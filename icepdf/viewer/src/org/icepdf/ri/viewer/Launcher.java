@@ -222,7 +222,7 @@ public class Launcher {
             String defaultLF = UIManager.getSystemLookAndFeelClassName();
             UIManager.setLookAndFeel(defaultLF);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error setting Swing Look and Feel.", e);
+            logger.log(Level.FINE, "Error setting Swing Look and Feel.", e);
         }
 
     }

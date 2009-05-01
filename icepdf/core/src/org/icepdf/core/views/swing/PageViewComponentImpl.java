@@ -1064,7 +1064,7 @@ public class PageViewComponentImpl extends
                 createBufferedPageImage(this);
             }
             catch (Throwable e) {
-                logger.log(Level.SEVERE, 
+                logger.log(Level.FINE,
                         "Error creating buffer, page: " + pageIndex, e);
 
                 // mark as dirty, so that it tries again to create buffer
@@ -1117,7 +1117,7 @@ public class PageViewComponentImpl extends
                 pageTree.releasePage(page, this);
             }
             catch (Throwable e) {
-                logger.log(Level.SEVERE,
+                logger.log(Level.FINE,
                         "Error initiating page: " + pageIndex, e);
                 // make sure we don't try to re-initialize
                 pageInitilizer.setHasBeenQueued(true);

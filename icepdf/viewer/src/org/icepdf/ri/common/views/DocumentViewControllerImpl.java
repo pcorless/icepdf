@@ -747,8 +747,8 @@ public class DocumentViewControllerImpl
                 ImageIcon cursorImage = new ImageIcon(Images.get(imageName));
                 c = tk.createCustomCursor(cursorImage.getImage(), cursorHotSpot, imageName);
             } catch (RuntimeException ex) {
-                if (logger.isLoggable(Level.SEVERE)) {
-                    logger.log(Level.SEVERE,
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE,
                             "Trying to load image: " + imageName, ex);
                 }
                 throw ex;

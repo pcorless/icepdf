@@ -213,7 +213,7 @@ try { throw new RuntimeException("MARK"); } catch(Exception e) {
             image = st.getImage(fill, this, true);
         }
         catch (Exception e) {
-            logger.log(Level.SEVERE, "Error getting image by name: " + s, e);
+            logger.log(Level.FINE, "Error getting image by name: " + s, e);
         }
 
         if (image != null && !st.isImageMask()) {

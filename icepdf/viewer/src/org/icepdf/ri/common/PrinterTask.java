@@ -71,7 +71,7 @@ public class PrinterTask implements Runnable {
                 cancelablePrintJob = printHelper.cancelablePrint();
             }
         } catch (PrintException ex) {
-            logger.log(Level.SEVERE, "Error during printing.", ex);
+            logger.log(Level.FINE, "Error during printing.", ex);
         }
     }
 
@@ -84,7 +84,7 @@ public class PrinterTask implements Runnable {
                 cancelablePrintJob.cancel();
             }
         } catch (PrintException ex) {
-            logger.log(Level.SEVERE, "Error during printing, " + ex.getMessage());
+            logger.log(Level.FINE, "Error during printing, " + ex.getMessage());
         }
     }
 }

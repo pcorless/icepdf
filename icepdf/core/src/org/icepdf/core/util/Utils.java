@@ -215,10 +215,10 @@ public class Utils {
                 content = new String(data);
         }
         catch (IOException ioe) {
-            logger.log(Level.SEVERE, "Problem getting debug string");
+            logger.log(Level.FINE, "Problem getting debug string");
         }
         catch (Throwable e) {
-            logger.log(Level.SEVERE, "Problem getting content stream, skipping");
+            logger.log(Level.FINE, "Problem getting content stream, skipping");
         }
         return content;
     }
@@ -258,7 +258,7 @@ public class Utils {
                 content = new String(data);
         }
         catch (IOException ioe) {
-            logger.log(Level.SEVERE, "Problem getting debug string");
+            logger.log(Level.FINE, "Problem getting debug string");
         }
         return content;
     }
@@ -295,7 +295,7 @@ public class Utils {
             sin = new SeekableByteArrayInputStream(data);
         }
         catch (IOException ioe) {
-            logger.log(Level.SEVERE, "Problem getting debug string");
+            logger.log(Level.FINE, "Problem getting debug string");
         }
         return sin;
     }

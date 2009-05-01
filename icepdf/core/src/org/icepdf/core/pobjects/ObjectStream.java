@@ -121,7 +121,7 @@ public class ObjectStream extends Stream {
             gotSomething = (ob != null);
         }
         catch (Exception e) {
-             logger.log(Level.SEVERE, "Error loading PDF object.", e);
+             logger.log(Level.FINE, "Error loading PDF object.", e);
         }
         return gotSomething;
     }

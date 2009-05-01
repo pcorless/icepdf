@@ -128,7 +128,7 @@ public class MemoryManager {
                 minMemory = t;
             }
         }catch(Throwable e){
-            logger.log(Level.WARNING, "Error setting org.icepdf.core.minMemory");
+            logger.log(Level.FINE, "Error setting org.icepdf.core.minMemory");
         }
 
         // gen max memory of jdk

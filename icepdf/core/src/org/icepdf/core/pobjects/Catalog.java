@@ -70,10 +70,10 @@ public class Catalog extends Dictionary {
     private boolean namesTreeInited = false;
     private boolean destsInited = false;
 
-    // Announce ICEpdf
+    // Announce ICEpdf Core
     static {
         if (logger.isLoggable(Level.INFO)) {
-            logger.info(new ProductInfo().toString());
+            logger.info("ICEsoft ICEpdf Core " + Document.getLibraryVersion());
         }
     }
 
@@ -107,7 +107,7 @@ public class Catalog extends Dictionary {
             pageTree.initRootPageTree();
         }
         catch (NullPointerException e) {
-            logger.log(Level.SEVERE, "Error parsing page tree.", e);
+            logger.log(Level.FINE, "Error parsing page tree.", e);
         }
     }
 

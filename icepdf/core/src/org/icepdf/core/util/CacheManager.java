@@ -91,7 +91,7 @@ public class CacheManager {
                 }
             }
             catch (SecurityException e) {
-                logger.log(Level.SEVERE,
+                logger.log(Level.FINE,
                         "Security error removing cached file " + fileName, e);
             }
         }

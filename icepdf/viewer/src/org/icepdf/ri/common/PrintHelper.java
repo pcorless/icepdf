@@ -285,7 +285,7 @@ public class PrintHelper implements Printable {
             // Step 2: Pass the settings to a page dialog and print dialog.
             pj.pageDialog(printRequestAttributeSet);
         } catch (Throwable e) {
-            logger.log(Level.SEVERE, "Error creating page setup dialog.", e);
+            logger.log(Level.FINE, "Error creating page setup dialog.", e);
         }
     }
 

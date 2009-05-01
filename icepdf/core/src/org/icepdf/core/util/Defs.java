@@ -78,7 +78,7 @@ public class Defs {
                 return Integer.parseInt(value);
             }
             catch (NumberFormatException ex) {
-                logger.log(Level.SEVERE, "Failed to parse property.", ex);
+                logger.log(Level.FINE, "Failed to parse property.", ex);
             }
         }
         return defaultValue;

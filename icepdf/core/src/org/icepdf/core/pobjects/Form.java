@@ -161,7 +161,7 @@ public class Form extends Stream {
             catch (Throwable e) {
                 // reset shapes vector, we don't want to mess up the paint stack
                 shapes = new Shapes();
-                logger.log(Level.SEVERE, "Error parsing Form content stream.", e);
+                logger.log(Level.FINE, "Error parsing Form content stream.", e);
             }
             finally {
                 try {
