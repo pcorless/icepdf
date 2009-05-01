@@ -175,7 +175,7 @@ public class Utils {
             }
         }
         catch (Throwable t) {
-            logger.log(Level.WARNING,
+            logger.log(Level.FINE,
                     "ImageCache: Java 1.4 Headless support not found.");
         }
         return defaultReturnIfNoMethod;

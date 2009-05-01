@@ -228,7 +228,7 @@ public class ImageCache {
                 isCached = false;
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING,
+            logger.log(Level.FINE,
                     "Error creating ImageCache temporary file.", e);
         }
     }

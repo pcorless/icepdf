@@ -275,7 +275,7 @@ public class Stream extends Dictionary {
                 // Leave empty so our else clause works
             } else if (
                     filterName.equals("JPXDecode")) {
-                if (logger.isLoggable(Level.WARNING)) {
+                if (logger.isLoggable(Level.FINE)) {
                     logger.log(Level.SEVERE, "UNSUPPORTED:" + filterName + " " + entries);
                 }
                 if (input != null) {
@@ -283,8 +283,8 @@ public class Stream extends Dictionary {
                         input.close();
                     }
                     catch (IOException e) {
-                        logger.log(Level.SEVERE,
-                                "Problem closing stream for unsupported JPXDecode", e);
+                        logger.log(Level.FINE,
+                                "Problem closing stream for unsupported JPXDecode");
                     }
                 }
                 return null;
