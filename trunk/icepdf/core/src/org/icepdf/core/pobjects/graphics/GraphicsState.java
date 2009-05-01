@@ -443,7 +443,7 @@ public class GraphicsState {
                 setDashPhase(((Number) dasshPattern.elementAt(1)).floatValue());
             }
             catch (ClassCastException e) {
-                logger.log(Level.SEVERE, "Dash cast error: ", e);
+                logger.log(Level.FINE, "Dash cast error: ", e);
             }
         }
         // Stroking alpha
@@ -547,7 +547,7 @@ public class GraphicsState {
                 afInverse = af.createInverse();
             }
             catch (Exception e) {
-                logger.log(Level.SEVERE, "Eror generating clip inverse.",e);
+                logger.log(Level.FINE, "Eror generating clip inverse.",e);
             }
 
             // transform the clip.

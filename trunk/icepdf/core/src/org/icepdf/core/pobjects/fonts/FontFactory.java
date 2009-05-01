@@ -104,7 +104,7 @@ public class FontFactory {
         try {
             Class.forName(NFONT_CLASS);
         } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE, "NFont font library was not found on the class path");
+            logger.log(Level.FINE, "NFont font library was not found on the class path");
         }
     }
 
@@ -141,7 +141,7 @@ public class FontFactory {
                 Object[] fontUrl = {library, entries};
                 fontDictionary = (Font) fontClassConstructor.newInstance(fontUrl);
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Could not load font dictionary class", e);
+                logger.log(Level.FINE, "Could not load font dictionary class", e);
             }
         } else {
             // create OFont implementation. 
@@ -168,7 +168,7 @@ public class FontFactory {
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Could not create instance oof font file " + fontType, e);
+                logger.log(Level.FINE, "Could not create instance oof font file " + fontType, e);
             }
         } else if (awtFontLoading) {
             // see if the font file can be loaded with Java Fonts
@@ -186,15 +186,15 @@ public class FontFactory {
                     try {
                         in.close();
                     } catch (IOException e) {
-                        logger.log(Level.SEVERE, "Error closing font stream.", e);
+                        logger.log(Level.FINE, "Error closing font stream.", e);
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Error reading font file with ", e);
+                logger.log(Level.FINE, "Error reading font file with ", e);
                 try {
                     if (in != null) in.close();
                 } catch (Throwable e1) {
-                    logger.log(Level.SEVERE, "Error closing font stream.", e);
+                    logger.log(Level.FINE, "Error closing font stream.", e);
                 }
             }
         }
@@ -215,7 +215,7 @@ public class FontFactory {
                     fontFile = (FontFile) fontClassConstructor.newInstance(fontUrl);
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Could not create instance oof font file " + fontType, e);
+                logger.log(Level.FINE, "Could not create instance oof font file " + fontType, e);
             }
         } else {
             // see if the font file can be loaded with Java Fonts
@@ -231,7 +231,7 @@ public class FontFactory {
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Error ready font file with ", e);
+                logger.log(Level.FINE, "Error ready font file with ", e);
             }
         }
         return fontFile;

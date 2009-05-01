@@ -145,15 +145,15 @@ class StandardEncryption {
             finalData = rc4.doFinal(inputData);
 
         } catch (NoSuchAlgorithmException ex) {
-            logger.log(Level.SEVERE, "NoSuchAlgorithmException.", ex);
+            logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         } catch (IllegalBlockSizeException ex) {
-            logger.log(Level.SEVERE, "IllegalBlockSizeException.", ex);
+            logger.log(Level.FINE, "IllegalBlockSizeException.", ex);
         } catch (BadPaddingException ex) {
-            logger.log(Level.SEVERE, "BadPaddingException.", ex);
+            logger.log(Level.FINE, "BadPaddingException.", ex);
         } catch (NoSuchPaddingException ex) {
-            logger.log(Level.SEVERE, "NoSuchPaddingException.", ex);
+            logger.log(Level.FINE, "NoSuchPaddingException.", ex);
         } catch (InvalidKeyException ex) {
-            logger.log(Level.SEVERE, "InvalidKeyException.", ex);
+            logger.log(Level.FINE, "InvalidKeyException.", ex);
         }
 
         return finalData;
@@ -200,11 +200,11 @@ class StandardEncryption {
             CipherInputStream cin = new CipherInputStream(input, rc4);
             return cin;
         } catch (NoSuchAlgorithmException ex) {
-            logger.log(Level.SEVERE, "NoSuchAlgorithmException.", ex);
+            logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         } catch (NoSuchPaddingException ex) {
-            logger.log(Level.SEVERE, "NoSuchPaddingException.", ex);
+            logger.log(Level.FINE, "NoSuchPaddingException.", ex);
         } catch (InvalidKeyException ex) {
-            logger.log(Level.SEVERE, "InvalidKeyException.", ex);
+            logger.log(Level.FINE, "InvalidKeyException.", ex);
         }
 
         return null;
@@ -276,7 +276,7 @@ class StandardEncryption {
             md5 = MessageDigest.getInstance("MD5");
         }
         catch (NoSuchAlgorithmException ex) {
-            logger.log(Level.SEVERE, "NoSuchAlgorithmException.", ex);
+            logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         }
         // and pass in padded password from step 1
         md5.update(paddedPassword);
@@ -419,7 +419,7 @@ class StandardEncryption {
             md5 = MessageDigest.getInstance("MD5");
         }
         catch (NoSuchAlgorithmException e) {
-            logger.log(Level.SEVERE, "Could not fint MD5 Digest", e);
+            logger.log(Level.FINE, "Could not fint MD5 Digest", e);
         }
         // and pass in padded password from step 1
         paddedOwnerPassword = md5.digest(paddedOwnerPassword);
@@ -496,12 +496,12 @@ class StandardEncryption {
             }
 
         } catch (NoSuchAlgorithmException ex) {
-            logger.log(Level.SEVERE, "NoSuchAlgorithmException.", ex);
+            logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         }
         catch (NoSuchPaddingException ex) {
-            logger.log(Level.SEVERE, "NoSuchPaddingException.", ex);
+            logger.log(Level.FINE, "NoSuchPaddingException.", ex);
         } catch (InvalidKeyException ex) {
-            logger.log(Level.SEVERE, "InvalidKeyException.", ex);
+            logger.log(Level.FINE, "InvalidKeyException.", ex);
         }
 
 
@@ -561,15 +561,15 @@ class StandardEncryption {
                 finalData = rc4.doFinal(paddedUserPassword);
 
             } catch (NoSuchAlgorithmException ex) {
-                logger.log(Level.SEVERE, "NoSuchAlgorithmException.", ex);
+                logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
             } catch (IllegalBlockSizeException ex) {
-                logger.log(Level.SEVERE, "IllegalBlockSizeException.", ex);
+                logger.log(Level.FINE, "IllegalBlockSizeException.", ex);
             } catch (BadPaddingException ex) {
-                logger.log(Level.SEVERE, "BadPaddingException.", ex);
+                logger.log(Level.FINE, "BadPaddingException.", ex);
             } catch (NoSuchPaddingException ex) {
-                logger.log(Level.SEVERE, "NoSuchPaddingException.", ex);
+                logger.log(Level.FINE, "NoSuchPaddingException.", ex);
             } catch (InvalidKeyException ex) {
-                logger.log(Level.SEVERE, "InvalidKeyException.", ex);
+                logger.log(Level.FINE, "InvalidKeyException.", ex);
             }
             // Step 3: return the result of step 2 as the value of the U entry
             return finalData;
@@ -585,7 +585,7 @@ class StandardEncryption {
                 md5 = MessageDigest.getInstance("MD5");
             }
             catch (NoSuchAlgorithmException e) {
-                logger.log(Level.SEVERE, "MD5 digester could not be found",e);
+                logger.log(Level.FINE, "MD5 digester could not be found",e);
             }
             // and pass in padded password 32-byte padding string
             md5.update(paddedUserPassword);
@@ -639,12 +639,12 @@ class StandardEncryption {
                 }
 
             } catch (NoSuchAlgorithmException ex) {
-                logger.log(Level.SEVERE, "NoSuchAlgorithmException.", ex);
+                logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
             }
             catch (NoSuchPaddingException ex) {
-                logger.log(Level.SEVERE, "NoSuchPaddingException.", ex);
+                logger.log(Level.FINE, "NoSuchPaddingException.", ex);
             } catch (InvalidKeyException ex) {
-                logger.log(Level.SEVERE, "InvalidKeyException.", ex);
+                logger.log(Level.FINE, "InvalidKeyException.", ex);
             }
             // Step 6: Append 16 bytes of arbitrary padding to the output from
             // the final invocation of the RC4 function and return the 32-byte
@@ -761,15 +761,15 @@ class StandardEncryption {
             }
 
         } catch (NoSuchAlgorithmException ex) {
-            logger.log(Level.SEVERE, "NoSuchAlgorithmException.", ex);
+            logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         } catch (IllegalBlockSizeException ex) {
-            logger.log(Level.SEVERE, "IllegalBlockSizeException.", ex);
+            logger.log(Level.FINE, "IllegalBlockSizeException.", ex);
         } catch (BadPaddingException ex) {
-            logger.log(Level.SEVERE, "BadPaddingException.", ex);
+            logger.log(Level.FINE, "BadPaddingException.", ex);
         } catch (NoSuchPaddingException ex) {
-            logger.log(Level.SEVERE, "NoSuchPaddingException.", ex);
+            logger.log(Level.FINE, "NoSuchPaddingException.", ex);
         } catch (InvalidKeyException ex) {
-            logger.log(Level.SEVERE, "InvalidKeyException.", ex);
+            logger.log(Level.FINE, "InvalidKeyException.", ex);
         }
         // Step 3: The result of step 2 purports to be the user password.
         // Authenticate this user password using Algorithm 3.6.  If it is found

@@ -95,7 +95,7 @@ public class Shapes {
                     Defs.intProperty("org.icepdf.core.views.refreshfrequency",
                             250);
         } catch (NumberFormatException e) {
-            logger.log(Level.SEVERE, "Error reading buffered scale factor");
+            logger.log(Level.FINE, "Error reading buffered scale factor");
         }
     }
 
@@ -442,7 +442,7 @@ public class Shapes {
             // eat any errors. 
         }
         catch (Exception e) {
-            logger.log(Level.SEVERE, "Error painting shapes.", e);
+            logger.log(Level.FINE, "Error painting shapes.", e);
         }
 //        System.out.println("Paint Count " + paintCount);
 

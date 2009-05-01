@@ -333,7 +333,7 @@ public class FontManager {
             }
         }
         catch (Throwable e) {
-            logger.log(Level.SEVERE, "Error setting font properties ", e);
+            logger.log(Level.FINE, "Error setting font properties ", e);
             throw new IllegalArgumentException(errorString);
         }
     }
@@ -746,7 +746,7 @@ public class FontManager {
                 font = fontFactory.createFontFile(file, FontFactory.FONT_OPEN_TYPE);
             }
         } catch (Throwable e) {
-           logger.log(Level.SEVERE, "Error reading font program.", e);
+           logger.log(Level.FINE, "Error reading font program.", e);
         }
         return font;
     }

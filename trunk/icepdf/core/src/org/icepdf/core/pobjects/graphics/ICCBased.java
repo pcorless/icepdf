@@ -96,7 +96,7 @@ public class ICCBased extends PColorSpace {
                 colorSpace = ColorSpaceWrapper.getICCColorSpaceInstance(in);
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error Processing ICCBased Colour Profile", e);
+            logger.log(Level.FINE, "Error Processing ICCBased Colour Profile", e);
         }
         finally {
             try {
@@ -172,7 +172,7 @@ public class ICCBased extends PColorSpace {
                     1);
                 */
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Error getting ICCBased colour", e);
+                logger.log(Level.FINE, "Error getting ICCBased colour", e);
             }
         }
         return alternate.getColor(f);

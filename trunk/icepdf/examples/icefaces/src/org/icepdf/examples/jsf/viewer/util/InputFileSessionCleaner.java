@@ -84,7 +84,7 @@ public class InputFileSessionCleaner implements HttpSessionListener {
                 sessionfileUploadDirectory.delete();
             }
             catch (SecurityException e) {
-                logger.log(Level.SEVERE, "Error deleting file upload directory: ", e);
+                logger.log(Level.FINE, "Error deleting file upload directory: ", e);
             }
         }
 

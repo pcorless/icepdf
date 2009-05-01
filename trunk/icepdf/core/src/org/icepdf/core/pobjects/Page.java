@@ -354,14 +354,14 @@ public class Page extends Dictionary implements MemoryManageable {
                 }
                 catch (Exception e) {
                     shapes = new Shapes();
-                    logger.log(Level.SEVERE, "Error initializing Page.", e);
+                    logger.log(Level.FINE, "Error initializing Page.", e);
                 }
                 finally {
                     try {
                         sis.close();
                     }
                     catch (IOException e) {
-                         logger.log(Level.SEVERE, "Error closing page stream.", e);
+                         logger.log(Level.FINE, "Error closing page stream.", e);
                     }
                 }
             }
@@ -1052,14 +1052,14 @@ public class Page extends Dictionary implements MemoryManageable {
                 extractedText = cp.parseTextBlocks(sis);
             }
             catch (Exception e) {
-                logger.log(Level.SEVERE, "Error getting page text.", e); 
+                logger.log(Level.FINE, "Error getting page text.", e);
             }
             finally {
                 try {
                     sis.close();
                 }
                 catch (IOException e) {
-                    logger.log(Level.SEVERE, "Error closing page stream.", e);
+                    logger.log(Level.FINE, "Error closing page stream.", e);
                 }
             }
         }
