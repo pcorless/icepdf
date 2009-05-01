@@ -778,7 +778,7 @@ public class PageViewComponentImpl extends
                 bufferedPageImageReference =
                         new SoftReference<Image>(pageBufferImage);
             } else {
-                if (logger.isLoggable(Level.WARNING)) {
+                if (logger.isLoggable(Level.FINE)) {
                     logger.info("Error creating buffer, not enough memory: page " + pageIndex);
                 }
                 // mark as dirty, so that it tries again to create buffer

@@ -890,8 +890,8 @@ public class ContentParser {
         // indicate a parsing problem or a not supported operand
         while (!stack.isEmpty()) {
             String tmp = stack.pop().toString();
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("STACK=" + tmp);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("STACK=" + tmp);
             }
         }
         return shapes;
@@ -1927,7 +1927,7 @@ public class ContentParser {
             graphicState.setDashPhase(dashPhase);
         }
         catch (ClassCastException e) {
-            logger.log(Level.WARNING, "Dash pattern syntax error: ", e);
+            logger.log(Level.FINE, "Dash pattern syntax error: ", e);
         }
         // update stroke state with possibly new dash data.
         setStroke(shapes, graphicState);

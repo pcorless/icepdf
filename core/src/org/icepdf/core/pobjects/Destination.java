@@ -159,7 +159,7 @@ public class Destination {
                         if (ob instanceof Hashtable) {
                             parse((Vector) (((Hashtable) ob).get("D")));
                         } else {
-                            if (logger.isLoggable(Level.WARNING)) {
+                            if (logger.isLoggable(Level.FINE)) {
                                 logger.warning("Destination type missed=" + ob);
                             }
                         }
