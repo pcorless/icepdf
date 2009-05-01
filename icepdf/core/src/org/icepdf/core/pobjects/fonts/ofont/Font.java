@@ -286,7 +286,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                                     try {
                                         c1 = Integer.parseInt(n);
                                     } catch (Exception ex) {
-                                        logger.log(Level.SEVERE, "Error parings font differences");
+                                        logger.log(Level.FINE, "Error parings font differences");
                                     }
                                 }
                             }

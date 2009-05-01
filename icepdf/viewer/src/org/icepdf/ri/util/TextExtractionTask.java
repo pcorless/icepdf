@@ -222,7 +222,7 @@ public class TextExtractionTask {
                 fileOutputStream.flush();
             }
             catch (Throwable e) {
-                logger.log(Level.SEVERE, "Malformed URL Exception ", e);
+                logger.log(Level.FINE, "Malformed URL Exception ", e);
             }
         }
     }

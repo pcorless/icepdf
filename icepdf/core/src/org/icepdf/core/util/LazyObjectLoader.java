@@ -84,7 +84,7 @@ public class LazyObjectLoader implements MemoryManagerDelegate {
                 }
             }
             catch (Exception e) {
-                logger.log(Level.SEVERE,
+                logger.log(Level.FINE,
                         "Error loading object instance: " + reference.toString(), e);
             }
             finally {
@@ -108,7 +108,7 @@ public class LazyObjectLoader implements MemoryManagerDelegate {
                 }
             }
             catch (Exception e) {
-               logger.log(Level.SEVERE,
+               logger.log(Level.FINE,
                        "Error loading object instance: " + reference.toString(), e);
             }
         }
@@ -139,7 +139,7 @@ public class LazyObjectLoader implements MemoryManagerDelegate {
             }
         }
         catch (Exception e) {
-            logger.log(Level.SEVERE,
+            logger.log(Level.FINE,
                     "Error loading PTrailer instance: " + position, e);
         }
         finally {

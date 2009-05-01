@@ -128,7 +128,7 @@ public class MemoryManager {
                 minMemory = t;
             }
         }catch(Throwable e){
-            logger.log(Level.WARNING, "Error setting org.icepdf.core.minMemory",e);
+            logger.log(Level.FINE, "Error setting org.icepdf.core.minMemory");
         }
 
         // gen max memory of jdk
@@ -325,7 +325,7 @@ public class MemoryManager {
             }
         }
         catch (Exception e) {
-            logger.log(Level.WARNING, "Problem while reducing memory", e);
+            logger.log(Level.FINE, "Problem while reducing memory",e);
         }
 //System.out.println("+-+ MM.reduceMemory()   managing: " + cumulativeDurationManagingMemory + ", not: " + cumulativeDurationNotManagingMemory + "      managing: " + percentageDurationManagingMemory + "%");
         return numDone;
