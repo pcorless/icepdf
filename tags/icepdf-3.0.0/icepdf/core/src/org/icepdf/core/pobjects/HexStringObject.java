@@ -104,7 +104,7 @@ public class HexStringObject implements StringObject {
                     stringData.substring(start, start + offset), 16);
         }
         catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
+            if (logger.isLoggable(Level.FINE)) {
                 logger.warning("Number Format Exception " + unsignedInt);
             }
         }

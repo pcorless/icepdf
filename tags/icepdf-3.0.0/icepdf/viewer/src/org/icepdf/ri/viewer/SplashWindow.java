@@ -71,7 +71,7 @@ final class SplashWindow extends JWindow {
         try {
             mediaTracker.waitForID(0);
         } catch (InterruptedException ex) {
-            logger.log(Level.SEVERE, "Failed to track splash image load.", ex);
+            logger.log(Level.FINE, "Failed to track splash image load.", ex);
         }
 
         setSize(splashImage.getWidth(null), splashImage.getHeight(null));

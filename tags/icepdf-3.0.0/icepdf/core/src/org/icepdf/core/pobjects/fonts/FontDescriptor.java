@@ -329,7 +329,7 @@ public class FontDescriptor extends Dictionary {
         // catch everything, we can fall back to font substitution if a failure
         // occurs. 
         catch (Throwable e) {
-            logger.log(Level.SEVERE, "Error Reading Embedded Font ", e);
+            logger.log(Level.FINE, "Error Reading Embedded Font ", e);
         }
 
     }

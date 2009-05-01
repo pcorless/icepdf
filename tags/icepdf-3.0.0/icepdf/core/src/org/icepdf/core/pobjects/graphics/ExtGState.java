@@ -331,7 +331,7 @@ public class ExtGState extends Dictionary {
                 dashPattern.add(dashPhase);
             }
             catch (ClassCastException e) {
-                logger.log(Level.SEVERE, "Dash pattern syntax error: ", e);
+                logger.log(Level.FINE, "Dash pattern syntax error: ", e);
             }
         }
         return dashPattern;

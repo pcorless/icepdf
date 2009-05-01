@@ -275,16 +275,16 @@ public class Stream extends Dictionary {
                 // Leave empty so our else clause works
             } else if (
                     filterName.equals("JPXDecode")) {
-                if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.SEVERE, "UNSUPPORTED:" + filterName + " " + entries);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "UNSUPPORTED:" + filterName + " " + entries);
                 }
                 if (input != null) {
                     try {
                         input.close();
                     }
                     catch (IOException e) {
-                        logger.log(Level.SEVERE,
-                                "Problem closing stream for unsupported JPXDecode", e);
+                        logger.log(Level.FINE,
+                                "Problem closing stream for unsupported JPXDecode");
                     }
                 }
                 return null;
@@ -323,7 +323,7 @@ public class Stream extends Dictionary {
             return ret;
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Problem decoding stream bytes: ", e);
+            logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
         }
 
         return null;
@@ -366,7 +366,7 @@ public class Stream extends Dictionary {
             return ret;
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Problem decoding stream bytes: ", e);
+            logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
         }
 
         return null;
@@ -463,7 +463,7 @@ public class Stream extends Dictionary {
                     streamInput.dispose();
                 }
                 catch (IOException e) {
-                    logger.log(Level.SEVERE, "Error disposing stream.", e);
+                    logger.log(Level.FINE, "Error disposing stream.", e);
                 }
                 streamInput = null;
             }
@@ -510,7 +510,7 @@ public class Stream extends Dictionary {
                 jpegEncoding = getJPEGEncoding(data, dataRead);
         }
         catch (IOException ioe) {
-            logger.log(Level.SEVERE, "Problem determining JPEG type: ", ioe);
+            logger.log(Level.FINE, "Problem determining JPEG type: ", ioe);
         }
         //System.out.println("Stream.dctDecode()  objectNumber: " + getPObjectReference().getObjectNumber());
         //System.out.println("Stream.dctDecode()  jpegEncoding: " + JPEG_ENC_NAMES[jpegEncoding]);
@@ -597,7 +597,7 @@ public class Stream extends Dictionary {
                 }
             }
             catch (Exception e) {
-                logger.log(Level.SEVERE, "Problem loading JPEG image via JPEGImageDecoder: ", e);
+                logger.log(Level.FINE, "Problem loading JPEG image via JPEGImageDecoder: ", e);
             }
         }
 
@@ -605,7 +605,7 @@ public class Stream extends Dictionary {
             bufferedInput.close();
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Error closing image stream.",e);
+            logger.log(Level.FINE, "Error closing image stream.",e);
         }
 
         if (tmpImage == null) {
@@ -680,14 +680,14 @@ public class Stream extends Dictionary {
                 }
             }
             catch (Exception e) {
-                logger.log(Level.SEVERE,"Problem loading JPEG image via JAI: ", e);
+                logger.log(Level.FINE,"Problem loading JPEG image via JAI: ", e);
             }
 
             try {
                 input.close();
             }
             catch (IOException e) {
-                logger.log(Level.SEVERE,"Problem closing image stream. ", e);
+                logger.log(Level.FINE,"Problem closing image stream. ", e);
             }
         }
 
@@ -702,7 +702,7 @@ public class Stream extends Dictionary {
                 }
             }
             catch (Exception e) {
-                logger.log(Level.SEVERE, "Problem loading JPEG image via Toolkit: ", e);
+                logger.log(Level.FINE, "Problem loading JPEG image via Toolkit: ", e);
             }
         }
 
@@ -1550,7 +1550,7 @@ public class Stream extends Dictionary {
                     return img;
             }
             catch (Exception e) {
-                logger.log(Level.SEVERE,"Error building image raster.", e);
+                logger.log(Level.FINE,"Error building image raster.", e);
             }
         }
 
@@ -2086,7 +2086,7 @@ public class Stream extends Dictionary {
             }
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Error parsing image.", e);
+            logger.log(Level.FINE, "Error parsing image.", e);
         }
 
         return bim;

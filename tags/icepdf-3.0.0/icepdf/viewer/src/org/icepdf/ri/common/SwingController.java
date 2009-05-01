@@ -952,7 +952,7 @@ public class SwingController
             try {
                 zoom = zoomLevels[selIndex];
             } catch (IndexOutOfBoundsException ex) {
-                logger.log(Level.WARNING, "Error apply zoom levels");
+                logger.log(Level.FINE, "Error apply zoom levels");
             } finally {
                 if (zoom != documentDocumentViewController.getZoom()) {
                     setZoom(zoom);
@@ -1279,7 +1279,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfException.msg",
                         pathname);
                 document = null;
-                logger.log(Level.SEVERE, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1290,7 +1290,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfSecurityException.msg",
                         pathname);
                 document = null;
-                logger.log(Level.SEVERE, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1301,7 +1301,7 @@ public class SwingController
                         "viewer.dialog.openDocument.exception.msg",
                         pathname);
                 document = null;
-                logger.log(Level.SEVERE, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
@@ -1401,7 +1401,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfException.msg",
                         location);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1412,7 +1412,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfSecurityException.msg",
                         location);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1423,7 +1423,7 @@ public class SwingController
                         "viewer.dialog.openDocument.exception.msg",
                         location);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
@@ -1474,7 +1474,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfException.msg",
                         description);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1485,7 +1485,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfSecurityException.msg",
                         description);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1496,7 +1496,7 @@ public class SwingController
                         "viewer.dialog.openDocument.exception.msg",
                         description);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
@@ -1544,7 +1544,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfException.msg",
                         description);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1555,7 +1555,7 @@ public class SwingController
                         "viewer.dialog.openDocument.pdfSecurityException.msg",
                         description);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1566,7 +1566,7 @@ public class SwingController
                         "viewer.dialog.openDocument.exception.msg",
                         description);
                 document = null;
-                logger.log(Level.WARNING, "Error opening document.", e);
+                logger.log(Level.FINE, "Error opening document.", e);
             }
             finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
@@ -1963,10 +1963,10 @@ public class SwingController
                     fileOutputStream.close();
                 }
                 catch (MalformedURLException e) {
-                    logger.log(Level.WARNING, "Malformed URL Exception ", e);
+                    logger.log(Level.FINE, "Malformed URL Exception ", e);
                 }
                 catch (IOException e) {
-                    logger.log(Level.WARNING, "IO Exception ", e);
+                    logger.log(Level.FINE, "IO Exception ", e);
                 }
                 // save the default directory
                 ViewModel.setDefaultFile(file);
@@ -2078,7 +2078,7 @@ public class SwingController
                             }
                             catch (Throwable e) {
                                 error = e.getMessage();
-                                logger.log(Level.WARNING, "Error exporting to SVG");
+                                logger.log(Level.FINE, "Error exporting to SVG");
                             }
                             final String tmpMsg;
                             // finsished message
@@ -2369,7 +2369,7 @@ public class SwingController
                 showPage(pageIndex);
             }
             catch (NumberFormatException nfe) {
-                logger.log(Level.WARNING, "Error converting page number.");
+                logger.log(Level.FINE, "Error converting page number.");
             }
         }
     }
@@ -2584,7 +2584,7 @@ public class SwingController
             }
         }
         catch (Exception e) {
-            logger.log(Level.WARNING, "Error updating page view.", e);
+            logger.log(Level.FINE, "Error updating page view.", e);
         }
         finally {
             setDisplayTool(oldTool);
@@ -2765,7 +2765,7 @@ public class SwingController
                 showPage(pageIndex);
             }
             catch (NumberFormatException nfe) {
-                logger.log(Level.WARNING, "Error selecting page number.");
+                logger.log(Level.FINE, "Error selecting page number.");
             }
         }
     }
@@ -2992,7 +2992,7 @@ public class SwingController
                     } else if (source == currentPageNumberTextField) {
                         showPageFromTextField();
                     } else {
-                        logger.log(Level.WARNING, "Unknown action event: " + source.toString());
+                        logger.log(Level.FINE, "Unknown action event: " + source.toString());
                     }
                 }
                 finally {
@@ -3015,7 +3015,7 @@ public class SwingController
             };
             SwingUtilities.invokeLater(doSwingWork);
 
-            logger.log(Level.WARNING, "Error processing action event.", e);
+            logger.log(Level.FINE, "Error processing action event.", e);
         }
         // setup focus to ensure page up and page down keys work
         documentDocumentViewController.requestViewFocusInWindow();

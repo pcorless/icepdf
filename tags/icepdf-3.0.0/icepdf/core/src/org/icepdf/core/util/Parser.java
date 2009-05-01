@@ -325,7 +325,7 @@ public class Parser {
                                         in.close();
                                     }
                                     catch (IOException e) {
-                                        logger.log(Level.SEVERE, "Error appending stream entries.", e);
+                                        logger.log(Level.FINE, "Error appending stream entries.", e);
                                     }
                                 }
                             }
@@ -514,7 +514,7 @@ public class Parser {
 //            throw e;
 //        }
         catch (Exception e) {
-            logger.log(Level.SEVERE, "Fatal error parsing PDF file stream.", e);
+            logger.log(Level.FINE, "Fatal error parsing PDF file stream.", e);
             return null;
         }
         // return the top of the statck
@@ -780,7 +780,7 @@ public class Parser {
                                 charNumber = Integer.parseInt(digit.toString(), 8);
                             }
                             catch (NumberFormatException e) {
-                                logger.log(Level.WARNING, "Integer parse error ", e);
+                                logger.log(Level.FINE, "Integer parse error ", e);
                             }
                             // convert the interger from octal to dec.
                             currentChar = (char) charNumber;
@@ -817,7 +817,7 @@ public class Parser {
                         }
                         // otherwise report the file format error
                         else {
-                            if (logger.isLoggable(Level.WARNING)) {
+                            if (logger.isLoggable(Level.FINE)) {
                                 logger.warning("C=" + ((int) currentChar));
                             }
                         }
@@ -989,7 +989,7 @@ public class Parser {
             }
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Error detecting int.", e);
+            logger.log(Level.FINE, "Error detecting int.", e);
         }
         if (makeNegative)
             num = num * -1;
@@ -1019,7 +1019,7 @@ public class Parser {
             }
         }
         catch (IOException e) {
-           logger.log(Level.SEVERE, "Error detecting long.", e);
+           logger.log(Level.FINE, "Error detecting long.", e);
         }
         if (makeNegative)
             num = num * -1L;
@@ -1041,7 +1041,7 @@ public class Parser {
             }
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Error detecting char.", e);
+            logger.log(Level.FINE, "Error detecting char.", e);
         }
         return alpha;
     }

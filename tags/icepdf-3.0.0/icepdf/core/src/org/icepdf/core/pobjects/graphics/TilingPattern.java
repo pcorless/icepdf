@@ -265,7 +265,7 @@ public class TilingPattern extends Stream implements Pattern {
                 shapes = cp.parse(in);
             }
             catch (Throwable e) {
-                logger.log(Level.SEVERE, "Error processing tiling pattern.", e);
+                logger.log(Level.FINE, "Error processing tiling pattern.", e);
             }
             finally {
                 try {
