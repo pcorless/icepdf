@@ -254,7 +254,7 @@ public class ImageCache {
                         image = (BufferedImage) imageIOReadMethod.invoke(null, readArgs);
                     }
                     catch (Throwable t) {
-                        logger.log(Level.SEVERE,
+                        logger.log(Level.FINE,
                                 "ImageCache: Java 1.4 Imaging subsystem read failure.", t);
                     }
                 }
@@ -273,7 +273,7 @@ public class ImageCache {
                         fileInputStream.close();
                     }
                     catch (ImageFormatException e) {
-                        logger.log(Level.SEVERE,
+                        logger.log(Level.FINE,
                                 "Error decoding ImageCache cached image.", e);
                     }
                 }
@@ -281,7 +281,7 @@ public class ImageCache {
                 length = tempFile.length();
 
             } catch (IOException e) {
-                logger.log(Level.SEVERE,
+                logger.log(Level.FINE,
                         "Error creating ImageCache temporary file ", e);
             }
             imageStore = image;

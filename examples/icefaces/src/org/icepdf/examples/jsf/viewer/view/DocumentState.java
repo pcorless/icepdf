@@ -179,7 +179,7 @@ public class DocumentState {
                 maxPages = -1;
                 isStateChanged = true;
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "Could not close document.", e);
+                logger.log(Level.FINE, "Could not close document.", e);
             }
         }
     }

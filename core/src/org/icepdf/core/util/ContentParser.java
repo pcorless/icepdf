@@ -1456,7 +1456,7 @@ public class ContentParser {
         // get rid of the rest
         while (!stack.isEmpty()) {
             String tmp = stack.pop().toString();
-            if (logger.isLoggable(Level.WARNING)) {
+            if (logger.isLoggable(Level.FINE)) {
                 logger.warning("Text=" + tmp);
             }
         }
@@ -1539,7 +1539,7 @@ public class ContentParser {
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error parsing inline image.", e);
+            logger.log(Level.FINE, "Error parsing inline image.", e);
         }
     }
 

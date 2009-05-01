@@ -84,8 +84,7 @@ public class Document {
      * @return version number of ICEpdf's rendering core.
      */
     public static String getLibraryVersion() {
-        return new StringBuffer().append(ProductInfo.PRODUCT).
-                append(" ").append(ProductInfo.PRIMARY).append(".").
+        return new StringBuffer().append(ProductInfo.PRIMARY).append(".").
                 append(ProductInfo.SECONDARY).append(".").
                 append(ProductInfo.TERTIARY).append(" ").
                 append(ProductInfo.RELEASE_TYPE).toString();
@@ -449,7 +448,7 @@ public class Document {
             catalog.init();
         }
         catch (PDFException e) {
-             logger.log(Level.SEVERE, "Error loading PDF file during linear parse.", e);
+             logger.log(Level.FINE, "Error loading PDF file during linear parse.", e);
             dispose();
             throw e;
         }
@@ -854,7 +853,7 @@ public class Document {
         try {
             return catalog.getPageTree().getNumberOfPages();
         } catch (Exception e) {
-             logger.log(Level.SEVERE, "Error getting number of pages.", e);
+             logger.log(Level.FINE, "Error getting number of pages.", e);
         }
         return 0;
     }
@@ -905,7 +904,7 @@ public class Document {
                 documentSeekableInput.close();
             }
             catch (IOException e) {
-                 logger.log(Level.SEVERE, "Error closing document input stream.", e);
+                 logger.log(Level.FINE, "Error closing document input stream.", e);
             }
             documentSeekableInput = null;
         }
@@ -942,7 +941,7 @@ public class Document {
             }
         }
         catch (Throwable e) {
-             logger.log(Level.SEVERE, "Error writting PDF output stream.", e);
+             logger.log(Level.FINE, "Error writting PDF output stream.", e);
             throw new IOException(e.getMessage());
         }
         finally {

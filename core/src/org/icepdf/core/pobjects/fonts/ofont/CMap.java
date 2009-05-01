@@ -321,7 +321,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                                 value = hexToken.getUnsignedInt(0, hexToken.getLength());
                             }
                             catch (NumberFormatException e) {
-                                logger.log(Level.SEVERE, "CMAP: ", e);
+                                logger.log(Level.FINE, "CMAP: ", e);
                             }
                             bfChars.put(key, value);
                         }
@@ -383,7 +383,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
             }
         }
         catch (UnsupportedEncodingException e) {
-            logger.log(Level.SEVERE, "CMap parsing error", e);
+            logger.log(Level.FINE, "CMap parsing error", e);
         }
         catch (IOException e) {
             // eat it, end of file stream
@@ -393,7 +393,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                 cMapInputStream.close();
             }
             catch (IOException e) {
-                logger.log(Level.SEVERE, "Error clossing cmap stream", e);
+                logger.log(Level.FINE, "Error clossing cmap stream", e);
             }
         }
     }

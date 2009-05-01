@@ -130,7 +130,7 @@ public class ByteCache {
             out.write(bytes);
             length = numNewBytes;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Error creating ByteCache temporary file.", e);
+            logger.log(Level.FINE, "Error creating ByteCache temporary file.", e);
         }
 
     }
@@ -155,7 +155,7 @@ public class ByteCache {
             getCorrectOutputStream(numNewBytes);
         }
         catch (IOException e) {
-            logger.log(Level.WARNING,
+            logger.log(Level.FINE,
                     "Error creating ByteCache temporary file.", e);
         }
     }
@@ -188,7 +188,7 @@ public class ByteCache {
             length += totalRead;
         }
         catch (IOException e) {
-            logger.log(Level.WARNING, "Error writing to temporary file ", e);
+            logger.log(Level.FINE, "Error writing to temporary file ", e);
         }
     }
 
@@ -211,7 +211,7 @@ public class ByteCache {
             length += numNewBytes;
         }
         catch (IOException e) {
-            logger.log(Level.WARNING, "Error writing to temporary file.", e);
+            logger.log(Level.FINE, "Error writing to temporary file.", e);
         }
     }
 
@@ -232,7 +232,7 @@ public class ByteCache {
             length += numNewBytes;
         }
         catch (IOException e) {
-            logger.log(Level.WARNING, "Error writing to temporary file ", e);
+            logger.log(Level.FINE, "Error writing to temporary file ", e);
         }
     }
 
@@ -250,7 +250,7 @@ public class ByteCache {
             length += numNewBytes;
         }
         catch (IOException e) {
-            logger.log(Level.WARNING, "Error writing to temporary file ", e);
+            logger.log(Level.FINE, "Error writing to temporary file ", e);
         }
     }
 
@@ -275,7 +275,7 @@ public class ByteCache {
                 returnValue = in.read(bytes, offset, length);
         }
         catch (IOException e) {
-            logger.log(Level.WARNING, "Error reading from temporary file ", e);
+            logger.log(Level.FINE, "Error reading from temporary file ", e);
         }
         return returnValue;
     }
@@ -299,7 +299,7 @@ public class ByteCache {
                 returnValue = in.read(bytes);
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Error reading from temporary file ", e);
+            logger.log(Level.FINE, "Error reading from temporary file ", e);
         }
         return returnValue;
     }
@@ -320,7 +320,7 @@ public class ByteCache {
                 returnValue = in.read();
         }
         catch (IOException e) {
-            logger.log(Level.SEVERE, "Error reading from temporary file ", e);
+            logger.log(Level.FINE, "Error reading from temporary file ", e);
         }
         return returnValue;
     }
@@ -351,7 +351,7 @@ public class ByteCache {
                 byteArrayOutputStream = null;
                 byteArrayInputStream = null;
             } catch (IOException e) {
-                logger.log(Level.SEVERE, "Error creating the temp file.", e);
+                logger.log(Level.FINE, "Error creating the temp file.", e);
             }
         }
     }
@@ -395,7 +395,7 @@ public class ByteCache {
                 deleteFileCache();
             }
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error closing file streams ", e);
+            logger.log(Level.FINE, "Error closing file streams ", e);
         }
     }
 
@@ -427,7 +427,7 @@ public class ByteCache {
             }
         }
         catch (IOException e) {
-            logger.log(Level.WARNING, "Error reading from temporary file.", e);
+            logger.log(Level.FINE, "Error reading from temporary file.", e);
         }
         return returnValue;
     }
@@ -460,7 +460,7 @@ public class ByteCache {
                 byteArrayOutputStream.close();
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Error closing file streams.", e);
+            logger.log(Level.FINE, "Error closing file streams.", e);
         }
     }
 
@@ -481,7 +481,7 @@ public class ByteCache {
                 fileInputStream = new FileInputStream(tempFile);
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Error closing file streams.", e);
+            logger.log(Level.FINE, "Error closing file streams.", e);
         }
     }
 
@@ -527,7 +527,7 @@ public class ByteCache {
             cacheManager.addCachedFile(tempFile.getAbsolutePath());
 
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Error creating byte cache tmp file");
+            logger.log(Level.FINE, "Error creating byte cache tmp file");
         }
     }
 
