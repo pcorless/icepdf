@@ -780,7 +780,7 @@ public class Parser {
                                 charNumber = Integer.parseInt(digit.toString(), 8);
                             }
                             catch (NumberFormatException e) {
-                                logger.log(Level.WARNING, "Integer parse error ", e);
+                                logger.log(Level.FINE, "Integer parse error ", e);
                             }
                             // convert the interger from octal to dec.
                             currentChar = (char) charNumber;
