@@ -40,6 +40,7 @@ import org.icepdf.core.pobjects.Outlines;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.examples.jsf.viewer.util.FacesUtils;
 
 import javax.faces.model.SelectItem;
 import javax.swing.tree.DefaultTreeModel;
@@ -93,6 +94,9 @@ public class DocumentState {
     // forces the Browser to re-request the page image from the servlet.
     private String documentId;
 
+    // is demo file flag, shared cached copy
+    private boolean sharedSession;
+
     // default rotation factor increment.
     public static final float ROTATION_FACTOR = 90f;
 
@@ -113,15 +117,20 @@ public class DocumentState {
         zoomLevels.add(new SelectItem(3.0f, "300%"));
     }
 
+    public DocumentState(String documentPath ) {
+        this(documentPath, false);
+    }
+
     /**
      * Createa  new document state based on the given document path.
      *
      * @param documentPath path to PDF document.
      */
-    public DocumentState(String documentPath) {
+    public DocumentState(String documentPath, boolean sharedSession ) {
         documentName = documentPath.substring(documentPath.lastIndexOf(File.separatorChar) + 1);
         this.documentPath = documentPath;
         isStateChanged = true;
+        this.sharedSession = sharedSession;
         // hock for file outputResource component/file download.
         pdfResource = new PDFResource();
     }
@@ -131,13 +140,30 @@ public class DocumentState {
      * assigned to this document it is closed before the current documentPath
      * is loaded.
      */
-    public void openDocument() throws PDFException, IOException, PDFSecurityException {
+    public void openDocument(DocumentCache test) throws PDFException, IOException, PDFSecurityException {
+
+        // get reference to applciatoin scoped document cache.
+        DocumentCache documentCache = (DocumentCache)
+                FacesUtils.getManagedBean("documentCache");
 
         synchronized (documentLock) {
 
-            if (document == null) {
-                document = new Document();
-                document.setFile(documentPath);
+            if (document == null ) {
+
+                if (sharedSession){
+                    Document documentReference = documentCache.get(documentPath);
+                    if (documentReference != null){
+                        document = documentReference;
+                    }else{
+                        document = new Document();
+                        document.setFile(documentPath);
+                        documentCache.put(documentPath, document);
+                    }
+                }else{
+                    document = new Document();
+                    document.setFile(documentPath);
+                }
+
             }
 
             // document length.
@@ -199,9 +225,13 @@ public class DocumentState {
      *
      * @return image represented by the pageCursor, rotation and zoom.
      */
-    public Image getPageImage() {
+    protected Image getPageImage() {
         synchronized (documentLock) {
             if (document != null) {
+
+                if (logger.isLoggable(Level.FINE)){
+                    logger.fine("Capturing " + documentName + " " + pageCursor );
+                }
 
                 // check page bounds just encase.
                 if (pageCursor < 1) {
@@ -345,6 +375,14 @@ public class DocumentState {
 
     public PDFResource getPdfResource() {
         return pdfResource;
+    }
+
+    public boolean isSharedSession() {
+        return sharedSession;
+    }
+
+    public void setSharedSession(boolean sharedSession) {
+        this.sharedSession = sharedSession;
     }
 
     /**
