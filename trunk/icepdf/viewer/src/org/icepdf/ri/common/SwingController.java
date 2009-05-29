@@ -3285,7 +3285,7 @@ public class SwingController
                     // load all the files that where dragged
                     for (Object aFileList : fileList) {
                         File file = (File) aFileList;
-                        if (file.getName().toLowerCase().endsWith(".core")) {
+                        if (file.getName().toLowerCase().endsWith(".pdf")) {
                             openFileInSomeViewer(file);
                             ViewModel.setDefaultFile(file);
                         }
@@ -3293,7 +3293,7 @@ public class SwingController
                 } else if (dataFlavor.equals(DataFlavor.stringFlavor)) {
                     String s = (String) transferable.getTransferData(dataFlavor);
                     int startIndex = s.toLowerCase().indexOf("http://");
-                    int endIndex = s.toLowerCase().indexOf(".core");
+                    int endIndex = s.toLowerCase().indexOf(".pdf");
                     if (startIndex >= 0 && endIndex >= 0) {
                         s = s.substring(startIndex, endIndex + 4);
                         URL url;
