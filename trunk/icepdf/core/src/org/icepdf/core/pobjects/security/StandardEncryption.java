@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * PDF’s standard security handler allows access permissions and up to two passwords
+ * PDF's standard security handler allows access permissions and up to two passwords
  * to be specified for a document.  The purpose of this class is to encapsulate
  * the algorithms used by the Standard Security Handler.
  * <p/>

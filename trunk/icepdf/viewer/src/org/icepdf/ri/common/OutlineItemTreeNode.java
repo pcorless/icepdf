@@ -40,8 +40,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * A PDF document may optionally display a document outline on the screen,
  * allowing the user to navigate interactively from one part of the document to
  * another. The outline consists of a tree-structured hierarchy of outline
- * items (sometimes called bookmarks), which serve as a “visual table of
- * contents” to display the document’s structure to the user. The user can
+ * items (sometimes called bookmarks), which serve as a "visual table of
+ * contents" to display the document's structure to the user. The user can
  * interactively open and close individual items by clicking them with the
  * mouse. When an item is open, its immediate children in the hierarchy become
  * visible on the screen; each child may in turn be open or closed, selectively

@@ -38,6 +38,8 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
+import org.icepdf.core.util.Utils;
+import org.icepdf.core.io.SeekableInput;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -221,16 +223,24 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
             if (cMapInputStream == null) {
                 cMapInputStream = cMapStream.getInputStreamForDecodedStreamBytes();
             }
-            Parser parser = new Parser(cMapInputStream);
 
             // Print CMap ASCII
-//            if (Debug.all) {
-//                //Debug.p("<------------------------ CMap");
-//                for (int i = 0; i < cMapByteStream.length; i++) {
-//                    System.out.print((char) cMapByteStream[i] + "");
-//                }
-//                //Debug.p("CMap ------------------------>  ");
-//            }
+            if (logger.isLoggable(Level.FINER)) {
+                 String content;
+                if (cMapInputStream instanceof SeekableInput) {
+                    content = Utils.getContentFromSeekableInput((SeekableInput) cMapInputStream, false);
+                } else {
+                    InputStream[] inArray = new InputStream[]{cMapInputStream};
+                    content = Utils.getContentAndReplaceInputStream(inArray, false);
+                    cMapInputStream = inArray[0];
+                }
+
+                logger.finer("<------------------------ CMap");
+                logger.finer(content);
+                logger.finer("CMap ------------------------>  ");
+            }
+
+            Parser parser = new Parser(cMapInputStream);
 
             /**
              * Start gathering the data from the CMap objects,  the CMap file

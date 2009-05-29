@@ -53,11 +53,11 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     private static final Logger logger =
             Logger.getLogger(Font.class.toString());
 
-    // A specification of the font’s character encoding, if different from its
+    // A specification of the font's character encoding, if different from its
     // built-in encoding. The value of Encoding may be either the name of a predefined
     // encoding (MacRomanEncoding, MacExpertEncoding, or WinAnsi- Encoding, as
     // described in Appendix D) or an encoding dictionary that specifies
-    // differences from the font’s built-in encoding or from a specified predefined
+    // differences from the font's built-in encoding or from a specified predefined
     // encoding
     private Encoding encoding;
     // encoding name for debugging reasons;

@@ -49,15 +49,15 @@ import java.util.StringTokenizer;
  * <ul>
  * <li>YYYY is the year</li>
  * <li>MM is the month </li>
- * <li>DD is the day (01–31)</li>
- * <li>HH is the hour (00–23) </li>
- * <li>mm is the minute (00–59) </li>
- * <li>SS is the second (00–59) </li>
+ * <li>DD is the day (01-31)</li>
+ * <li>HH is the hour (00-23) </li>
+ * <li>mm is the minute (00-59) </li>
+ * <li>SS is the second (00-59) </li>
  * <li>O is the relationship of local time to Universal Time (UT), denoted by
  * one of the characters +, ?, or Z (see below) </li>
  * <li>HH followed by ' is the absolute value of the offset from UT in hours
- * (00–23)mm followed by ' is the absolute value of the offset from UT
- * in minutes (00–59)</li>
+ * (00-23)mm followed by ' is the absolute value of the offset from UT
+ * in minutes (00-59)</li>
  * </ul>
  * <p/>
  * <p>The apostrophe character (') after HH and mm is part of the syntax. All

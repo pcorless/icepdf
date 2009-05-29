@@ -83,7 +83,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     // An array of four numbers in the pattern coordinate system giving the
     // coordinates of the left, bottom, right, and top edges, respectively, of
-    // the pattern cell’s bounding box. These boundaries are used to clip the
+    // the pattern cell's bounding box. These boundaries are used to clip the
     // pattern cell.
     protected Rectangle2D bBox;
 
