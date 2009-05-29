@@ -35,8 +35,8 @@ package org.icepdf.examples.jsf.viewer.util;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 import java.io.File;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The InputFileSessionCleaner is responsible for cleaning up any files
@@ -75,17 +75,21 @@ public class InputFileSessionCleaner implements HttpSessionListener {
                 event.getSession().getServletContext().getServletContextName());
 
         String sessionFileUploadPath =
-                applicationPath + FILE_UPLOAD_DIRECTORY + sessionId;
+                applicationPath + File.separatorChar +
+                        FILE_UPLOAD_DIRECTORY +
+                        File.separatorChar + sessionId;
 
         File sessionfileUploadDirectory = new File(sessionFileUploadPath);
 
         if (sessionfileUploadDirectory.isDirectory()) {
+            boolean delete;
             try {
-                sessionfileUploadDirectory.delete();
+                delete = sessionfileUploadDirectory.delete();
             }
             catch (SecurityException e) {
                 logger.log(Level.FINE, "Error deleting file upload directory: ", e);
             }
+            logger.log(Level.INFO, "Deleted Uploaded sessino files");
         }
 
     }

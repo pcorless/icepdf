@@ -73,6 +73,7 @@
 
                         <!-- file upload usage with progress callback. -->
                         <ice:inputFile
+                                uniqueFolder="true"
                                 progressListener="#{documentManager.fileUploadProgress}"
                                 actionListener="#{documentManager.fileUploadMonitor}"/>
 

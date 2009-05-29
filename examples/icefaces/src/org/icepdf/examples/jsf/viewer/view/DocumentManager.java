@@ -34,6 +34,7 @@ package org.icepdf.examples.jsf.viewer.view;
 
 import com.icesoft.faces.component.inputfile.FileInfo;
 import com.icesoft.faces.component.inputfile.InputFile;
+import com.icesoft.faces.context.DisposableBean;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.examples.jsf.viewer.util.FacesUtils;
 
@@ -50,6 +51,7 @@ import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * DocumentManager is a session scpoed bean responsible for managing the
@@ -60,9 +62,9 @@ import java.util.logging.Level;
  *
  * @since 3.0
  */
-public class DocumentManager {
+public class DocumentManager implements DisposableBean {
 
-    private static final Logger logger = 
+    private static final Logger logger =
             Logger.getLogger(DocumentManager.class.toString());
 
     // state of current document, outline, annotations, page cursor, zoom, path
@@ -84,6 +86,11 @@ public class DocumentManager {
     // is opened again.
     private ArrayList<DocumentState> documentStateHistory =
             new ArrayList<DocumentState>(10);
+
+    // document cache, intended to lower memory consumption for files that
+    // are open more then one session such as the demo files are.  Other
+    // files are opened in a users session, so it best to clean when we can.
+    private DocumentCache documentDemoCache;
 
     /**
      * Opens the PDF document specified by the request param "documentPath".
@@ -131,7 +138,7 @@ public class DocumentManager {
 
         // see if we can open the document.
         try {
-            currentDocumentState.openDocument();
+            currentDocumentState.openDocument(documentDemoCache);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error loading file default file: ", e);
         }
@@ -170,6 +177,7 @@ public class DocumentManager {
                 }
             }
         } catch (Throwable e) {
+            FacesUtils.addInfoMessage("Error during upload of PDF Document.");
             logger.log(Level.WARNING,
                     "Error opening PDF document that was uploaded."
                             + e.getMessage(), e);
@@ -214,10 +222,11 @@ public class DocumentManager {
             documentStateHistory.add(0, documentState);
         } else {
             // if the document changes then we'll close the previous one.
-            // otherwise we keep it open
+            // but only if it is not shared session.
             if (currentDocumentState != null &&
+                    !currentDocumentState.isSharedSession() &&
                     !documentState.getDocumentName().equals(
-                            currentDocumentState.getDocumentName())) {
+                            currentDocumentState.getDocumentName()) ) {
                 currentDocumentState.closeDocument();
             }
             // update history queue
@@ -226,16 +235,19 @@ public class DocumentManager {
         }
         // see if we can open the document.
         try {
-            documentState.openDocument();
+            documentState.openDocument(documentDemoCache);
             // assign the newly open document state.
             currentDocumentState = documentState;
 
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error loading file at path: " + documentPath, e);
+            System.out.println("Error Loading file " + e.getMessage());
             FacesUtils.addInfoMessage("Could not open the PDF file." +
                     documentState.getDocumentName());
             // clean up and reset the viewer state. 
-            documentState.closeDocument();
+            if (!documentState.isSharedSession()){
+                documentState.closeDocument();
+            }
         }
     }
 
@@ -366,7 +378,7 @@ public class DocumentManager {
             // refresh current page state.
             refreshDocumentState();
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "Errror goign to specified page number.");
+            logger.log(Level.WARNING, "Error goign to specified page number.");
         }
     }
 
@@ -398,6 +410,24 @@ public class DocumentManager {
         }
     }
 
+     /**
+     * Gets the image associated with the current document state.
+     *
+     * @return image represented by the pageCursor, rotation and zoom.
+     */
+    public Image getCurrentPageImage() {
+        if (currentDocumentState != null) {
+            FontFactory.getInstance().setAwtFontSubstitution(!isFontEngine);
+            // invalidate the content streams, so we are paint with as close
+            // to as possible the correct awt font state.
+            if(isDemo){
+                currentDocumentState.invalidate();
+            }
+            return currentDocumentState.getPageImage();
+        }
+        return null;
+    }
+
 
     /**
      * Toggle the font engine functionality and refresht he current page view
@@ -407,12 +437,9 @@ public class DocumentManager {
     public void toggleFontEngine(ActionEvent event) {
         try {
             if (currentDocumentState != null) {
-                // toggle the font library
-                FontFactory.getInstance().toggleAwtFontSubstitution();
-                // invalidate the content streams
-                currentDocumentState.invalidate();
+
                 // toggle flag.
-                isFontEngine = !FontFactory.getInstance().isAwtFontSubstitution();
+                isFontEngine = !isFontEngine;
 
                 // refresh current page state.
                 refreshDocumentState();
@@ -448,7 +475,7 @@ public class DocumentManager {
                         pdfFile.endsWith(".pdf")) {
                     demoFilePaths.add(new DocumentState(
                             directory.getAbsolutePath() + File.separatorChar +
-                                    pdfFile));
+                                    pdfFile, true));
                 }
             }
         }
@@ -478,6 +505,13 @@ public class DocumentManager {
         } else {
             // refresh current page state.
             refreshDocumentState();
+        }
+    }
+
+    public void dispose() throws Exception {
+        if (currentDocumentState != null &&
+                !currentDocumentState.isSharedSession()){
+            currentDocumentState.closeDocument();
         }
     }
 
@@ -515,5 +549,9 @@ public class DocumentManager {
 
     public void setDemo(boolean demo) {
         isDemo = demo;
+    }
+
+    public void setDocumentDemoCache(DocumentCache documentDemoCache) {
+        this.documentDemoCache = documentDemoCache;
     }
 }
