@@ -55,6 +55,14 @@
     </application>
 
     <managed-bean>
+        <managed-bean-name>documentCache</managed-bean-name>
+        <managed-bean-class>
+            org.icepdf.examples.jsf.viewer.view.DocumentCache
+        </managed-bean-class>
+        <managed-bean-scope>application</managed-bean-scope>
+    </managed-bean>
+
+    <managed-bean>
         <managed-bean-name>documentManager</managed-bean-name>
         <managed-bean-class>
             org.icepdf.examples.jsf.viewer.view.DocumentManager

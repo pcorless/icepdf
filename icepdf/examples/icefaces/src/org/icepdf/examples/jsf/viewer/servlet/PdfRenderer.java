@@ -67,7 +67,7 @@ public class PdfRenderer extends HttpServlet {
     public void doGet(HttpServletRequest request,
                                    HttpServletResponse response)
             throws ServletException, IOException {
-
+        BufferedImage bi = null;
         try {
             // get the document manager from the session map.
             DocumentManager documentManager = (DocumentManager)
@@ -75,8 +75,8 @@ public class PdfRenderer extends HttpServlet {
 
             if (documentManager != null) {
                 // get the page image a write it out to the response stream
-                BufferedImage bi = (BufferedImage)
-                        documentManager.getCurrentDocumentState().getPageImage();
+                bi = (BufferedImage)
+                        documentManager.getCurrentPageImage();
                 if (bi != null) {
                     response.setContentType("image/png");
                     OutputStream os1 = response.getOutputStream();
@@ -85,8 +85,11 @@ public class PdfRenderer extends HttpServlet {
                     bi.flush();
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.log(Level.FINE, "Error writing image stream.", e);
+            if (bi != null){
+                bi.flush();
+            }
         }
     }
 
