@@ -55,18 +55,18 @@ import java.util.Hashtable;
  * <li>Glyphs in the font are selected by single-byte character codes obtained from a
  * string that is shown by the text-showing operators. Logically, these codes
  * index into a table of 256 glyphs; the mapping from codes to glyphs is called
- * the font’s encoding. Each font program has a built-in encoding. Under some
+ * the font's encoding. Each font program has a built-in encoding. Under some
  * circumstances, the encoding can be altered by means described in Section
- * 5.5.5, “Character Encoding.”</li>
+ * 5.5.5, "Character Encoding."</li>
  * <p/>
  * <li>Each glyph has a single set of metrics, including a horizontal displacement
- * or width, as described in Section 5.1.3, “Glyph Positioning and Metrics.”
+ * or width, as described in Section 5.1.3, "Glyph Positioning and Metrics."
  * That is, simple fonts support only horizontal writing mode.</li>
  * <p/>
  * <li>Except for Type 3 fonts and certain standard Type 1 fonts, every font
  * dictionary contains a subsidiary dictionary, the font descriptor,
  * containing fontwide metrics and other attributes of the font; see Section
- * 5.7, “Font Descriptors.” Among those attributes is an optional font file
+ * 5.7, "Font Descriptors." Among those attributes is an optional font file
  * stream containing the font program itself.</li>
  * </ul>
  * <p/>
@@ -108,7 +108,7 @@ public abstract class Font extends Dictionary {
     // The actual Java font that will be used to display the Glyphs
     protected FontFile font;
 
-    // The first character code defined in the font’s Widths array.
+    // The first character code defined in the font's Widths array.
     protected int firstchar = 32;
 
     // Font Descriptor used

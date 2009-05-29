@@ -146,8 +146,8 @@ import java.util.logging.Level;
  * <td valign="top" >UCR</td>
  * <td valign="top" >function</td>
  * <td>(Optional) The undercolor-removal function, which maps the interval
- * [0.0 1.0] to the interval [?1.0 1.0] (see Section 6.2.3, “Conversion
- * from DeviceRGB to DeviceCMYK”).</td>
+ * [0.0 1.0] to the interval [?1.0 1.0] (see Section 6.2.3, "Conversion
+ * from DeviceRGB to DeviceCMYK").</td>
  * </tr>
  * <tr>
  * <td valign="top" >UCR2</td>
@@ -161,7 +161,7 @@ import java.util.logging.Level;
  * <td valign="top" >TR</td>
  * <td valign="top" >function, array, or name</td>
  * <td>(Optional) The transfer function, which maps the interval [0.0 1.0]
- * to the interval [0.0 1.0] (see Section 6.3, “Transfer Functions”).
+ * to the interval [0.0 1.0] (see Section 6.3, "Transfer Functions").
  * The value is either a single function (which applies to all process
  * colorants) or an array of four functions (which apply to the process
  * colorants individually). The name Identity may be used to represent
@@ -178,7 +178,7 @@ import java.util.logging.Level;
  * <tr>
  * <td valign="top" >HT</td>
  * <td valign="top" >dictionary, stream, or name</td>
- * <td>(Optional) The halftone dictionary or stream (see Section 6.4, “Halftones”) or
+ * <td>(Optional) The halftone dictionary or stream (see Section 6.4, "Halftones") or
  * the name Default, denoting the halftone that was in effect at the start of the
  * page.</td>
  * </tr>
@@ -196,7 +196,7 @@ import java.util.logging.Level;
  * <td valign="top" >SA</td>
  * <td valign="top" >boolean</td>
  * <td>(Optional) A flag specifying whether to apply automatic stroke adjustment
- * (see Section 6.5.4, “Automatic Stroke Adjustment”).</td>
+ * (see Section 6.5.4, "Automatic Stroke Adjustment").</td>
  * </tr>
  * <tr>
  * <td valign="top" >BM</td>

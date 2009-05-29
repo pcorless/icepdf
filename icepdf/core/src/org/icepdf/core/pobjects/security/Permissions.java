@@ -43,8 +43,8 @@ package org.icepdf.core.pobjects.security;
  * Bit positions within the flag word are numbered from 1 (low-order) to 32
  * (high-order); a 1 bit in any position enables the corresponding access
  * permission. Which bits are meaningful, and in some cases how they are
- * interpreted, depends on the security handler’s revision number (specified in
- * the encryption dictionary’s R entry).</p>
+ * interpreted, depends on the security handler's revision number (specified in
+ * the encryption dictionary's R entry).</p>
  * <p/>
  * <table border="1" cellpadding="1" cellspacing="1" >
  * <tr>
@@ -52,7 +52,7 @@ package org.icepdf.core.pobjects.security;
  * <td><b> Meaning</b></td>
  * </tr>
  * <tr>
- * <td valign="top" >1–2</td>
+ * <td valign="top" >1-2</td>
  * <td>Reserved; must be 0.</td>
  * </tr>
  * <tr>
@@ -111,7 +111,7 @@ package org.icepdf.core.pobjects.security;
  * quality.</td>
  * </tr>
  * <tr>
- * <td valign="top" >13–32</td>
+ * <td valign="top" >13-32</td>
  * <td>(Revision 3 only) Reserved; must be 1.</td>
  * </tr>
  * </table>
@@ -119,7 +119,7 @@ package org.icepdf.core.pobjects.security;
  * <b>Note:</b><br/>
  * PDF integer objects in fact are represented internally in signed
  * twos complement form. Since all the reserved high-order flag bits in the
- * encryption dictionary’s P value are required to be 1, the value must be
+ * encryption dictionary's P value are required to be 1, the value must be
  * specified as a negative integer. For example, assuming revision 2 of the
  * security handler, the value -44 allows printing and copying but disallows
  * modifying the contents and annotations.

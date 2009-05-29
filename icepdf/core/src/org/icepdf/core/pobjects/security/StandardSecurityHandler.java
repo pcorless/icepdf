@@ -37,9 +37,9 @@ import org.icepdf.core.pobjects.Reference;
 import java.io.InputStream;
 
 /**
- * <p>ICEpdf’s standard security handler allows access permissions and up to two passwords
+ * <p>ICEpdf's standard security handler allows access permissions and up to two passwords
  * to be specified for a document: an owner password and a user password. An
- * application’s decision to encrypt a document is based on whether the user
+ * application's decision to encrypt a document is based on whether the user
  * creating the document specifies any passwords or access restrictions (for example, in a
  * security settings dialog that the user can invoke before saving the PDF file); if so,
  * the document is encrypted, and the permissions and information required to validate
@@ -59,22 +59,22 @@ import java.io.InputStream;
  * <li>Opening the document with the correct owner password (assuming it is not
  * the same as the user password) allows full (owner) access to the
  * document. This unlimited access includes the ability to change the
- * document’s passwords and access permissions.</li>
+ * document's passwords and access permissions.</li>
  * <p/>
  * <li>Opening the document with the correct user password (or opening a
  * document that does not have a user password) allows additional operations
  * to be performed according to the user access permissions specified in the
- * document’s encryption dictionary.</li>
+ * document's encryption dictionary.</li>
  * </ul>
  * <p/>
  * <p>Access permissions are specified in the form of flags corresponding to the
  * various operations, and the set of operations to which they correspond,
- * depends in turn on the security handler’s revision number (also stored in the
+ * depends in turn on the security handler's revision number (also stored in the
  * encryption dictionary). If the revision number is 2 or greater, the
  * operations to which user access can be controlled are as follows:
  * <p/>
  * <ul>
- * <li>Modifying the document’s contents</li>
+ * <li>Modifying the document's contents</li>
  * <p/>
  * <li>Copying or otherwise extracting text and graphics from the document,
  * including extraction for accessibility purposes (that is, to make the
@@ -86,7 +86,7 @@ import java.io.InputStream;
  * <li>Printing the document</li>
  * </ul>
  * <p/>
- * <p>If the security handler’s revision number is 3 or greater, user access to the
+ * <p>If the security handler's revision number is 3 or greater, user access to the
  * following operations can be controlled more selectively:
  * <ul>
  * <li>Filling in forms (that is, filling in existing interactive form fields)
@@ -98,7 +98,7 @@ import java.io.InputStream;
  * <p/>
  * <li>Printing to a representation from which a faithful digital copy of the
  * PDF content could be generated. Disallowing such printing may result in
- * degradation of output quality (a feature implemented as “Print As Image”
+ * degradation of output quality (a feature implemented as "Print As Image"
  * in Acrobat)</li>
  * </ul>
  * <p>In addition, revision 3 enables the extraction of text and graphics (in

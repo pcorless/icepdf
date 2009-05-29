@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * characters. Uniquely defined means that any two name objects made up of the
  * same sequence of characters are identical. Atomic means
  * that a name has no internal structure, although it is defined by a sequence
- * of characters, those characters are not “elements” of the name. </p>
+ * of characters, those characters are not "elements" of the name. </p>
  * <p/>
  * <p>A slash character (/) introduces a name. The slash is not part of the name
  * itself, but a prefix indicating that the following sequence of characters

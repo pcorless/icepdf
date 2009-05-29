@@ -73,15 +73,15 @@ public class TilingPattern extends Stream implements Pattern {
     private Color unColored;
 
     /**
-     * Colored tiling pattern. The pattern’s content stream itself specifies the
+     * Colored tiling pattern. The pattern's content stream itself specifies the
      * colors used to paint the pattern cell. When the content stream begins
      * execution, the current color is the one that was initially in effect in
-     * the pattern’s parent content stream.
+     * the pattern's parent content stream.
      */
     public static final int PAINTING_TYPE_COLORED_TILING_PATTERN = 1;
 
     /**
-     * Uncolored tiling pattern. The pattern’s content stream does not specify
+     * Uncolored tiling pattern. The pattern's content stream does not specify
      * any color information. Instead, the entire pattern cell is painted with a
      * separately specified color each time the pattern is used. Essentially,
      * the content stream describes a stencil through which the current color is
@@ -100,7 +100,7 @@ public class TilingPattern extends Stream implements Pattern {
 
     /**
      * Spacing of tiles relative to the device grid: Pattern cells are spaced
-     * consistently—that is, by a multiple of a device pixel. To achieve this,
+     * consistently-that is, by a multiple of a device pixel. To achieve this,
      * the viewer application may need to distort the pattern cell slightly by
      * making small adjustments to XStep, YStep, and the transformation matrix.
      * The amount of distortion does not exceed 1 device pixel.
@@ -124,7 +124,7 @@ public class TilingPattern extends Stream implements Pattern {
 
     // An array of four numbers in the pattern coordinate system giving the
     // coordinates of the left, bottom, right, and top edges, respectively, of
-    // the pattern cell’s bounding box. These boundaries are used to clip the
+    // the pattern cell's bounding box. These boundaries are used to clip the
     // pattern cell.
     private Rectangle2D bBox;
 
@@ -140,7 +140,7 @@ public class TilingPattern extends Stream implements Pattern {
     private float yStep;
 
     // A resource dictionary containing all of the named resources required by
-    // the pattern’s content stream
+    // the pattern's content stream
     private Resources resources;
 
     // An array of six numbers specifying the pattern matrix. The default value

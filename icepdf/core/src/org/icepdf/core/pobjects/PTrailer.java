@@ -92,7 +92,7 @@ public class PTrailer extends Dictionary {
     }
 
     /**
-     * Gets the total number of entries in the file’s cross-reference table, as
+     * Gets the total number of entries in the file's cross-reference table, as
      * defined by the combination of the original section and all updated sections.
      * Equivalently, this value is 1 greater than the highest object number
      * used in the file.
@@ -190,7 +190,7 @@ public class PTrailer extends Dictionary {
     }
 
     /**
-     * The document’s encryption dictionary
+     * The document's encryption dictionary
      * <p/>
      * <b>Required : </b> if document is encrypted; PDF 1.1
      *
@@ -206,7 +206,7 @@ public class PTrailer extends Dictionary {
     }
 
     /**
-     * The document’s information dictionary
+     * The document's information dictionary
      * <p/>
      * <b>Optional : </b> must be an indirect reference.
      *

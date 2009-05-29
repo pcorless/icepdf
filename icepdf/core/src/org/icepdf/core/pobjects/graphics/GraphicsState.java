@@ -126,8 +126,8 @@ import java.util.logging.Level;
  * <td>A set of nine graphics state parameters that pertain only to the
  * painting of text. These include parameters that select the font,
  * scale the glyphs to an appropriate size, and accomplish other effects.
- * The text state parameters are described in Section 5.2, “Text State
- * Parameters and Operators.”</td>
+ * The text state parameters are described in Section 5.2, "Text State
+ * Parameters and Operators."</td>
  * </tr>
  * <tr>
  * <td valign="top" >line width</td>
@@ -138,7 +138,7 @@ import java.util.logging.Level;
  * <td valign="top" >line cap</td>
  * <td valign="top" >integer</td>
  * <td>A code specifying the shape of the endpoints for any open path that
- * is stroked (see “Line Cap Style” on page 186). Initial value: 0, for
+ * is stroked (see "Line Cap Style" on page 186). Initial value: 0, for
  * square butt caps.</td>
  * </tr>
  * <tr>
@@ -151,7 +151,7 @@ import java.util.logging.Level;
  * <td valign="top" >miter limit</td>
  * <td valign="top" >number</td>
  * <td>The maximum length of mitered line joins for stroked paths. This
- * parameter limits the length of “spikes” produced when line segments
+ * parameter limits the length of "spikes" produced when line segments
  * join at sharp angles. Initial value: 10.0, for a miter cutoff below
  * approximately 11.5 degrees.</td>
  * </tr>

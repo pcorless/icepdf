@@ -99,7 +99,7 @@ import java.util.Vector;
  * <td>array</td>
  * <td><i>(Optional)</i> A <i>dash array</i> defining a pattern of dashes and gaps to be used in drawing a
  * dashed border (border style D above). The dash array is specified in the same format
- * as in the line dash pattern parameter of the graphics state (see “Line Dash Pattern” on
+ * as in the line dash pattern parameter of the graphics state (see "Line Dash Pattern" on
  * page 187). The dash phase is not specified and is assumed to be 0. For example, a <b>D</b>
  * entry of [3 2] specifies a border drawn with 3-point dashes alternating with 2-point
  * gaps. Default value: [3].</td>
