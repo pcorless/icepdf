@@ -161,9 +161,9 @@ import java.util.Vector;
  * <ul>
  * <li>2 if the document is encrypted with a V value less than 2
  * and does not have any of the access permissions set (via the
- * P entry, below) that are designated “Revision3”</li>
+ * P entry, below) that are designated "Revision3"</li>
  * <li>3 if the document is encrypted with a V value of 2 or 3, or
- * has any “Revision 3” access permissions set.</li>
+ * has any "Revision 3" access permissions set.</li>
  * <li>4 if the document is encrypted with a V value of 4.</li>
  * </ul>
  * </td>

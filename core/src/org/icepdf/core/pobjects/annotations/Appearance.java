@@ -46,10 +46,10 @@ import java.util.Hashtable;
  * <ul>
  * <li> The normal appearance is used when the annotation is not interacting with the
  * user. This appearance is also used for printing the annotation.</li>
- * <li> The rollover appearance is used when the user moves the cursor into the annotation’s
+ * <li> The rollover appearance is used when the user moves the cursor into the annotation's
  * active area without pressing the mouse button.</li>
  * <li> The down appearance is used when the mouse button is pressed or held down
- * within the annotation’s active area.</li>
+ * within the annotation's active area.</li>
  * </ul>
  * <p/>
  * <table border=1>
@@ -66,13 +66,13 @@ import java.util.Hashtable;
  * <tr>
  * <td><b>R</b></td>
  * <td>stream or dictionary</td>
- * <td><i>(Optional)</i> The annotation’s rollover appearance. Default value: the value of
+ * <td><i>(Optional)</i> The annotation's rollover appearance. Default value: the value of
  * the <b>N</b> entry.</td>
  * </tr>
  * <tr>
  * <td><b>D</b></td>
  * <td>stream or dictionary</td>
- * <td><i>(Optional)</i> The annotation’s down appearance. Default value: the value of the
+ * <td><i>(Optional)</i> The annotation's down appearance. Default value: the value of the
  * <b>N</b> entry.</td>
  * </tr>
  * </table>

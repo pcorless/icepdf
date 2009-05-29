@@ -110,7 +110,7 @@ public class TextState {
     public float wspace = 0;
 
     /**
-     * Set the horizontal scaling, Th, to (scale ÷ 100). scale is a number
+     * Set the horizontal scaling, Th, to (scale div 100). scale is a number
      * specifying the percentage of the normal width. Initial value: 100
      * (normal width).
      */

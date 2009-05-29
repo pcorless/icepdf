@@ -90,11 +90,10 @@ import java.util.Vector;
  * <td><b>Contents</b></td>
  * <td>text string</td>
  * <td>(<i>Optional</i>) Text to be displayed for the annotation or, if this type of annotation
- * does not display text, an alternate description of the annotation’s contents
- * in human-readable form. In either case, this text is useful when
- * extracting the document’s contents in support of accessibility to users with
- * disabilities or for other purposes (see Section 10.8.2, “Alternate Descriptions”).
- * See Section 8.4.5, “Annotation Types” for more details on the meaning
+ * does not display text, an alternate description of the annotation's contents
+ * in human-readable form.'s contents in support of accessibility to users with
+ * disabilities or for other purposes (see Section 10.8.2, "Alternate Descriptions").
+ * See Section 8.4.5, "Annotation Types" for more details on the meaning
  * of this entry for each annotation type.</td>
  * </tr>
  * <tr>
@@ -114,20 +113,20 @@ import java.util.Vector;
  * <td>date or string</td>
  * <td>(<i>Optional; PDF 1.1</i>) The date and time when the annotation was most
  * recently modified. The preferred format is a date string as described in Section
- * 3.8.3, “Dates,” but viewer applications should be prepared to accept and
+ * 3.8.3, "Dates," but viewer applications should be prepared to accept and
  * display a string in any format. (See implementation note 78 in Appendix H.)</td>
  * </tr>
  * <tr>
  * <td><b>F</b></td>
  * <td>integer</td>
  * <td>(<i>Optional; PDF 1.1</i>) A set of flags specifying various characteristics of the annotation
- * (see Section 8.4.2, “Annotation Flags”). Default value: 0.</td>
+ * (see Section 8.4.2, "Annotation Flags"). Default value: 0.</td>
  * </tr>
  * <tr>
  * <td><b>BS</b></td>
  * <td>dictionary</td>
  * <td>(<i>Optional; PDF 1.2</i>) A border style dictionary specifying the characteristics of
- * the annotation’s border (see Section 8.4.3, “Border Styles”; see also implementation
+ * the annotation's border (see Section 8.4.3, "Border Styles"; see also implementation
  * notes 79 and 86 in Appendix H).<br>
  * <br>
  * <i><b>Note:</b> This entry also specifies the width and dash pattern for the lines drawn by
@@ -142,12 +141,12 @@ import java.util.Vector;
  * <td><b>AP</b></td>
  * <td>dictionary</td>
  * <td>(<i>Optional; PDF 1.2</i>) An <i>appearance dictionary</i> specifying how the annotation
- * is presented visually on the page (see Section 8.4.4, “Appearance Streams” and
+ * is presented visually on the page (see Section 8.4.4, "Appearance Streams" and
  * also implementation notes 79 and 80 in Appendix H). Individual annotation
  * handlers may ignore this entry and provide their own appearances.<br>
  * <br>
  * For convenience in managing appearance streams that are used repeatedly, the AP
- * entry in a PDF document’s name dictionary (see Section 3.6.3, “Name Dictionary”)
+ * entry in a PDF document's name dictionary (see Section 3.6.3, "Name Dictionary")
  * can contain a name tree mapping name strings to appearance streams. The
  * name strings have no standard meanings; no PDF objects refer to appearance
  * streams by name.</td>
@@ -156,14 +155,14 @@ import java.util.Vector;
  * <td><b>AS</b></td>
  * <td>name</td>
  * <td>(<i>Required if the appearance dictionary <b>AP</b> contains one or more subdictionaries;
- * PDF 1.2</i>) The annotation’s <i>appearance state</i>, which selects the applicable
- * appearance stream from an appearance subdictionary (see Section 8.4.4, “Appearance
- * Streams” and also implementation note 79 in Appendix H).</td>
+ * PDF 1.2</i>) The annotation's <i>appearance state</i>, which selects the applicable
+ * appearance stream from an appearance subdictionary (see Section 8.4.4, "Appearance
+ * Streams" and also implementation note 79 in Appendix H).</td>
  * </tr>
  * <tr>
  * <td><b>Border</b></td>
  * <td>array</td>
- * <td>(<i>Optional</i>) An array specifying the characteristics of the annotation’s border.
+ * <td>(<i>Optional</i>) An array specifying the characteristics of the annotation's border.
  * The border is specified as a rounded rectangle.<br>
  * <br>
  * In PDF 1.0, the array consists of three numbers defining the horizontal corner
@@ -175,7 +174,7 @@ import java.util.Vector;
  * In PDF 1.1, the array may have a fourth element, an optional <i>dash array</i>
  * defining a pattern of dashes and gaps to be used in drawing the border. The
  * dash array is specified in the same format as in the line dash pattern parameter
- * of the graphics state (see “Line Dash Pattern” on page 187). For example, a
+ * of the graphics state (see "Line Dash Pattern" on page 187). For example, a
  * <b>Border</b> value of [0 0 1 [3 2]] specifies a border 1 unit wide, with square corners,
  * drawn with 3-unit dashes alternating with 2-unit gaps. Note that no
  * dash phase is specified; the phase is assumed to be 0. (See implementation
@@ -200,8 +199,8 @@ import java.util.Vector;
  * the components of a color in the <b>DeviceRGB</b> color space. This color is
  * used for the following purposes:
  * <ul>
- * <li>The background of the annotation’s icon when closed
- * <li>The title bar of the annotation’s pop-up window
+ * <li>The background of the annotation's icon when closed
+ * <li>The title bar of the annotation's pop-up window
  * <li>The border of a link annotation
  * </ul></td>
  * </tr>
@@ -209,42 +208,42 @@ import java.util.Vector;
  * <td><b>A</b></td>
  * <td>dictionary</td>
  * <td>(<i>Optional; PDF 1.1</i>) An action to be performed when the annotation is activated
- * (see Section 8.5, “Actions”).<br>
+ * (see Section 8.5, "Actions").<br>
  * <br>
  * <i><b>Note:</b> This entry is not permitted in link annotations if a Dest entry is present
- * (see “Link Annotations” on page 587). Also note that the A entry in movie annotations
- * has a different meaning (see “Movie Annotations” on page 601).</i></td>
+ * (see "Link Annotations" on page 587). Also note that the A entry in movie annotations
+ * has a different meaning (see "Movie Annotations" on page 601).</i></td>
  * </tr>
  * <tr>
  * <td><b>AA</b></td>
  * <td>dictionary</td>
- * <td>(<i>Optional; PDF 1.2</i>) An additional-actions dictionary defining the annotation’s
+ * <td>(<i>Optional; PDF 1.2</i>) An additional-actions dictionary defining the annotation's
  * behavior in response to various trigger events (see Section 8.5.2,
- * “Trigger Events”). At the time of publication, this entry is used only by widget
+ * "Trigger Events"). At the time of publication, this entry is used only by widget
  * annotations.</td>
  * </tr>
  * <tr>
  * <td><b>StructParent</b></td>
  * <td>integer</td>
  * <td>(<i>(Required if the annotation is a structural content item; PDF 1.3</i>) The integer
- * key of the annotation’s entry in the structural parent tree (see “Finding Structure
- * Elements from Content Items” on page 797).</td>
+ * key of the annotation's entry in the structural parent tree (see "Finding Structure
+ * Elements from Content Items" on page 797).</td>
  * </tr>
  * <tr>
  * <td><b>OC</b></td>
  * <td>dictionary</td>
  * <td>(<i>Optional; PDF 1.5</i>) An optional content group or optional content membership
- * dictionary (see Section 4.10, “Optional Content”) specifying the optional
+ * dictionary (see Section 4.10, "Optional Content") specifying the optional
  * content properties for the annotation. Before the annotation is drawn, its visibility
  * is determined based on this entry as well as the annotation flags specified
- * in the <b>F</b> entry (see Section 8.4.2, “Annotation Flags”). If it is determined
+ * in the <b>F</b> entry (see Section 8.4.2, "Annotation Flags"). If it is determined
  * to be invisible, the annotation is skipped, as if it were not in the document.</td>
  * </tr>
  * </table>
  * <p/>
  * <p/>
  * <h2>8.4.2 Annotation Flags</h2>
- * The value of the annotation dictionary’s <b>F</b> entry is an unsigned 32-bit integer containing
+ * The value of the annotation dictionary's <b>F</b> entry is an unsigned 32-bit integer containing
  * flags specifying various characteristics of the annotation. Bit positions
  * within the flag word are numbered from 1 (low-order) to 32 (high-order). Table
  * 8.12 shows the meanings of the flags; all undefined flag bits are reserved and must
@@ -261,7 +260,7 @@ import java.util.Vector;
  * <td>If set, do not display the annotation if it does not belong to one of the standard
  * annotation types and no annotation handler is available. If clear, display such an
  * unknown annotation using an appearance stream specified by its appearance
- * dictionary, if any (see Section 8.4.4, “Appearance Streams”).</td>
+ * dictionary, if any (see Section 8.4.4, "Appearance Streams").</td>
  * </tr>
  * <tr>
  * <td>2</td>
@@ -270,7 +269,7 @@ import java.util.Vector;
  * with the user, regardless of its annotation type or whether an annotation
  * handler is available. In cases where screen space is limited, the ability to hide
  * and show annotations selectively can be used in combination with appearance
- * streams (see Section 8.4.4, “Appearance Streams”) to display auxiliary pop-up
+ * streams (see Section 8.4.4, "Appearance Streams") to display auxiliary pop-up
  * information similar in function to online help systems. (See implementation
  * note 83 in Appendix H.)</td>
  * </tr>
@@ -286,7 +285,7 @@ import java.util.Vector;
  * <tr>
  * <td>4</td>
  * <td>NoZoom</td>
- * <td>If set, do not scale the annotation’s appearance to match the magnification
+ * <td>If set, do not scale the annotation's appearance to match the magnification
  * of the page. The location of the annotation on the page (defined by the
  * upper-left corner of its annotation rectangle) remains fixed, regardless of the
  * page magnification. See below for further discussion.</td>
@@ -294,7 +293,7 @@ import java.util.Vector;
  * <tr>
  * <td>5</td>
  * <td>NoRotate</td>
- * <td>If set, do not rotate the annotation’s appearance to match the rotation
+ * <td>If set, do not rotate the annotation's appearance to match the rotation
  * of the page. The upper-left corner of the annotation rectangle remains in a fixed
  * location on the page, regardless of the page rotation. See below for further discussion.</td>
  * </tr>
@@ -322,7 +321,7 @@ import java.util.Vector;
  * <td>Locked</td>
  * <td>If set, do not allow the annotation to be deleted or its properties (including
  * position and size) to be modified by the user. However, this flag does
- * not restrict changes to the annotation’s contents, such as the value of a form
+ * not restrict changes to the annotation's contents, such as the value of a form
  * field. (See implementation note 84 in Appendix H.)</td>
  * </tr>
  * <tr>

@@ -49,19 +49,19 @@ import java.util.Vector;
  * annotation.</td> </tr> <tr> <td><b>Dest</b></td> <td>array, name, or
  * string</td> <td><i>(Optional; not permitted if an <b>A</b> entry is
  * present)</i> A destination to be displayed when the annotation is activated
- * (see Section 8.2.1, “Destinations”; see also implementation note 90 in
+ * (see Section 8.2.1, "Destinations"; see also implementation note 90 in
  * Appendix H).</td> </tr> <tr> <td><b>H</b></td> <td>name</td>
- * <td><i>(Optional; PDF 1.2)</i> The annotation’s <i>highlighting mode</i>, the
+ * <td><i>(Optional; PDF 1.2)</i> The annotation's <i>highlighting mode</i>, the
  * visual effect to be used when the mouse button is pressed or held down inside
  * its active area: <table border=0> <tr> <td>N</td> <td>(None) No
  * highlighting.</td> </tr> <tr> <td>I</td> <td>(Invert) Invert the contents of
  * the annotation rectangle.</td> </tr> <tr> <td>O</td> <td>(Outline) Invert the
- * annotation’s border.</td> </tr> <tr> <td>P</td> <td>(Push) Display the
+ * annotation's border.</td> </tr> <tr> <td>P</td> <td>(Push) Display the
  * annotation as if it were being pushed below the surface of the page; see
  * implementation note 91 in Appendix H.<br> Acrobat viewer displays the link
  * appearance with bevel border, ignoring any down appearance.</td> </tr>
  * </table>Default value: I.</td> </tr> <tr> <td><b>QuadPoints</b></td>
- * <td>array</td> <td><i>(Optional; PDF 1.6)</i> An array of 8 × n numbers
+ * <td>array</td> <td><i>(Optional; PDF 1.6)</i> An array of 8 x n numbers
  * specifying the coordinates of n quadrilaterals in default user space that
  * comprise the region in which the link should be activated. The coordinates
  * for each quadrilateral are given in the order<br> x1 y1 x2 y2 x3 y3 x4 y4<br>

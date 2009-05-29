@@ -235,9 +235,9 @@ public class ContentParser {
                         geometricPath.moveTo(x, y);
                     }
 
-                    // Append a cubic Bézier curve to the current path. The curve
+                    // Append a cubic Bezier curve to the current path. The curve
                     // extends from the current point to the point (x3, y3), using
-                    // (x1, y1) and (x2, y2) as the Bézier control points.
+                    // (x1, y1) and (x2, y2) as the Bezier control points.
                     // The new current point is (x3, y3).
                     else if (tok.equals(PdfOps.c_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.c_TOKEN);
@@ -277,8 +277,8 @@ public class ContentParser {
                     }
 
                     // Fill the path, using the nonzero winding number rule to
-                    // determine the region to fill (see “Nonzero Winding
-                    // Number Rule” ). Any subpaths that are open are implicitly
+                    // determine the region to fill (see "Nonzero Winding
+                    // Number Rule" ). Any subpaths that are open are implicitly
                     // closed before being filled. f or F
                     else if (tok.equals(PdfOps.F_TOKEN) ||
                             tok.equals(PdfOps.f_TOKEN)) {
@@ -369,22 +369,22 @@ public class ContentParser {
                      * from the content stream in which it is used. There are three
                      * types of external object:
                      *
-                     *   • An image XObject (Section 4.8.4, “Image Dictionaries”)
+                     *   - An image XObject (Section 4.8.4, "Image Dictionaries")
                      *     represents a sampled visual image such as a photograph.
-                     *   • A form XObject (Section 4.9, “Form XObjects”) is a
+                     *   - A form XObject (Section 4.9, "Form XObjects") is a
                      *     self-contained description of an arbitrary sequence of
                      *     graphics objects.
-                     *   • A PostScript XObject (Section 4.7.1, “PostScript XObjects”)
+                     *   - A PostScript XObject (Section 4.7.1, "PostScript XObjects")
                      *     contains a fragment of code expressed in the PostScript
                      *     page description language. PostScript XObjects are no
                      *     longer recommended to be used. (NOT SUPPORTED)
                      */
                     // Paint the specified XObject. The operand name must appear as
                     // a key in the XObject subdictionary of the current resource
-                    // dictionary (see Section 3.7.2, “Resource Dictionaries”); the
+                    // dictionary (see Section 3.7.2, "Resource Dictionaries"); the
                     // associated value must be a stream whose Type entry, if
                     // present, is XObject. The effect of Do depends on the value of
-                    // the XObject’s Subtype entry, which may be Image , Form, or PS
+                    // the XObject's Subtype entry, which may be Image , Form, or PS
                     else if (tok.equals(PdfOps.Do_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.Do_TOKEN);
                         String xobjectName = ((Name) (stack.pop())).getName();
@@ -465,7 +465,7 @@ public class ContentParser {
                     }
 
                     // End the path object without filling or stroking it. This
-                    // operator is a “path-painting no-op,” used primarily for the
+                    // operator is a "path-painting no-op," used primarily for the
                     // side effect of changing the current clipping path
                     else if (tok.equals(PdfOps.n_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.n_TOKEN);
@@ -502,7 +502,7 @@ public class ContentParser {
                     // Close, fill, and then stroke the path, using the nonzero
                     // winding number rule to determine the region to fill. This
                     // operator has the same effect as the sequence h B. See also
-                    // “Special Path-Painting Considerations”
+                    // "Special Path-Painting Considerations"
                     else if (tok.equals(PdfOps.b_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.b_TOKEN);
                         if (geometricPath != null) {
@@ -555,9 +555,9 @@ public class ContentParser {
                         consume_d(graphicState, stack, shapes);
                     }
 
-                    // Append a cubic Bézier curve to the current path. The curve
+                    // Append a cubic Bezier curve to the current path. The curve
                     // extends from the current point to the point (x3, y3), using
-                    // the current point and (x2, y2) as the Bézier control points.
+                    // the current point and (x2, y2) as the Bezier control points.
                     // The new current point is (x3, y3).
                     else if (tok.equals(PdfOps.v_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.v_TOKEN);
@@ -579,9 +579,9 @@ public class ContentParser {
                         consume_j(graphicState, stack, shapes);
                     }
 
-                    // Append a cubic Bézier curve to the current path. The curve
+                    // Append a cubic Bezier curve to the current path. The curve
                     // extends from the current point to the point (x3, y3), using
-                    // (x1, y1) and (x3, y3) as the Bézier control points.
+                    // (x1, y1) and (x3, y3) as the Bezier control points.
                     // The new current point is (x3, y3).
                     else if (tok.equals(PdfOps.y_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.y_TOKEN);
@@ -606,11 +606,11 @@ public class ContentParser {
                     // Set the color to use for stroking operations in a device, CIE-based
                     // (other than ICCBased), or Indexed color space. The number of operands
                     // required and their interpretation depends on the current stroking color space:
-                    //   • For DeviceGray, CalGray, and Indexed color spaces, one operand
+                    //   - For DeviceGray, CalGray, and Indexed color spaces, one operand
                     //     is required (n = 1).
-                    //   • For DeviceRGB, CalRGB, and Lab color spaces, three operands are
+                    //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
                     //     required (n = 3).
-                    //   • For DeviceCMYK, four operands are required (n = 4).
+                    //   - For DeviceCMYK, four operands are required (n = 4).
                     else if (tok.equals(PdfOps.SC_TOKEN) ||
                             tok.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
                         consume_SC(graphicState, stack, library, resources);
@@ -634,11 +634,11 @@ public class ContentParser {
                     }
 
                     // Set the stroking color space to DeviceCMYK (or the DefaultCMYK color
-                    // space; see “Default Color Spaces” on page 227) and set the color to
+                    // space; see "Default Color Spaces" on page 227) and set the color to
                     // use for stroking operations. Each operand must be a number between
                     // 0.0 (zero concentration) and 1.0 (maximum concentration). The
                     // behavior of this operator is affected by the overprint mode
-                    // (see Section 4.5.6, “Overprint Control”).
+                    // (see Section 4.5.6, "Overprint Control").
                     else if (tok.equals(PdfOps.K_TOKEN)) { // Stroke Color CMYK
                         consume_K(graphicState, stack, library, resources);
                     }
@@ -669,7 +669,7 @@ public class ContentParser {
                     }
 
                     // Set the stroking color space to DeviceGray (or the DefaultGray color
-                    // space; see “Default Color Spaces” ) and set the gray level to use for
+                    // space; see "Default Color Spaces" ) and set the gray level to use for
                     // stroking operations. gray is a number between 0.0 (black)
                     // and 1.0 (white).
                     else if (tok.equals(PdfOps.G_TOKEN)) {
@@ -678,8 +678,8 @@ public class ContentParser {
 
                     // Close, fill, and then stroke the path, using the even-odd
                     // rule to determine the region to fill. This operator has the
-                    // same effect as the sequence h B*. See also “Special
-                    // Path-Painting Considerations”
+                    // same effect as the sequence h B*. See also "Special
+                    // Path-Painting Considerations"
                     else if (tok.equals(PdfOps.b_STAR_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.b_STAR_TOKEN);
                         if (geometricPath != null) {
@@ -692,7 +692,7 @@ public class ContentParser {
                     }
 
                     // Set the stroking color space to DeviceRGB (or the DefaultRGB color
-                    // space; see “Default Color Spaces” on page 227) and set the color to
+                    // space; see "Default Color Spaces" on page 227) and set the color to
                     // use for stroking operations. Each operand must be a number between
                     // 0.0 (minimum intensity) and 1.0 (maximum intensity).
                     else if (tok.equals(PdfOps.RG_TOKEN)) { // Stroke Color RGB
@@ -718,7 +718,7 @@ public class ContentParser {
                     //     [0.0 0.0 0.0 1.0].   </li>
                     // <li>In a Lab or ICCBased color space, the initial color has all
                     //     components equal to 0.0 unless that falls outside the intervals
-                    //     specified by the space’s Range entry, in which case the nearest
+                    //     specified by the space's Range entry, in which case the nearest
                     //     valid value is substituted.</li>
                     // <li>In an Indexed color space, the initial color value is 0. </li>
                     // <li>In a Separation or DeviceN color space, the initial tint value is
@@ -749,7 +749,7 @@ public class ContentParser {
                     // Fill and then stroke the path, using the even-odd rule to
                     // determine the region to fill. This operator produces the same
                     // result as B, except that the path is filled as if with f*
-                    // instead of f. See also “Special Path-Painting Considerations”
+                    // instead of f. See also "Special Path-Painting Considerations"
                     else if (tok.equals(PdfOps.B_STAR_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.B_STAR_TOKEN);
                         if (geometricPath != null) {
@@ -1310,28 +1310,28 @@ public class ContentParser {
                 // Set the color to use for stroking operations in a device, CIE-based
                 // (other than ICCBased), or Indexed color space. The number of operands
                 // required and their interpretation depends on the current stroking color space:
-                //   • For DeviceGray, CalGray, and Indexed color spaces, one operand
+                //   - For DeviceGray, CalGray, and Indexed color spaces, one operand
                 //     is required (n = 1).
-                //   • For DeviceRGB, CalRGB, and Lab color spaces, three operands are
+                //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
                 //     required (n = 3).
-                //   • For DeviceCMYK, four operands are required (n = 4).
+                //   - For DeviceCMYK, four operands are required (n = 4).
                 else if (nextToken.equals(PdfOps.SC_TOKEN) ||
                         nextToken.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
                     consume_SC(graphicState, stack, library, resources);
                 }
 
                 // Set the stroking color space to DeviceCMYK (or the DefaultCMYK color
-                // space; see “Default Color Spaces” on page 227) and set the color to
+                // space; see "Default Color Spaces" on page 227) and set the color to
                 // use for stroking operations. Each operand must be a number between
                 // 0.0 (zero concentration) and 1.0 (maximum concentration). The
                 // behavior of this operator is affected by the overprint mode
-                // (see Section 4.5.6, “Overprint Control”).
+                // (see Section 4.5.6, "Overprint Control").
                 else if (nextToken.equals(PdfOps.K_TOKEN)) { // Stroke Color CMYK
                     consume_K(graphicState, stack, library, resources);
                 }
 
                 // Set the stroking color space to DeviceGray (or the DefaultGray color
-                // space; see “Default Color Spaces” ) and set the gray level to use for
+                // space; see "Default Color Spaces" ) and set the gray level to use for
                 // stroking operations. gray is a number between 0.0 (black)
                 // and 1.0 (white).
                 else if (nextToken.equals(PdfOps.G_TOKEN)) {
@@ -1339,7 +1339,7 @@ public class ContentParser {
                 }
 
                 // Set the stroking color space to DeviceRGB (or the DefaultRGB color
-                // space; see “Default Color Spaces” on page 227) and set the color to
+                // space; see "Default Color Spaces" on page 227) and set the color to
                 // use for stroking operations. Each operand must be a number between
                 // 0.0 (minimum intensity) and 1.0 (maximum intensity).
                 else if (nextToken.equals(PdfOps.RG_TOKEN)) { // Stroke Color RGB

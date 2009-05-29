@@ -15,7 +15,7 @@ Contains:
   - IMPORTANT time-saving Known Issues
 
 
-ICEpdf Developer’s Guide
+ICEpdf Developer's Guide
 
    - Includes materials targeted for ICEpdf application developers
    - Includes an in-depth discussion of the ICEfpdf architecture and key concepts

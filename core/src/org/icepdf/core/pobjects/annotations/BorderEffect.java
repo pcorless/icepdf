@@ -53,11 +53,11 @@ import java.util.Hashtable;
  * <table border=0>
  * <tr>
  * <td>S</td>
- * <td>No effect: the border is as described by the annotation dictionary’s <b>BS</b> entry.</td>
+ * <td>No effect: the border is as described by the annotation dictionary's <b>BS</b> entry.</td>
  * </tr>
  * <tr>
  * <td>C</td>
- * <td>The border should appear “cloudy”. The width and dash array specified by <b>BS</b>
+ * <td>The border should appear "cloudy". The width and dash array specified by <b>BS</b>
  * are honored.</td>
  * </tr>
  * </table>
