@@ -243,7 +243,7 @@ public class Stream extends Dictionary {
                     filterName.equals("LZWDecode")
                             || filterName.equals("/LZW")
                             || filterName.equals("LZW")) {
-                input = new LZWDecode(new BitStream(input));
+                input = new LZWDecode(new BitStream(input), library, entries);
                 memoryNeeded *= 2;
             } else if (
                     filterName.equals("ASCII85Decode")
