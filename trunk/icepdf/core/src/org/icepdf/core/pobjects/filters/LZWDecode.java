@@ -33,9 +33,11 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
+import org.icepdf.core.util.Library;
 
 import java.io.IOException;
 import java.util.Stack;
+import java.util.Hashtable;
 
 /**
  * @author Mark Collette
@@ -43,6 +45,7 @@ import java.util.Stack;
  */
 public class LZWDecode extends ChunkingInputStream {
     private BitStream inb;
+    private int earlyChange;
     private int code;
     private int old_code;
     private boolean firstTime;
@@ -52,8 +55,17 @@ public class LZWDecode extends ChunkingInputStream {
     private Code[] codes;
 
 
-    public LZWDecode(BitStream inb) {
+    public LZWDecode(BitStream inb, Library library, Hashtable entries) {
         this.inb = inb;
+        
+        this.earlyChange = 1; // Default value
+        Hashtable decodeParmsDictionary = library.getDictionary(entries, "DecodeParms");
+        if (decodeParmsDictionary != null) {
+            Number earlyChangeNumber = library.getNumber(decodeParmsDictionary, "EarlyChange");
+            if (earlyChangeNumber != null) {
+                this.earlyChange = earlyChangeNumber.intValue();
+            }
+        }
 
         code = 0;
         old_code = 0;
@@ -118,7 +130,7 @@ public class LZWDecode extends ChunkingInputStream {
                     last_code++;
                 }
             }
-            if (code_len < 12 && last_code == (1 << code_len) - 1) {
+            if (code_len < 12 && last_code == (1 << code_len) - earlyChange) {
                 //System.err.println(last_code+" "+code_len);
                 code_len++;
             }
