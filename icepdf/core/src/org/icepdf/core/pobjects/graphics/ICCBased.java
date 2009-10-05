@@ -33,11 +33,12 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.util.ColorSpaceWrapper;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.color.ICC_ColorSpace;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
@@ -83,7 +84,7 @@ public class ICCBased extends PColorSpace {
     /**
      *
      */
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }
@@ -93,7 +94,8 @@ public class ICCBased extends PColorSpace {
             stream.init();
             in = stream.getInputStreamForDecodedStreamBytes();
             if (in != null) {
-                colorSpace = ColorSpaceWrapper.getICCColorSpaceInstance(in);
+                ICC_Profile profile = ICC_Profile.getInstance(in);
+                colorSpace = new ICC_ColorSpace(profile);
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Error Processing ICCBased Colour Profile", e);

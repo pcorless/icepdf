@@ -37,7 +37,6 @@ import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.filters.*;
 import org.icepdf.core.pobjects.graphics.*;
-import org.icepdf.core.util.ColorSpaceWrapper;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.ImageCache;
 import org.icepdf.core.util.Library;
@@ -317,6 +316,7 @@ public class Stream extends Dictionary {
             }
             out.flush();
             out.close();
+            // removes this thread from current read,  pottential entry for other thread
             input.close();
 
             byte[] ret = out.toByteArray();
@@ -1224,7 +1224,7 @@ public class Stream extends Dictionary {
     }
 
     private static BufferedImage makeRGBABufferedImage(WritableRaster wr) {
-        ColorSpace cs = ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_sRGB);
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[4];
         for (int i = 0; i < bits.length; i++)
             bits[i] = 8;
@@ -1237,7 +1237,7 @@ public class Stream extends Dictionary {
     }
 
     private static BufferedImage makeRGBBufferedImage(WritableRaster wr) {
-        ColorSpace cs = ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_sRGB);
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[3];
         for (int i = 0; i < bits.length; i++)
             bits[i] = 8;
@@ -1250,7 +1250,7 @@ public class Stream extends Dictionary {
     }
 
     private static BufferedImage makeGrayBufferedImage(WritableRaster wr) {
-        ColorSpace cs = ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_GRAY);
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
         int[] bits = new int[1];
         for (int i = 0; i < bits.length; i++)
             bits[i] = 8;
@@ -1649,7 +1649,7 @@ public class Stream extends Dictionary {
                 DataBuffer db = new DataBufferByte(data, data_length);
                 SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
                 WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-                ColorSpace cs = ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_GRAY);
+                ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
                 ColorModel cm = new ComponentColorModel(cs, new int[]{bitspercomponent}, false, false, ColorModel.OPAQUE, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             }
@@ -1701,12 +1701,12 @@ public class Stream extends Dictionary {
                     alterRasterBGRA(wr, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
                 //WritableRaster wr = Raster.createInterleavedRaster( db, width, height, colorSpaceCompCount*width, colorSpaceCompCount, bandOffsets, new Point(0,0) );
                 //System.out.println("Mem   wr  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                ColorSpace cs = ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_sRGB);
+                ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                 //System.out.println("Mem   cs  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 int[] bits = new int[compCount];
                 for (int i = 0; i < compCount; i++)
                     bits[i] = bitspercomponent;
-                ColorModel cm = new ComponentColorModel(cs, bits, usingAlpha, false, ColorModel.OPAQUE, db.getDataType());
+                ColorModel cm = new ComponentColorModel(cs, bits, usingAlpha, false, usingAlpha ? ColorModel.BITMASK : ColorModel.OPAQUE, db.getDataType());
                 //System.out.println("Mem   cm  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 img = new BufferedImage(cm, wr, false, null);
                 //System.out.println("Mem  img  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
@@ -1837,7 +1837,7 @@ public class Stream extends Dictionary {
                     //    db.getDataType(), width, height, masks );
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, width, masks, new Point(0, 0));
                     alterRasterRGBA(wr, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
-                    ColorSpace cs = ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_sRGB);
+                    ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                     ColorModel cm = new DirectColorModel(cs, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000, false, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 } else {

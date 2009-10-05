@@ -32,7 +32,6 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.util.ColorSpaceWrapper;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -54,7 +53,7 @@ public class DeviceGray extends PColorSpace {
     }
 
     public Color getColor(float[] f) {
-        return new Color(ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_sRGB),
+        return new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                 new Color(f[0], f[0], f[0]).getRGBComponents(null),
                 1);
     }
