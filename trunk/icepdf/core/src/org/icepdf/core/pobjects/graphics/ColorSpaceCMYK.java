@@ -32,8 +32,6 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.util.ColorSpaceWrapper;
-
 import java.awt.color.ColorSpace;
 
 /**
@@ -42,7 +40,7 @@ import java.awt.color.ColorSpace;
  */
 public class ColorSpaceCMYK extends ColorSpace {
     private static final String[] NAMES = new String[]{"Cyan", "Magenta", "Yellow", "Black"};
-    private static final ColorSpace COLOR_SPACE_sRGB = ColorSpaceWrapper.getColorSpaceInstance(ColorSpace.CS_sRGB);
+    private static final ColorSpace COLOR_SPACE_sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
     public ColorSpaceCMYK() {
         super(TYPE_CMYK, 4);
