@@ -47,19 +47,19 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
             Logger.getLogger(SeekableByteArrayInputStream.class.toString());
 
     private int m_iBeginningOffset;
-    private final Object m_oLock;
+
     private Object m_oCurrentUser;
 
     public SeekableByteArrayInputStream(byte buf[]) {
         super(buf);
         m_iBeginningOffset = 0;
-        m_oLock = new Object();
+
     }
 
     public SeekableByteArrayInputStream(byte buf[], int offset, int length) {
         super(buf, offset, length);
         m_iBeginningOffset = offset;
-        m_oLock = new Object();
+
     }
 
 
@@ -100,42 +100,38 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
     }
 
 
-    public void beginThreadAccess() {
-        synchronized (m_oLock) {
-            Object requestingUser = Thread.currentThread();
-            while (true) {
-                if (m_oCurrentUser == null) {
-                    m_oCurrentUser = requestingUser;
-                    break;
-                } else if (m_oCurrentUser == requestingUser) {
-                    break;
-                } else { // Some other Thread is currently using us
-                    try {
-                        m_oLock.wait(100L);
-                    }
-                    catch (InterruptedException ie) {
-                    }
+    public synchronized void beginThreadAccess() {
+        Object requestingUser = Thread.currentThread();
+        while (true) {
+            if (m_oCurrentUser == null) {
+                m_oCurrentUser = requestingUser;
+                break;
+            } else if (m_oCurrentUser == requestingUser) {
+                break;
+            } else { // Some other Thread is currently using us
+                try {
+                    this.wait(100L);
+                }
+                catch (InterruptedException ie) {
                 }
             }
         }
     }
 
-    public void endThreadAccess() {
-        synchronized (m_oLock) {
-            Object requestingUser = Thread.currentThread();
-            if (m_oCurrentUser == null) {
-                m_oLock.notifyAll();
-            } else if (m_oCurrentUser == requestingUser) {
-                m_oCurrentUser = null;
-                m_oLock.notifyAll();
-            } else { // Some other Thread is currently using us
-                if (log.isLoggable(Level.SEVERE)) {
-                    log.severe(
-                            "ERROR:  Thread finished using SeekableInput, but it wasn't locked by that Thread\n" +
-                            "        Thread: " + Thread.currentThread() + "\n" +
-                            "        Locking Thread: " + m_oCurrentUser + "\n" +
-                            "        SeekableInput: " + this);
-                }
+    public synchronized void endThreadAccess() {
+        Object requestingUser = Thread.currentThread();
+        if (m_oCurrentUser == null) {
+            this.notifyAll();
+        } else if (m_oCurrentUser == requestingUser) {
+            m_oCurrentUser = null;
+            this.notifyAll();
+        } else { // Some other Thread is currently using us
+            if (log.isLoggable(Level.SEVERE)) {
+                log.severe(
+                        "ERROR:  Thread finished using SeekableInput, but it wasn't locked by that Thread\n" +
+                        "        Thread: " + Thread.currentThread() + "\n" +
+                        "        Locking Thread: " + m_oCurrentUser + "\n" +
+                        "        SeekableInput: " + this);
             }
         }
     }

@@ -84,7 +84,7 @@ public class LazyObjectLoader implements MemoryManagerDelegate {
                 }
             }
             catch (Exception e) {
-                logger.log(Level.FINE,
+                logger.log(Level.SEVERE,
                         "Error loading object instance: " + reference.toString(), e);
             }
             finally {
@@ -108,7 +108,7 @@ public class LazyObjectLoader implements MemoryManagerDelegate {
                 }
             }
             catch (Exception e) {
-               logger.log(Level.FINE,
+               logger.log(Level.SEVERE,
                        "Error loading object instance: " + reference.toString(), e);
             }
         }

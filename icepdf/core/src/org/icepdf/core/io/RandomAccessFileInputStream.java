@@ -47,7 +47,6 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
 
     private long m_lMarkPosition;
     private RandomAccessFile m_RandomAccessFile;
-    private final Object m_oLock;
     private Object m_oCurrentUser;
 
     public static RandomAccessFileInputStream build(File file) throws FileNotFoundException {
@@ -60,7 +59,6 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
         super();
         m_lMarkPosition = 0L;
         m_RandomAccessFile = raf;
-        m_oLock = new Object();
     }
 
 
@@ -145,34 +143,33 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
         return this;
     }
 
-    public void beginThreadAccess() {
-        synchronized (m_oLock) {
-            Object requestingUser = Thread.currentThread();
-            while (true) {
-                if (m_oCurrentUser == null) {
-                    m_oCurrentUser = requestingUser;
-                    break;
-                } else if (m_oCurrentUser == requestingUser) {
-                    break;
-                } else { // Some other Thread is currently using us
-                    try {
-                        m_oLock.wait(100L);
-                    }
-                    catch (InterruptedException ie) {
-                    }
+    public synchronized void beginThreadAccess() {
+
+        Object requestingUser = Thread.currentThread();
+        while (true) {
+            if (m_oCurrentUser == null) {
+                m_oCurrentUser = requestingUser;
+                break;
+            } else if (m_oCurrentUser == requestingUser) {
+                break;
+            } else { // Some other Thread is currently using us
+                try {
+                    this.wait(100L);
+                }
+                catch (InterruptedException ie) {
                 }
             }
         }
     }
 
-    public void endThreadAccess() {
-        synchronized (m_oLock) {
+    public synchronized void endThreadAccess() {
+
             Object requestingUser = Thread.currentThread();
             if (m_oCurrentUser == null) {
-                m_oLock.notifyAll();
+                this.notifyAll();
             } else if (m_oCurrentUser == requestingUser) {
                 m_oCurrentUser = null;
-                m_oLock.notifyAll();
+                this.notifyAll();
             } else { // Some other Thread is currently using us
                 if (logger.isLoggable(Level.SEVERE)) {
                     logger.severe(
@@ -184,4 +181,4 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
             }
         }
     }
-}
+

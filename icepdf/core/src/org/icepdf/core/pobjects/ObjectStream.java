@@ -68,22 +68,28 @@ public class ObjectStream extends Stream {
         super(l, h, streamInputWrapper);
     }
 
-    public void init() {
+    public synchronized void init() {
         if (m_bInited)
             return;
         m_bInited = true;
-
         int numObjects = library.getInt(entries, "N");
         long firstObjectsOffset = library.getLong(entries, "First");
         byte[] data = getBytes();
         m_DecodedStream = new SeekableByteArrayInputStream(data);
+        m_DecodedStream.beginThreadAccess();
         m_iaObjectNumbers = new int[numObjects];
         m_laObjectOffset = new long[numObjects];
-        Parser parser = new Parser(m_DecodedStream);
-        for (int i = 0; i < numObjects; i++) {
-            m_iaObjectNumbers[i] = parser.getIntSurroundedByWhitespace();
-            m_laObjectOffset[i] = parser.getLongSurroundedByWhitespace() + firstObjectsOffset;
+        try{
+            Parser parser = new Parser(m_DecodedStream);
+            for (int i = 0; i < numObjects; i++) {
+                m_iaObjectNumbers[i] = parser.getIntSurroundedByWhitespace();
+                m_laObjectOffset[i] = parser.getLongSurroundedByWhitespace() + firstObjectsOffset;
+            }
         }
+        finally {
+            m_DecodedStream.endThreadAccess();
+        }
+
     }
 
     public boolean loadObject(Library library, int objectIndex) {
@@ -102,6 +108,7 @@ public class ObjectStream extends Stream {
             int objectNumber = m_iaObjectNumbers[objectIndex];
             long position = m_laObjectOffset[objectIndex];
 //System.out.println("ObjectStream.loadObject()  objectNumber: " + objectNumber + ", position: " + position);
+            m_DecodedStream.beginThreadAccess();
             m_DecodedStream.seekAbsolute(position);
             Parser parser = new Parser(m_DecodedStream, Parser.PARSE_MODE_OBJECT_STREAM);
             // Parser.getObject() either does 1 of 3 things:
@@ -122,6 +129,9 @@ public class ObjectStream extends Stream {
         }
         catch (Exception e) {
              logger.log(Level.FINE, "Error loading PDF object.", e);
+        }
+        finally {
+            m_DecodedStream.endThreadAccess();
         }
         return gotSomething;
     }
