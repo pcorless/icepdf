@@ -170,56 +170,54 @@ public class Page extends Dictionary implements MemoryManageable {
      * @param cache if true, cached files are removed; otherwise, objects are freed
      *              but object caches are left intact.
      */
-    protected void dispose(boolean cache) {
+    protected synchronized void dispose(boolean cache) {
         // Do not null out Library library reference here, without taking
         //   into account that MemoryManager.releaseAllByLibrary(Library)
         //   requires Page to still have Library library in getLibrary()
         // dispose only if the pages has been initiated
-        synchronized (isInitedLock) {
-            if (isInited) {
-                // un-init a page to free up memory
-                isInited = false;
-                // null data collections for page content
-                if (annotation != null) {
-                    annotation.clear();
-                }
-                // work through contents and null any stream that have images in them
-                if (contents != null) {
-                    Enumeration pageContent = contents.elements();
-                    //System.out.println("   Content size " + contents.size());
-                    while (pageContent.hasMoreElements()) {
-                        Object tmp = pageContent.nextElement();
-                        if (tmp instanceof Stream) {
-                            //System.out.println("  -------------> Found stream");
-                            Stream stream = (Stream) tmp;
-                            stream.dispose(cache);
-                        }
+        if (isInited) {
+            // un-init a page to free up memory
+            isInited = false;
+            // null data collections for page content
+            if (annotation != null) {
+                annotation.clear();
+            }
+            // work through contents and null any stream that have images in them
+            if (contents != null) {
+                Enumeration pageContent = contents.elements();
+                //System.out.println("   Content size " + contents.size());
+                while (pageContent.hasMoreElements()) {
+                    Object tmp = pageContent.nextElement();
+                    if (tmp instanceof Stream) {
+                        //System.out.println("  -------------> Found stream");
+                        Stream stream = (Stream) tmp;
+                        stream.dispose(cache);
                     }
-                    contents.clear();
                 }
-
-                // work through contents and null any stream that have images in them
-                if (shapes != null) {
-                    shapes.dispose();
-                    shapes = null;
-                }
-
-                // clear extracted text
-                if (extractedText != null) {
-                    extractedText.clear();
-                    extractedText = null;
-                }
-
-                // work through resources and null any images in the image hash
-                if (resources != null) {
-                    resources.dispose(cache);
-                    resources = null;
-                }
+                contents.clear();
             }
-            // clear vector of listeners
-            if (paintPageListeners != null) {
-                paintPageListeners.clear();
+
+            // work through contents and null any stream that have images in them
+            if (shapes != null) {
+                shapes.dispose();
+                shapes = null;
             }
+
+            // clear extracted text
+            if (extractedText != null) {
+                extractedText.clear();
+                extractedText = null;
+            }
+
+            // work through resources and null any images in the image hash
+            if (resources != null) {
+                resources.dispose(cache);
+                resources = null;
+            }
+        }
+        // clear vector of listeners
+        if (paintPageListeners != null) {
+            paintPageListeners.clear();
         }
     }
 
@@ -227,7 +225,7 @@ public class Page extends Dictionary implements MemoryManageable {
         return isInited;
     }
 
-    private void initPageContents() {
+    private void initPageContents() throws InterruptedException {
         Object pageContent = library.getObject(entries, "Contents");
 
         // if a stream process it as needed
@@ -244,6 +242,9 @@ public class Page extends Dictionary implements MemoryManageable {
             contents = new Vector<Stream>();
             // pull all of the page content references from the library
             for (int i = 0; i < conts.size(); i++) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("Page Content initialization thread interrupted");
+                }
                 Stream tmpStream = (Stream) library.getObject((Reference) conts.elementAt(i));
                 tmpStream.setPObjectReference((Reference) conts.elementAt(i));
                 contents.addElement(tmpStream);
@@ -251,11 +252,14 @@ public class Page extends Dictionary implements MemoryManageable {
         }
     }
 
-    private void initPageResources() {
+    private void initPageResources() throws InterruptedException {
         Resources res = library.getResources(entries, "Resources");
         if (res == null) {
             PageTree pt = getParent();
             while (pt != null) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("Page Resource initialization thread interrupted");
+                }
                 Resources parentResources = pt.getResources();
                 if (parentResources != null) {
                     res = parentResources;
@@ -267,7 +271,7 @@ public class Page extends Dictionary implements MemoryManageable {
         resources = res;
     }
 
-    private void initPageAnnotations() {
+    private void initPageAnnotations() throws InterruptedException {
         // find annotation in main library for our pages dictionary
         Object annots = library.getObject(entries, "Annots");
         if (annots != null && annots instanceof Vector) {
@@ -277,6 +281,10 @@ public class Page extends Dictionary implements MemoryManageable {
             Object annotObj;
             org.icepdf.core.pobjects.annotations.Annotation a = null;
             for (int i = 0; i < v.size(); i++) {
+
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("Page Annotation initialization thread interrupted");
+                }
 
                 annotObj = v.elementAt(i);
 
@@ -304,13 +312,14 @@ public class Page extends Dictionary implements MemoryManageable {
      * child elements.  Once a page has been initialized, it can be painted.
      */
     public synchronized void init() {
+        try{
         // make sure we are not revisiting this method
-        if (isInited) {
-            return;
-        }
+            if (isInited) {
+                return;
+            }
 //try { throw new RuntimeException("Page.init() ****"); } catch(Exception e) { e.printStackTrace(); }
 
-        synchronized (isInitedLock) {
+
             // get pages resources
             initPageResources();
 
@@ -365,15 +374,20 @@ public class Page extends Dictionary implements MemoryManageable {
                     }
                 }
             }
-            // empty page
+            // empty page, nothing to do.
             else {
                 shapes = new Shapes();
             }
-
-
             // set the initiated flag
             isInited = true;
+
+        }catch(InterruptedException e){
+            // keeps shapes vector so we can paint what we have but make init state as false
+            // so we can try to reparse it later.
+            isInited = false;
+            logger.log(Level.SEVERE, "Page initializing thread interrupted.", e);
         }
+
     }
 
     public void paint(Graphics g, int renderHintType, final int boundary,
@@ -1011,57 +1025,64 @@ public class Page extends Dictionary implements MemoryManageable {
      *
      * @return vector of Strings of all text objects inside the specified page.
      */
-    public Vector<StringBuffer> getText() {
+    public synchronized Vector<StringBuffer> getText() {
 
         // we only do this once per page
         if (extractedText != null) {
             return extractedText;
         }
 
-        /**
-         * Finally iterate through the contents vector and concat all of the
-         * the resouse streams together so that the contant parser can
-         * go to town and build all of the pages shapes.
-         */
-        if (contents == null) {
-            // Get the value of the page's content entry
-            initPageContents();
-        }
-
-        if (resources == null) {
-            // get pages resources
-            initPageResources();
-        }
-
-        if (contents != null) {
-            Vector<InputStream> inputStreamsVec =
-                    new Vector<InputStream>(contents.size());
-            for (int st = 0, max = contents.size(); st < max; st++) {
-                Stream stream = contents.elementAt(st);
-                InputStream input = stream.getInputStreamForDecodedStreamBytes();
-                inputStreamsVec.add(input);
+        try{
+            /**
+             * Finally iterate through the contents vector and concat all of the
+             * the resouse streams together so that the contant parser can
+             * go to town and build all of the pages shapes.
+             */
+            if (contents == null) {
+                // Get the value of the page's content entry
+                initPageContents();
             }
-            SequenceInputStream sis = new SequenceInputStream(inputStreamsVec.iterator());
 
-            // push the library and resources to the content parse
-            // and return the the shapes vector for the screen elements
-            // for the page/resources in question.
-            try {
-                ContentParser cp = new ContentParser(library, resources);
-                // custom parsing for text extraction, should be faster
-                extractedText = cp.parseTextBlocks(sis);
+            if (resources == null) {
+                // get pages resources
+                initPageResources();
             }
-            catch (Exception e) {
-                logger.log(Level.FINE, "Error getting page text.", e);
-            }
-            finally {
+
+            if (contents != null) {
+                Vector<InputStream> inputStreamsVec =
+                        new Vector<InputStream>(contents.size());
+                for (int st = 0, max = contents.size(); st < max; st++) {
+                    Stream stream = contents.elementAt(st);
+                    InputStream input = stream.getInputStreamForDecodedStreamBytes();
+                    inputStreamsVec.add(input);
+                }
+                SequenceInputStream sis = new SequenceInputStream(inputStreamsVec.iterator());
+
+                // push the library and resources to the content parse
+                // and return the the shapes vector for the screen elements
+                // for the page/resources in question.
                 try {
-                    sis.close();
+                    ContentParser cp = new ContentParser(library, resources);
+                    // custom parsing for text extraction, should be faster
+                    extractedText = cp.parseTextBlocks(sis);
                 }
-                catch (IOException e) {
-                    logger.log(Level.FINE, "Error closing page stream.", e);
+                catch (Exception e) {
+                    logger.log(Level.FINE, "Error getting page text.", e);
+                }
+                finally {
+                    try {
+                        sis.close();
+                    }
+                    catch (IOException e) {
+                        logger.log(Level.FINE, "Error closing page stream.", e);
+                    }
                 }
             }
+        }catch(InterruptedException e){
+            // keeps shapes vector so we can paint what we have but make init state as false
+            // so we can try to reparse it later.
+            isInited = false;
+            logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
         }
         return extractedText;
     }
@@ -1072,7 +1093,7 @@ public class Page extends Dictionary implements MemoryManageable {
      *
      * @return vector of Images inside the current page
      */
-    public Vector getImages() {
+    public synchronized Vector getImages() {
         if (!isInited) {
             init();
         }

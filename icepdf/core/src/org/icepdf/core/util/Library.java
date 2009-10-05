@@ -33,18 +33,15 @@
 package org.icepdf.core.util;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.awt.geom.Rectangle2D;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -116,12 +113,12 @@ public class Library {
         while (true) {
             ob = refs.get(reference);
             if (ob == null && m_LazyObjectLoader != null) {
-                boolean gotSomething = m_LazyObjectLoader.loadObject(reference);
-                if (gotSomething) {
+                if ( m_LazyObjectLoader.loadObject(reference)) {
                     ob = refs.get(reference);
+//                    printObjectDebug(ob);
                 }
             }
-            printObjectDebug(ob);
+
             if (ob == null)
                 break;
             else if (!(ob instanceof Reference))
@@ -137,18 +134,16 @@ public class Library {
      * @param ob object to show debug information for
      */
     private void printObjectDebug(Object ob) {
-        if (log.isLoggable(Level.FINER)) {
-            if (ob == null) {
-                log.finer("null object found");
-            } else if (ob instanceof PObject) {
-                PObject tmp = (PObject) ob;
-                log.finer(tmp.getReference() + " " + tmp.toString());
-            } else if (ob instanceof Dictionary) {
-                Dictionary tmp = (Dictionary) ob;
-                log.finer(tmp.getPObjectReference() + " " + tmp.toString());
-            } else {
-                log.finer(ob.getClass() + " " + ob.toString());
-            }
+        if (ob == null) {
+            log.finer("null object found");
+        } else if (ob instanceof PObject) {
+            PObject tmp = (PObject) ob;
+            log.finer(tmp.getReference() + " " + tmp.toString());
+        } else if (ob instanceof Dictionary) {
+            Dictionary tmp = (Dictionary) ob;
+            log.finer(tmp.getPObjectReference() + " " + tmp.toString());
+        } else {
+            log.finer(ob.getClass() + " " + ob.toString());
         }
     }
 
@@ -410,8 +405,7 @@ public class Library {
         while (true) {
             Object ob = refs.get(reference);
             if (ob == null && m_LazyObjectLoader != null) {
-                boolean gotSomething = m_LazyObjectLoader.loadObject(reference);
-                if (gotSomething) {
+                if (m_LazyObjectLoader.loadObject(reference)) {
                     ob = refs.get(reference);
                 }
             }

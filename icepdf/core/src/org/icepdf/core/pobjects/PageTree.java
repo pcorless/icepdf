@@ -257,7 +257,7 @@ public class PageTree extends Dictionary {
      * @param index index in the kids vector to initialize
      * @return
      */
-    private synchronized Object getPageOrPagesPotentiallyNotInitedFromReferenceAt(int index) {
+    private  Object getPageOrPagesPotentiallyNotInitedFromReferenceAt(int index) {
         Object pageOrPages = kidsPageAndPages.get(index);
         if (pageOrPages == null) {
             Reference ref = (Reference) kidsReferences.get(index);

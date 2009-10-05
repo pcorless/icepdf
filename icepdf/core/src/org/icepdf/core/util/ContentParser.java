@@ -151,7 +151,7 @@ public class ContentParser {
      * @param source byte stream containing page content
      * @return a Shapes Ojbect containing all the pages text and images shapes.
      */
-    public Shapes parse(InputStream source) {
+    public Shapes parse(InputStream source) throws InterruptedException {
         Shapes shapes = new Shapes();
         // Normal, clean content parse where graphics state is null
         if (graphicState == null) {
@@ -202,6 +202,10 @@ public class ContentParser {
             // loop through each token returned form the parser
             Object tok;
             while (true) {
+
+                if (Thread.interrupted()) {
+                    throw new InterruptedException("ContentParser thread interrupted");
+                }
 
                 tok = parser.getStreamObject();
 
