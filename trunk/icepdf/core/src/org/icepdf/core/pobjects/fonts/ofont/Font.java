@@ -81,6 +81,10 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
     // Base 14 AFM fonts
     protected AFM afm;
+    
+    // get list of all available fonts.
+    private static final java.awt.Font[] fonts =
+            GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 
     // Array of type1 font differences based on family names.
     static final String type1Diff[][] =
@@ -181,21 +185,6 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         for (char i = 0; i < 256; i++) {
             cMap[i] = i;
         }
-        // name of object  "Font"
-        name = library.getName(entries, "Name");
-
-        // Type of the font, type 0, 1, 2, 3 etc.
-        subtype = library.getName(entries, "Subtype");
-
-        // font name, SanSerif is used as it has a a robust CID, and it
-        // is the most commonly used font family for PDF
-        basefont = "Serif";
-        if (entries.containsKey("BaseFont")) {
-            Object o = entries.get("BaseFont");
-            if (o instanceof Name) {
-                basefont = ((Name) o).getName();
-            }
-        }
 
         // strip font name clean ready for processing
         basefont = cleanFontName(basefont);
@@ -242,7 +231,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
      * Initiate the Font. Retrieve any needed attributes, basically setup the
      * font so it can be used by the content parser.
      */
-    public void init() {
+    public synchronized void init() {
         // flag for initiated fonts
         if (inited) {
             return;
@@ -430,9 +419,6 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // look at all PS font names and try and find a match
         if (font == null && basefont != null) {
             //System.out.println("PS System Lookup ");
-            // get all system fonts.
-            java.awt.Font[] fonts =
-                    GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 
             // Check to see if any of the system fonts match the basefont name
             //System.out.println(basefont);
