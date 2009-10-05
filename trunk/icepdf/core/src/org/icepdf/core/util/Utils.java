@@ -226,6 +226,8 @@ public class Utils {
     public static String getContentFromSeekableInput(SeekableInput in, boolean convertToHex) {
         String content = null;
         try {
+            in.beginThreadAccess();
+
             long position = in.getAbsolutePosition();
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -259,6 +261,9 @@ public class Utils {
         }
         catch (IOException ioe) {
             logger.log(Level.FINE, "Problem getting debug string");
+        }
+        finally {
+            in.endThreadAccess();
         }
         return content;
     }
