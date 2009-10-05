@@ -61,7 +61,7 @@ public class ShadingType1Pattern extends ShadingPattern {
         super(library, entries);
     }
 
-    public void init() {
+    public synchronized void init() {
 
         // get type 3 specific data.
         inited = true;
