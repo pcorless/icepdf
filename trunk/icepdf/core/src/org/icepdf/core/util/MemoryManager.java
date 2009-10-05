@@ -306,7 +306,7 @@ public class MemoryManager {
         return ((numDone > 0) || delegatesReduced);
     }
 
-    protected synchronized int reduceMemory(int numToDo) {
+    protected int reduceMemory(int numToDo) {
 //System.out.println("+-+ MM.reduceMemory() numToDo: " + numToDo + ", LRU size: " + leastRecentlyUsed.size());
         int numDone = 0;
         try {

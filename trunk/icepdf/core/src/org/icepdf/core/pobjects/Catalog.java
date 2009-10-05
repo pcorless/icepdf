@@ -90,7 +90,7 @@ public class Catalog extends Dictionary {
     /**
      * Initiate the PageTree.
      */
-    public void init() {
+    public synchronized void init() {
         Object tmp = library.getObject(entries, "Pages");
         pageTree = null;
         if (tmp instanceof PageTree) {

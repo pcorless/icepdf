@@ -49,6 +49,9 @@ import java.util.logging.Level;
 
 /**
  * Form XObject class. Not currently part of the public api.
+ * <p/>
+ * Forms are grouped into the 'Resource' category and can be shared.  As a result we need to make sure
+ * that the init method are synchronized as they can be accessed by different page loading threads.
  *
  * @since 1.0
  */
@@ -132,7 +135,7 @@ public class Form extends Stream {
     /**
      *
      */
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }

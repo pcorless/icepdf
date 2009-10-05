@@ -89,7 +89,7 @@ public class ShadingType3Pattern extends ShadingPattern {
         super(library, entries);
     }
 
-    public void init() {
+    public synchronized void init() {
 
         if (inited) {
             return;
