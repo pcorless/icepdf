@@ -42,10 +42,12 @@ import java.awt.Font;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
+import java.awt.font.GlyphMetrics;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -63,6 +65,9 @@ public class OFont implements FontFile {
     private Rectangle2D maxCharBounds =
             new Rectangle2D.Double(0.0, 0.0, 1.0, 1.0);
 
+    // text layout map, very expensive to create, so we'll cache them.
+    private HashMap<String, Point2D.Float> echarAdvanceCache;
+
     protected float[] widths;
     protected Map<Integer, Float> cidWidths;
     protected float missingWidth;
@@ -77,9 +82,11 @@ public class OFont implements FontFile {
     public OFont(Font awtFont) {
         this.awtFont = awtFont;
         maxCharBounds = new Rectangle2D.Double();
+        this.echarAdvanceCache = new HashMap<String, Point2D.Float>(256);
     }
 
     private OFont(OFont font) {
+        this.echarAdvanceCache = font.echarAdvanceCache;
         this.awtFont = font.awtFont;
         this.encoding = font.encoding;
         this.toUnicode = font.toUnicode;
@@ -145,32 +152,54 @@ public class OFont implements FontFile {
     public Point2D echarAdvance(char ech) {
 
         // create a glyph vector for the char
-        GlyphVector glyphVector = awtFont.createGlyphVector(
+        float advance;
+        float advanceY;
+
+        // check cache for existing layout
+        String text = String.valueOf(ech);
+        Point2D.Float echarAdvance = echarAdvanceCache.get(text);
+
+        // generate metrics is needed
+        if (echarAdvance == null){
+
+            GlyphVector glyphVector = awtFont.createGlyphVector(
                 new FontRenderContext(new AffineTransform(), true, true),
                 String.valueOf(ech));
 
-        FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
-        maxCharBounds = awtFont.getMaxCharBounds(frc);
-        TextLayout textLayout = new TextLayout(String.valueOf(ech), awtFont, frc);
-        ascent = textLayout.getAscent();
-        descent = textLayout.getDescent();
+            FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+            TextLayout textLayout = new TextLayout(String.valueOf(ech), awtFont, frc);
 
-        float advance = glyphVector.getGlyphMetrics(0).getAdvanceX();
-        if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
-            advance = widths[ech - firstCh] * awtFont.getSize2D();
-        } else if (cidWidths != null) {
-            Float width = cidWidths.get((int) ech);
-            if (width != null) {
-                advance = cidWidths.get((int) ech) * awtFont.getSize2D();
+            // get bounds, only need to do this once.
+            maxCharBounds = awtFont.getMaxCharBounds(frc);
+            ascent = textLayout.getAscent();
+            descent = textLayout.getDescent();
+
+            GlyphMetrics glyphMetrics = glyphVector.getGlyphMetrics(0);
+            advance = glyphMetrics.getAdvanceX();
+            advanceY = glyphMetrics.getAdvanceY();
+
+            if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
+                advance = widths[ech - firstCh] * awtFont.getSize2D();
+            } else if (cidWidths != null) {
+                Float width = cidWidths.get((int) ech);
+                if (width != null) {
+                    advance = cidWidths.get((int) ech) * awtFont.getSize2D();
+                }
             }
+            // find any widths in the font descriptor
+            else if (missingWidth > 0) {
+                advance = missingWidth / 1000f;
+            }
+            echarAdvanceCache.put(text,
+                    new Point2D.Float(advance, advanceY));
         }
-        // find any widths in the font descriptor
-        else if (missingWidth > 0) {
-            advance = missingWidth / 1000f;
+        // returned cashed value
+        else{
+            advance = echarAdvance.x;
+            advanceY = echarAdvance.y;
         }
 
-        return new Point2D.Float(advance,
-                glyphVector.getGlyphMetrics(0).getAdvanceY());
+        return new Point2D.Float(advance, advanceY);
     }
 
     /**
