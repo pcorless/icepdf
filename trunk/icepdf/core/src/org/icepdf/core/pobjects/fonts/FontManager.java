@@ -114,7 +114,7 @@ public class FontManager {
                     {"NewCenturySchlbk-Italic", "CenturySchL-Ital", "Arial"},
                     {"NewCenturySchlbk-Bold", "CenturySchL-Bold", "Arial"},
                     {"NewCenturySchlbk-BoldItalic", "CenturySchL-BoldItal", "Arial"},
-                    {"Times-Roman", "NimbusRomNo9L-Regu", "Nimbus Roman No9 L", "TimesNewRoman", "TimesNewRomanPS", "TimesNewRomanPSMT"},
+                    {"Times-Roman", "NimbusRomNo9L-Regu", "Nimbus Roman No9 L", "TimesNewRoman", "TimesNewRomanPSMT", "TimesNewRomanPS"},
                     {"Times-Italic", "NimbusRomNo9L-ReguItal", "Nimbus Roman No9 L", "TimesNewRoman,Italic", "TimesNewRoman-Italic", "TimesNewRomanPS-Italic", "TimesNewRomanPS-ItalicMT"},
                     {"Times-Bold", "NimbusRomNo9L-Medi", "Nimbus Roman No9 L", "TimesNewRoman,Bold", "TimesNewRoman-Bold", "TimesNewRomanPS-Bold", "TimesNewRomanPS-BoldMT"},
                     {"Times-BoldItalic", "NimbusRomNo9L-MediItal", "Nimbus Roman No9 L", "TimesNewRoman,BoldItalic", "TimesNewRoman-BoldItalic", "TimesNewRomanPS-BoldItalic", "TimesNewRomanPS-BoldItalicMT"},
@@ -672,8 +672,8 @@ public class FontManager {
                             baseName.equals("starsymbol")
                             || baseName.equals("arial-black")
                             || baseName.equals("arial-blackitalic")
-                            // mapping issue with standard ascii, not sure why. 
-                            || baseName.indexOf("timesnewromanps") >= 0
+                            // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
+                            || baseName.equals("timesnewromanps")
                             ) {
                         //found = false;
                     } else if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
