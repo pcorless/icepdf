@@ -98,6 +98,8 @@ public class PageViewComponentImpl extends
     private static boolean isInteractiveAnnotationsEnabled;
 
     private static Color pageColor;
+    private static Color annotationHighlightColor;
+    private static float annotationHighlightAlpha;
 
     static{
         // enables interactive annotation support.
@@ -115,6 +117,35 @@ public class PageViewComponentImpl extends
 
         } catch (NumberFormatException e) {
             logger.warning("Error reading page paper color.");
+        }
+
+        // sets annotation selected highlight colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.highlight.color", "#000000");
+            int colorValue = ColorUtil.convertColor(color);
+            annotationHighlightColor =
+                    new Color( colorValue > 0? colorValue :
+                            Integer.parseInt("000000", 16 ));
+
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading page annotation highlight colour");
+            }
+        }
+
+        // set the annotation alpha value.
+        // sets annotation selected highlight colour
+        try {
+            String alpha = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.highlight.alpha", "0.4");
+            annotationHighlightAlpha = Float.parseFloat(alpha);
+
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading page annotation highlight alpha");
+            }
+            annotationHighlightAlpha = 0.4f;
         }
     }
 
@@ -392,24 +423,27 @@ public class PageViewComponentImpl extends
                             int highlightMode = linkAnnotation.getHighlightMode();
                             if (highlightMode == LinkAnnotation.HIGHLIGHT_INVERT) {
                                 Rectangle2D rect = currentAnnotation.getUserSpaceRectangle();
-                                gg2.setColor(Color.white);
-                                gg2.setXORMode(Color.black);
+                                gg2.setColor(annotationHighlightColor);
+                                gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                        annotationHighlightAlpha));
                                 gg2.fillRect((int) rect.getX(),
                                         (int) rect.getY(),
                                         (int) rect.getWidth(),
                                         (int) rect.getHeight());
                             } else if (highlightMode == LinkAnnotation.HIGHLIGHT_OUTLINE) {
                                 Rectangle2D rect = currentAnnotation.getUserSpaceRectangle();
-                                gg2.setColor(Color.white);
-                                gg2.setXORMode(Color.black);
+                                gg2.setColor(annotationHighlightColor);
+                                gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                        annotationHighlightAlpha));
                                 gg2.drawRect((int) rect.getX(),
                                         (int) rect.getY(),
                                         (int) rect.getWidth(),
                                         (int) rect.getHeight());
                             } else if (highlightMode == LinkAnnotation.HIGHLIGHT_PUSH) {
                                 Rectangle2D rect = currentAnnotation.getUserSpaceRectangle();
-                                gg2.setColor(Color.white);
-                                gg2.setXORMode(Color.black);
+                                gg2.setColor(annotationHighlightColor);
+                                gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                        annotationHighlightAlpha));
                                 gg2.drawRect((int) rect.getX(),
                                         (int) rect.getY(),
                                         (int) rect.getWidth(),
