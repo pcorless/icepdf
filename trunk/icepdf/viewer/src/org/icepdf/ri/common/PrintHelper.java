@@ -89,6 +89,22 @@ public class PrintHelper implements Printable {
         services =
                 PrintServiceLookup.lookupPrintServices(
                         DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
+        // check for a default service and make sure it is at index 0. the lookupPrintServices does not
+        // aways put the default printer first in the array. 
+        PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
+        if (defaultService != null && services.length > 1){
+            PrintService printService;
+            for (int i=1, max= services.length; i < max; i++){
+                printService = services[i];
+                if (printService.equals(defaultService)){
+                    // found the default printer, now swap it with the first index. 
+                    PrintService tmp = services[0];
+                    services[0] = defaultService;
+                    services[i] = tmp;
+                    break;
+                }
+            }
+        }
 
         // default printing properties.
         // Print and document attributes sets.
