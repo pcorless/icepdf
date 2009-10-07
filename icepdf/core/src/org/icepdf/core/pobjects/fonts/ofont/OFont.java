@@ -102,6 +102,7 @@ public class OFont implements FontFile {
 
     public FontFile deriveFont(Encoding encoding, CMap toUnicode) {
         OFont font = new OFont(this);
+        this.echarAdvanceCache.clear();
         font.encoding = encoding;
         font.toUnicode = toUnicode;
         return font;
@@ -110,6 +111,7 @@ public class OFont implements FontFile {
     public FontFile deriveFont(float[] widths, int firstCh, float missingWidth,
                                float ascent, float descent, char[] diff) {
         OFont font = new OFont(this);
+        this.echarAdvanceCache.clear();
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
         font.ascent = ascent;
@@ -122,6 +124,7 @@ public class OFont implements FontFile {
     public FontFile deriveFont(Map<Integer, Float> widths, int firstCh, float missingWidth,
                                float ascent, float descent, char[] diff) {
         OFont font = new OFont(this);
+        this.echarAdvanceCache.clear();
         font.missingWidth = this.missingWidth;
         font.firstCh = firstCh;
         font.ascent = ascent;
@@ -133,7 +136,12 @@ public class OFont implements FontFile {
 
     public FontFile deriveFont(AffineTransform at) {
         OFont font = new OFont(this);
+        // clear font metric cache if we change the font's transform
+        if (!font.getTransform().equals(this.awtFont.getTransform())){
+            this.echarAdvanceCache.clear();
+        }
         font.awtFont = this.awtFont.deriveFont(at);
+
         font.maxCharBounds = this.maxCharBounds;
         return font;
     }
@@ -144,12 +152,16 @@ public class OFont implements FontFile {
 
     public FontFile deriveFont(float pointsize) {
         OFont font = new OFont(this);
+        // clear font metric cache if we change the font's transform
+        if (font.getSize() != (this.awtFont.getSize())){
+            this.echarAdvanceCache.clear();
+        }
         font.awtFont = this.awtFont.deriveFont(pointsize);
         font.maxCharBounds = this.maxCharBounds;
         return font;
     }
 
-    public Point2D echarAdvance(char ech) {
+    public Point2D echarAdvance(final char ech) {
 
         // create a glyph vector for the char
         float advance;
@@ -162,12 +174,16 @@ public class OFont implements FontFile {
         // generate metrics is needed
         if (echarAdvance == null){
 
+            // the glyph vector should be created using any toUnicode value if present, as this is what we
+            // are drawing, however widths in the
+            char echGlyph = getCMapping(ech);
+
             GlyphVector glyphVector = awtFont.createGlyphVector(
                 new FontRenderContext(new AffineTransform(), true, true),
-                String.valueOf(ech));
+                String.valueOf(echGlyph));
 
             FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
-            TextLayout textLayout = new TextLayout(String.valueOf(ech), awtFont, frc);
+            TextLayout textLayout = new TextLayout(String.valueOf(echGlyph), awtFont, frc);
 
             // get bounds, only need to do this once.
             maxCharBounds = awtFont.getMaxCharBounds(frc);
@@ -178,18 +194,6 @@ public class OFont implements FontFile {
             advance = glyphMetrics.getAdvanceX();
             advanceY = glyphMetrics.getAdvanceY();
 
-            if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
-                advance = widths[ech - firstCh] * awtFont.getSize2D();
-            } else if (cidWidths != null) {
-                Float width = cidWidths.get((int) ech);
-                if (width != null) {
-                    advance = cidWidths.get((int) ech) * awtFont.getSize2D();
-                }
-            }
-            // find any widths in the font descriptor
-            else if (missingWidth > 0) {
-                advance = missingWidth / 1000f;
-            }
             echarAdvanceCache.put(text,
                     new Point2D.Float(advance, advanceY));
         }
@@ -197,6 +201,20 @@ public class OFont implements FontFile {
         else{
             advance = echarAdvance.x;
             advanceY = echarAdvance.y;
+        }
+
+        // widths uses original cid's, not the converted to unicode value.
+        if (widths != null && ech - firstCh >= 0 && ech - firstCh < widths.length) {
+            advance = widths[ech - firstCh] * awtFont.getSize2D();
+        } else if (cidWidths != null) {
+            Float width = cidWidths.get((int) ech);
+            if (width != null) {
+                advance = cidWidths.get((int) ech) * awtFont.getSize2D();
+            }
+        }
+        // find any widths in the font descriptor
+        else if (missingWidth > 0) {
+            advance = missingWidth / 1000f;
         }
 
         return new Point2D.Float(advance, advanceY);
@@ -330,17 +348,17 @@ public class OFont implements FontFile {
             // get the first char in the buffer
             char c1 = displayText.charAt(i);
 
-            // take care of any character differences
-            char c = c1;//getCharDiff(c1);
+            // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
+            // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
+            // differences.
+            char c = toUnicode==null?getCharDiff(c1):c1;
 
             // The problem here is that some CMaping only work properly if the
             // embedded font is working properly, so that's how this logic works.
 
             //System.out.print((int)c + " (" + (char)c + ")");
             // check for CMap ToUnicode properties.
-            if (toUnicode != null) {
-                c = getCMapping(c);
-            }
+            c = getCMapping(c);
             //System.out.print(" -> " + (int)c + " (" + (char)c + ")");
             //System.out.println();
 
