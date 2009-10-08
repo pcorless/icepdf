@@ -175,7 +175,7 @@ public class OFont implements FontFile {
         if (echarAdvance == null){
 
             // the glyph vector should be created using any toUnicode value if present, as this is what we
-            // are drawing, however widths in the
+            // are drawing, the method also does a check to apply differences if toUnicode is null.
             char echGlyph = getCMapping(ech);
 
             GlyphVector glyphVector = awtFont.createGlyphVector(
