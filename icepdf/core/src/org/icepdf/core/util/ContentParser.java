@@ -2097,9 +2097,6 @@ public class ContentParser {
         boolean isVerticalWriting = textState.font.isVerticalWriting();
         // int spaceCharacter = currentFont.getSpaceEchar();
 
-        // check in unicode cMap exists
-        boolean isToUnicode = textState.currentfont.getToUnicode() != null;
-
         // font metrics data
         float textRise = textState.trise;
         float charcterSpace = textState.cspace;
@@ -2119,16 +2116,9 @@ public class ContentParser {
             currentChar = displayText.charAt(i);
 
             // Position of the specified glyph relative to the origin of glyphVector
-            if (!textState.font.isAFMFont()) {
-                newAdvanceX = (float) currentFont.echarAdvance(currentChar).getX();
-            } else {
-                // Problematic Type1 characters that hare hard to draw.
-                if (currentChar != 160 && currentChar > 31) {
-                    newAdvanceX = (float) currentFont.echarAdvance(currentChar).getX();
-                } else {
-                    newAdvanceX = (float) currentFont.echarAdvance(' ').getX();
-                }
-            }
+            // advance is handled by the particular font implementation.
+            newAdvanceX = (float) currentFont.echarAdvance(currentChar).getX();
+
 //            System.out.println(currentChar + " : " + (int)currentChar + " : " + newAdvanceX + " : " +
 //                               currentFont.echarAdvance(currentChar).getX() + " : " + currentFont.echarAdvance(' ').getX());
             newAdvanceY = newAdvanceX;
@@ -2154,6 +2144,8 @@ public class ContentParser {
 
             // add extract text.
             if (isExtractText) {
+                // check in unicode cMap exists
+                boolean isToUnicode = textState.currentfont.getToUnicode() != null;
                 // check char value from the unicode mpa and if not we just use the character code. 
                 int charValue = isToUnicode ? textState.currentfont.getToUnicode()
                         .toSelector(unmodifiedDisplayText.charAt(i)) : currentChar;
