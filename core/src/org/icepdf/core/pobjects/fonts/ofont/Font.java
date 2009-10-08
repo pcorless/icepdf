@@ -38,6 +38,7 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.FontUtil;
 
 import java.awt.*;
 import java.util.*;
@@ -81,7 +82,10 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
     // Base 14 AFM fonts
     protected AFM afm;
-    
+
+    // awt font style reference, ITALIC or BOLD|ITALIC 
+    protected int style;
+
     // get list of all available fonts.
     private static final java.awt.Font[] fonts =
             GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
@@ -185,6 +189,9 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         for (char i = 0; i < 256; i++) {
             cMap[i] = i;
         }
+
+        // get font style value.
+        style = FontUtil.guessAWTFontStyle(basefont);
 
         // strip font name clean ready for processing
         basefont = cleanFontName(basefont);
@@ -433,7 +440,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 //System.out.println(fontName + " --- >" + basefont);
                 if (fontName.equalsIgnoreCase(basefont)) {
                     //System.out.println("       " + fontName+ " found --- >" + basefont);
-                    font = new OFont(font1);
+                    font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
                     basefont = font1.getPSName();
                     isFontSubstitution = true;
                     break;
@@ -459,7 +466,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 //System.out.println(fontName + " --- >" + basefont);
                 if (fontName.equalsIgnoreCase(basefont)) {
                     //System.out.println("       " + fontName + " found --- >" + basefont);
-                    font = new OFont(font1);
+                    font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
                     basefont = fontName;
                     isFontSubstitution = true;
                     break;
@@ -689,7 +696,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 || subtype.equals("MMType1")
                 || subtype.equals("TrueType")) {
             if (fontName != null) {
-                fontName = fontName.replace(',', '-');
+                fontName = FontUtil.normalizeString(fontName);
             }
         }
         return fontName;

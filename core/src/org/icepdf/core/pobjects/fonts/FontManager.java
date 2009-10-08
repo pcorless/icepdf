@@ -33,6 +33,7 @@
 package org.icepdf.core.pobjects.fonts;
 
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.FontUtil;
 
 import java.io.File;
 import java.util.*;
@@ -414,7 +415,7 @@ public class FontManager {
                             fontName = font.getName().toLowerCase();
                             // Add new font data to the font list
                             fontList.add(new Object[]{font.getName().toLowerCase(), // original PS name
-                                    normalizeString(font.getFamily()), // family name
+                                    FontUtil.normalizeString(font.getFamily()), // family name
                                     guessFontStyle(fontName), // weight and decorations, mainly bold,italic
                                     fontPath.toString()});  // path to font on OS
                             if (logger.isLoggable(Level.FINER)) {
@@ -647,7 +648,7 @@ public class FontManager {
         String familyName;
         // normalize the fontName we are trying to find a match for
         int decorations = guessFontStyle(fontName);
-        String name = normalizeString(fontName);
+        String name = FontUtil.normalizeString(fontName);
         int style;
 
         if (logger.isLoggable(Level.FINER)) {
@@ -762,7 +763,7 @@ public class FontManager {
     private FontFile getCoreJavaFont(String fontName, int flags) {
 
         int decorations = guessFontStyle(fontName);
-        fontName = normalizeString(fontName);
+        fontName = FontUtil.normalizeString(fontName);
         FontFile font;
         // If no name are found then match against the core java font names
         // "Serif", java equivalent is  "Lucida Bright"
@@ -858,6 +859,7 @@ public class FontManager {
     /**
      * Utitility method which maps know sytle strings to an integer value which
      * is used later for effeciant font searching.
+     * todo: move out to FontUtil and use awt contants
      *
      * @param name base name of font.
      * @return integer representing dffs
@@ -899,23 +901,5 @@ public class FontManager {
             style += " Plain";
         }
         return style;
-    }
-
-    /**
-     * Utility method for normailing strings, to lowercase and remove any spaces.
-     *
-     * @param name base name of font
-     * @return normalized copy of string.
-     */
-    private static String normalizeString(String name) {
-        name = guessFamily(name);
-        StringBuffer normalized = new StringBuffer(name.toLowerCase());
-        for (int k = normalized.length() - 1; k >= 0; k--) {
-            if (normalized.charAt(k) == 32) {
-                normalized.deleteCharAt(k);
-                k--;
-            }
-        }
-        return normalized.toString();
     }
 }
