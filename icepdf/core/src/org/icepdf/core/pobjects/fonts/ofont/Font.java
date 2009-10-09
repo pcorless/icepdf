@@ -448,26 +448,17 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             }
         }
 
-        // look at not ps fonts check against system fonts
+        // look at font family name matches against system fonts
         if (font == null && basefont != null) {
-            //System.out.println("None PS System Lookup ");
-            // get all system fonts.
-            java.awt.Font[] fonts =
-                    GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+
+            // clean the base name so that is has just the font family
+            String fontFamily = FontUtil.guessFamily(basefont);
 
             for (java.awt.Font font1 : fonts) {
-
-                // remove white space
-                StringTokenizer st = new StringTokenizer(font1.getName(), " ", false);
-                String fontName = "";
-                while (st.hasMoreElements()) fontName += st.nextElement();
-
-                // find font match
-                //System.out.println(fontName + " --- >" + basefont);
-                if (fontName.equalsIgnoreCase(basefont)) {
-                    //System.out.println("       " + fontName + " found --- >" + basefont);
+                // find font family match
+                if (font1.getFamily().equalsIgnoreCase(fontFamily)) {
+                    // create new font with font family name and style
                     font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
-                    basefont = fontName;
                     isFontSubstitution = true;
                     break;
                 }
@@ -696,7 +687,8 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 || subtype.equals("MMType1")
                 || subtype.equals("TrueType")) {
             if (fontName != null) {
-                fontName = FontUtil.normalizeString(fontName);
+                // normalize so that java.awt.decode will work correctly
+                fontName = fontName.replace(',', '-');
             }
         }
         return fontName;
