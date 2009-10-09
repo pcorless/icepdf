@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
-<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"><title>ICEpdf v3.0 Release Notes</title>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"><title>ICEpdf v3.1.0 Release Notes</title>
 
 <style type="text/css">
 body, td, th, input {
@@ -46,8 +46,8 @@ font-size: 110%
 <h1 style="border-bottom: 0pt none; margin-left: 16px; margin-top: 8px;">
 ICEpdf<sup> <small>&reg;</small> </sup> </h1>
 <h2 style="border-bottom: 0pt none; font-weight: bold; margin-left: 16px;">
-v3.0 Release Notes</h2>
-<p style="margin-left: 16px; margin-bottom: 12px;">May 1st, 2009</p>
+v3.1.0 Release Notes</h2>
+<p style="margin-left: 16px; margin-bottom: 12px;">October 9th, 2009</p>
 </td>
 <td align="center" valign="middle" width="22%">
 <img alt="ICEpdf Logo" src="images/icepdf-logo-release-notes.gif" style="" height="100" width="81"><br>
@@ -60,8 +60,9 @@ v3.0 Release Notes</h2>
 <h2><a name="Overview"></a>Overview</h2>
 This document contains the following sections:<br>
 <ul>
-<li><a href="#Changes_30">Changes in v3.0 (This
+<li><a href="#Changes_31">Changes in v3.1 (This
 Release)</a></li>
+<li><a href="#Changes_30">Changes in v3.0 </a></li>
 <li><a href="#MigrationNotes">2.x to 3.x Migration
 Notes </a></li>
 <li><a href="#Known_Issues">Known Issues</a><br>
@@ -75,8 +76,61 @@ Notes </a></li>
 Information</a></li>
 </ul>
 <br>
-<h2><a name="Changes_30"></a>Changes in v3.0
-(This Release)</h2>
+<!-- Start v3.1.0 release notes-->
+<h2><a name="Changes_31"></a>Changes in v3.1.0 (This Release)</h2>
+<p>ICEpdf v3.1.0 is a maintenance release featuring numerous fixes and improvements.</p>
+<p>Review the <a href="#Known_Issues">Known Issues</a>
+prior to using this release. Review the <a href="#MigrationNotes">Migration
+Notes</a> if you plan to use an existing ICEpdf 2.7.x application with 3.1.x.</p>
+<p>Please report any issues with this release to the ICEpdf
+<a target="_blank" href="http://www.icefaces.org/JForum/">forums</a>
+or the ICEpdf <a target="_blank" href="http://jira.icefaces.org/browse/PDF">
+JIRA issue tracker</a>.</p>
+<h3><span style="font-weight: bold;">Notable Improvements &amp; Enhancements</span></h3>
+<ul class="contentIndent">
+	<li><p><span style="font-weight: bold;">Rendering Core</span></p></li>
+	<ul>
+		<li>Removed XOR draw code from PageViewComponentImpl when displaying 
+			Annotation highlight states. The system property -Dsun.java2d.d3d can now be set to true
+			in JDK 1.6 or higher for enhanced drawing performance on Windows systems.  </li>
+		<li>Improved OS font substitution by constructing fonts with style hinting.</li>	
+		<li>Fixed a refactoring issue that broke drag and drop file loading in the Viewer RI.</li>
+		<li>Improved OS font substitution by correctly applying encoding 
+			   differences to respective character codes and ignoring certain white space characters.</li>
+		<li>Added support for CMap beginbfrange in the format 
+			  <src1> <srcn> [&lt;dest1&gt; &lt;dest2&gt; ... &lt;destn&gt;] to both OS and Pro versions of ICEpdf which 
+			  significantly	improves font substitution and text extraction.</li>
+	  <li>Improved OS font substitution by fixing an error in the Cmap parser 
+	  	which failed to read multiple entries for beginbfchar and beginbfrange definitions.</li>
+		<li>Fixed a font substitution regression in 3.0 which changed the 
+			rendering quality of PDF's that used the named font "TimesNewRomanPSMT".</li>
+		<li>Added support for LZWDecode early change decode parameter which prevented
+			certain PDF documents from being displayed correctly. </li>
+		<li>Improved performance of glyph layout calculations for the OS font layout engine. </li>
+	</ul>
+</ul>
+<ul class="contentIndent">
+	<li>
+		<p><span style="font-weight: bold;">Viewer Application</span></p>
+		<ul>
+			<li>Updated PrintHelper code to ensure that the system's default printer 
+				is always selected when the print dialog is shown.</li>
+	  </ul>
+	</li>
+</ul>
+<ul class="contentIndent">
+	<li>
+		<p><span style="font-weight: bold;">Community Contributor</span></p>
+		<p>Many thanks to ICEpdf community contributer:</p>
+		<ul>
+			<li>Pedro Rivera</li>
+	  </ul>
+	</li>
+</ul>
+<p>Refer to the <a href="http://jira.icefaces.org/secure/IssueNavigator.jspa?reset=true&pid=10030&fixfor=10181" target="_blank">
+	ICEpdf JIRA Change Log</a> for detailed information on all the changes included in this release.</p>
+<!-- Start v3.0.0 release notes-->	
+<h2><a name="Changes_30"></a>Changes in v3.0</h2>
 <p>ICEpdf v3.0 is a certified production release that introduces
 ICEpdf as an open source project. Please visit the community site at
 <a target="_blank" href="http://www.icepdf.org">http://www.icepdf.org</a>
@@ -320,7 +374,7 @@ issue tracker.
 <ul>
 <li>
 <p>JDK 1.6.0_10 introduced a regression which affects the
-performance of the XOR draw operation. This issue can be resolved with
+performance of the XOR draw operation in ICEpdf 3.0.1 and earlier. This issue can be resolved with
 the system property -Dsun.java2d.d3d=false. More information on this
 issue can be found at <a target="_blank" href="http://bugs.sun.com/bugdatabase/view_bug.do;jsessionid=1eab0b38c1a1f182447c78f2e988?bug_id=6792551">
 Bug ID 6792551</a>.</p>
