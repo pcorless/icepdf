@@ -152,8 +152,8 @@ public class OFont implements FontFile {
 
     public FontFile deriveFont(float pointsize) {
         OFont font = new OFont(this);
-        // clear font metric cache if we change the font's transform
-        if (font.getSize() != (this.awtFont.getSize())){
+        // clear font metric cache if we change the font's size
+        if (font.getSize() != pointsize){
             this.echarAdvanceCache.clear();
         }
         font.awtFont = this.awtFont.deriveFont(pointsize);
