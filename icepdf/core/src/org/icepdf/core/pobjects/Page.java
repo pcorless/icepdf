@@ -37,6 +37,8 @@ import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.io.SequenceInputStream;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.TextSprite;
+import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
@@ -50,6 +52,7 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -129,9 +132,6 @@ public class Page extends Dictionary implements MemoryManageable {
     // Container for all shapes stored on page
     private Shapes shapes = null;
 
-    // extracted text from page
-    private Vector<StringBuffer> extractedText;
-
     // the collection of objects listening for page paint events
     private Vector<PaintPageListener> paintPageListeners = new Vector<PaintPageListener>();
 
@@ -201,12 +201,6 @@ public class Page extends Dictionary implements MemoryManageable {
             if (shapes != null) {
                 shapes.dispose();
                 shapes = null;
-            }
-
-            // clear extracted text
-            if (extractedText != null) {
-                extractedText.clear();
-                extractedText = null;
             }
 
             // work through resources and null any images in the image hash
@@ -380,6 +374,7 @@ public class Page extends Dictionary implements MemoryManageable {
             }
             // set the initiated flag
             isInited = true;
+            shapes.getPageText().toString();
 
         }catch(InterruptedException e){
             // keeps shapes vector so we can paint what we have but make init state as false
@@ -1018,20 +1013,37 @@ public class Page extends Dictionary implements MemoryManageable {
     }
 
     /**
-     * Gets a vector of Strings where each index represents a text block inside
-     * this page's content streams.  Due to limitations in how PDF documents are encoded,
-     * it is not always possible to extract valid ASCII or unicode text and order
-     * is not always guaranteed.
+     * Gest the PageText data structure for this page.  PageText is made up
+     * of lines, words and glyphs which can be used for searches, text extraction
+     * and text highlighting.  The coordinates system has been normalized
+     * to page space.
+     *
+     * @return list of text sprites for the given page.
+     */
+    public synchronized PageText getViewText(){
+        if (!isInited){
+            init();
+        }
+        return shapes.getPageText();
+    }
+
+    /**
+     * Gest the PageText data structure for this page using an accelerated
+     * parsing technique that ignores none text elements. This method should
+     * be used for straight text extraction.
      *
      * @return vector of Strings of all text objects inside the specified page.
      */
-    public synchronized Vector<StringBuffer> getText() {
+    public synchronized PageText getText() {
 
         // we only do this once per page
-        if (extractedText != null) {
-            return extractedText;
+        if (isInited) {
+            if (shapes != null && shapes.getPageText() != null){
+                return shapes.getPageText();
+            }
         }
 
+        Shapes textBlockShapes = null;
         try{
             /**
              * Finally iterate through the contents vector and concat all of the
@@ -1064,7 +1076,7 @@ public class Page extends Dictionary implements MemoryManageable {
                 try {
                     ContentParser cp = new ContentParser(library, resources);
                     // custom parsing for text extraction, should be faster
-                    extractedText = cp.parseTextBlocks(sis);
+                    textBlockShapes = cp.parseTextBlocks(sis);
                 }
                 catch (Exception e) {
                     logger.log(Level.FINE, "Error getting page text.", e);
@@ -1084,7 +1096,12 @@ public class Page extends Dictionary implements MemoryManageable {
             isInited = false;
             logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
         }
-        return extractedText;
+        if (textBlockShapes != null && textBlockShapes.getPageText() != null){
+            return textBlockShapes.getPageText();
+        }
+        else {
+            return null;
+        }
     }
 
     /**

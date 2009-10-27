@@ -318,8 +318,10 @@ public class SearchPanel extends JPanel implements ActionListener,
                 listModel.removeAllElements();
 
                 // start a new search text task
+                Container viewContainer =controller.getDocumentViewController().getViewContainer();
                 searchTextTask = new SearchTextTask(document, this,
-                        searchTextField.getText(), messageBundle);
+                        searchTextField.getText(), messageBundle,
+                        viewContainer);
                 isSearching = true;
 
                 // set state of search button
@@ -369,7 +371,7 @@ public class SearchPanel extends JPanel implements ActionListener,
             }
             // update the text when the search is completed
             if (searchTextTask.isDone() || !isSearching) {
-                Toolkit.getDefaultToolkit().beep();
+//                Toolkit.getDefaultToolkit().beep();
                 // update search status
                 findMessage.setText(searchTextTask.getFinalMessage());
                 timer.stop();

@@ -33,10 +33,13 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.AffineTransform;
+import java.util.ArrayList;
 
 /**
  * <p>This class represents text which will be rendered to the a graphics context.
@@ -56,9 +59,16 @@ public class TextSprite {
     private final static boolean OPTIMIZED_DRAWING_ENABLED =
             Defs.booleanProperty("org.icepdf.core.text.optimized", true);
 
-    // private Vector textObjects;
-    private float[][] textObjects;
-    private int count;
+    // child GlyphText objects
+    private ArrayList<GlyphText> glyphTexts;
+
+    // text bounds, including all child Glyph sprites, in glyph space
+    // this bound is used during painting to respect painting clip.
+    Rectangle2D.Float bounds;
+
+    // space reference for where glyph
+    private AffineTransform graphicStateTransform;
+
     // stroke color
     private Color strokeColor;
     // the write
@@ -66,17 +76,16 @@ public class TextSprite {
     // Font used to paint text
     private FontFile font;
 
-    // string bounds
-    Rectangle2D.Float bounds;
-
     /**
      * <p>Creates a new TextSprit object.</p>
      *
      * @param font font used when painting glyphs.
      * @param size size of the font in user space
      */
-    public TextSprite(FontFile font, int size) {
-        textObjects = new float[size][3];
+    public TextSprite(FontFile font, int size, AffineTransform graphicStateTransform) {
+        glyphTexts = new ArrayList<GlyphText>(size);
+        // all glyphs in text share this ctm
+        this.graphicStateTransform = graphicStateTransform;
         this.font = font;
         bounds = new Rectangle2D.Float();
     }
@@ -90,10 +99,8 @@ public class TextSprite {
      * @param y         y-coordinate to paint.
      * @param width     width of character from font.
      */
-    public void addText(char character, float x, float y, float width) {
-        textObjects[count][0] = x;
-        textObjects[count][1] = y;
-        textObjects[count][2] = (int) character;
+    // todo add tranform
+    public GlyphText addText(char character, char unicode, float x, float y, float width) {
 
         // keep track of the text total bound, important for shapes painting.
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
@@ -109,17 +116,50 @@ public class TextSprite {
             w = (float) font.getMaxCharBounds().getWidth();
         }
         // zero height will not intersect with clip rectangle
-        // todo: for reliable text selection we have to calculate bounds based
-        // on individual bounds data.
+        // todo: test if this can occur, might be legacy code from old bug...
         if (h <= 0.0f) {
             h = 1.0f;
         }
         if (w <= 0.0f) {
             w = 1.0f;
         }
-        bounds.add(new Rectangle2D.Float(x, y - (float) font.getAscent(), w, h));
+        Rectangle2D.Float glyphBounds =
+                new Rectangle2D.Float(x, y - (float) font.getAscent(), w, h);
 
-        count++;
+        // add bounds to total text bounds.
+        bounds.add(glyphBounds);
+
+        // create glyph and normalize bounds.
+        GlyphText glyphText =
+                new GlyphText(x, y, glyphBounds, character, unicode);
+        glyphText.normalizeToUserSpace(graphicStateTransform);
+        glyphTexts.add(glyphText);
+        return glyphText;
+    }
+
+    /**
+     * Gets the character bounds of each glyph found in the TextSprite.
+     * @return  bounds in PDF coordinates of character bounds
+     */
+    public ArrayList<GlyphText> getGlyphSprites() {
+        return glyphTexts;
+    }
+
+    public AffineTransform getGraphicStateTransform() {
+        return graphicStateTransform;
+    }
+
+    /**
+     * Set the graphic state transorm on all child sprites, This is used for
+     * xForm object parsing and text selection.  There is no need to do this
+     * outside of the context parser. 
+     * @param graphicStateTransform
+     */
+    public void setGraphicStateTransform(AffineTransform graphicStateTransform) {
+        this.graphicStateTransform = graphicStateTransform;
+        for (GlyphText sprite : glyphTexts){
+            sprite.normalizeToUserSpace(this.graphicStateTransform);
+        }
     }
 
     /**
@@ -145,9 +185,9 @@ public class TextSprite {
     }
 
     public String toString() {
-        StringBuffer text = new StringBuffer(textObjects.length);
-        for (int i = 0, max = textObjects.length; i < max; i++) {
-            text.append(textObjects[i][2]);
+        StringBuffer text = new StringBuffer(glyphTexts.size());
+        for (GlyphText glyphText : glyphTexts){
+            text.append(glyphText.getUnicode());
         }
         return text.toString();
     }
@@ -157,21 +197,12 @@ public class TextSprite {
     }
 
     /**
-     * <p>Gets the list of textObjects.</p>
-     *
-     * @return list of all CharSprites contained in this TextSprite.
+     * Getst the bounds of the text that makes up this sprite.  The bounds
+     * are defined PDF space and are relative to the current CTM.
+     * @return
      */
-    public float[][] getTextObjects() {
-        return textObjects;
-    }
-
-    /**
-     * <p>Gets the size value in user space associated with this TextSprite.</p>
-     *
-     * @return size of font in user space.
-     */
-    public int getSize() {
-        return textObjects.length;
+    public Rectangle2D.Float getBounds(){
+        return bounds;
     }
 
     /**
@@ -186,21 +217,19 @@ public class TextSprite {
         // draw bounding box.
 //        drawBoundBox(g2d);
 
-        for (int i = textObjects.length - 1; i >= 0; i--) {
+        for (GlyphText glyphText : glyphTexts){
 
-            // draw glyph box
-//            drawGyphBox(g2d, (char)textObjects[i][2],
-//                        textObjects[i][0], textObjects[i][1],
-//                        oldGraphics);
-
-            // draw glyph
+            // paint glyph
             font.drawEstring(g2d,
-                    String.valueOf((char) textObjects[i][2]),
-                    textObjects[i][0],
-                    textObjects[i][1],
+                    String.valueOf((char) glyphText.getCid()),
+                    glyphText.getX(),
+                    glyphText.getY(),
                     FontFile.LAYOUT_NONE, rmode, strokeColor);
-        }
 
+            // debug glyph box
+            // draw glyph box
+//            drawGyphBox(g2d, glyphText);
+        }
     }
     /*
     private void drawBoundBox(Graphics2D gg) {
@@ -225,19 +254,15 @@ public class TextSprite {
         gg.setColor(oldColor);
         gg.setStroke(oldStroke);
     }
-
-    private void drawGyphBox(Graphics2D gg, char glyph, float x, float y,
-                             AffineTransform transform) {
-        Color oldColor = gg.getColor();
-        Stroke oldStroke = gg.getStroke();
+    */
+    /*
+    private void drawGyphBox(Graphics2D gg, GlyphText glyphSprite) {
 
         // draw the characters
-        Rectangle2D stringBounds;
         GeneralPath charOutline;
 
-        // set graphics context
-        AffineTransform oldGraphics = null;
-
+        Color oldColor = gg.getColor();
+        Stroke oldStroke = gg.getStroke();
         double scale = gg.getTransform().getScaleX();
 
         scale = 1.0f / scale;
@@ -247,26 +272,14 @@ public class TextSprite {
         gg.setStroke(new BasicStroke((float) (scale)));
         gg.setColor(Color.red);
 
-
-//        stringBounds = font.getCharBounds(glyph);
-        stringBounds = font.getMaxCharBounds();
-
-        float h = (float) stringBounds.getHeight();
-        float w = (float) stringBounds.getWidth();
-
-        charOutline = new GeneralPath();
-        charOutline.moveTo(x, y);
-        charOutline.lineTo(x + w, y);
-        charOutline.lineTo(x + w, y + h);
-        charOutline.lineTo(x, y + h);
-        charOutline.lineTo(x, y);
-
+        charOutline = new GeneralPath(glyphSprite.getGeneralPath());
         gg.draw(charOutline);
 
         gg.setColor(oldColor);
         gg.setStroke(oldStroke);
 
-    }  */
+    }
+    */
 
     /**
      * Tests if the interior of the <code>TextSprite</code> bounds intersects the
@@ -285,7 +298,7 @@ public class TextSprite {
      * Dispose this TextSprite Object.
      */
     public void dispose() {
-        textObjects = null;
+        glyphTexts.clear();
         strokeColor = null;
         font = null;
     }
