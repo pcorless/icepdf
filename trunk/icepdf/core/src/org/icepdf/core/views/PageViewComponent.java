@@ -86,4 +86,5 @@ public interface PageViewComponent {
      * @return true if the page is showing, otherwise; false. 
      */
     public boolean isShowing();
+
 }

@@ -33,6 +33,7 @@
 package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewModel;
@@ -71,6 +72,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected float userZoom = 1.0f, oldUserZoom = 1.0f;
     protected float userRotation, oldUserRotation;
     protected int currentPageIndex, oldPageIndex;
+    protected int pageBoundary = Page.BOUNDARY_CROPBOX;
 
     // page tool settings
     protected int userToolModeFlag, oldUserToolModeFlag;
@@ -85,7 +87,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected static int maxPainterThreads;
     protected static int maxPageInitThreads;
 
-    private static final long KEEP_ALIVE_TIME = 3;
+    private static final long KEEP_ALIVE_TIME = 3;      
 
     static {
         try {
@@ -247,6 +249,24 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public boolean isViewToolModeSelected(final int viewToolMode) {
         return userToolModeFlag == viewToolMode;
+    }
+
+    /**
+     * Sets the page boundtry used to paint a page.
+     *
+     * @param pageBoundary page bounds
+     */
+    public void setPageBoundary(int pageBoundary) {
+        this.pageBoundary = pageBoundary;
+    }
+
+    /**
+     * Gets the page boundry used to paint document pages.
+     *
+     * @return page boundary type as defined in the class Page.
+     */
+    public int getPageBoundary() {
+        return pageBoundary;
     }
 
     public Rectangle getPageBounds(int pageIndex) {

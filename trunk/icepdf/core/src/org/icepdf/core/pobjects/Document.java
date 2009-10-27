@@ -38,6 +38,7 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.LazyObjectLoader;
 import org.icepdf.core.util.Library;
@@ -448,7 +449,7 @@ public class Document {
             catalog.init();
         }
         catch (PDFException e) {
-             logger.log(Level.FINE, "Error loading PDF file during linear parse.", e);
+            logger.log(Level.FINE, "Error loading PDF file during linear parse.", e);
             dispose();
             throw e;
         }
@@ -462,6 +463,7 @@ public class Document {
         }
         catch (Exception e) {
             dispose();
+            logger.log(Level.SEVERE, "Error loading PDF Document.", e);
             throw new IOException(e.getMessage());
         }
     }
@@ -994,24 +996,47 @@ public class Document {
     }
 
     /**
-     * Gets a vector of StringBuffers where each index represents a text block inside
-     * the specified page number.  Due to limitations in how PDF document are encoded,
-     * it is not always possible to extract valid ASCII or unicode text and order
-     * is not always guaranteed.
+     * Exposes a page's PageText object which can be used to get text with
+     * in the PDF document.  The PageText.toString() is the simpleset way to
+     * get a pages text.  This utility call does not parse the whole stream
+     * and is best suited for text extraction functionality as it faster then
+     * @see #getPageViewText(int).  
      *
      * @param pageNumber Page number of page in which text extraction will act on.
      *                   The page number is zero-based.
-     * @return vector of StringBuffers of all text objects inside the specified page.
-     */
-    public Vector<StringBuffer> getPageText(int pageNumber) {
+     * @return page PageText data Structure. 
+     */   
+    public PageText getPageText(int pageNumber) {
         PageTree pageTree = catalog.getPageTree();
         if (pageNumber >= 0 && pageNumber < pageTree.getNumberOfPages()) {
             Page pg = pageTree.getPage(pageNumber, this);
-            Vector<StringBuffer> text = pg.getText();
+            PageText text = pg.getText();
             catalog.getPageTree().releasePage(pg, this);
             return text;
         } else {
-            return new Vector<StringBuffer>();
+            return null;
+        }
+    }
+
+    /**
+     * Exposes a page's PageText object which can be used to get text with
+     * in the PDF document.  The PageText.toString() is the simpleset way to
+     * get a pages text.  The pageText heirarch can be used to search for
+     * selected text or used to set text as highlighted.
+     *
+     * @param pageNumber Page number of page in which text extraction will act on.
+     *                   The page number is zero-based.
+     * @return page PageText data Structure.
+     */
+    public PageText getPageViewText(int pageNumber) {
+        PageTree pageTree = catalog.getPageTree();
+        if (pageNumber >= 0 && pageNumber < pageTree.getNumberOfPages()) {
+            Page pg = pageTree.getPage(pageNumber, this);
+            PageText text = pg.getViewText();
+            catalog.getPageTree().releasePage(pg, this);
+            return text;
+        } else {
+            return null;
         }
     }
 

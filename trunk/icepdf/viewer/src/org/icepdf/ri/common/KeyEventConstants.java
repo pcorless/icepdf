@@ -88,4 +88,10 @@ public class KeyEventConstants {
     public static final int KEY_CODE_GOTO = KeyEvent.VK_N;
     public static final int MODIFIER_GOTO = InputEvent.CTRL_MASK;
 
+    public static final int KEY_CODE_COPY = KeyEvent.VK_C;
+    public static final int MODIFIER_COPY = InputEvent.CTRL_MASK;
+    public static final int KEY_CODE_SELECT_ALL = KeyEvent.VK_A;
+    public static final int MODIFIER_SELECT_ALL = InputEvent.CTRL_MASK;
+    public static final int KEY_CODE_DESELECT_ALL = KeyEvent.VK_A;
+    public static final int MODIFIER_DESELECT_ALL = InputEvent.CTRL_MASK | InputEvent.SHIFT_MASK;
 }

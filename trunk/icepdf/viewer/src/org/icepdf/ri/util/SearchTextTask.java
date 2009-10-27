@@ -33,13 +33,18 @@
 package org.icepdf.ri.util;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.ri.common.SearchPanel;
 import org.icepdf.ri.common.SwingWorker;
 
+import javax.swing.*;
+import java.awt.*;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
-import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 /**
@@ -81,6 +86,8 @@ public class SearchTextTask {
 
     private boolean currentlySearching;
 
+    private Container viewContainer;
+
     /**
      * Creates a new instance of the SearchTextTask.
      *
@@ -91,12 +98,14 @@ public class SearchTextTask {
     public SearchTextTask(Document document,
                           SearchPanel searchPanel,
                           String pattern,
-                          ResourceBundle messageBundle) {
+                          ResourceBundle messageBundle,
+                          Container viewContainer) {
         this.document = document;
         this.pattern = pattern;
         this.searchPanel = searchPanel;
         lengthOfTask = document.getNumberOfPages();
         this.messageBundle = messageBundle;
+        this.viewContainer = viewContainer;
     }
 
     /**
@@ -162,6 +171,12 @@ public class SearchTextTask {
      */
     class ActualTask {
         ActualTask() {
+
+            // break on bad input, todo, extend cases.
+            if ("".equals(pattern)) {
+                return;
+            }
+
             try {
                 currentlySearching = true;
                 // Extraction of text from pdf procedure
@@ -195,23 +210,49 @@ public class SearchTextTask {
                     Format[] formats = {null, choiceForm, null};
                     messageForm.setFormats(formats);
                     Object[] messageArguments = {String.valueOf((current + 1)),
-                            new Integer(lengthOfTask), new Integer(lengthOfTask)};
+                            lengthOfTask, lengthOfTask};
 
                     dialogMessage = messageForm.format(messageArguments);
 
-                    Enumeration pageText = document.getPageText(i).elements();
                     // hits per page count
                     int hitCount = 0;
 
-                    while (pageText.hasMoreElements()) {
+                    // todo make search criteria, matchcase, etc.
+
+                    // check if search term is a phrase or a word
+                    boolean isPhrase = false;
+                    pattern = pattern.toLowerCase();
+                    if (pattern.indexOf(' ') > 0) {
+                        isPhrase = true;
+                    }
+
+                    // iterate of page sentences, words, glyphs
+                    PageText pageText = document.getPageViewText(i);
+                    pageText.clearHighlighted();
+                    ArrayList<LineText> pageLines = pageText.getPageLines();
+                    for (LineText pageLine : pageLines) {
                         if (canceled || done) {
                             setDialogMessage();
                             break;
                         }
-                        // do text string comparison
-                        String text =
-                                pageText.nextElement().toString().toLowerCase();
-                        if (!"".equals(text) && !"".equals(pattern)) {
+
+                        ArrayList<WordText> lineWords = pageLine.getWords();
+
+                        // if search work then its quick, we just index search
+                        // each work
+                        if (!isPhrase) {
+                            for (WordText word : lineWords) {
+                                if (word.toString().toLowerCase().indexOf(pattern) >= 0) {
+                                    word.setHighlighted(true);
+                                    word.setHasHighlight(true);
+                                    hitCount++;
+                                }
+                            }
+                        }
+                        // lines text is bit more expensive, as we work through whole line
+                        else {
+                            // todo hook up work highlight selection...
+                            String text = lineWords.toString();
                             int offset = 0;
                             // iterate through PDF text looking for pattern
                             while (offset >= 0 && offset <= pattern.length()) {
@@ -221,12 +262,6 @@ public class SearchTextTask {
                                     setDialogMessage();
                                     break;
                                 }
-                                // stop if there is no search pattern
-                                if (text.length() < pattern.length()) {
-                                    setDialogMessage();
-                                    break;
-                                }
-
                                 offset = text.indexOf(pattern.toLowerCase());
                                 if (offset < 0) {
                                     setDialogMessage();
@@ -276,6 +311,13 @@ public class SearchTextTask {
             finally {
                 currentlySearching = false;
             }
+
+            // repaint the view container
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    viewContainer.repaint();
+                }
+            });
         }
     }
 

@@ -125,7 +125,7 @@ public class DocumentViewControllerImpl
             }
         }
     }
-    
+
     private float[] zoomLevels;
 
     private Document document;
@@ -214,7 +214,7 @@ public class DocumentViewControllerImpl
         setCurrentPageIndex(0);
         setZoom(1);
         setRotation(0);
-        setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_NONE);
+//        setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_NONE);
         setViewCursor(DocumentViewControllerImpl.CURSOR_DEFAULT);
 
     }
@@ -235,6 +235,54 @@ public class DocumentViewControllerImpl
      */
     public void setAnnotationCallback(AnnotationCallback annotationCallback) {
         this.annotationCallback = annotationCallback;
+    }
+
+    /**
+     * Clear selected text in all pages that make up the current document
+     *
+     * todo - cash select state, as it is too expensive to lock every page
+     *      - in a document to test if it has been initialized.
+     *      - likely each view will be responsible for a page selection map
+     *      - of page->selected|highlighted.
+     */
+    public void clearSelectedText(){
+//        if (document != null){
+//            Page currentPage;
+//            PageTree pageTree = document.getPageTree();
+//            for (int i= 0, max= document.getNumberOfPages(); i<max; i++){
+//                currentPage = pageTree.getPage(i, this);
+//                // uninitialized pages won't have any selections to clear.
+//                if (currentPage.isInitiated()){
+//                    currentPage.getPageText().clearSelected();
+//                }
+//                document.getPageTree().releasePage(currentPage, this);
+//            }
+//            // refresh the view.
+//            documentView.repaint();
+//        }
+    }
+
+     /**
+     * Clear highlighted text in all pages that make up the current document
+     *
+     * todo - cash select state, as it is too expensive to lock every page
+     *      - in a document to test if it has been initialized.
+     *      - likely each view will be responsible for a page selection map
+     *      - of page->selected|highlighted.
+     */
+    public void clearHighlightedText(){
+//         if (document != null){
+//            Page currentPage;
+//            PageTree pageTree = document.getPageTree();
+//            for (int i= 0, max= document.getNumberOfPages(); i<max; i++){
+//                currentPage = pageTree.getPage(i, this);
+//                // uninitialized pages won't have any selections to clear.
+//                if (currentPage.isInitiated()){
+//                    currentPage.getPageText().clearHighlighted();
+//                }
+//                document.getPageTree().releasePage(currentPage, this);
+//            }
+//        }
     }
 
     /**
@@ -723,7 +771,7 @@ public class DocumentViewControllerImpl
         } else if (currsorType == CURSOR_WAIT) {
             return Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR);
         } else if (currsorType == CURSOR_SELECT) {
-            return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
+            return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
         } else if (currsorType == CURSOR_HAND_OPEN) {
             imageName = "hand_open.gif";
         } else if (currsorType == CURSOR_HAND_CLOSE) {
@@ -734,6 +782,8 @@ public class DocumentViewControllerImpl
             imageName = "zoom_out.gif";
         } else if (currsorType == CURSOR_HAND_ANNOTATION) {
             return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        } else if ( currsorType == CURSOR_TEXT_SELECTION){
+            return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
         } else {
             return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
         }
