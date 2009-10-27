@@ -59,6 +59,10 @@ public interface DocumentViewModel {
      */
     public int DISPLAY_TOOL_ZOOM_OUT = 3;
     /**
+     * Display tool constant for adding a text selection tool.
+     */
+    public int DISPLAY_TOOL_TEXT_SELECTION = 4;
+    /**
      * Display tool constant for setting no tools
      */
     public int DISPLAY_TOOL_NONE = 8;
@@ -171,4 +175,18 @@ public interface DocumentViewModel {
      * Free resources associated with this model.
      */
     public void dispose();
+
+    /**
+     * Sets the page boundtry used to paint a page.
+     *
+     * @param pageBoundary page bounds
+     */
+    public void setPageBoundary(final int pageBoundary);
+
+    /**
+     * Gets the page boundry used to paint document pages.
+     *
+     * @return page boundary type as defined in the class Page.
+     */
+    public int getPageBoundary();
 }

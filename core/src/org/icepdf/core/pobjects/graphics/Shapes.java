@@ -33,16 +33,14 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.swing.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -85,6 +83,8 @@ public class Shapes {
     // the collection of objects listening for page paint events
     private Page parentPage;
 
+    // text extraction data structure
+    private PageText pageText = new PageText();
 
     private static int paintDelay = 250;
 
@@ -117,6 +117,10 @@ public class Shapes {
 
     public Shapes() {
 
+    }
+
+    public PageText getPageText(){
+        return pageText;
     }
 
     /**
@@ -171,8 +175,10 @@ public class Shapes {
             }
         }
         shapes.clear();
-        //shapes = null;
 
+        if (pageText != null){
+            pageText.dispose();
+        }
     }
 
     /**
@@ -224,7 +230,11 @@ public class Shapes {
                 }
             }
         }
-
+        // copy any shapes fro xForms.
+        if (o instanceof Shapes){
+            Shapes tmp = (Shapes) o;
+            pageText.getPageLines().addAll(tmp.getPageText().getPageLines());
+        }
         shapes.add(o);
 
     }

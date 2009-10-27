@@ -187,18 +187,17 @@ public abstract class AbstractDocumentView
         if (currentDocument == null) {
             return;
         }
-        // assing correct mouse state.
+        // assigning correct mouse state.
         if (documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_PAN)) {
             documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_CLOSE);
         } else if (documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_ZOOM_IN)) {
             documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_IN);
-//            viewerModel.isZoomBoxDrawingEnabled = true;
-//            viewerModel.zoomBoxStart.setLocation(e.getPoint());
         } else if (documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT)) {
             documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_OUT);
-//            viewerModel.isZoomBoxDrawingEnabled = true;
-//            viewerModel.zoomBoxStart.setLocation(e.getPoint());
         }
+
+        // deselect any selected text.
+        documentViewController.clearSelectedText();
     }
 
     /**
@@ -213,14 +212,6 @@ public abstract class AbstractDocumentView
         if (documentViewController.isToolModeSelected(DocumentViewModel.DISPLAY_TOOL_PAN)) {
             documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_OPEN);
         }
-        /*
-         * Zoom box related
-        else{
-            // release box draw flag
-            isZoomBoxDrawingEnabled = false;
-            pageComponent.repaint();
-        }
-        */
     }
 
     /**
@@ -244,7 +235,8 @@ public abstract class AbstractDocumentView
                 int y = (int) (verticalScrollbar.getValue() - (p.getY() - lastMousePosition.getY()));
 
                 // if mouse is selected we want to move the view port
-                if (documentViewController.isToolModeSelected(DocumentViewModel.DISPLAY_TOOL_PAN)) {
+                if (documentViewController.isToolModeSelected(
+                        DocumentViewModel.DISPLAY_TOOL_PAN)) {
                     horizontalScrollbar.setValue(x);
                     verticalScrollbar.setValue(y);
                 }
@@ -272,11 +264,11 @@ public abstract class AbstractDocumentView
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {
-        if (e.getAdjustable().getOrientation() == Adjustable.HORIZONTAL) {
+//        if (e.getAdjustable().getOrientation() == Adjustable.HORIZONTAL) {
 //              System.out.println("horizontal");
-        } else if (e.getAdjustable().getOrientation() == Adjustable.VERTICAL) {
+//        } else if (e.getAdjustable().getOrientation() == Adjustable.VERTICAL) {
 //              System.out.println("vertical");
-        }
+//        }
     }
 
     public void focusGained(FocusEvent e) {

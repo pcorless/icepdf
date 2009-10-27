@@ -467,6 +467,7 @@ public class SwingViewBuilder {
     public JMenuBar buildCompleteMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         addToMenuBar(menuBar, buildFileMenu());
+        addToMenuBar(menuBar, buildEditMenu());
         addToMenuBar(menuBar, buildViewMenu());
         addToMenuBar(menuBar, buildDocumentMenu());
         addToMenuBar(menuBar, buildWindowMenu());
@@ -607,6 +608,48 @@ public class SwingViewBuilder {
                 null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_EXIT, KeyEventConstants.MODIFIER_EXIT));
         if (viewerController != null && mi != null)
             viewerController.setExitMenuItem(mi);
+        return mi;
+    }
+
+    public JMenu buildEditMenu() {
+        JMenu viewMenu = new JMenu(messageBundle.getString("viewer.menu.edit.label"));
+        viewMenu.setMnemonic(messageBundle.getString("viewer.menu.edit.mnemonic").charAt(0));
+        addToMenu(viewMenu, buildCopyMenuItem());
+        viewMenu.addSeparator();
+        addToMenu(viewMenu, buildSelectAllMenuItem());
+        addToMenu(viewMenu, buildDeselectAllMenuItem());
+        viewMenu.addSeparator();
+
+        return viewMenu;
+    }
+
+    public JMenuItem buildCopyMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.edit.copy.label"),
+                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_COPY,
+                        KeyEventConstants.MODIFIER_COPY));
+        if (viewerController != null && mi != null)
+            viewerController.setCopyMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildSelectAllMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.edit.selectAll.label"),
+                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_SELECT_ALL,
+                        KeyEventConstants.MODIFIER_SELECT_ALL));
+        if (viewerController != null && mi != null)
+            viewerController.setSelectAllMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildDeselectAllMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.edit.deselectAll.label"),
+                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_DESELECT_ALL,
+                        KeyEventConstants.MODIFIER_DESELECT_ALL));
+        if (viewerController != null && mi != null)
+            viewerController.setDselectAllMenuItem(mi);
         return mi;
     }
 
@@ -1176,6 +1219,7 @@ public class SwingViewBuilder {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         addToToolBar(toolbar, buildPanToolButton());
+        addToToolBar(toolbar, buildTextSelectToolButton());
         addToToolBar(toolbar, buildZoomInToolButton());
         addToToolBar(toolbar, buildZoomOutToolButton());
         return toolbar;
@@ -1195,6 +1239,16 @@ public class SwingViewBuilder {
                 "pan", buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setPanToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildTextSelectToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.text.label"),
+                messageBundle.getString("viewer.toolbar.tool.text.tooltip"),
+                "text", buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setTextSelectToolButton(btn);
         return btn;
     }
 

@@ -60,6 +60,7 @@ import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.datatransfer.StringSelection;
 import java.awt.dnd.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -123,6 +124,10 @@ public class SwingController
     private JMenuItem printMenuItem;
     private JMenuItem exitMenuItem;
 
+    private JMenuItem copyMenuItem;
+    private JMenuItem selectAllMenuItem;
+    private JMenuItem deselectAllMenuItem;
+
     private JMenuItem fitActualSizeMenuItem;
     private JMenuItem fitPageMenuItem;
     private JMenuItem fitWidthMenuItem;
@@ -178,6 +183,7 @@ public class SwingController
     private JButton rotateRightButton;
 
     private JToggleButton panToolButton;
+    private JToggleButton textSelectToolButton;
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomOutToolButton;
 
@@ -363,6 +369,30 @@ public class SwingController
      */
     public void setExitMenuItem(JMenuItem mi) {
         exitMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setCopyMenuItem(JMenuItem mi) {
+        copyMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setSelectAllMenuItem(JMenuItem mi) {
+        selectAllMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setDselectAllMenuItem(JMenuItem mi) {
+        deselectAllMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -702,6 +732,11 @@ public class SwingController
         btn.addItemListener(this);
     }
 
+    public void setTextSelectToolButton(JToggleButton btn) {
+        textSelectToolButton = btn;
+        btn.addItemListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
@@ -877,6 +912,7 @@ public class SwingController
         setEnabled(panToolButton, opened);
         setEnabled(zoomInToolButton, opened);
         setEnabled(zoomOutToolButton, opened);
+        setEnabled(textSelectToolButton, opened);
         setEnabled(fontEngineButton, opened);
         setEnabled(facingPageViewContinuousButton, opened);
         setEnabled(singlePageViewContinuousButton, opened);
@@ -1078,7 +1114,12 @@ public class SwingController
                     documentDocumentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             documentDocumentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_HAND_OPEN);
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
+        }else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION) {
+            actualToolMayHaveChanged =
+                    documentDocumentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
+            documentDocumentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+        }else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
             actualToolMayHaveChanged =
                     documentDocumentViewController.setToolMode(
                             DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
@@ -1119,6 +1160,10 @@ public class SwingController
         reflectSelectionInButton(panToolButton,
                 documentDocumentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_PAN
+                ));
+        reflectSelectionInButton(textSelectToolButton,
+                documentDocumentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION
                 ));
         reflectSelectionInButton(zoomInToolButton,
                 documentDocumentViewController.isToolModeSelected(
@@ -1811,6 +1856,7 @@ public class SwingController
         panToolButton = null;
         zoomInToolButton = null;
         zoomOutToolButton = null;
+        textSelectToolButton = null;
 
         fontEngineButton = null;
 
@@ -2953,6 +2999,27 @@ public class SwingController
                         print(true);
                     } else if (source == printButton) {
                         print(false);
+                    } else if (source == copyMenuItem) {
+                        // todo  move copy into view controller
+                        int page = documentDocumentViewController
+                                .getCurrentPageDisplayValue();
+                        StringBuffer currentPage = document.getPageViewText(page-1)
+                                .getSelected();
+                        StringSelection ss =
+                                new StringSelection(currentPage.toString());
+
+                        Toolkit.getDefaultToolkit().getSystemClipboard().
+                                setContents(ss, null);
+                    } else if (source == selectAllMenuItem) {
+                       // todo move select all into view controller
+                       int currentPage = documentDocumentViewController.getCurrentPageDisplayValue();
+                       document.getPageViewText(currentPage-1).selectAll();
+                       documentDocumentViewController.getViewContainer().repaint();
+                    } else if (source == deselectAllMenuItem) {
+                        // todo move deselect all into view controller
+                        int currentPage = documentDocumentViewController.getCurrentPageDisplayValue();
+                        document.getPageViewText(currentPage-1).clearSelected();
+                        documentDocumentViewController.getViewContainer().repaint();
                     } else if (source == fitActualSizeMenuItem) {
                         // Clicking only seems to invoke an itemStateChanged() event,
                         //  so this is probably redundant
@@ -3093,6 +3160,11 @@ public class SwingController
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_PAN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                }
+            } else if (source == textSelectToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
                 }
             } else if (source == zoomInToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {

@@ -33,6 +33,7 @@
 package org.icepdf.core.views.swing;
 
 import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.pobjects.Page;
 
 import javax.swing.*;
 
@@ -42,4 +43,9 @@ import javax.swing.*;
 public abstract class AbstractPageViewComponent
         extends JComponent
         implements PageViewComponent {
+
+    public abstract Page getPageLock(Object lock);
+
+    public abstract void releasePageLock(Page currentPage, Object lock);
+
 }
