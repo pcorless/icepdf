@@ -320,7 +320,11 @@ public class SearchPanel extends JPanel implements ActionListener,
                 // start a new search text task
                 Container viewContainer =controller.getDocumentViewController().getViewContainer();
                 searchTextTask = new SearchTextTask(document, this,
-                        searchTextField.getText(), messageBundle,
+                        searchTextField.getText(),
+                        false,
+                        false,
+                        false,
+                        messageBundle,
                         viewContainer);
                 isSearching = true;
 

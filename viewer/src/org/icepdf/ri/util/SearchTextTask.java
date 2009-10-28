@@ -77,6 +77,9 @@ public class SearchTextTask {
 
     // String to search for
     private String pattern = "";
+    private boolean wholeWord;
+    private boolean caseSensitive;
+    private boolean r2L;
 
     // append nodes for found text.
     private SearchPanel searchPanel;
@@ -98,6 +101,9 @@ public class SearchTextTask {
     public SearchTextTask(Document document,
                           SearchPanel searchPanel,
                           String pattern,
+                          boolean wholeWord,
+                          boolean caseSensitive,
+                          boolean r2L,
                           ResourceBundle messageBundle,
                           Container viewContainer) {
         this.document = document;
@@ -106,6 +112,9 @@ public class SearchTextTask {
         lengthOfTask = document.getNumberOfPages();
         this.messageBundle = messageBundle;
         this.viewContainer = viewContainer;
+        this.wholeWord = wholeWord;
+        this.caseSensitive = caseSensitive;
+        this.r2L = r2L;
     }
 
     /**
@@ -121,7 +130,7 @@ public class SearchTextTask {
                 return new ActualTask();
             }
         };
-        worker.setThreadPriority(Thread.MIN_PRIORITY);
+        worker.setThreadPriority(Thread.NORM_PRIORITY);
         worker.start();
     }
 
@@ -173,7 +182,7 @@ public class SearchTextTask {
         ActualTask() {
 
             // break on bad input, todo, extend cases.
-            if ("".equals(pattern)) {
+            if ("".equals(pattern) || " ".equals(pattern)) {
                 return;
             }
 
@@ -182,6 +191,26 @@ public class SearchTextTask {
                 // Extraction of text from pdf procedure
                 totalHitCount = 0;
                 current = 0;
+
+                // check criteria for case sensitivity.
+                if (!caseSensitive){
+                    pattern = pattern.toLowerCase();
+                }
+
+                // parse search term out into words, so we can match
+                // them against WordText
+                ArrayList<String> searchPhrase = phraseParser(pattern);
+
+                // found word index to keep track of when we have found a hit
+                int searchPhraseHitCount = 0;
+                int searchPhraseFoundCount = searchPhrase.size();
+
+                // list of found words for highlighting, as hits can span
+                // lines and pages
+                ArrayList<WordText> searchPhraseHits =
+                        new ArrayList<WordText>(searchPhraseFoundCount);
+
+                // iterate over each page in the document
                 for (int i = 0; i < document.getNumberOfPages(); i++) {
                     // break if needed
                     if (canceled || done) {
@@ -211,66 +240,95 @@ public class SearchTextTask {
                     messageForm.setFormats(formats);
                     Object[] messageArguments = {String.valueOf((current + 1)),
                             lengthOfTask, lengthOfTask};
-
                     dialogMessage = messageForm.format(messageArguments);
 
                     // hits per page count
                     int hitCount = 0;
 
-                    // todo make search criteria, matchcase, etc.
-
-                    // check if search term is a phrase or a word
-                    boolean isPhrase = false;
-                    pattern = pattern.toLowerCase();
-                    if (pattern.indexOf(' ') > 0) {
-                        isPhrase = true;
-                    }
-
                     // iterate of page sentences, words, glyphs
-                    PageText pageText = document.getPageViewText(i);
+                    PageText pageText = document.getPageText(i);
+                    // clear previous searches.
                     pageText.clearHighlighted();
+
                     ArrayList<LineText> pageLines = pageText.getPageLines();
                     for (LineText pageLine : pageLines) {
+
                         if (canceled || done) {
                             setDialogMessage();
                             break;
                         }
-
                         ArrayList<WordText> lineWords = pageLine.getWords();
 
-                        // if search work then its quick, we just index search
-                        // each work
-                        if (!isPhrase) {
-                            for (WordText word : lineWords) {
-                                if (word.toString().toLowerCase().indexOf(pattern) >= 0) {
-                                    word.setHighlighted(true);
-                                    word.setHasHighlight(true);
-                                    hitCount++;
+                        // compare words against search terms.
+                        String wordString;
+                        for (WordText word : lineWords) {
+                            // apply case sensitivity rule.
+                            wordString = caseSensitive?word.toString():
+                                    word.toString().toLowerCase();
+                            // word matches, we have to match full word hits
+                            if (wholeWord){
+                                if (wordString.equals(
+                                        searchPhrase.get(searchPhraseHitCount))) {
+                                    // add word to potentials
+                                    searchPhraseHits.add(word);
+                                    searchPhraseHitCount++;
+                                }
+//                                else if (wordString.length() == 1 &&
+//                                        WordText.isPunctuation(wordString.charAt(0))){
+//                                    // ignore punctuation
+//                                    searchPhraseHitCount++;
+//                                }
+                                // reset the counters.
+                                else{
+                                    searchPhraseHits.clear();
+                                    searchPhraseHitCount = 0;
                                 }
                             }
-                        }
-                        // lines text is bit more expensive, as we work through whole line
-                        else {
-                            // todo hook up work highlight selection...
-                            String text = lineWords.toString();
-                            int offset = 0;
-                            // iterate through PDF text looking for pattern
-                            while (offset >= 0 && offset <= pattern.length()) {
+                            // otherwise we look for an index of hits
+                            else{
+                                // found a potential hit, depends on the length
+                                // of searchPhrase.
+                                if (wordString.indexOf(
+                                        searchPhrase.get(searchPhraseHitCount)) >= 0) {
+                                    // add word to potentials
+                                    searchPhraseHits.add(word);
+                                    searchPhraseHitCount++;
+                                }
+//                                else if (wordString.length() == 1 &&
+//                                        WordText.isPunctuation(wordString.charAt(0))){
+//                                    // ignore punctuation
+//                                    searchPhraseHitCount++;
+//                                }
+                                // reset the counters.
+                                else{
+                                    searchPhraseHits.clear();
+                                    searchPhraseHitCount = 0;
+                                }
 
-                                // break for cancelation of task
-                                if (canceled || done) {
-                                    setDialogMessage();
-                                    break;
-                                }
-                                offset = text.indexOf(pattern.toLowerCase());
-                                if (offset < 0) {
-                                    setDialogMessage();
-                                    break;
-                                } else {
-                                    text = text.substring(offset + pattern.length());
-                                    hitCount++;
-                                }
                             }
+
+                            // check if we have found what we're looking for
+                            if (searchPhraseHitCount == searchPhraseFoundCount){
+                                // iterate of found, highlighting words
+                                for (WordText wordHit : searchPhraseHits){
+                                    wordHit.setHighlighted(true);
+                                    wordHit.setHasHighlight(true);
+                                }
+
+                                // rest counts and start over again.
+                                hitCount++;
+                                searchPhraseHits.clear();
+                                searchPhraseHitCount = 0;
+
+                                // queue repaint for page
+                                // repaint the view container
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    public void run() {
+                                        viewContainer.repaint();
+                                    }
+                                });
+                            }
+
                         }
                     }
                     // update total hit count
@@ -327,6 +385,39 @@ public class SearchTextTask {
     public String getFinalMessage() {
         setDialogMessage();
         return dialogMessage;
+    }
+
+    /**
+     * Utility for breaking the pattern up into searchable words.  Breaks are
+     * done on white spaces and punctuation. 
+     * @param pattern pattern to search words for.
+     * @return
+     */
+    private ArrayList<String> phraseParser(String pattern){
+        // trim white space, not really useful.
+        pattern = pattern.trim();
+
+        ArrayList<String> words = new ArrayList<String>();
+        char c;
+        for (int start = 0, curs= 0, max = pattern.length(); curs < max; curs++){
+            c = pattern.charAt(curs);
+            if (WordText.isWhiteSpace(c) ||
+                    WordText.isPunctuation(c)){
+                // add word segment
+                if (start!= curs){
+                    words.add(pattern.substring(start, curs));
+                }
+                // add white space  as word too.
+                words.add(pattern.substring(curs, curs+1));
+                // start
+                start = curs + 1 < max?curs+1:start;
+            }
+            else if (curs + 1 == max){
+                words.add(pattern.substring(start, curs+1));
+            }
+
+        }
+        return words;
     }
 
     /**

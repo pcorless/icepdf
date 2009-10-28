@@ -85,13 +85,21 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected static boolean detectPunctuation(GlyphText sprite) {
         int c = sprite.getUnicode();
+        return isPunctuation(c);
+    }
+
+    protected static boolean detectWhiteSpace(GlyphText sprite) {
+        int c = sprite.getUnicode();
+        return isWhiteSpace(c);
+    }
+
+    public static boolean isPunctuation(int c) {
         return ((c == '.') || (c == ',') || (c == '?') || (c == '!') ||
                 (c == ':') || (c == ';') || (c == '"') || (c == '\'')
                 || (c == '/') || (c == '\\') || (c == '`') || (c == '#'));
     }
 
-    protected static boolean detectWhiteSpace(GlyphText sprite) {
-        int c = sprite.getUnicode();
+    public static boolean isWhiteSpace(int c) {
         return ((c == ' ') || (c == '\t') || (c == '\r') ||
                 (c == '\n') || (c == '\f'));
     }
