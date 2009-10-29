@@ -567,45 +567,47 @@ public class TextSelectionPageHandler implements MouseInputListener {
         gg.setStroke(new BasicStroke(1.0f));
 
         Page currentPage = pageViewComponent.getPageLock(this);
-        PageText pageText = currentPage.getViewText();
-        if (pageText != null) {
-            // get page transformation
-            AffineTransform pageTransform = currentPage.getPageTransform(
-                    documentViewModel.getPageBoundary(),
-                    documentViewModel.getViewRotation(),
-                    documentViewModel.getViewZoom());
-            // paint the sprites                                                     
-            GeneralPath textPath;
-            for (LineText lineText : pageText.getPageLines()) {
-                // paint whole line
-                if (lineText.isSelected()) {
-                    textPath = new GeneralPath(lineText.getGeneralPath());
-                    textPath.transform(pageTransform);
-                    gg.fill(textPath);
-                }
-                // check children for selection
-                else {
-                    for (WordText wordText : lineText.getWords()) {
-                        // paint whole word
-                        if (wordText.isSelected() || wordText.isHighlighted()) {
-                            textPath = new GeneralPath(wordText.getGeneralPath());
-                            textPath.transform(pageTransform);
-                            // tmp highlight hack.
-                            if (wordText.isHighlighted()) {
-                                gg.setColor(Color.yellow);
+        if (currentPage != null && currentPage.isInitiated()) {
+            PageText pageText = currentPage.getViewText();
+            if (pageText != null) {
+                // get page transformation
+                AffineTransform pageTransform = currentPage.getPageTransform(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom());
+                // paint the sprites
+                GeneralPath textPath;
+                for (LineText lineText : pageText.getPageLines()) {
+                    // paint whole line
+                    if (lineText.isSelected()) {
+                        textPath = new GeneralPath(lineText.getGeneralPath());
+                        textPath.transform(pageTransform);
+                        gg.fill(textPath);
+                    }
+                    // check children for selection
+                    else {
+                        for (WordText wordText : lineText.getWords()) {
+                            // paint whole word
+                            if (wordText.isSelected() || wordText.isHighlighted()) {
+                                textPath = new GeneralPath(wordText.getGeneralPath());
+                                textPath.transform(pageTransform);
+                                // tmp highlight hack.
+                                if (wordText.isHighlighted()) {
+                                    gg.setColor(Color.yellow);
+                                }
+                                gg.fill(textPath);
+                                if (wordText.isHighlighted()) {
+                                    gg.setColor(new Color(0, 119, 255));
+                                }
                             }
-                            gg.fill(textPath);
-                            if (wordText.isHighlighted()) {
-                                gg.setColor(new Color(0, 119, 255));
-                            }
-                        }
-                        // check children
-                        else {
-                            for (GlyphText glyph : wordText.getGlyphs()) {
-                                if (glyph.isSelected()) {
-                                    textPath = new GeneralPath(glyph.getGeneralPath());
-                                    textPath.transform(pageTransform);
-                                    gg.fill(textPath);
+                            // check children
+                            else {
+                                for (GlyphText glyph : wordText.getGlyphs()) {
+                                    if (glyph.isSelected()) {
+                                        textPath = new GeneralPath(glyph.getGeneralPath());
+                                        textPath.transform(pageTransform);
+                                        gg.fill(textPath);
+                                    }
                                 }
                             }
                         }
