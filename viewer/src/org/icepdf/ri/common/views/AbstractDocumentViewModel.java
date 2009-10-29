@@ -119,6 +119,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         pageInitilizationThreadPool.setThreadFactory(new ThreadFactory() {
             public Thread newThread(java.lang.Runnable command) {
                 Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-pageInitializer");
                 newThread.setPriority(Thread.NORM_PRIORITY);
                 return newThread;
             }
@@ -132,6 +133,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         pagePainterThreadPool.setThreadFactory(new ThreadFactory() {
             public Thread newThread(java.lang.Runnable command) {
                 Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-pagePainter");
                 newThread.setPriority(Thread.NORM_PRIORITY);
                 return newThread;
             }
@@ -260,11 +262,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.pageBoundary = pageBoundary;
     }
 
-    /**
-     * Gets the page boundry used to paint document pages.
-     *
-     * @return page boundary type as defined in the class Page.
-     */
     public int getPageBoundary() {
         return pageBoundary;
     }
