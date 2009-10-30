@@ -36,6 +36,7 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
@@ -45,6 +46,7 @@ import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.common.AnnotationHandler;
 import org.icepdf.core.views.common.TextSelectionPageHandler;
+import org.icepdf.ri.common.search.DocumentSearchController;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;
@@ -395,6 +397,19 @@ public class PageViewComponentImpl extends
             }
             // paint annotations
             annotationHandler.paintAnnotations(g);
+
+            // test for search refresh
+             // check highlight state
+            // todo clean up search highlight call, as text selection will need similar idea.
+            DocumentSearchController searchController =
+                    documentViewController.getParentController().getDocumentSearchController();
+            // fast but feels dirty. 
+            Page currentPage = this.getPageLock(this);
+            PageText pageText = currentPage.getViewText();
+            this.releasePageLock(currentPage,  this);
+            if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)){
+                 searchController.searchHighlightPage(pageIndex);    
+            }
 
             // paint selected test sprites.
             textSelectionHandler.paintSelectedText(g);

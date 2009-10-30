@@ -35,7 +35,7 @@ public class WordText extends AbstractText implements TextSelect {
         // sets the shadow colour of the decorator.
         try {
             spaceFraction = Defs.sysPropertyInt(
-                    "org.icepdf.core.views.page.text.spaceFraction", 4);
+                    "org.icepdf.core.views.page.text.spaceFraction", 3);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text selection colour");

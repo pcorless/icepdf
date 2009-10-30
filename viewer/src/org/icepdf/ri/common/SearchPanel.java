@@ -77,6 +77,13 @@ public class SearchPanel extends JPanel implements ActionListener,
 
     // search start button
     private JButton searchButton;
+    // clear search
+    private JButton clearSearchButton;
+
+    // search option check boxes.
+    private JCheckBox caseSensitiveCheckbox;
+    private JCheckBox wholeWordCheckbox;
+
 
     // show progress of search
     protected JProgressBar progressBar = null;
@@ -102,14 +109,14 @@ public class SearchPanel extends JPanel implements ActionListener,
     /**
      * Create a new instance of SearchPanel.
      *
-     * @param doc document that will be searched
+     * @param controller root SwingController
      */
-    public SearchPanel(SwingController controller, Document doc) {
+    public SearchPanel(SwingController controller) {
         super(true);
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
         setGui();
-        setDocument(doc);
+        setDocument(controller.getDocument());
     }
 
     public void setDocument(Document doc) {
@@ -122,6 +129,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 try {
                     Thread.sleep(50L);
                 } catch (Exception e) {
+                    // intentional
                 }
             }
         }
@@ -156,17 +164,15 @@ public class SearchPanel extends JPanel implements ActionListener,
          * Setup GUI objects
          */
 
-
         // build the Jlist for search results
-        JScrollPane scrollPane = new JScrollPane();
+
         listModel = new DefaultListModel();
         // Create the list and put it in a scroll pane.
         list = new JList(listModel);
-        //list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addListSelectionListener(this);
-        scrollPane.getViewport().add(list);
-        scrollPane.setMinimumSize(new Dimension(scrollPane.getMinimumSize().width,
-                100));
+        JScrollPane scrollPane = new JScrollPane(list);
+        scrollPane.setPreferredSize(new Dimension(100, 250));
 
         // search Label
         JLabel searchLabel = new JLabel(messageBundle.getString("viewer.utilityPane.search.searchText.label"));
@@ -179,13 +185,27 @@ public class SearchPanel extends JPanel implements ActionListener,
         progressBar = new JProgressBar(0, 1);
         progressBar.setValue(0);
         progressBar.setVisible(false);
-        findMessage = new JLabel(messageBundle.getString("viewer.utilityPane.search.searching.msg"));
+        findMessage = new JLabel(
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching.msg"));
         findMessage.setVisible(false);
         timer = new Timer(ONE_SECOND, new TimerListener());
 
         // setup search button
-        searchButton = new JButton(messageBundle.getString("viewer.utilityPane.search.searchButton.label"));
+        searchButton = new JButton(messageBundle.getString(
+                "viewer.utilityPane.search.searchButton.label"));
         searchButton.addActionListener(this);
+
+        // clear search button
+        clearSearchButton = new JButton(messageBundle.getString(
+                "viewer.utilityPane.search.clearSearchButton.label"));
+        clearSearchButton.addActionListener(this);
+
+        // search options check boxes.
+        wholeWordCheckbox = new JCheckBox(messageBundle.getString(
+                "viewer.utilityPane.search.wholeWordCheckbox.label"));
+        caseSensitiveCheckbox = new JCheckBox(messageBundle.getString(
+                "viewer.utilityPane.search.caseSenstiveCheckbox.label"));
 
         /**
          * Build search GUI
@@ -210,43 +230,61 @@ public class SearchPanel extends JPanel implements ActionListener,
         addGB(searchPanel, searchLabel, 0, 0, 2, 1);
 
         // add the search input field
-        constraints.insets = new Insets(1, 5, 1, 2);
+        constraints.insets = new Insets(1, 1, 1, 5);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, searchTextField, 0, 1, 1, 1);
+        addGB(searchPanel, searchTextField, 0, 1, 2, 1);
 
         // add start/stop search button
         constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.EAST;
+        addGB(searchPanel, searchButton, 0, 2, 1, 1);
+
+        // add clear search button
+        constraints.insets = new Insets(1, 1, 1, 5);
         constraints.weightx = 0;
-        constraints.fill = GridBagConstraints.NONE;
-        addGB(searchPanel, searchButton, 1, 1, 1, 1);
+        constraints.fill = GridBagConstraints.REMAINDER;
+        addGB(searchPanel, clearSearchButton, 1, 2, 1, 1);
+
+        // add case sensitive button
+        constraints.insets = new Insets(5, 1, 1, 5);
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        addGB(searchPanel, caseSensitiveCheckbox, 0, 3, 2, 1);
+
+        // add whole word checkbox
+        constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        addGB(searchPanel, wholeWordCheckbox, 0, 4, 2, 1);
 
         // Add Results label
-        constraints.weightx = 1.0;
         constraints.insets = new Insets(10, 5, 1, 5);
-        addGB(searchPanel,
-                new JLabel(messageBundle.getString("viewer.utilityPane.search.results.label")),
-                0, 2, 2, 1);
+        constraints.fill = GridBagConstraints.NONE;
+        addGB(searchPanel, new JLabel(messageBundle.getString(
+                "viewer.utilityPane.search.results.label")),
+                0, 5, 2, 1);
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(1, 5, 1, 5);
-        addGB(searchPanel, scrollPane, 0, 3, 2, 1);
+        addGB(searchPanel, scrollPane, 0, 6, 2, 1);
 
         // add find message
         constraints.insets = new Insets(1, 5, 1, 5);
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
-        addGB(searchPanel, findMessage, 0, 4, 2, 1);
+        addGB(searchPanel, findMessage, 0, 7, 2, 1);
 
         // add progress
         constraints.insets = new Insets(5, 5, 1, 5);
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, progressBar, 0, 5, 2, 1);
+        addGB(searchPanel, progressBar, 0, 8, 2, 1);
 
         constraints.weighty = 1.0;
-        addGB(searchPanel, new JLabel(), 0, 6, 2, 1);
+        addGB(searchPanel, new JLabel(), 0, 9, 2, 1);
+
     }
 
     public void setVisible(boolean flag) {
@@ -318,36 +356,56 @@ public class SearchPanel extends JPanel implements ActionListener,
                 listModel.removeAllElements();
 
                 // start a new search text task
-                Container viewContainer =controller.getDocumentViewController().getViewContainer();
-                searchTextTask = new SearchTextTask(document, this,
+                searchTextTask = new SearchTextTask(this,
+                        controller,
                         searchTextField.getText(),
+                        wholeWordCheckbox.isSelected(),
+                        caseSensitiveCheckbox.isSelected(),
                         false,
-                        false,
-                        false,
-                        messageBundle,
-                        viewContainer);
+                        messageBundle);
                 isSearching = true;
 
                 // set state of search button
-                searchButton.setText(messageBundle.getString("viewer.utilityPane.search.stopButton.label"));
+                searchButton.setText(messageBundle.getString(
+                        "viewer.utilityPane.search.stopButton.label"));
+                clearSearchButton.setEnabled(false);
+                caseSensitiveCheckbox.setEnabled(false);
+                wholeWordCheckbox.setEnabled(false);
 
                 // start the task and the timer
                 searchTextTask.go();
                 timer.start();
             } else {
                 isSearching = false;
+                clearSearchButton.setEnabled(true);
+                caseSensitiveCheckbox.setEnabled(true);
+                wholeWordCheckbox.setEnabled(true);
             }
+        } else if (source == clearSearchButton) {
+            // clear input
+            searchTextField.setText("");
+
+            // clear hit list
+            list.setSelectedIndex(-1);
+            listModel.removeAllElements();
+            // refresh list
+            list.validate();
+            list.repaint();
+            // reset high light states.
+            controller.getDocumentSearchController().clearAllSearchHighlight();
+            controller.getDocumentViewController().getViewContainer().repaint();
         }
     }
 
     /**
      * Gridbag constructor helper
      *
+     * @param panel     parent adding component too.
      * @param component component to add to grid
      * @param x         row
      * @param y         col
-     * @param rowSpan
-     * @param colSpan
+     * @param rowSpan   rowspane of field
+     * @param colSpan   colspane of field.
      */
     private void addGB(JPanel panel, Component component,
                        int x, int y,
@@ -380,7 +438,11 @@ public class SearchPanel extends JPanel implements ActionListener,
                 findMessage.setText(searchTextTask.getFinalMessage());
                 timer.stop();
                 searchTextTask.stop();
+                // update buttons states. 
                 searchButton.setText(messageBundle.getString("viewer.utilityPane.search.searchButton.label"));
+                clearSearchButton.setEnabled(true);
+                caseSensitiveCheckbox.setEnabled(true);
+                wholeWordCheckbox.setEnabled(true);
                 // update the list
                 list.validate();
                 list.repaint();
@@ -404,6 +466,8 @@ public class SearchPanel extends JPanel implements ActionListener,
 
         /**
          * Creates a new instance of a FindEntry.
+         *
+         * @param title of found entry
          */
         FindEntry(String title) {
             super();
