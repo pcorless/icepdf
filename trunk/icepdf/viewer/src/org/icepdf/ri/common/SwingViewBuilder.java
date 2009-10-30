@@ -364,6 +364,8 @@ public class SwingViewBuilder {
      * Construct a SwingVewBuilder with all of the default settings
      *
      * @param c SwingController that will interact with the GUI
+     * @param documentViewType view type to build , single page, single column etc.
+     * @param documentPageFitMode fit mode to initially load document with.
      */
     public SwingViewBuilder(SwingController c, int documentViewType,
                             int documentPageFitMode) {
@@ -872,7 +874,8 @@ public class SwingViewBuilder {
 
             shortenDocumentOrigins(windowDocOriginList);
 
-            List windowListMenuItems = new ArrayList(Math.max(count, 1));
+            List<JMenuItem> windowListMenuItems =
+                    new ArrayList<JMenuItem>(Math.max(count, 1));
             for (int i = 0; i < count; i++) {
                 String number = Integer.toString(i + 1);
                 String label = null;
@@ -1325,7 +1328,7 @@ public class SwingViewBuilder {
     }
 
     public SearchPanel buildSearchPanel() {
-        SearchPanel searchPanel = new SearchPanel(viewerController, null);
+        SearchPanel searchPanel = new SearchPanel(viewerController);
         if (viewerController != null)
             viewerController.setSearchPanel(searchPanel);
         return searchPanel;
@@ -1514,58 +1517,10 @@ public class SwingViewBuilder {
         return jmi;
     }
 
-    /**
-     * void javax.swing.JToolBar.setRollover(boolean) does not exist in Java 1.3.
-     * Since it was introduced in Java 1.4, so we use reflection to call it,
-     * if it exists.
-     * We don't treat it as an error if this fails, since it's only an enhancement,
-     * and is not critical.
-     *
-     * @param jtoolbar javax.swing.JToolBar to call setRollover( val ) on
-     * @param val      Argument to jtoolbar.setRollover( val )
-     */
-    protected void reflectJToolBarSetRollover(JToolBar jtoolbar, boolean val) {
-        try {
-            Class toolBar = jtoolbar.getClass();
-            Method rolloverMethod =
-                    toolBar.getMethod("setRollover",
-                            Boolean.TYPE);
-            if (rolloverMethod != null) {
-                rolloverMethod.invoke(jtoolbar, (val ? Boolean.TRUE : Boolean.FALSE));
-            }
-        }
-        catch (Throwable t) {
-        }
-    }
-
-    /**
-     * void java.awt.Component.setFocusable(boolean) does not exist in Java 1.3.
-     * Since it was introduced in Java 1.4, so we use reflection to call it,
-     * if it exists.
-     * We don't treat it as an error if this fails, since it's only an enhancement,
-     * and is not critical.
-     *
-     * @param comp java.awt.Component to call setFocusable( val ) on
-     * @param val  Argument to comp.setFocusable( val )
-     */
-    protected void reflectComponentSetFocusable(Component comp, boolean val) {
-        try {
-            Class component = comp.getClass();
-            Method rolloverMethod =
-                    component.getMethod("setFocusable",
-                            Boolean.TYPE);
-            if (rolloverMethod != null) {
-                rolloverMethod.invoke(comp, (val ? Boolean.TRUE : Boolean.FALSE));
-            }
-        }
-        catch (Throwable t) {
-        }
-    }
-
     protected void commonToolBarSetup(JToolBar toolbar, boolean isMainToolBar) {
         if (!isMainToolBar) {
-            reflectComponentSetFocusable(toolbar, true);
-            reflectJToolBarSetRollover(toolbar, true);
+            toolbar.requestFocus();
+            toolbar.setRollover(true);
         }
         if (toolbarStyle == TOOL_BAR_STYLE_FIXED) {
             toolbar.setFloatable(false);

@@ -33,6 +33,8 @@
 package org.icepdf.core;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.ri.common.search.DocumentSearchController;
 
 /**
  * A Controller is the glue between the model and view components.
@@ -77,4 +79,17 @@ public interface Controller {
      * @return The user's requested zoom
      */
     public float getUserZoom();
+
+    /**
+     * Gets controller responsible for Page view UI interaction.
+     * @return document view controller.
+     */
+    public DocumentViewController getDocumentViewController();
+
+    /**
+     * Gets controller responsible for the document text searches.
+     *
+     * @return page view controller.
+     */
+    public DocumentSearchController getDocumentSearchController();
 }

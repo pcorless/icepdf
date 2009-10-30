@@ -10,6 +10,7 @@ import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.ColorUtil;
+import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
@@ -65,7 +66,7 @@ public class TextSelectionPageHandler implements MouseInputListener {
         // sets the shadow colour of the decorator.
         try {
             String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.highlightColor", "#FFF600");
+                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");
             int colorValue = ColorUtil.convertColor(color);
             highlightColor =
                     new Color(colorValue > 0 ? colorValue :
@@ -593,11 +594,11 @@ public class TextSelectionPageHandler implements MouseInputListener {
                                 textPath.transform(pageTransform);
                                 // tmp highlight hack.
                                 if (wordText.isHighlighted()) {
-                                    gg.setColor(Color.yellow);
+                                    gg.setColor(highlightColor);
                                 }
                                 gg.fill(textPath);
                                 if (wordText.isHighlighted()) {
-                                    gg.setColor(new Color(0, 119, 255));
+                                    gg.setColor(selectionColor);
                                 }
                             }
                             // check children
