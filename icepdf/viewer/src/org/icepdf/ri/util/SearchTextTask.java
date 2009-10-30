@@ -33,18 +33,16 @@
 package org.icepdf.ri.util;
 
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.graphics.text.LineText;
-import org.icepdf.core.pobjects.graphics.text.PageText;
-import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.ri.common.SearchPanel;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
+import org.icepdf.ri.common.search.DocumentSearchController;
 
 import javax.swing.*;
 import java.awt.*;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 /**
@@ -65,6 +63,10 @@ public class SearchTextTask {
     // message displayed on progress bar
     private String dialogMessage;
 
+    // canned internationalized messages.
+    private MessageFormat searchingMessageForm;
+    private MessageFormat searchDialogMessageForm;
+
     // flags for threading
     private boolean done = false;
     private boolean canceled = false;
@@ -72,14 +74,14 @@ public class SearchTextTask {
     // keep track of total hits
     private int totalHitCount = 0;
 
-    // PDF document pointer
-    private Document document = null;
-
-    // String to search for
+    // String to search for and parameters from gui
     private String pattern = "";
     private boolean wholeWord;
     private boolean caseSensitive;
     private boolean r2L;
+
+    // parent swing controller
+    SwingController controller;
 
     // append nodes for found text.
     private SearchPanel searchPanel;
@@ -94,27 +96,34 @@ public class SearchTextTask {
     /**
      * Creates a new instance of the SearchTextTask.
      *
-     * @param document    document that will be searched
-     * @param searchPanel GUI that shows search tools and results
-     * @param pattern     string to search for in the document
+     * @param searchPanel   parent search panel that start this task via an action
+     * @param controller    root controller object
+     * @param pattern       pattern to search for
+     * @param wholeWord     ture inticates whole word search
+     * @param caseSensitive case sensitive indicates cases sensitive search
+     * @param r2L           right left earch, not currently implemented.
+     * @param messageBundle message bundle used for dialog text.
      */
-    public SearchTextTask(Document document,
-                          SearchPanel searchPanel,
+    public SearchTextTask(SearchPanel searchPanel,
+                          SwingController controller,
                           String pattern,
                           boolean wholeWord,
                           boolean caseSensitive,
                           boolean r2L,
-                          ResourceBundle messageBundle,
-                          Container viewContainer) {
-        this.document = document;
+                          ResourceBundle messageBundle) {
+        this.controller = controller;
         this.pattern = pattern;
         this.searchPanel = searchPanel;
-        lengthOfTask = document.getNumberOfPages();
+        lengthOfTask = controller.getDocument().getNumberOfPages();
         this.messageBundle = messageBundle;
-        this.viewContainer = viewContainer;
+        this.viewContainer = controller.getDocumentViewController().getViewContainer();
         this.wholeWord = wholeWord;
         this.caseSensitive = caseSensitive;
         this.r2L = r2L;
+
+        // setup searching format format.
+        searchingMessageForm = setupSearchingMessageForm();
+        searchDialogMessageForm = setupSearchDialogMessageForm();
     }
 
     /**
@@ -135,14 +144,18 @@ public class SearchTextTask {
     }
 
     /**
-     * Find out how much work needs to be done.
+     * Number pages that search task has to iterate over.
+     *
+     * @return returns max number of pages in document being search.
      */
     public int getLengthOfTask() {
         return lengthOfTask;
     }
 
     /**
-     * Find out how much has been done.
+     * Gets the page that is currently being searched by this task.
+     *
+     * @return current page being processed.
      */
     public int getCurrent() {
         return current;
@@ -158,6 +171,8 @@ public class SearchTextTask {
 
     /**
      * Find out if the task has completed.
+     *
+     * @return true if task is done, false otherwise.
      */
     public boolean isDone() {
         return done;
@@ -170,6 +185,8 @@ public class SearchTextTask {
     /**
      * Returns the most recent dialog message, or null
      * if there is no current dialog message.
+     *
+     * @return current message dialog text.
      */
     public String getMessage() {
         return dialogMessage;
@@ -181,7 +198,7 @@ public class SearchTextTask {
     class ActualTask {
         ActualTask() {
 
-            // break on bad input, todo, extend cases.
+            // break on bad input
             if ("".equals(pattern) || " ".equals(pattern)) {
                 return;
             }
@@ -192,24 +209,14 @@ public class SearchTextTask {
                 totalHitCount = 0;
                 current = 0;
 
-                // check criteria for case sensitivity.
-                if (!caseSensitive){
-                    pattern = pattern.toLowerCase();
-                }
+                // get instance of the search controller
+                DocumentSearchController searchController =
+                        controller.getDocumentSearchController();
+                searchController.clearAllSearchHighlight();
+                searchController.addSearchTerm(pattern,
+                        caseSensitive, wholeWord);
 
-                // parse search term out into words, so we can match
-                // them against WordText
-                ArrayList<String> searchPhrase = phraseParser(pattern);
-
-                // found word index to keep track of when we have found a hit
-                int searchPhraseHitCount = 0;
-                int searchPhraseFoundCount = searchPhrase.size();
-
-                // list of found words for highlighting, as hits can span
-                // lines and pages
-                ArrayList<WordText> searchPhraseHits =
-                        new ArrayList<WordText>(searchPhraseFoundCount);
-
+                Document document = controller.getDocument();
                 // iterate over each page in the document
                 for (int i = 0; i < document.getNumberOfPages(); i++) {
                     // break if needed
@@ -217,146 +224,33 @@ public class SearchTextTask {
                         setDialogMessage();
                         break;
                     }
-
                     // Update task information
                     current = i;
 
-                    // Build Internationalized plural phrase.
-                    MessageFormat messageForm =
-                            new MessageFormat(messageBundle.getString(
-                                    "viewer.utilityPane.search.searching1.msg"));
-                    double[] fileLimits = {0, 1, 2};
-                    String[] fileStrings = {
-                            messageBundle.getString(
-                                    "viewer.utilityPane.search.searching1.moreFile.msg"),
-                            messageBundle.getString(
-                                    "viewer.utilityPane.search.searching1.oneFile.msg"),
-                            messageBundle.getString(
-                                    "viewer.utilityPane.search.searching1.moreFile.msg"),
-                    };
-                    ChoiceFormat choiceForm = new ChoiceFormat(fileLimits,
-                            fileStrings);
-                    Format[] formats = {null, choiceForm, null};
-                    messageForm.setFormats(formats);
+                    // update search message in search pane.
                     Object[] messageArguments = {String.valueOf((current + 1)),
                             lengthOfTask, lengthOfTask};
-                    dialogMessage = messageForm.format(messageArguments);
+                    dialogMessage = searchingMessageForm.format(messageArguments);
 
                     // hits per page count
-                    int hitCount = 0;
+                    int hitCount = searchController.searchHighlightPage(i);
 
-                    // iterate of page sentences, words, glyphs
-                    PageText pageText = document.getPageText(i);
-                    // clear previous searches.
-                    pageText.clearHighlighted();
-
-                    ArrayList<LineText> pageLines = pageText.getPageLines();
-                    for (LineText pageLine : pageLines) {
-
-                        if (canceled || done) {
-                            setDialogMessage();
-                            break;
+                    // repaint the view container, probably a little too frequent.
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            viewContainer.repaint();
                         }
-                        ArrayList<WordText> lineWords = pageLine.getWords();
+                    });
 
-                        // compare words against search terms.
-                        String wordString;
-                        for (WordText word : lineWords) {
-                            // apply case sensitivity rule.
-                            wordString = caseSensitive?word.toString():
-                                    word.toString().toLowerCase();
-                            // word matches, we have to match full word hits
-                            if (wholeWord){
-                                if (wordString.equals(
-                                        searchPhrase.get(searchPhraseHitCount))) {
-                                    // add word to potentials
-                                    searchPhraseHits.add(word);
-                                    searchPhraseHitCount++;
-                                }
-//                                else if (wordString.length() == 1 &&
-//                                        WordText.isPunctuation(wordString.charAt(0))){
-//                                    // ignore punctuation
-//                                    searchPhraseHitCount++;
-//                                }
-                                // reset the counters.
-                                else{
-                                    searchPhraseHits.clear();
-                                    searchPhraseHitCount = 0;
-                                }
-                            }
-                            // otherwise we look for an index of hits
-                            else{
-                                // found a potential hit, depends on the length
-                                // of searchPhrase.
-                                if (wordString.indexOf(
-                                        searchPhrase.get(searchPhraseHitCount)) >= 0) {
-                                    // add word to potentials
-                                    searchPhraseHits.add(word);
-                                    searchPhraseHitCount++;
-                                }
-//                                else if (wordString.length() == 1 &&
-//                                        WordText.isPunctuation(wordString.charAt(0))){
-//                                    // ignore punctuation
-//                                    searchPhraseHitCount++;
-//                                }
-                                // reset the counters.
-                                else{
-                                    searchPhraseHits.clear();
-                                    searchPhraseHitCount = 0;
-                                }
-
-                            }
-
-                            // check if we have found what we're looking for
-                            if (searchPhraseHitCount == searchPhraseFoundCount){
-                                // iterate of found, highlighting words
-                                for (WordText wordHit : searchPhraseHits){
-                                    wordHit.setHighlighted(true);
-                                    wordHit.setHasHighlight(true);
-                                }
-
-                                // rest counts and start over again.
-                                hitCount++;
-                                searchPhraseHits.clear();
-                                searchPhraseHitCount = 0;
-
-                                // queue repaint for page
-                                // repaint the view container
-                                SwingUtilities.invokeLater(new Runnable() {
-                                    public void run() {
-                                        viewContainer.repaint();
-                                    }
-                                });
-                            }
-
-                        }
-                    }
                     // update total hit count
                     totalHitCount += hitCount;
                     if (hitCount > 0) {
-
-                        // Build Internationalized plural phrase.
-                        messageForm =
-                                new MessageFormat(messageBundle.getString(
-                                        "viewer.utilityPane.search.result.msg"));
-                        fileLimits = new double[]{0, 1, 2};
-                        fileStrings = new String[]{
-                                messageBundle.getString(
-                                        "viewer.utilityPane.search.result.moreFile.msg"),
-                                messageBundle.getString(
-                                        "viewer.utilityPane.search.result.oneFile.msg"),
-                                messageBundle.getString(
-                                        "viewer.utilityPane.search.result.moreFile.msg"),
-                        };
-                        choiceForm = new ChoiceFormat(fileLimits,
-                                fileStrings);
-                        formats = new Format[]{null, choiceForm};
-                        messageForm.setFormats(formats);
-                        messageArguments = new Object[]{String.valueOf((current + 1)),
-                                new Integer(hitCount), new Integer(hitCount)};
-
+                        // update search dialog
+                        messageArguments = new Object[]{
+                                String.valueOf((current + 1)),
+                                hitCount, hitCount};
                         searchPanel.addFoundEntry(
-                                messageForm.format(messageArguments),
+                                searchDialogMessageForm.format(messageArguments),
                                 current);
                     }
                     Thread.yield();
@@ -381,43 +275,12 @@ public class SearchTextTask {
 
     /**
      * Gets the message that should be displayed when the task has completed.
+     *
+     * @return search completed or stoped final message.
      */
     public String getFinalMessage() {
         setDialogMessage();
         return dialogMessage;
-    }
-
-    /**
-     * Utility for breaking the pattern up into searchable words.  Breaks are
-     * done on white spaces and punctuation. 
-     * @param pattern pattern to search words for.
-     * @return
-     */
-    private ArrayList<String> phraseParser(String pattern){
-        // trim white space, not really useful.
-        pattern = pattern.trim();
-
-        ArrayList<String> words = new ArrayList<String>();
-        char c;
-        for (int start = 0, curs= 0, max = pattern.length(); curs < max; curs++){
-            c = pattern.charAt(curs);
-            if (WordText.isWhiteSpace(c) ||
-                    WordText.isPunctuation(c)){
-                // add word segment
-                if (start!= curs){
-                    words.add(pattern.substring(start, curs));
-                }
-                // add white space  as word too.
-                words.add(pattern.substring(curs, curs+1));
-                // start
-                start = curs + 1 < max?curs+1:start;
-            }
-            else if (curs + 1 == max){
-                words.add(pattern.substring(start, curs+1));
-            }
-
-        }
-        return words;
     }
 
     /**
@@ -426,6 +289,19 @@ public class SearchTextTask {
     private void setDialogMessage() {
 
         // Build Internationalized plural phrase.
+
+        Object[] messageArguments = {String.valueOf((current + 1)),
+                (current + 1), totalHitCount};
+
+        dialogMessage = searchDialogMessageForm.format(messageArguments);
+    }
+
+    /**
+     * Uitility for createing the searchable dialog message format.
+     * 
+     * @return  reuseable message format.
+     */
+    private MessageFormat setupSearchDialogMessageForm() {
         MessageFormat messageForm =
                 new MessageFormat(messageBundle.getString(
                         "viewer.utilityPane.search.progress.msg"));
@@ -453,9 +329,33 @@ public class SearchTextTask {
 
         Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
         messageForm.setFormats(formats);
-        Object[] messageArguments = {String.valueOf((current + 1)),
-                new Integer((current + 1)), new Integer(totalHitCount)};
+        return messageForm;
+    }
 
-        dialogMessage = messageForm.format(messageArguments);
+    /**
+     * Uitility for createing the searching message format.
+     *
+     * @return  reuseable message format.
+     */
+    private MessageFormat setupSearchingMessageForm() {
+        // Build Internationalized plural phrase.
+        MessageFormat messageForm =
+                new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.msg"));
+        double[] fileLimits = {0, 1, 2};
+        String[] fileStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.moreFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.oneFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.moreFile.msg"),
+        };
+        ChoiceFormat choiceForm = new ChoiceFormat(fileLimits,
+                fileStrings);
+        Format[] formats = {null, choiceForm, null};
+        messageForm.setFormats(formats);
+
+        return messageForm;
     }
 }
