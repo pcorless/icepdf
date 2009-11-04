@@ -160,24 +160,28 @@ public class Shapes {
         images.clear();
 
         //System.out.println("   Shapes Shapes vector  size " + images.size());
-        Enumeration shapeContent = shapes.elements();
-        while (shapeContent.hasMoreElements()) {
-            tmp = shapeContent.nextElement();
-            if (tmp instanceof Image) {
-                //System.out.println("  -------------> Found images");
-                image = (Image) tmp;
-                image.flush();
-            } else if (tmp instanceof TextSprite) {
-                ((TextSprite) tmp).dispose();
-            } else {
-                //System.out.println("  -------------> Found other " + shapes.size());
-                //tmp = null;
+        if (shapes != null){
+            Enumeration shapeContent = shapes.elements();
+            while (shapeContent.hasMoreElements()) {
+                tmp = shapeContent.nextElement();
+                if (tmp instanceof Image) {
+                    //System.out.println("  -------------> Found images");
+                    image = (Image) tmp;
+                    image.flush();
+                } else if (tmp instanceof TextSprite) {
+                    ((TextSprite) tmp).dispose();
+                } else {
+                    //System.out.println("  -------------> Found other " + shapes.size());
+                    //tmp = null;
+                }
             }
+            shapes.clear();
+            shapes = null;
         }
-        shapes.clear();
 
         if (pageText != null){
             pageText.dispose();
+            pageText = null;
         }
     }
 
@@ -284,6 +288,7 @@ public class Shapes {
      * Paint the graphics stack to the graphics context
      *
      * @param g graphics context to paint to.
+     * @param pagePainter parent page painter
      */
     public synchronized void paint(Graphics2D g, PageViewComponentImpl.PagePainter pagePainter) {
 

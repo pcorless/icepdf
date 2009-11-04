@@ -193,6 +193,7 @@ public class OnePageView extends AbstractDocumentView {
         // paint background gray
         g.setColor(backgroundColor);
         g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
-
+        // paint selection box
+        super.paintComponent(g);
     }
 }

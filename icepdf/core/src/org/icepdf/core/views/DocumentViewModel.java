@@ -36,6 +36,8 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 
 import java.awt.*;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -78,6 +80,41 @@ public interface DocumentViewModel {
      */
     public Document getDocument();
 
+    /**
+     * Gets a list of doucment pages that have selected text elements. The
+     * pages are referenced so that they will be removed automatically if
+     * the memory manage needs to dispose of a page.
+     *
+     * @return list Weakly referenced pages
+     */
+    public ArrayList<WeakReference<AbstractPageViewComponent>> getSelectedPageText();
+
+    /**
+     * Adds the specified page to the list of selected pages.
+     *
+     * @param pageViewComponent pageview component to add to list.
+     */
+    public void addSelectedPageText(AbstractPageViewComponent pageViewComponent);
+
+
+    /**
+     * Returns true if all text in the document should be in a selected state.
+     *
+     * @return true if document is in select all text text state, false otherwise.
+     */
+    public boolean isSelectAll();
+
+    /**
+     * Sets the selected all text state.
+     *
+     * @param selectAll true to select all text, false otherwise.
+     */
+    public void setSelectAll(boolean selectAll);
+
+    /**
+     * Clears all pages in a selected state.
+     */
+    public void clearSelectedPageText();
 
     public void executePageInitialization(Runnable runnable) throws InterruptedException;
 

@@ -33,20 +33,25 @@
 package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.views.common.PanningHandler;
+import org.icepdf.core.views.common.SelectionBoxHandler;
+import org.icepdf.core.views.common.ZoomHandler;
+import org.icepdf.core.views.swing.AbstractPageViewComponent;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.FocusEvent;
-import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
-import java.util.logging.Logger;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -88,9 +93,6 @@ public abstract class AbstractDocumentView
     protected static int horizontalSpace = 6;
     protected static int layoutInserts = 6;
 
-    // page mouse evnet manipulation
-    protected Point lastMousePosition = new Point();
-
     protected DocumentViewController documentViewController;
 
     protected JScrollPane documentScrollpane;
@@ -99,6 +101,12 @@ public abstract class AbstractDocumentView
 
     protected DocumentViewModelImpl documentViewModel;
 
+    // panning handler
+    protected PanningHandler panningHandler;
+    protected ZoomHandler zoomHandler;
+
+    // aid for drawing selection box
+    public SelectionBoxHandler selectionBox;
 
     /**
      * Creates a new instance of AbstractDocumentView.
@@ -116,11 +124,28 @@ public abstract class AbstractDocumentView
 
         currentDocument = this.documentViewModel.getDocument();
 
+        // selectionBox paint
+        selectionBox = new SelectionBoxHandler();
+
+        setFocusable(true);
+        // add focus listener
+        addFocusListener(this);
+
         // add mouse manipulator listeners.
         addMouseListener(this);
         addMouseMotionListener(this);
 
-        // listen for scroll bar manaipulators
+        // add custom tools
+        // panning
+        panningHandler = new PanningHandler(documentViewController);
+//        addMouseMotionListener(panningHandler);
+//        addMouseListener(panningHandler);
+        // zoom click and select zoom box.
+        zoomHandler = new ZoomHandler(documentViewController);
+        addMouseListener(zoomHandler);
+        addMouseMotionListener(zoomHandler);
+
+        // listen for scroll bar manipulators
         documentViewController.getHorizontalScrollBar().addAdjustmentListener(this);
         documentViewController.getVerticalScrollBar().addAdjustmentListener(this);
     }
@@ -145,6 +170,11 @@ public abstract class AbstractDocumentView
         documentViewController.getHorizontalScrollBar().removeAdjustmentListener(this);
         documentViewController.getVerticalScrollBar().removeAdjustmentListener(this);
 
+        // remove custom handlers
+//        removeMouseMotionListener(panningHandler);
+//        removeMouseListener(panningHandler);
+        removeMouseMotionListener(zoomHandler);
+        removeMouseListener(zoomHandler);
     }
 
     /**
@@ -153,19 +183,27 @@ public abstract class AbstractDocumentView
     public abstract void updateDocumentView();
 
     /**
-     * Handler for mouse clicks.  Zoom-in and Zoom-out tools are handled here.
+     * Handles mouse click events.  First any selected text is cleared and
+     * then if the mouse event occured over a page component the mouse
+     * coordinates are converted to page space rebroadcast. 
      *
-     * @param e  awt mouse event
+     * @param e awt mouse event
      */
     public void mouseClicked(MouseEvent e) {
-        if ((e.getModifiers() & MouseEvent.MOUSE_PRESSED) != 0) {
-            if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) {
-                int userToolModeFlag = documentViewModel.getViewToolMode();
-                if (userToolModeFlag == DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
-                    documentViewController.setZoomIn(e.getPoint());
-                } else if (userToolModeFlag == DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
-                    documentViewController.setZoomOut(e.getPoint());
-                }
+        if (documentViewController != null) {
+            // clear all selected text.
+            documentViewController.clearSelectedText();
+            // find a a page component
+            AbstractPageViewComponent pageViewComponent =
+                    isOverPageComponent(e);
+            // found a page
+            if (pageViewComponent != null) {
+                // assign focus to the clicked on page
+                pageViewComponent.requestFocus();
+                // broadcast the event.
+                pageViewComponent.mouseClicked(
+                        SwingUtilities.convertMouseEvent(this, e,
+                                pageViewComponent));
             }
         }
     }
@@ -179,96 +217,208 @@ public abstract class AbstractDocumentView
     }
 
     /**
-     * Mouse pressed, changes the mouse cursor depending on the tool selected.
+     * Mouse is press  the page selection box is removed and if the mouse is
+     * over a page component its focus is gained and it becomes the current page.
+     * Each individual tool mode has a different behavior afterwards.
+     * <p/>
+     * Annotations have first priority and the mouse event is passed on to the
+     * page component that the mouse is over for processing.
+     * <p/>
+     * If the text selection tool is selected then the event is broadcast to all
+     * pages that have selected text.  This insures the selected text on other
+     * pages matches the boounds of this selection box.
+     * <p/>
+     * If the panning tool is selected then we pass the event of the panning
+     * handler.
      *
      * @param e awt mouse event
      */
     public void mousePressed(MouseEvent e) {
-        if (currentDocument == null) {
-            return;
-        }
-        // assigning correct mouse state.
-        if (documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_PAN)) {
-            documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_CLOSE);
-        } else if (documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_ZOOM_IN)) {
-            documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_IN);
-        } else if (documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT)) {
-            documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_OUT);
-        }
-
-        // deselect any selected text.
+        // clear all selected text. 
         documentViewController.clearSelectedText();
-    }
 
-    /**
-     * Mouse released, changes the mouse cursor depending on the tool selected.
-     *
-     * @param e  awt mouse event
-     */
-    public void mouseReleased(MouseEvent e) {
-        if (currentDocument == null) {
-            return;
+        // start selection box.
+        selectionBox.resetRectangle(e.getX(), e.getY());
+
+        // check if we are over a page
+        AbstractPageViewComponent pageComponent = isOverPageComponent(e);
+        MouseEvent modeEvent = SwingUtilities.convertMouseEvent(this, e, pageComponent);
+
+        // assign focus to the clicked on page
+        if (pageComponent != null) {
+            pageComponent.requestFocus();
         }
-        if (documentViewController.isToolModeSelected(DocumentViewModel.DISPLAY_TOOL_PAN)) {
-            documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_OPEN);
-        }
-    }
-
-    /**
-     * Mouse dragged, initiates page panning if the tool is selected.
-     *
-     * @param e awt mouse event
-     */
-    public void mouseDragged(MouseEvent e) {
-        if (documentViewController != null) {
-
-            // Get data about the current view port position
-            Adjustable verticalScrollbar = documentViewController.getVerticalScrollBar();
-            Adjustable horizontalScrollbar = documentViewController.getHorizontalScrollBar();
-
-            if (verticalScrollbar != null && horizontalScrollbar != null) {
-                // calculate how much the view port should be moved
-                Point p = new Point(
-                        (int) e.getPoint().getX() - horizontalScrollbar.getValue(),
-                        (int) e.getPoint().getY() - verticalScrollbar.getValue());
-                int x = (int) (horizontalScrollbar.getValue() - (p.getX() - lastMousePosition.getX()));
-                int y = (int) (verticalScrollbar.getValue() - (p.getY() - lastMousePosition.getY()));
-
-                // if mouse is selected we want to move the view port
-                if (documentViewController.isToolModeSelected(
-                        DocumentViewModel.DISPLAY_TOOL_PAN)) {
-                    horizontalScrollbar.setValue(x);
-                    verticalScrollbar.setValue(y);
-                }
-
-                // update last position holder
-                lastMousePosition.setLocation(p);
-
-                // grab focus for keyboard events
-                documentViewController.requestViewFocusInWindow();
+        // annotations always win, we have to deal with them first.
+        if (pageComponent != null &&
+                pageComponent.isCursorOverAnnotation()) {
+            pageComponent.mousePressed(modeEvent);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+            // take care of annotations and the first click for selection 
+            if (pageComponent != null) {
+                pageComponent.mousePressed(modeEvent);
+            }
+        } else {
+            // panning icon state
+            if (documentViewController.getDocumentViewModel()
+                    .isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_PAN)) {
+                panningHandler.mousePressed(e);
             }
         }
     }
 
+    /**
+     * Mouse is release the page selection box is removed and each individual
+     * tool mode has a different behavior.
+     * <p/>
+     * Annotations have first priority and the mouse event is passed on to the
+     * page component that the mouse is over for processing.
+     * <p/>
+     * If the text selection tool is selected then the event is broadcast to all
+     * pages that have selected text.  This insures the selected text on other
+     * pages matches the boounds of this selection box.
+     * <p/>
+     * If the panning tool is selected then we pass the event of the panning
+     * handler. 
+     *
+     * @param e awt mouse event
+     */
+    public void mouseReleased(MouseEvent e) {
+
+        // update selection rectangle
+        selectionBox.updateSelectionSize(e, this);
+
+        // check if we are over a page
+        AbstractPageViewComponent pageComponent = isOverPageComponent(e);
+        MouseEvent modeEvent = SwingUtilities.convertMouseEvent(this, e, pageComponent);
+        if (pageComponent != null &&
+                pageComponent.isCursorOverAnnotation()) {
+            pageComponent.mouseReleased(modeEvent);
+        } else if (pageComponent != null &&
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+            pageComponent.mouseReleased(modeEvent);
+            // deselect rectangles on other selected pages.
+            ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
+                    documentViewModel.getSelectedPageText();
+            if (selectedPages != null &&
+                    selectedPages.size() > 0) {
+                for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
+                    AbstractPageViewComponent pageComp = page.get();
+                    if (pageComp != null) {
+                        pageComp.mouseReleased(modeEvent);
+                    }
+                }
+            }
+        } else {
+            // panning icon state
+            if (documentViewController.getDocumentViewModel()
+                    .isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_PAN)) {
+                panningHandler.mouseReleased(e);
+            }
+        }
+
+        // clear the rectangle
+        selectionBox.clearRectangle(this);
+    }
+
+    /**
+     * Mouse dragged events are broad casted to this child page components
+     * depending on the tool that is selected.
+     * <p/>
+     * When the text selection tool is selected this views selected rectangle
+     * is converted to page space and updates the selection box of the page
+     * that the pages that intersect the selected rectangle. Each individual
+     * page component is still responsible for how it handles text selection
+     * <p/>
+     * When the annotations tool is selected...
+     *
+     * @param e awt mouse event
+     */
+    public void mouseDragged(MouseEvent e) {
+        // handle text selection drags.
+        if (documentViewController != null &&
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+            // update the currently selected box
+            selectionBox.updateSelectionSize(e, this);
+            // clear previously selected pages
+            documentViewModel.clearSelectedPageText();
+            // 
+            if (documentViewModel != null) {
+                java.util.List<AbstractPageViewComponent> pages =
+                        documentViewModel.getPageComponents();
+                for (AbstractPageViewComponent page : pages) {
+                    Rectangle tmp = SwingUtilities.convertRectangle(
+                            this, selectionBox.getRectToDraw(), page);
+                    if (page.getBounds().intersects(tmp)) {
+
+                        // add the page to the page as it is marked for selection
+                        documentViewModel.addSelectedPageText(page);
+
+                        Rectangle selectRec =
+                                SwingUtilities.convertRectangle(this,
+                                        selectionBox.getRectToDraw(),
+                                        page);
+                        // set the selected region. 
+                        page.setTextSelectionRectangle(
+                                SwingUtilities.convertPoint(this, e.getPoint(), page),
+                                selectRec);
+                    }
+                }
+            }
+        }
+        else if (documentViewController != null &&
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_PAN) {
+            panningHandler.mouseDragged(e);
+        }
+        // todo add code for annotation tool handler, we can use the same
+        // selection box as text selection...
+    }
+
+    /**
+     * Mouse moved event listener,  All mouse events that are generated via
+     * a mouse moves are then passed on to the page component that the mouse
+     * event occured over.  The coordinates system of the mouse event Point
+     * is converted to the coordinates space of the found page.
+     * <p/>
+     * If there is no page then we don't do anything.
+     *
+     * @param e mouse move mouse event.
+     */
     public void mouseMoved(MouseEvent e) {
+        // push all mouse events into the page, as they are used for selection
+        // and annotation processing.
         if (documentViewController != null) {
-
-            Adjustable verticalScrollbar = documentViewController.getVerticalScrollBar();
-            Adjustable horizontalScrollbar = documentViewController.getHorizontalScrollBar();
-
-            lastMousePosition.setLocation(
-                    e.getPoint().getX() - horizontalScrollbar.getValue(),
-                    e.getPoint().getY() - verticalScrollbar.getValue());
-
+            // mouse -> page  broadcast .
+            AbstractPageViewComponent pageViewComponent =
+                    isOverPageComponent(e);
+            if (pageViewComponent != null) {
+                pageViewComponent.mouseMoved(
+                        SwingUtilities.convertMouseEvent(this, e,
+                                pageViewComponent));
+            }
+        }
+        // let the pan handler know about it too. 
+        if (documentViewController != null &&
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_PAN) {
+            panningHandler.mouseMoved(e);
         }
     }
 
+    /**
+     * Paints the selection box for this page view.
+     *
+     * @param g Java graphics context to paint to.
+     */
+    public void paintComponent(Graphics g) {
+        selectionBox.paintSelectionBox(g);
+    }
+
     public void adjustmentValueChanged(AdjustmentEvent e) {
-//        if (e.getAdjustable().getOrientation() == Adjustable.HORIZONTAL) {
-//              System.out.println("horizontal");
-//        } else if (e.getAdjustable().getOrientation() == Adjustable.VERTICAL) {
-//              System.out.println("vertical");
-//        }
+
     }
 
     public void focusGained(FocusEvent e) {
@@ -277,6 +427,23 @@ public abstract class AbstractDocumentView
 
     public void focusLost(FocusEvent e) {
 
+    }
+
+    /**
+     * Utility method for determininng if the mouse event occured over a
+     * page in the page view.
+     *
+     * @param e mouse event in this coordinates space
+     * @return component that mouse event is over or null if not over a page.
+     */
+    private AbstractPageViewComponent isOverPageComponent(MouseEvent e) {
+        // mouse -> page  broadcast .
+        Component comp = findComponentAt(e.getPoint());
+        if (comp instanceof AbstractPageViewComponent) {
+            return (AbstractPageViewComponent) comp;
+        } else {
+            return null;
+        }
     }
 
 }

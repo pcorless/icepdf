@@ -37,19 +37,15 @@ import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.graphics.text.PageText;
-import org.icepdf.core.util.ColorUtil;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.GraphicsRenderingHints;
-import org.icepdf.core.util.MemoryManager;
+import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.util.*;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.common.AnnotationHandler;
 import org.icepdf.core.views.common.TextSelectionPageHandler;
-import org.icepdf.ri.common.search.DocumentSearchController;
 
 import javax.swing.*;
-import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
@@ -92,14 +88,13 @@ import java.util.logging.Logger;
  */
 public class PageViewComponentImpl extends
         AbstractPageViewComponent
-        implements PaintPageListener, MouseInputListener,
+        implements PaintPageListener,
         FocusListener, ComponentListener {
 
     private static final Logger logger =
             Logger.getLogger(PageViewComponentImpl.class.toString());
 
     private static Color pageColor;
-
 
     static {
 
@@ -224,22 +219,30 @@ public class PageViewComponentImpl extends
         }
     }
 
-    public void init() {
-        if (inited) {
-            return;
-        }
-        inited = true;
+    /**
+     * If no DocumentView is used then the various mouse and keyboard
+     * listeners must be added tothis component.  If there is a document
+     * view then we let it delegate events to make life easier.
+     */
+    public void addPageViewComponentListeners() {
         // add listeners
         addMouseListener(this);
         addMouseMotionListener(this);
         addComponentListener(this);
         // annotation pickups
-        addMouseListener(annotationHandler);
-        addMouseMotionListener(annotationHandler);
+//        addMouseListener(annotationHandler);
+//        addMouseMotionListener(annotationHandler);
 
         // text selection mouse handler
-        addMouseMotionListener(textSelectionHandler);
-        addMouseListener(textSelectionHandler);
+//        addMouseMotionListener(textSelectionHandler);
+//        addMouseListener(textSelectionHandler);
+    }
+
+    public void init() {
+        if (inited) {
+            return;
+        }
+        inited = true;
 
         // add repaint listener
         addPageRepaintListener();
@@ -303,7 +306,7 @@ public class PageViewComponentImpl extends
     }
 
     public void releasePageLock(Page currentPage, Object lock) {
-        pageTree.releasePage(currentPage, this);
+        pageTree.releasePage(currentPage, lock);
     }
 
     public void setDocumentViewCallback(DocumentView parentDocumentView) {
@@ -398,44 +401,64 @@ public class PageViewComponentImpl extends
             // paint annotations
             annotationHandler.paintAnnotations(g);
 
-            // test for search refresh
-             // check highlight state
-            // todo clean up search highlight call, as text selection will need similar idea.
-            DocumentSearchController searchController =
-                    documentViewController.getParentController().getDocumentSearchController();
-            // fast but feels dirty. 
+            // Lazy paint of highlight and select all text states.
             Page currentPage = this.getPageLock(this);
-            PageText pageText = currentPage.getViewText();
-            this.releasePageLock(currentPage,  this);
-            if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)){
-                 searchController.searchHighlightPage(pageIndex);    
-            }
+            if (currentPage != null && currentPage.isInitiated()) {
+                PageText pageText = currentPage.getViewText();
 
-            // paint selected test sprites.
-            textSelectionHandler.paintSelectedText(g);
+                // paint any highlighted words
+                DocumentSearchController searchController =
+                    documentViewController.getParentController().getDocumentSearchController();
+                if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)) {
+                    searchController.searchHighlightPage(pageIndex);
+                }
+                // if select all we'll want to paint the selected text.
+                if (documentViewModel.isSelectAll()) {
+                    documentViewModel.addSelectedPageText(this);
+                    pageText.selectAll();
+                }
+
+                // paint selected test sprites.
+                textSelectionHandler.paintSelectedText(g);
+            }
+            this.releasePageLock(currentPage, this);
         }
     }
 
+    /**
+     * Mouse clicked event priority is given to annotation clicks.  Otherwise
+     * the selected tool state is respected.
+     * @param e awt mouse event.
+     */
     public void mouseClicked(MouseEvent e) {
 
-
-        // depending on tool state propagate mouse state
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
-            // correct click for coordinate of this component
-            Point p = e.getPoint();
-            Point offset = documentViewModel.getPageBounds(pageIndex).getLocation();
-            p.setLocation(p.x + offset.x, p.y + offset.y);
-            // request a zoom center on the new point
-            documentViewController.setZoomIn(p);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
-            // correct click for coordinate of this component
-            Point p = e.getPoint();
-            // request a zoom center on the new point
-            documentViewController.setZoomOut(p);
+        // if we have an annotation then we process it over other clicks.
+        if (annotationHandler.isCurrentAnnotation()) {
+            annotationHandler.mouseClicked(e);
         }
-
+        // otherwise handle the click. 
+        else {
+            // depending on tool state propagate mouse state
+            if (documentViewModel.getViewToolMode() ==
+                    DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+                textSelectionHandler.mouseClicked(e);
+            } else if (documentViewModel.getViewToolMode() ==
+                    DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
+                // correct click for coordinate of this component
+                Point p = e.getPoint();
+                Point offset = documentViewModel.getPageBounds(pageIndex).getLocation();
+                p.setLocation(p.x + offset.x, p.y + offset.y);
+                // request a zoom center on the new point
+                documentViewController.setZoomIn(p);
+            } else if (documentViewModel.getViewToolMode() ==
+                    DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
+                // correct click for coordinate of this component
+                Point p = e.getPoint();
+                // request a zoom center on the new point
+                documentViewController.setZoomOut(p);
+            }
+            // todo handle annotation selection.
+        }
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -449,59 +472,65 @@ public class PageViewComponentImpl extends
     public void mousePressed(MouseEvent e) {
 
         // request page focus
-        requestFocusInWindow();  
+        requestFocusInWindow();
 
-        Point p = e.getPoint();
-        Point offset = this.getLocation();
-        p.setLocation(p.x + offset.x, p.y + offset.y);
-        MouseEvent newEvent =
-                new MouseEvent((Component) e.getSource(), e.getID(), e.getWhen(),
-                        e.getModifiers(), p.x, p.y, e.getClickCount(),
-                        e.isPopupTrigger());
-
-        // mouse pressed is picked up for panning and annotations
-        // if currentAnnotation is not null then we can pan,
-        // todo replace parent glass pane event tree. 
-        if (parentDocumentView != null) {
-            parentDocumentView.mousePressed(newEvent);
+        if (annotationHandler.isCurrentAnnotation()) {
+            annotationHandler.mousePressed(e);
+        } else {
+            textSelectionHandler.mousePressed(e);
         }
 
     }
 
+    public void clearSelectedText() {
+        if (textSelectionHandler != null) {
+            textSelectionHandler.clearSelection();
+        }
+    }
+
+    public boolean isCursorOverAnnotation() {
+        return annotationHandler != null &&
+                annotationHandler.isCurrentAnnotation();
+    }
+
     public void mouseReleased(MouseEvent e) {
-        if (parentDocumentView != null &&
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_PAN) {
-            parentDocumentView.mouseReleased(e);
+
+        if (annotationHandler.isCurrentAnnotation()) {
+            annotationHandler.mouseReleased(e);
+        } else {
+            textSelectionHandler.mouseReleased(e);
         }
     }
 
     public void mouseDragged(MouseEvent e) {
-        if (parentDocumentView != null &&
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_PAN) {
-            parentDocumentView.mouseDragged(e);
-        }
-        else if (parentDocumentView != null &&
-            documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            parentDocumentView.mouseDragged(
-                    SwingUtilities.convertMouseEvent(
-                            this, e, (Component)parentDocumentView));
-        }
+
+        textSelectionHandler.mouseDragged(e);
+    }
+
+    public void setTextSelectionRectangle(Point cursorLocation, Rectangle selection) {
+        textSelectionHandler.setSelectionRectangle(cursorLocation, selection);
     }
 
     public void mouseMoved(MouseEvent e) {
-        if (parentDocumentView != null &&
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_PAN) {
-            parentDocumentView.mouseMoved(e);
+
+        // annotation get priority
+        annotationHandler.mouseMoved(e);
+
+        // if we're not over an onotation than process text selection. 
+        if (!annotationHandler.isCurrentAnnotation()) {
+            if (documentViewModel.getViewToolMode() ==
+                    DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+                textSelectionHandler.mouseMoved(e);
+            }
         }
     }
 
     public void focusGained(FocusEvent e) {
-        // todo update paging model to keep track of "focused" page for select
-        // all and other related commands.
+        int oldCurrentPage = documentViewModel.getViewCurrentPageIndex();
+        documentViewModel.setViewCurrentPageIndex(pageIndex);
+        documentViewController.firePropertyChange(PropertyConstants.DOCUMENT_CURRENT_PAGE,
+                oldCurrentPage,
+                pageIndex);
 
         // todo also add focus group into the page for annotation tabbing...
     }

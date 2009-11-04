@@ -43,6 +43,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusListener;
+import java.awt.event.FocusEvent;
 import java.util.ResourceBundle;
 
 /**
@@ -55,16 +57,16 @@ import java.util.ResourceBundle;
  * @since 1.1
  */
 public class SearchPanel extends JPanel implements ActionListener,
-        ListSelectionListener {
+        ListSelectionListener, FocusListener {
 
     // layouts constraint
     private GridBagConstraints constraints;
 
     // input for a search pattern
-    private JTextField searchTextField = null;
+    private JTextField searchTextField;
 
     // pointer to document which will be searched
-    private Document document = null;
+    private Document document;
 
     private SwingController controller;
 
@@ -86,16 +88,16 @@ public class SearchPanel extends JPanel implements ActionListener,
 
 
     // show progress of search
-    protected JProgressBar progressBar = null;
+    protected JProgressBar progressBar;
 
     // task to complete in separate thread
-    protected SearchTextTask searchTextTask = null;
+    protected SearchTextTask searchTextTask;
 
     // status label for search
-    protected JLabel findMessage = null;
+    protected JLabel findMessage;
 
     // time class to manage gui updates
-    protected Timer timer = null;
+    protected Timer timer;
 
     // refresh rate of gui elements
     private static final int ONE_SECOND = 1000;
@@ -113,6 +115,8 @@ public class SearchPanel extends JPanel implements ActionListener,
      */
     public SearchPanel(SwingController controller) {
         super(true);
+        setFocusable(true);
+        addFocusListener(this);
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
         setGui();
@@ -135,23 +139,28 @@ public class SearchPanel extends JPanel implements ActionListener,
         }
 
         document = doc;
-        if (document != null && progressBar != null)
+        if (document != null && progressBar != null){
             progressBar.setMaximum(document.getNumberOfPages());
-
-        if (searchTextField != null)
+        }
+        if (searchTextField != null){
             searchTextField.setText("");
-        if (searchButton != null)
+        }
+        if (searchButton != null){
             searchButton.setText(messageBundle.getString("viewer.utilityPane.search.tab.title"));
-        if (list != null)
+        }
+        if (list != null){
             list.setSelectedIndex(-1);
-        if (listModel != null)
+        }
+        if (listModel != null){
             listModel.clear();
+        }
         if (findMessage != null) {
             findMessage.setText("");
             findMessage.setVisible(false);
         }
-        if (progressBar != null)
+        if (progressBar != null){
             progressBar.setVisible(false);
+        }
         isSearching = false;
     }
 
@@ -287,11 +296,19 @@ public class SearchPanel extends JPanel implements ActionListener,
 
     }
 
+    public void focusGained(FocusEvent e) {
+
+    }
+
+    public void focusLost(FocusEvent e) {
+        
+    }
+
     public void setVisible(boolean flag) {
         // try and get searchText focus
         super.setVisible(flag);
         if (this.isShowing()) {
-            searchTextField.requestFocus();
+            searchTextField.requestFocus(true);
         }
     }
 

@@ -36,13 +36,16 @@ import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.Controller;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.core.views.DocumentViewModel;
+import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.images.Images;
 
@@ -53,8 +56,10 @@ import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.logging.Logger;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The DocumentViewControllerImpl is responsible for controlling the four
@@ -239,50 +244,73 @@ public class DocumentViewControllerImpl
 
     /**
      * Clear selected text in all pages that make up the current document
-     *
-     * todo - cash select state, as it is too expensive to lock every page
-     *      - in a document to test if it has been initialized.
-     *      - likely each view will be responsible for a page selection map
-     *      - of page->selected|highlighted.
      */
-    public void clearSelectedText(){
-//        if (document != null){
-//            Page currentPage;
-//            PageTree pageTree = document.getPageTree();
-//            for (int i= 0, max= document.getNumberOfPages(); i<max; i++){
-//                currentPage = pageTree.getPage(i, this);
-//                // uninitialized pages won't have any selections to clear.
-//                if (currentPage.isInitiated()){
-//                    currentPage.getPageText().clearSelected();
-//                }
-//                document.getPageTree().releasePage(currentPage, this);
-//            }
-//            // refresh the view.
-//            documentView.repaint();
-//        }
+    public void clearSelectedText() {
+        ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
+                documentViewModel.getSelectedPageText();
+        documentViewModel.setSelectAll(false);
+        if (selectedPages != null &&
+                selectedPages.size() > 0) {
+            for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
+                PageViewComponent pageComp = page.get();
+                if (pageComp != null) {
+                    pageComp.clearSelectedText();
+                }
+            }
+            selectedPages.clear();
+            documentView.repaint();
+        }
     }
 
-     /**
+    /**
      * Clear highlighted text in all pages that make up the current document
-     *
-     * todo - cash select state, as it is too expensive to lock every page
-     *      - in a document to test if it has been initialized.
-     *      - likely each view will be responsible for a page selection map
-     *      - of page->selected|highlighted.
      */
-    public void clearHighlightedText(){
-//         if (document != null){
-//            Page currentPage;
-//            PageTree pageTree = document.getPageTree();
-//            for (int i= 0, max= document.getNumberOfPages(); i<max; i++){
-//                currentPage = pageTree.getPage(i, this);
-//                // uninitialized pages won't have any selections to clear.
-//                if (currentPage.isInitiated()){
-//                    currentPage.getPageText().clearHighlighted();
-//                }
-//                document.getPageTree().releasePage(currentPage, this);
-//            }
-//        }
+    public void clearHighlightedText() {
+        DocumentSearchController searchController =
+                viewerController.getDocumentSearchController();
+        searchController.clearAllSearchHighlight();
+        documentView.repaint();
+    }
+
+    /**
+     * Sets the selectall status flag as true.  Text selection requires that
+     * a pages content has been parsed and can be quite expensive for long
+     * documents. The page component will pick up on this plag and paint the
+     * selected state.  If the content is copied to the clipboard we go
+     * thought he motion of parsing every page.
+     */
+    public void selectAllText() {
+        documentViewModel.setSelectAll(true);
+        documentView.repaint();
+    }
+
+    public String getSelectedText() {
+
+        StringBuffer selectedText = new StringBuffer();
+        // regular page selected by user mouse, keyboard or api
+        if (!documentViewModel.isSelectAll()) {
+            ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
+                    documentViewModel.getSelectedPageText();
+            if (selectedPages != null &&
+                    selectedPages.size() > 0) {
+                for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
+                    AbstractPageViewComponent pageComp = page.get();
+                    if (pageComp != null) {
+                        int pageIndex = pageComp.getPageIndex();
+                        selectedText.append(document.getPageText(pageIndex).getSelected());
+                    }
+                }
+            }
+        }
+        // select all text
+        else {
+            Document document = documentViewModel.getDocument();
+            // iterate over each page in the document
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                selectedText.append(viewerController.getDocument().getPageText(i));
+            }
+        }
+        return selectedText.toString();
     }
 
     /**
@@ -782,7 +810,7 @@ public class DocumentViewControllerImpl
             imageName = "zoom_out.gif";
         } else if (currsorType == CURSOR_HAND_ANNOTATION) {
             return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-        } else if ( currsorType == CURSOR_TEXT_SELECTION){
+        } else if (currsorType == CURSOR_TEXT_SELECTION) {
             return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
         } else {
             return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
@@ -906,8 +934,10 @@ public class DocumentViewControllerImpl
     /**
      * Zoom to a new zoom level, centered at a specific point.
      *
-     * @param zoom
-     * @param centeringPoint
+     * @param zoom                  zoom level which should be in the range of zoomLevels array
+     * @param becauseOfValidFitMode true will update ui elements with zoom state.
+     * @param centeringPoint        point to center on.
+     * @return true if the zoom level changed, false otherwise.
      */
     private boolean setZoom(float zoom, Point centeringPoint, boolean becauseOfValidFitMode) {
         if (documentViewModel == null) {
@@ -982,19 +1012,23 @@ public class DocumentViewControllerImpl
         return document.getPageTree();
     }
 
-    private Page getPageLock(int pageNumber) {
-        PageTree pageTree = getPageTree();
-        if (pageTree == null)
-            return null;
-        return pageTree.getPage(pageNumber, this);
+    public DocumentViewModel getDocumentViewModel() {
+        return documentViewModel;
     }
 
-    private void removePageLock(Page page) {
-        PageTree pageTree = getPageTree();
-        if (pageTree != null) {
-            pageTree.releasePage(page, this);
-        }
-    }
+//    private Page getPageLock(int pageNumber) {
+//        PageTree pageTree = getPageTree();
+//        if (pageTree == null)
+//            return null;
+//        return pageTree.getPage(pageNumber, this);
+//    }
+//
+//    private void removePageLock(Page page) {
+//        PageTree pageTree = getPageTree();
+//        if (pageTree != null) {
+//            pageTree.releasePage(page, this);
+//        }
+//    }
     //
     // ComponentListener interface
     //
