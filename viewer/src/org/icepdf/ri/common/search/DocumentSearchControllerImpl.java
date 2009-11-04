@@ -9,6 +9,7 @@ import org.icepdf.ri.common.SwingController;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -194,6 +195,151 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         }
 
         return hitCount;
+    }
+
+    /**
+     * Searches the page index given the search terms that have been added
+     * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
+     * hits where detected then the Page's PageText is added to the cache.
+     * <p/>
+     * This class differences from {@link #searchHighlightPage(int)} in that
+     * is returns a list of lineText fragements for each hit but the LinText
+     * is padded by pre and post words that surround the hit in the page
+     * context.
+     * <p/>
+     * This method represent the core search algorithm for this
+     * DocumentSearchController implmentation.  This method can be overriden
+     * if a different search algorithm or functinality is needed.
+     *
+     * @param pageIndex page index to search
+     * @param wordPadding word padding on either side of hit to give context
+     * to found woords in the returned LineText
+     * @return list of contectual hits for the give page.  If no hits an empty
+     * list is returned. 
+     */                                                                          
+    public ArrayList<LineText> searchHighlightPage(int pageIndex, int wordPadding){
+        // get search terms from model and search for each occurrence.
+        Collection<SearchTerm> terms = searchModel.getSearchTerms();
+
+        // search hit list
+        ArrayList<LineText>searchHits = new ArrayList<LineText>();
+
+        // get our our page text reference
+        PageText pageText = viewerController.getDocument()
+                .getPageText(pageIndex);
+
+        // some pages just don't have any text.
+        if (pageText == null){
+            return searchHits;
+        }
+
+        // we need to do the search for  each term.
+        for (SearchTerm term : terms) {
+
+            // found word index to keep track of when we have found a hit
+            int searchPhraseHitCount = 0;
+            int searchPhraseFoundCount = term.getTerms().size();
+            // list of found words for highlighting, as hits can span
+            // lines and pages
+            ArrayList<WordText> searchPhraseHits =
+                    new ArrayList<WordText>(searchPhraseFoundCount);
+
+            // start iteration over words.
+            ArrayList<LineText> pageLines = pageText.getPageLines();
+            for (LineText pageLine : pageLines) {
+                ArrayList<WordText> lineWords = pageLine.getWords();
+                // compare words against search terms.
+                String wordString;
+                WordText word;
+                for (int i= 0, max = lineWords.size(); i < max; i++) {
+                    word = lineWords.get(i);
+
+                    // apply case sensitivity rule.
+                    wordString = term.isCaseSensitive() ? word.toString() :
+                            word.toString().toLowerCase();
+                    // word matches, we have to match full word hits
+                    if (term.isWholeWord()) {
+                        if (wordString.equals(
+                                term.getTerms().get(searchPhraseHitCount))) {
+                            // add word to potentials
+                            searchPhraseHits.add(word);
+                            searchPhraseHitCount++;
+                        }
+                        // reset the counters.
+                        else {
+                            searchPhraseHits.clear();
+                            searchPhraseHitCount = 0;
+                        }
+                    }
+                    // otherwise we look for an index of hits
+                    else {
+                        // found a potential hit, depends on the length
+                        // of searchPhrase.
+                        if (wordString.indexOf(
+                                term.getTerms().get(searchPhraseHitCount)) >= 0) {
+                            // add word to potentials
+                            searchPhraseHits.add(word);
+                            searchPhraseHitCount++;
+                        }
+                        // reset the counters.
+                        else {
+                            searchPhraseHits.clear();
+                            searchPhraseHitCount = 0;
+                        }
+
+                    }
+                    // check if we have found what we're looking for
+                    if (searchPhraseHitCount == searchPhraseFoundCount) {
+
+                        LineText lineText = new LineText();
+                        int lineWordsSize = lineWords.size();
+                        ArrayList<WordText> hitWords = lineText.getWords();
+                        // add pre padding
+                        int start = i - searchPhraseHitCount - wordPadding + 1;
+                        start = start < 0? 0:start;
+                        int end = i ;
+                        end = end < 0? 0:end;
+                        for (int p = start; p < end; p++){
+                            hitWords.add(lineWords.get(p));
+                        }
+
+                        // iterate of found, highlighting words
+                        for (WordText wordHit : searchPhraseHits) {
+                            wordHit.setHighlighted(true);
+                            wordHit.setHasHighlight(true);
+                        }
+                        hitWords.addAll(searchPhraseHits);
+
+                        // add word padding to front of line
+                        start = i + 1;
+                        start = start > lineWordsSize?lineWordsSize:start;
+                        end = start + wordPadding;
+                        end = end > lineWordsSize?lineWordsSize:end;
+                        for (int p = start; p < end; p++){
+                            hitWords.add(lineWords.get(p));
+                        }
+
+                        // add the hits to our list.
+                        searchHits.add(lineText);
+
+                        searchPhraseHits.clear();
+                        searchPhraseHitCount = 0;
+                    }
+
+                }
+            }
+        }
+
+        // if we have a hit we'll add it to the model cache
+        if (searchHits.size() > 0) {
+            searchModel.addPageSearchHit(pageIndex, pageText);
+            if (logger.isLoggable(Level.FINE)){
+                logger.fine("Found search hits on page " + pageIndex +
+                        " hit count " + searchHits.size());
+            }
+        }
+
+        return searchHits;
     }
 
     /**
