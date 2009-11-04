@@ -1,6 +1,7 @@
 package org.icepdf.ri.common.search;
 
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.search.SearchTerm;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
