@@ -37,6 +37,10 @@ import org.icepdf.ri.common.SearchPanel;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.pobjects.graphics.text.LineText;
+
+import java.util.List;
+import java.util.ArrayList;
 
 import javax.swing.*;
 import java.awt.*;
@@ -234,6 +238,7 @@ public class SearchTextTask {
 
                     // hits per page count
                     int hitCount = searchController.searchHighlightPage(i);
+                    List<LineText> lineItems = searchController.searchHighlightPage(current, 2);
 
                     // repaint the view container, probably a little too frequent.
                     SwingUtilities.invokeLater(new Runnable() {
@@ -249,9 +254,11 @@ public class SearchTextTask {
                         messageArguments = new Object[]{
                                 String.valueOf((current + 1)),
                                 hitCount, hitCount};
+
                         searchPanel.addFoundEntry(
                                 searchDialogMessageForm.format(messageArguments),
-                                current);
+                                current,
+                                lineItems);
                     }
                     Thread.yield();
                 }
