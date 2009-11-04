@@ -35,8 +35,6 @@ import java.util.logging.Logger;
  * select, etc.) use the ctr key combined with a mouse click to activate the
  * annotaiton. </p>
  *
- * // todo - push mouse events out to parent
- *
  * @since 4.0
  */
 public class AnnotationHandler implements MouseInputListener {
@@ -93,13 +91,22 @@ public class AnnotationHandler implements MouseInputListener {
     private Annotation currentAnnotation;
     private boolean isMousePressed = false;
 
-
     public AnnotationHandler(AbstractPageViewComponent pageViewComponent,
                              DocumentViewModel documentViewModel) {
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
     }
 
+    /**
+     * Is the given mouse event over an annotation.  Annotation detection
+     * is actually handled by the mouse moved event and a currentAnnotation
+     * is set to represent the current annotation.
+     *  
+     * @return true if there is a current annotation false otherwise.
+     */
+    public boolean isCurrentAnnotation(){
+        return currentAnnotation != null;
+    }
 
     public void setDocumentViewController(
             DocumentViewController documentViewController) {
@@ -116,21 +123,13 @@ public class AnnotationHandler implements MouseInputListener {
     }
 
     public void mousePressed(MouseEvent e) {
-        Point p = e.getPoint();
-        Point offset = pageViewComponent.getLocation();
-        p.setLocation(p.x + offset.x, p.y + offset.y);
-        MouseEvent newEvent =
-                new MouseEvent((Component) e.getSource(), e.getID(), e.getWhen(),
-                        e.getModifiers(), p.x, p.y, e.getClickCount(),
-                        e.isPopupTrigger());
-
+       
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.
         isMousePressed = true;
         if (currentAnnotation != null) {
             pageViewComponent.repaint();
         }
-
     }
 
     public void mouseDragged(MouseEvent e) {
@@ -147,13 +146,9 @@ public class AnnotationHandler implements MouseInputListener {
 
     public void mouseMoved(MouseEvent e) {
 
-
         Page currentPage = pageViewComponent.getPageLock(this);
-
-        Point mouseLocation = (Point) e.getPoint().clone();
-
         // handle annotation mouse coordinates
-        annotationMouseMoveHandler(currentPage, mouseLocation);
+        annotationMouseMoveHandler(currentPage, e.getPoint());
 
         pageViewComponent.releasePageLock(currentPage, this);
     }

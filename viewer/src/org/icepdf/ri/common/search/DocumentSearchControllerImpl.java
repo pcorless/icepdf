@@ -3,6 +3,7 @@ package org.icepdf.ri.common.search;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.ri.common.SwingController;
 
 import java.util.ArrayList;
@@ -96,6 +97,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = viewerController.getDocument()
                 .getPageText(pageIndex);
+
+        // some pages just don't have any text. 
+        if (pageText == null){
+            return 0;
+        }
 
         // we need to do the search for  each term.
         for (SearchTerm term : terms) {
@@ -233,7 +239,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public SearchTerm addSearchTerm(String term, boolean caseSensitive,
                                     boolean wholeWord) {
-
+        // keep origional copy
         String origionalTerm = new String(term);
 
         // check criteria for case sensitivity.

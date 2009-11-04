@@ -242,7 +242,8 @@ public class TwoColumnPageView extends AbstractDocumentView {
         Rectangle clipBounds = g.getClipBounds();
         g.setColor(backgroundColor);
         g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
-
+        // paint selection box
+        super.paintComponent(g);
     }
 
 //    public void adjustmentValueChanged(AdjustmentEvent e){

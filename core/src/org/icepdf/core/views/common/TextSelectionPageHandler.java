@@ -5,12 +5,11 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.ColorUtil;
-import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
@@ -31,20 +30,20 @@ import java.util.logging.Logger;
  * <p/>
  * The highlight colour by default is #FFF600 but can be set using color or
  * hex values names using the system property "org.icepdf.core.views.page.text.selectionColor"
- *
- * // todo - push text selection box outinto the parent page view
+ * <p/>
  * // todo - use existing selection box as a crop tool.
- * // todo - push mouse events out to parent 
  *
  * @since 4.0
  */
-public class TextSelectionPageHandler implements MouseInputListener {
+public class TextSelectionPageHandler extends SelectionBoxHandler
+        implements MouseInputListener {
 
     private static final Logger logger =
             Logger.getLogger(TextSelectionPageHandler.class.toString());
 
     // text selection colour
     public static Color selectionColor;
+
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -60,8 +59,10 @@ public class TextSelectionPageHandler implements MouseInputListener {
             }
         }
     }
+
     // text highlight colour
     public static Color highlightColor;
+
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -77,18 +78,6 @@ public class TextSelectionPageHandler implements MouseInputListener {
             }
         }
     }
-
-    // dashed selection rectangle stroke
-    private final static float dash1[] = {1.0f};
-    private final static BasicStroke dashed = new BasicStroke(1.0f,
-            BasicStroke.CAP_BUTT,
-            BasicStroke.JOIN_MITER,
-            1.0f, dash1, 0.0f);
-
-    // selection rectangle used for glyph intersection aka text selection
-    private Rectangle currentRect = null;
-    private Rectangle rectToDraw = null;
-    private Rectangle previousRectDrawn = new Rectangle();
 
     // parent page component
     private AbstractPageViewComponent pageViewComponent;
@@ -112,7 +101,8 @@ public class TextSelectionPageHandler implements MouseInputListener {
     /**
      * Document view controller callback setup.  Has to be done after the
      * contructor.
-     * @param documentViewController  document controller callback.
+     *
+     * @param documentViewController document controller callback.
      */
     public void setDocumentViewController(
             DocumentViewController documentViewController) {
@@ -134,7 +124,6 @@ public class TextSelectionPageHandler implements MouseInputListener {
                 // handle text selection mouse coordinates
                 Point mouseLocation = (Point) e.getPoint().clone();
                 lineSelectHandler(currentPage, mouseLocation);
-                currentPage.getViewText().getSelected();
                 pageViewComponent.releasePageLock(currentPage, this);
             }
         }
@@ -144,7 +133,6 @@ public class TextSelectionPageHandler implements MouseInputListener {
                     DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
 
                 Page currentPage = pageViewComponent.getPageLock(this);
-
                 // handle text selection mouse coordinates
                 Point mouseLocation = (Point) e.getPoint().clone();
                 wordSelectHandler(currentPage, mouseLocation);
@@ -154,24 +142,29 @@ public class TextSelectionPageHandler implements MouseInputListener {
         }
     }
 
-    /**
-     * Invoked when a mouse button has been pressed on a component.
-     */
-    public void mousePressed(MouseEvent e) {
-
-        // todo: this also has to listen for selection from parent view, so
-        // we can deselect text from other pages....
-
-        // on mouse click clear the currently selected sprints
+    public void clearSelection(){
+         // on mouse click clear the currently selected sprints
         Page currentPage = pageViewComponent.getPageLock(this);
         // clear selected text.
         if (currentPage.getViewText() != null) {
             currentPage.getViewText().clearSelected();
         }
-        // todo: repaint should be able to do a tight repaint clip...
-        // likely have to calculate bounds of selected text.
-        pageViewComponent.repaint();
         pageViewComponent.releasePageLock(currentPage, this);
+
+        // reset painted rectangle
+        currentRect = new Rectangle(0, 0, 0, 0);
+        updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
+
+        pageViewComponent.repaint();
+    }
+
+
+    /**
+     * Invoked when a mouse button has been pressed on a component.
+     */
+    public void mousePressed(MouseEvent e) {
+
+        clearSelection();
 
         // text selection box.
         if (documentViewModel.getViewToolMode() ==
@@ -182,7 +175,6 @@ public class TextSelectionPageHandler implements MouseInputListener {
             updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
             pageViewComponent.repaint();
         }
-
     }
 
     /**
@@ -192,20 +184,19 @@ public class TextSelectionPageHandler implements MouseInputListener {
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             // update selection rectangle
-            updateSize(e);
+            updateSelectionSize(e, pageViewComponent);
 
             // write out selected text.
-            if (logger.isLoggable(Level.FINE)){
+            if (logger.isLoggable(Level.FINE)) {
                 Page currentPage = pageViewComponent.getPageLock(this);
                 // handle text selection mouse coordinates
-                currentPage.getViewText().getSelected();
+                logger.fine(currentPage.getViewText().getSelected().toString());
                 pageViewComponent.releasePageLock(currentPage, this);
             }
 
             // clear the rectangle
-            currentRect = new Rectangle(0, 0, 0, 0);
-            updateDrawableRect(pageViewComponent.getWidth(),
-                    pageViewComponent.getHeight());
+            clearRectangle(pageViewComponent);
+
             pageViewComponent.repaint();
         }
     }
@@ -241,11 +232,25 @@ public class TextSelectionPageHandler implements MouseInputListener {
                 DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
 
             // rectangle select tool
-            updateSize(e);
+            updateSelectionSize(e, pageViewComponent);
 
             // lock and unlock content before iterating over the pageText tree.
             Page currentPage = pageViewComponent.getPageLock(this);
             multilineSelectHandler(currentPage, e.getPoint());
+            pageViewComponent.releasePageLock(currentPage, this);
+        }
+    }
+
+    public void setSelectionRectangle(Point cursorLocation, Rectangle selection){
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+
+            // rectangle select tool
+            setSelectionSize(selection, pageViewComponent);
+
+            // lock and unlock content before iterating over the pageText tree.
+            Page currentPage = pageViewComponent.getPageLock(this);
+            multilineSelectHandler(currentPage, cursorLocation);
             pageViewComponent.releasePageLock(currentPage, this);
         }
     }
@@ -259,7 +264,7 @@ public class TextSelectionPageHandler implements MouseInputListener {
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             Page currentPage = pageViewComponent.getPageLock(this);
-            selectionMouseCursor(currentPage,  e.getPoint());
+            selectionMouseCursor(currentPage, e.getPoint());
             pageViewComponent.releasePageLock(currentPage, this);
         }
     }
@@ -267,10 +272,11 @@ public class TextSelectionPageHandler implements MouseInputListener {
     /**
      * Utility for detecting and changing the cursor to the text selection tool
      * when over text in the doucument.
+     *
      * @param currentPage   page to looking for text inersection on.
      * @param mouseLocation location of mouse.
      */
-    private void selectionMouseCursor(Page currentPage, Point mouseLocation){
+    private void selectionMouseCursor(Page currentPage, Point mouseLocation) {
         if (currentPage != null &&
                 currentPage.isInitiated()) {
             // get page text
@@ -294,9 +300,9 @@ public class TextSelectionPageHandler implements MouseInputListener {
                         break;
                     }
                 }
-                if (!found){
+                if (!found) {
                     documentViewController.setViewCursor(
-                                DocumentViewController.CURSOR_SELECT);
+                            DocumentViewController.CURSOR_SELECT);
                 }
             }
         }
@@ -367,7 +373,8 @@ public class TextSelectionPageHandler implements MouseInputListener {
 
     /**
      * Utility for right to left selection, NOT Correct
-     * @param pageLine page line to select.
+     *
+     * @param pageLine      page line to select.
      * @param pageTransform page transform.
      */
     private void selectRightToLeft(LineText pageLine,
@@ -391,7 +398,8 @@ public class TextSelectionPageHandler implements MouseInputListener {
 
     /**
      * Simple left to right, top down type selection model, not perfect.
-     * @param pageLine page line to select.
+     *
+     * @param pageLine      page line to select.
      * @param pageTransform page transform.
      */
     private void selectLeftToRight(LineText pageLine,
@@ -521,7 +529,8 @@ public class TextSelectionPageHandler implements MouseInputListener {
     /**
      * Utility for selecting a LineText which is usually a sentence in the
      * document.   This is usually triggered by a tripple click of the mouse
-     * @param currentPage page to select
+     *
+     * @param currentPage   page to select
      * @param mouseLocation location of mouse
      */
     private void lineSelectHandler(Page currentPage, Point mouseLocation) {
@@ -555,6 +564,7 @@ public class TextSelectionPageHandler implements MouseInputListener {
 
     /**
      * Utility for painting the highlight and selected
+     *
      * @param g graphics to paint to.
      */
     public void paintSelectedText(Graphics g) {
@@ -618,25 +628,8 @@ public class TextSelectionPageHandler implements MouseInputListener {
         }
         pageViewComponent.releasePageLock(currentPage, this);
 
-        // post paint clean up.
-        gg.setColor(oldColor);
-        gg.setStroke(oldStroke);
-        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-
-        oldColor = gg.getColor();
-        oldStroke = gg.getStroke();
-        if (currentRect != null) {
-            //Draw a rectangle on top of the image.
-            oldColor = g.getColor();
-            g.setColor(Color.gray);
-            gg.setStroke(dashed);
-            g.drawRect(rectToDraw.x, rectToDraw.y,
-                    rectToDraw.width - 1, rectToDraw.height - 1);
-            g.setColor(oldColor);
-        }
-
-        gg.setColor(oldColor);
-        gg.setStroke(oldStroke);
+        // pain selection box
+        paintSelectionBox(g);
 
         // paint words for bounds test.
 //        paintTextBounds(g);
@@ -646,6 +639,7 @@ public class TextSelectionPageHandler implements MouseInputListener {
 
     /**
      * Utility for painting text bounds.
+     *
      * @param g graphics context to paint to.
      */
     private void paintTextBounds(Graphics g) {
@@ -690,68 +684,5 @@ public class TextSelectionPageHandler implements MouseInputListener {
         pageViewComponent.releasePageLock(currentPage, this);
     }
 
-    /**
-     * Update the size of the selection rectangle.
-     * @param e
-     */
-    private void updateSize(MouseEvent e) {
-        int x = e.getX();
-        int y = e.getY();
-        currentRect.setSize(x - currentRect.x,
-                y - currentRect.y);
-        updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
-        Rectangle totalRepaint = rectToDraw.union(previousRectDrawn);
-        pageViewComponent.repaint(totalRepaint.x, totalRepaint.y,
-                totalRepaint.width, totalRepaint.height);
-    }
 
-    /**
-     * Udpate the drawable rectangle so that it does not extend bast the edge
-     * of the page.
-     *
-     * @param compWidth  width of component being selected
-     * @param compHeight height of component being selected.
-     */
-    private void updateDrawableRect(int compWidth, int compHeight) {
-        int x = currentRect.x;
-        int y = currentRect.y;
-        int width = currentRect.width;
-        int height = currentRect.height;
-
-        //Make the width and height positive, if necessary.
-        if (width < 0) {
-            width = 0 - width;
-            x = x - width + 1;
-            if (x < 0) {
-                width += x;
-                x = 0;
-            }
-        }
-        if (height < 0) {
-            height = 0 - height;
-            y = y - height + 1;
-            if (y < 0) {
-                height += y;
-                y = 0;
-            }
-        }
-
-        //The rectangle shouldn't extend past the drawing area.
-        if ((x + width) > compWidth) {
-            width = compWidth - x;
-        }
-        if ((y + height) > compHeight) {
-            height = compHeight - y;
-        }
-
-        //Update rectToDraw after saving old value.
-        if (rectToDraw != null) {
-            previousRectDrawn.setBounds(
-                    rectToDraw.x, rectToDraw.y,
-                    rectToDraw.width, rectToDraw.height);
-            rectToDraw.setBounds(x, y, width, height);
-        } else {
-            rectToDraw = new Rectangle(x, y, width, height);
-        }
-    }
 }

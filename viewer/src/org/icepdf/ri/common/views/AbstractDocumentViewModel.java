@@ -37,16 +37,17 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 
 import java.awt.*;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * <p>The AbstractDocumentViewModel is responsible for keeping the state of the
@@ -65,6 +66,11 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     // document that model is associated.
     protected Document currentDocument;
+
+    // Pages that have selected text.
+    private ArrayList<WeakReference<AbstractPageViewComponent>> selectedPageText;
+    // select all state flag, optimization for painting select all state lazily
+    private boolean selectAll;
 
     protected List<AbstractPageViewComponent> pageComponents;
 
@@ -87,7 +93,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected static int maxPainterThreads;
     protected static int maxPageInitThreads;
 
-    private static final long KEEP_ALIVE_TIME = 3;      
+    private static final long KEEP_ALIVE_TIME = 3;
 
     static {
         try {
@@ -172,6 +178,63 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     /**
+     * Gets the list of components that have a selected state.  The
+     * WeakReference must be checkt o make sure the page was not disposed of
+     * for for some reason by the the memeory manager.
+     *
+     * @return list of pages that are in a selected state. 
+     */
+    public ArrayList<WeakReference<AbstractPageViewComponent>> getSelectedPageText() {
+        return selectedPageText;
+    }
+
+    /**
+     * Gets the selected all state of the doucment pages view.
+     * @return true if all pages are ina  selected state, false otherwise.
+     */
+    public boolean isSelectAll() {
+        return selectAll;
+    }
+
+    /**
+     * Sets the select all state of the text in the document.  If true the
+     * document text is all selected; otherwise, false. This is only a flag
+     * and must be interpreted by the pages and page view components.
+     *
+     * @param selectAll to to specify all text is selected, false to sepcify
+     *                  no text is selected
+     */
+    public void setSelectAll(boolean selectAll) {
+        this.selectAll = selectAll;
+    }
+
+    /**
+     * Adds the specified page to selected page cache.  No checking is done
+     * to make sure of selected text.  The caches is used as an optimization
+     * to make sure selected text can be cleared quickly.
+     *
+     * @param pageViewComponent pageview component to add to list.
+     */
+    public void addSelectedPageText(AbstractPageViewComponent pageViewComponent) {
+        if (selectedPageText == null) {
+            selectedPageText =
+                    new ArrayList<WeakReference<AbstractPageViewComponent>>();
+        }
+        selectedPageText.add(
+                new WeakReference<AbstractPageViewComponent>(pageViewComponent));
+    }
+
+    /**
+     * Clears cache used to store which pages have selected state.
+     */
+    public void clearSelectedPageText() {
+        if (selectedPageText != null) {
+            selectedPageText.clear();
+        }
+        selectAll = false;
+    }
+
+    /**
      * Sets the zoom factor of the page visualization. A zoom factor of 1.0f
      * is equal to 100% or actual size.  A zoom factor of 0.5f is equal to 50%
      * of the original size.
@@ -186,8 +249,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             oldUserZoom = userZoom;
             userZoom = viewZoom;
             // propagate the changes to the sub components.
-            for (AbstractPageViewComponent pageViewComponent : pageComponents){
-                if (pageViewComponent != null){
+            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
+                if (pageViewComponent != null) {
                     pageViewComponent.invalidate();
                 }
             }
@@ -198,8 +261,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     /**
      * Invalidate the underlying Document Page models.
      */
-    public void invalidate(){
-        for (AbstractPageViewComponent pageViewComponent : pageComponents){
+    public void invalidate() {
+        for (AbstractPageViewComponent pageViewComponent : pageComponents) {
             pageViewComponent.invalidatePage();
         }
     }
@@ -215,8 +278,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             oldUserRotation = userRotation;
             userRotation = viewRotation;
             // propagate the changes to the sub components.
-            for (PageViewComponent pageViewComponent : pageComponents){
-                if (pageViewComponent != null){
+            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
+                if (pageViewComponent != null) {
                     pageViewComponent.invalidate();
                 }
             }
@@ -290,8 +353,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public void dispose() {
 
         if (pageComponents != null) {
-            for (PageViewComponent pageViewComponent : pageComponents){
-                if (pageViewComponent != null){
+            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
+                if (pageViewComponent != null) {
                     pageViewComponent.dispose();
                 }
             }

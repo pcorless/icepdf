@@ -34,7 +34,7 @@ package org.icepdf.core;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.ri.common.search.DocumentSearchController;
+import org.icepdf.core.search.DocumentSearchController;
 
 /**
  * A Controller is the glue between the model and view components.

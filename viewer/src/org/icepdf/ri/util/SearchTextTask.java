@@ -36,7 +36,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.SearchPanel;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
-import org.icepdf.ri.common.search.DocumentSearchController;
+import org.icepdf.core.search.DocumentSearchController;
 
 import javax.swing.*;
 import java.awt.*;

@@ -36,23 +36,21 @@ import org.icepdf.core.Controller;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
+import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
-import org.icepdf.ri.common.views.DocumentViewControllerImpl;
-import org.icepdf.ri.common.views.DocumentViewModelImpl;
-import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
-import org.icepdf.ri.common.search.DocumentSearchController;
-import org.icepdf.ri.util.*;
+import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
+import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.views.DocumentViewModelImpl;
+import org.icepdf.ri.util.*;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
@@ -72,10 +70,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * SwingController is the meat of a PDF viewing application. It is the Controller
@@ -113,6 +113,7 @@ public class SwingController
 
     public static final int CURSOR_DEFAULT = 8;
 
+    private static final int MAX_SELECT_ALL_PAGE_COUNT = 250;
 
     private JMenuItem openFileMenuItem;
     private JMenuItem openURLMenuItem;
@@ -216,12 +217,10 @@ public class SwingController
     private DocumentViewControllerImpl documentViewController;
 
     // subcontroller for document text searching.
-    // todo extract interface for search controller.
     private DocumentSearchController documentSearchController;
 
     // todo subcontroller for document annotations creation.
 
-    // todo subcontroller for document text selection/copy management 
 
     private Document document;
 
@@ -874,6 +873,10 @@ public class SwingController
         setEnabled(printSetupMenuItem, opened && canPrint);
         setEnabled(printMenuItem, opened && canPrint);
 
+        setEnabled(copyMenuItem, opened && canExtract);
+        setEnabled(selectAllMenuItem, opened && canExtract);
+        setEnabled(deselectAllMenuItem, opened && canExtract);
+
         setEnabled(fitActualSizeMenuItem, opened);
         setEnabled(fitPageMenuItem, opened);
         setEnabled(fitWidthMenuItem, opened);
@@ -1138,12 +1141,12 @@ public class SwingController
                     documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_HAND_OPEN);
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        }else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION) {
+        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION) {
             actualToolMayHaveChanged =
                     documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
             documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        }else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
+        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
             actualToolMayHaveChanged =
                     documentViewController.setToolMode(
                             DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
@@ -1752,7 +1755,7 @@ public class SwingController
         documentViewController.closeDocument();
 
         // clear search controller caches.
-         documentSearchController.dispose();
+        documentSearchController.dispose();
 
         // free the document
         if (document != null) {
@@ -1909,7 +1912,7 @@ public class SwingController
         }
 
         // clean up search controller
-        if (documentSearchController != null){
+        if (documentSearchController != null) {
             documentSearchController.dispose();
         }
 
@@ -2285,7 +2288,7 @@ public class SwingController
      */
     public void showPrintSetupDialog() {
         PrintHelper printHelper = viewModel.getPrintHelper();
-        if (printHelper == null){
+        if (printHelper == null) {
             printHelper = new PrintHelper(documentViewController, getPageTree());
             viewModel.setPrintHelper(printHelper);
         }
@@ -2331,7 +2334,7 @@ public class SwingController
         }
         // create a new print helper
         PrintHelper printHelper = viewModel.getPrintHelper();
-        if (printHelper == null){
+        if (printHelper == null) {
             printHelper = new PrintHelper(documentViewController, getPageTree());
             viewModel.setPrintHelper(printHelper);
         }
@@ -2343,7 +2346,7 @@ public class SwingController
                 1,           // default number of copies.
                 true,        // shrink to printable area
                 withDialog  // show print dialogl
-                );
+        );
         // if user cancelled the print job from the dialog, don't start printing
         // in the background.
         if (!canPrint) {
@@ -2759,6 +2762,7 @@ public class SwingController
 
     /**
      * If the utility pane is currently visible
+     * @return true if pane is visilbe false otherwise.
      */
     public boolean isUtilityPaneVisible() {
         return (utilityTabbedPane != null) && utilityTabbedPane.isVisible();
@@ -2771,8 +2775,9 @@ public class SwingController
      *                invisible.
      */
     public void setUtilityPaneVisible(boolean visible) {
-        if (utilityTabbedPane != null)
+        if (utilityTabbedPane != null) {
             utilityTabbedPane.setVisible(visible);
+        }
         if (utilityAndDocumentSplitPane != null) {
             if (visible) {
                 utilityAndDocumentSplitPane.setDividerLocation(
@@ -2810,6 +2815,8 @@ public class SwingController
             utilityTabbedPane.setSelectedComponent(searchPanel);
             // make sure the utility pane is visible
             setUtilityPaneVisible(true);
+            // request focus
+            searchPanel.requestFocus();
         }
     }
 
@@ -3029,26 +3036,34 @@ public class SwingController
                     } else if (source == printButton) {
                         print(false);
                     } else if (source == copyMenuItem) {
-                        // todo  move copy into view controller
-                        int page = documentViewController
-                                .getCurrentPageDisplayValue();
-                        StringBuffer currentPage = document.getPageViewText(page-1)
-                                .getSelected();
-                        StringSelection ss =
-                                new StringSelection(currentPage.toString());
-
-                        Toolkit.getDefaultToolkit().getSystemClipboard().
-                                setContents(ss, null);
+                        if (document != null &&
+                                havePermissionToExtractContent() &&
+                                !(documentViewController.getDocumentViewModel().isSelectAll() &&
+                                document.getNumberOfPages() > MAX_SELECT_ALL_PAGE_COUNT)) {
+                            // get the text.
+                            StringSelection stringSelection = new StringSelection(
+                                documentViewController.getSelectedText());
+                            Toolkit.getDefaultToolkit().getSystemClipboard().
+                                    setContents(stringSelection, null);
+                        } else {
+                            Runnable doSwingWork = new Runnable() {
+                                public void run() {
+                                    org.icepdf.ri.util.Resources.showMessageDialog(
+                                            viewer,
+                                            JOptionPane.INFORMATION_MESSAGE,
+                                            messageBundle,
+                                            "viewer.dialog.information.copyAll.title",
+                                            "viewer.dialog.information.copyAll.msg",
+                                            MAX_SELECT_ALL_PAGE_COUNT);
+                                }
+                            };
+                            SwingUtilities.invokeLater(doSwingWork);
+                        }
                     } else if (source == selectAllMenuItem) {
-                       // todo move select all into view controller
-                       int currentPage = documentViewController.getCurrentPageDisplayValue();
-                       document.getPageViewText(currentPage-1).selectAll();
-                       documentViewController.getViewContainer().repaint();
+                        // check to see how many page are in the document
+                        documentViewController.selectAllText();
                     } else if (source == deselectAllMenuItem) {
-                        // todo move deselect all into view controller
-                        int currentPage = documentViewController.getCurrentPageDisplayValue();
-                        document.getPageViewText(currentPage-1).clearSelected();
-                        documentViewController.getViewContainer().repaint();
+                        documentViewController.clearSelectedText();
                     } else if (source == fitActualSizeMenuItem) {
                         // Clicking only seems to invoke an itemStateChanged() event,
                         //  so this is probably redundant
@@ -3176,9 +3191,9 @@ public class SwingController
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
                 }
-            } else if (source == fontEngineButton){
+            } else if (source == fontEngineButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED ||
-                        e.getStateChange() == ItemEvent.DESELECTED ) {
+                        e.getStateChange() == ItemEvent.DESELECTED) {
                     // get instance of the font factory
                     FontFactory.getInstance().toggleAwtFontSubstitution();
                     // refresh the document, refresh will happen by the component.

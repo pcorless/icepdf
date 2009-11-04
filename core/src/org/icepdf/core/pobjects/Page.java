@@ -37,7 +37,6 @@ import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.io.SequenceInputStream;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.GraphicsRenderingHints;
@@ -52,9 +51,8 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.ArrayList;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>This class represents the leaves of a <code>PageTree</code> object known
@@ -119,7 +117,6 @@ public class Page extends Dictionary implements MemoryManageable {
 
     // Flag for call to init method, very simple cache
     private boolean isInited = false;
-    private final Object isInitedLock = new Object();
 
     // resources for page's parent pages, default fonts, etc.
     private Resources resources;
@@ -306,8 +303,8 @@ public class Page extends Dictionary implements MemoryManageable {
      * child elements.  Once a page has been initialized, it can be painted.
      */
     public synchronized void init() {
-        try{
-        // make sure we are not revisiting this method
+        try {
+            // make sure we are not revisiting this method
             if (isInited) {
                 return;
             }
@@ -364,7 +361,7 @@ public class Page extends Dictionary implements MemoryManageable {
                         sis.close();
                     }
                     catch (IOException e) {
-                         logger.log(Level.FINE, "Error closing page stream.", e);
+                        logger.log(Level.FINE, "Error closing page stream.", e);
                     }
                 }
             }
@@ -374,11 +371,10 @@ public class Page extends Dictionary implements MemoryManageable {
             }
             // set the initiated flag
             isInited = true;
-            shapes.getPageText().toString();
 
-        }catch(InterruptedException e){
+        } catch (InterruptedException e) {
             // keeps shapes vector so we can paint what we have but make init state as false
-            // so we can try to reparse it later.
+            // so we can try to re parse it later.
             isInited = false;
             logger.log(Level.SEVERE, "Page initializing thread interrupted.", e);
         }
@@ -667,6 +663,7 @@ public class Page extends Dictionary implements MemoryManageable {
         // Rotated sideways
         else if (totalRotation == 90 || totalRotation == 270) {
             float temp = width;
+            // flip with and height.
             width = height;
             height = temp;
         }
@@ -1020,8 +1017,8 @@ public class Page extends Dictionary implements MemoryManageable {
      *
      * @return list of text sprites for the given page.
      */
-    public synchronized PageText getViewText(){
-        if (!isInited){
+    public synchronized PageText getViewText() {
+        if (!isInited) {
             init();
         }
         return shapes.getPageText();
@@ -1038,13 +1035,13 @@ public class Page extends Dictionary implements MemoryManageable {
 
         // we only do this once per page
         if (isInited) {
-            if (shapes != null && shapes.getPageText() != null){
+            if (shapes != null && shapes.getPageText() != null) {
                 return shapes.getPageText();
             }
         }
 
         Shapes textBlockShapes = null;
-        try{
+        try {
             /**
              * Finally iterate through the contents vector and concat all of the
              * the resouse streams together so that the contant parser can
@@ -1090,16 +1087,15 @@ public class Page extends Dictionary implements MemoryManageable {
                     }
                 }
             }
-        }catch(InterruptedException e){
+        } catch (InterruptedException e) {
             // keeps shapes vector so we can paint what we have but make init state as false
             // so we can try to reparse it later.
             isInited = false;
             logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
         }
-        if (textBlockShapes != null && textBlockShapes.getPageText() != null){
+        if (textBlockShapes != null && textBlockShapes.getPageText() != null) {
             return textBlockShapes.getPageText();
-        }
-        else {
+        } else {
             return null;
         }
     }
