@@ -176,9 +176,15 @@ public interface DocumentViewController {
 
     public AnnotationCallback getAnnotationCallback();
 
-    // todo, selectAll for text selection. 
+    public DocumentViewModel getDocumentViewModel();
 
     public void clearSelectedText();
 
     public void clearHighlightedText();
+
+    public void selectAllText();
+
+    public String getSelectedText();
+
+    public void firePropertyChange(String event, int oldValue, int newValue);
 }

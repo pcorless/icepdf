@@ -36,13 +36,14 @@ import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.pobjects.Page;
 
 import javax.swing.*;
+import javax.swing.event.MouseInputListener;
 
 /**
  * Abstract PageViewComponent.
  */
 public abstract class AbstractPageViewComponent
         extends JComponent
-        implements PageViewComponent {
+        implements PageViewComponent, MouseInputListener {
 
     public abstract Page getPageLock(Object lock);
 
