@@ -35,16 +35,19 @@ package org.icepdf.ri.common;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.util.SearchTextTask;
+import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.pobjects.graphics.text.WordText;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.event.TreeWillExpandListener;
+import javax.swing.event.TreeExpansionEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusListener;
-import java.awt.event.FocusEvent;
+import java.util.List;
 import java.util.ResourceBundle;
 
 /**
@@ -57,7 +60,7 @@ import java.util.ResourceBundle;
  * @since 1.1
  */
 public class SearchPanel extends JPanel implements ActionListener,
-        ListSelectionListener, FocusListener {
+        TreeSelectionListener, TreeWillExpandListener {
 
     // layouts constraint
     private GridBagConstraints constraints;
@@ -74,8 +77,9 @@ public class SearchPanel extends JPanel implements ActionListener,
     //private ResultsTree resultsTree;
 
     // list box to hold search results
-    private JList list;
-    private DefaultListModel listModel;
+    private JTree tree;
+    private DefaultMutableTreeNode treeNode;
+    private DefaultTreeModel treeModel;
 
     // search start button
     private JButton searchButton;
@@ -116,7 +120,6 @@ public class SearchPanel extends JPanel implements ActionListener,
     public SearchPanel(SwingController controller) {
         super(true);
         setFocusable(true);
-        addFocusListener(this);
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
         setGui();
@@ -148,11 +151,8 @@ public class SearchPanel extends JPanel implements ActionListener,
         if (searchButton != null){
             searchButton.setText(messageBundle.getString("viewer.utilityPane.search.tab.title"));
         }
-        if (list != null){
-            list.setSelectedIndex(-1);
-        }
-        if (listModel != null){
-            listModel.clear();
+        if (treeNode != null) {
+            treeNode.removeAllChildren();
         }
         if (findMessage != null) {
             findMessage.setText("");
@@ -173,15 +173,23 @@ public class SearchPanel extends JPanel implements ActionListener,
          * Setup GUI objects
          */
 
-        // build the Jlist for search results
+        // build the supporting tree objects
+        treeNode = new DefaultMutableTreeNode("Search Results");
+        treeModel = new DefaultTreeModel(treeNode);
 
-        listModel = new DefaultListModel();
-        // Create the list and put it in a scroll pane.
-        list = new JList(listModel);
-        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.addListSelectionListener(this);
-        JScrollPane scrollPane = new JScrollPane(list);
-        scrollPane.setPreferredSize(new Dimension(100, 250));
+        // build and customize the JTree
+        tree = new JTree(treeModel);
+        tree.setRootVisible(false);
+        tree.setScrollsOnExpand(true);
+        tree.setToggleClickCount(1);
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        tree.addTreeWillExpandListener(this);
+        tree.addTreeSelectionListener(this);
+
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.getViewport().add(tree);
+        scrollPane.setMinimumSize(new Dimension(scrollPane.getMinimumSize().width,
+                100));
 
         // search Label
         JLabel searchLabel = new JLabel(messageBundle.getString("viewer.utilityPane.search.searchText.label"));
@@ -296,12 +304,20 @@ public class SearchPanel extends JPanel implements ActionListener,
 
     }
 
-    public void focusGained(FocusEvent e) {
-
+    public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+        // If the search is still running then don't allow nodes to be expanded
+        // This is because all nodes will autocollapse when the tree is reloaded as more search results are added to it
+        if (timer.isRunning()) {
+            throw new ExpandVetoException(event);
+        }
     }
 
-    public void focusLost(FocusEvent e) {
-        
+    public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+        // If the search is still running then don't allow nodes to be collapsed
+        // This is because all nodes will autocollapse when the tree is reloaded as more search results are added to it
+        if (timer.isRunning()) {
+            throw new ExpandVetoException(event);
+        }
     }
 
     public void setVisible(boolean flag) {
@@ -325,11 +341,18 @@ public class SearchPanel extends JPanel implements ActionListener,
         timer = null;
     }
 
-    // Listen for selected list items
-    public void valueChanged(ListSelectionEvent e) {
-        // jump to the page stored in the JList
-        if (list.getSelectedIndex() != -1) {
-            FindEntry tmp = (FindEntry) list.getSelectedValue();
+    // Listen for selected tree items
+    public void valueChanged(TreeSelectionEvent e) {
+        // jump to the page stored in the JTree
+        if (tree.getLastSelectedPathComponent() != null) {
+            DefaultMutableTreeNode selectedNode = ((DefaultMutableTreeNode)tree.getLastSelectedPathComponent());
+
+            if (selectedNode.isLeaf()) {
+                selectedNode = (DefaultMutableTreeNode)selectedNode.getParent();
+            }
+
+            FindEntry tmp = (FindEntry)selectedNode.getUserObject();
+
             if (controller != null) {
                 int oldTool = controller.getDocumentViewToolMode();
                 try {
@@ -340,21 +363,70 @@ public class SearchPanel extends JPanel implements ActionListener,
                     controller.setDisplayTool(oldTool);
                 }
             }
-            // return focus so that arrow keys will work on list
-            list.requestFocus();
+
+            // return focus so that arrow keys will work on tree
+            tree.requestFocus();
         }
     }
 
     /**
-     * Adds a new List item to the listModel.
+     * Adds a new node item to the treeModel.
      *
-     * @param title      display title of list item
-     * @param pageNumber page number where the hit(s) occured
+     * @param title       display title of tree item
+     * @param pageNumber  page number where the hit(s) occured
+     * @param textResults list of LineText items that match
      */
-    public void addFoundEntry(String title, int pageNumber) {
-        //resultsTree.add(title, pageIndex);
-        listModel.addElement(new FindEntry(title, pageNumber));
+    public void addFoundEntry(String title, int pageNumber, List<LineText> textResults) {
+        if ((textResults != null) && (textResults.size() > 0)) {
+            DefaultMutableTreeNode resultNode = new DefaultMutableTreeNode(new FindEntry(title, pageNumber), true);
+
+            for (LineText currentText : textResults) {
+                resultNode.add(new DefaultMutableTreeNode(generateResultPreview(currentText.getWords()), false));
+            }
+
+            treeNode.add(resultNode);
+        }
+        else {
+            treeNode.add(new DefaultMutableTreeNode(new FindEntry(title, pageNumber), false));
+        }
     }
+
+    private static String generateResultPreview(List<WordText> allText) {
+        StringBuffer toReturn = new StringBuffer("<html>");
+        for (WordText currentText : allText) {
+            if (currentText.isHighlighted()) {
+                toReturn.append("<b>");
+                toReturn.append(currentText.getText());
+                toReturn.append("</b>");
+            }
+            else {
+                toReturn.append(currentText.getText());
+            }
+        }
+
+        toReturn.append("</html>");
+
+        return toReturn.toString();
+    }
+
+    /**
+     * Refresh the tree model and repaint the view to update when necessary
+     *
+     * @param maintainSelection keep the selected node state after refresh or not
+     */
+    protected void refreshTree(boolean maintainSelection) {
+        TreePath currentSelection = tree.getSelectionPath();
+
+        treeModel.nodeStructureChanged(treeNode);
+        //treeModel.reload(treeNode);
+        //treeModel.setRoot(treeNode);
+        //tree.validate();
+        //tree.repaint();
+
+        if (maintainSelection) {
+            tree.setSelectionPath(currentSelection);
+        }
+    }    
 
     public void actionPerformed(ActionEvent event) {
 
@@ -368,9 +440,9 @@ public class SearchPanel extends JPanel implements ActionListener,
                 findMessage.setVisible(true);
                 progressBar.setVisible(true);
 
-                // create a new task
-                list.setSelectedIndex(-1);
-                listModel.removeAllElements();
+                // clean the previous results and repaint the tree
+                treeNode.removeAllChildren();
+                refreshTree(false);
 
                 // start a new search text task
                 searchTextTask = new SearchTextTask(this,
@@ -402,12 +474,11 @@ public class SearchPanel extends JPanel implements ActionListener,
             // clear input
             searchTextField.setText("");
 
-            // clear hit list
-            list.setSelectedIndex(-1);
-            listModel.removeAllElements();
-            // refresh list
-            list.validate();
-            list.repaint();
+            if (treeNode != null) {
+                treeNode.removeAllChildren();
+                refreshTree(false);
+            }
+
             // reset high light states.
             controller.getDocumentSearchController().clearAllSearchHighlight();
             controller.getDocumentViewController().getViewContainer().repaint();
@@ -444,9 +515,8 @@ public class SearchPanel extends JPanel implements ActionListener,
             String s = searchTextTask.getMessage();
             if (s != null) {
                 findMessage.setText(s);
-                // refresh list
-                list.validate();
-                list.repaint();
+
+                refreshTree(true);
             }
             // update the text when the search is completed
             if (searchTextTask.isDone() || !isSearching) {
@@ -461,8 +531,8 @@ public class SearchPanel extends JPanel implements ActionListener,
                 caseSensitiveCheckbox.setEnabled(true);
                 wholeWordCheckbox.setEnabled(true);
                 // update the list
-                list.validate();
-                list.repaint();
+                refreshTree(true);
+                
                 // update progress bar then hide it.
                 progressBar.setValue(progressBar.getMinimum());
                 progressBar.setVisible(false);
