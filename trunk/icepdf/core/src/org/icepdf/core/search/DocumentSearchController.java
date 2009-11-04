@@ -1,9 +1,11 @@
 package org.icepdf.core.search;
 
+import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Document search controller interface for content text searches
@@ -47,6 +49,28 @@ public interface DocumentSearchController {
      * @return number of hits found for this page.
      */
     int searchHighlightPage(int pageIndex);
+
+    /**
+     * Searches the page index given the search terms that have been added
+     * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
+     * hits where detected then the Page's PageText is added to the cache.
+     * <p/>
+     * This class differences from {@link #searchHighlightPage(int)} in that
+     * is returns a list of lineText fragements for each hit but the LinText
+     * is padded by pre and post words that surround the hit in the page
+     * context.
+     * <p/>
+     * This method represent the core search algorithm for this
+     * DocumentSearchController implmentation.  This method can be overriden
+     * if a different search algorithm or functinality is needed.
+     *
+     * @param pageIndex   page index to search
+     * @param wordPadding word padding on either side of hit to give context
+     *                    to found words in the returned LineText.  Values should be greater than
+     *                    zero
+     * @return number of hits found for this page.
+     */
+    List<LineText> searchHighlightPage(int pageIndex, int wordPadding);
 
     /**
      * Search page but only return words that are hits.  Highlighting is till
