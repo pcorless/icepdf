@@ -4,6 +4,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchTerm;
 import org.icepdf.ri.common.SwingController;
 
 import java.util.ArrayList;

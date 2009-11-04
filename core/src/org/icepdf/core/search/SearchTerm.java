@@ -1,4 +1,4 @@
-package org.icepdf.ri.common.search;
+package org.icepdf.core.search;
 
 import java.util.ArrayList;
 
