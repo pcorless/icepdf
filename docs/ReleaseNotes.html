@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
-<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"><title>ICEpdf v3.1.0 Release Notes</title>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"><title>ICEpdf v3.1.1 Release Notes</title>
 
 <style type="text/css">
 body, td, th, input {
@@ -46,8 +46,8 @@ font-size: 110%
 <h1 style="border-bottom: 0pt none; margin-left: 16px; margin-top: 8px;">
 ICEpdf<sup> <small>&reg;</small> </sup> </h1>
 <h2 style="border-bottom: 0pt none; font-weight: bold; margin-left: 16px;">
-v3.1.0 Release Notes</h2>
-<p style="margin-left: 16px; margin-bottom: 12px;">October 9th, 2009</p>
+v3.1.1 Release Notes</h2>
+<p style="margin-left: 16px; margin-bottom: 12px;">November 5th, 2009</p>
 </td>
 <td align="center" valign="middle" width="22%">
 <img alt="ICEpdf Logo" src="images/icepdf-logo-release-notes.gif" style="" height="100" width="81"><br>
@@ -60,8 +60,8 @@ v3.1.0 Release Notes</h2>
 <h2><a name="Overview"></a>Overview</h2>
 This document contains the following sections:<br>
 <ul>
-<li><a href="#Changes_31">Changes in v3.1 (This
-Release)</a></li>
+	<li><a href="#Changes_311">Changes in v3.1.1 (This Release)</a></li>
+<li><a href="#Changes_31">Changes in v3.1 </a></li>
 <li><a href="#Changes_30">Changes in v3.0 </a></li>
 <li><a href="#MigrationNotes">2.x to 3.x Migration
 Notes </a></li>
@@ -77,7 +77,29 @@ Information</a></li>
 </ul>
 <br>
 <!-- Start v3.1.0 release notes-->
-<h2><a name="Changes_31"></a>Changes in v3.1.0 (This Release)</h2>
+<h2><a name="Changes_311"></a>Changes in v3.1.1 (This Release)</h2>
+<p>ICEpdf v3.1.1 is a maintenance release featuring numerous fixes and improvements.</p>
+<p>Review the <a href="#Known_Issues">Known Issues</a>
+prior to using this release. Review the <a href="#MigrationNotes">Migration
+Notes</a> if you plan to use an existing ICEpdf 2.7.x application with 3.1.x.</p>
+<p>Please report any issues with this release to the ICEpdf
+<a target="_blank" href="http://www.icefaces.org/JForum/">forums</a>
+or the ICEpdf <a target="_blank" href="http://jira.icefaces.org/browse/PDF">
+JIRA issue tracker</a>.</p>
+<h3><span style="font-weight: bold;">Notable Improvements &amp; Enhancements</span></h3>
+<ul class="contentIndent">
+	<li><p><span style="font-weight: bold;">Rendering Core</span></p></li>
+	<ul>
+		<li>Fixed a rare issue where some page content could not be correctly reinitialized after 
+			 being disposed of in a low memory environment.</li>
+		<li>Fixed a bug in the Single Page Document view which may cause excesive CPU consumption in 
+			low memory environments.</li>	
+  </ul>
+</ul>  
+<p>Refer to the <a href="http://jira.icefaces.org/secure/IssueNavigator.jspa?reset=true&pid=10030&fixfor=10217" target="_blank">
+	ICEpdf JIRA Change Log</a> for detailed information on all the changes included in this release.</p>
+<!-- Start v3.1.0 release notes-->
+<h2><a name="Changes_31"></a>Changes in v3.1.0</h2>
 <p>ICEpdf v3.1.0 is a maintenance release featuring numerous fixes and improvements.</p>
 <p>Review the <a href="#Known_Issues">Known Issues</a>
 prior to using this release. Review the <a href="#MigrationNotes">Migration
