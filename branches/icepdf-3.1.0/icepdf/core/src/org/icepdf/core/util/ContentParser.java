@@ -428,6 +428,7 @@ public class ContentParser {
                                     shapes.add(formXObject.getShapes().getImages());
                                 }
                                 shapes.addNoClipCommand();
+                                formXObject.completed();
                             }
                             //  5.) Restore the saved graphics state
                             graphicState = graphicState.restore();
@@ -2033,13 +2034,6 @@ public class ContentParser {
     private static void consume_Ts(GraphicsState graphicState, Stack stack) {
 //        collectTokenFrequency(PdfOps.Ts_TOKEN);
         graphicState.getTextState().trise = ((Number) stack.pop()).floatValue();
-    }
-
-
-    public void dispose(boolean cache) {
-        graphicState = null;
-        library = null;
-        resources.dispose(cache);
     }
 
     /**
