@@ -78,11 +78,15 @@ public class Form extends Stream {
         super(l, h, streamInputWrapper);
     }
 
+    /**
+     * When a Page refers to a Form, it calls this to cleanup and get rid of,
+     * or reduce the memory footprint of, the refered objects
+     */
     public void dispose(boolean cache) {
         if (shapes != null)
             shapes.dispose();
         if (resources != null) {
-            resources.dispose(cache);
+            resources.dispose(cache, this);
         }
         if (parentResource != null) {
             // remove parent reference to parent
@@ -90,6 +94,24 @@ public class Form extends Stream {
         }
         inited = false;
         graphicsState = null;
+    }
+
+    /**
+     * When a ContentParser refers to a Form, it calls this to signal that it
+     * is done with the Form itself, while the generated Shapes are still
+     * in use.
+     */
+    public void completed() {
+        // null the reference, the shapes are refered to in the
+        // parent page and will be disposed of later if needed.
+        shapes = null;
+        if (resources != null) {
+            resources.removeReference(this);
+            resources = null;
+        }
+        parentResource = null;
+        graphicsState = null;
+        inited = false;
     }
 
     /**
@@ -122,8 +144,8 @@ public class Form extends Stream {
     }
 
     /**
-     * As of the PDF 1.2 specification, a resouce entry is not required for
-     * a XObject and thus it needs to point to the parent resource enable
+     * As of the PDF 1.2 specification, a resource entry is not required for
+     * a XObject and thus it needs to point to the parent resource to enable
      * to correctly load the content stream.
      *
      * @param parentResource parent objects resourse when available.
@@ -149,6 +171,7 @@ public class Form extends Stream {
         // apply parent resource, if the current resources is null
         if (leafResources != null) {
             resources = leafResources;
+            resources.addReference(this);
         } else {
             leafResources = parentResource;
         }

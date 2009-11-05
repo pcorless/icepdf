@@ -170,7 +170,9 @@ public class Shapes {
                     image.flush();
                 } else if (tmp instanceof TextSprite) {
                     ((TextSprite) tmp).dispose();
-                } else {
+                }else if (tmp instanceof Shapes) {
+                    ((Shapes) tmp).dispose();
+                }  else {
                     //System.out.println("  -------------> Found other " + shapes.size());
                     //tmp = null;
                 }
