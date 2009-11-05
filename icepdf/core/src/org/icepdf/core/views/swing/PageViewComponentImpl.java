@@ -1028,7 +1028,7 @@ public class PageViewComponentImpl extends
 
     private boolean isPageIntersectViewport() {
         Rectangle pageBounds = documentViewModel.getPageBounds(pageIndex);
-        return pageBounds != null &&
+        return pageBounds != null && this.isShowing() &&
                 pageBounds.intersects(parentScrollPane.getViewport().getViewRect());
     }
 
