@@ -57,20 +57,20 @@ public class Dictionary {
      * Pointer to the documents <code>Library</code> object which
      * acts a central repository for the access of PDF object in the document.
      */
-    protected Library library = null;
+    protected Library library;
 
     /**
      * Table of associative pairs of objects.
      */
-    protected Hashtable entries = null;
+    protected Hashtable entries;
 
     /**
      * Indicates if Dictionary has been initiated.
      */
-    protected boolean inited = false;
+    protected boolean inited;
 
     // reference of stream, needed for encryption support
-    private Reference pObjectReference = null;
+    private Reference pObjectReference;
 
     /**
      * Creates a new instance of a Dictionary.

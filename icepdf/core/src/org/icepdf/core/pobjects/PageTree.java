@@ -69,6 +69,9 @@ public class PageTree extends Dictionary {
     private PRectangle cropBox;
     // inheritable Resources
     private Resources resources;
+    // loaded resource flag, we can't use null check as some trees don't have
+    // resources. 
+    private boolean loadedResources;
 
     /**
      * Inheritable rotation factor by child pages.
@@ -91,7 +94,7 @@ public class PageTree extends Dictionary {
     }
 
     /**
-     * Dispose the NameTree.
+     * Dispose the PageTree.
      */
     protected synchronized void dispose(boolean cache) {
         if (kidsReferences != null) {
@@ -110,8 +113,20 @@ public class PageTree extends Dictionary {
                 kidsPageAndPages.clear();
             }
         }
+        /*
+         * If resources is non-null, then at least one page has got a reference
+         * to it. At which point we'll wait for the last page to reference it
+         * do make the call to dispose.
+         *
+         * It is also possible for type3 fonts to use a resource, so we better
+         * go through the motions to remove the resource, as we don't dispose
+         * of fonts.
+         */
         if (resources != null) {
-            resources.dispose(cache);
+            boolean disposeSuccess = resources.dispose(cache, this);
+            if (disposeSuccess){
+                loadedResources = false;
+            }
         }
     }
 
@@ -137,7 +152,6 @@ public class PageTree extends Dictionary {
             cropBox = new PRectangle(boxDimensions);
 //            System.out.println("PageTree - CropBox " + cropBox);
         }
-        resources = library.getResources(entries, "Resources");
         kidsReferences = (Vector) library.getObject(entries, "Kids");
         kidsPageAndPages = new Vector(kidsReferences.size());
         kidsPageAndPages.setSize(kidsReferences.size());
@@ -181,9 +195,15 @@ public class PageTree extends Dictionary {
      * Gets the Resources defined by this PageTree.  The Resources entry can
      * be inherited by the child Page objects.
      *
+     * The caller is responsible for disposing of the returned Resources object.
+     *
      * @return Resources associates with the PageTree
      */
     public Resources getResources() {
+        if (!loadedResources) {
+            loadedResources = true;
+            resources = library.getResources(entries, "Resources");
+        }
         return resources;
     }
 

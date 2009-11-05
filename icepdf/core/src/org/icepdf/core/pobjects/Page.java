@@ -202,7 +202,7 @@ public class Page extends Dictionary implements MemoryManageable {
 
             // work through resources and null any images in the image hash
             if (resources != null) {
-                resources.dispose(cache);
+                resources.dispose(cache, this);
                 resources = null;
             }
         }
@@ -260,6 +260,9 @@ public class Page extends Dictionary implements MemoryManageable {
             }
         }
         resources = res;
+        if (resources != null) {
+            resources.addReference(this);
+        }
     }
 
     private void initPageAnnotations() throws InterruptedException {
