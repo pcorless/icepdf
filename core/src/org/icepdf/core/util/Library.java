@@ -75,8 +75,8 @@ public class Library {
     public CacheManager cacheManager;
     public SecurityManager securityManager;
 
-    private boolean isEncrypted = false;
-    private boolean isLinearTraversal = false;
+    private boolean isEncrypted;
+    private boolean isLinearTraversal;
 
     /**
      * Sets a document loader for the library.

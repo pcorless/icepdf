@@ -50,6 +50,13 @@ import java.util.logging.Level;
  */
 public class Resources extends Dictionary {
 
+    // shared resource counter. 
+    private static int uniqueCounter = 0;
+
+    private static synchronized int getUniqueId() {
+        return uniqueCounter++;
+    }
+
     private static final Logger logger =
             Logger.getLogger(Resources.class.toString());
 
@@ -60,6 +67,9 @@ public class Resources extends Dictionary {
     Hashtable shading;
     Hashtable extGStates;
     private Hashtable<String, Image> images = new Hashtable<String, Image>();
+
+    // reference count to keep track of how many objects reference this resource.
+    private int referenceCount;
 
     /**
      * @param l
@@ -73,17 +83,54 @@ public class Resources extends Dictionary {
         patterns = library.getDictionary(entries, "Pattern");
         shading = library.getDictionary(entries, "Shading");
         extGStates = library.getDictionary(entries, "ExtGState");
+        referenceCount = 0;
     }
 
-    public void dispose(boolean cache) {
-/*
-System.out.println("Resources.dispose()  cache: " + cache);
-try { throw new RuntimeException("MARK"); } catch(Exception e) {
-    StackTraceElement[] ste = e.getStackTrace();
-    for(int i = 1; i < Math.min(20,ste.length); i++)
-        System.out.println("  " + ste[i].getClassName() + "." + ste[i].getMethodName() + " : " + ste[i].getLineNumber());
-}
-*/
+    /**
+     * Increments the refernce count, meaning that at least one object is
+     * depending on this reference. 
+     *
+     * @param referer object doing the reference, used for debug purposes.
+     */
+    public void addReference(Object referer) {
+        synchronized(this) {
+            referenceCount++;
+            ////System.out.println("Resources.addReference()  " + getPObjectReference() + "  " + uniqueId + "  count: " + referenceCount);
+            ////System.out.println("Resources.addReference()    referer: " + referer.getPObjectReference() + "  " + referer.getClass().getSimpleName());
+            //if (referer instanceof Page) {
+            //    Thread.dumpStack();
+            //}
+        }
+    }
+
+    public void removeReference(Object referer) {
+        synchronized(this) {
+            referenceCount--;
+            ////System.out.println("Resources.removeReference()  " + getPObjectReference() + "  " + uniqueId + "  count: " + referenceCount);
+            ////System.out.println("Resources.removeReference()    referer: " + referer.getPObjectReference() + "  " + referer.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Disposes this classes resources if an only if no other PObject
+     * is also using this oject.  If no other PObject references this instance
+     * then we can dispose of image, stream and xform objects.
+     *
+     * @param cache true to cache image streams, false otherwise.
+     * @param referer only used for debuggin, can be null otherwise.
+     */
+    public boolean  dispose(boolean cache, Dictionary referer) {
+        synchronized(this) {
+            referenceCount--;
+            ////System.out.println("Resources.dispose()  " + getPObjectReference() + "  " + uniqueId + "  count: " + referenceCount + "  cache: " + cache);
+            ////System.out.println("Resources.dispose()    referer: " + referer.getPObjectReference() + "  " + referer.getClass().getSimpleName());
+            // we have a reference so we can't dispose.
+            if (referenceCount > 0) {
+                ////System.out.println("Resources.dispose()      REDUNDANT");
+                return false;
+            }
+        }
+
         // remove all images.
         if (images != null) {
             Enumeration shapeContent = images.elements();
@@ -123,6 +170,7 @@ try { throw new RuntimeException("MARK"); } catch(Exception e) {
                 }
             }
         }
+        return true;
     }
 
     /**

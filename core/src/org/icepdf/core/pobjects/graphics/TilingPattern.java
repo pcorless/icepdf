@@ -183,8 +183,6 @@ public class TilingPattern extends Stream implements Pattern {
 
         yStep = library.getFloat(entries, "YStep");
 
-        resources = library.getResources(entries, "Resources");
-
         Vector v = (Vector) library.getObject(entries, "Matrix");
         if (v != null) {
             matrix = getAffineTransform(v);
@@ -253,6 +251,8 @@ public class TilingPattern extends Stream implements Pattern {
         // apply resource for tiling if any, otherwise we use the default dictionary.
         if (leafResources != null) {
             resources = leafResources;
+//            resources.addReference(this);
+            //  todo, need a way do dispose of reference when we implement this fully
         }
 
         // Build a new content parser for the content streams and apply the
