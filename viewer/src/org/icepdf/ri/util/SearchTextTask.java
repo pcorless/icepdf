@@ -40,7 +40,6 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 
 import java.util.List;
-import java.util.ArrayList;
 
 import javax.swing.*;
 import java.awt.*;
@@ -237,15 +236,9 @@ public class SearchTextTask {
                     dialogMessage = searchingMessageForm.format(messageArguments);
 
                     // hits per page count
-                    int hitCount = searchController.searchHighlightPage(i);
-                    List<LineText> lineItems = searchController.searchHighlightPage(current, 2);
-
-                    // repaint the view container, probably a little too frequent.
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            viewContainer.repaint();
-                        }
-                    });
+                    final List<LineText> lineItems =
+                            searchController.searchHighlightPage(current, 6);
+                    int hitCount = lineItems.size();
 
                     // update total hit count
                     totalHitCount += hitCount;
@@ -254,11 +247,22 @@ public class SearchTextTask {
                         messageArguments = new Object[]{
                                 String.valueOf((current + 1)),
                                 hitCount, hitCount};
-
-                        searchPanel.addFoundEntry(
-                                searchDialogMessageForm.format(messageArguments),
-                                current,
+                        final String nodeText =
+                                searchDialogMessageForm.format(messageArguments);
+                        final int currentPage = i;
+                        // add the node to the search panel tree but on the
+                        // awt thread.
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                // add the node
+                                searchPanel.addFoundEntry(
+                                nodeText,
+                                currentPage,
                                 lineItems);
+                                // try repainting the container
+                                viewContainer.repaint();
+                            }
+                        });
                     }
                     Thread.yield();
                 }
