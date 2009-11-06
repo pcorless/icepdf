@@ -1025,7 +1025,8 @@ public class ContentParser {
                                 stringObject.getLiteralStringBuffer(
                                         textState.font.getSubTypeFormat(),
                                         textState.font.getFont()),
-                                advance, 0,
+                                advance,
+                                previousAdvance,
                                 graphicState.getTextState(),
                                 shapes);
                         graphicState.translate(d.x, 0);
@@ -1156,7 +1157,7 @@ public class ContentParser {
                                     stringObject.getLiteralStringBuffer(
                                             textState.font.getSubTypeFormat(),
                                             textState.font.getFont()),
-                                    advance, lastTextAdvance,
+                                    advance, previousAdvance,
                                     graphicState.getTextState(), shapes);
                             // update the text advance
                             lastTextAdvance = advance.x;
