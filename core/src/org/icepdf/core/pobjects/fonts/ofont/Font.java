@@ -37,13 +37,13 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.AFM;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
-import org.icepdf.core.util.Library;
 import org.icepdf.core.util.FontUtil;
+import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -338,7 +338,6 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             if (afm != null && afm instanceof AFM) {
                 AFM fontMetrix = (AFM) afm;
                 // finally create a fontDescriptor based on AFM data.
-                //System.out.println("Initiating core 14 AFM font DEscriptor");
                 fontDescriptor = FontDescriptor.createDescriptor(library, fontMetrix);
                 fontDescriptor.init();
             }
@@ -359,7 +358,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         // this is a test to basic CIDFont support.  The current font class
         // is not setup to deal with this type of font,  however we can still
-        // located the decendant font described by the CIDFont's data and try
+        // located the descendant font described by the CIDFont's data and try
         // and cMap the properties over to the type1 font
         Object desendantFont = library.getObject(entries, "DescendantFonts");
         if (desendantFont != null) {
@@ -395,15 +394,12 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // Create a new true type font based on the named basefont.
         if (subtype.equals("Type1")) {
             for (String[] aType1Diff : type1Diff) {
-                //Debug.p("type1 font " + i + " " + basefont + " = " + type1Diff[i][0]);
                 if (basefont.equals(aType1Diff[0])) {
-                    //Debug.p("type1 font " + basefont + " = " + type1Diff[i][1]);
                     java.awt.Font f =
                             new java.awt.Font(
                                     aType1Diff[1],
                                     java.awt.Font.PLAIN,
                                     12);
-                    //Debug.p("type1 basefont " + basefont + " = " + type1Diff[i][2]);
                     if (f.getFamily().equals(aType1Diff[2])) {
                         basefont = aType1Diff[1];
                         break;
@@ -425,10 +421,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         // look at all PS font names and try and find a match
         if (font == null && basefont != null) {
-            //System.out.println("PS System Lookup ");
-
             // Check to see if any of the system fonts match the basefont name
-            //System.out.println(basefont);
             for (java.awt.Font font1 : fonts) {
 
                 // remove white space
@@ -437,9 +430,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 while (st.hasMoreElements()) fontName += st.nextElement();
 
                 // if a match is found assign it as the real font
-                //System.out.println(fontName + " --- >" + basefont);
                 if (fontName.equalsIgnoreCase(basefont)) {
-                    //System.out.println("       " + fontName+ " found --- >" + basefont);
                     font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
                     basefont = font1.getPSName();
                     isFontSubstitution = true;
@@ -456,9 +447,11 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
             for (java.awt.Font font1 : fonts) {
                 // find font family match
-                if (font1.getFamily().equalsIgnoreCase(fontFamily)) {
+                if(FontUtil.normalizeString(
+                        font1.getFamily()).equalsIgnoreCase(fontFamily)) {
                     // create new font with font family name and style
                     font = new OFont(new java.awt.Font(font1.getFamily(), style, 1));
+                    basefont = font1.getFontName();
                     isFontSubstitution = true;
                     break;
                 }
@@ -467,13 +460,11 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // if the font is still null decode the name, which will try and find
         // the basefont, if it fails it will assign a default dialog font
         if (font == null && basefont != null && basefont.indexOf("-") != -1) {
-            //System.out.println("java.awt.Font.decode ");
             font = new OFont(java.awt.Font.decode(basefont));
             basefont = font.getName();
         }
         // if still null, shouldn't be, assigned the basefont name
         if (font == null) {
-            //System.out.println("java.awt.Font.getFont");
             font = new OFont(java.awt.Font.getFont(basefont,
                     new java.awt.Font(basefont,
                             java.awt.Font.PLAIN,
@@ -481,7 +472,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             basefont = font.getName();
         }
 
-        // If the font substituions failed then we want to try and pick the proper
+        // If the font substitutions failed then we want to try and pick the proper
         // font family based on what the font name best matches up with none
         // font family font names.  if all else fails use serif as it is the most'
         // common font.
@@ -520,7 +511,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                         font.getStyle(), (int) font.getSize()));
                 basefont = "sansserif";
             }
-            // see if we working with a monospaced font                                      C
+            // see if we working with a mono spaced font
             else if ((font.getName().toLowerCase().indexOf("courier") != -1 ||
                     font.getName().toLowerCase().indexOf("courier new") != -1 ||
                     font.getName().toLowerCase().indexOf("couriernew") != -1 ||
@@ -599,12 +590,11 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
      * @param character character to find width of
      * @param advance   current advance of the character
      * @return width of specfied character.
-     */
+
     private float getWidth(int character, float advance) {
         character -= firstchar;
         if (widths != null) {
             if (character >= 0 && character < widths.size()) {
-                //Debug.p("font widths " + (((Float) widths.elementAt(character)).floatValue() / 1000f));
                 return ((Number) widths.elementAt(character)).floatValue() / 1000f;
             }
         }
@@ -621,7 +611,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 return fontDescriptor.getMissingWidth() / 1000f;
         }
         return advance;
-    }
+    }*/
 
     /**
      * Utility method for setting the widths for a particular font given the
@@ -714,10 +704,9 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     currentChar = (Integer) current;
                     subWidth = (Vector) peek;
                     for (int j = 0, subMax = subWidth.size(); j < subMax; j++) {
-                        if (subWidth.get(j) instanceof Integer){
+                        if (subWidth.get(j) instanceof Integer) {
                             cidWidths.put(currentChar + j, (Integer) subWidth.get(j) / 1000f);
-                        }
-                        else if (subWidth.get(j) instanceof Float){
+                        } else if (subWidth.get(j) instanceof Float) {
                             cidWidths.put(currentChar + j, (Float) subWidth.get(j) / 1000f);
                         }
                     }
