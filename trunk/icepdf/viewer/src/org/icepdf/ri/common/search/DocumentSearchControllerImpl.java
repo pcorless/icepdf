@@ -297,7 +297,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         // add pre padding
                         int start = i - searchPhraseHitCount - wordPadding + 1;
                         start = start < 0? 0:start;
-                        int end = i ;
+                        int end = i - searchPhraseHitCount + 1;
                         end = end < 0? 0:end;
                         for (int p = start; p < end; p++){
                             hitWords.add(lineWords.get(p));
