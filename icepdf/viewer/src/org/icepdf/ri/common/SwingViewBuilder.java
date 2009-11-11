@@ -1339,6 +1339,8 @@ public class SwingViewBuilder {
 
         JLabel lbl = new JLabel(" ");
         lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
+        JLabel lbl2 = new JLabel(" ");
+        lbl2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5)); // So text isn't at the very edge
         // layout the components
         Box horizontalBox = Box.createHorizontalBox();
         horizontalBox.add(lbl, BorderLayout.WEST);
@@ -1347,6 +1349,7 @@ public class SwingViewBuilder {
         horizontalBox.add(buildPageViewSinglePageConToggleButton());
         horizontalBox.add(buildPageViewFacingPageNonConToggleButton());
         horizontalBox.add(buildPageViewFacingPageConToggleButton());
+        horizontalBox.add(lbl2, BorderLayout.EAST);
 
         statusPanel.add(horizontalBox, BorderLayout.CENTER);
 
