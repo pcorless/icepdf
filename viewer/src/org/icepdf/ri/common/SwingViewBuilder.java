@@ -32,6 +32,7 @@
  */
 package org.icepdf.ri.common;
 
+import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.core.util.Defs;
@@ -42,6 +43,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -480,7 +482,14 @@ public class SwingViewBuilder {
 
         // If running on MacOS, setup the native app. menu item handlers
         if (isMacOs) {
-            MacOSAppMenuEventHandler macHandler = new MacOSAppMenuEventHandler(viewerController);
+            try {
+                // Generate and register the OSXAdapter, passing it a hash of all the methods we wish to
+                // use as delegates for various com.apple.eawt.ApplicationListener methods
+                OSXAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[])null));
+                OSXAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
+            } catch (Exception e) {
+                logger.log(Level.FINE, "Error occurred while loading the OSXAdapter:", e);
+            }
         }
 
         return menuBar;
