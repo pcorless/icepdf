@@ -340,9 +340,12 @@ public class SwingViewBuilder {
 
     protected ResourceBundle messageBundle;
 
+    public static boolean isMacOs;
+
     private static boolean isDemo;
 
     static {
+        isMacOs = (Defs.sysProperty("mrj.version") != null);
         // check for demo system property
          isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
     }
@@ -466,6 +469,7 @@ public class SwingViewBuilder {
 
 
     public JMenuBar buildCompleteMenuBar() {
+      
         JMenuBar menuBar = new JMenuBar();
         addToMenuBar(menuBar, buildFileMenu());
         addToMenuBar(menuBar, buildEditMenu());
@@ -473,6 +477,12 @@ public class SwingViewBuilder {
         addToMenuBar(menuBar, buildDocumentMenu());
         addToMenuBar(menuBar, buildWindowMenu());
         addToMenuBar(menuBar, buildHelpMenu());
+
+        // If running on MacOS, setup the native app. menu item handlers
+        if (isMacOs) {
+            MacOSAppMenuEventHandler macHandler = new MacOSAppMenuEventHandler(viewerController);
+        }
+
         return menuBar;
     }
 
@@ -504,8 +514,11 @@ public class SwingViewBuilder {
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildPrintSetupMenuItem());
         addToMenu(fileMenu, buildPrintMenuItem());
-        fileMenu.addSeparator();
-        addToMenu(fileMenu, buildExitMenuItem());
+        if (!isMacOs) {
+            // Not on a Mac, so create the Exit menu item.
+            fileMenu.addSeparator();
+            addToMenu(fileMenu, buildExitMenuItem());
+        }
         return fileMenu;
     }
 
@@ -926,11 +939,16 @@ public class SwingViewBuilder {
     public JMenu buildHelpMenu() {
         JMenu helpMenu = new JMenu(messageBundle.getString("viewer.menu.help.label"));
         helpMenu.setMnemonic(messageBundle.getString("viewer.menu.help.mnemonic").charAt(0));
-        addToMenu(helpMenu, buildAboutMenuItem());
+
+        if (!isMacOs) {
+            // Not on a Mac, so create the About menu item.
+            addToMenu(helpMenu, buildAboutMenuItem());
+        }
         return helpMenu;
     }
 
     public JMenuItem buildAboutMenuItem() {
+
         JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.help.about.label"), null);
         if (viewerController != null && mi != null)
             viewerController.setAboutMenuItem(mi);

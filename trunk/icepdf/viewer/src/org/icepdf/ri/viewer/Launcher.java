@@ -43,6 +43,7 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import org.icepdf.core.util.Defs;
 
 /**
  * <p>Launches the Viewer Application.  The following parameters can be used
@@ -190,6 +191,16 @@ public class Launcher {
      * @param messageBundle
      */
     private static void setupLookAndFeel(ResourceBundle messageBundle) {
+
+        // Do Mac related-setup (if running on a Mac)
+        if (Defs.sysProperty("mrj.version") != null) {
+            // Running on a mac
+            // take the menu bar off the jframe
+            Defs.setSystemProperty("apple.laf.useScreenMenuBar", "true");
+            // set the name of the application menu item (must precede the L&F setup)
+            String appName = messageBundle.getString("viewer.window.title.default");
+            Defs.setSystemProperty( "com.apple.mrj.application.apple.menu.about.name", appName);
+        }
 
         String className =
                 propertiesManager.getLookAndFeel("application.lookandfeel",
