@@ -1319,6 +1319,16 @@ public class SwingController
         }
     }
 
+    public void openFileInSomeViewer(String filename) {
+        try {
+            File pdfFile = new File( filename);
+            openFileInSomeViewer(pdfFile);
+        } catch (Exception e) {
+
+        }
+    }
+
+
     /**
      * Open a file specified by the given path name.
      *
@@ -2255,11 +2265,19 @@ public class SwingController
      * alternate About dialog
      */
     public void showAboutDialog() {
-        AboutDialog ad = new AboutDialog(viewer, messageBundle, true,
-                AboutDialog.OK, AboutDialog.NO_TIMER);
-        ad.setVisible(true);
+        // Added to swing thread to ensure it shows up on top of main
+        // browser window
+        Runnable doSwingWork = new Runnable() {
+            public void run() {
+                AboutDialog ad = new AboutDialog(viewer, messageBundle, true,
+                    AboutDialog.OK, AboutDialog.NO_TIMER);
+                ad.setVisible(true);
+            }
+        };
+        SwingUtilities.invokeLater(doSwingWork);
     }
 
+    
     /**
      * Show the permissions set in the PDF file's Document, as relates to encryption,
      * altering, or extracting information from, the Document
@@ -2995,14 +3013,7 @@ public class SwingController
                 };
                 SwingUtilities.invokeLater(doSwingWork);
             } else if (source == aboutMenuItem) {
-                // Added to swing thread to ensure it shows up on top of main
-                // browser window
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        showAboutDialog();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                showAboutDialog();
             } else if (document != null) {
                 // get document previous icon
                 int documentIcon = getDocumentViewToolMode();
