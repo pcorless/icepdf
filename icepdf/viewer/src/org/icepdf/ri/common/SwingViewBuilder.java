@@ -641,8 +641,6 @@ public class SwingViewBuilder {
         viewMenu.addSeparator();
         addToMenu(viewMenu, buildSelectAllMenuItem());
         addToMenu(viewMenu, buildDeselectAllMenuItem());
-        viewMenu.addSeparator();
-
         return viewMenu;
     }
 
