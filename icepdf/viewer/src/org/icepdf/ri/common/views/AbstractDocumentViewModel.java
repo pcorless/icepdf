@@ -117,7 +117,9 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         pageInitilizationThreadPool.setThreadFactory(new ThreadFactory() {
             public Thread newThread(java.lang.Runnable command) {
                 Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-pageInitializer");
                 newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
                 return newThread;
             }
         });
@@ -130,7 +132,9 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         pagePainterThreadPool.setThreadFactory(new ThreadFactory() {
             public Thread newThread(java.lang.Runnable command) {
                 Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-pagePainter");
                 newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
                 return newThread;
             }
         });
