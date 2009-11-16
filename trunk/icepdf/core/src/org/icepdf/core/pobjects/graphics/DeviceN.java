@@ -41,23 +41,15 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 /**
- * put your documentation comment here
+ * DeviceN Color Space.
  */
 public class DeviceN extends PColorSpace {
     Vector names;
     PColorSpace alternate;
     Function func;
-    Hashtable colorants = new Hashtable();
+    Hashtable<Object, Object> colorants = new Hashtable<Object, Object>();
     PColorSpace colorspaces[];
 
-    /**
-     * @param l
-     * @param h
-     * @param o1
-     * @param o2
-     * @param o3
-     * @param o4
-     */
     DeviceN(Library l, Hashtable h, Object o1, Object o2, Object o3, Object o4) {
         super(l, h);
         names = (Vector) o1;
@@ -81,23 +73,32 @@ public class DeviceN extends PColorSpace {
         }
     }
 
-    /**
-     * @return
-     */
     public int getNumComponents() {
         return names.size();
     }
 
-    /**
-     * @param f
-     * @return
-     */
     public Color getColor(float[] f) {
         if (func == null) {
-            float y[] = new float[alternate.getNumComponents()];
-            for (int i = 0; i < Math.min(y.length, f.length); i++) {
-                y[i] = f[i];
+            if (alternate.getNumComponents() > f.length) {
+                float[] ftmp = new float[alternate.getNumComponents()];
+                for (int index = 0; index < f.length && index < names.size(); index++) {
+                    if (names.get(index).equals("Cyan")) {
+                        ftmp[0] = f[index];
+                    }
+                    else if (names.get(index).equals("Magenta")) {
+                        ftmp[1] = f[index];
+                    }
+                    else if (names.get(index).equals("Yellow")) {
+                        ftmp[2] = f[index];
+                    }
+                    else if (names.get(index).equals("Black")) {
+                        ftmp[3] = f[index];
+                    }
+                }
+                f = ftmp;
             }
+            float y[] = new float[alternate.getNumComponents()];
+            System.arraycopy(f, 0, y, 0, Math.min(y.length, f.length));
             return alternate.getColor(y);
         }
         float y[] = func.calculate(f);
