@@ -895,7 +895,7 @@ public class SwingViewBuilder {
 
     public JToolBar buildCompleteToolBar(boolean embeddableComponent) {
         JToolBar toolbar = new JToolBar();
-        toolbar.setLayout(new FlowLayout(FlowLayout.LEFT));
+        toolbar.setLayout(new ToolbarLayout( ToolbarLayout.LEFT));
         commonToolBarSetup(toolbar, true);
         addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent));
         addToToolBar(toolbar, buildPageNavigationToolBar());
