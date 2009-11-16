@@ -51,6 +51,7 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -122,7 +123,7 @@ public class Page extends Dictionary implements MemoryManageable {
     private Resources resources;
 
     // Vector of annotations
-    private Vector<Annotation> annotation;
+    private ArrayList<Annotation> annotation;
 
     // Contents
     private Vector<Stream> contents;
@@ -270,7 +271,7 @@ public class Page extends Dictionary implements MemoryManageable {
         Object annots = library.getObject(entries, "Annots");
         if (annots != null && annots instanceof Vector) {
             Vector v = (Vector) annots;
-            annotation = new Vector<Annotation>(v.size() + 1);
+            annotation = new ArrayList<Annotation>(v.size() + 1);
             // add annotation
             Object annotObj;
             org.icepdf.core.pobjects.annotations.Annotation a = null;
@@ -289,14 +290,15 @@ public class Page extends Dictionary implements MemoryManageable {
                 }
 
                 // but most likely its an annotation base class
-                if (annotObj instanceof Annotation)
+                if (annotObj instanceof Annotation){
                     a = (Annotation) annotObj;
-                    // or build annotation from dictionary.
-                else if (annotObj instanceof Hashtable) // Hashtable lacks "Type"->"Annot" entry
+                }
+                // or build annotation from dictionary.
+                else if (annotObj instanceof Hashtable){ // Hashtable lacks "Type"->"Annot" entry
                     a = Annotation.buildAnnotation(library, (Hashtable) annotObj);
-
+                }
                 // add any found annotations to the vector.
-                annotation.addElement(a);
+                annotation.add(a);
             }
         }
     }
@@ -884,7 +886,7 @@ public class Page extends Dictionary implements MemoryManageable {
      *
      * @return annotation associated with page; null, if there are no annotations.
      */
-    public Vector getAnnotations() {
+    public ArrayList<Annotation> getAnnotations() {
         if (!isInited) {
             init();
         }
