@@ -1245,6 +1245,7 @@ public class SwingViewBuilder {
     public JToolBar buildToolToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
+        addToToolBar(toolbar, buildSelectToolButton());
         addToToolBar(toolbar, buildPanToolButton());
         addToToolBar(toolbar, buildTextSelectToolButton());
         addToToolBar(toolbar, buildZoomInToolButton());
@@ -1276,6 +1277,16 @@ public class SwingViewBuilder {
                 "text", buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setTextSelectToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildSelectToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.select.label"),
+                messageBundle.getString("viewer.toolbar.tool.select.tooltip"),
+                "select", buttonFont);
+        if (viewerController != null && btn != null)      
+            viewerController.setSelectToolButton(btn);
         return btn;
     }
 

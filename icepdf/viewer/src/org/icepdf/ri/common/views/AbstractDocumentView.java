@@ -185,7 +185,7 @@ public abstract class AbstractDocumentView
     /**
      * Handles mouse click events.  First any selected text is cleared and
      * then if the mouse event occured over a page component the mouse
-     * coordinates are converted to page space rebroadcast. 
+     * coordinates are converted to page space rebroadcast.
      *
      * @param e awt mouse event
      */
@@ -250,14 +250,13 @@ public abstract class AbstractDocumentView
         }
         // annotations always win, we have to deal with them first.
         if (pageComponent != null &&
-                pageComponent.isCursorOverAnnotation()) {
+                (documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION
+                        ||
+                        documentViewModel.getViewToolMode() ==
+                                DocumentViewModel.DISPLAY_TOOL_SELECTION)) {
+            // take care of annotations and the first click for selection
             pageComponent.mousePressed(modeEvent);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            // take care of annotations and the first click for selection 
-            if (pageComponent != null) {
-                pageComponent.mousePressed(modeEvent);
-            }
         } else {
             // panning icon state
             if (documentViewController.getDocumentViewModel()
@@ -279,7 +278,7 @@ public abstract class AbstractDocumentView
      * pages matches the boounds of this selection box.
      * <p/>
      * If the panning tool is selected then we pass the event of the panning
-     * handler. 
+     * handler.
      *
      * @param e awt mouse event
      */
@@ -292,9 +291,6 @@ public abstract class AbstractDocumentView
         AbstractPageViewComponent pageComponent = isOverPageComponent(e);
         MouseEvent modeEvent = SwingUtilities.convertMouseEvent(this, e, pageComponent);
         if (pageComponent != null &&
-                pageComponent.isCursorOverAnnotation()) {
-            pageComponent.mouseReleased(modeEvent);
-        } else if (pageComponent != null &&
                 documentViewModel.getViewToolMode() ==
                         DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             pageComponent.mouseReleased(modeEvent);
@@ -310,6 +306,12 @@ public abstract class AbstractDocumentView
                     }
                 }
             }
+        }
+        // annotation selection box drawing.
+        else if (pageComponent != null &&
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            pageComponent.mouseReleased(modeEvent);
         } else {
             // panning icon state
             if (documentViewController.getDocumentViewModel()
@@ -368,13 +370,23 @@ public abstract class AbstractDocumentView
                 }
             }
         }
+        // handles multiple selection box drawing.
         else if (documentViewController != null &&
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            // mouse -> page  broadcast .
+            AbstractPageViewComponent pageViewComponent =
+                    isOverPageComponent(e);
+            if (pageViewComponent != null) {
+                pageViewComponent.mouseDragged(
+                        SwingUtilities.convertMouseEvent(this, e,
+                                pageViewComponent));
+            }
+        } else if (documentViewController != null &&
                 documentViewModel.getViewToolMode() ==
                         DocumentViewModel.DISPLAY_TOOL_PAN) {
             panningHandler.mouseDragged(e);
         }
-        // todo add code for annotation tool handler, we can use the same
-        // selection box as text selection...
     }
 
     /**
