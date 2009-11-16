@@ -36,6 +36,7 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
@@ -53,6 +54,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -192,9 +194,9 @@ public class PageViewComponentImpl extends
         this.documentViewModel = documentViewModel;
         this.parentScrollPane = parentScrollPane;
 
-        // annotation hookup
+        // annotation action, selection and creation
         annotationHandler = new AnnotationHandler(this, documentViewModel);
-
+        // text selection
         textSelectionHandler = new TextSelectionPageHandler(this,
                 documentViewModel);
 
@@ -230,12 +232,13 @@ public class PageViewComponentImpl extends
         addMouseMotionListener(this);
         addComponentListener(this);
         // annotation pickups
-//        addMouseListener(annotationHandler);
-//        addMouseMotionListener(annotationHandler);
+        // handles, multiple selections and new annotation creation. 
+        addMouseListener(annotationHandler);
+        addMouseMotionListener(annotationHandler);
 
         // text selection mouse handler
-//        addMouseMotionListener(textSelectionHandler);
-//        addMouseListener(textSelectionHandler);
+        addMouseMotionListener(textSelectionHandler);
+        addMouseListener(textSelectionHandler);
     }
 
     public void init() {
@@ -253,7 +256,7 @@ public class PageViewComponentImpl extends
         isDirtyTimer.setInitialDelay(0);
 
         // PageInilizer and painter commands
-        pageInitilizer = new PageInitilizer();
+        pageInitilizer = new PageInitilizer(this);
         pagePainter = new PagePainter();
     }
 
@@ -408,7 +411,7 @@ public class PageViewComponentImpl extends
 
                 // paint any highlighted words
                 DocumentSearchController searchController =
-                    documentViewController.getParentController().getDocumentSearchController();
+                        documentViewController.getParentController().getDocumentSearchController();
                 if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)) {
                     searchController.searchHighlightPage(pageIndex);
                 }
@@ -428,36 +431,32 @@ public class PageViewComponentImpl extends
     /**
      * Mouse clicked event priority is given to annotation clicks.  Otherwise
      * the selected tool state is respected.
+     *
      * @param e awt mouse event.
      */
     public void mouseClicked(MouseEvent e) {
 
-        // if we have an annotation then we process it over other clicks.
-        if (annotationHandler.isCurrentAnnotation()) {
+        // depending on tool state propagate mouse state
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+            textSelectionHandler.mouseClicked(e);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
+            // correct click for coordinate of this component
+            Point p = e.getPoint();
+            Point offset = documentViewModel.getPageBounds(pageIndex).getLocation();
+            p.setLocation(p.x + offset.x, p.y + offset.y);
+            // request a zoom center on the new point
+            documentViewController.setZoomIn(p);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
+            // correct click for coordinate of this component
+            Point p = e.getPoint();
+            // request a zoom center on the new point
+            documentViewController.setZoomOut(p);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
             annotationHandler.mouseClicked(e);
-        }
-        // otherwise handle the click. 
-        else {
-            // depending on tool state propagate mouse state
-            if (documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-                textSelectionHandler.mouseClicked(e);
-            } else if (documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
-                // correct click for coordinate of this component
-                Point p = e.getPoint();
-                Point offset = documentViewModel.getPageBounds(pageIndex).getLocation();
-                p.setLocation(p.x + offset.x, p.y + offset.y);
-                // request a zoom center on the new point
-                documentViewController.setZoomIn(p);
-            } else if (documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
-                // correct click for coordinate of this component
-                Point p = e.getPoint();
-                // request a zoom center on the new point
-                documentViewController.setZoomOut(p);
-            }
-            // todo handle annotation selection.
         }
     }
 
@@ -474,10 +473,12 @@ public class PageViewComponentImpl extends
         // request page focus
         requestFocusInWindow();
 
-        if (annotationHandler.isCurrentAnnotation()) {
-            annotationHandler.mousePressed(e);
-        } else {
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             textSelectionHandler.mousePressed(e);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            annotationHandler.mousePressed(e);
         }
 
     }
@@ -488,23 +489,24 @@ public class PageViewComponentImpl extends
         }
     }
 
-    public boolean isCursorOverAnnotation() {
-        return annotationHandler != null &&
-                annotationHandler.isCurrentAnnotation();
-    }
-
     public void mouseReleased(MouseEvent e) {
-
-        if (annotationHandler.isCurrentAnnotation()) {
-            annotationHandler.mouseReleased(e);
-        } else {
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             textSelectionHandler.mouseReleased(e);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            annotationHandler.mouseReleased(e);
         }
     }
 
     public void mouseDragged(MouseEvent e) {
-
-        textSelectionHandler.mouseDragged(e);
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+            textSelectionHandler.mouseDragged(e);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            annotationHandler.mouseDragged(e);
+        }
     }
 
     public void setTextSelectionRectangle(Point cursorLocation, Rectangle selection) {
@@ -513,15 +515,13 @@ public class PageViewComponentImpl extends
 
     public void mouseMoved(MouseEvent e) {
 
-        // annotation get priority
-        annotationHandler.mouseMoved(e);
-
-        // if we're not over an onotation than process text selection. 
-        if (!annotationHandler.isCurrentAnnotation()) {
-            if (documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-                textSelectionHandler.mouseMoved(e);
-            }
+        // process text selection.
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+            textSelectionHandler.mouseMoved(e);
+        } else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            annotationHandler.mouseMoved(e);
         }
     }
 
@@ -531,8 +531,6 @@ public class PageViewComponentImpl extends
         documentViewController.firePropertyChange(PropertyConstants.DOCUMENT_CURRENT_PAGE,
                 oldCurrentPage,
                 pageIndex);
-
-        // todo also add focus group into the page for annotation tabbing...
     }
 
     public void focusLost(FocusEvent e) {
@@ -1078,7 +1076,12 @@ public class PageViewComponentImpl extends
         private boolean isRunning;
         private final Object isRunningLock = new Object();
 
+        private AbstractPageViewComponent pageComponent;
         private boolean hasBeenQueued;
+
+        private PageInitilizer(AbstractPageViewComponent pageComponent) {
+            this.pageComponent = pageComponent;
+        }
 
         public void run() {
             synchronized (isRunningLock) {
@@ -1093,6 +1096,21 @@ public class PageViewComponentImpl extends
                     documentViewController.getAnnotationCallback()
                             .pageAnnotationsInitialized(page);
                 }
+                // add annotation components to container.
+                ArrayList<Annotation> annotations = page.getAnnotations();
+                if (annotations != null) {
+                    for (Annotation annotation : annotations) {
+                        if (!(annotation.getFlagReadOnly() ||
+                                annotation.getFlagLocked() ||
+                                annotation.getFlagInvisible() ||
+                                annotation.getFlagHidden())) {
+                            add(new AnnotationComponent(annotation,
+                                    documentViewController,
+                                    pageComponent, documentViewModel));
+                        }
+                    }
+                }
+
                 pageTree.releasePage(page, this);
             }
             catch (Throwable e) {

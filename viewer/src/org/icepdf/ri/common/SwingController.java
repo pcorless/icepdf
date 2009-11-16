@@ -187,6 +187,7 @@ public class SwingController
 
     private JToggleButton panToolButton;
     private JToggleButton textSelectToolButton;
+    private JToggleButton selectToolButton;
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomOutToolButton;
 
@@ -755,8 +756,19 @@ public class SwingController
         btn.addItemListener(this);
     }
 
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
     public void setTextSelectToolButton(JToggleButton btn) {
         textSelectToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setSelectToolButton(JToggleButton btn) {
+        selectToolButton = btn;
         btn.addItemListener(this);
     }
 
@@ -940,6 +952,7 @@ public class SwingController
         setEnabled(zoomInToolButton, opened);
         setEnabled(zoomOutToolButton, opened);
         setEnabled(textSelectToolButton, opened);
+        setEnabled(selectToolButton, opened);
         setEnabled(fontEngineButton, opened);
         setEnabled(facingPageViewContinuousButton, opened);
         setEnabled(singlePageViewContinuousButton, opened);
@@ -1146,6 +1159,11 @@ public class SwingController
                     documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
             documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+        }  else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
+            actualToolMayHaveChanged =
+                    documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
+            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
         } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
             actualToolMayHaveChanged =
                     documentViewController.setToolMode(
@@ -1163,8 +1181,11 @@ public class SwingController
         } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_NONE) {
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
         }
-        if (actualToolMayHaveChanged)
+        if (actualToolMayHaveChanged){
             reflectToolInToolButtons();
+        }
+        // repaint the page views. 
+        documentViewController.getViewContainer().repaint();
     }
 
 
@@ -1191,6 +1212,10 @@ public class SwingController
         reflectSelectionInButton(textSelectToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION
+                ));
+        reflectSelectionInButton(selectToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION
                 ));
         reflectSelectionInButton(zoomInToolButton,
                 documentViewController.isToolModeSelected(
@@ -1897,6 +1922,7 @@ public class SwingController
         zoomInToolButton = null;
         zoomOutToolButton = null;
         textSelectToolButton = null;
+        selectToolButton = null;
 
         fontEngineButton = null;
 
@@ -3220,6 +3246,11 @@ public class SwingController
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
+                }
+            }  else if (source == selectToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_SELECTION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
                 }
             } else if (source == zoomInToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {

@@ -2,155 +2,193 @@ package org.icepdf.core.views.common;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.util.ColorUtil;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.core.views.swing.AnnotationComponent;
 
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
-import java.awt.geom.Rectangle2D;
-import java.util.Vector;
-import java.util.logging.Level;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * <p>This Class takes care of handling annoation interaction
- * via the UI mouse.  This class is responsible for a few things:
- * </p>
- * <ul>
- * - changing the mouse icon to a pointer when an annotation is encountered
- * on a page.
- * - listener for mouse pressed events to handle annotation actions
- * - painting of annotation rollover effects.
- * </ul>
- * <p>Annotation mouse clicks will only be enabled when the regular pan tool
- * is selected, to activate an annotation using another tool (maginify, text
- * select, etc.) use the ctr key combined with a mouse click to activate the
- * annotaiton. </p>
+ * <p>This classes purpose is to manage annotation selected state and the
+ * broadcaset of resized and moved for multiple selected components.  The
+ * other purpose of this class is to handle the drawing of a selection box
+ * and handle the creation of new link annotation when the link annotation
+ * tool is selected </p>
  *
  * @since 4.0
  */
-public class AnnotationHandler implements MouseInputListener {
+public class AnnotationHandler extends SelectionBoxHandler
+        implements MouseInputListener {
 
     private static final Logger logger =
             Logger.getLogger(AnnotationHandler.class.toString());
 
-    // disable/enable file caching, overrides fileCachingSize.
-    private static boolean isInteractiveAnnotationsEnabled;
-    private static Color annotationHighlightColor;
-    private static float annotationHighlightAlpha;
-
-    static {
-        // enables interactive annotation support.
-        isInteractiveAnnotationsEnabled =
-                Defs.sysPropertyBoolean(
-                        "org.icepdf.core.annotations.interactive.enabled", true);
-
-        // sets annotation selected highlight colour
-        try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.highlight.color", "#000000");
-            int colorValue = ColorUtil.convertColor(color);
-            annotationHighlightColor =
-                    new Color(colorValue > 0 ? colorValue :
-                            Integer.parseInt("000000", 16));
-
-        } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading page annotation highlight colour");
-            }
-        }
-
-        // set the annotation alpha value.
-        // sets annotation selected highlight colour
-        try {
-            String alpha = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.highlight.alpha", "0.4");
-            annotationHighlightAlpha = Float.parseFloat(alpha);
-
-        } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading page annotation highlight alpha");
-            }
-            annotationHighlightAlpha = 0.4f;
-        }
-    }
 
     // parent page component
     private AbstractPageViewComponent pageViewComponent;
     private DocumentViewController documentViewController;
     private DocumentViewModel documentViewModel;
-    // annotation support
-    private Annotation currentAnnotation;
-    private boolean isMousePressed = false;
+
+    // selected annotations.
+    private ArrayList<AnnotationComponent> selectedAnnotations;
 
     public AnnotationHandler(AbstractPageViewComponent pageViewComponent,
                              DocumentViewModel documentViewModel) {
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
+        selectedAnnotations = new ArrayList<AnnotationComponent>();
     }
 
     /**
-     * Is the given mouse event over an annotation.  Annotation detection
-     * is actually handled by the mouse moved event and a currentAnnotation
-     * is set to represent the current annotation.
-     *  
-     * @return true if there is a current annotation false otherwise.
+     * DocumentController callback
+     *
+     * @param documentViewController document controller.
      */
-    public boolean isCurrentAnnotation(){
-        return currentAnnotation != null;
-    }
-
     public void setDocumentViewController(
             DocumentViewController documentViewController) {
         this.documentViewController = documentViewController;
     }
 
-    public void mouseClicked(MouseEvent e) {
-        // if cuurrentAnnotation exists, we want to process the click.
-        if (currentAnnotation != null &&
-                documentViewController.getAnnotationCallback() != null) {
-            documentViewController.getAnnotationCallback()
-                    .proccessAnnotationAction(currentAnnotation);
+    /**
+     * Creates a new link annotation when the link annotation creation tool is
+     * selected.  The bounds of the annotation are defined by the current
+     * selection box that has none zero bounds.  If the two previous
+     * conditions are met then the annotation callback is fired and an
+     * width a new annotation object which can be updated by the end user
+     * using either the api or UI tools.
+     */
+    public void createNewLinkAnnotation() {
+        // todo setup objects, add them to library and finally the callback api
+        // call.
+        if (documentViewModel.getViewToolMode() !=
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+//            if (documentViewController.getAnnotationCallback() != null) {
+//                documentViewController.getAnnotationCallback()
+//                        .proccessAnnotationAction(annotation);
+//            }
         }
+    }
+
+    /**
+     * Adds an Annotation component to the list of selected.  The list
+     * of selected annotations is used do batch resize and moved commands.
+     *
+     * @param annotationComponent component to add to list of selected annotations
+     */
+    public void addSelectedAnnotation(AnnotationComponent annotationComponent) {
+        selectedAnnotations.add(annotationComponent);
+    }
+
+    /**
+     * Adds an Annotation component to the list of selected.  The list
+     * of selected annotations is used do batch resize and moved commands.
+     *
+     * @param annotationComponent remove the specified annotation from the
+     *                            selection list
+     */
+    public void removeSelectedAnnotation(AnnotationComponent annotationComponent) {
+        selectedAnnotations.remove(annotationComponent);
+    }
+
+    /**
+     * Clears the slected list of AnnotationComponent,  PageViewComponent
+     * focus should be called after this method is called to insure deselection
+     * of all AnnotationComponents.
+     */
+    public void clearSelectedList() {
+        selectedAnnotations.clear();
+    }
+
+    /**
+     * Determines if there are more then one selected component.  If there is
+     * more then one component that steps should be made to do batch move and
+     * resize propigation.
+     *
+     * @return true if there are more then one AnnotationComponents in a selected
+     *         state
+     */
+    public boolean isMultipleSelect() {
+        return selectedAnnotations.size() > 1;
+    }
+
+    /**
+     * Moves all selected annotation components by the x,y translation.
+     *
+     * @param x x-axis offset to be applied to all selected annotation.
+     * @param y y-axis offset to be applied to all selected annotation.
+     */
+    public void moveSelectedAnnotations(int x, int y) {
+        // todo implement
+
+        // considerations to make sure annotation is not outside of page bounds
+    }
+
+    /**
+     * Resizes all selected annotation components by the width and height
+     * values.
+     *
+     * @param width  width offset to be applied to all selected annotation.
+     * @param height height offset to be applied to all selected annotation.
+     */
+    public void resizeSelectedAnnotations(int width, int height) {
+        // todo implement
+
+        // considerations to make sure annotation is not outside of page bounds
+    }
+
+
+    public void mouseClicked(MouseEvent e) {
+
     }
 
     public void mousePressed(MouseEvent e) {
-       
-        // setup visual effect when the mouse button is pressed or held down
-        // inside the active area of the annotation.
-        isMousePressed = true;
-        if (currentAnnotation != null) {
+
+        clearSelectedList();
+
+        // annotation selection box.
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            int x = e.getX();
+            int y = e.getY();
+            currentRect = new Rectangle(x, y, 0, 0);
+            updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
             pageViewComponent.repaint();
         }
+
     }
 
     public void mouseDragged(MouseEvent e) {
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
 
+            // rectangle select tool
+            updateSelectionSize(e, pageViewComponent);
+        }
     }
 
     public void mouseReleased(MouseEvent e) {
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
 
-        isMousePressed = false;
-        if (currentAnnotation != null) {
+            // update selection rectangle
+            updateSelectionSize(e, pageViewComponent);
+
+            // clear the rectangle
+            clearRectangle(pageViewComponent);
+
             pageViewComponent.repaint();
         }
     }
 
     public void mouseMoved(MouseEvent e) {
 
-        Page currentPage = pageViewComponent.getPageLock(this);
-        // handle annotation mouse coordinates
-        annotationMouseMoveHandler(currentPage, e.getPoint());
-
-        pageViewComponent.releasePageLock(currentPage, this);
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -161,10 +199,22 @@ public class AnnotationHandler implements MouseInputListener {
 
     }
 
+    /**
+     * Paints all annotation content for a given page view.  If any annotation
+     * properties are changed then this method must be called to repaint the
+     * page annotations.
+     * <p/>
+     * todo: as a future enhancement it would be great if each Annotation
+     * component did its own painting,  this would take a little more time
+     * to figure out the correct coordinate space.
+     *
+     * @param g parent PageViewComponent graphics context to paint annotations
+     *          to.
+     */
     public void paintAnnotations(Graphics g) {
         Page currentPage = pageViewComponent.getPageLock(this);
         if (currentPage != null && currentPage.isInitiated()) {
-            Vector annotations = currentPage.getAnnotations();
+            ArrayList<Annotation> annotations = currentPage.getAnnotations();
             if (annotations != null) {
 
                 Graphics2D gg2 = (Graphics2D) g;
@@ -187,46 +237,11 @@ public class AnnotationHandler implements MouseInputListener {
                     tmp = annotation1;
                     if (tmp instanceof Annotation) {
                         annotation = (Annotation) tmp;
+                        // todo annotationComp know if they are selected....
+                        // and we can paint the selected state. 
                         annotation.render(gg2, GraphicsRenderingHints.SCREEN,
-                                documentViewModel.getViewRotation(), documentViewModel.getViewZoom(), false);
-                    }
-                }
-
-                // annotation appearance dictionary, rollover, down appearance.
-                if (currentAnnotation != null &&
-                        currentAnnotation.allowScreenRolloverMode() &&
-                        isMousePressed) {
-                    if (currentAnnotation instanceof LinkAnnotation) {
-                        LinkAnnotation linkAnnotation = (LinkAnnotation) currentAnnotation;
-                        int highlightMode = linkAnnotation.getHighlightMode();
-                        if (highlightMode == LinkAnnotation.HIGHLIGHT_INVERT) {
-                            Rectangle2D rect = currentAnnotation.getUserSpaceRectangle();
-                            gg2.setColor(annotationHighlightColor);
-                            gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                                    annotationHighlightAlpha));
-                            gg2.fillRect((int) rect.getX(),
-                                    (int) rect.getY(),
-                                    (int) rect.getWidth(),
-                                    (int) rect.getHeight());
-                        } else if (highlightMode == LinkAnnotation.HIGHLIGHT_OUTLINE) {
-                            Rectangle2D rect = currentAnnotation.getUserSpaceRectangle();
-                            gg2.setColor(annotationHighlightColor);
-                            gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                                    annotationHighlightAlpha));
-                            gg2.drawRect((int) rect.getX(),
-                                    (int) rect.getY(),
-                                    (int) rect.getWidth(),
-                                    (int) rect.getHeight());
-                        } else if (highlightMode == LinkAnnotation.HIGHLIGHT_PUSH) {
-                            Rectangle2D rect = currentAnnotation.getUserSpaceRectangle();
-                            gg2.setColor(annotationHighlightColor);
-                            gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                                    annotationHighlightAlpha));
-                            gg2.drawRect((int) rect.getX(),
-                                    (int) rect.getY(),
-                                    (int) rect.getWidth(),
-                                    (int) rect.getHeight());
-                        }
+                                documentViewModel.getViewRotation(),
+                                documentViewModel.getViewZoom(), false);
                     }
                 }
                 // post paint clean up.
@@ -236,62 +251,65 @@ public class AnnotationHandler implements MouseInputListener {
             }
         }
         pageViewComponent.releasePageLock(currentPage, this);
+
+        // pain selection box
+        paintSelectionBox(g);
     }
 
+    /**
+     private void annotationMouseMoveHandler(Page currentPage,
+     Point mouseLocation) {
 
-    private void annotationMouseMoveHandler(Page currentPage,
-                                            Point mouseLocation) {
+     if (currentPage != null &&
+     currentPage.isInitiated() &&
+     isInteractiveAnnotationsEnabled) {
+     ArrayList<Annotation> annotations = currentPage.getAnnotations();
+     if (annotations != null) {
+     Annotation annotation;
+     Object tmp;
+     AffineTransform at = currentPage.getPageTransform(
+     documentViewModel.getPageBoundary(),
+     documentViewModel.getViewRotation(),
+     documentViewModel.getViewZoom());
 
-        if (currentPage != null &&
-                currentPage.isInitiated() &&
-                isInteractiveAnnotationsEnabled) {
-            Vector annotations = currentPage.getAnnotations();
-            if (annotations != null) {
-                Annotation annotation;
-                Object tmp;
-                AffineTransform at = currentPage.getPageTransform(
-                        documentViewModel.getPageBoundary(),
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
+     try {
+     at.inverseTransform(mouseLocation, mouseLocation);
+     } catch (NoninvertibleTransformException e1) {
+     e1.printStackTrace();
+     }
 
-                try {
-                    at.inverseTransform(mouseLocation, mouseLocation);
-                } catch (NoninvertibleTransformException e1) {
-                    e1.printStackTrace();
-                }
-
-                for (Object annotation1 : annotations) {
-                    tmp = annotation1;
-                    if (tmp instanceof Annotation) {
-                        annotation = (Annotation) tmp;
-                        // repaint an annotation.
-                        if (annotation.getUserSpaceRectangle().contains(
-                                mouseLocation.getX(), mouseLocation.getY())) {
-                            currentAnnotation = annotation;
-                            documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_ANNOTATION);
-//                            repaint(annotation.getUserSpaceRectangle().getBounds());
-                            pageViewComponent.repaint();
-                            break;
-                        } else {
-                            currentAnnotation = null;
-                        }
-                    }
-                }
-                if (currentAnnotation == null) {
-                    int toolMode = documentViewModel.getViewToolMode();
-                    if (toolMode == DocumentViewModel.DISPLAY_TOOL_PAN) {
-                        documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_OPEN);
-                    } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
-                        documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_IN);
-                    } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
-                        documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_OUT);
-                    } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-                        documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
-                    }
-                    pageViewComponent.repaint();
-                }
-            }
-        }
-    }
-
+     for (Object annotation1 : annotations) {
+     tmp = annotation1;
+     if (tmp instanceof Annotation) {
+     annotation = (Annotation) tmp;
+     // repaint an annotation.
+     if (annotation.getUserSpaceRectangle().contains(
+     mouseLocation.getX(), mouseLocation.getY())) {
+     currentAnnotation = annotation;
+     documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_ANNOTATION);
+     //                            repaint(annotation.getUserSpaceRectangle().getBounds());
+     pageViewComponent.repaint();
+     break;
+     } else {
+     currentAnnotation = null;
+     }
+     }
+     }
+     if (currentAnnotation == null) {
+     int toolMode = documentViewModel.getViewToolMode();
+     if (toolMode == DocumentViewModel.DISPLAY_TOOL_PAN) {
+     documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_OPEN);
+     } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
+     documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_IN);
+     } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
+     documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_OUT);
+     } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+     documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+     }
+     pageViewComponent.repaint();
+     }
+     }
+     }
+     }
+     */
 }

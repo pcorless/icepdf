@@ -95,12 +95,6 @@ public interface PageViewComponent {
     public void clearSelectedText();
 
     /**
-     * Determines if cursor is over a page annotation.
-     * @return true if mouse pointer or cursor is over annotation.
-     */
-    public boolean isCursorOverAnnotation();
-
-    /**
      * Sets the text that is contained in the specified recttangle and the
      * given mouse pointer.  The cursor and selection rectangel must be in
      * in page space.

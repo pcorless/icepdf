@@ -65,6 +65,10 @@ public interface DocumentViewModel {
      */
     public int DISPLAY_TOOL_TEXT_SELECTION = 4;
     /**
+     * Display tool constant for adding a text selection tool.
+     */
+    public int DISPLAY_TOOL_SELECTION = 5;
+    /**
      * Display tool constant for setting no tools
      */
     public int DISPLAY_TOOL_NONE = 8;
