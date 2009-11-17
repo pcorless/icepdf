@@ -198,8 +198,6 @@ public abstract class AbstractDocumentView
                     isOverPageComponent(e);
             // found a page
             if (pageViewComponent != null) {
-                // assign focus to the clicked on page
-                pageViewComponent.requestFocus();
                 // broadcast the event.
                 pageViewComponent.mouseClicked(
                         SwingUtilities.convertMouseEvent(this, e,
