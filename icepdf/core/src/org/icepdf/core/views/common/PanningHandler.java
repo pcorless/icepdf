@@ -56,9 +56,6 @@ public class PanningHandler implements MouseMotionListener, MouseListener {
 
                 // update last position holder
                 lastMousePosition.setLocation(p);
-
-                // grab focus for keyboard events
-                documentViewController.requestViewFocusInWindow();
             }
         }
     }
