@@ -1414,7 +1414,6 @@ public class SwingController
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
         }
-        documentViewController.requestViewFocusInWindow();
     }
 
     /**
@@ -1536,7 +1535,6 @@ public class SwingController
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
         }
-        documentViewController.requestViewFocusInWindow();
     }
 
     /**
@@ -1609,7 +1607,6 @@ public class SwingController
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
         }
-        documentViewController.requestViewFocusInWindow();
     }
 
     /**
@@ -1679,7 +1676,6 @@ public class SwingController
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
         }
-        documentViewController.requestViewFocusInWindow();
     }
 
     private void commonNewDocumentHandling(String fileDescription) {
@@ -2576,7 +2572,6 @@ public class SwingController
      */
     public void setZoom(float zoom) {
         documentViewController.setZoom(zoom);
-//        doCommonZoomUIUpdates();
     }
 
     public void doCommonZoomUIUpdates(boolean becauseOfValidFitMode) {
@@ -2584,8 +2579,6 @@ public class SwingController
         reflectZoomInZoomComboBox();    // Might change fit value
         if (!becauseOfValidFitMode)
             setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_NONE, false);
-        // assign focus to document view
-        documentViewController.requestViewFocusInWindow();
     }
 
     /**
@@ -2689,9 +2682,6 @@ public class SwingController
                 }
             }
 
-            // grab focus for keyboard events
-            documentViewController.requestViewFocusInWindow();
-
             if (statusLabel != null) {
                 if (pageTree != null) {
                     // progress bar for printing
@@ -2719,8 +2709,6 @@ public class SwingController
      */
     public void rotateLeft() {
         documentViewController.setRotateLeft();
-        // grab focus for keyboard events
-        documentViewController.requestViewFocusInWindow();
         // rest fit page mode, if any
         setPageFitMode(documentViewController.getFitMode(), true);
     }
@@ -2731,8 +2719,6 @@ public class SwingController
      */
     public void rotateRight() {
         documentViewController.setRotateRight();
-        // grab focus for keyboard events
-        documentViewController.requestViewFocusInWindow();
         // rest fit page mode, if any
         setPageFitMode(documentViewController.getFitMode(), true);
     }
@@ -2967,6 +2953,9 @@ public class SwingController
         Object source = event.getSource();
         if (source == null)
             return;
+
+        boolean cancelSetFocus = false;
+
         try {
             if (source == openFileMenuItem || source == openFileButton) {
                 Runnable doSwingWork = new Runnable() {
@@ -3071,7 +3060,7 @@ public class SwingController
                     } else if (source == printMenuItem) {
                         print(true);
                     } else if (source == printButton) {
-                        print(false);
+                        print(true); // Used to be 'false' PDF-86
                     } else if (source == copyMenuItem) {
                         if (document != null &&
                                 havePermissionToExtractContent() &&
@@ -3134,6 +3123,7 @@ public class SwingController
                     } else if (source == lastPageMenuItem || source == lastPageButton) {
                         showPage(getPageTree().getNumberOfPages() - 1);
                     } else if (source == searchMenuItem || source == searchButton) {
+                        cancelSetFocus = true;
                         showSearchPanel();
                     } else if (source == goToPageMenuItem) {
                         showPageSelectionDialog();
@@ -3144,7 +3134,7 @@ public class SwingController
                     }
                 }
                 finally {
-                    // set view pain back to previous icon
+                    // set view pane back to previous icon
                     setDisplayTool(documentIcon);
                 }
             }
@@ -3162,11 +3152,13 @@ public class SwingController
                 }
             };
             SwingUtilities.invokeLater(doSwingWork);
-
             logger.log(Level.FINE, "Error processing action event.", e);
         }
-        // setup focus to ensure page up and page down keys work
-        documentViewController.requestViewFocusInWindow();
+
+        if (!cancelSetFocus) {
+            // setup focus to ensure page up and page down keys work
+            documentViewController.requestViewFocusInWindow();
+        }
     }
 
     //
@@ -3209,24 +3201,29 @@ public class SwingController
         if (source == null)
             return;
 
+        boolean doSetFocus = false;
         int tool = getDocumentViewToolMode();
         setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
         try {
             if (source == zoomComboBox) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setZoomFromZoomComboBox();
+                    // Since combobox is an entry component, we don't force focus to the document
                 }
             } else if (source == fitActualSizeButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
+                    doSetFocus = true;
                 }
             } else if (source == fitHeightButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
+                    doSetFocus = true;
                 }
             } else if (source == fitWidthButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
+                    doSetFocus = true;
                 }
             } else if (source == fontEngineButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED ||
@@ -3235,17 +3232,20 @@ public class SwingController
                     FontFactory.getInstance().toggleAwtFontSubstitution();
                     // refresh the document, refresh will happen by the component.
                     documentViewController.getDocumentView().getViewModel().invalidate();
+                    doSetFocus = true;
                 }
 
             } else if (source == panToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_PAN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                    doSetFocus = true;
                 }
             } else if (source == textSelectToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
+                    doSetFocus = true;
                 }
             }  else if (source == selectToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -3256,39 +3256,49 @@ public class SwingController
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
+                    doSetFocus = true;
                 }
             } else if (source == zoomOutToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT);
+                    doSetFocus = true;
                 }
             } else if (source == facingPageViewNonContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW,
                             false);
+                    doSetFocus = true;
                 }
             } else if (source == facingPageViewContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.TWO_COLUMN_RIGHT_VIEW,
                             false);
+                    doSetFocus = true;
                 }
             } else if (source == singlePageViewNonContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.ONE_PAGE_VIEW,
                             false);
+                    doSetFocus = true;
                 }
             } else if (source == singlePageViewContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.ONE_COLUMN_VIEW,
                             false);
+                    doSetFocus = true;
                 }
             }
-            // setup focus to ensure page up and page down keys work
-            documentViewController.requestViewFocusInWindow();
+
+            if (doSetFocus) {
+                // setup focus to ensure page up and page down keys work
+                documentViewController.requestViewFocusInWindow();
+            }
+
         }
         finally {
             setDisplayTool(tool);
@@ -3317,6 +3327,8 @@ public class SwingController
         // return focus so that arrow keys will work on list
         outlinesTree.requestFocus();
     }
+
+
     //
     // WindowListener interface
     //
