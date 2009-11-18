@@ -34,6 +34,8 @@ package org.icepdf.core.views;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.ri.common.AnnotationCareTaker;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
@@ -68,6 +70,10 @@ public interface DocumentViewModel {
      * Display tool constant for adding a text selection tool.
      */
     public int DISPLAY_TOOL_SELECTION = 5;
+    /**
+     * Display tool constant for adding a text selection tool.
+     */
+    public int DISPLAY_TOOL_LINK_ANNOTATION = 6;
     /**
      * Display tool constant for setting no tools
      */
@@ -230,4 +236,10 @@ public interface DocumentViewModel {
      * @return page boundary type as defined in the class Page.
      */
     public int getPageBoundary();
+
+    public AnnotationComponent getCurrentAnnotation();
+
+    public void setCurrentAnnotation(AnnotationComponent currentAnnotation);
+
+    public AnnotationCareTaker getAnnotationCareTaker();
 }

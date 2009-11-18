@@ -283,6 +283,7 @@ public class PageViewComponentImpl extends
         // remove annotation listeners.
         removeMouseMotionListener(annotationHandler);
         removeMouseListener(annotationHandler);
+        // todo unhook annotation handler. 
 
         // text selection
         removeMouseMotionListener(textSelectionHandler);
@@ -1091,26 +1092,16 @@ public class PageViewComponentImpl extends
             try {
                 Page page = pageTree.getPage(pageIndex, this);
                 page.init();
+                // add annotation components to container, this only done
+                // once, but Annotation state can be refreshed with the api
+                // when needed.
+                annotationHandler.initializeAnnotationComponents(
+                        page.getAnnotations());
                 // fire page annotation initialized callback
                 if (documentViewController.getAnnotationCallback() != null) {
                     documentViewController.getAnnotationCallback()
                             .pageAnnotationsInitialized(page);
                 }
-                // add annotation components to container.
-                ArrayList<Annotation> annotations = page.getAnnotations();
-                if (annotations != null) {
-                    for (Annotation annotation : annotations) {
-                        if (!(annotation.getFlagReadOnly() ||
-                                annotation.getFlagLocked() ||
-                                annotation.getFlagInvisible() ||
-                                annotation.getFlagHidden())) {
-                            add(new AnnotationComponent(annotation,
-                                    documentViewController,
-                                    pageComponent, documentViewModel));
-                        }
-                    }
-                }
-
                 pageTree.releasePage(page, this);
             }
             catch (Throwable e) {

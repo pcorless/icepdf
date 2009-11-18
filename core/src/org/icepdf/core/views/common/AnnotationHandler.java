@@ -36,7 +36,12 @@ public class AnnotationHandler extends SelectionBoxHandler
     private DocumentViewController documentViewController;
     private DocumentViewModel documentViewModel;
 
+    // annotations component for pageViewComp.
+    private ArrayList<AnnotationComponent> annotations;
+
     // selected annotations.
+    // todo: implement multiple select,  should probably go in documentViewModel
+    // instead. 
     private ArrayList<AnnotationComponent> selectedAnnotations;
 
     public AnnotationHandler(AbstractPageViewComponent pageViewComponent,
@@ -54,6 +59,29 @@ public class AnnotationHandler extends SelectionBoxHandler
     public void setDocumentViewController(
             DocumentViewController documentViewController) {
         this.documentViewController = documentViewController;
+    }
+
+    public void initializeAnnotationComponents(ArrayList<Annotation> annotations){
+
+        if (this.annotations == null && annotations != null){
+            this.annotations = new ArrayList<AnnotationComponent>(annotations.size());
+            AnnotationComponent comp;
+            for (Annotation annotation : annotations) {
+                if (!(annotation.getFlagReadOnly() ||
+                        annotation.getFlagLocked() ||
+                        annotation.getFlagInvisible() ||
+                        annotation.getFlagHidden())) {
+                    comp = new AnnotationComponent(annotation,
+                            documentViewController,
+                            pageViewComponent, documentViewModel);
+                    // add them to the container, using absolute positioning.
+                    pageViewComponent.add(comp);
+                    // add the comp reference locally so we have easier access
+                    this.annotations.add(comp);
+                }
+            }
+        }
+
     }
 
     /**
@@ -214,35 +242,30 @@ public class AnnotationHandler extends SelectionBoxHandler
     public void paintAnnotations(Graphics g) {
         Page currentPage = pageViewComponent.getPageLock(this);
         if (currentPage != null && currentPage.isInitiated()) {
-            ArrayList<Annotation> annotations = currentPage.getAnnotations();
             if (annotations != null) {
-
                 Graphics2D gg2 = (Graphics2D) g;
-
                 // save draw state.
                 AffineTransform prePaintTransform = gg2.getTransform();
                 Color oldColor = gg2.getColor();
                 Stroke oldStroke = gg2.getStroke();
-
+                // apply page transform.
                 AffineTransform at = currentPage.getPageTransform(
                         documentViewModel.getPageBoundary(),
                         documentViewModel.getViewRotation(),
                         documentViewModel.getViewZoom());
                 gg2.transform(at);
+                // get current tool state, we don't want to draw the highlight
+                // state if the selection tool is selected.
+                boolean notSelectTool =
+                        documentViewModel.getViewToolMode() !=
+                                DocumentViewModel.DISPLAY_TOOL_SELECTION;
 
                 // paint all annotations on top of the content buffer
-                Object tmp;
-                Annotation annotation;
-                for (Object annotation1 : annotations) {
-                    tmp = annotation1;
-                    if (tmp instanceof Annotation) {
-                        annotation = (Annotation) tmp;
-                        // todo annotationComp know if they are selected....
-                        // and we can paint the selected state. 
-                        annotation.render(gg2, GraphicsRenderingHints.SCREEN,
-                                documentViewModel.getViewRotation(),
-                                documentViewModel.getViewZoom(), false);
-                    }
+                for (AnnotationComponent annotation : annotations) {
+                    annotation.getAnnotation().render(gg2, GraphicsRenderingHints.SCREEN,
+                            documentViewModel.getViewRotation(),
+                            documentViewModel.getViewZoom(),
+                            annotation.hasFocus() && notSelectTool);
                 }
                 // post paint clean up.
                 gg2.setColor(oldColor);
@@ -253,7 +276,8 @@ public class AnnotationHandler extends SelectionBoxHandler
         pageViewComponent.releasePageLock(currentPage, this);
 
         // pain selection box
-        paintSelectionBox(g);
+        // multiple selection annotations is not currently supported.
+//        paintSelectionBox(g);
     }
 
     /**

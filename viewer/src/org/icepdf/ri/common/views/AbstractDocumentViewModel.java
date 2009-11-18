@@ -38,6 +38,8 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.ri.common.AnnotationCareTaker;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
@@ -73,6 +75,12 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     private boolean selectAll;
 
     protected List<AbstractPageViewComponent> pageComponents;
+
+    // annotation memento caretaker
+    protected AnnotationCareTaker annotationCareTaker;
+
+    // currently selected annotation
+    protected AnnotationComponent currentAnnotation;
 
     // page view settings
     protected float userZoom = 1.0f, oldUserZoom = 1.0f;
@@ -150,6 +158,9 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public AbstractDocumentViewModel(Document currentDocument) {
         this.currentDocument = currentDocument;
+
+        // create new instance of the annotationCareTaker
+        annotationCareTaker = new AnnotationCareTaker();
     }
 
     public Document getDocument() {
@@ -184,7 +195,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * WeakReference must be checkt o make sure the page was not disposed of
      * for for some reason by the the memeory manager.
      *
-     * @return list of pages that are in a selected state. 
+     * @return list of pages that are in a selected state.
      */
     public ArrayList<WeakReference<AbstractPageViewComponent>> getSelectedPageText() {
         return selectedPageText;
@@ -192,6 +203,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Gets the selected all state of the doucment pages view.
+     *
      * @return true if all pages are ina  selected state, false otherwise.
      */
     public boolean isSelectAll() {
@@ -366,6 +378,41 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         // do a little clean up.
         pageInitilizationThreadPool.purge();
         pagePainterThreadPool.purge();
+    }
+
+    /**
+     * Gets the currently selected annotation in the document model.
+     * @return currently selected annotation, null if there is none.
+     */
+    public AnnotationComponent getCurrentAnnotation() {
+        return currentAnnotation;
+    }
+
+    /**
+     * Sets the current annotation.  This is manily called by the UI tools
+     * when editing and selecting page annotations.
+     * @param currentAnnotation annotation to make current.
+     */
+    public void setCurrentAnnotation(AnnotationComponent currentAnnotation) {
+        // clear the previously selected state.
+        if (this.currentAnnotation != null){
+            this.currentAnnotation.setSelected(false);
+            this.currentAnnotation.repaint();
+        }
+        this.currentAnnotation = currentAnnotation;
+        // select the new selection if valid
+        if (this.currentAnnotation != null){
+            this.currentAnnotation.setSelected(true);
+        }
+    }
+
+    /**
+     * Gets annotation caretaker responsible for saving states as defined
+     * by the momento pattern.
+     * @return document leve annotation care taker.
+     */
+    public AnnotationCareTaker getAnnotationCareTaker() {
+        return annotationCareTaker;
     }
 
 }

@@ -35,6 +35,7 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
@@ -42,6 +43,7 @@ import org.icepdf.core.views.common.PanningHandler;
 import org.icepdf.core.views.common.SelectionBoxHandler;
 import org.icepdf.core.views.common.ZoomHandler;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.core.views.swing.AnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,6 +54,8 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 
 /**
@@ -148,6 +152,45 @@ public abstract class AbstractDocumentView
         // listen for scroll bar manipulators
         documentViewController.getHorizontalScrollBar().addAdjustmentListener(this);
         documentViewController.getVerticalScrollBar().addAdjustmentListener(this);
+
+        // add a focus management listener.
+        KeyboardFocusManager focusManager =
+           KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        focusManager.addPropertyChangeListener(new PropertyChangeListener(){
+            public void propertyChange(PropertyChangeEvent evt) {
+                String prop = evt.getPropertyName();
+                Object newValue = evt.getNewValue();
+                Object oldValue = evt.getOldValue();
+                if ("focusOwner".equals(prop) &&
+                        newValue instanceof AnnotationComponent){
+                    // the correct annotations for the properties pane
+                    if (logger.isLoggable(Level.INFO)){
+                        logger.info("Selected Annotation " + newValue);
+                    }
+                    DocumentViewController documentViewController =
+                            getParentViewController();
+                        documentViewController.firePropertyChange(
+                                PropertyConstants.ANNOTATION_FOCUS_GAINED,
+                                evt.getOldValue(),
+                                evt.getNewValue());
+
+                }
+                else if ("focusOwner".equals(prop) &&
+                        oldValue instanceof AnnotationComponent){
+                    // the correct annotations for the properties pane
+                    if (logger.isLoggable(Level.INFO)){
+                        logger.info("Deselected Annotation " + oldValue);
+                    }
+                    DocumentViewController documentViewController =
+                            getParentViewController();
+                    documentViewController.firePropertyChange(
+                            PropertyConstants.ANNOTATION_FOCUS_LOST,
+                            evt.getOldValue(),
+                            evt.getNewValue());
+                }
+            }
+        });
+
     }
 
     public DocumentViewController getParentViewController() {
@@ -234,6 +277,8 @@ public abstract class AbstractDocumentView
     public void mousePressed(MouseEvent e) {
         // clear all selected text. 
         documentViewController.clearSelectedText();
+        // deselect any selected annotations.
+        documentViewController.clearSelectedAnnotations();
 
         // start selection box.
         selectionBox.resetRectangle(e.getX(), e.getY());
@@ -303,6 +348,12 @@ public abstract class AbstractDocumentView
                         pageComp.mouseReleased(modeEvent);
                     }
                 }
+            }
+            // finally if we have selected any text then fire a property change event
+            if (selectedPages != null && selectedPages.size() > 0 ){
+                documentViewController.firePropertyChange(
+                        PropertyConstants.TEXT_SELECTED,
+                        null,null);
             }
         }
         // annotation selection box drawing.

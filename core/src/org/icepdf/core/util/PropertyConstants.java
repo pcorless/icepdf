@@ -37,13 +37,38 @@ public class PropertyConstants {
     // property change event names
 
     public final static String
+
             DOCUMENT_CURRENT_PAGE = "documentCurrentPage",
-//		DOCUMENT_ZOOM                    = "documentZoom",
-            //        DOCUMENT_ROTATION                = "documentRotation",
+
             DOCUMENT_TOOL_PAN = "documentToolRotation",
             DOCUMENT_TOOL_ZOOM_IN = "documentToolZoomIn",
             DOCUMENT_TOOL_ZOOM_OUT = "documentToolZoomOut",
-//        DOCUMENT_TOOL_DYNAMIC_ROTATION   = "documentToolDynamicRotation",
-            //        DOCUMENT_TOOL_DYNAMIC_ZOOM       = "documentToolDynamicZoom",
-            DOCUMENT_TOOL_NONE = "documentToolNone";
+//           DOCUMENT_TOOL_DYNAMIC_ROTATION   = "documentToolDynamicRotation",
+//           DOCUMENT_TOOL_DYNAMIC_ZOOM       = "documentToolDynamicZoom",
+
+            DOCUMENT_TOOL_NONE = "documentToolNone",
+            DOCUMENT_TOOL_TEXT_SELECTION = "documentToolTextSelect",
+            DOCUMENT_TOOL_ANNOTATION_SELECTION = "documentToolAnnotationSelect",
+
+            DOCUMENT_INITIALIZING_PAGE = "documentPageInitialization",
+            DOCUMENT_PAINTING_PAGE = "documentPagePainting",
+
+            TEXT_DESELECTED = "textDeselected",
+            TEXT_SELECTED = "textSelected",
+            TEXT_SELECT_ALL = "textSelectAll",
+
+            ANNOTATION_SELECTED = "annotationSelected",
+            ANNOTATION_DESELECTED = "annotationDeselected",
+
+            ANNOTATION_DELETED = "annotationDeleted",
+
+            ANNOTATION_BOUNDS = "annotationBounds",
+
+            ANNOTATION_FOCUS_GAINED = "annotationFocusGained",
+            ANNOTATION_FOCUS_LOST = "annotationFocusLost",
+
+            ANNOTATION_NEW_LINK = "annotationFocusLost"
+          ;
+
+
 }
