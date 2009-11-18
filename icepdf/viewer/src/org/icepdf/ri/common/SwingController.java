@@ -36,6 +36,7 @@ import org.icepdf.core.Controller;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
@@ -45,6 +46,8 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
+import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.core.views.swing.AnnotationComponent;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
@@ -3718,10 +3721,21 @@ public class SwingController
             // enable the delete menu
             setEnabled(deleteMenuItem, true);
 
+
             // get the current selected tool, we only care about the select tool or
             // link annotation tool.
-            
-                // set the annotationPane with the new current annotation state
+            if (documentViewController.getToolMode() ==
+                            DocumentViewModelImpl.DISPLAY_TOOL_SELECTION){
+                AnnotationComponent annotationComponent =
+                        (AnnotationComponent)newValue;
+                if (annotationComponent.getAnnotation() != null &&
+                        annotationComponent.getAnnotation() instanceof LinkAnnotation){
+                    // set the annotationPane with the new annotation component
+                    logger.info("selected annotation " + annotationComponent);
+                }
+
+            }
+
         }
         // annotation bounds have change.
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_BOUNDS)){
