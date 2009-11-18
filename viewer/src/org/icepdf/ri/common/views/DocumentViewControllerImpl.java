@@ -254,8 +254,8 @@ public class DocumentViewControllerImpl
 
     public void assignSelectedAnnotation(AnnotationComponent annotationComponent){
         firePropertyChange(PropertyConstants.ANNOTATION_SELECTED,
-                    annotationComponent,
-                    documentViewModel.getCurrentAnnotation());
+                documentViewModel.getCurrentAnnotation(),
+                annotationComponent);
         documentViewModel.setCurrentAnnotation(annotationComponent);
     }
 

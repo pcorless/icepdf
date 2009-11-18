@@ -62,8 +62,8 @@ public class AnnotationCareTaker {
         // check to see if we are in a possible redo state, if so we clear
         // all states from the current pointer.
         if (isRedo()){
-            for (int i = statePointer; i < MAX_HISTORY_SIZE; i++){
-                annotationStateHistory.set(i, null);
+            for (int i = statePointer; i < annotationStateHistory.size(); i++){
+                annotationStateHistory.remove(i);
             }
         }
         // add the new state to the list

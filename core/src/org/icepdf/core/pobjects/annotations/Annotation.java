@@ -359,6 +359,19 @@ public class Annotation extends Dictionary {
     }
 
     /**
+     * Incomplete, currently not working or usuable. 
+     */
+    public static Annotation buildAnnotation(Library library, AnnotationState annotationState) {
+        Annotation annot = null;
+        Hashtable<String,Object> dictionary = new Hashtable<String,Object>(3);
+        dictionary.put("SubType","Link");
+
+        // todo properly apply annotation state values. 
+
+        return new LinkAnnotation(library, dictionary);
+    }
+
+    /**
      * Creates a new instance of an Annotation.
      *
      * @param l document library.
