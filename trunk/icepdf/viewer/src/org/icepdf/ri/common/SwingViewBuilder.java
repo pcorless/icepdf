@@ -637,11 +637,35 @@ public class SwingViewBuilder {
     public JMenu buildEditMenu() {
         JMenu viewMenu = new JMenu(messageBundle.getString("viewer.menu.edit.label"));
         viewMenu.setMnemonic(messageBundle.getString("viewer.menu.edit.mnemonic").charAt(0));
+        addToMenu(viewMenu, buildUndoMenuItem());
+        addToMenu(viewMenu, buildRedoMenuItem());
+        viewMenu.addSeparator();
         addToMenu(viewMenu, buildCopyMenuItem());
+        addToMenu(viewMenu, buildDeleteMenuItem());
         viewMenu.addSeparator();
         addToMenu(viewMenu, buildSelectAllMenuItem());
         addToMenu(viewMenu, buildDeselectAllMenuItem());
         return viewMenu;
+    }
+
+    public JMenuItem buildUndoMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.edit.undo.label"),
+                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_UNDO,
+                        KeyEventConstants.MODIFIER_UNDO));
+        if (viewerController != null && mi != null)
+            viewerController.setUndoMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildRedoMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.edit.redo.label"),
+                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_REDO,
+                        KeyEventConstants.MODIFIER_REDO));
+        if (viewerController != null && mi != null)
+            viewerController.setReduMenuItem(mi);
+        return mi;
     }
 
     public JMenuItem buildCopyMenuItem() {
@@ -651,6 +675,16 @@ public class SwingViewBuilder {
                         KeyEventConstants.MODIFIER_COPY));
         if (viewerController != null && mi != null)
             viewerController.setCopyMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildDeleteMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.edit.delete.label"),
+                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_DELETE,
+                        KeyEventConstants.MODIFIER_DELETE));
+        if (viewerController != null && mi != null)
+            viewerController.setDeleteMenuItem(mi);
         return mi;
     }
 
@@ -973,6 +1007,7 @@ public class SwingViewBuilder {
         addToToolBar(toolbar, buildFitToolBar());
         addToToolBar(toolbar, buildRotateToolBar());
         addToToolBar(toolbar, buildToolToolBar());
+        addToToolBar(toolbar, buildAnnotationlToolBar());
         // we only add the configurable font engin in the demo version
         if (isDemo){
             addToToolBar(toolbar, buildDemoToolBar());
@@ -1245,11 +1280,18 @@ public class SwingViewBuilder {
     public JToolBar buildToolToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
-        addToToolBar(toolbar, buildSelectToolButton());
         addToToolBar(toolbar, buildPanToolButton());
         addToToolBar(toolbar, buildTextSelectToolButton());
         addToToolBar(toolbar, buildZoomInToolButton());
         addToToolBar(toolbar, buildZoomOutToolButton());
+        return toolbar;
+    }
+
+    public JToolBar buildAnnotationlToolBar() {
+        JToolBar toolbar = new JToolBar();
+        commonToolBarSetup(toolbar, false);
+        addToToolBar(toolbar, buildSelectToolButton());
+        addToToolBar(toolbar, buildLinkAnnotationToolButton());
         return toolbar;
     }
 
@@ -1287,6 +1329,16 @@ public class SwingViewBuilder {
                 "select", buttonFont);
         if (viewerController != null && btn != null)      
             viewerController.setSelectToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildLinkAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.link.label"),
+                messageBundle.getString("viewer.toolbar.tool.link.tooltip"),
+                "link", buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setLinkAnnotationToolButton(btn);
         return btn;
     }
 

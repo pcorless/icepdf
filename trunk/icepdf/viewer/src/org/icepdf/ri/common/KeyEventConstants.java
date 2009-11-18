@@ -92,8 +92,14 @@ public class KeyEventConstants {
     public static final int KEY_CODE_GOTO = KeyEvent.VK_N;
     public static final int MODIFIER_GOTO = MENU_SHORTCUT_KEY_MASK;
 
+    public static final int KEY_CODE_UNDO = KeyEvent.VK_Z;
+    public static final int MODIFIER_UNDO = MENU_SHORTCUT_KEY_MASK;
+    public static final int KEY_CODE_REDO = KeyEvent.VK_Z;
+    public static final int MODIFIER_REDO = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
     public static final int KEY_CODE_COPY = KeyEvent.VK_C;
     public static final int MODIFIER_COPY = MENU_SHORTCUT_KEY_MASK;
+    public static final int KEY_CODE_DELETE = KeyEvent.VK_D;
+    public static final int MODIFIER_DELETE = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_SELECT_ALL = KeyEvent.VK_A;
     public static final int MODIFIER_SELECT_ALL = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_DESELECT_ALL = KeyEvent.VK_A;
