@@ -443,8 +443,7 @@ public class AnnotationComponent extends JComponent implements FocusListener,
             wasResized = false;
             AnnotationState  annotationState =
                     new AnnotationState(this.getAnnotation());
-            documentViewModel.getAnnotationCareTaker().addState(annotationState);
-
+            documentViewModel.addAnnotationStateChange(annotationState);
 
             // fire new change event.
             documentViewController.firePropertyChange(

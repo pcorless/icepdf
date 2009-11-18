@@ -34,6 +34,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewModel;
@@ -415,4 +416,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         return annotationCareTaker;
     }
 
+    public void addAnnotationStateChange(AnnotationState annotationState) {
+        annotationCareTaker.addState(annotationState);
+    }
 }
