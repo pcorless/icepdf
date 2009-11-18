@@ -1109,6 +1109,14 @@ public class SwingController
         }
     }
 
+    private void reflectUndoCommands(){
+         AnnotationCareTaker annotationCareTaker = ((DocumentViewModelImpl)
+                 documentViewController.getDocumentViewModel()).
+                        getAnnotationCareTaker();
+        setEnabled(undoMenuItem, annotationCareTaker.isUndo());
+        setEnabled(redoMenuItem, annotationCareTaker.isRedo());
+    }
+
     private void reflectZoomInZoomComboBox() {
         if (reflectingZoomInZoomComboBox)
             return;
@@ -3122,10 +3130,14 @@ public class SwingController
                         print(true); // Used to be 'false' PDF-86
                     } else if (source == undoMenuItem) {
                         documentViewController.undo();
+                        // refresh undo buttons.
+                        reflectUndoCommands();
                     } else if (source == redoMenuItem) {
                         documentViewController.redo();
+                        reflectUndoCommands();
                     } else if (source == deleteMenuItem) {
                         documentViewController.deleteCurrentAnnotation();
+                        reflectUndoCommands();
                     } else if (source == copyMenuItem) {
                         if (document != null &&
                                 havePermissionToExtractContent() &&
@@ -3720,8 +3732,6 @@ public class SwingController
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_SELECTED)){
             // enable the delete menu
             setEnabled(deleteMenuItem, true);
-
-
             // get the current selected tool, we only care about the select tool or
             // link annotation tool.
             if (documentViewController.getToolMode() ==
@@ -3733,18 +3743,12 @@ public class SwingController
                     // set the annotationPane with the new annotation component
                     logger.info("selected annotation " + annotationComponent);
                 }
-
             }
-
         }
-        // annotation bounds have change.
+        // annotation bounds have changed.
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_BOUNDS)){
             // check to see if undo/redo can be enabled/disabled.
-            AnnotationCareTaker annotationCareTaker =
-                    documentViewController.getDocumentViewModel().
-                            getAnnotationCareTaker();
-            setEnabled(undoMenuItem, annotationCareTaker.isUndo());
-            setEnabled(redoMenuItem, annotationCareTaker.isRedo());
+            reflectUndoCommands();
         }
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_DESELECTED)){
             // disable the delete menu
