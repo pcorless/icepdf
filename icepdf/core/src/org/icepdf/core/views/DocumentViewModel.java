@@ -33,9 +33,9 @@
 package org.icepdf.core.views;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.core.views.swing.AnnotationComponent;
-import org.icepdf.ri.common.AnnotationCareTaker;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
@@ -241,5 +241,5 @@ public interface DocumentViewModel {
 
     public void setCurrentAnnotation(AnnotationComponent currentAnnotation);
 
-    public AnnotationCareTaker getAnnotationCareTaker();
+    public void addAnnotationStateChange(AnnotationState annotationState);
 }
