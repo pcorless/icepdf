@@ -37,6 +37,7 @@ import org.icepdf.core.Controller;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
@@ -46,6 +47,7 @@ import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.core.views.swing.AnnotationComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.images.Images;
 
@@ -242,6 +244,21 @@ public class DocumentViewControllerImpl
         this.annotationCallback = annotationCallback;
     }
 
+    public void clearSelectedAnnotations(){
+        // fire change event
+        firePropertyChange(PropertyConstants.ANNOTATION_DESELECTED,
+                    documentViewModel.getCurrentAnnotation(),
+                    null);
+        documentViewModel.setCurrentAnnotation(null);
+    }
+
+    public void assignSelectedAnnotation(AnnotationComponent annotationComponent){
+        firePropertyChange(PropertyConstants.ANNOTATION_SELECTED,
+                    annotationComponent,
+                    documentViewModel.getCurrentAnnotation());
+        documentViewModel.setCurrentAnnotation(annotationComponent);
+    }
+
     /**
      * Clear selected text in all pages that make up the current document
      */
@@ -260,6 +277,11 @@ public class DocumentViewControllerImpl
             selectedPages.clear();
             documentView.repaint();
         }
+        // fire property change
+        firePropertyChange(PropertyConstants.TEXT_DESELECTED,
+                    null,
+                    null);
+
     }
 
     /**
@@ -282,6 +304,7 @@ public class DocumentViewControllerImpl
     public void selectAllText() {
         documentViewModel.setSelectAll(true);
         documentView.repaint();
+        firePropertyChange(PropertyConstants.TEXT_SELECT_ALL, null,null);
     }
 
     public String getSelectedText() {
@@ -1074,9 +1097,64 @@ public class DocumentViewControllerImpl
         changes.firePropertyChange(event, oldValue, newValue);
     }
 
+    /**
+     * Fires property change events for Page view UI changes such as:
+     * <li>focus gained/lost</li>
+     * <li>annotation state change such as move or resize</li>
+     * <li>new annotation crreated, currently only for new link annotations</li>
+     * <li></li>
+     *
+     * @param event property being changes
+     * @param oldValue old value, null if no old value
+     * @param newValue new annotation value.
+     */
+    public void firePropertyChange(String event, Object oldValue,
+                                   Object newValue) {
+        changes.firePropertyChange(event,  oldValue, newValue);
+    }
+
     public void addPropertyChangeListener(PropertyChangeListener l) {
         changes.addPropertyChangeListener(l);
     }
+
+    public void deleteCurrentAnnotation() {
+        // make sure there is a current annotation in model
+        AnnotationComponent annotationComponent =
+                documentViewModel.getCurrentAnnotation();
+        if (documentViewModel != null && annotationComponent !=null ){
+
+            // store the annotation state in the caretaker
+            documentViewModel.getAnnotationCareTaker().addState(
+                    new AnnotationState(annotationComponent.getAnnotation()));
+
+            // todo update the annotation state to invisible
+
+            // repaint the view.
+            documentView.repaint();
+
+            // fire event notification
+            firePropertyChange(PropertyConstants.ANNOTATION_DELETED,
+                    documentViewModel.getCurrentAnnotation(),
+                    null);
+
+            // clear previously selected annotation and fire event.
+            assignSelectedAnnotation(null);
+        }
+    }
+
+    public void undo() {
+        // reloads the last modified annotations state.
+        documentViewModel.getAnnotationCareTaker().undo();
+        // repaint the view.
+    }
+
+    public void redo() {
+        // tries to redo a previously undo command, may not do anything
+        documentViewModel.getAnnotationCareTaker().redo();
+
+        // repaint the view.
+    }
+
 
     public void removePropertyChangeListener(PropertyChangeListener l) {
         changes.removePropertyChangeListener(l);

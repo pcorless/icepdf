@@ -34,6 +34,7 @@ package org.icepdf.core.views;
 
 import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.Controller;
+import org.icepdf.core.views.swing.AnnotationComponent;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 
@@ -174,6 +175,12 @@ public interface DocumentViewController {
 
     public void setAnnotationCallback(AnnotationCallback annotationCallback);
 
+    public void deleteCurrentAnnotation();
+
+    public void undo();
+
+    public void redo();
+
     public AnnotationCallback getAnnotationCallback();
 
     public DocumentViewModel getDocumentViewModel();
@@ -182,9 +189,15 @@ public interface DocumentViewController {
 
     public void clearHighlightedText();
 
+    public void clearSelectedAnnotations();
+
+    public void assignSelectedAnnotation(AnnotationComponent annotationComponent);
+
     public void selectAllText();
 
     public String getSelectedText();
 
     public void firePropertyChange(String event, int oldValue, int newValue);
+
+    public void firePropertyChange(String event, Object oldValue, Object newValue);
 }

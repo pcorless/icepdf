@@ -3,8 +3,10 @@ package org.icepdf.core.views.swing;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 
@@ -92,12 +94,14 @@ public class AnnotationComponent extends JComponent implements FocusListener,
     protected Annotation annotation;
     private boolean isMousePressed;
     private boolean resized;
+    private boolean wasResized;
 
     // border state flags.
     private boolean isEditable;
     private boolean isRollover;
     private boolean isLinkAnnot;
     private boolean isBorderStyle;
+    private boolean isSelected;
 
     // selection, move and resize handling.
     private int cursor;
@@ -214,6 +218,7 @@ public class AnnotationComponent extends JComponent implements FocusListener,
                 getParent().repaint();
             }
             resized = false;
+            wasResized = true;
         }
 
     }
@@ -305,12 +310,17 @@ public class AnnotationComponent extends JComponent implements FocusListener,
         if (documentViewModel.getViewToolMode() !=
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
                 isInteractiveAnnotationsEnabled) {
+
+
             if (documentViewController.getAnnotationCallback() != null) {
                 documentViewController.getAnnotationCallback()
                         .proccessAnnotationAction(annotation);
             }
         } else {
-            // todo call up to handler that we have selected this annotation
+            // let parent know that we are the "selected" annotation so
+            // property change events can be fired. 
+            documentViewController.assignSelectedAnnotation(this);
+            repaint();
         }
     }
 
@@ -420,14 +430,28 @@ public class AnnotationComponent extends JComponent implements FocusListener,
             }
             setCursor(Cursor.getPredefinedCursor(cursor));
             validate();
-        } else {
-            // todo push event back to parent so that the selection box can be updated
         }
     }
 
     public void mouseReleased(MouseEvent mouseEvent) {
         startPos = null;
         isMousePressed = false;
+
+        // check to see if a move/resize occurred and if so we add the
+        // state change to the memento in document view.
+        if (wasResized){
+            wasResized = false;
+            AnnotationState  annotationState =
+                    new AnnotationState(this.getAnnotation());
+            documentViewModel.getAnnotationCareTaker().addState(annotationState);
+
+
+            // fire new change event.
+            documentViewController.firePropertyChange(
+                    PropertyConstants.ANNOTATION_BOUNDS,
+                    null,this);
+            
+        }
         repaint();
     }
 
@@ -461,7 +485,10 @@ public class AnnotationComponent extends JComponent implements FocusListener,
      * }
      */
 
-
+    /**
+     * Is the annotation editable
+     * @return true if editable, false otherwise.
+     */
     public boolean isEditable() {
         return isEditable;
     }
@@ -476,5 +503,13 @@ public class AnnotationComponent extends JComponent implements FocusListener,
 
     public boolean isBorderStyle() {
         return isBorderStyle;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
     }
 }

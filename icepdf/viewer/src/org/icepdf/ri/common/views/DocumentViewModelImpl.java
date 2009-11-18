@@ -36,7 +36,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.views.swing.PageViewComponentImpl;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.PageViewComponent;
 
 import javax.swing.*;
 import java.util.ArrayList;

@@ -78,8 +78,8 @@ public class ResizableBorder extends AbstractBorder {
     public void paintBorder(Component component, Graphics g, int x, int y,
                             int w, int h) {
 
-        // todo, look to parent for selected state as well as focus.
-        boolean isSelected = component.hasFocus();
+
+        boolean isSelected = false;
         boolean isEditable = false;
         boolean isRollover = false;
         boolean isLinkAnnot = false;
@@ -92,6 +92,7 @@ public class ResizableBorder extends AbstractBorder {
             isRollover = annot.isRollover();
             isLinkAnnot = annot.isLinkAnnot();
             isBorderStyle = annot.isBorderStyle();
+            isSelected = annot.isSelected();
         }
 
         // if we aren't in the edit mode, then we have nothing to paint.
@@ -100,7 +101,7 @@ public class ResizableBorder extends AbstractBorder {
         }
 
         // get paint colour
-        if (component.hasFocus() || isRollover){
+        if (isSelected || component.hasFocus() || isRollover){
             g.setColor(selectColor);
         }
         else{

@@ -67,4 +67,12 @@ public interface AnnotationCallback {
      *             available via an accessor method.
      */
     public void pageAnnotationsInitialized(Page page);
+
+    /**
+     * New annotation created with view tool.
+     * @param page page that annotation was added to.
+     * @param annotation new annotation object
+     */
+//    public void newAnnotation(Page page, AnnotationComponent annotation);
+    
 }

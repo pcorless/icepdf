@@ -127,7 +127,12 @@ public class SwingController
     private JMenuItem printMenuItem;
     private JMenuItem exitMenuItem;
 
+    private JMenuItem undoMenuItem;
+    private JMenuItem redoMenuItem;
+
     private JMenuItem copyMenuItem;
+    private JMenuItem deleteMenuItem;
+
     private JMenuItem selectAllMenuItem;
     private JMenuItem deselectAllMenuItem;
 
@@ -187,9 +192,11 @@ public class SwingController
 
     private JToggleButton panToolButton;
     private JToggleButton textSelectToolButton;
-    private JToggleButton selectToolButton;
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomOutToolButton;
+
+    private JToggleButton selectToolButton;
+    private JToggleButton linkAnnotationToolButton;
 
     private JToolBar completeToolBar;
 
@@ -399,8 +406,32 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
+    public void setUndoMenuItem(JMenuItem mi) {
+        undoMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setReduMenuItem(JMenuItem mi) {
+        redoMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
     public void setCopyMenuItem(JMenuItem mi) {
         copyMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setDeleteMenuItem(JMenuItem mi) {
+        deleteMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -775,6 +806,14 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
+    public void setLinkAnnotationToolButton(JToggleButton btn) {
+        linkAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
     public void setZoomOutToolButton(JToggleButton btn) {
         zoomOutToolButton = btn;
         btn.addItemListener(this);
@@ -885,9 +924,15 @@ public class SwingController
         setEnabled(printSetupMenuItem, opened && canPrint);
         setEnabled(printMenuItem, opened && canPrint);
 
-        setEnabled(copyMenuItem, opened && canExtract);
+        // set initial sate for undo/redo edit, afterwards state is set by
+        // valueChange events depending on tool selection.
+        setEnabled(undoMenuItem, false);
+        setEnabled(redoMenuItem, false);
+        setEnabled(copyMenuItem, false);
+        setEnabled(deleteMenuItem, false);
         setEnabled(selectAllMenuItem, opened && canExtract);
-        setEnabled(deselectAllMenuItem, opened && canExtract);
+        setEnabled(deselectAllMenuItem, false);
+
 
         setEnabled(fitActualSizeMenuItem, opened);
         setEnabled(fitPageMenuItem, opened);
@@ -953,6 +998,7 @@ public class SwingController
         setEnabled(zoomOutToolButton, opened);
         setEnabled(textSelectToolButton, opened);
         setEnabled(selectToolButton, opened);
+        setEnabled(linkAnnotationToolButton, opened);
         setEnabled(fontEngineButton, opened);
         setEnabled(facingPageViewContinuousButton, opened);
         setEnabled(singlePageViewContinuousButton, opened);
@@ -1164,6 +1210,11 @@ public class SwingController
                     documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
             documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
+            actualToolMayHaveChanged =
+                    documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
+            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
         } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
             actualToolMayHaveChanged =
                     documentViewController.setToolMode(
@@ -1216,6 +1267,10 @@ public class SwingController
         reflectSelectionInButton(selectToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_SELECTION
+                ));
+        reflectSelectionInButton(linkAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION
                 ));
         reflectSelectionInButton(zoomInToolButton,
                 documentViewController.isToolModeSelected(
@@ -1919,6 +1974,7 @@ public class SwingController
         zoomOutToolButton = null;
         textSelectToolButton = null;
         selectToolButton = null;
+        linkAnnotationToolButton = null;
 
         fontEngineButton = null;
 
@@ -2540,7 +2596,7 @@ public class SwingController
         return (event.getDropAction() & DnDConstants.ACTION_COPY_OR_MOVE) != 0;
     }
 
-    // Utility method which alows copy or move drop actions
+    // Utility method which allows copy or move drop actions
     private boolean isDropAcceptable(DropTargetDropEvent event) {
         // check to make sure that we only except the copy action
         return (event.getDropAction() & DnDConstants.ACTION_COPY_OR_MOVE) != 0;
@@ -3061,6 +3117,12 @@ public class SwingController
                         print(true);
                     } else if (source == printButton) {
                         print(true); // Used to be 'false' PDF-86
+                    } else if (source == undoMenuItem) {
+                        documentViewController.undo();
+                    } else if (source == redoMenuItem) {
+                        documentViewController.redo();
+                    } else if (source == deleteMenuItem) {
+                        documentViewController.deleteCurrentAnnotation();
                     } else if (source == copyMenuItem) {
                         if (document != null &&
                                 havePermissionToExtractContent() &&
@@ -3251,6 +3313,11 @@ public class SwingController
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
+                }
+            } else if (source == linkAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 }
             } else if (source == zoomInToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -3601,23 +3668,77 @@ public class SwingController
      * related to PDF Document manipulation
      */
     public void keyTyped(KeyEvent e) {
-        if (currentPageNumberTextField != null && e.getSource() == currentPageNumberTextField) {
+        if (currentPageNumberTextField != null &&
+                e.getSource() == currentPageNumberTextField) {
             char c = e.getKeyChar();
             if (c == KeyEvent.VK_ESCAPE) {
                 String fieldValue = currentPageNumberTextField.getText();
-                String modelValue = Integer.toString(documentViewController.getCurrentPageDisplayValue());
+                String modelValue = Integer.toString(
+                        documentViewController.getCurrentPageDisplayValue());
                 if (!fieldValue.equals(modelValue))
                     currentPageNumberTextField.setText(modelValue);
             }
         }
     }
 
+    /**
+     * Listen for property change events from the page view.  This method
+     * acts like a mediator passing on the new states to the interested parties.
+     *
+     * @param evt property change event 
+     */
     public void propertyChange(PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
         if (evt.getPropertyName().equals(PropertyConstants.DOCUMENT_CURRENT_PAGE)) {
             if (currentPageNumberTextField != null && newValue instanceof Integer) {
                 updateDocumentView();
             }
+        }
+        // text selected,
+        else if (evt.getPropertyName().equals(PropertyConstants.TEXT_SELECTED)){
+            // enable the copy menu
+            setEnabled(copyMenuItem, true);
+            setEnabled(deselectAllMenuItem, true);
+        }
+        // text deselected
+        else if (evt.getPropertyName().equals(PropertyConstants.TEXT_DESELECTED)){
+            // disable the copy menu
+            setEnabled(copyMenuItem, false);
+            setEnabled(deselectAllMenuItem, false);
+            setEnabled(selectAllMenuItem, true);
+        }
+        // select all
+        else if (evt.getPropertyName().equals(PropertyConstants.TEXT_SELECT_ALL)){
+            setEnabled(selectAllMenuItem, false);
+             setEnabled(deselectAllMenuItem, true);
+             setEnabled(copyMenuItem, true);
+        }
+        // focus gains for an annotation
+        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_SELECTED)){
+            // enable the delete menu
+            setEnabled(deleteMenuItem, true);
+
+            // get the current selected tool, we only care about the select tool or
+            // link annotation tool.
+            
+                // set the annotationPane with the new current annotation state
+        }
+        // annotation bounds have change.
+        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_BOUNDS)){
+            // check to see if undo/redo can be enabled/disabled.
+            AnnotationCareTaker annotationCareTaker =
+                    documentViewController.getDocumentViewModel().
+                            getAnnotationCareTaker();
+            setEnabled(undoMenuItem, annotationCareTaker.isUndo());
+            setEnabled(redoMenuItem, annotationCareTaker.isRedo());
+        }
+        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_DESELECTED)){
+            // disable the delete menu
+            setEnabled(deleteMenuItem, false);
+        }
+        // New link annotation was created with tool.
+        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_NEW_LINK)){
+            // get reference to annotation callback? not sure yet as to correct behaviour
         }
     }
 }
