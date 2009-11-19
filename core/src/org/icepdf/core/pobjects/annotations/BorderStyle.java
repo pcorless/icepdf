@@ -191,6 +191,10 @@ public class BorderStyle extends Dictionary {
         return strokeWidth;
     }
 
+    public String getBorderStyle() {
+        return borderStyle;
+    }
+
     /**
      * Sets the stroke width of the border style.  Default value 1.0.
      *
