@@ -3,6 +3,8 @@ package org.icepdf.ri.common;
 import org.icepdf.core.views.swing.AnnotationComponent;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
+import org.icepdf.ri.common.views.DocumentViewModelImpl;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -142,7 +144,9 @@ public class AnnotationLinkPanel extends JPanel {
      */
     public void applyUIBorderColor() {
         if (currentAnnotation != null) {
+            AnnotationState undoState = new AnnotationState(currentAnnotation);
             currentAnnotation.getAnnotation().setBorderColor(colorButton.getBackground());
+            storeUndoState(undoState, new AnnotationState(currentAnnotation));
         }
     }
 
@@ -155,8 +159,10 @@ public class AnnotationLinkPanel extends JPanel {
             (currentAnnotation.getAnnotation().getBorderStyle() != null)) {
             if ((linkThicknessBox != null) &&
                     (linkThicknessBox.getSelectedItem() != null)) {
+                AnnotationState undoState = new AnnotationState(currentAnnotation);
                 currentAnnotation.getAnnotation().getBorderStyle().setStrokeWidth(
                         Float.parseFloat(((ValueLabelItem)linkThicknessBox.getSelectedItem()).getValue().toString()));
+                storeUndoState(undoState, new AnnotationState(currentAnnotation));
             }
         }
     }
@@ -170,8 +176,10 @@ public class AnnotationLinkPanel extends JPanel {
             (currentAnnotation.getAnnotation().getBorderStyle() != null)) {
             if ((linkStyleBox != null) &&
                     (linkStyleBox.getSelectedItem() != null)) {
+                AnnotationState undoState = new AnnotationState(currentAnnotation);
                 currentAnnotation.getAnnotation().getBorderStyle().setBorderStyle(
                         ((ValueLabelItem)linkStyleBox.getSelectedItem()).getValue().toString());
+                storeUndoState(undoState, new AnnotationState(currentAnnotation));
             }
         }
     }
@@ -213,6 +221,26 @@ public class AnnotationLinkPanel extends JPanel {
         }
 
         return false;
+    }
+
+    /**
+     * Method to store the state of a change (such as modifying the border color)
+     * This will allow the user to undo such changes
+     * 
+     * @param oldState before the change
+     * @param newState after the change
+     */
+    protected void storeUndoState(AnnotationState oldState, AnnotationState newState) {
+        UndoCaretaker undoCaretaker = ((DocumentViewModelImpl)controller
+            .getDocumentViewController().getDocumentViewModel()).getAnnotationCareTaker();
+
+        if (undoCaretaker != null) {
+            // Add our states to the undo caretaker
+            undoCaretaker.addState(oldState, newState);
+
+            // Check with the controller whether we can enable the undo/redo menu items
+            controller.reflectUndoCommands();
+        }
     }
 
     /**
