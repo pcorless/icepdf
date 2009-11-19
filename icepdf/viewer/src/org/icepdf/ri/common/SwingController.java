@@ -37,6 +37,7 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
@@ -46,7 +47,6 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.swing.AnnotationComponent;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -1110,11 +1110,11 @@ public class SwingController
     }
 
     private void reflectUndoCommands(){
-         AnnotationCareTaker annotationCareTaker = ((DocumentViewModelImpl)
+         UndoCaretaker undoCaretaker = ((DocumentViewModelImpl)
                  documentViewController.getDocumentViewModel()).
                         getAnnotationCareTaker();
-        setEnabled(undoMenuItem, annotationCareTaker.isUndo());
-        setEnabled(redoMenuItem, annotationCareTaker.isRedo());
+        setEnabled(undoMenuItem, undoCaretaker.isUndo());
+        setEnabled(redoMenuItem, undoCaretaker.isRedo());
     }
 
     private void reflectZoomInZoomComboBox() {
@@ -3704,6 +3704,7 @@ public class SwingController
      */
     public void propertyChange(PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
+        Object oldValue = evt.getOldValue();
         if (evt.getPropertyName().equals(PropertyConstants.DOCUMENT_CURRENT_PAGE)) {
             if (currentPageNumberTextField != null && newValue instanceof Integer) {
                 updateDocumentView();
@@ -3747,6 +3748,16 @@ public class SwingController
         }
         // annotation bounds have changed.
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_BOUNDS)){
+            if (documentViewController.getToolMode() ==
+                            DocumentViewModelImpl.DISPLAY_TOOL_SELECTION){
+                AnnotationState oldAnnotationState = (AnnotationState)oldValue;
+                AnnotationState newAnnotationState = (AnnotationState)newValue;
+
+                // add new states to care taker implementation.
+                documentViewController.getDocumentViewModel()
+                        .addMemento(oldAnnotationState,
+                                newAnnotationState);
+            }
             // check to see if undo/redo can be enabled/disabled.
             reflectUndoCommands();
         }

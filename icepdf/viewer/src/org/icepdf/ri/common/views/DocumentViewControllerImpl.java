@@ -1124,10 +1124,16 @@ public class DocumentViewControllerImpl
         if (documentViewModel != null && annotationComponent !=null ){
 
             // store the annotation state in the caretaker
-            documentViewModel.getAnnotationCareTaker().addState(
-                    new AnnotationState(annotationComponent.getAnnotation()));
+            AnnotationState preDeleteState =
+                    new AnnotationState(annotationComponent);
 
             // todo update the annotation state to invisible
+
+            AnnotationState postDeleteState =
+                    new AnnotationState(annotationComponent);
+
+            documentViewModel.getAnnotationCareTaker().addState(preDeleteState,
+                    postDeleteState);
 
             // repaint the view.
             documentView.repaint();
@@ -1145,14 +1151,13 @@ public class DocumentViewControllerImpl
     public void undo() {
         // reloads the last modified annotations state.
         documentViewModel.getAnnotationCareTaker().undo();
-        // repaint the view.
+
     }
 
     public void redo() {
         // tries to redo a previously undo command, may not do anything
         documentViewModel.getAnnotationCareTaker().redo();
 
-        // repaint the view.
     }
 
 

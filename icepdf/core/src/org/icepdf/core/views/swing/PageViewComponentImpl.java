@@ -36,7 +36,6 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
@@ -54,7 +53,6 @@ import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -412,7 +410,8 @@ public class PageViewComponentImpl extends
 
                 // paint any highlighted words
                 DocumentSearchController searchController =
-                        documentViewController.getParentController().getDocumentSearchController();
+                        documentViewController.getParentController()
+                                .getDocumentSearchController();
                 if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)) {
                     searchController.searchHighlightPage(pageIndex);
                 }
