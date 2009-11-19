@@ -1427,7 +1427,7 @@ public class SwingViewBuilder {
     }
 
     public AnnotationLinkPanel buildLinkPanel() {
-        AnnotationLinkPanel linkPanel = new AnnotationLinkPanel();
+        AnnotationLinkPanel linkPanel = new AnnotationLinkPanel(viewerController);
         if (viewerController != null)
             viewerController.setAnnotationLinkPanel(linkPanel);
         return linkPanel;
