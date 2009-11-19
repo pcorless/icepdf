@@ -1,4 +1,3 @@
-
 /*
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -30,47 +29,78 @@
  * not delete the provisions above, a recipient may use your version of
  * this file under either the MPL or the LGPL License."
  *
- */package org.icepdf.core.pobjects.annotations;
+ */
+package org.icepdf.core.pobjects.annotations;
+
+import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.Memento;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 
 /**
- * Stores state paramaters for annotation objects.
- * todo: work in progress.
+ * Stores state paramaters for annotation objects to be used in conjuction
+ * with a care taker as part of the memento pattern.
  *
  * @since 4.0
  */
-public class AnnotationState {
+public class AnnotationState implements Memento {
 
     protected BorderStyle borderStyle;
     // border color of annotation.
     protected Color borderColor;
     // annotation bounding rectangle in user space.
     protected Rectangle2D.Float userSpaceRectangle;
+    // todo keep mapping annotation state params. 
 
     // original rectangle reference.
-    protected Annotation annotation;
+    protected AnnotationComponent annotationComponent;
 
-    public AnnotationState(Annotation annotation) {
-        this.annotation = annotation;
-
+    /**
+     * Stores the annotation state associated with the AnnotationComponents
+     * annotation object.  When a new instance of this object is created
+     * the annotation's proeprties are saved.
+     *
+     * @param annotation annotation component who's state will be stored.
+     */
+    public AnnotationState(AnnotationComponent annotation) {
+        // reference to component so we can apply the state parameters if
+        // restore() is called.
+        this.annotationComponent = annotation;
         // test to store previous border color, more properties to follow.
-        if (this.annotation != null){
-            Color tmp = annotation.getBorderColor();
-            borderColor = new Color(tmp.getRGB());
-
-            // test to store old user SpaceRectangle.
-            Rectangle2D.Float rect = annotation.getUserSpaceRectangle();
+        if (this.annotationComponent != null){
+            // store background
+            Color tmp = annotation.getAnnotation().getBorderColor();
+            if (tmp != null){
+                borderColor = new Color(tmp.getRGB());
+            }
+            // store userpace rectangle SpaceRectangle.
+            Rectangle2D.Float rect = annotation.getAnnotation().getUserSpaceRectangle();
             userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
                     rect.width, rect.height);
+
+            // todo state save other annotation properties.
         }
     }
 
+    /**
+     * Restores the AnnotationComponents state to the state stored during the
+     * construction of this object. 
+     */
     public void restore(){
-        if (annotation != null){
+        if (annotationComponent.getAnnotation() != null){
+            // get reference to annotation
+            Annotation annotation = annotationComponent.getAnnotation();
+            // apply old colour
             annotation.setBorderColor(borderColor);
-            annotation.getUserSpaceRectangle().setRect(userSpaceRectangle);
+            // apply old user rectangle
+            annotation.getUserSpaceRectangle()
+                    .setRect(userSpaceRectangle);
+            // trigger the component to refresh and repaint its self with the
+            // new 'restored' properties.
+            annotationComponent.refreshBounds();
+
+            // todo state restore other annotation properties.
         }
     }
 }

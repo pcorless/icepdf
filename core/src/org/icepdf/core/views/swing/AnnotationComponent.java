@@ -1,3 +1,35 @@
+/*
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * "The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations under
+ * the License.
+ *
+ * The Original Code is ICEpdf 3.0 open source software code, released
+ * May 1st, 2009. The Initial Developer of the Original Code is ICEsoft
+ * Technologies Canada, Corp. Portions created by ICEsoft are Copyright (C)
+ * 2004-2009 ICEsoft Technologies Canada, Corp. All Rights Reserved.
+ *
+ * Contributor(s): _____________________.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"
+ * License), in which case the provisions of the LGPL License are
+ * applicable instead of those above. If you wish to allow use of your
+ * version of this file only under the terms of the LGPL License and not to
+ * allow others to use your version of this file under the MPL, indicate
+ * your decision by deleting the provisions above and replace them with
+ * the notice and other provisions required by the LGPL License. If you do
+ * not delete the provisions above, a recipient may use your version of
+ * this file under either the MPL or the LGPL License."
+ *
+ */
 package org.icepdf.core.views.swing;
 
 import org.icepdf.core.pobjects.Page;
@@ -77,7 +109,6 @@ public class AnnotationComponent extends JComponent implements FocusListener,
         }
     }
 
-
     public static final int resizeBoxSize = 4;
 
     // reusable border
@@ -105,7 +136,8 @@ public class AnnotationComponent extends JComponent implements FocusListener,
 
     // selection, move and resize handling.
     private int cursor;
-    private Point startPos = null;
+    private Point startPos;
+    private AnnotationState previousAnnotationState;
 
     public AnnotationComponent(Annotation annotation,
                                DocumentViewController documentViewController,
@@ -171,24 +203,26 @@ public class AnnotationComponent extends JComponent implements FocusListener,
         resized = true;
     }
 
+    /**
+     * Refreshses the components bounds for the current page transformation. 
+     */
+    public void refreshBounds(){
+        Page currentPage = pageViewComponent.getPageLock(this);
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        GeneralPath shapePath = new GeneralPath(
+                annotation.getUserSpaceRectangle());
+        shapePath.transform(at);
+        setBounds(shapePath.getBounds());
+        pageViewComponent.releasePageLock(currentPage, this);
+    }
+
     public void validate() {
         if (currentZoom != documentViewModel.getViewZoom() ||
                 currentRotation != documentViewModel.getViewRotation()) {
-            Page currentPage = pageViewComponent.getPageLock(this);
-            AffineTransform at = currentPage.getPageTransform(
-                    documentViewModel.getPageBoundary(),
-                    documentViewModel.getViewRotation(),
-                    documentViewModel.getViewZoom());
-
-            GeneralPath shapePath = new GeneralPath(
-                    annotation.getUserSpaceRectangle().getBounds());
-            shapePath.transform(at);
-            setBounds(shapePath.getBounds());
-
-            currentRotation = documentViewModel.getViewRotation();
-            currentZoom = documentViewModel.getViewZoom();
-            pageViewComponent.releasePageLock(currentPage, this);
-
+            refreshBounds();
             currentRotation = documentViewModel.getViewRotation();
             currentZoom = documentViewModel.getViewZoom();
         }
@@ -336,16 +370,15 @@ public class AnnotationComponent extends JComponent implements FocusListener,
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.
         isMousePressed = true;
-        repaint();
 
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION) {
             ResizableBorder border = (ResizableBorder) getBorder();
             cursor = border.getCursor(me);
             startPos = me.getPoint();
-            requestFocus();
+            previousAnnotationState = new AnnotationState(this);
         }
-
+        repaint();
     }
 
     public void mouseDragged(MouseEvent me) {
@@ -441,15 +474,13 @@ public class AnnotationComponent extends JComponent implements FocusListener,
         // state change to the memento in document view.
         if (wasResized){
             wasResized = false;
-            AnnotationState  annotationState =
-                    new AnnotationState(this.getAnnotation());
-            documentViewModel.addAnnotationStateChange(annotationState);
 
-            // fire new change event.
+
+            // fire new bounds change event, let the listener handle
+            // how to deal with the bound change.
             documentViewController.firePropertyChange(
                     PropertyConstants.ANNOTATION_BOUNDS,
-                    null,this);
-            
+                    previousAnnotationState, new AnnotationState(this));
         }
         repaint();
     }
