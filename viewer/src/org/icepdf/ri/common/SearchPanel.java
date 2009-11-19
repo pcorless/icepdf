@@ -94,6 +94,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     // search option check boxes.
     private JCheckBox caseSensitiveCheckbox;
     private JCheckBox wholeWordCheckbox;
+    private JCheckBox cumulativeCheckbox;
 
     // page index of the last added node.
     private int lastNodePageIndex;
@@ -241,6 +242,8 @@ public class SearchPanel extends JPanel implements ActionListener,
                 "viewer.utilityPane.search.wholeWordCheckbox.label"));
         caseSensitiveCheckbox = new JCheckBox(messageBundle.getString(
                 "viewer.utilityPane.search.caseSenstiveCheckbox.label"));
+        cumulativeCheckbox = new JCheckBox(messageBundle.getString(
+                "viewer.utilityPane.search.cumlitiveCheckbox.label"));
 
         /**
          * Build search GUI
@@ -293,19 +296,24 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.fill = GridBagConstraints.HORIZONTAL;
         addGB(searchPanel, wholeWordCheckbox, 0, 4, 2, 1);
 
+        // add cumulative checkbox
+        constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        addGB(searchPanel, cumulativeCheckbox, 0, 5, 2, 1);
+
         // Add Results label
         constraints.insets = new Insets(10, 5, 1, 5);
         constraints.fill = GridBagConstraints.NONE;
         addGB(searchPanel, new JLabel(messageBundle.getString(
                 "viewer.utilityPane.search.results.label")),
-                0, 5, 2, 1);
+                0, 6, 2, 1);
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
         constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(searchPanel, scrollPane, 0, 6, 2, 1);
+        addGB(searchPanel, scrollPane, 0, 7, 2, 1);
 
         // add find message
         constraints.insets = new Insets(1, 5, 1, 5);
@@ -313,12 +321,12 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
-        addGB(searchPanel, findMessage, 0, 7, 2, 1);
+        addGB(searchPanel, findMessage, 0, 8, 2, 1);
 
         // add progress
         constraints.insets = new Insets(5, 5, 1, 5);
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, progressBar, 0, 8, 2, 1);
+        addGB(searchPanel, progressBar, 0, 9, 2, 1);
 
     }
 
@@ -504,6 +512,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                         searchTextField.getText(),
                         wholeWordCheckbox.isSelected(),
                         caseSensitiveCheckbox.isSelected(),
+                        cumulativeCheckbox.isSelected(),
                         false,
                         messageBundle);
                 isSearching = true;
@@ -514,6 +523,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 clearSearchButton.setEnabled(false);
                 caseSensitiveCheckbox.setEnabled(false);
                 wholeWordCheckbox.setEnabled(false);
+                cumulativeCheckbox.setEnabled(false);
 
                 // start the task and the timer
                 searchTextTask.go();
@@ -523,6 +533,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 clearSearchButton.setEnabled(true);
                 caseSensitiveCheckbox.setEnabled(true);
                 wholeWordCheckbox.setEnabled(true);
+                cumulativeCheckbox.setEnabled(true);
             }
         } else if (source == clearSearchButton) {
             // clear input
@@ -579,6 +590,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 clearSearchButton.setEnabled(true);
                 caseSensitiveCheckbox.setEnabled(true);
                 wholeWordCheckbox.setEnabled(true);
+                cumulativeCheckbox.setEnabled(true);
 
                 // update progress bar then hide it.
                 progressBar.setValue(progressBar.getMinimum());
