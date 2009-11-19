@@ -46,9 +46,11 @@ import java.awt.geom.Rectangle2D;
  */
 public class AnnotationState implements Memento {
 
-    protected BorderStyle borderStyle;
     // border color of annotation.
     protected Color borderColor;
+    // border style of annotation.
+    protected String borderStyle;
+    protected float borderWidth;
     // annotation bounding rectangle in user space.
     protected Rectangle2D.Float userSpaceRectangle;
     // todo keep mapping annotation state params. 
@@ -69,17 +71,24 @@ public class AnnotationState implements Memento {
         this.annotationComponent = annotation;
         // test to store previous border color, more properties to follow.
         if (this.annotationComponent != null){
-            // store background
-            Color tmp = annotation.getAnnotation().getBorderColor();
-            if (tmp != null){
-                borderColor = new Color(tmp.getRGB());
-            }
             // store userpace rectangle SpaceRectangle.
             Rectangle2D.Float rect = annotation.getAnnotation().getUserSpaceRectangle();
             userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
                     rect.width, rect.height);
-
-            // todo state save other annotation properties.
+            // store border color
+            Color tmpColor = annotation.getAnnotation().getBorderColor();
+            if (tmpColor != null) {
+                borderColor = new Color(tmpColor.getRGB());
+            }
+            if (annotation.getAnnotation().getBorderStyle() != null) {
+                String tmpStyle = annotation.getAnnotation().getBorderStyle().getBorderStyle();
+                if (tmpStyle != null) {
+                    // store border style
+                    borderStyle = new String(tmpStyle);
+                }
+                float tmpWidth = annotation.getAnnotation().getBorderStyle().getStrokeWidth();
+                borderWidth = new Float(tmpWidth);
+            }
         }
     }
 
@@ -91,16 +100,22 @@ public class AnnotationState implements Memento {
         if (annotationComponent.getAnnotation() != null){
             // get reference to annotation
             Annotation annotation = annotationComponent.getAnnotation();
-            // apply old colour
-            annotation.setBorderColor(borderColor);
+            // apply old border color
+            if (borderColor != null) {
+                annotation.setBorderColor(borderColor);
+            }
+            if (annotation.getBorderStyle() != null) {
+                if (borderStyle != null) {
+                    annotation.getBorderStyle().setBorderStyle(borderStyle);
+                }
+                annotation.getBorderStyle().setStrokeWidth(borderWidth);
+            }
             // apply old user rectangle
             annotation.getUserSpaceRectangle()
                     .setRect(userSpaceRectangle);
             // trigger the component to refresh and repaint its self with the
             // new 'restored' properties.
             annotationComponent.refreshBounds();
-
-            // todo state restore other annotation properties.
         }
     }
 }

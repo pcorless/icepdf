@@ -1117,7 +1117,11 @@ public class SwingController
         }
     }
 
-    private void reflectUndoCommands(){
+    /**
+     * Method to determine if the Undo and Redo menu items can be enabled
+     * This will query the UndoCaretaker for the status of the queue first
+     */
+    public void reflectUndoCommands(){
          UndoCaretaker undoCaretaker = ((DocumentViewModelImpl)
                  documentViewController.getDocumentViewModel()).
                         getAnnotationCareTaker();
@@ -2934,12 +2938,19 @@ public class SwingController
         if (utilityTabbedPane != null && linkPanel != null) {
             // Pass the selected annotation to the link panel
             linkPanel.setAndApplyAnnotationToUI(selectedAnnotation);
-            // select the linkPanel tab
-            utilityTabbedPane.setSelectedComponent(linkPanel);
+
             // make sure the utility pane is visible
             setUtilityPaneVisible(true);
+
+            // select the linkPanel tab
+            if (utilityTabbedPane.getSelectedComponent() != linkPanel) {
+                utilityTabbedPane.setSelectedComponent(linkPanel);
+            }
+
             // request focus
-            linkPanel.requestFocus();
+            if (!linkPanel.hasFocus()) {
+                linkPanel.requestFocus();
+            }
         }
     }
 
