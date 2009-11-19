@@ -81,6 +81,7 @@ public class SearchTextTask {
     private String pattern = "";
     private boolean wholeWord;
     private boolean caseSensitive;
+    private boolean cumulative;
     private boolean r2L;
 
     // parent swing controller
@@ -112,6 +113,7 @@ public class SearchTextTask {
                           String pattern,
                           boolean wholeWord,
                           boolean caseSensitive,
+                          boolean cumulative,
                           boolean r2L,
                           ResourceBundle messageBundle) {
         this.controller = controller;
@@ -122,6 +124,7 @@ public class SearchTextTask {
         this.viewContainer = controller.getDocumentViewController().getViewContainer();
         this.wholeWord = wholeWord;
         this.caseSensitive = caseSensitive;
+        this.cumulative = cumulative;
         this.r2L = r2L;
 
         // setup searching format format.
@@ -215,7 +218,9 @@ public class SearchTextTask {
                 // get instance of the search controller
                 DocumentSearchController searchController =
                         controller.getDocumentSearchController();
-                searchController.clearAllSearchHighlight();
+                if (! cumulative){
+                    searchController.clearAllSearchHighlight();
+                }
                 searchController.addSearchTerm(pattern,
                         caseSensitive, wholeWord);
 
