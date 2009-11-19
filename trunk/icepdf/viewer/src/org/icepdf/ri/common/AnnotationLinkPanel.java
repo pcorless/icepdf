@@ -41,7 +41,7 @@ public class AnnotationLinkPanel extends JPanel {
     private AnnotationComponent currentAnnotation;
 
     private JButton colorButton;
-    private JComboBox linkTypeBox, linkStyleBox, linkThicknessBox, linkHighlightBox, zoomBox;
+    private JComboBox linkTypeBox, linkStyleBox, linkThicknessBox, zoomBox;
     private JTextField pageField;
     private JLabel pageLabel;
 
@@ -194,7 +194,6 @@ public class AnnotationLinkPanel extends JPanel {
         safeEnable(linkTypeBox, enabled);
         safeEnable(linkStyleBox, enabled);
         safeEnable(linkThicknessBox, enabled);
-        safeEnable(linkHighlightBox, enabled);
         safeEnable(zoomBox, enabled);
         safeEnable(pageField, enabled);
     }
