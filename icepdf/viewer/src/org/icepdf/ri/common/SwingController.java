@@ -210,6 +210,7 @@ public class SwingController
     private JTree outlinesTree;
     private JScrollPane outlinesScrollPane;
     private SearchPanel searchPanel;
+    private AnnotationLinkPanel linkPanel;
     private JTabbedPane utilityTabbedPane;
 
     private JSplitPane utilityAndDocumentSplitPane;
@@ -844,6 +845,13 @@ public class SwingController
      */
     public void setSearchPanel(SearchPanel sp) {
         searchPanel = sp;
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setAnnotationLinkPanel(AnnotationLinkPanel lp) {
+        linkPanel = lp;
     }
 
     /**
@@ -2366,7 +2374,6 @@ public class SwingController
         SwingUtilities.invokeLater(doSwingWork);
     }
 
-    
     /**
      * Show the permissions set in the PDF file's Document, as relates to encryption,
      * altering, or extracting information from, the Document
@@ -2914,6 +2921,27 @@ public class SwingController
             setUtilityPaneVisible(true);
             // request focus
             searchPanel.requestFocus();
+        }
+    }
+
+    /**
+     * Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
+     *
+     * @param selectedAnnotation the annotation to show in the panel
+     * @see #setUtilityPaneVisible(boolean)
+     */
+    public void showAnnotationLinkPanel(AnnotationComponent selectedAnnotation) {
+        if (utilityTabbedPane != null && linkPanel != null) {
+            // Pass the selected annotation to the link panel
+            linkPanel.applyAnnotationToUI(selectedAnnotation);
+            // Enable the linkPanel attributes
+            linkPanel.enablePanel();
+            // select the linkPanel tab
+            utilityTabbedPane.setSelectedComponent(linkPanel);
+            // make sure the utility pane is visible
+            setUtilityPaneVisible(true);
+            // request focus
+            linkPanel.requestFocus();
         }
     }
 
@@ -3729,7 +3757,7 @@ public class SwingController
              setEnabled(deselectAllMenuItem, true);
              setEnabled(copyMenuItem, true);
         }
-        // focus gains for an annotation
+        // annotation is selected
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_SELECTED)){
             // enable the delete menu
             setEnabled(deleteMenuItem, true);
@@ -3739,10 +3767,24 @@ public class SwingController
                             DocumentViewModelImpl.DISPLAY_TOOL_SELECTION){
                 AnnotationComponent annotationComponent =
                         (AnnotationComponent)newValue;
-                if (annotationComponent.getAnnotation() != null &&
+                if (annotationComponent != null &&
+                    annotationComponent.getAnnotation() != null &&
                         annotationComponent.getAnnotation() instanceof LinkAnnotation){
                     // set the annotationPane with the new annotation component
                     logger.info("selected annotation " + annotationComponent);
+
+                    showAnnotationLinkPanel(annotationComponent);
+                }
+            }
+        }
+        // annotation is deselected
+        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_DESELECTED)){
+            if (documentViewController.getToolMode() ==
+                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
+                logger.info("deselected current annotation");
+
+                if (linkPanel != null) {
+                    linkPanel.disablePanel();
                 }
             }
         }
