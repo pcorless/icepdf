@@ -2933,9 +2933,7 @@ public class SwingController
     public void showAnnotationLinkPanel(AnnotationComponent selectedAnnotation) {
         if (utilityTabbedPane != null && linkPanel != null) {
             // Pass the selected annotation to the link panel
-            linkPanel.applyAnnotationToUI(selectedAnnotation);
-            // Enable the linkPanel attributes
-            linkPanel.enablePanel();
+            linkPanel.setAndApplyAnnotationToUI(selectedAnnotation);
             // select the linkPanel tab
             utilityTabbedPane.setSelectedComponent(linkPanel);
             // make sure the utility pane is visible
