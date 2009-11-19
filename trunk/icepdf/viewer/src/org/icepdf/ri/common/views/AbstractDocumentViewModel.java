@@ -34,13 +34,13 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.core.views.swing.AnnotationComponent;
-import org.icepdf.ri.common.AnnotationCareTaker;
+import org.icepdf.core.Memento;
+import org.icepdf.ri.common.UndoCaretaker;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
@@ -78,7 +78,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected List<AbstractPageViewComponent> pageComponents;
 
     // annotation memento caretaker
-    protected AnnotationCareTaker annotationCareTaker;
+    protected UndoCaretaker undoCaretaker;
 
     // currently selected annotation
     protected AnnotationComponent currentAnnotation;
@@ -160,8 +160,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public AbstractDocumentViewModel(Document currentDocument) {
         this.currentDocument = currentDocument;
 
-        // create new instance of the annotationCareTaker
-        annotationCareTaker = new AnnotationCareTaker();
+        // create new instance of the undoCaretaker
+        undoCaretaker = new UndoCaretaker();
     }
 
     public Document getDocument() {
@@ -412,11 +412,11 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * by the momento pattern.
      * @return document leve annotation care taker.
      */
-    public AnnotationCareTaker getAnnotationCareTaker() {
-        return annotationCareTaker;
+    public UndoCaretaker getAnnotationCareTaker() {
+        return undoCaretaker;
     }
 
-    public void addAnnotationStateChange(AnnotationState annotationState) {
-        annotationCareTaker.addState(annotationState);
+    public void addMemento(Memento oldMementoState, Memento newMementoState) {
+        undoCaretaker.addState(oldMementoState, newMementoState);
     }
 }
