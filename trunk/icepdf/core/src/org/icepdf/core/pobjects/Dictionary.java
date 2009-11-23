@@ -62,12 +62,22 @@ public class Dictionary {
     /**
      * Table of associative pairs of objects.
      */
-    protected Hashtable entries;
+    protected Hashtable<String, Object> entries;
 
     /**
      * Indicates if Dictionary has been initiated.
      */
     protected boolean inited;
+
+    /**
+     * Flag to indicate this object has been flaged for deletion.
+     */
+    protected boolean isDeleted;
+
+    /**
+     * Flags the object as new and not previously saved in the file
+     */
+    protected boolean isNew;
 
     // reference of stream, needed for encryption support
     private Reference pObjectReference;
@@ -82,7 +92,7 @@ public class Dictionary {
         this.library = library;
         this.entries = entries;
         if (this.entries == null) {
-            this.entries = new Hashtable();
+            this.entries = new Hashtable<String, Object>();
         }
     }
 
@@ -125,8 +135,8 @@ public class Dictionary {
      *
      * @return a copy of the Dictionary's entries.
      */
-    public Hashtable getEntries() {
-        return new Hashtable(entries);
+    public Hashtable<String, Object> getEntries() {
+        return entries;
     }
 
     public Object getObject(String key) {
@@ -180,6 +190,22 @@ public class Dictionary {
      */
     public Library getLibrary() {
         return library;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
+    public boolean isNew() {
+        return isNew;
+    }
+
+    public void setNew(boolean aNew) {
+        isNew = aNew;
     }
 
     /**

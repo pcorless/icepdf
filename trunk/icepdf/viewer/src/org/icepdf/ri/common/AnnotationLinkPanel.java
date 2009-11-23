@@ -1,6 +1,6 @@
 package org.icepdf.ri.common;
 
-import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
@@ -40,7 +40,7 @@ public class AnnotationLinkPanel extends JPanel {
     private SwingController controller;
     private ResourceBundle messageBundle;
 
-    private AnnotationComponent currentAnnotation;
+    private AnnotationComponentImpl currentAnnotation;
 
     private JButton colorButton;
     private JComboBox linkTypeBox, linkStyleBox, linkThicknessBox, zoomBox;
@@ -67,12 +67,12 @@ public class AnnotationLinkPanel extends JPanel {
         disablePanel();
     }
 
-    public AnnotationComponent getCurrentAnnotation() {
+    public AnnotationComponentImpl getCurrentAnnotation() {
         return currentAnnotation;
     }
 
     public void setCurrentAnnotation(
-            AnnotationComponent currentAnnotation) {
+            AnnotationComponentImpl currentAnnotation) {
         this.currentAnnotation = currentAnnotation;
     }
 
@@ -85,7 +85,7 @@ public class AnnotationLinkPanel extends JPanel {
      *
      * @param newAnnotation to set and apply to this UI
      */
-    public void setAndApplyAnnotationToUI(AnnotationComponent newAnnotation) {
+    public void setAndApplyAnnotationToUI(AnnotationComponentImpl newAnnotation) {
         if ((newAnnotation == null) || (newAnnotation.getAnnotation() == null)) {
             return;
         }

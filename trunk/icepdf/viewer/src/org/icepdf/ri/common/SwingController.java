@@ -47,7 +47,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
@@ -937,10 +937,12 @@ public class SwingController
 
         // set initial sate for undo/redo edit, afterwards state is set by
         // valueChange events depending on tool selection.
-        setEnabled(undoMenuItem, false);
-        setEnabled(redoMenuItem, false);
-        setEnabled(copyMenuItem, false);
-        setEnabled(deleteMenuItem, false);
+        // todo fix disabled state.
+//        setEnabled(undoMenuItem, false);
+//        setEnabled(redoMenuItem, false);
+//        setEnabled(copyMenuItem, false);
+//        setEnabled(deleteMenuItem, false);
+
         setEnabled(selectAllMenuItem, opened && canExtract);
         setEnabled(deselectAllMenuItem, false);
 
@@ -2934,7 +2936,7 @@ public class SwingController
      * @param selectedAnnotation the annotation to show in the panel
      * @see #setUtilityPaneVisible(boolean)
      */
-    public void showAnnotationLinkPanel(AnnotationComponent selectedAnnotation) {
+    public void showAnnotationLinkPanel(AnnotationComponentImpl selectedAnnotation) {
         if (utilityTabbedPane != null && linkPanel != null) {
             // Pass the selected annotation to the link panel
             linkPanel.setAndApplyAnnotationToUI(selectedAnnotation);
@@ -2948,9 +2950,9 @@ public class SwingController
             }
 
             // request focus
-            if (!linkPanel.hasFocus()) {
-                linkPanel.requestFocus();
-            }
+//            if (!linkPanel.hasFocus()) {
+//                linkPanel.requestFocus();
+//            }
         }
     }
 
@@ -3774,8 +3776,8 @@ public class SwingController
             // link annotation tool.
             if (documentViewController.getToolMode() ==
                             DocumentViewModelImpl.DISPLAY_TOOL_SELECTION){
-                AnnotationComponent annotationComponent =
-                        (AnnotationComponent)newValue;
+                AnnotationComponentImpl annotationComponent =
+                        (AnnotationComponentImpl)newValue;
                 if (annotationComponent != null &&
                     annotationComponent.getAnnotation() != null &&
                         annotationComponent.getAnnotation() instanceof LinkAnnotation){
@@ -3784,6 +3786,9 @@ public class SwingController
 
                     showAnnotationLinkPanel(annotationComponent);
                 }
+                else{
+                    // todo deselect if null annotation. 
+                }
             }
         }
         // annotation is deselected
@@ -3791,7 +3796,8 @@ public class SwingController
             if (documentViewController.getToolMode() ==
                         DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
                 logger.info("deselected current annotation");
-
+                // disable the delete menu
+                setEnabled(deleteMenuItem, false);
                 if (linkPanel != null) {
                     linkPanel.disablePanel();
                 }
@@ -3811,10 +3817,6 @@ public class SwingController
             }
             // check to see if undo/redo can be enabled/disabled.
             reflectUndoCommands();
-        }
-        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_DESELECTED)){
-            // disable the delete menu
-            setEnabled(deleteMenuItem, false);
         }
         // New link annotation was created with tool.
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_NEW_LINK)){

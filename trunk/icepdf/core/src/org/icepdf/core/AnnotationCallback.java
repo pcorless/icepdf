@@ -34,6 +34,9 @@ package org.icepdf.core;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.views.PageViewComponent;
+
+import java.awt.*;
 
 /**
  * <p>Annotation callback allows developers to control how Annotation and
@@ -71,8 +74,8 @@ public interface AnnotationCallback {
     /**
      * New annotation created with view tool.
      * @param page page that annotation was added to.
-     * @param annotation new annotation object
+     * @param rect new annotation bounds.
      */
-//    public void newAnnotation(Page page, AnnotationComponent annotation);
+    public void newAnnotation(PageViewComponent page, Rectangle rect);
     
 }

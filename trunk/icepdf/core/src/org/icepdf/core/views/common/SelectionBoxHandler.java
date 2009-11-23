@@ -13,8 +13,8 @@ import java.awt.event.MouseEvent;
 public class SelectionBoxHandler {
 
     // dashed selection rectangle stroke
-    protected final static float dash1[] = {1.0f};
-    protected final static BasicStroke dashed = new BasicStroke(1.0f,
+    protected static float dash1[] = {1.0f};
+    protected static BasicStroke stroke = new BasicStroke(1.0f,
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f, dash1, 0.0f);
@@ -24,6 +24,7 @@ public class SelectionBoxHandler {
     protected Rectangle rectToDraw = null;
     protected Rectangle previousRectDrawn = new Rectangle();
 
+    protected Color selectionBoxColour = Color.lightGray;
 
 
     public void paintSelectionBox(Graphics g) {
@@ -33,8 +34,8 @@ public class SelectionBoxHandler {
         if (rectToDraw != null) {
             //Draw a rectangle on top of the image.
             oldColor = g.getColor();
-            g.setColor(Color.lightGray);
-            gg.setStroke(dashed);
+            g.setColor(selectionBoxColour);
+            gg.setStroke(stroke);
             g.drawRect(rectToDraw.x, rectToDraw.y,
                     rectToDraw.width - 1, rectToDraw.height - 1);
             g.setColor(oldColor);

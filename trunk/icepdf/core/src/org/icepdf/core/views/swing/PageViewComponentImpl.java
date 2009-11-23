@@ -36,9 +36,11 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
@@ -183,7 +185,6 @@ public class PageViewComponentImpl extends
                                  PageTree pageTree, int pageNumber,
                                  JScrollPane parentScrollPane,
                                  int width, int height) {
-
         setFocusable(true);
         // add focus listener
         addFocusListener(this);
@@ -237,6 +238,28 @@ public class PageViewComponentImpl extends
         // text selection mouse handler
         addMouseMotionListener(textSelectionHandler);
         addMouseListener(textSelectionHandler);
+    }
+
+    /**
+     * Adds the specified annotation to this page instance.  The annotation
+     * is wrapped with a AnnotationComponent and added to this components layout
+     * manager.
+     *
+     * @param annotation annotation to add to this page instance. .
+     */
+    public void addAnnotation(Annotation annotation) {
+        // delegate to handler.
+        annotationHandler.addAnnotationComponent(annotation);
+    }
+
+    /**
+     * Removes the specified annotation from this page component
+     *
+     * @param annotationComp annotation to be removed.
+     */
+    public void removeAnnotation(AnnotationComponent annotationComp) {
+        // delegate to handler. 
+        annotationHandler.removeAnnotationComponent(annotationComp);
     }
 
     public void init() {
@@ -471,13 +494,15 @@ public class PageViewComponentImpl extends
     public void mousePressed(MouseEvent e) {
 
         // request page focus
-        requestFocusInWindow();
+//        requestFocusInWindow();
 
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             textSelectionHandler.mousePressed(e);
         } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             annotationHandler.mousePressed(e);
         }
 
@@ -494,7 +519,9 @@ public class PageViewComponentImpl extends
                 DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             textSelectionHandler.mouseReleased(e);
         } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             annotationHandler.mouseReleased(e);
         }
     }
@@ -504,7 +531,9 @@ public class PageViewComponentImpl extends
                 DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
             textSelectionHandler.mouseDragged(e);
         } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             annotationHandler.mouseDragged(e);
         }
     }

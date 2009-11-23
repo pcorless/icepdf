@@ -37,8 +37,8 @@ import org.icepdf.core.application.ProductInfo;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
-import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.LazyObjectLoader;
 import org.icepdf.core.util.Library;
@@ -51,8 +51,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The <code>Document</code> class represents a PDF document and provides
@@ -98,6 +98,10 @@ public class Document {
     //  but now that's lazily loaded, so instead we keep the
     //  PTrailer itself, which can get us the PInfo whenever
     private PTrailer pTrailer;
+
+    // state manager for tracking object that have been touched in some way
+    // for editing purposes,
+    private StateManager stateManager;
 
     // This is the original file or url path of where the PDF document was load
     // from
@@ -447,6 +451,10 @@ public class Document {
 
             // initiate the catalog, build the outline for the document
             catalog.init();
+
+            // create new instance of state manager and add it to the library
+            stateManager = new StateManager(pTrailer);
+            library.setStateManager(stateManager);
         }
         catch (PDFException e) {
             logger.log(Level.FINE, "Error loading PDF file during linear parse.", e);
@@ -847,6 +855,15 @@ public class Document {
     }
 
     /**
+     * Gets an instance of the the document state manager which stores references
+     * of object that need to be written to file.
+     * @return stateManager instance for this document. 
+     */
+    public StateManager getStateManager(){
+        return stateManager;
+    }
+
+    /**
      * Returns the total number of pages in this document.
      *
      * @return number of pages in the document
@@ -855,7 +872,7 @@ public class Document {
         try {
             return catalog.getPageTree().getNumberOfPages();
         } catch (Exception e) {
-             logger.log(Level.FINE, "Error getting number of pages.", e);
+            logger.log(Level.FINE, "Error getting number of pages.", e);
         }
         return 0;
     }
@@ -906,7 +923,7 @@ public class Document {
                 documentSeekableInput.close();
             }
             catch (IOException e) {
-                 logger.log(Level.FINE, "Error closing document input stream.", e);
+                logger.log(Level.FINE, "Error closing document input stream.", e);
             }
             documentSeekableInput = null;
         }
@@ -943,7 +960,7 @@ public class Document {
             }
         }
         catch (Throwable e) {
-             logger.log(Level.FINE, "Error writting PDF output stream.", e);
+            logger.log(Level.FINE, "Error writting PDF output stream.", e);
             throw new IOException(e.getMessage());
         }
         finally {
@@ -1000,12 +1017,12 @@ public class Document {
      * in the PDF document.  The PageText.toString() is the simpleset way to
      * get a pages text.  This utility call does not parse the whole stream
      * and is best suited for text extraction functionality as it faster then
-     * @see #getPageViewText(int).  
      *
      * @param pageNumber Page number of page in which text extraction will act on.
      *                   The page number is zero-based.
-     * @return page PageText data Structure. 
-     */   
+     * @return page PageText data Structure.
+     * @see #getPageViewText(int).
+     */
     public PageText getPageText(int pageNumber) {
         PageTree pageTree = catalog.getPageTree();
         if (pageNumber >= 0 && pageNumber < pageTree.getNumberOfPages()) {

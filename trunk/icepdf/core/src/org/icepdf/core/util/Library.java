@@ -75,6 +75,10 @@ public class Library {
     public CacheManager cacheManager;
     public SecurityManager securityManager;
 
+    // state manager reference needed by most classes to properly managed state
+    // changes and new object creation
+    public StateManager stateManager;
+
     private boolean isEncrypted;
     private boolean isLinearTraversal;
 
@@ -167,6 +171,38 @@ public class Library {
         if (o instanceof Reference)
             o = getObject((Reference) o);
         return o;
+    }
+
+    /**
+     * Test to see if the given key is a reference and not an inline dictinary
+     * @param dictionaryEntries dictionary to test
+     * @param key dictionary key
+     * @return true if the key value exists and is a reference, false if the
+     * dictionaryEntries are null or the key references an inline dictionary
+     */
+    public boolean isReference(Hashtable dictionaryEntries, String key) {
+        return dictionaryEntries != null &&
+                dictionaryEntries.get(key) instanceof Reference;
+
+    }
+
+    /**
+     * Gets the state manager class which keeps track of changes PDF objects.
+     *
+     * @return  document state manager
+     */
+    public StateManager getStateManager() {
+        return stateManager;
+    }
+
+    /**
+     * Sets the document state manager so that all object can access the
+     * state manager via the central library instance.
+     *
+     * @param stateManager
+     */
+    public void setStateManager(StateManager stateManager) {
+        this.stateManager = stateManager;
     }
 
     /**
@@ -435,6 +471,17 @@ public class Library {
      */
     public void addObject(Object object, Reference objectReference) {
         refs.put(objectReference, object);
+    }
+
+    /**
+     * Removes an object from from the library.
+     *
+     * @param objetReference
+     */
+    public void removeObject(Reference objetReference){
+        if (objetReference != null){
+            refs.remove(objetReference);
+        }
     }
 
     /**

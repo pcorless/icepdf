@@ -38,7 +38,7 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.core.Memento;
 import org.icepdf.ri.common.UndoCaretaker;
 
@@ -81,7 +81,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected UndoCaretaker undoCaretaker;
 
     // currently selected annotation
-    protected AnnotationComponent currentAnnotation;
+    protected AnnotationComponentImpl currentAnnotation;
 
     // page view settings
     protected float userZoom = 1.0f, oldUserZoom = 1.0f;
@@ -385,7 +385,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * Gets the currently selected annotation in the document model.
      * @return currently selected annotation, null if there is none.
      */
-    public AnnotationComponent getCurrentAnnotation() {
+    public AnnotationComponentImpl getCurrentAnnotation() {
         return currentAnnotation;
     }
 
@@ -394,7 +394,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * when editing and selecting page annotations.
      * @param currentAnnotation annotation to make current.
      */
-    public void setCurrentAnnotation(AnnotationComponent currentAnnotation) {
+    public void setCurrentAnnotation(AnnotationComponentImpl currentAnnotation) {
         // clear the previously selected state.
         if (this.currentAnnotation != null){
             this.currentAnnotation.setSelected(false);

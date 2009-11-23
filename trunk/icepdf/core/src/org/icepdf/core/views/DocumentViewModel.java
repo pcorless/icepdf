@@ -32,10 +32,10 @@
  */
 package org.icepdf.core.views;
 
+import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponent;
-import org.icepdf.core.Memento;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
@@ -237,10 +237,26 @@ public interface DocumentViewModel {
      */
     public int getPageBoundary();
 
-    public AnnotationComponent getCurrentAnnotation();
+    /**
+     * Gets the currently selected annotation
+     *
+     * @return currently selected annotaitons.
+     */
+    public AnnotationComponentImpl getCurrentAnnotation();
 
-    public void setCurrentAnnotation(AnnotationComponent currentAnnotation);
+    /**
+     * Sets teh current annotation
+     *
+     * @param currentAnnotation annotation to set as current
+     */
+    public void setCurrentAnnotation(AnnotationComponentImpl currentAnnotation);
 
+    /**
+     * Adds memento state  to the care taker.
+     *
+     * @param oldMementoState origional state.
+     * @param newMementoState new state.
+     */
     public void addMemento(Memento oldMementoState,
-                                         Memento newMementoState);
+                           Memento newMementoState);
 }
