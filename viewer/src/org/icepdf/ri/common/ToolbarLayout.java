@@ -42,6 +42,7 @@ import java.awt.LayoutManager;
 /**
  * The ToolbarLayout class provides a Flow-like Layout Manager specifically
  * suited for use within a JToolBar.
+ *
  * <p>This layout manager will dynamically wrap JToolBar contents to additional
  * toolbar rows if the current toolbar width is not sufficient for it to display
  * all of the toolbar items on the current number of toolbar rows. Alternatively,
@@ -114,12 +115,14 @@ class ToolbarLayout implements LayoutManager {
             Dimension dim = new Dimension(0,0);
             int maxWidth = 0;
             int componentCount = parent.getComponentCount();
+            Insets insets = parent.getInsets();
+            int padWidths = (hgap *2) + insets.left + insets.right;
 
             for(int i = 0; i < componentCount; i++) {
                 Component c = parent.getComponent(i);
                 if(c.isVisible()) {
                     Dimension d = c.getPreferredSize();
-                    if((dim.width + d.width + hgap) <= parent.getWidth()) {
+                    if((dim.width + d.width + padWidths) <= parent.getWidth()) {
                         dim.height = Math.max(dim.height, d.height);
                     } else {
                         dim.height += vgap + d.height;
@@ -134,7 +137,6 @@ class ToolbarLayout implements LayoutManager {
                     }
                 }
             }
-            Insets insets = parent.getInsets();
             dim.width = Math.max(dim.width, maxWidth);
             dim.width += insets.left + insets.right + 2*hgap;
             dim.height += insets.top + insets.bottom + 2*vgap;
