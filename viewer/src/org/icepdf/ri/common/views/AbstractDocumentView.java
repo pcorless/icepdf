@@ -39,11 +39,11 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.common.PanningHandler;
 import org.icepdf.core.views.common.SelectionBoxHandler;
 import org.icepdf.core.views.common.ZoomHandler;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -68,7 +68,7 @@ import java.beans.PropertyChangeEvent;
  */
 public abstract class AbstractDocumentView
         extends JComponent
-        implements DocumentView {
+        implements DocumentView, PropertyChangeListener {
 
     private static final Logger logger =
             Logger.getLogger(AbstractDocumentView.class.toString());
@@ -154,43 +154,43 @@ public abstract class AbstractDocumentView
         documentViewController.getVerticalScrollBar().addAdjustmentListener(this);
 
         // add a focus management listener.
-        KeyboardFocusManager focusManager =
-           KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        focusManager.addPropertyChangeListener(new PropertyChangeListener(){
-            public void propertyChange(PropertyChangeEvent evt) {
-                String prop = evt.getPropertyName();
-                Object newValue = evt.getNewValue();
-                Object oldValue = evt.getOldValue();
-                if ("focusOwner".equals(prop) &&
-                        newValue instanceof AnnotationComponent){
-                    // the correct annotations for the properties pane
-                    if (logger.isLoggable(Level.INFO)){
-                        logger.info("Selected Annotation " + newValue);
-                    }
-                    DocumentViewController documentViewController =
-                            getParentViewController();
-                        documentViewController.firePropertyChange(
-                                PropertyConstants.ANNOTATION_FOCUS_GAINED,
-                                evt.getOldValue(),
-                                evt.getNewValue());
+//        KeyboardFocusManager focusManager =
+//           KeyboardFocusManager.getCurrentKeyboardFocusManager();
+//        focusManager.addPropertyChangeListener(this);
 
-                }
-                else if ("focusOwner".equals(prop) &&
-                        oldValue instanceof AnnotationComponent){
-                    // the correct annotations for the properties pane
-                    if (logger.isLoggable(Level.INFO)){
-                        logger.info("Deselected Annotation " + oldValue);
-                    }
-                    DocumentViewController documentViewController =
-                            getParentViewController();
-                    documentViewController.firePropertyChange(
-                            PropertyConstants.ANNOTATION_FOCUS_LOST,
-                            evt.getOldValue(),
-                            evt.getNewValue());
-                }
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        String prop = evt.getPropertyName();
+        Object newValue = evt.getNewValue();
+        Object oldValue = evt.getOldValue();
+        if ("focusOwner".equals(prop) &&
+                newValue instanceof AnnotationComponent){
+            // the correct annotations for the properties pane
+            if (logger.isLoggable(Level.INFO)){
+                logger.info("Selected Annotation " + newValue);
             }
-        });
+            DocumentViewController documentViewController =
+                    getParentViewController();
+                documentViewController.firePropertyChange(
+                        PropertyConstants.ANNOTATION_FOCUS_GAINED,
+                        evt.getOldValue(),
+                        evt.getNewValue());
 
+        }
+        else if ("focusOwner".equals(prop) &&
+                oldValue instanceof AnnotationComponent){
+            // the correct annotations for the properties pane
+            if (logger.isLoggable(Level.INFO)){
+                logger.info("Deselected Annotation " + oldValue);
+            }
+            DocumentViewController documentViewController =
+                    getParentViewController();
+            documentViewController.firePropertyChange(
+                    PropertyConstants.ANNOTATION_FOCUS_LOST,
+                    evt.getOldValue(),
+                    evt.getNewValue());
+        }
     }
 
     public DocumentViewController getParentViewController() {
@@ -297,7 +297,10 @@ public abstract class AbstractDocumentView
                         DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION
                         ||
                         documentViewModel.getViewToolMode() ==
-                                DocumentViewModel.DISPLAY_TOOL_SELECTION)) {
+                                DocumentViewModel.DISPLAY_TOOL_SELECTION
+                        ||
+                        documentViewModel.getViewToolMode() ==
+                                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION)) {
             // take care of annotations and the first click for selection
             pageComponent.mousePressed(modeEvent);
         } else {
@@ -358,8 +361,10 @@ public abstract class AbstractDocumentView
         }
         // annotation selection box drawing.
         else if (pageComponent != null &&
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+                (documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_SELECTION  ||
+                 documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION)) {
             pageComponent.mouseReleased(modeEvent);
         } else {
             // panning icon state
@@ -422,7 +427,9 @@ public abstract class AbstractDocumentView
         // handles multiple selection box drawing.
         else if (documentViewController != null &&
                 documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+                        DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                 documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             // mouse -> page  broadcast .
             AbstractPageViewComponent pageViewComponent =
                     isOverPageComponent(e);

@@ -32,7 +32,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.Memento;
 
 import java.awt.*;
@@ -115,7 +115,7 @@ public class AnnotationState implements Memento {
                     .setRect(userSpaceRectangle);
             // trigger the component to refresh and repaint its self with the
             // new 'restored' properties.
-            annotationComponent.refreshBounds();
+            annotationComponent.refreshDirtyBounds();
         }
     }
 }

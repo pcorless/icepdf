@@ -2,6 +2,7 @@ package org.icepdf.core.views.swing;
 
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.views.AnnotationComponent;
 
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
@@ -77,8 +78,6 @@ public class ResizableBorder extends AbstractBorder {
 
     public void paintBorder(Component component, Graphics g, int x, int y,
                             int w, int h) {
-
-
         boolean isSelected = false;
         boolean isEditable = false;
         boolean isRollover = false;
@@ -157,8 +156,8 @@ public class ResizableBorder extends AbstractBorder {
         boolean isLinkAnnot = false;
 
         // get render flags from component.
-        if (c instanceof AnnotationComponent){
-            AnnotationComponent annot = (AnnotationComponent) c;
+        if (c instanceof AnnotationComponentImpl){
+            AnnotationComponentImpl annot = (AnnotationComponentImpl) c;
             isEditable = annot.isEditable();
             isLinkAnnot = annot.isLinkAnnot();
         }

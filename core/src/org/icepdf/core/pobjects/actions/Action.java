@@ -53,6 +53,8 @@ import java.util.Hashtable;
  */
 public class Action extends Dictionary {
 
+    public static final String ACTION_TYPE = "S";
+
     public static final String ACTION_TYPE_GOTO = "GoTo";
 
     public static final String ACTION_TYPE_GOTO_REMOTE = "GoToR";

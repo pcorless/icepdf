@@ -5,13 +5,15 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -36,19 +38,23 @@ public class AnnotationHandler extends SelectionBoxHandler
     private DocumentViewController documentViewController;
     private DocumentViewModel documentViewModel;
 
+    // flag to indicate a drag had occured.
+    private boolean isDragged;
+
     // annotations component for pageViewComp.
     private ArrayList<AnnotationComponent> annotations;
 
     // selected annotations.
     // todo: implement multiple select,  should probably go in documentViewModel
     // instead. 
-    private ArrayList<AnnotationComponent> selectedAnnotations;
+    private ArrayList<AnnotationComponentImpl> selectedAnnotations;
 
     public AnnotationHandler(AbstractPageViewComponent pageViewComponent,
                              DocumentViewModel documentViewModel) {
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
-        selectedAnnotations = new ArrayList<AnnotationComponent>();
+        selectedAnnotations = new ArrayList<AnnotationComponentImpl>();
+        selectionBoxColour = Color.GRAY;
     }
 
     /**
@@ -61,17 +67,22 @@ public class AnnotationHandler extends SelectionBoxHandler
         this.documentViewController = documentViewController;
     }
 
+    /**
+     * Initializes the annotation components given the annotations collections.
+     *
+     * @param annotations annotations to wrap with annotaitons components.
+     */
     public void initializeAnnotationComponents(ArrayList<Annotation> annotations){
 
         if (this.annotations == null && annotations != null){
             this.annotations = new ArrayList<AnnotationComponent>(annotations.size());
-            AnnotationComponent comp;
+            AnnotationComponentImpl comp;
             for (Annotation annotation : annotations) {
                 if (!(annotation.getFlagReadOnly() ||
                         annotation.getFlagLocked() ||
                         annotation.getFlagInvisible() ||
                         annotation.getFlagHidden())) {
-                    comp = new AnnotationComponent(annotation,
+                    comp = new AnnotationComponentImpl(annotation,
                             documentViewController,
                             pageViewComponent, documentViewModel);
                     // add them to the container, using absolute positioning.
@@ -81,7 +92,54 @@ public class AnnotationHandler extends SelectionBoxHandler
                 }
             }
         }
+    }
 
+    /**
+     * Wraps the specified annotaiton with a new Annotation component and adds
+     * it to the PageViewComponent as a child.
+     * @param annotation new annotation to add to PageView.
+     */
+    public void addAnnotationComponent(Annotation annotation){
+        // initialize annotations
+        if (annotations == null){
+            annotations = new ArrayList<AnnotationComponent>();
+        }
+        // make sure we don't add the following types.
+        if (!(annotation.getFlagReadOnly() ||
+                annotation.getFlagLocked() ||
+                annotation.getFlagInvisible() ||
+                annotation.getFlagHidden())) {
+            Rectangle2D.Float rect = annotation.getUserSpaceRectangle();
+            rect = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
+            AnnotationComponentImpl comp = new AnnotationComponentImpl(annotation,
+                    documentViewController,
+                    pageViewComponent, documentViewModel);
+            comp.setBounds(rect.getBounds());
+            // convert rectangle from sapce
+            comp.refreshResizedBounds();
+            // add them to the container, using absolute positioning.
+            pageViewComponent.add(comp);
+            // add the comp reference locally so we have easier access
+            this.annotations.add(comp);
+            // set the new annotation as the selected one.
+            documentViewController.clearSelectedAnnotations();
+        }
+    }
+
+    /**
+     * Removes the specified annotation from the page view.
+     * @param annotation annotation component to removed. 
+     */
+    public void removeAnnotationComponent(AnnotationComponent annotation){
+        // initialize annotations
+        if (annotations == null){
+            return;
+        }
+        this.annotations.remove(annotation);
+        pageViewComponent.remove((Component)annotation);
+
+        // set the new annotation as the selected one.
+        documentViewController.assignSelectedAnnotation(null);
     }
 
     /**
@@ -93,14 +151,13 @@ public class AnnotationHandler extends SelectionBoxHandler
      * using either the api or UI tools.
      */
     public void createNewLinkAnnotation() {
-        // todo setup objects, add them to library and finally the callback api
-        // call.
-        if (documentViewModel.getViewToolMode() !=
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
-//            if (documentViewController.getAnnotationCallback() != null) {
-//                documentViewController.getAnnotationCallback()
-//                        .proccessAnnotationAction(annotation);
-//            }
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
+            if (documentViewController.getAnnotationCallback() != null) {
+                // convert the drawn rectangle to page space.
+                documentViewController.getAnnotationCallback()
+                        .newAnnotation(pageViewComponent, rectToDraw);
+            }
         }
     }
 
@@ -110,7 +167,7 @@ public class AnnotationHandler extends SelectionBoxHandler
      *
      * @param annotationComponent component to add to list of selected annotations
      */
-    public void addSelectedAnnotation(AnnotationComponent annotationComponent) {
+    public void addSelectedAnnotation(AnnotationComponentImpl annotationComponent) {
         selectedAnnotations.add(annotationComponent);
     }
 
@@ -121,7 +178,7 @@ public class AnnotationHandler extends SelectionBoxHandler
      * @param annotationComponent remove the specified annotation from the
      *                            selection list
      */
-    public void removeSelectedAnnotation(AnnotationComponent annotationComponent) {
+    public void removeSelectedAnnotation(AnnotationComponentImpl annotationComponent) {
         selectedAnnotations.remove(annotationComponent);
     }
 
@@ -182,19 +239,25 @@ public class AnnotationHandler extends SelectionBoxHandler
 
         // annotation selection box.
         if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+                DocumentViewModel.DISPLAY_TOOL_SELECTION||
+            documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             int x = e.getX();
             int y = e.getY();
             currentRect = new Rectangle(x, y, 0, 0);
-            updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
+            updateDrawableRect(pageViewComponent.getWidth(),
+                    pageViewComponent.getHeight());
             pageViewComponent.repaint();
         }
 
     }
 
     public void mouseDragged(MouseEvent e) {
+        isDragged = true;
         if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+            documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
 
             // rectangle select tool
             updateSelectionSize(e, pageViewComponent);
@@ -202,17 +265,25 @@ public class AnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseReleased(MouseEvent e) {
+        // update selection rectangle
+        updateSelectionSize(e, pageViewComponent);
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION) {
-
-            // update selection rectangle
-            updateSelectionSize(e, pageViewComponent);
-
             // clear the rectangle
             clearRectangle(pageViewComponent);
-
             pageViewComponent.repaint();
         }
+        // link annotations tool.
+        else if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION &&
+                isDragged){
+            createNewLinkAnnotation();
+            // clear the rectangle
+            clearRectangle(pageViewComponent);
+            pageViewComponent.repaint();
+        }
+
+        isDragged = false;
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -275,9 +346,11 @@ public class AnnotationHandler extends SelectionBoxHandler
         }
         pageViewComponent.releasePageLock(currentPage, this);
 
-        // pain selection box
-        // multiple selection annotations is not currently supported.
-//        paintSelectionBox(g);
+        // paint new link annotation bound box.
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION){
+            paintSelectionBox(g);
+        }
     }
 
     /**
