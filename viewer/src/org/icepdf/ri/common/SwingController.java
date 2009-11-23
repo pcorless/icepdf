@@ -3765,8 +3765,8 @@ public class SwingController
         // select all
         else if (evt.getPropertyName().equals(PropertyConstants.TEXT_SELECT_ALL)){
             setEnabled(selectAllMenuItem, false);
-             setEnabled(deselectAllMenuItem, true);
-             setEnabled(copyMenuItem, true);
+            setEnabled(deselectAllMenuItem, true);
+            setEnabled(copyMenuItem, true);
         }
         // annotation is selected
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_SELECTED)){
@@ -3785,9 +3785,6 @@ public class SwingController
                     logger.info("selected annotation " + annotationComponent);
 
                     showAnnotationLinkPanel(annotationComponent);
-                }
-                else{
-                    // todo deselect if null annotation. 
                 }
             }
         }
