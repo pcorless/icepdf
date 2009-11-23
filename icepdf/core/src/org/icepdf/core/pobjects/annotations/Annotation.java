@@ -339,6 +339,89 @@ import java.util.Vector;
 
 public class Annotation extends Dictionary {
 
+    /**
+     * Dictionary constants for Annotations.
+     */
+
+    /**
+     * Border style
+     */
+    public static final String TYPE = "Type";
+    public static final String TYPE_VALUE = "Annot";
+
+    /**
+     * Annotation subtype and types.
+     */
+    public static final String SUBTYPE = "Subtype";
+    public static final String SUBTYPE_LINK = "Link";
+
+
+    /**
+     * Border style
+     */
+    public static final String BORDER_STYLE = "BS";
+
+    /**
+     * The annotation location on the page in user space units.
+     */
+    public static final String RECTANGLE = "Rect";
+
+    /**
+     * The action to be performed whenteh annotation is activated.
+     */
+    public static final String ACTION = "A";
+
+    /**
+     * Page that this annotation is associated with.
+     */
+    public static final String PARENT_PAGE = "P";
+
+    /**
+     *  Annotation border characteristics.
+     */
+    public static final String BORDER = "Border";
+
+    /**
+     *  Annotation border characteristics.
+     */
+    public static final String FLAG = "F";
+
+    /**
+     *  RGB colour value for background, titlebars and link annotation borders
+     */
+    public static final String COLOR = "C";
+
+
+    /**
+     *  Appearance dictionary specifying how the annotation is presented
+     * visually on the page.
+     */
+    public static final String APPEARANCE_STREAM = "AP";
+
+    /**
+     *  Appearance state selecting default from multiple AP's.
+     */
+    public static final String APPEARANCE_STATE = "AS";
+
+    /**
+     * Appearance dictionary specifying how the annotation is presented
+     * visually on the page for normal display.
+     */
+    public static final String APPEARANCE_STREAM_NORMAL = "N";
+
+    /**
+     * Appearance dictionary specifying how the annotation is presented
+     * visually on the page for rollover display.
+     */
+    public static final String APPEARANCE_STREAM_ROLLOVER = "R";
+
+    /**
+     * Appearance dictionary specifying how the annotation is presented
+     * visually on the page for down display.
+     */
+    public static final String APPEARANCE_STREAM_DOWN = "d";
+
+
     // borders style of the annotation, can be null
     protected BorderStyle borderStyle;
     // border color of annotation.
@@ -346,29 +429,23 @@ public class Annotation extends Dictionary {
     // annotation bounding rectangle in user space.
     protected Rectangle2D.Float userSpaceRectangle;
 
+    /**
+     * Should only be called from Parser,  Use AnnotationFactory if you
+     * creating a new annotation. 
+     * @param library document library
+     * @param hashTable annotation properties.
+     * @return annotation instance. 
+     */
     public static Annotation buildAnnotation(Library library, Hashtable hashTable) {
         Annotation annot = null;
-        Name subtype = (Name) hashTable.get("Subtype");
+        Name subtype = (Name) hashTable.get(SUBTYPE);
         if (subtype != null) {
-            if (subtype.equals("Link"))
+            if (subtype.equals(SUBTYPE_LINK))
                 annot = new LinkAnnotation(library, hashTable);
         }
         if (annot == null)
             annot = new Annotation(library, hashTable);
         return annot;
-    }
-
-    /**
-     * Incomplete, currently not working or usuable. 
-     */
-    public static Annotation buildAnnotation(Library library, AnnotationState annotationState) {
-        Annotation annot = null;
-        Hashtable<String,Object> dictionary = new Hashtable<String,Object>(3);
-        dictionary.put("SubType","Link");
-
-        // todo properly apply annotation state values. 
-
-        return new LinkAnnotation(library, dictionary);
     }
 
     /**
@@ -382,7 +459,7 @@ public class Annotation extends Dictionary {
 //System.out.println( "Construction: " + this );
 
         // parse out border style if available
-        Hashtable BS = (Hashtable) getObject("BS");
+        Hashtable BS = (Hashtable) getObject(BORDER_STYLE);
         if (BS != null) {
             borderStyle = new BorderStyle(library, BS);
         }
@@ -395,7 +472,7 @@ public class Annotation extends Dictionary {
      * @return subtype of annotation
      */
     public String getSubType() {
-        return library.getName(entries, "Subtype");
+        return library.getName(entries, SUBTYPE);
     }
 
     /**
@@ -407,8 +484,18 @@ public class Annotation extends Dictionary {
      */
     public Rectangle2D.Float getUserSpaceRectangle() {
         if (userSpaceRectangle == null) {
-            userSpaceRectangle = library.getRectangle(entries, "Rect");
+//            userSpaceRectangle = library.getRectangle(entries, "Rect");
+        
+            Object tmp = library.getObject(entries, RECTANGLE);
+            if (tmp instanceof Vector){
+                userSpaceRectangle = library.getRectangle(entries, RECTANGLE);
+            }
+            else if (tmp instanceof Rectangle){
+                Rectangle rect = (Rectangle)tmp;
+                userSpaceRectangle =  new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
+            }
         }
+
         return userSpaceRectangle;
     }
 
@@ -420,9 +507,9 @@ public class Annotation extends Dictionary {
      */
     public org.icepdf.core.pobjects.actions.Action getAction() {
 
-        Hashtable h1 = library.getDictionary(entries, "A");
+        Hashtable h1 = library.getDictionary(entries, ACTION);
         if (h1 != null) {
-            String actionType = ((Name) h1.get("S")).getName();
+            String actionType = ((Name) h1.get(Action.ACTION_TYPE)).getName();
             if (actionType != null) {
 
                 if (actionType.equals(Action.ACTION_TYPE_GOTO)) {
@@ -496,7 +583,7 @@ public class Annotation extends Dictionary {
     }
 
     public Page getPage() {
-        Page page = (Page) getObject("P");
+        Page page = (Page) getObject(PARENT_PAGE);
         if (page == null) {
             Annotation annot = getParentAnnotation();
             if (annot != null)
@@ -512,7 +599,7 @@ public class Annotation extends Dictionary {
      */
     public boolean isBorder() {
         boolean borderWidth = false;
-        Object border = getObject("Border");
+        Object border = getObject(BORDER);
         if (border != null && border instanceof Vector) {
             Vector borderProps = (Vector) border;
             if (borderProps.size() == 3) {
@@ -615,12 +702,13 @@ public class Annotation extends Dictionary {
 //origG.fill( topLeft );
     }
 
+    // TODO add support for rollover and down states..
     protected void renderAppearanceStream(Graphics2D g) {
-        Object AP = getObject("AP");
+        Object AP = getObject(APPEARANCE_STREAM);
         if (AP instanceof Hashtable) {
-            Object N = library.getObject((Hashtable) AP, "N");
+            Object N = library.getObject((Hashtable) AP, APPEARANCE_STREAM_NORMAL);
             if (N instanceof Hashtable) {
-                Object AS = getObject("AS");
+                Object AS = getObject(APPEARANCE_STATE);
                 if (AS != null)
                     N = library.getObject((Hashtable) N, AS.toString());
             }
@@ -773,7 +861,7 @@ public class Annotation extends Dictionary {
                 }
             }
         } else {
-            Vector borderVector = (Vector) getObject("Border");
+            Vector borderVector = (Vector) getObject(BORDER);
             if (borderVector != null) {
                 if (borderColor != null) {
                     float horizRadius = 0.0f;
@@ -858,14 +946,6 @@ public class Annotation extends Dictionary {
         this.borderColor = borderColor;
     }
 
-    private PRectangle getRectangle() {
-        Vector Rect = (Vector) getObject("Rect");
-        PRectangle prect = new PRectangle(Rect);
-        return prect;
-//        Rectangle2D.Float jrect = prect.toJava2dCoordinates();
-//        return jrect;
-    }
-
     private Rectangle2D.Float deriveDrawingRectangle() {
         Rectangle2D.Float origRect = getUserSpaceRectangle();
         Rectangle2D.Float jrect = new Rectangle2D.Float(origRect.x, origRect.y,
@@ -915,39 +995,39 @@ public class Annotation extends Dictionary {
     }
 
     public boolean getFlagInvisible() {
-        return ((getInt("F") & 0x0001) != 0);
+        return ((getInt(FLAG) & 0x0001) != 0);
     }
 
     public boolean getFlagHidden() {
-        return ((getInt("F") & 0x0002) != 0);
+        return ((getInt(FLAG) & 0x0002) != 0);
     }
 
     public boolean getFlagPrint() {
-        return ((getInt("F") & 0x0004) != 0);
+        return ((getInt(FLAG) & 0x0004) != 0);
     }
 
     public boolean getFlagNoZoom() {
-        return ((getInt("F") & 0x0008) != 0);
+        return ((getInt(FLAG) & 0x0008) != 0);
     }
 
     public boolean getFlagNoRotate() {
-        return ((getInt("F") & 0x0010) != 0);
+        return ((getInt(FLAG) & 0x0010) != 0);
     }
 
     public boolean getFlagNoView() {
-        return ((getInt("F") & 0x0020) != 0);
+        return ((getInt(FLAG) & 0x0020) != 0);
     }
 
     public boolean getFlagReadOnly() {
-        return ((getInt("F") & 0x0040) != 0);
+        return ((getInt(FLAG) & 0x0040) != 0);
     }
 
     public boolean getFlagLocked() {
-        return ((getInt("F") & 0x0080) != 0);
+        return ((getInt(FLAG) & 0x0080) != 0);
     }
 
     public boolean getFlagToggleNoView() {
-        return ((getInt("F") & 0x0100) != 0);
+        return ((getInt(FLAG) & 0x0100) != 0);
     }
 
     public String toString() {

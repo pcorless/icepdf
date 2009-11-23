@@ -34,14 +34,19 @@ package org.icepdf.ri.common;
 
 import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.views.DocumentViewModel;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * This class represents a basic implemenation of the AnnotationCallback
@@ -137,5 +142,27 @@ public class MyAnnotationCallback implements AnnotationCallback {
      */
     public void pageAnnotationsInitialized(Page page) {
 
+    }
+
+    /**
+     * New annotation created with view tool.
+     * 
+     * @param pageComponent page that annotation was added to.
+     * @param rect annotation bounds
+     */
+    public void newAnnotation(PageViewComponent pageComponent, Rectangle rect){
+        // do a bunch a owrk to get at the page object.
+        Document document = documentViewController.getDocument();
+        PageTree pageTree = document.getPageTree();
+        Page page = pageTree.getPage(pageComponent.getPageIndex(), this);
+        Annotation annotation = page.createAnnotation(rect, null);
+        // no we have let the pageComponent now about it.
+        pageComponent.addAnnotation(annotation);
+        // release the page
+        pageTree.releasePage(pageComponent.getPageIndex(), this);
+
+        // finally change the current tool to the annotation selection
+        documentViewController.getParentController().setDocumentToolMode(
+                DocumentViewModel.DISPLAY_TOOL_SELECTION);
     }
 }

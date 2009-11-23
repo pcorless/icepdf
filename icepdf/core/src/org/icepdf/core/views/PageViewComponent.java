@@ -32,6 +32,9 @@
  */
 package org.icepdf.core.views;
 
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
+
 import java.awt.*;
 
 /**
@@ -104,4 +107,17 @@ public interface PageViewComponent {
      */
     public void setTextSelectionRectangle(Point cursorLocation, Rectangle selection);
 
+    /**
+     * Add a new annotation object to this page view comnponent.
+     *
+     * @param annotation annotation to add. 
+     */
+    public void addAnnotation(Annotation annotation );
+
+    /**
+     * Remove the specified annotation from this page view.
+     *
+     * @param annotationComp annotation to be removed.
+     */
+    public void removeAnnotation(AnnotationComponent annotationComp);
 }

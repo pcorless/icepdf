@@ -37,6 +37,7 @@ import org.icepdf.core.Controller;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.ColorUtil;
@@ -47,7 +48,7 @@ import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.images.Images;
 
@@ -56,6 +57,7 @@ import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
+import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.lang.ref.WeakReference;
@@ -165,6 +167,21 @@ public class DocumentViewControllerImpl
         // set scroll bar speeds
         documentViewScrollPane.getVerticalScrollBar().setUnitIncrement(20);
         documentViewScrollPane.getHorizontalScrollBar().setUnitIncrement(20);
+
+        // add a delete key functionality for annotation edits.
+        Action doNothing = new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                if (documentViewModel != null){
+                    deleteCurrentAnnotation();
+                }
+            }
+        };
+        InputMap inputMap = documentViewScrollPane.getInputMap(
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
+        inputMap.put(KeyStroke.getKeyStroke("DELETE"),
+                                    "removeSelecteAnnotation");
+        documentViewScrollPane.getActionMap().put("removeSelecteAnnotation",
+                                     doNothing);
     }
 
     public Document getDocument() {
@@ -245,14 +262,17 @@ public class DocumentViewControllerImpl
     }
 
     public void clearSelectedAnnotations(){
-        // fire change event
-        firePropertyChange(PropertyConstants.ANNOTATION_DESELECTED,
-                    documentViewModel.getCurrentAnnotation(),
-                    null);
-        documentViewModel.setCurrentAnnotation(null);
+        if (documentViewModel.getCurrentAnnotation() != null){
+            documentViewModel.getCurrentAnnotation().setSelected(false);
+            // fire change event
+            firePropertyChange(PropertyConstants.ANNOTATION_DESELECTED,
+                        documentViewModel.getCurrentAnnotation(),
+                        null);
+            documentViewModel.setCurrentAnnotation(null);
+        }
     }
 
-    public void assignSelectedAnnotation(AnnotationComponent annotationComponent){
+    public void assignSelectedAnnotation(AnnotationComponentImpl annotationComponent){
         firePropertyChange(PropertyConstants.ANNOTATION_SELECTED,
                 documentViewModel.getCurrentAnnotation(),
                 annotationComponent);
@@ -1119,15 +1139,30 @@ public class DocumentViewControllerImpl
 
     public void deleteCurrentAnnotation() {
         // make sure there is a current annotation in model
-        AnnotationComponent annotationComponent =
+        AnnotationComponentImpl annotationComponent =
                 documentViewModel.getCurrentAnnotation();
         if (documentViewModel != null && annotationComponent !=null ){
+
+            // parent component
+            AbstractPageViewComponent pageComponent =
+                    annotationComponent.getPageViewComponent();
 
             // store the annotation state in the caretaker
             AnnotationState preDeleteState =
                     new AnnotationState(annotationComponent);
 
-            // todo update the annotation state to invisible
+            // remove annotation
+            Document document = getDocument();
+            PageTree pageTree = document.getPageTree();
+            Page page = pageTree.getPage(pageComponent.getPageIndex(), this);
+            // remove from page
+            page.deleteAnnotation(annotationComponent.getAnnotation());
+            // remove from page view.
+            pageComponent.removeAnnotation(annotationComponent);
+
+            // release the page
+            pageTree.releasePage(pageComponent.getPageIndex(), this);
+
 
             AnnotationState postDeleteState =
                     new AnnotationState(annotationComponent);
@@ -1159,7 +1194,6 @@ public class DocumentViewControllerImpl
         documentViewModel.getAnnotationCareTaker().redo();
 
     }
-
 
     public void removePropertyChangeListener(PropertyChangeListener l) {
         changes.removePropertyChangeListener(l);

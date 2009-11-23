@@ -113,7 +113,7 @@ public class LinkAnnotation extends Annotation {
         // parse out border colour, specific to link annotations. 
         //TODO Find what color to use if no Annot.C entry
         borderColor = Color.black;
-        Vector C = (Vector) getObject("C");
+        Vector C = (Vector) getObject(COLOR);
         // parse thought rgb colour.
         if (C != null && C.size() >= 3) {
             float red = ((Number) C.get(0)).floatValue();

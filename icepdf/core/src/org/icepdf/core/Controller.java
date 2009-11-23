@@ -92,4 +92,12 @@ public interface Controller {
      * @return page view controller.
      */
     public DocumentSearchController getDocumentSearchController();
+
+    /**
+     * Sets the tool mode used for the controller view. Tools such as
+     * text selection, panning and annotation selection can be used.
+     *
+     * @param toolType tool mode constants defined in DocumentViewModel
+     */
+    public void setDocumentToolMode(final int toolType);
 }

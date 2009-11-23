@@ -34,7 +34,7 @@ package org.icepdf.core.views;
 
 import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.Controller;
-import org.icepdf.core.views.swing.AnnotationComponent;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 
@@ -191,7 +191,7 @@ public interface DocumentViewController {
 
     public void clearSelectedAnnotations();
 
-    public void assignSelectedAnnotation(AnnotationComponent annotationComponent);
+    public void assignSelectedAnnotation(AnnotationComponentImpl annotationComponent);
 
     public void selectAllText();
 
