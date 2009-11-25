@@ -333,6 +333,7 @@ public class AnnotationLinkPanel extends JPanel {
                 }
             }
         });
+        colorButton.setOpaque(true);
         colorButton.setBackground(DEFAULT_BORDER_COLOR);
         appearancePane.add(new JLabel(messageBundle.getString("viewer.utilityPane.link.colorLabel")));
         appearancePane.add(colorButton);
