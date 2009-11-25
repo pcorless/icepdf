@@ -2051,7 +2051,7 @@ public class SwingController
     public void saveFile() {
         // Create and display a file saving dialog
         final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveCopy.title"));
+        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileChooser.addChoosableFileFilter(FileExtensionUtils.getPDFFileFilter());
         if (ViewModel.getDefaultFile() != null) {
@@ -2088,8 +2088,8 @@ public class SwingController
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
-                        "viewer.dialog.saveCopy.noExtensionError.title",
-                        "viewer.dialog.saveCopy.noExtensionError.msg");
+                        "viewer.dialog.saveAs.noExtensionError.title",
+                        "viewer.dialog.saveAs.noExtensionError.msg");
 
                 saveFile();
             } else if (!extension.equals(FileExtensionUtils.pdf)) {
@@ -2097,8 +2097,8 @@ public class SwingController
                         viewer,
                         JOptionPane.INFORMATION_MESSAGE,
                         messageBundle,
-                        "viewer.dialog.saveCopy.extensionError.title",
-                        "viewer.dialog.saveCopy.extensionError.msg",
+                        "viewer.dialog.saveAs.extensionError.title",
+                        "viewer.dialog.saveAs.extensionError.msg",
                         file.getName());
                 saveFile();
             } else {
