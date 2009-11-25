@@ -95,6 +95,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     private JCheckBox caseSensitiveCheckbox;
     private JCheckBox wholeWordCheckbox;
     private JCheckBox cumulativeCheckbox;
+    private JCheckBox showPagesCheckbox;
 
     // page index of the last added node.
     private int lastNodePageIndex;
@@ -163,8 +164,10 @@ public class SearchPanel extends JPanel implements ActionListener,
         if (rootTreeNode != null) {
             resetTree();
             // set title
-            rootTreeNode.setUserObject(getDocumentTitle());
+            String docTitle = getDocumentTitle();
+            rootTreeNode.setUserObject(docTitle);
             rootTreeNode.setAllowsChildren(true);
+            tree.setRootVisible((docTitle != null));
         }
         if (findMessage != null) {
             findMessage.setText("");
@@ -244,6 +247,8 @@ public class SearchPanel extends JPanel implements ActionListener,
                 "viewer.utilityPane.search.caseSenstiveCheckbox.label"));
         cumulativeCheckbox = new JCheckBox(messageBundle.getString(
                 "viewer.utilityPane.search.cumlitiveCheckbox.label"));
+        showPagesCheckbox = new JCheckBox(messageBundle.getString(
+                "viewer.utilityPane.search.showPagesCheckbox.label"), true);
 
         /**
          * Build search GUI
@@ -301,19 +306,24 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.fill = GridBagConstraints.HORIZONTAL;
         addGB(searchPanel, cumulativeCheckbox, 0, 5, 2, 1);
 
+        // add show pages checkbox
+        constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        addGB(searchPanel, showPagesCheckbox, 0, 6, 2, 1);
+
         // Add Results label
         constraints.insets = new Insets(10, 5, 1, 5);
         constraints.fill = GridBagConstraints.NONE;
         addGB(searchPanel, new JLabel(messageBundle.getString(
                 "viewer.utilityPane.search.results.label")),
-                0, 6, 2, 1);
+                0, 7, 2, 1);
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
         constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(searchPanel, scrollPane, 0, 7, 2, 1);
+        addGB(searchPanel, scrollPane, 0, 8, 2, 1);
 
         // add find message
         constraints.insets = new Insets(1, 5, 1, 5);
@@ -321,12 +331,12 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
-        addGB(searchPanel, findMessage, 0, 8, 2, 1);
+        addGB(searchPanel, findMessage, 0, 9, 2, 1);
 
         // add progress
         constraints.insets = new Insets(5, 5, 1, 5);
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, progressBar, 0, 9, 2, 1);
+        addGB(searchPanel, progressBar, 0, 10, 2, 1);
 
     }
 
@@ -380,14 +390,17 @@ public class SearchPanel extends JPanel implements ActionListener,
      * @param title       display title of tree item
      * @param pageNumber  page number where the hit(s) occured
      * @param textResults list of LineText items that match
+     * @param showPages   boolean to display or hide the page node
      */
     public void addFoundEntry(String title, int pageNumber,
-                              List<LineText> textResults) {
+                              List<LineText> textResults,
+                              boolean showPages) {
         // add the new results entry.
         if ((textResults != null) && (textResults.size() > 0)) {
             DefaultMutableTreeNode parentNode;
-            // insert parent page number note. 
-            if (lastNodePageIndex != pageNumber) {
+            // insert parent page number note.
+            if ((showPages) &&
+                (lastNodePageIndex != pageNumber)) {
                 parentNode = new DefaultMutableTreeNode(
                         new FindEntry(title, pageNumber), true);
                 treeModel.insertNodeInto(parentNode, rootTreeNode,
@@ -478,9 +491,9 @@ public class SearchPanel extends JPanel implements ActionListener,
         if (document != null && document.getInfo() != null) {
             documentTitle = document.getInfo().getTitle();
         }
-        if (documentTitle == null) {
-            documentTitle = messageBundle.getString(
-                    "viewer.utilityPane.search.results.label");
+        
+        if ((documentTitle == null) || (documentTitle.trim().length() == 0)) {
+            return null;
         }
 
         return documentTitle;
@@ -513,6 +526,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                         wholeWordCheckbox.isSelected(),
                         caseSensitiveCheckbox.isSelected(),
                         cumulativeCheckbox.isSelected(),
+                        showPagesCheckbox.isSelected(),
                         false,
                         messageBundle);
                 isSearching = true;
@@ -524,6 +538,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 caseSensitiveCheckbox.setEnabled(false);
                 wholeWordCheckbox.setEnabled(false);
                 cumulativeCheckbox.setEnabled(false);
+                showPagesCheckbox.setEnabled(false);
 
                 // start the task and the timer
                 searchTextTask.go();
@@ -534,6 +549,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 caseSensitiveCheckbox.setEnabled(true);
                 wholeWordCheckbox.setEnabled(true);
                 cumulativeCheckbox.setEnabled(true);
+                showPagesCheckbox.setEnabled(true);
             }
         } else if (source == clearSearchButton) {
             // clear input
@@ -591,6 +607,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 caseSensitiveCheckbox.setEnabled(true);
                 wholeWordCheckbox.setEnabled(true);
                 cumulativeCheckbox.setEnabled(true);
+                showPagesCheckbox.setEnabled(true);
 
                 // update progress bar then hide it.
                 progressBar.setValue(progressBar.getMinimum());
