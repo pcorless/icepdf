@@ -82,6 +82,7 @@ public class SearchTextTask {
     private boolean wholeWord;
     private boolean caseSensitive;
     private boolean cumulative;
+    private boolean showPages;
     private boolean r2L;
 
     // parent swing controller
@@ -114,6 +115,7 @@ public class SearchTextTask {
                           boolean wholeWord,
                           boolean caseSensitive,
                           boolean cumulative,
+                          boolean showPages,
                           boolean r2L,
                           ResourceBundle messageBundle) {
         this.controller = controller;
@@ -125,6 +127,7 @@ public class SearchTextTask {
         this.wholeWord = wholeWord;
         this.caseSensitive = caseSensitive;
         this.cumulative = cumulative;
+        this.showPages = showPages;
         this.r2L = r2L;
 
         // setup searching format format.
@@ -263,7 +266,8 @@ public class SearchTextTask {
                                 searchPanel.addFoundEntry(
                                 nodeText,
                                 currentPage,
-                                lineItems);
+                                lineItems,
+                                showPages);
                                 // try repainting the container
                                 viewContainer.repaint();
                             }
@@ -322,28 +326,18 @@ public class SearchTextTask {
                 new MessageFormat(messageBundle.getString(
                         "viewer.utilityPane.search.progress.msg"));
         double[] pageLimits = {0, 1, 2};
-        String[] pageStrings = {
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.morePage.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.onePage.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.morePage.msg"),
-        };
-        ChoiceFormat pageChoiceForm = new ChoiceFormat(pageLimits,
-                pageStrings);
         String[] resultsStrings = {
                 messageBundle.getString(
                         "viewer.utilityPane.search.progress.moreMatch.msg"),
                 messageBundle.getString(
                         "viewer.utilityPane.search.progress.oneMatch.msg"),
                 messageBundle.getString(
-                        "viewer.utilityPane.search.progress.moreMatch.msg"),
+                        "viewer.utilityPane.search.progress.moreMatch.msg")
         };
         ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
                 resultsStrings);
 
-        Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
+        Format[] formats = {null, resultsChoiceForm};
         messageForm.setFormats(formats);
         return messageForm;
     }
