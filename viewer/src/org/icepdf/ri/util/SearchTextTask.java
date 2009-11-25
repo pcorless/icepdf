@@ -68,7 +68,8 @@ public class SearchTextTask {
 
     // canned internationalized messages.
     private MessageFormat searchingMessageForm;
-    private MessageFormat searchDialogMessageForm;
+    private MessageFormat searchResultMessageForm;
+    private MessageFormat searchCompletionMessageForm;
 
     // flags for threading
     private boolean done = false;
@@ -132,7 +133,8 @@ public class SearchTextTask {
 
         // setup searching format format.
         searchingMessageForm = setupSearchingMessageForm();
-        searchDialogMessageForm = setupSearchDialogMessageForm();
+        searchResultMessageForm = setupSearchResultMessageForm();
+        searchCompletionMessageForm = setupSearchCompletionMessageForm();
     }
 
     /**
@@ -256,7 +258,7 @@ public class SearchTextTask {
                                 String.valueOf((current + 1)),
                                 hitCount, hitCount};
                         final String nodeText =
-                                searchDialogMessageForm.format(messageArguments);
+                                searchResultMessageForm.format(messageArguments);
                         final int currentPage = i;
                         // add the node to the search panel tree but on the
                         // awt thread.
@@ -313,7 +315,7 @@ public class SearchTextTask {
         Object[] messageArguments = {String.valueOf((current + 1)),
                 (current + 1), totalHitCount};
 
-        dialogMessage = searchDialogMessageForm.format(messageArguments);
+        dialogMessage = searchCompletionMessageForm.format(messageArguments);
     }
 
     /**
@@ -321,18 +323,18 @@ public class SearchTextTask {
      * 
      * @return  reuseable message format.
      */
-    private MessageFormat setupSearchDialogMessageForm() {
+    private MessageFormat setupSearchResultMessageForm() {
         MessageFormat messageForm =
                 new MessageFormat(messageBundle.getString(
-                        "viewer.utilityPane.search.progress.msg"));
+                        "viewer.utilityPane.search.result.msg"));
         double[] pageLimits = {0, 1, 2};
         String[] resultsStrings = {
                 messageBundle.getString(
-                        "viewer.utilityPane.search.progress.moreMatch.msg"),
+                        "viewer.utilityPane.search.result.moreFile.msg"),
                 messageBundle.getString(
-                        "viewer.utilityPane.search.progress.oneMatch.msg"),
+                        "viewer.utilityPane.search.result.oneFile.msg"),
                 messageBundle.getString(
-                        "viewer.utilityPane.search.progress.moreMatch.msg")
+                        "viewer.utilityPane.search.result.moreFile.msg")
         };
         ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
                 resultsStrings);
@@ -366,6 +368,37 @@ public class SearchTextTask {
         Format[] formats = {null, choiceForm, null};
         messageForm.setFormats(formats);
 
+        return messageForm;
+    }
+
+    private MessageFormat setupSearchCompletionMessageForm() {
+        MessageFormat messageForm =
+                new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.search.progress.msg"));
+        double[] pageLimits = {0, 1, 2};
+        String[] pageStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.morePage.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.onePage.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.morePage.msg"),
+        };
+        ChoiceFormat pageChoiceForm = new ChoiceFormat(pageLimits,
+                pageStrings);
+        String[] resultsStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.moreMatch.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.oneMatch.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.moreMatch.msg"),
+        };
+        ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
+                resultsStrings);
+
+        Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
+        messageForm.setFormats(formats);
         return messageForm;
     }
 }
