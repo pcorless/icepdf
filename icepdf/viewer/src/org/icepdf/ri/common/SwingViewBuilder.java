@@ -560,7 +560,7 @@ public class SwingViewBuilder {
 
     public JMenuItem buildSaveAsFileMenuItem() {
         JMenuItem mi = makeMenuItem(
-                messageBundle.getString("viewer.menu.saveCopy.label"), "save",
+                messageBundle.getString("viewer.menu.saveAs.label"), "save",
                 KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_SAVE_AS, KeyEventConstants.MODIFIER_SAVE_AS, false));
         if (viewerController != null && mi != null)
             viewerController.setSaveAsFileMenuItem(mi);
