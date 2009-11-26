@@ -112,7 +112,7 @@ public interface PageViewComponent {
      *
      * @param annotation annotation to add. 
      */
-    public void addAnnotation(Annotation annotation );
+    public AnnotationComponent addAnnotation(Annotation annotation );
 
     /**
      * Remove the specified annotation from this page view.

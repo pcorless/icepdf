@@ -518,12 +518,6 @@ public class Annotation extends Dictionary {
             if (tmp instanceof Vector) {
                 userSpaceRectangle = library.getRectangle(entries, RECTANGLE_KEY.getName());
             }
-//            // this a from a saved state, as we didn't write out the PRectangle
-//            // explicitly. Likely want to fix this in the future.
-//            else if (tmp instanceof Rectangle) {
-//                Rectangle rect = (Rectangle) tmp;
-//                userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
-//            }
         }
         return userSpaceRectangle;
     }
