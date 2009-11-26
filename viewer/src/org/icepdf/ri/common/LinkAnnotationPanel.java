@@ -253,10 +253,11 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
         // store old state
         AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
         // store new state from panel
-        AnnotationState newState = new AnnotationState(
+        AnnotationState newState = new AnnotationState(currentAnnotationComponent);
+        AnnotationState changes = new AnnotationState(
                 linkType, highlightStyle, lineThickness, lineStyle, color);
         // apply new properties to the annotation and the component
-        newState = oldState.apply(newState);
+        newState.apply(changes);
 
         // update thickness control as it might have changed
         lineThickness = currentAnnotationComponent.getAnnotation()
@@ -271,13 +272,6 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
         // Check with the controller whether we can enable the undo/redo menu items
         controller.reflectUndoCommands();
 
-        // update the page annotation
-//        int pageIndex = currentAnnotationComponent.getPageViewComponent()
-//                .getPageIndex();
-//        PageTree pageTree = controller.getDocument().getPageTree();
-//        Page page = pageTree.getPage(pageIndex,this);
-//        page.updateAnnotation(currentAnnotationComponent.getAnnotation());
-//        pageTree.releasePage(page, this);
 
     }
 
