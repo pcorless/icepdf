@@ -101,24 +101,21 @@ public class AnnotationState implements Memento {
         this.highlightStyle = highlightStyle;
         this.lineThickness = lineThickness;
         this.lineStyle = lineStyle;
-        this.color = color;
+        this.color =  new Color(color.getRGB());
     }
 
-    public AnnotationState apply(AnnotationState applyState){
+    public void apply(AnnotationState applyState){
 
-        AnnotationState annotaitonState = new AnnotationState(annotationComponent);
         // apply the new state vars.
         this.linkType = applyState.linkType;
         this.highlightStyle = applyState.highlightStyle;
         this.lineThickness = applyState.lineThickness;
         this.lineStyle = applyState.lineStyle;
-        this.color = applyState.color;
+        this.color = new Color(applyState.color.getRGB());
 
         // apply the new state to the annotation and schedule a sync
         restore();
 
-        // return the new modified state.
-        return annotaitonState;
     }
 
     /**
@@ -154,11 +151,6 @@ public class AnnotationState implements Memento {
             // of restore values if linkType == Annotation.INVISIBLE_RECTANGLE
             applyInvisibleLinkType(annotation);
 
-            // trigger the component to refresh and repaint its self with the
-            // new 'restored' properties.
-            // todo fix prectangle issue.
-            annotationComponent.refreshDirtyBounds();
-
             // update the document with current state.
             synchronizeState();
         }
@@ -173,6 +165,8 @@ public class AnnotationState implements Memento {
         Page page = pageTree.getPage(pageIndex,this);
         if (!annotation.isDeleted()){
             page.updateAnnotation(annotation);
+            // refresh bounds for any resizes
+            annotationComponent.refreshAnnotationRect();
         }else{
             // mark it as not deleted
             annotation.setDeleted(false);
@@ -181,7 +175,6 @@ public class AnnotationState implements Memento {
             // finally update the pageComponent so we can se it again.
             annotationComponent.getParentPageView().addAnnotation(annotation);
             // refresh bounds for any resizes
-            annotationComponent.refreshDirtyBounds();
             annotationComponent.refreshAnnotationRect();
         }
         pageTree.releasePage(page, this);
