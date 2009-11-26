@@ -119,7 +119,7 @@ public class UndoCaretaker {
      */
     public void addState(Memento previousState, Memento newState) {
         // first check history bounds, if we are in an none
-        if (cursor + 1 >= maxHistorySize) {
+        if (cursor  >= maxHistorySize) {
             // get rid of first index.
             mementoStateHistory.remove(0);
         }

@@ -87,10 +87,21 @@ public class StateManager {
     /**
      * Add a new PObject containing changed data to the cache.
      *
-     * @param pObject
+     * @param pObject object to add to cache. 
      */
     public void addChange(PObject pObject) {
         changes.put(pObject.getReference(), pObject);
+    }
+
+    /**
+     * Checks the state manager to see if an instance of the specified reference
+     * already exists in the cache.
+     *
+     * @param reference reference to look for an existing usuage.
+     * @return true if reference is already a key in the cache; otherwise, false.
+     */
+    public boolean contains(Reference reference){
+        return changes.containsKey(reference);
     }
 
     /**

@@ -1389,7 +1389,7 @@ public class SwingViewBuilder {
     public JTabbedPane buildUtilityTabbedPane() {
         JComponent outlinesComp = buildOutlineComponents();
         SearchPanel searchPanel = buildSearchPanel();
-        AnnotationLinkPanel linkPanel = buildLinkPanel();
+        LinkAnnotationPanel linkAnnotationPanel = buildLinkPanel();
         if (outlinesComp == null && searchPanel == null)
             return null;
         JTabbedPane utilityTabbedPane = new JTabbedPane();
@@ -1402,10 +1402,10 @@ public class SwingViewBuilder {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
                     searchPanel);
-        if (linkPanel != null)
+        if (linkAnnotationPanel != null)
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.link.tab.title"),
-                    linkPanel);
+                    linkAnnotationPanel);
         if (viewerController != null)
             viewerController.setUtilityTabbedPane(utilityTabbedPane);
         return utilityTabbedPane;
@@ -1426,11 +1426,11 @@ public class SwingViewBuilder {
         return searchPanel;
     }
 
-    public AnnotationLinkPanel buildLinkPanel() {
-        AnnotationLinkPanel linkPanel = new AnnotationLinkPanel(viewerController);
+    public LinkAnnotationPanel buildLinkPanel() {
+        LinkAnnotationPanel linkAnnotationPanel = new LinkAnnotationPanel(viewerController);
         if (viewerController != null)
-            viewerController.setAnnotationLinkPanel(linkPanel);
-        return linkPanel;
+            viewerController.setAnnotationLinkPanel(linkAnnotationPanel);
+        return linkAnnotationPanel;
     }
 
     public JPanel buildStatusPanel() {

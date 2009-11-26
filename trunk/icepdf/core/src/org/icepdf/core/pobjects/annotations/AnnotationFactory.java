@@ -32,7 +32,10 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -72,36 +75,37 @@ public class AnnotationFactory {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        Hashtable<String, Object> entries = new Hashtable<String, Object>();
+        Hashtable<Name, Object> entries = new Hashtable<Name, Object>();
         // set default link annotation values. 
-        entries.put(Annotation.TYPE, Annotation.TYPE_VALUE);
-        entries.put(Annotation.SUBTYPE, Annotation.SUBTYPE_LINK);
+        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
+        entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_LINK);
         // copy over properties
         if (annotationState != null) {
-
+            // todo still need to hook up property coping for new annotations ....
         }
         // some defaults just for display purposes.
         else {
-            entries.put(Annotation.SUBTYPE, Annotation.SUBTYPE_LINK);
+            entries.put(Annotation.SUBTYPE_KEY, Annotation.SUBTYPE_LINK);
 
             // /C [ 1 0 0 ]
             Vector<Number> properties = new Vector<Number>();
             properties.add(1);
             properties.add(0);
             properties.add(0);
-            entries.put(Annotation.COLOR, properties);
+            entries.put(Annotation.COLOR_KEY, properties);
             // /Border [ 0 0 1 ]
             properties = new Vector<Number>();
             properties.add(0);
             properties.add(0);
             properties.add(1);
-            entries.put(Annotation.BORDER, properties);
+            entries.put(Annotation.BORDER_KEY, properties);
         }
         // coordinates
         if (rect != null) {
-            entries.put(Annotation.RECTANGLE, rect);
+            entries.put(Annotation.RECTANGLE_KEY, 
+                    PRectangle.getPRectangleVector(rect));
         } else {
-            entries.put(Annotation.RECTANGLE, new Rectangle(10, 10, 50, 100));
+            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
         }
 
         // we only support one type of annotation creation for now

@@ -33,6 +33,7 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -111,7 +112,11 @@ import java.util.Vector;
  */
 public class BorderStyle extends Dictionary {
 
+    //todo fill out with valid numbers...
     private static final float[] DEFAULT_DASH_ARRAY = new float[]{3.0f};
+
+    public static final Name BORDER_STYLE_KEY = new Name("S");
+    public static final Name BORDER_WIDTH_KEY = new Name("W");
 
     public static final Color DARKEST = Color.black;
     public static final Color DARK = new Color(0xFF606060);
@@ -161,12 +166,12 @@ public class BorderStyle extends Dictionary {
     public BorderStyle(Library l, Hashtable h) {
         super(l, h);
         // parse out stroke width
-        Number value = (Number) getObject("W");
+        Number value = (Number) getObject(BORDER_WIDTH_KEY);
         if (value != null) {
             strokeWidth = value.floatValue();
         }
         // parse the default style.
-        Object style = getObject("S");
+        Object style = getObject(BORDER_STYLE_KEY);
         if (style != null) {
             borderStyle = style.toString();
         }
@@ -202,17 +207,19 @@ public class BorderStyle extends Dictionary {
      */
     public void setStrokeWidth(float strokeWidth) {
         this.strokeWidth = strokeWidth;
+        entries.put(BORDER_WIDTH_KEY, this.strokeWidth);
     }
 
     /**
      * Sets the borderStyle type for this instance.
      *
-     * @param borderStyle border style type as defined by, BORDER_STYLE_SOLID,
+     * @param lineStyle border style type as defined by, BORDER_STYLE_SOLID,
      *                    BORDER_STYLE_DASHED, BORDER_STYLE_BEVELED, BORDER_STYLE_INSET,
      *                    BORDER_STYLE_UNDERLINE
      */
-    public void setBorderStyle(final String borderStyle) {
-        this.borderStyle = borderStyle;
+    public void setBorderStyle(final String lineStyle) {
+        this.borderStyle = lineStyle;
+        entries.put(BORDER_STYLE_KEY, this.borderStyle);
     }
 
     public boolean isStyleSolid() {
@@ -236,7 +243,16 @@ public class BorderStyle extends Dictionary {
     }
 
     public void setDashArray(float[] dashArray) {
-        this.dashArray = dashArray;
+        if (dashArray != null) {
+            this.dashArray = dashArray;
+            int sz = dashArray.length;
+            Vector<Number> dashVector = new Vector<Number>(sz);
+            for (int i = 0; i < sz; i++) {
+                dashVector.add(dashArray[i]);
+            }
+            this.dashArray = dashArray;
+            entries.put(BORDER_STYLE_DASHED, dashVector);
+        }
     }
 
     public float[] getDashArray() {
