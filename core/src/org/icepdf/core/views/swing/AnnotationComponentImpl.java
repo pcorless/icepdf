@@ -33,6 +33,7 @@
 package org.icepdf.core.views.swing;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
@@ -42,6 +43,7 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.AnnotationComponent;
+import org.icepdf.core.views.PageViewComponent;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;
@@ -180,6 +182,18 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
 
     }
 
+    public Document getDocument() {
+        return documentViewModel.getDocument();
+    }
+
+    public int getPageIndex() {
+        return pageViewComponent.getPageIndex();
+    }
+
+    public PageViewComponent getParentPageView() {
+        return pageViewComponent;
+    }
+
     public AbstractPageViewComponent getPageViewComponent() {
         return pageViewComponent;
     }
@@ -299,10 +313,9 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
             Graphics2D gg2 = (Graphics2D) g;
             if (annotation instanceof LinkAnnotation) {
                 LinkAnnotation linkAnnotation = (LinkAnnotation) annotation;
-                int highlightMode = linkAnnotation.getHighlightMode();
+                String highlightMode = linkAnnotation.getHighlightMode();
                 Rectangle2D rect = new Rectangle(0, 0, getWidth(), getHeight());
-                if (highlightMode == LinkAnnotation.HIGHLIGHT_INVERT) {
-
+                if (LinkAnnotation.HIGHLIGHT_INVERT.equals(highlightMode)) {
                     gg2.setColor(annotationHighlightColor);
                     gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
                             annotationHighlightAlpha));
@@ -310,7 +323,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                             (int) rect.getY(),
                             (int) rect.getWidth(),
                             (int) rect.getHeight());
-                } else if (highlightMode == LinkAnnotation.HIGHLIGHT_OUTLINE) {
+                } else if (LinkAnnotation.HIGHLIGHT_OUTLINE.equals(highlightMode)) {
                     gg2.setColor(annotationHighlightColor);
                     gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
                             annotationHighlightAlpha));
@@ -318,7 +331,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                             (int) rect.getY(),
                             (int) rect.getWidth(),
                             (int) rect.getHeight());
-                } else if (highlightMode == LinkAnnotation.HIGHLIGHT_PUSH) {
+                } else if (LinkAnnotation.HIGHLIGHT_PUSH.equals(highlightMode)) {
                     gg2.setColor(annotationHighlightColor);
                     gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
                             annotationHighlightAlpha));

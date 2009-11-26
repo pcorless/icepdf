@@ -53,6 +53,10 @@ import java.util.Hashtable;
  */
 public class Dictionary {
 
+    public static final Name TYPE_KEY = new Name("Type");
+    
+    public static final Name SUBTYPE_KEY = new Name("Subtype");
+
     /**
      * Pointer to the documents <code>Library</code> object which
      * acts a central repository for the access of PDF object in the document.
@@ -62,7 +66,7 @@ public class Dictionary {
     /**
      * Table of associative pairs of objects.
      */
-    protected Hashtable<String, Object> entries;
+    protected Hashtable<Object, Object> entries;
 
     /**
      * Indicates if Dictionary has been initiated.
@@ -92,7 +96,7 @@ public class Dictionary {
         this.library = library;
         this.entries = entries;
         if (this.entries == null) {
-            this.entries = new Hashtable<String, Object>();
+            this.entries = new Hashtable<Object, Object>();
         }
     }
 
@@ -135,12 +139,16 @@ public class Dictionary {
      *
      * @return a copy of the Dictionary's entries.
      */
-    public Hashtable<String, Object> getEntries() {
+    public Hashtable<Object, Object> getEntries() {
         return entries;
     }
 
     public Object getObject(String key) {
         return library.getObject(entries, key);
+    }
+
+    public Object getObject(Name key) {
+        return library.getObject(entries, key.getName());
     }
 
     /**

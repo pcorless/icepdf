@@ -1187,12 +1187,16 @@ public class DocumentViewControllerImpl
         // reloads the last modified annotations state.
         documentViewModel.getAnnotationCareTaker().undo();
 
+        // repaint the view.
+        documentView.repaint();
     }
 
     public void redo() {
         // tries to redo a previously undo command, may not do anything
         documentViewModel.getAnnotationCareTaker().redo();
 
+        // repaint the view.
+        documentView.repaint();
     }
 
     public void removePropertyChangeListener(PropertyChangeListener l) {

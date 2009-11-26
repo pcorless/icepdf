@@ -210,7 +210,7 @@ public class SwingController
     private JTree outlinesTree;
     private JScrollPane outlinesScrollPane;
     private SearchPanel searchPanel;
-    private AnnotationLinkPanel linkPanel;
+    private LinkAnnotationPanel linkAnnotationPanel;
     private JTabbedPane utilityTabbedPane;
 
     private JSplitPane utilityAndDocumentSplitPane;
@@ -850,8 +850,8 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setAnnotationLinkPanel(AnnotationLinkPanel lp) {
-        linkPanel = lp;
+    public void setAnnotationLinkPanel(LinkAnnotationPanel lp) {
+        linkAnnotationPanel = lp;
     }
 
     /**
@@ -2893,7 +2893,7 @@ public class SwingController
                 utilityAndDocumentSplitPane.setDividerLocation(
                         utilityAndDocumentSplitPaneLastDividerLocation);
                 if (utilityAndDocumentSplitPane.getDividerLocation() < 5)
-                    utilityAndDocumentSplitPane.setDividerLocation(200);
+                    utilityAndDocumentSplitPane.setDividerLocation(250);
                 utilityAndDocumentSplitPane.setDividerSize(8);
             } else {
                 int divLoc = utilityAndDocumentSplitPane.getDividerLocation();
@@ -2937,21 +2937,23 @@ public class SwingController
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showAnnotationLinkPanel(AnnotationComponentImpl selectedAnnotation) {
-        if (utilityTabbedPane != null && linkPanel != null) {
+        if (utilityTabbedPane != null && linkAnnotationPanel != null) {
             // Pass the selected annotation to the link panel
-            linkPanel.setAndApplyAnnotationToUI(selectedAnnotation);
+            linkAnnotationPanel.setAndApplyAnnotationToUI(selectedAnnotation);
 
             // make sure the utility pane is visible
-            setUtilityPaneVisible(true);
+            if (!isUtilityPaneVisible()){
+                setUtilityPaneVisible(true);
+            }
 
-            // select the linkPanel tab
-            if (utilityTabbedPane.getSelectedComponent() != linkPanel) {
-                utilityTabbedPane.setSelectedComponent(linkPanel);
+            // select the linkAnnotationPanel tab
+            if (utilityTabbedPane.getSelectedComponent() != linkAnnotationPanel) {
+                utilityTabbedPane.setSelectedComponent(linkAnnotationPanel);
             }
 
             // request focus
-//            if (!linkPanel.hasFocus()) {
-//                linkPanel.requestFocus();
+//            if (!linkAnnotationPanel.hasFocus()) {
+//                linkAnnotationPanel.requestFocus();
 //            }
         }
     }
@@ -3795,8 +3797,8 @@ public class SwingController
                 logger.info("deselected current annotation");
                 // disable the delete menu
                 setEnabled(deleteMenuItem, false);
-                if (linkPanel != null) {
-                    linkPanel.disablePanel();
+                if (linkAnnotationPanel != null) {
+                    linkAnnotationPanel.disablePanel();
                 }
             }
         }
@@ -3811,6 +3813,9 @@ public class SwingController
                 documentViewController.getDocumentViewModel()
                         .addMemento(oldAnnotationState,
                                 newAnnotationState);
+
+                // saves the state changes back to the document structure.
+                newAnnotationState.synchronizeState();
             }
             // check to see if undo/redo can be enabled/disabled.
             reflectUndoCommands();
