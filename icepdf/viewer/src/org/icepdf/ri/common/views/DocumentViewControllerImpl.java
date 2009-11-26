@@ -157,7 +157,7 @@ public class DocumentViewControllerImpl
     protected PropertyChangeSupport changes = new PropertyChangeSupport(this);
 
 
-    public DocumentViewControllerImpl(SwingController viewerController) {
+    public DocumentViewControllerImpl(final SwingController viewerController) {
 
         this.viewerController = viewerController;
 
@@ -173,6 +173,7 @@ public class DocumentViewControllerImpl
             public void actionPerformed(ActionEvent e) {
                 if (documentViewModel != null){
                     deleteCurrentAnnotation();
+                    viewerController.reflectUndoCommands();
                 }
             }
         };
@@ -1159,19 +1160,15 @@ public class DocumentViewControllerImpl
             page.deleteAnnotation(annotationComponent.getAnnotation());
             // remove from page view.
             pageComponent.removeAnnotation(annotationComponent);
-
             // release the page
             pageTree.releasePage(pageComponent.getPageIndex(), this);
 
-
+            // store the post delete state.
             AnnotationState postDeleteState =
                     new AnnotationState(annotationComponent);
 
             documentViewModel.getAnnotationCareTaker().addState(preDeleteState,
                     postDeleteState);
-
-            // repaint the view.
-            documentView.repaint();
 
             // fire event notification
             firePropertyChange(PropertyConstants.ANNOTATION_DELETED,
@@ -1180,6 +1177,9 @@ public class DocumentViewControllerImpl
 
             // clear previously selected annotation and fire event.
             assignSelectedAnnotation(null);
+
+            // repaint the view.
+            documentView.repaint();
         }
     }
 

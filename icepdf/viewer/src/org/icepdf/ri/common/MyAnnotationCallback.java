@@ -43,6 +43,7 @@ import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.views.DocumentViewModel;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -157,7 +158,11 @@ public class MyAnnotationCallback implements AnnotationCallback {
         Page page = pageTree.getPage(pageComponent.getPageIndex(), this);
         Annotation annotation = page.createAnnotation(rect, null);
         // no we have let the pageComponent now about it.
-        pageComponent.addAnnotation(annotation);
+        AnnotationComponentImpl annotComponent = (AnnotationComponentImpl)
+                pageComponent.addAnnotation(annotation);
+        // normalize the rectangle
+        annotComponent.setBounds(rect);
+        annotComponent.refreshAnnotationRect();
         // release the page
         pageTree.releasePage(pageComponent.getPageIndex(), this);
 

@@ -45,7 +45,6 @@ import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -131,7 +130,7 @@ public class AnnotationHandler extends SelectionBoxHandler
      * it to the PageViewComponent as a child.
      * @param annotation new annotation to add to PageView.
      */
-    public void addAnnotationComponent(Annotation annotation){
+    public AnnotationComponent addAnnotationComponent(Annotation annotation){
         // initialize annotations
         if (annotations == null){
             annotations = new ArrayList<AnnotationComponent>();
@@ -141,21 +140,18 @@ public class AnnotationHandler extends SelectionBoxHandler
                 annotation.getFlagLocked() ||
                 annotation.getFlagInvisible() ||
                 annotation.getFlagHidden())) {
-            Rectangle2D.Float rect = annotation.getUserSpaceRectangle();
-            rect = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
             AnnotationComponentImpl comp = new AnnotationComponentImpl(annotation,
                     documentViewController,
                     pageViewComponent, documentViewModel);
-            comp.setBounds(rect.getBounds());
-            // convert rectangle from sapce
-            comp.refreshResizedBounds();
             // add them to the container, using absolute positioning.
             pageViewComponent.add(comp);
             // add the comp reference locally so we have easier access
             this.annotations.add(comp);
             // set the new annotation as the selected one.
             documentViewController.clearSelectedAnnotations();
+            return comp;
         }
+        return null;
     }
 
     /**

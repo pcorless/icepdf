@@ -59,6 +59,12 @@ public interface AnnotationComponent {
     public void refreshDirtyBounds();
 
     /**
+     * Refreshed the annotation rectangle by inverting the components current
+     * bounds with the current page transformation.
+     */
+    public void refreshAnnotationRect();
+
+    /**
      * Component has focus.
      *
      * @return true if has focus, false otherwise.

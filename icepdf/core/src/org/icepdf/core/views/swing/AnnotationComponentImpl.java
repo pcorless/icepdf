@@ -242,9 +242,12 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     }
 
     /**
-     * Refreshes/transforms the page space bounds back to user space.
+     * Refreshes/transforms the page space bounds back to user space.  This
+     * must be done in order refresh the annotation user space rectangle after
+     * UI manipulation, otherwise the annotation will be incorrectly located
+     * on the next repaint.
      */
-    public void refreshResizedBounds(){
+    public void refreshAnnotationRect(){
         Page currentPage = pageViewComponent.getPageLock(this);
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
@@ -275,7 +278,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         }
 
         if (resized) {
-            refreshResizedBounds();
+            refreshAnnotationRect();
             if (getParent() != null) {
                 ((JComponent) getParent()).revalidate();
                 getParent().repaint();
