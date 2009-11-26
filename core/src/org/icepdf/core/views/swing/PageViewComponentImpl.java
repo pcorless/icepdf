@@ -247,9 +247,9 @@ public class PageViewComponentImpl extends
      *
      * @param annotation annotation to add to this page instance. .
      */
-    public void addAnnotation(Annotation annotation) {
+    public AnnotationComponent addAnnotation(Annotation annotation) {
         // delegate to handler.
-        annotationHandler.addAnnotationComponent(annotation);
+        return annotationHandler.addAnnotationComponent(annotation);
     }
 
     /**

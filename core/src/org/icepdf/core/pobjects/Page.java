@@ -753,7 +753,7 @@ public class Page extends Dictionary implements MemoryManageable {
         }
 
         // finally remove it from the library, probably not necessary....
-        library.removeObject(annot.getPObjectReference());
+//        library.removeObject(annot.getPObjectReference());
 
     }
 

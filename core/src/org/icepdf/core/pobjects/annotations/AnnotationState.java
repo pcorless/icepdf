@@ -178,10 +178,11 @@ public class AnnotationState implements Memento {
             annotation.setDeleted(false);
             // re-add it to the page
             annotation = page.addAnnotation(annotation);
-            // finally update the pageComponent so we can se it again. 
+            // finally update the pageComponent so we can se it again.
             annotationComponent.getParentPageView().addAnnotation(annotation);
-            // todo fix prectangle issue.
+            // refresh bounds for any resizes
             annotationComponent.refreshDirtyBounds();
+            annotationComponent.refreshAnnotationRect();
         }
         pageTree.releasePage(page, this);
     }
