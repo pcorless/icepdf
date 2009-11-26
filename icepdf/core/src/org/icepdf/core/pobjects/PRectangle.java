@@ -181,6 +181,33 @@ public class PRectangle extends Rectangle2D.Float {
     }
 
     /**
+     * Converts a rectangle defined in user page in Java2D coordinates back
+     * to PDF space and in the vector for of the rectangle.
+     * @param rect user space rectangle in Java2D coordinates space.
+     * @return vector notation of rectangle in PDF space.
+     *
+     * todo:  java2D to PDF space is not currently setup.
+     */
+    public static Vector getPRectangleVector(Rectangle2D rect){
+
+        // convert the rectangle back to PDF space.
+        rect = new Rectangle2D.Double(rect.getX(), rect.getY(),
+                rect.getWidth(), rect.getHeight());
+        // get to points
+        Number p1x = rect.getMaxX();
+        Number ply = rect.getMaxY();
+        Number p2x = rect.getMinX();
+        Number p2y = rect.getMinY();
+        Vector<Number> rectVector = new Vector<Number>(4);
+        rectVector.add(p1x);
+        rectVector.add(ply);
+        rectVector.add(p2x);
+        rectVector.add(p2y);
+
+        return rectVector;
+    }
+
+    /**
      * Normalizes the given coordinates so that the rectangle is created with the
      * proper dimensions.
      *

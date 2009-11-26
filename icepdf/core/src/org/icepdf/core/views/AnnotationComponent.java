@@ -33,6 +33,7 @@
 package org.icepdf.core.views;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.Document;
 
 /**
  * AnnotationComponent interfaces.  Oulines two main methods needed for
@@ -73,4 +74,11 @@ public interface AnnotationComponent {
     public boolean isBorderStyle() ;
 
     public boolean isSelected();
+
+    public Document getDocument();
+
+    public int getPageIndex();
+
+    public PageViewComponent getParentPageView();
+
 }

@@ -343,108 +343,120 @@ public class Annotation extends Dictionary {
      * Dictionary constants for Annotations.
      */
 
-    /**
-     * Border style
-     */
-    public static final String TYPE = "Type";
     public static final String TYPE_VALUE = "Annot";
 
     /**
      * Annotation subtype and types.
      */
-    public static final String SUBTYPE = "Subtype";
     public static final String SUBTYPE_LINK = "Link";
-
 
     /**
      * Border style
      */
-    public static final String BORDER_STYLE = "BS";
+    public static final Name BORDER_STYLE_KEY = new Name("BS");
 
     /**
      * The annotation location on the page in user space units.
      */
-    public static final String RECTANGLE = "Rect";
+    public static final Name RECTANGLE_KEY = new Name("Rect");
 
     /**
      * The action to be performed whenteh annotation is activated.
      */
-    public static final String ACTION = "A";
+    public static final Name ACTION_KEY = new Name("A");
 
     /**
      * Page that this annotation is associated with.
      */
-    public static final String PARENT_PAGE = "P";
+    public static final Name PARENT_PAGE_KEY = new Name("P");
 
     /**
-     *  Annotation border characteristics.
+     * Annotation border characteristics.
      */
-    public static final String BORDER = "Border";
+    public static final Name BORDER_KEY = new Name("Border");
 
     /**
-     *  Annotation border characteristics.
+     * Annotation border characteristics.
      */
-    public static final String FLAG = "F";
+    public static final Name FLAG_KEY = new Name("F");
 
     /**
-     *  RGB colour value for background, titlebars and link annotation borders
+     * RGB colour value for background, titlebars and link annotation borders
      */
-    public static final String COLOR = "C";
+    public static final Name COLOR_KEY = new Name("C");
 
 
     /**
-     *  Appearance dictionary specifying how the annotation is presented
+     * Appearance dictionary specifying how the annotation is presented
      * visually on the page.
      */
-    public static final String APPEARANCE_STREAM = "AP";
+    public static final Name APPEARANCE_STREAM_KEY = new Name("AP");
 
     /**
-     *  Appearance state selecting default from multiple AP's.
+     * Appearance state selecting default from multiple AP's.
      */
-    public static final String APPEARANCE_STATE = "AS";
+    public static final Name APPEARANCE_STATE_KEY = new Name("AS");
 
     /**
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for normal display.
      */
-    public static final String APPEARANCE_STREAM_NORMAL = "N";
+    public static final Name APPEARANCE_STREAM_NORMAL_KEY = new Name("N");
 
     /**
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for rollover display.
      */
-    public static final String APPEARANCE_STREAM_ROLLOVER = "R";
+    public static final Name APPEARANCE_STREAM_ROLLOVER_KEY = new Name("R");
 
     /**
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for down display.
      */
-    public static final String APPEARANCE_STREAM_DOWN = "d";
+    public static final Name APPEARANCE_STREAM_DOWN_KEY = new Name("d");
 
+    /**
+     * Border property indexes for the border vector,  only applicable
+     * if the border style has not been set.
+     */
+    public static final int BORDER_HORIZONTAL_CORNER_RADIUS = 0;
+    public static final int BORDER_VERTICAL_CORNER_RADIUS = 1;
+    public static final int BORDER_WIDTH = 2;
+    public static final int BORDER_DASH = 3;
+
+    /**
+     * Annotion may or may not have a visible rectangle border
+     */
+    public static final int VISIBLE_RECTANGLE = 1;
+    public static final int INVISIBLE_RECTANGLE = 0;
 
     // borders style of the annotation, can be null
     protected BorderStyle borderStyle;
+    // border defined by vector
+    protected Vector<Number> border;
     // border color of annotation.
-    protected Color borderColor;
+    protected Color color;
     // annotation bounding rectangle in user space.
     protected Rectangle2D.Float userSpaceRectangle;
 
     /**
      * Should only be called from Parser,  Use AnnotationFactory if you
-     * creating a new annotation. 
-     * @param library document library
+     * creating a new annotation.
+     *
+     * @param library   document library
      * @param hashTable annotation properties.
-     * @return annotation instance. 
+     * @return annotation instance.
      */
     public static Annotation buildAnnotation(Library library, Hashtable hashTable) {
         Annotation annot = null;
-        Name subtype = (Name) hashTable.get(SUBTYPE);
+        Name subtype = (Name) hashTable.get(SUBTYPE_KEY);
         if (subtype != null) {
             if (subtype.equals(SUBTYPE_LINK))
                 annot = new LinkAnnotation(library, hashTable);
         }
-        if (annot == null)
+        if (annot == null) {
             annot = new Annotation(library, hashTable);
+        }
         return annot;
     }
 
@@ -456,12 +468,30 @@ public class Annotation extends Dictionary {
      */
     public Annotation(Library l, Hashtable h) {
         super(l, h);
-//System.out.println( "Construction: " + this );
 
         // parse out border style if available
-        Hashtable BS = (Hashtable) getObject(BORDER_STYLE);
+        Hashtable BS = (Hashtable) getObject(BORDER_STYLE_KEY);
         if (BS != null) {
             borderStyle = new BorderStyle(library, BS);
+        }
+        // get old school border
+        Object borderObject = getObject(BORDER_KEY);
+        if (borderObject != null && borderObject instanceof Vector) {
+            border = (Vector<Number>) borderObject;
+        }
+
+        // parse out border colour, specific to link annotations.
+        color = Color.black; // we default to black but probably should be null
+        Vector C = (Vector) getObject(COLOR_KEY);
+        // parse thought rgb colour.
+        if (C != null && C.size() >= 3) {
+            float red = ((Number) C.get(0)).floatValue();
+            float green = ((Number) C.get(1)).floatValue();
+            float blue = ((Number) C.get(2)).floatValue();
+            red = Math.max(0.0f, Math.min(1.0f, red));
+            green = Math.max(0.0f, Math.min(1.0f, green));
+            blue = Math.max(0.0f, Math.min(1.0f, blue));
+            color = new Color(red, green, blue);
         }
     }
 
@@ -472,7 +502,7 @@ public class Annotation extends Dictionary {
      * @return subtype of annotation
      */
     public String getSubType() {
-        return library.getName(entries, SUBTYPE);
+        return library.getName(entries, SUBTYPE_KEY.getName());
     }
 
     /**
@@ -484,18 +514,17 @@ public class Annotation extends Dictionary {
      */
     public Rectangle2D.Float getUserSpaceRectangle() {
         if (userSpaceRectangle == null) {
-//            userSpaceRectangle = library.getRectangle(entries, "Rect");
-        
-            Object tmp = library.getObject(entries, RECTANGLE);
-            if (tmp instanceof Vector){
-                userSpaceRectangle = library.getRectangle(entries, RECTANGLE);
+            Object tmp = getObject(RECTANGLE_KEY);
+            if (tmp instanceof Vector) {
+                userSpaceRectangle = library.getRectangle(entries, RECTANGLE_KEY.getName());
             }
-            else if (tmp instanceof Rectangle){
-                Rectangle rect = (Rectangle)tmp;
-                userSpaceRectangle =  new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
-            }
+//            // this a from a saved state, as we didn't write out the PRectangle
+//            // explicitly. Likely want to fix this in the future.
+//            else if (tmp instanceof Rectangle) {
+//                Rectangle rect = (Rectangle) tmp;
+//                userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
+//            }
         }
-
         return userSpaceRectangle;
     }
 
@@ -507,7 +536,7 @@ public class Annotation extends Dictionary {
      */
     public org.icepdf.core.pobjects.actions.Action getAction() {
 
-        Hashtable h1 = library.getDictionary(entries, ACTION);
+        Hashtable h1 = library.getDictionary(entries, ACTION_KEY.getName());
         if (h1 != null) {
             String actionType = ((Name) h1.get(Action.ACTION_TYPE)).getName();
             if (actionType != null) {
@@ -551,9 +580,7 @@ public class Annotation extends Dictionary {
     }
 
     public boolean allowPrintNormalMode() {
-        if (!allowScreenOrPrintRenderingOrInteraction())
-            return false;
-        return getFlagPrint();
+        return allowScreenOrPrintRenderingOrInteraction() && getFlagPrint();
     }
 
     public boolean allowAlterProperties() {
@@ -562,10 +589,15 @@ public class Annotation extends Dictionary {
 
     public void setBorderStyle(BorderStyle borderStyle) {
         this.borderStyle = borderStyle;
+        entries.put(Annotation.BORDER_STYLE_KEY,this.borderStyle);
     }
 
     public BorderStyle getBorderStyle() {
         return borderStyle;
+    }
+
+    public Vector<Number> getBorder() {
+        return border;
     }
 
     public Annotation getParentAnnotation() {
@@ -583,7 +615,7 @@ public class Annotation extends Dictionary {
     }
 
     public Page getPage() {
-        Page page = (Page) getObject(PARENT_PAGE);
+        Page page = (Page) getObject(PARENT_PAGE_KEY);
         if (page == null) {
             Annotation annot = getParentAnnotation();
             if (annot != null)
@@ -593,13 +625,82 @@ public class Annotation extends Dictionary {
     }
 
     /**
+     * Gets the Link type,  can be either VISIBLE_RECTANGLE or
+     * INVISIBLE_RECTANGLE, it all depends on the if the border or BS has
+     * border width > 0.
+     *
+     * @return VISIBLE_RECTANGLE if the annotation has a visible borde, otherwise
+     *         INVISIBLE_RECTANGLE
+     */
+    public int getLinkType() {
+        // border style has W value for border with
+        if (borderStyle != null) {
+            if (borderStyle.getStrokeWidth() > 0) {
+                return VISIBLE_RECTANGLE;
+            }
+        }
+        // look for a border, 0,0,1 has one, 0,0,0 doesn't
+        else if (border != null) {
+            if (border.size() >= 3 && border.get(2).floatValue() > 0) {
+                return VISIBLE_RECTANGLE;
+            }
+        }
+        // should never happen
+        return INVISIBLE_RECTANGLE;
+    }
+
+    /**
+     * Gets the Annotation border style for the given annotation.  If no
+     * annotation line style can be found the default value of BORDER_STYLE_SOLID
+     * is returned.  Otherwise the bordStyle and border dictionaries are used
+     * to deduse a line style.
+     *
+     * @return  BorderSTyle line constants. 
+     */
+    public String getLineStyle() {
+        // check for border style
+        if (borderStyle != null) {
+            return borderStyle.getBorderStyle();
+        }
+        // check the border entry, will be solid or dashed
+        else if (border != null) {
+            if (border.size() > 3) {
+                return BorderStyle.BORDER_STYLE_DASHED;
+            }else if (border.get(2).floatValue() > 1){
+                return BorderStyle.BORDER_STYLE_SOLID;    
+            }
+        }
+        // default value
+        return BorderStyle.BORDER_STYLE_SOLID;
+    }
+
+    /**
+     * Gets the line thickness assoicated with this annotation.
+     *
+     * @return point value used when drawing line thickness. 
+     */
+    public float getLineThickness(){
+        // check for border style
+        if (borderStyle != null) {
+            return borderStyle.getStrokeWidth();
+        }
+        // check the border entry, will be solid or dashed
+        else if (border != null) {
+            if (border.size() >= 3) {
+                return border.get(2).floatValue();
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Checks to see if the annotation has defined a drawable border width.
      *
      * @return true if a border will be drawn; otherwise, false.
      */
     public boolean isBorder() {
         boolean borderWidth = false;
-        Object border = getObject(BORDER);
+        Object border = getObject(BORDER_KEY);
         if (border != null && border instanceof Vector) {
             Vector borderProps = (Vector) border;
             if (borderProps.size() == 3) {
@@ -704,11 +805,12 @@ public class Annotation extends Dictionary {
 
     // TODO add support for rollover and down states..
     protected void renderAppearanceStream(Graphics2D g) {
-        Object AP = getObject(APPEARANCE_STREAM);
+        Object AP = getObject(APPEARANCE_STREAM_KEY);
         if (AP instanceof Hashtable) {
-            Object N = library.getObject((Hashtable) AP, APPEARANCE_STREAM_NORMAL);
+            Object N = library.getObject(
+                    (Hashtable) AP, APPEARANCE_STREAM_NORMAL_KEY.getName());
             if (N instanceof Hashtable) {
-                Object AS = getObject(APPEARANCE_STATE);
+                Object AS = getObject(APPEARANCE_STATE_KEY);
                 if (AS != null)
                     N = library.getObject((Hashtable) N, AS.toString());
             }
@@ -742,7 +844,7 @@ public class Annotation extends Dictionary {
 //            return;
 //        }
 
-        Color borderColor = getBorderColor();
+        Color borderColor = getColor();
         if (borderColor != null)
             g.setColor(borderColor);
 
@@ -861,7 +963,7 @@ public class Annotation extends Dictionary {
                 }
             }
         } else {
-            Vector borderVector = (Vector) getObject(BORDER);
+            Vector borderVector = (Vector) getObject(BORDER_KEY);
             if (borderVector != null) {
                 if (borderColor != null) {
                     float horizRadius = 0.0f;
@@ -936,14 +1038,21 @@ public class Annotation extends Dictionary {
     }
 
     /**
+     * Gest the RGB colour of the annotation used for the following purposes:
+     * <ul>
+     *  <li>the background of the annotaiton's icon when closed</li>
+     *  <li>the title bar of the anntoation's pop-up window</li>
+     *  <li>the border of a link annotation</li>
+     * </ul>
+     * 
      * @return A Color for the border, or null if none is to be used
      */
-    public Color getBorderColor() {
-        return borderColor;
+    public Color getColor() {
+        return color;
     }
 
-    public void setBorderColor(Color borderColor) {
-        this.borderColor = borderColor;
+    public void setColor(Color color) {
+        this.color = color;
     }
 
     private Rectangle2D.Float deriveDrawingRectangle() {
@@ -995,39 +1104,39 @@ public class Annotation extends Dictionary {
     }
 
     public boolean getFlagInvisible() {
-        return ((getInt(FLAG) & 0x0001) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0001) != 0);
     }
 
     public boolean getFlagHidden() {
-        return ((getInt(FLAG) & 0x0002) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0002) != 0);
     }
 
     public boolean getFlagPrint() {
-        return ((getInt(FLAG) & 0x0004) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0004) != 0);
     }
 
     public boolean getFlagNoZoom() {
-        return ((getInt(FLAG) & 0x0008) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0008) != 0);
     }
 
     public boolean getFlagNoRotate() {
-        return ((getInt(FLAG) & 0x0010) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0010) != 0);
     }
 
     public boolean getFlagNoView() {
-        return ((getInt(FLAG) & 0x0020) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0020) != 0);
     }
 
     public boolean getFlagReadOnly() {
-        return ((getInt(FLAG) & 0x0040) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0040) != 0);
     }
 
     public boolean getFlagLocked() {
-        return ((getInt(FLAG) & 0x0080) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0080) != 0);
     }
 
     public boolean getFlagToggleNoView() {
-        return ((getInt(FLAG) & 0x0100) != 0);
+        return ((getInt(FLAG_KEY.getName()) & 0x0100) != 0);
     }
 
     public String toString() {

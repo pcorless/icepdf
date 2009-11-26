@@ -87,6 +87,8 @@ public class Page extends Dictionary implements MemoryManageable {
     private static final Logger logger =
             Logger.getLogger(Page.class.toString());
 
+    public static final Name ANNOTS_KEY = new Name("Annots");
+
     /**
      * Defines the boundaries of the physical medium on which the page is
      * intended to be displayed or printed.
@@ -125,7 +127,7 @@ public class Page extends Dictionary implements MemoryManageable {
     private Resources resources;
 
     // Vector of annotations
-    private ArrayList<Annotation> annotation;
+    private ArrayList<Annotation> annotations;
 
     // Contents
     private Vector<Stream> contents;
@@ -179,8 +181,8 @@ public class Page extends Dictionary implements MemoryManageable {
             // un-init a page to free up memory
             isInited = false;
             // null data collections for page content
-            if (annotation != null) {
-                annotation.clear();
+            if (annotations != null) {
+                annotations.clear();
             }
             // work through contents and null any stream that have images in them
             if (contents != null) {
@@ -269,12 +271,12 @@ public class Page extends Dictionary implements MemoryManageable {
     }
 
     private void initPageAnnotations() throws InterruptedException {
-        // find annotation in main library for our pages dictionary
-        Object annots = library.getObject(entries, "Annots");
+        // find annotations in main library for our pages dictionary
+        Object annots = library.getObject(entries, ANNOTS_KEY.getName());
         if (annots != null && annots instanceof Vector) {
             Vector v = (Vector) annots;
-            annotation = new ArrayList<Annotation>(v.size() + 1);
-            // add annotation
+            annotations = new ArrayList<Annotation>(v.size() + 1);
+            // add annotations
             Object annotObj;
             org.icepdf.core.pobjects.annotations.Annotation a = null;
             for (int i = 0; i < v.size(); i++) {
@@ -285,23 +287,29 @@ public class Page extends Dictionary implements MemoryManageable {
                 }
 
                 annotObj = v.elementAt(i);
-
+                Reference ref = null;
                 // we might have a reference
                 if (annotObj instanceof Reference) {
-                    Reference ref = (Reference) v.elementAt(i);
+                    ref = (Reference) v.elementAt(i);
                     annotObj = library.getObject(ref);
                 }
 
-                // but most likely its an annotation base class
+                // but most likely its an annotations base class
                 if (annotObj instanceof Annotation) {
                     a = (Annotation) annotObj;
                 }
-                // or build annotation from dictionary.
+                // or build annotations from dictionary.
                 else if (annotObj instanceof Hashtable) { // Hashtable lacks "Type"->"Annot" entry
                     a = Annotation.buildAnnotation(library, (Hashtable) annotObj);
                 }
+                // set the object reference, so we can save the state correct
+                // and update any references accordingly. 
+                if (ref != null ){
+                    a.setPObjectReference(ref);
+                }
+
                 // add any found annotations to the vector.
-                annotation.add(a);
+                annotations.add(a);
             }
         }
     }
@@ -486,12 +494,12 @@ public class Page extends Dictionary implements MemoryManageable {
             g2.setTransform(pageTransform);
             g2.setClip(pageClip);
         }
-        // paint annotation if available and desired.
-        if (annotation != null && paintAnnotations) {
+        // paint annotations if available and desired.
+        if (annotations != null && paintAnnotations) {
             float totalRotation = getTotalRotation(userRotation);
-            int num = annotation.size();
+            int num = annotations.size();
             for (int i = 0; i < num; i++) {
-                Annotation annot = annotation.get(i);
+                Annotation annot = annotations.get(i);
                 annot.render(g2, renderHintType, totalRotation, userZoom, false);
             }
         }
@@ -616,18 +624,33 @@ public class Page extends Dictionary implements MemoryManageable {
                         rect,
                         annotationState);
 
+        // return to caller for further manipulations.
+        return addAnnotation(newAnnotation);
+    }
+
+    /**
+     * Adds an annotation that was previously added to the document.  It is
+     * assumed that the annotation has a valid object reference.  This
+     * is commonly used with the undo/redo state manager in the RI.  Use
+     * the method @link{#createAnnotation} for creating new annotations.
+     *
+     * @param newAnnotation
+     * @return reference to annotaiton that was added.
+     */
+    public Annotation addAnnotation(Annotation newAnnotation) {
+
         StateManager stateManager = library.getStateManager();
 
-        Object annots = library.getObject(entries, "Annots");
-        boolean isAnnotAReference = library.isReference(entries, "Annots");
+        Object annots = library.getObject(entries, ANNOTS_KEY.getName());
+        boolean isAnnotAReference = library.isReference(entries, ANNOTS_KEY.getName());
 
-        // does the page not already have an annotation or if the annots
+        // does the page not already have an annotations or if the annots
         // dictionary is indirect.  If so we have to add the page to the state
         // manager
         if (!isAnnotAReference && annots != null) {
             // get annots array from page
             if (annots instanceof Vector) {
-                // update annots dictionary with new annotation reference,
+                // update annots dictionary with new annotations reference,
                 Vector v = (Vector) annots;
                 v.add(newAnnotation.getPObjectReference());
                 // add the page as state change
@@ -637,12 +660,13 @@ public class Page extends Dictionary implements MemoryManageable {
         } else if (isAnnotAReference && annots != null) {
             // get annots array from page
             if (annots instanceof Vector) {
-                // update annots dictionary with new annotation reference,
+                // update annots dictionary with new annotations reference,
                 Vector v = (Vector) annots;
                 v.add(newAnnotation.getPObjectReference());
-                // add the annotation reference dictionary as state has changed
+                // add the annotations reference dictionary as state has changed
                 stateManager.addChange(
-                        new PObject(annots, library.getObjectReference(entries, "Annots")));
+                        new PObject(annots, library.getObjectReference(
+                                entries, ANNOTS_KEY.getName())));
             }
         }
         // we need to add the a new annots reference
@@ -655,29 +679,30 @@ public class Page extends Dictionary implements MemoryManageable {
                     stateManager.getNewReferencNumber());
 
             // add the new dictionary to the page
-            entries.put("Annots", annotsPObject.getReference());
+            entries.put(ANNOTS_KEY, annotsPObject.getReference());
+            // add it to the library so we can resolve the reference
+            library.addObject(annotsVector, annotsPObject.getReference());
 
             // add the page and the new dictionary to the state change
             stateManager.addChange(
                     new PObject(this, this.getPObjectReference()));
             stateManager.addChange(annotsPObject);
 
-            annotation = new ArrayList<Annotation>();
+            annotations = new ArrayList<Annotation>();
         }
 
         // update parent page reference.
-        newAnnotation.getEntries().put(Annotation.PARENT_PAGE,
+        newAnnotation.getEntries().put(Annotation.PARENT_PAGE_KEY,
                 this.getPObjectReference());
 
-        // add the annotation to the parsed annotation list
-        annotation.add(newAnnotation);
+        // add the annotations to the parsed annotations list
+        annotations.add(newAnnotation);
 
-        // add the new annotation to the library
+        // add the new annotations to the library
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
 
-        // finally add the new annotation to the state manager
+        // finally add the new annotations to the state manager
         stateManager.addChange(new PObject(newAnnotation, newAnnotation.getPObjectReference()));
-
 
         // return to caller for further manipulations.
         return newAnnotation;
@@ -690,52 +715,102 @@ public class Page extends Dictionary implements MemoryManageable {
      * we just have to update the page and or annot reference as the objects
      * will allready be in the state manager.
      *
-     * todo, consider markign an annotation for delete and changing is state
-     * to invisible so that the delete state can be more easily undone.
      */
     public void deleteAnnotation(Annotation annot) {
 
         StateManager stateManager = library.getStateManager();
 
-        Object annots = library.getObject(entries, "Annots");
-        boolean isAnnotAReference = library.isReference(entries, "Annots");
+        Object annots = getObject(ANNOTS_KEY);
+        boolean isAnnotAReference =
+                library.isReference(entries, ANNOTS_KEY.getName());
 
         // mark the item as deleted so the state manager can clean up the reference.
         annot.setDeleted(true);
 
-        // check to see if this is an existing annotation, if the annotation
+        // check to see if this is an existing annotations, if the annotations
         // is existing then we have to mark either the page or annot ref as chagned.
         if (!annot.isNew() && !isAnnotAReference){
             // add the page as state change
             stateManager.addChange(
                     new PObject(this, this.getPObjectReference()));
-        }else{
-            // add the annotation vector as changed
-            stateManager.addChange(
-                        new PObject(annots,
-                                library.getObjectReference(entries, "Annots")));
         }
-        // removed the annoation from the page object
+        // if not new and annot is a ref, we have to add annot ref as changed.
+        else if (!annot.isNew() && isAnnotAReference){
+            stateManager.addChange(
+                        new PObject(annots, library.getObjectReference(
+                                entries, ANNOTS_KEY.getName())));
+        }
+        // removed the annotations from the annots vector
         if (annots instanceof Vector) {
-            // update annots dictionary with new annotation reference,
+            // update annots dictionary with new annotations reference,
             Vector v = (Vector) annots;
             v.remove(annot.getPObjectReference());
         }
-        // remove the annotation form the annotaion collection
-        if (annotation != null){
-            annotation.remove(annot);
+
+        // remove the annotations form the annotation cache in the page object
+        if (annotations != null){
+            annotations.remove(annot);
         }
 
-        // remove the new annotation to the library
+        // finally remove it from the library, probably not necessary....
         library.removeObject(annot.getPObjectReference());
 
     }
 
-    public void updateAnnotation(Annotation annotation,
-                                 AnnotationState newAnnotationState) {
-        // check the state manager for an instance of this object
+    /**
+     * Updates the annotation associated with this page.  If the annotation
+     * is not in this page then the annotation is no added.
+     * @param annotation annotation object that should be updated for this page.
+     * @return true if the update was successful, false otherwise.
+     */
+    public boolean updateAnnotation(Annotation annotation) {
+        // bail on null annotations
+        if (annotation == null){
+            return false;
+        }
 
-        // if not already there we add it.
+        StateManager stateManager = library.getStateManager();
+        // if we are doing an update we have at least on annot
+        Vector<Reference> annots = (Vector)
+                library.getObject(entries, ANNOTS_KEY.getName());
+
+        // make sure annotations is in part of page.
+        boolean found = false;
+        for (Reference ref : annots){
+            if (ref.equals(annotation.getPObjectReference())){
+                found = true;
+                break;
+            }
+        }
+        if (!found){
+            return false;
+        }
+
+        // check the state manager for an instance of this object
+        if (stateManager.contains(annotation.getPObjectReference())){
+            // if found we just have to re add the object, foot work around
+            // page and annotations creation has already been done.
+            stateManager.addChange(
+                    new PObject(annotation, annotation.getPObjectReference()));
+            return true;
+        }
+        // we have to do the checks for page and annot dictionary entry.
+        else{
+            // update parent page reference.
+            annotation.getEntries().put(Annotation.PARENT_PAGE_KEY,
+                this.getPObjectReference());
+
+            // add the annotations to the parsed annotations list
+            annotations.add(annotation);
+
+            // add the new annotations to the library
+            library.addObject(annotation, annotation.getPObjectReference());
+
+            // finally add the new annotations to the state manager
+            stateManager.addChange(new PObject(annotation, annotation.getPObjectReference()));
+
+            return true;
+        }
     }
 
     /**
@@ -1034,7 +1109,7 @@ public class Page extends Dictionary implements MemoryManageable {
         if (!isInited) {
             init();
         }
-        return annotation;
+        return annotations;
     }
 
     /**

@@ -36,9 +36,7 @@ import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
-import java.awt.*;
 import java.util.Hashtable;
-import java.util.Vector;
 
 /**
  * <h2>Refer to: 8.4.5 Annotation Types</h2>
@@ -79,27 +77,37 @@ import java.util.Vector;
 public class LinkAnnotation extends Annotation {
 
     /**
+     * Key used to indcate highlight mode.
+     */
+    public static final Name DESTINATION_KEY = new Name("Dest");
+
+    /**
+     * Key used to indcate highlight mode.
+     */
+    public static final Name HIGHLIGHT_MODE_KEY = new Name("H");
+
+    /**
      * Indicates that the annotation has no highlight effect.
      */
-    public static final int HIGHLIGHT_NONE = 0;
+    public static final String HIGHLIGHT_NONE = "N";
 
     /**
      * Indicates that the annotation rectangle colours should be inverted for
      * its highlight effect.
      */
-    public static final int HIGHLIGHT_INVERT = 1;
+    public static final String HIGHLIGHT_INVERT = "I";
 
     /**
      * Indicates that the annotation rectangle border should be inverted for its
      * highlight effect.
      */
-    public static final int HIGHLIGHT_OUTLINE = 2;
+    public static final String HIGHLIGHT_OUTLINE = "O";
 
     /**
      * Indicates that the annotation rectangle border should be pushed below the
      * surface of th page.
      */
-    public static final int HIGHLIGHT_PUSH = 3;
+    public static final String HIGHLIGHT_PUSH = "P";
 
     /**
      * Creates a new instance of a LinkAnnotation.
@@ -109,40 +117,25 @@ public class LinkAnnotation extends Annotation {
      */
     public LinkAnnotation(Library l, Hashtable h) {
         super(l, h);
-
-        // parse out border colour, specific to link annotations. 
-        //TODO Find what color to use if no Annot.C entry
-        borderColor = Color.black;
-        Vector C = (Vector) getObject(COLOR);
-        // parse thought rgb colour.
-        if (C != null && C.size() >= 3) {
-            float red = ((Number) C.get(0)).floatValue();
-            float green = ((Number) C.get(1)).floatValue();
-            float blue = ((Number) C.get(2)).floatValue();
-            red = Math.max(0.0f, Math.min(1.0f, red));
-            green = Math.max(0.0f, Math.min(1.0f, green));
-            blue = Math.max(0.0f, Math.min(1.0f, blue));
-            borderColor = new Color(red, green, blue);
-        }
     }
 
     /**
-     * <p>Gets the link annotations highlight mode (visual effect)taht shouldbe
-     * displayed when the mouse button is pressed or held down inside it's
+     * <p>Gets the link annotations highlight mode (visual effect)taht should
+     * be displayed when the mouse button is pressed or held down inside it's
      * active area.</p>
      *
      * @return one of the predefined highlight effects, HIGHLIGHT_NONE,
      *         HIGHLIGHT_OUTLINE or HIGHLIGHT_PUSH.
      */
-    public int getHighlightMode() {
-        Object possibleName = getObject("H");
+    public String getHighlightMode() {
+        Object possibleName = getObject(HIGHLIGHT_MODE_KEY);
         if (possibleName instanceof Name) {
             Name name = (Name) possibleName;
-            if (name.getName().equalsIgnoreCase("N")) {
+            if (name.getName().equalsIgnoreCase(HIGHLIGHT_NONE)) {
                 return HIGHLIGHT_NONE;
-            } else if (name.getName().equalsIgnoreCase("O")) {
+            } else if (name.getName().equalsIgnoreCase(HIGHLIGHT_OUTLINE)) {
                 return HIGHLIGHT_OUTLINE;
-            } else if (name.getName().equalsIgnoreCase("P")) {
+            } else if (name.getName().equalsIgnoreCase(HIGHLIGHT_PUSH)) {
                 return HIGHLIGHT_PUSH;
             }
         }
@@ -157,7 +150,7 @@ public class LinkAnnotation extends Annotation {
      *         annotation.
      */
     public Destination getDestination() {
-        Object obj = library.getObject(entries, "Dest");
+        Object obj = library.getObject(entries, DESTINATION_KEY.getName());
         if (obj != null) {
             return new Destination(library, obj);
         }
