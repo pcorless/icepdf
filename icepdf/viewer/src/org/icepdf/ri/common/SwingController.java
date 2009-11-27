@@ -51,6 +51,7 @@ import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
+import org.icepdf.ri.common.annotation.LinkAnnotationPanel;
 import org.icepdf.ri.util.*;
 
 import javax.swing.*;
@@ -3787,6 +3788,9 @@ public class SwingController
                     logger.info("selected annotation " + annotationComponent);
 
                     showAnnotationLinkPanel(annotationComponent);
+                }
+                else{
+                    System.out.println("annotation type "+ annotationComponent.getAnnotation());
                 }
             }
         }

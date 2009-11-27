@@ -34,6 +34,7 @@ package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.annotation.LinkAnnotationPanel;
 import org.icepdf.ri.images.Images;
 import org.icepdf.core.util.Defs;
 
