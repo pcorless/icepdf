@@ -30,20 +30,23 @@
  * this file under either the MPL or the LGPL License."
  *
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.annotation;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
+import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.UndoCaretaker;
 
-import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -186,6 +189,17 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
          * Take care of actions fields.
          */
         // todo action fields or move to another class.
+        org.icepdf.core.pobjects.actions.Action action =
+                newAnnotation.getAnnotation().getAction();
+        if (action != null){
+            Annotation annot = newAnnotation.getAnnotation();
+            System.out.println("annot" + annot);
+            System.out.println("action" + action);
+        } else{
+           Destination dest =
+                   ((LinkAnnotation)newAnnotation.getAnnotation()).getDestination();
+            System.out.println("dest " + dest);
+        }
 
     }
 
