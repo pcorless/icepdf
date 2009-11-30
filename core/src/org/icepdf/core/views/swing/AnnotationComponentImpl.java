@@ -208,11 +208,11 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     }
 
     public void focusGained(FocusEvent e) {
-        repaint();
+//        repaint();
     }
 
     public void focusLost(FocusEvent e) {
-        repaint();
+//        repaint();
         // if we've lost focus then drop the selected state
 //        isSelected = false;
     }
@@ -237,7 +237,8 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         GeneralPath shapePath = new GeneralPath(
                 annotation.getUserSpaceRectangle());
         shapePath.transform(at);
-        setBounds(shapePath.getBounds());
+        Rectangle rect = shapePath.getBounds2D().getBounds();
+        setBounds(rect);
         pageViewComponent.releasePageLock(currentPage, this);
     }
 
@@ -262,10 +263,13 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         // store the new annotation rectangle in its original user space
         Rectangle2D rect = annotation.getUserSpaceRectangle();
         Rectangle bounds = getBounds();
-        Rectangle innerRectangle = new Rectangle(bounds.x + resizeBoxSize / 2,
-                bounds.y + resizeBoxSize / 2, bounds.width - resizeBoxSize, bounds.height - resizeBoxSize);
+        Rectangle2D innerRectangle = new Rectangle2D.Float(
+                bounds.x + resizeBoxSize / 2.0f,
+                bounds.y + resizeBoxSize / 2.0f,
+                bounds.width - resizeBoxSize,
+                bounds.height - resizeBoxSize);
         GeneralPath shapePath = new GeneralPath(innerRectangle);
-        shapePath.transform(at);
+        shapePath.transform(at);     
         rect.setRect(shapePath.getBounds());
     }
 

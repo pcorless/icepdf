@@ -36,17 +36,13 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
-import org.icepdf.ri.common.views.AbstractDocumentViewModel;
-import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.UndoCaretaker;
+import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 
-import javax.swing.border.EmptyBorder;
+import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -55,9 +51,13 @@ import java.awt.event.ItemListener;
 import java.util.ResourceBundle;
 
 /**
+ * Link Annotation panel intended use is for the manipulation of LinkAnnotation
+ * appearance prooperties.  This could be used with other annotation types but
+ * it's not suggested.
+ *
  * @since 4.0
  */
-public class LinkAnnotationPanel extends JPanel implements ItemListener,
+public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
         ActionListener {
 
     // default list values.
@@ -100,10 +100,10 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
     private SwingController controller;
     private ResourceBundle messageBundle;
 
-    // annotation instance that is being edited
+    // action instance that is being edited
     private AnnotationComponentImpl currentAnnotationComponent;
 
-    // link annotation appearance properties.
+    // link action appearance properties.
     private JComboBox linkTypeBox;
     private JComboBox highlightStyleBox;
     private JComboBox lineThicknessBox;
@@ -117,29 +117,23 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
     private String lineStyle;
     private Color color;
 
-    // todo action fields, probably new panels for each
-    private JTextField pageField;
-
     public LinkAnnotationPanel(SwingController controller) {
-        super(new FlowLayout(FlowLayout.CENTER, 5, 5), true);
+        super(new GridLayout(5, 2, 5, 2), true);
 
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
 
         // Setup the basics of the panel
         setFocusable(true);
-        setBorder(new EmptyBorder(10, 5, 1, 5));
+//        setBorder(new EmptyBorder(10, 5, 1, 5));
 
         // Add the tabbed pane to the overall panel
-        // todo rework layout for auto sizing.
-        JPanel innerPane = new JPanel(new GridLayout(2, 1, 5, 5));
-        innerPane.add(generateAppearancePane());
-//        innerPane.add(generateActionPane());
-        add(innerPane);
-        this.revalidate();
+        createGUI();
 
-        // Start the panel disabled until an annotation is clicked
-        disableAppearanceInputComponents();
+        // Start the panel disabled until an action is clicked
+        setEnabled(false);
+
+        revalidate();
     }
 
     /**
@@ -151,15 +145,14 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
      *
      * @param newAnnotation to set and apply to this UI
      */
-    public void setAndApplyAnnotationToUI(AnnotationComponentImpl newAnnotation) {
+    public void setAnnotationComponent(AnnotationComponentImpl newAnnotation) {
 
         if (newAnnotation == null || newAnnotation.getAnnotation() == null ||
                 !(newAnnotation.getAnnotation() instanceof LinkAnnotation)) {
-            disableAppearanceInputComponents();
+            setEnabled(false);
             return;
         }
-
-        // assign the new annotation instance.
+        // assign the new action instance.
         this.currentAnnotationComponent = newAnnotation;
 
         // For convenience grab the Annotation object wrapped by the component
@@ -179,48 +172,8 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
         applySelectedValue(lineStyleBox, lineStyle);
         colorButton.setBackground(color);
 
-        /**
-         * Take care of appears fields.
-         */
         // disable appearance input if we have a invisible rectangle
         enableAppearanceInputComponents(linkAnnotation.getLinkType());
-
-        /**
-         * Take care of actions fields.
-         */
-        // todo action fields or move to another class.
-        org.icepdf.core.pobjects.actions.Action action =
-                newAnnotation.getAnnotation().getAction();
-        if (action != null){
-            Annotation annot = newAnnotation.getAnnotation();
-            System.out.println("annot" + annot);
-            System.out.println("action" + action);
-        } else{
-           Destination dest =
-                   ((LinkAnnotation)newAnnotation.getAnnotation()).getDestination();
-            System.out.println("dest " + dest);
-        }
-
-    }
-
-    /**
-     * Method to store the state of a change (such as modifying the border color)
-     * This will allow the user to undo such changes
-     *
-     * @param oldState before the change
-     * @param newState after the change
-     */
-    protected void storeUndoState(AnnotationState oldState, AnnotationState newState) {
-        UndoCaretaker undoCaretaker = ((DocumentViewModelImpl) controller
-                .getDocumentViewController().getDocumentViewModel()).getAnnotationCareTaker();
-
-        if (undoCaretaker != null) {
-            // Add our states to the undo caretaker
-            undoCaretaker.addState(oldState, newState);
-
-            // Check with the controller whether we can enable the undo/redo menu items
-            controller.reflectUndoCommands();
-        }
     }
 
     public void itemStateChanged(ItemEvent e) {
@@ -237,7 +190,7 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
             } else if (e.getSource() == lineStyleBox) {
                 lineStyle = (String) item.getValue();
             }
-            // save the annotation state back to the document structure.
+            // save the action state back to the document structure.
             updateAnnotationState();
 
             currentAnnotationComponent.repaint();
@@ -255,22 +208,80 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
                 colorButton.setBackground(chosenColor);
                 color = chosenColor;
 
-                // save the annotation state back to the document structure.
+                // save the action state back to the document structure.
                 updateAnnotationState();
                 currentAnnotationComponent.repaint();
             }
         }
     }
 
-    private void updateAnnotationState() {
+    /**
+     * Method to create link annotation GUI.
+     */
+    private void createGUI() {
 
+        // Create and setup an Appearance panel
+        setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.utilityPane.link.appearanceTitle"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        // link type box
+        linkTypeBox = new JComboBox(LINK_TYPE_LIST);
+        linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
+        linkTypeBox.addItemListener(this);
+        add(new JLabel(
+                messageBundle.getString("viewer.utilityPane.link.linkType")));
+        add(linkTypeBox);
+        // highlight style box.
+        highlightStyleBox = new JComboBox(HIGHLIGHT_STYLE_LIST);
+        highlightStyleBox.setSelectedIndex(DEFAULT_HIGHLIGHT_STYLE);
+        highlightStyleBox.addItemListener(this);
+        add(new JLabel(
+                messageBundle.getString("viewer.utilityPane.link.highlightType")));
+        add(highlightStyleBox);
+        // line thickness
+        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
+        lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
+        lineThicknessBox.addItemListener(this);
+        add(new JLabel(messageBundle.getString(
+                "viewer.utilityPane.link.lineThickness")));
+        add(lineThicknessBox);
+        // line style
+        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
+        lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
+        lineStyleBox.addItemListener(this);
+        add(new JLabel(
+                messageBundle.getString("viewer.utilityPane.link.lineStyle")));
+        add(lineStyleBox);
+        // line colour
+        colorButton = new JButton();
+        colorButton.addActionListener(this);
+        colorButton.setOpaque(true);
+        colorButton.setBackground(DEFAULT_BORDER_COLOR);
+        add(new JLabel(
+                messageBundle.getString("viewer.utilityPane.link.colorLabel")));
+        add(colorButton);
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+
+        safeEnable(linkTypeBox, enabled);
+        safeEnable(highlightStyleBox, enabled);
+        safeEnable(lineThicknessBox, enabled);
+        safeEnable(lineStyleBox, enabled);
+        safeEnable(colorButton, enabled);
+    }
+
+    private void updateAnnotationState() {
         // store old state
         AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
         // store new state from panel
         AnnotationState newState = new AnnotationState(currentAnnotationComponent);
         AnnotationState changes = new AnnotationState(
                 linkType, highlightStyle, lineThickness, lineStyle, color);
-        // apply new properties to the annotation and the component
+        // apply new properties to the action and the component
         newState.apply(changes);
 
         // update thickness control as it might have changed
@@ -285,131 +296,6 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
 
         // Check with the controller whether we can enable the undo/redo menu items
         controller.reflectUndoCommands();
-
-
-    }
-
-
-    /**
-     * Method to create and customize the appearance section of the panel
-     *
-     * @return completed panel
-     */
-    protected JPanel generateAppearancePane() {
-        // Create and setup an Appearance panel
-        JPanel appearancePane = new JPanel(new GridLayout(5, 2, 5, 5));
-        appearancePane.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
-                messageBundle.getString("viewer.utilityPane.link.appearanceTitle"),
-                TitledBorder.LEFT,
-                TitledBorder.DEFAULT_POSITION));
-        // link type box
-        linkTypeBox = new JComboBox(LINK_TYPE_LIST);
-        linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
-        linkTypeBox.addItemListener(this);
-        appearancePane.add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.linkType")));
-        appearancePane.add(linkTypeBox);
-        // highlight style box.
-        highlightStyleBox = new JComboBox(HIGHLIGHT_STYLE_LIST);
-        highlightStyleBox.setSelectedIndex(DEFAULT_HIGHLIGHT_STYLE);
-        highlightStyleBox.addItemListener(this);
-        appearancePane.add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.highlightType")));
-        appearancePane.add(highlightStyleBox);
-        // line thickness
-        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
-        lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
-        lineThicknessBox.addItemListener(this);
-        appearancePane.add(new JLabel(messageBundle.getString(
-                "viewer.utilityPane.link.lineThickness")));
-        appearancePane.add(lineThicknessBox);
-        // line style
-        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
-        lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
-        lineStyleBox.addItemListener(this);
-        appearancePane.add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.lineStyle")));
-        appearancePane.add(lineStyleBox);
-        // line colour
-        colorButton = new JButton();
-        colorButton.addActionListener(this);
-        colorButton.setOpaque(true);
-        colorButton.setBackground(DEFAULT_BORDER_COLOR);
-        appearancePane.add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.colorLabel")));
-        appearancePane.add(colorButton);
-
-        return appearancePane;
-    }
-
-    /**
-     * Method to create and customize the actions section of the panel
-     *
-     * @return completed panel
-     */
-    protected JPanel generateActionPane() {
-        // Create and setup an Action panel
-/**        JPanel pageNumberSubpane = new JPanel(new GridLayout(2, 3, 5, 5));
- pageNumberSubpane.setBorder(new EmptyBorder(0, 40, 0, 0));
- pageNumberSubpane.add(new JLabel(messageBundle.getString("viewer.utilityPane.link.pageLabel")));
- pageField = new JTextField();
- pageNumberSubpane.add(pageField);
- pageLabel = new JLabel(generatePageLabelText());
- pageNumberSubpane.add(pageLabel);
- pageNumberSubpane.add(new JLabel(messageBundle.getString("viewer.utilityPane.link.zoomLabel")));
- zoomBox = new JComboBox(new String[]{"Fit Page"});
- pageNumberSubpane.add(zoomBox);
-
- JPanel pageNumberPane = new JPanel(new BorderLayout(5, 5));
- JRadioButton pageNumberRadio = new JRadioButton(messageBundle.getString("viewer.utilityPane.link.usePage"), true);
- pageNumberPane.add(pageNumberRadio, BorderLayout.NORTH);
- pageNumberPane.add(pageNumberSubpane, BorderLayout.CENTER);
-
- JPanel namedDestSubpane = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
- namedDestSubpane.setBorder(new EmptyBorder(0, 40, 0, 0));
- namedDestSubpane.add(new JLabel(messageBundle.getString("viewer.utilityPane.link.nameLabel")));
- namedDestSubpane.add(new JLabel("X"));
- namedDestSubpane.add(new JButton(messageBundle.getString("viewer.utilityPane.link.browse")));
-
- JPanel namedDestPane = new JPanel(new BorderLayout(5, 5));
- JRadioButton namedDestRadio =
- new JRadioButton(messageBundle.getString("viewer.utilityPane.link.useDestination"), false);
- namedDestPane.add(namedDestRadio, BorderLayout.NORTH);
- namedDestPane.add(namedDestSubpane, BorderLayout.CENTER);
-
- ButtonGroup actionButtonGroup = new ButtonGroup();
- actionButtonGroup.add(pageNumberRadio);
- actionButtonGroup.add(namedDestRadio);
-
- JPanel actionPane = new JPanel(new GridLayout(2, 1, 2, 2));
- actionPane.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
- messageBundle.getString("viewer.utilityPane.link.actionsTitle"),
- TitledBorder.LEFT,
- TitledBorder.DEFAULT_POSITION));
- actionPane.add(pageNumberPane);
- actionPane.add(namedDestPane);
-
- return actionPane;
- */
-        return null;
-    }
-
-    public void disablePanel() {
-        disableAppearanceInputComponents();
-    }
-
-    /**
-     * Method to update the page label text based on the current page count
-     *
-     * @return the new text to use
-     */
-    private String generatePageLabelText() {
-        if ((controller != null) &&
-                (controller.getDocument() != null)) {
-            return "of " + controller.getDocument().getNumberOfPages();
-        }
-
-        return "of ?";
     }
 
     /**
@@ -433,18 +319,6 @@ public class LinkAnnotationPanel extends JPanel implements ItemListener,
             safeEnable(lineStyleBox, true);
             safeEnable(colorButton, true);
         }
-    }
-
-
-    /**
-     * Disable all appearance panel input fields.
-     */
-    private void disableAppearanceInputComponents() {
-        safeEnable(linkTypeBox, false);
-        safeEnable(highlightStyleBox, false);
-        safeEnable(lineThicknessBox, false);
-        safeEnable(lineStyleBox, false);
-        safeEnable(colorButton, false);
     }
 
     /**

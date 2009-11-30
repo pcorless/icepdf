@@ -163,18 +163,21 @@ public class AnnotationState implements Memento {
         Annotation annotation = annotationComponent.getAnnotation();
         PageTree pageTree = document.getPageTree();
         Page page = pageTree.getPage(pageIndex,this);
+        // todo still some bug here, when undoing a delete
         if (!annotation.isDeleted()){
             page.updateAnnotation(annotation);
             // refresh bounds for any resizes
+            annotationComponent.refreshDirtyBounds();
             annotationComponent.refreshAnnotationRect();
         }else{
             // mark it as not deleted
             annotation.setDeleted(false);
             // re-add it to the page
             annotation = page.addAnnotation(annotation);
-            // finally update the pageComponent so we can se it again.
+            // finally update the pageComponent so we can see it again.
             annotationComponent.getParentPageView().addAnnotation(annotation);
             // refresh bounds for any resizes
+//            annotationComponent.refreshDirtyBounds();
             annotationComponent.refreshAnnotationRect();
         }
         pageTree.releasePage(page, this);
