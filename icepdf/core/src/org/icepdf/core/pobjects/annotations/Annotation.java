@@ -532,7 +532,7 @@ public class Annotation extends Dictionary {
 
         Hashtable h1 = library.getDictionary(entries, ACTION_KEY.getName());
         if (h1 != null) {
-            String actionType = ((Name) h1.get(Action.ACTION_TYPE)).getName();
+            String actionType = ((Name) h1.get(Action.ACTION_TYPE_KEY)).getName();
             if (actionType != null) {
 
                 if (actionType.equals(Action.ACTION_TYPE_GOTO)) {

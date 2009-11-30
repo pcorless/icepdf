@@ -651,17 +651,13 @@ public class FontManager {
         String name = FontUtil.normalizeString(fontName);
         int style;
 
-        if (logger.isLoggable(Level.FINER)) {
-            logger.finer("Finding known fot list for " + fontName);
-        }
-
         if (fontList != null) {
             for (int i = fontList.size() - 1; i >= 0; i--) {
                 fontData = fontList.get(i);
                 baseName = (String) fontData[0];
                 familyName = (String) fontData[1];
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer(baseName + " : " + familyName + "  : " + name);
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
                 if (name.indexOf(familyName) >= 0 ||
                         fontName.toLowerCase().indexOf(baseName) >= 0) {
@@ -700,7 +696,9 @@ public class FontManager {
 
                     if (found) {
                         if (logger.isLoggable(Level.FINER)) {
-                            logger.finer("----> Found " + baseName + " : " + getFontSytle(style, 0));
+                            logger.finer("----> Found font: " + baseName +
+                                    " family: " + getFontSytle(style, 0) +
+                                    " for: " + fontName);
                         }
                         font = buildFont((String) fontData[3]);
                         // make sure the font does indeed exist

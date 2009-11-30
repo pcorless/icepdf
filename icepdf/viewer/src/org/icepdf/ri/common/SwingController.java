@@ -36,7 +36,6 @@ import org.icepdf.core.Controller;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
@@ -49,9 +48,10 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.search.SearchPanel;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
-import org.icepdf.ri.common.annotation.LinkAnnotationPanel;
+import org.icepdf.ri.common.annotation.AnnotationPanel;
 import org.icepdf.ri.util.*;
 
 import javax.swing.*;
@@ -211,7 +211,7 @@ public class SwingController
     private JTree outlinesTree;
     private JScrollPane outlinesScrollPane;
     private SearchPanel searchPanel;
-    private LinkAnnotationPanel linkAnnotationPanel;
+    private AnnotationPanel annotationPanel;
     private JTabbedPane utilityTabbedPane;
 
     private JSplitPane utilityAndDocumentSplitPane;
@@ -851,8 +851,8 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setAnnotationLinkPanel(LinkAnnotationPanel lp) {
-        linkAnnotationPanel = lp;
+    public void setAnnotationPanel(AnnotationPanel lp) {
+        annotationPanel = lp;
     }
 
     /**
@@ -2894,7 +2894,7 @@ public class SwingController
                 utilityAndDocumentSplitPane.setDividerLocation(
                         utilityAndDocumentSplitPaneLastDividerLocation);
                 if (utilityAndDocumentSplitPane.getDividerLocation() < 5)
-                    utilityAndDocumentSplitPane.setDividerLocation(250);
+                    utilityAndDocumentSplitPane.setDividerLocation(260);
                 utilityAndDocumentSplitPane.setDividerSize(8);
             } else {
                 int divLoc = utilityAndDocumentSplitPane.getDividerLocation();
@@ -2937,25 +2937,21 @@ public class SwingController
      * @param selectedAnnotation the annotation to show in the panel
      * @see #setUtilityPaneVisible(boolean)
      */
-    public void showAnnotationLinkPanel(AnnotationComponentImpl selectedAnnotation) {
-        if (utilityTabbedPane != null && linkAnnotationPanel != null) {
+    public void showAnnotationPanel(AnnotationComponentImpl selectedAnnotation) {
+        if (utilityTabbedPane != null && annotationPanel != null) {
             // Pass the selected annotation to the link panel
-            linkAnnotationPanel.setAndApplyAnnotationToUI(selectedAnnotation);
-
+            annotationPanel.setAnnotationComponent(selectedAnnotation);
+            annotationPanel.setEnabled(true);
             // make sure the utility pane is visible
             if (!isUtilityPaneVisible()){
                 setUtilityPaneVisible(true);
             }
 
-            // select the linkAnnotationPanel tab
-            if (utilityTabbedPane.getSelectedComponent() != linkAnnotationPanel) {
-                utilityTabbedPane.setSelectedComponent(linkAnnotationPanel);
+            // select the annotationPanel tab
+            if (utilityTabbedPane.getSelectedComponent() != annotationPanel) {
+                utilityTabbedPane.setSelectedComponent(annotationPanel);
             }
 
-            // request focus
-//            if (!linkAnnotationPanel.hasFocus()) {
-//                linkAnnotationPanel.requestFocus();
-//            }
         }
     }
 
@@ -3782,16 +3778,13 @@ public class SwingController
                 AnnotationComponentImpl annotationComponent =
                         (AnnotationComponentImpl)newValue;
                 if (annotationComponent != null &&
-                    annotationComponent.getAnnotation() != null &&
-                        annotationComponent.getAnnotation() instanceof LinkAnnotation){
+                    annotationComponent.getAnnotation() != null ){
                     // set the annotationPane with the new annotation component
                     logger.info("selected annotation " + annotationComponent);
 
-                    showAnnotationLinkPanel(annotationComponent);
+                    showAnnotationPanel(annotationComponent);
                 }
-                else{
-                    System.out.println("annotation type "+ annotationComponent.getAnnotation());
-                }
+
             }
         }
         // annotation is deselected
@@ -3801,8 +3794,8 @@ public class SwingController
                 logger.info("deselected current annotation");
                 // disable the delete menu
                 setEnabled(deleteMenuItem, false);
-                if (linkAnnotationPanel != null) {
-                    linkAnnotationPanel.disablePanel();
+                if (annotationPanel != null) {
+                    annotationPanel.setEnabled(false);
                 }
             }
         }
@@ -3827,6 +3820,8 @@ public class SwingController
         // New link annotation was created with tool.
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_NEW_LINK)){
             // get reference to annotation callback? not sure yet as to correct behaviour
+            // todo remove and clean up documentation for new link property change, call
+            // back is used instead.
         }
     }
 }
