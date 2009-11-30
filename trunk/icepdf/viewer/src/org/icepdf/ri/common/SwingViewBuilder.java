@@ -34,7 +34,7 @@ package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
-import org.icepdf.ri.common.annotation.LinkAnnotationPanel;
+import org.icepdf.ri.common.annotation.AnnotationPanel;
 import org.icepdf.ri.images.Images;
 import org.icepdf.core.util.Defs;
 
@@ -1390,11 +1390,11 @@ public class SwingViewBuilder {
     public JTabbedPane buildUtilityTabbedPane() {
         JComponent outlinesComp = buildOutlineComponents();
         SearchPanel searchPanel = buildSearchPanel();
-        LinkAnnotationPanel linkAnnotationPanel = buildLinkPanel();
+        AnnotationPanel annotationPanel = buildAnnotationPanel();
         if (outlinesComp == null && searchPanel == null)
             return null;
         JTabbedPane utilityTabbedPane = new JTabbedPane();
-        utilityTabbedPane.setPreferredSize(new Dimension(200, 400));
+        utilityTabbedPane.setPreferredSize(new Dimension(250, 400));
         if (outlinesComp != null)
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.bookmarks.tab.title"),
@@ -1403,10 +1403,10 @@ public class SwingViewBuilder {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
                     searchPanel);
-        if (linkAnnotationPanel != null)
+        if (annotationPanel != null)
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.link.tab.title"),
-                    linkAnnotationPanel);
+                    annotationPanel);
         if (viewerController != null)
             viewerController.setUtilityTabbedPane(utilityTabbedPane);
         return utilityTabbedPane;
@@ -1427,11 +1427,11 @@ public class SwingViewBuilder {
         return searchPanel;
     }
 
-    public LinkAnnotationPanel buildLinkPanel() {
-        LinkAnnotationPanel linkAnnotationPanel = new LinkAnnotationPanel(viewerController);
+    public AnnotationPanel buildAnnotationPanel() {
+        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController);
         if (viewerController != null)
-            viewerController.setAnnotationLinkPanel(linkAnnotationPanel);
-        return linkAnnotationPanel;
+            viewerController.setAnnotationPanel(annotationPanel);
+        return annotationPanel;
     }
 
     public JPanel buildStatusPanel() {

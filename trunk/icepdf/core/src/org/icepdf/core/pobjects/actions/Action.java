@@ -33,6 +33,7 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.util.Hashtable;
@@ -53,7 +54,9 @@ import java.util.Hashtable;
  */
 public class Action extends Dictionary {
 
-    public static final String ACTION_TYPE = "S";
+    public static final Name ACTION_TYPE_KEY = new Name("S");
+
+    public static final Name NEXT_KEY = new Name("Next");
 
     public static final String ACTION_TYPE_GOTO = "GoTo";
 
@@ -78,7 +81,7 @@ public class Action extends Dictionary {
      */
     public Action(Library l, Hashtable h) {
         super(l, h);
-        type = library.getObject(entries, "S").toString();
+        type = getObject(ACTION_TYPE_KEY).toString();
     }
 
     /**
