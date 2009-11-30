@@ -48,7 +48,6 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
-import org.icepdf.ri.common.search.SearchPanel;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.common.annotation.AnnotationPanel;
@@ -3781,7 +3780,6 @@ public class SwingController
                     annotationComponent.getAnnotation() != null ){
                     // set the annotationPane with the new annotation component
                     logger.info("selected annotation " + annotationComponent);
-
                     showAnnotationPanel(annotationComponent);
                 }
 
