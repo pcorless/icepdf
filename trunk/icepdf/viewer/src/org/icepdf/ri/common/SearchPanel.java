@@ -344,8 +344,12 @@ public class SearchPanel extends JPanel implements ActionListener,
 
                                 if (currentChild.getChildCount() > 0) {
                                     // Get any subchildren and reinsert them as plain leafs on the root
+                                    // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent indexes
                                     for (int j = 0; j < currentChild.getChildCount(); j++) {
-                                        treeModel.insertNodeInto((DefaultMutableTreeNode)currentChild.getChildAt(j),
+                                        treeModel.insertNodeInto(
+                                                new DefaultMutableTreeNode(
+                                                        ((DefaultMutableTreeNode)currentChild.getChildAt(j)).getUserObject(),
+                                                        false),
                                                 rootTreeNode, rootTreeNode.getChildCount());
                                     }
                                 }
