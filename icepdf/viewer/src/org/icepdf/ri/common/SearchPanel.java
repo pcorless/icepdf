@@ -48,6 +48,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.ArrayList;
+import java.text.MessageFormat;
+import java.text.ChoiceFormat;
+import java.text.Format;
 
 /**
  * This class is the GUI component for the SearchTextTask.  This panel can be
@@ -120,6 +124,7 @@ public class SearchPanel extends JPanel implements ActionListener,
 
     // message bundle for internationalization
     ResourceBundle messageBundle;
+    MessageFormat searchResultMessageForm;
 
     /**
      * Create a new instance of SearchPanel.
@@ -131,6 +136,7 @@ public class SearchPanel extends JPanel implements ActionListener,
         setFocusable(true);
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
+        searchResultMessageForm = setupSearchResultMessageForm();
         setGui();
         setDocument(controller.getDocument());
     }
@@ -249,6 +255,114 @@ public class SearchPanel extends JPanel implements ActionListener,
                 "viewer.utilityPane.search.cumlitiveCheckbox.label"));
         showPagesCheckbox = new JCheckBox(messageBundle.getString(
                 "viewer.utilityPane.search.showPagesCheckbox.label"), true);
+        showPagesCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                if (event.getSource() != null) {
+                    // Determine if the user just selected or deselected the Show Pages checkbox
+                    // If selected we'll want to combine all the leaf results into page nodes containing a series of results
+                    // Otherwise we'll want to explode the parent/node page folders into basic leafs showing the results
+                    if (((JCheckBox)event.getSource()).isSelected()) {
+                        if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
+                            DefaultMutableTreeNode currentChild; // the current node we're handling
+                            DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to 
+                            int newPageNumber; // page number of the current result node
+                            int storedPageNumber = -1; // the page number of the node we're adding to                                  
+                            int storedResultCount = 0; // the count of results that are on the storedPageNumber
+                            Object[] messageArguments; // arguments used for formatting the labels
+
+                            // Loop through the results tree
+                            for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
+                                currentChild = (DefaultMutableTreeNode)rootTreeNode.getChildAt(i);
+
+                                // Ensure we have a FindEntry object
+                                if (currentChild.getUserObject() instanceof FindEntry) {
+                                    newPageNumber = ((FindEntry)currentChild.getUserObject()).getPageNumber();
+
+                                    // Check if the page number for the current node matches the stored number
+                                    // If it does we will want to add the node to the existing page node,
+                                    //  otherwise we'll want to create a new page node and start adding to that
+                                    if (storedPageNumber == newPageNumber) {
+                                        storedResultCount++;
+
+                                        if (storedChildParent != null) {
+                                            // Remove the old parentless child from the tree
+                                            treeModel.removeNodeFromParent(currentChild);
+
+                                            // Add the child back to the new page node
+                                            storedChildParent.add(currentChild);
+                                            currentChild.setParent(storedChildParent);
+
+                                            // Reduce the loop count by one since we moved a node from the root to a page node
+                                            i--;
+                                        }
+                                    }
+                                    else {
+                                        // Update the label of the page node, so that the result count is correct
+                                        if (storedChildParent != null) {
+                                            messageArguments = new Object[] {
+                                                    String.valueOf(storedPageNumber+1),
+                                                    storedResultCount, storedResultCount};
+                                            storedChildParent.setUserObject(
+                                                    new FindEntry(searchResultMessageForm.format(messageArguments),
+                                                                  storedPageNumber));
+                                        }
+                                        
+                                        // Reset the stored variables
+                                        storedPageNumber = newPageNumber;
+                                        storedResultCount = 1;
+
+                                        treeModel.removeNodeFromParent(currentChild);
+
+                                        // Create a new page node and move the current leaf to it
+                                        messageArguments = new Object[] {
+                                                String.valueOf(storedPageNumber+1),
+                                                storedResultCount, storedResultCount};
+                                        storedChildParent = new DefaultMutableTreeNode(
+                                                        new FindEntry(searchResultMessageForm.format(messageArguments),
+                                                                      storedPageNumber),
+                                                        true);
+                                        storedChildParent.add(currentChild);
+                                        currentChild.setParent(storedChildParent);
+
+                                        // Put the new page node into the overall tree
+                                        treeModel.insertNodeInto(storedChildParent, rootTreeNode, i);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
+                            DefaultMutableTreeNode currentChild;
+                            List<DefaultMutableTreeNode> toAdd = new ArrayList<DefaultMutableTreeNode>();
+                            int rootChildCount = rootTreeNode.getChildCount();
+
+                            // Loop through all children page nodes and grab the children
+                            // Then we'll remove the parent nodes in preparation for readding the children nodes
+                            //  as plain leafs of the tree
+                            for (int i = 0; i < rootChildCount; i++) {
+                                currentChild = (DefaultMutableTreeNode)rootTreeNode.getChildAt(0);
+
+                                if (currentChild.getChildCount() > 0) {
+                                    // Store all the children of the page node
+                                    for (int j = 0; j < currentChild.getChildCount(); j++) {
+                                        toAdd.add((DefaultMutableTreeNode)currentChild.getChildAt(j));
+                                    }
+                                }
+                                treeModel.removeNodeFromParent(currentChild);
+                            }
+
+                            // Now add the children back into the tree, this time without parent nodes
+                            for (DefaultMutableTreeNode addChild : toAdd) {
+                                rootTreeNode.add(addChild);
+                            }
+                            // Force a reload since the root node was emptied and repopulated
+                            treeModel.reload();
+                        }
+                    }
+                }
+            }
+        });
 
         /**
          * Build search GUI
@@ -583,6 +697,90 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.gridheight = colSpan;
         panel.add(component, constraints);
     }
+
+    /**
+     * Uitility for createing the searchable dialog message format.
+     *
+     * @return  reuseable message format.
+     */
+    public MessageFormat setupSearchResultMessageForm() {
+        MessageFormat messageForm =
+                new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.search.result.msg"));
+        double[] pageLimits = {0, 1, 2};
+        String[] resultsStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.result.moreFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.result.oneFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.result.moreFile.msg")
+        };
+        ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
+                resultsStrings);
+
+        Format[] formats = {null, resultsChoiceForm};
+        messageForm.setFormats(formats);
+        return messageForm;
+    }
+
+    /**
+     * Uitility for createing the searching message format.
+     *
+     * @return  reuseable message format.
+     */
+    public MessageFormat setupSearchingMessageForm() {
+        // Build Internationalized plural phrase.
+        MessageFormat messageForm =
+                new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.msg"));
+        double[] fileLimits = {0, 1, 2};
+        String[] fileStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.moreFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.oneFile.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.searching1.moreFile.msg"),
+        };
+        ChoiceFormat choiceForm = new ChoiceFormat(fileLimits,
+                fileStrings);
+        Format[] formats = {null, choiceForm, null};
+        messageForm.setFormats(formats);
+
+        return messageForm;
+    }
+
+    public MessageFormat setupSearchCompletionMessageForm() {
+        MessageFormat messageForm =
+                new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.search.progress.msg"));
+        double[] pageLimits = {0, 1, 2};
+        String[] pageStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.morePage.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.onePage.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.morePage.msg"),
+        };
+        ChoiceFormat pageChoiceForm = new ChoiceFormat(pageLimits,
+                pageStrings);
+        String[] resultsStrings = {
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.moreMatch.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.oneMatch.msg"),
+                messageBundle.getString(
+                        "viewer.utilityPane.search.progress.moreMatch.msg"),
+        };
+        ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
+                resultsStrings);
+
+        Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
+        messageForm.setFormats(formats);
+        return messageForm;
+    }    
 
     /**
      * The actionPerformed method in this class
