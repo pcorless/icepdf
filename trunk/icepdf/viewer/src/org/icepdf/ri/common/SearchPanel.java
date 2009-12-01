@@ -333,31 +333,24 @@ public class SearchPanel extends JPanel implements ActionListener,
                     }
                     else {
                         if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
+                            // Now add the children back into the tree, this time without parent nodes
                             DefaultMutableTreeNode currentChild;
-                            List<DefaultMutableTreeNode> toAdd = new ArrayList<DefaultMutableTreeNode>();
                             int rootChildCount = rootTreeNode.getChildCount();
 
-                            // Loop through all children page nodes and grab the children
-                            // Then we'll remove the parent nodes in preparation for readding the children nodes
-                            //  as plain leafs of the tree
+                            // Loop through all children page nodes and explode the children out into leafs under the root node
+                            // Then we'll remove the parent nodes so we're just left with leafs under the root
                             for (int i = 0; i < rootChildCount; i++) {
                                 currentChild = (DefaultMutableTreeNode)rootTreeNode.getChildAt(0);
 
                                 if (currentChild.getChildCount() > 0) {
-                                    // Store all the children of the page node
+                                    // Get any subchildren and reinsert them as plain leafs on the root
                                     for (int j = 0; j < currentChild.getChildCount(); j++) {
-                                        toAdd.add((DefaultMutableTreeNode)currentChild.getChildAt(j));
+                                        treeModel.insertNodeInto((DefaultMutableTreeNode)currentChild.getChildAt(j),
+                                                rootTreeNode, rootTreeNode.getChildCount());
                                     }
                                 }
                                 treeModel.removeNodeFromParent(currentChild);
                             }
-
-                            // Now add the children back into the tree, this time without parent nodes
-                            for (DefaultMutableTreeNode addChild : toAdd) {
-                                rootTreeNode.add(addChild);
-                            }
-                            // Force a reload since the root node was emptied and repopulated
-                            treeModel.reload();
                         }
                     }
                 }
