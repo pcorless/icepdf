@@ -43,8 +43,6 @@ import java.util.List;
 
 import javax.swing.*;
 import java.awt.*;
-import java.text.ChoiceFormat;
-import java.text.Format;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -132,9 +130,11 @@ public class SearchTextTask {
         this.r2L = r2L;
 
         // setup searching format format.
-        searchingMessageForm = setupSearchingMessageForm();
-        searchResultMessageForm = setupSearchResultMessageForm();
-        searchCompletionMessageForm = setupSearchCompletionMessageForm();
+        if (searchPanel != null) {
+            searchingMessageForm = searchPanel.setupSearchingMessageForm();
+            searchResultMessageForm = searchPanel.setupSearchResultMessageForm();
+            searchCompletionMessageForm = searchPanel.setupSearchCompletionMessageForm();
+        }
     }
 
     /**
@@ -316,89 +316,5 @@ public class SearchTextTask {
                 (current + 1), totalHitCount};
 
         dialogMessage = searchCompletionMessageForm.format(messageArguments);
-    }
-
-    /**
-     * Uitility for createing the searchable dialog message format.
-     * 
-     * @return  reuseable message format.
-     */
-    private MessageFormat setupSearchResultMessageForm() {
-        MessageFormat messageForm =
-                new MessageFormat(messageBundle.getString(
-                        "viewer.utilityPane.search.result.msg"));
-        double[] pageLimits = {0, 1, 2};
-        String[] resultsStrings = {
-                messageBundle.getString(
-                        "viewer.utilityPane.search.result.moreFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.result.oneFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.result.moreFile.msg")
-        };
-        ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
-                resultsStrings);
-
-        Format[] formats = {null, resultsChoiceForm};
-        messageForm.setFormats(formats);
-        return messageForm;
-    }
-
-    /**
-     * Uitility for createing the searching message format.
-     *
-     * @return  reuseable message format.
-     */
-    private MessageFormat setupSearchingMessageForm() {
-        // Build Internationalized plural phrase.
-        MessageFormat messageForm =
-                new MessageFormat(messageBundle.getString(
-                        "viewer.utilityPane.search.searching1.msg"));
-        double[] fileLimits = {0, 1, 2};
-        String[] fileStrings = {
-                messageBundle.getString(
-                        "viewer.utilityPane.search.searching1.moreFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.searching1.oneFile.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.searching1.moreFile.msg"),
-        };
-        ChoiceFormat choiceForm = new ChoiceFormat(fileLimits,
-                fileStrings);
-        Format[] formats = {null, choiceForm, null};
-        messageForm.setFormats(formats);
-
-        return messageForm;
-    }
-
-    private MessageFormat setupSearchCompletionMessageForm() {
-        MessageFormat messageForm =
-                new MessageFormat(messageBundle.getString(
-                        "viewer.utilityPane.search.progress.msg"));
-        double[] pageLimits = {0, 1, 2};
-        String[] pageStrings = {
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.morePage.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.onePage.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.morePage.msg"),
-        };
-        ChoiceFormat pageChoiceForm = new ChoiceFormat(pageLimits,
-                pageStrings);
-        String[] resultsStrings = {
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.moreMatch.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.oneMatch.msg"),
-                messageBundle.getString(
-                        "viewer.utilityPane.search.progress.moreMatch.msg"),
-        };
-        ChoiceFormat resultsChoiceForm = new ChoiceFormat(pageLimits,
-                resultsStrings);
-
-        Format[] formats = {null, pageChoiceForm, resultsChoiceForm};
-        messageForm.setFormats(formats);
-        return messageForm;
     }
 }
