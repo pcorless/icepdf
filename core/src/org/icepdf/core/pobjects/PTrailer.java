@@ -246,7 +246,7 @@ public class PTrailer extends Dictionary {
         Enumeration currKeys = currDictionary.keys();
         while (currKeys.hasMoreElements()) {
             Object currKey = currKeys.nextElement();
-            if (!nextDictionary.contains(currKey)) {
+            if (!nextDictionary.containsKey(currKey)) {
                 Object currValue = currDictionary.get(currKey);
                 nextDictionary.put(currKey, currValue);
             }
@@ -263,7 +263,7 @@ public class PTrailer extends Dictionary {
         Enumeration prevKeys = prevDictionary.keys();
         while (prevKeys.hasMoreElements()) {
             Object prevKey = prevKeys.nextElement();
-            if (!currDictionary.contains(prevKey)) {
+            if (!currDictionary.containsKey(prevKey)) {
                 Object prevValue = prevDictionary.get(prevKey);
                 currDictionary.put(prevKey, prevValue);
             }
