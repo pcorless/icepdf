@@ -33,6 +33,7 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.util.Hashtable;
@@ -47,8 +48,9 @@ import java.util.Hashtable;
  */
 public class GoToAction extends Action {
 
-    // inherited from the Action class, Destination to jump to, name, sting
-    // or array.
+    public static final Name DESTINATION_KEY = new Name("D");
+
+    // Destination to jump to, name, sting or array.
     private Destination destination;
 
     /**
@@ -60,7 +62,7 @@ public class GoToAction extends Action {
     public GoToAction(Library l, Hashtable h) {
         super(l, h);
         // get the Destination for this action
-        destination = new Destination(library, library.getObject(entries, "D"));
+        destination = new Destination(library, getObject(DESTINATION_KEY));
     }
 
     /**

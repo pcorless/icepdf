@@ -54,18 +54,19 @@ import java.util.Hashtable;
  */
 public class Action extends Dictionary {
 
+    public static final Name ACTION_TYPE = new Name("Action");
+
     public static final Name ACTION_TYPE_KEY = new Name("S");
 
     public static final Name NEXT_KEY = new Name("Next");
 
-    public static final String ACTION_TYPE_GOTO = "GoTo";
+    public static final Name ACTION_TYPE_GOTO = new Name("GoTo");
 
-    public static final String ACTION_TYPE_GOTO_REMOTE = "GoToR";
+    public static final Name ACTION_TYPE_GOTO_REMOTE =  new Name("GoToR");
 
-    public static final String ACTION_TYPE_LAUNCH = "Launch";
+    public static final Name ACTION_TYPE_LAUNCH =  new Name("Launch");
 
-    public static final String ACTION_TYPE_URI = "URI";
-
+    public static final Name ACTION_TYPE_URI =  new Name("URI");
 
     // type of annotation
     private String type;
@@ -84,6 +85,22 @@ public class Action extends Dictionary {
         type = getObject(ACTION_TYPE_KEY).toString();
     }
 
+     public static Action buildAction(Library library, Hashtable hashTable) {
+        Name actionType = (Name) hashTable.get(Action.ACTION_TYPE_KEY);
+        if (actionType != null) {
+            if (actionType.equals(Action.ACTION_TYPE_GOTO)) {
+                return new GoToAction(library, hashTable);
+            } else if (actionType.equals(Action.ACTION_TYPE_GOTO_REMOTE)) {
+                return new GoToRAction(library, hashTable);
+            } else if (actionType.equals(Action.ACTION_TYPE_LAUNCH)) {
+                return new LaunchAction(library, hashTable);
+            } else if (actionType.equals(Action.ACTION_TYPE_URI)) {
+                return new URIAction(library, hashTable);
+            }
+        }
+        return new Action(library, hashTable);
+    }
+
     /**
      * <p>Gets the type of action that this dictionary describes.  The most
      * common actions can be found in the PDF Reference 1.6 in section
@@ -96,4 +113,14 @@ public class Action extends Dictionary {
         return type;
     }
 
+    public boolean similar(Action obj){
+        // check if object references can be compared
+        if (this.getPObjectReference() != null &&
+                obj.getPObjectReference() != null){
+            return getPObjectReference().equals(obj.getPObjectReference());
+        }else{
+            // compare type
+            return getType().equals(obj.getType());
+        }
+    }
 }

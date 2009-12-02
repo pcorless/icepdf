@@ -187,6 +187,25 @@ public class Library {
     }
 
     /**
+     * Gets the reference association of the key if any.  This method is usual
+     * used in combination with #isReference to get and assign the Reference
+     * for a given PObject.
+     * @param dictionaryEntries dictionary to search in.
+     * @param key key to search for in dictionary.
+     * @return reference of the object that key points if any.  Null if the key
+     * points to an inline dictionary and not a reference. 
+     */
+    public Reference getReference(Hashtable dictionaryEntries, String key) {
+        Object ref = dictionaryEntries.get(key);
+        if (ref instanceof Reference){
+            return (Reference)ref;
+        }
+        else{
+            return null;
+        }
+    }
+
+    /**
      * Gets the state manager class which keeps track of changes PDF objects.
      *
      * @return  document state manager

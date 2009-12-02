@@ -33,6 +33,8 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.util.Library;
 
 import java.util.Hashtable;
@@ -50,6 +52,8 @@ import java.util.Hashtable;
  */
 public class URIAction extends Action {
 
+    public static final Name URI_KEY = new Name("URI");
+
     // uniform resource identifier to be resolved.
     private String URI;
 
@@ -66,13 +70,23 @@ public class URIAction extends Action {
         super(l, h);
         // URI should alwasy be text, but there have been examples of
         // Hex encoded uri values.
-        Object actionURI = library.getObject(entries, "URI");
+        Object actionURI = getObject(URI_KEY);
         if (actionURI instanceof StringObject) {
             StringObject tmp = (StringObject) actionURI;
             URI = tmp.getDecryptedLiteralString(library.securityManager);
         }
     }
 
+    /**
+     * Sets the URI string associated witht this action.
+     * 
+     * @param URI an string value except null.
+     */
+    public void setURI(String URI) {
+        // StringObject detection should allow writer to pick on encryption.
+        entries.put(URIAction.URI_KEY, new LiteralStringObject(URI));
+        this.URI = URI;
+    }
 
     /**
      * Gets the Uniform resource identifier to resolve, encoded in 7-bit ASCII.
