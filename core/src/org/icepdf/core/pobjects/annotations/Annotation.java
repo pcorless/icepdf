@@ -42,6 +42,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 /**
  * <p>An <code>Annotation</code> class associates an object such as a note, sound, or movie with
@@ -339,6 +340,9 @@ import java.util.Vector;
 
 public class Annotation extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(Annotation.class.toString());
+
     /**
      * Dictionary constants for Annotations.
      */
@@ -529,26 +533,154 @@ public class Annotation extends Dictionary {
      * @return action to be activated, if no action, null is returned.
      */
     public org.icepdf.core.pobjects.actions.Action getAction() {
-
         Hashtable h1 = library.getDictionary(entries, ACTION_KEY.getName());
         if (h1 != null) {
-            String actionType = ((Name) h1.get(Action.ACTION_TYPE_KEY)).getName();
-            if (actionType != null) {
-
-                if (actionType.equals(Action.ACTION_TYPE_GOTO)) {
-                    return new GoToAction(library, h1);
-                } else if (actionType.equals(Action.ACTION_TYPE_GOTO_REMOTE)) {
-                    return new GoToRAction(library, h1);
-                } else if (actionType.equals(Action.ACTION_TYPE_LAUNCH)) {
-                    return new LaunchAction(library, h1);
-                } else if (actionType.equals(Action.ACTION_TYPE_URI)) {
-                    return new URIAction(library, h1);
-                } else {
-                    return new Action(library, h1);
-                }
+            Action action = Action.buildAction(library,h1);
+            // assign reference if applicable
+            if (action != null  &&
+                    library.isReference(entries, ACTION_KEY.getName())){
+                action.setPObjectReference(
+                        library.getReference(entries, ACTION_KEY.getName()));
             }
+            return action;
         }
         return null;
+    }
+
+    /**
+     * Adds the specified action to this annotation isnstance.  If the annotation
+     * instance already has an action then this action replaces it.
+     * <p/>
+     * todo: future enhancment add support of next/muliple action chains.
+     *
+     * @param action action to add to this annotation.  This action must
+     *               be created using the the ActionFactory in order to correctly setup
+     *               the Pobject reference.
+     * @return action that was added to Annotation, null if it was not success
+     *         fully added.
+     */
+    public Action addAction(Action action) {
+
+        // if no object ref we bail early.
+        if (action.getPObjectReference() == null) {
+            logger.severe("Addition of action was rejected null Object reference "
+                    + action);
+            return null;
+        }
+
+        // gen instance of state manager
+        StateManager stateManager = library.getStateManager();
+
+        // check if there is a 'dest' entry, if so we need to add this as a new
+        // action, flag it for later processing.
+        boolean isDestKey = getObject(LinkAnnotation.DESTINATION_KEY) != null;
+
+        // check the annotation dictionary for an instance of an existing action
+        if (getObject(ACTION_KEY) != null) {
+            // if found we will add the new action at the beginning of the
+            // next chain.
+            boolean isReference = library.isReference(getEntries(),
+                    ACTION_KEY.toString());
+            // we have a next action that is an object, mark it for delete.
+            // Because its a reference no need to flag the annotation as changed.
+            if (isReference) {
+                // mark this action for delete.
+                Action oldAction = (Action) action.getObject(ACTION_KEY);
+                oldAction.setDeleted(true);
+                stateManager.addChange(new PObject(oldAction,
+                        oldAction.getPObjectReference()));
+            }
+            // not a reference, we have an inline dictionary and we'll be
+            // clearing it later, so we only need to add this annotation
+            // to the state mnager.
+            else {
+                getEntries().remove(ACTION_KEY);
+                stateManager.addChange(new PObject(this, getPObjectReference()));
+            }
+        }
+        // add the new action as per usual
+        getEntries().put(ACTION_KEY, action.getPObjectReference());
+        stateManager.addChange(new PObject(this, getPObjectReference()));
+
+        // if this is a link annotation and there is a dest, we need to remove
+        // as it is not allowed once an action has bee added.
+        if (isDestKey && this instanceof LinkAnnotation) {
+            // remove the dest key from the dictionary
+            this.getEntries().remove(LinkAnnotation.DESTINATION_KEY);
+            // mark the annotation as changed.
+            stateManager.addChange(new PObject(this, getPObjectReference()));
+        }
+
+        // add the new action to the state manager.
+        action.setNew(true);
+        stateManager.addChange(new PObject(action.getEntries(),
+                action.getPObjectReference()));
+        // add it to the library so we can get it again. 
+        library.addObject(action.getEntries(), action.getPObjectReference());
+
+        return action;
+    }
+
+    /**
+     * Deletes the annotation action specified as a paramater.  If an instance
+     * of the specified action can not be found, no delete is make.
+     *
+     * @param action action to remove
+     * @return true if the delete was successful, false otherwise.
+     */
+    public boolean deleteAction(Action action) {
+
+        // gen instance of state manager
+        StateManager stateManager = library.getStateManager();
+
+        if (getObject(ACTION_KEY) != null) {
+            // mark this action for delete.
+            Action currentAction = getAction();
+            if (currentAction.similar(action)) {
+                // clear the action key for the annotation and add it as changed.
+                // add the new action to the annotation
+                getEntries().remove(ACTION_KEY);
+                currentAction.setDeleted(true);
+                // mark the action as changed.
+                stateManager.addChange(new PObject(currentAction,
+                        currentAction.getPObjectReference()));
+                // mark the action as change.d 
+                stateManager.addChange(new PObject(this, getPObjectReference()));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Update the current annotation action with this entry.  This is very similar
+     * to add but this method will return false if there was no previous annotation.
+     * In such a case a call to addAction should be made.
+     *
+     * @param action action to update
+     * @return true if the update was successful, othere; false.
+     */
+    public boolean updateAction(Action action) {
+        // gen instance of state manager
+        StateManager stateManager = library.getStateManager();
+        if (getObject(ACTION_KEY) != null) {
+            Action currentAction = getAction();
+            // check if we are updating an existing instance
+            if (!currentAction.similar(action)){
+                stateManager.addChange(new PObject(action,
+                        action.getPObjectReference()));
+                currentAction.setDeleted(true);
+                stateManager.addChange(new PObject(currentAction,
+                        currentAction.getPObjectReference()));
+            }
+            // add the action to the annotation
+            getEntries().put(ACTION_KEY, action.getPObjectReference());
+            stateManager.addChange(new PObject(action,
+                        action.getPObjectReference()));
+
+            return true;
+        }
+        return false;
     }
 
     public boolean allowScreenNormalMode() {
@@ -583,7 +715,7 @@ public class Annotation extends Dictionary {
 
     public void setBorderStyle(BorderStyle borderStyle) {
         this.borderStyle = borderStyle;
-        entries.put(Annotation.BORDER_STYLE_KEY,this.borderStyle);
+        entries.put(Annotation.BORDER_STYLE_KEY, this.borderStyle);
     }
 
     public BorderStyle getBorderStyle() {
@@ -649,7 +781,7 @@ public class Annotation extends Dictionary {
      * is returned.  Otherwise the bordStyle and border dictionaries are used
      * to deduse a line style.
      *
-     * @return  BorderSTyle line constants. 
+     * @return BorderSTyle line constants.
      */
     public String getLineStyle() {
         // check for border style
@@ -660,8 +792,8 @@ public class Annotation extends Dictionary {
         else if (border != null) {
             if (border.size() > 3) {
                 return BorderStyle.BORDER_STYLE_DASHED;
-            }else if (border.get(2).floatValue() > 1){
-                return BorderStyle.BORDER_STYLE_SOLID;    
+            } else if (border.get(2).floatValue() > 1) {
+                return BorderStyle.BORDER_STYLE_SOLID;
             }
         }
         // default value
@@ -671,9 +803,9 @@ public class Annotation extends Dictionary {
     /**
      * Gets the line thickness assoicated with this annotation.
      *
-     * @return point value used when drawing line thickness. 
+     * @return point value used when drawing line thickness.
      */
-    public float getLineThickness(){
+    public float getLineThickness() {
         // check for border style
         if (borderStyle != null) {
             return borderStyle.getStrokeWidth();
@@ -1034,11 +1166,11 @@ public class Annotation extends Dictionary {
     /**
      * Gest the RGB colour of the annotation used for the following purposes:
      * <ul>
-     *  <li>the background of the annotaiton's icon when closed</li>
-     *  <li>the title bar of the anntoation's pop-up window</li>
-     *  <li>the border of a link annotation</li>
+     * <li>the background of the annotaiton's icon when closed</li>
+     * <li>the title bar of the anntoation's pop-up window</li>
+     * <li>the border of a link annotation</li>
      * </ul>
-     * 
+     *
      * @return A Color for the border, or null if none is to be used
      */
     public Color getColor() {
