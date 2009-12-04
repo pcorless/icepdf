@@ -1,8 +1,43 @@
+/*
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * "The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations under
+ * the License.
+ *
+ * The Original Code is ICEpdf 3.0 open source software code, released
+ * May 1st, 2009. The Initial Developer of the Original Code is ICEsoft
+ * Technologies Canada, Corp. Portions created by ICEsoft are Copyright (C)
+ * 2004-2009 ICEsoft Technologies Canada, Corp. All Rights Reserved.
+ *
+ * Contributor(s): _____________________.
+ *
+ * Alternatively, the contents of this file may be used under the terms of
+ * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"
+ * License), in which case the provisions of the LGPL License are
+ * applicable instead of those above. If you wish to allow use of your
+ * version of this file only under the terms of the LGPL License and not to
+ * allow others to use your version of this file under the MPL, indicate
+ * your decision by deleting the provisions above and replace them with
+ * the notice and other provisions required by the LGPL License. If you do
+ * not delete the provisions above, a recipient may use your version of
+ * this file under either the MPL or the LGPL License."
+ *
+ */
 package org.icepdf.ri.common.annotation;
 
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.SwingController;
@@ -51,6 +86,9 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private String uriActionLabel;
     private String goToActionLabel;
 
+    // Goto action dialog
+    private GoToActionDialog goToActionDialog;
+
     public ActionsPanel(SwingController controller) {
         super(new GridLayout(2, 1, 5, 5), true);
         this.controller = controller;
@@ -83,14 +121,15 @@ public class ActionsPanel extends AnnotationPanelAdapter
         currentAnnotaiton = annotaiton;
 
         // remove previous old annotations
-        actionListModel.removeAllElements();
+        actionListModel.clear();
 
         // get annotations from action
         if (annotaiton.getAnnotation() != null &&
                 annotaiton.getAnnotation().getAction() != null) {
-            addAnnotationToList(annotaiton.getAnnotation().getAction());
+            addActionToList(annotaiton.getAnnotation().getAction());
         }
-        // check to see if the link annotation "dest" key is present.
+        // check to see if the link annotation "dest" key is present. as
+        // we'll edit this field with the goToAction dialog
         else if (annotaiton.getAnnotation() != null &&
                 annotaiton.getAnnotation() instanceof LinkAnnotation) {
             LinkAnnotation linkAnnotaiton = (LinkAnnotation)
@@ -183,14 +222,16 @@ public class ActionsPanel extends AnnotationPanelAdapter
         // create and show a new GOTO action
         if (actionType != null &&
                 actionType.getActionType() == ActionFactory.GOTO_ACTION) {
-
-        } // create and show a new URI action
+            // create new instance of dialog if it hasn't been created.
+            showGoToActionDialog(true);
+        }
+        // create and show a new URI action
         else if (actionType != null &&
                 actionType.getActionType() == ActionFactory.URI_ACTION) {
             // show URI dialog
             String uriString = showURIActionDialog(null);
-            // finally do all the lifting for adding a new action for the curren
-            // action
+            // finally do all the lifting for adding a new action for the
+            // current action
             if (uriString != null && currentAnnotaiton != null) {
                 // create a new instance of the action type
                 org.icepdf.core.pobjects.actions.URIAction uriAction = (URIAction)
@@ -230,7 +271,11 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 currentAnnotaiton.getAnnotation().updateAction(uriAction);
             }
         }
-        // todo add checks for goto action and dest attributes.
+        // show goto dialog for goToAction or link annotation dest
+        else if (action instanceof GoToAction || action == null){
+            // goToAction dialog handles the save action processing
+            showGoToActionDialog(false);
+        }
     }
 
     /**
@@ -250,18 +295,47 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 actionList.setSelectedIndex(-1);
             }
         }
-        // todo remove dest entry.
+        // we must have a destination and will try and delete it.
+        else if (currentAnnotaiton.getAnnotation() instanceof LinkAnnotation) {
+            LinkAnnotation linkAnnotation = (LinkAnnotation)
+                    currentAnnotaiton.getAnnotation();
+            // remove the dest key and save the action, currently we don't
+            // use the annotationState object to reflect his change.
+            linkAnnotation.getEntries().remove(LinkAnnotation.DESTINATION_KEY);
+            updateCurrentAnnotation(linkAnnotation);
+            // update the list
+            actionListModel.removeElementAt(actionList.getSelectedIndex());
+            actionList.setSelectedIndex(-1);
+        }
     }
 
+    /**
+     * Utility to show the URIAction dialog for add and edits.
+     *
+     * @param oldURIValue default value to show in dialog text field.
+     * @return new values typed by user.
+     */
     private String showURIActionDialog(String oldURIValue) {
         return (String) JOptionPane.showInputDialog(
                 controller.getViewerFrame(),
                 messageBundle.getString(
-                                "viewer.utilityPane.action.dialog.uri.msgs"),
+                        "viewer.utilityPane.action.dialog.uri.msgs"),
                 messageBundle.getString(
-                                "viewer.utilityPane.action.dialog.uri.title"),
+                        "viewer.utilityPane.action.dialog.uri.title"),
                 JOptionPane.PLAIN_MESSAGE, null, null,
                 oldURIValue);
+    }
+
+    private void showGoToActionDialog(boolean isNew){
+        // create new instance of dialog if it hasn't been created.
+        if (goToActionDialog != null){
+            goToActionDialog.dispose();
+        }
+        goToActionDialog = new GoToActionDialog(controller,this);
+        // set the new annotation
+        goToActionDialog.setAnnotationComponent(currentAnnotaiton);
+        // make it visible.
+        goToActionDialog.setVisible(true);
     }
 
     /**
@@ -332,13 +406,40 @@ public class ActionsPanel extends AnnotationPanelAdapter
         revalidate();
     }
 
-    private void addAnnotationToList(org.icepdf.core.pobjects.actions.Action action) {
+    /**
+     * Clear the action list of all action items.
+     */
+    public void clearActionList(){
+        actionListModel.clear();
+    }
+
+    /**
+     * Add an action to the list.
+     * @param action action object to add.
+     */
+    public void addActionToList(org.icepdf.core.pobjects.actions.Action action) {
         if (action instanceof GoToAction) {
             actionListModel.addElement(new ActionEntry(goToActionLabel, action));
         } else if (action instanceof URIAction) {
             actionListModel.addElement(new ActionEntry(uriActionLabel, action));
         }
         // todo check for an next entry
+    }
+
+    /**
+     * Utility to udpate the action annotation when changes have been made to
+     * 'Dest' which has the same notation as 'GoTo'.  It's the pre action way
+     * of doign things and is still very common of link Annotations. .
+     *
+     * @param annotation annotation to update/sync with parent page object.
+     */
+    private void updateCurrentAnnotation(Annotation annotation) {
+        int pageIndex = currentAnnotaiton.getPageIndex();
+        PageTree pageTree = currentAnnotaiton.getDocument().getPageTree();
+        Page page = pageTree.getPage(pageIndex, this);
+        // update the altered annotation.
+        page.updateAnnotation(annotation);
+        pageTree.releasePage(page, this);
     }
 
     /**

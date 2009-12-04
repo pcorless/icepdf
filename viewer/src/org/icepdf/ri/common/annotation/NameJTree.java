@@ -32,19 +32,33 @@
  */
 package org.icepdf.ri.common.annotation;
 
+import org.icepdf.ri.images.Images;
+
 import javax.swing.*;
-import java.awt.*;
+import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.DefaultTreeCellRenderer;
 
 /**
- * All annotation and action property panels have a common method for
- * assigning the current annotation component.
+ * Name tree component to represent a PDF documents name tree data structure.
  *
  * @since 4.0
  */
-public abstract class AnnotationPanelAdapter extends JPanel
-        implements AnnotationProperties{
+public class NameJTree extends JTree {
+    public NameJTree() {
+        getSelectionModel().setSelectionMode(
+                TreeSelectionModel.SINGLE_TREE_SELECTION);
+        // change the look & feel of the jtree
+        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+        renderer.setOpenIcon(new ImageIcon(Images.get("page.gif")));
+        renderer.setClosedIcon(new ImageIcon(Images.get("page.gif")));
+        renderer.setLeafIcon(new ImageIcon(Images.get("page.gif")));
+        setCellRenderer(renderer);
 
-    protected AnnotationPanelAdapter(LayoutManager layout, boolean isDoubleBuffered) {
-        super(layout, isDoubleBuffered);
+        setModel(null);
+        setRootVisible(true);
+        setScrollsOnExpand(true);
+        // old font was Arial with is no go for linux.
+        setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
+        setRowHeight(18);
     }
 }

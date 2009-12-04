@@ -124,7 +124,7 @@ public class PageTree extends Dictionary {
          */
         if (resources != null) {
             boolean disposeSuccess = resources.dispose(cache, this);
-            if (disposeSuccess){
+            if (disposeSuccess) {
                 loadedResources = false;
             }
         }
@@ -194,7 +194,7 @@ public class PageTree extends Dictionary {
     /**
      * Gets the Resources defined by this PageTree.  The Resources entry can
      * be inherited by the child Page objects.
-     *
+     * <p/>
      * The caller is responsible for disposing of the returned Resources object.
      *
      * @return Resources associates with the PageTree
@@ -277,7 +277,7 @@ public class PageTree extends Dictionary {
      * @param index index in the kids vector to initialize
      * @return
      */
-    private  Object getPageOrPagesPotentiallyNotInitedFromReferenceAt(int index) {
+    private Object getPageOrPagesPotentiallyNotInitedFromReferenceAt(int index) {
         Object pageOrPages = kidsPageAndPages.get(index);
         if (pageOrPages == null) {
             Reference ref = (Reference) kidsReferences.get(index);
@@ -360,6 +360,22 @@ public class PageTree extends Dictionary {
             //p.init();
         }
         return p;
+    }
+
+    /**
+     * Get the page reference for the specified page number.
+     *
+     * @param pageNumber zero-based indox of page to find reference of.
+     * @return found page reference or null if number could not be resolved.
+     */
+    public Reference getPageReference(int pageNumber) {
+        if (pageNumber < 0)
+            return null;
+        Page p = getPagePotentiallyNotInitedByRecursiveIndex(pageNumber);
+        if (p != null) {
+            return p.getPObjectReference();
+        }
+        return null;
     }
 
     /**
