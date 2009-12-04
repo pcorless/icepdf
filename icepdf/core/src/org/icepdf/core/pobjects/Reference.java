@@ -127,6 +127,6 @@ public class Reference {
      * @return summary of reference object data.
      */
     public String toString() {
-        return "R[" + objf + "," + genf + "]";
+        return objf + " " + genf + "R";
     }
 }

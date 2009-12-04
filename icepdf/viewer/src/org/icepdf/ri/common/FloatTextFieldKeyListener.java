@@ -30,21 +30,30 @@
  * this file under either the MPL or the LGPL License."
  *
  */
-package org.icepdf.ri.common.annotation;
+package org.icepdf.ri.common;
 
-import javax.swing.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.*;
 
 /**
- * All annotation and action property panels have a common method for
- * assigning the current annotation component.
+ * Utility class to ignore all keyboard events that are not digits, KeyEvent.VK_BACK_SPACE,
+ * KeyEvent.VK_DELETE, KeyEvent.VK_ENTER and KeyEvent.VK_PERIOD are exempt.
  *
  * @since 4.0
  */
-public abstract class AnnotationPanelAdapter extends JPanel
-        implements AnnotationProperties{
-
-    protected AnnotationPanelAdapter(LayoutManager layout, boolean isDoubleBuffered) {
-        super(layout, isDoubleBuffered);
+public class FloatTextFieldKeyListener extends KeyAdapter {
+    public void keyTyped(KeyEvent e) {
+        char c = e.getKeyChar();
+        if (!(Character.isDigit(c) ||
+                c == KeyEvent.VK_PERIOD ||
+                c == KeyEvent.VK_MINUS |
+                c == KeyEvent.VK_BACK_SPACE ||
+                c == KeyEvent.VK_DELETE ||
+                c == KeyEvent.VK_ESCAPE ||
+                c == KeyEvent.VK_ENTER)) {
+            Toolkit.getDefaultToolkit().beep();
+            e.consume();
+        }
     }
 }

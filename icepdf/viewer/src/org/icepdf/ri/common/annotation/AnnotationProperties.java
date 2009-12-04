@@ -32,19 +32,14 @@
  */
 package org.icepdf.ri.common.annotation;
 
-import javax.swing.*;
-import java.awt.*;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 /**
- * All annotation and action property panels have a common method for
- * assigning the current annotation component.
  *
  * @since 4.0
  */
-public abstract class AnnotationPanelAdapter extends JPanel
-        implements AnnotationProperties{
+public interface AnnotationProperties {
 
-    protected AnnotationPanelAdapter(LayoutManager layout, boolean isDoubleBuffered) {
-        super(layout, isDoubleBuffered);
-    }
+    public abstract void setAnnotationComponent(AnnotationComponentImpl annotaiton);
+    
 }
