@@ -123,6 +123,7 @@ public class UndoCaretaker {
             // get rid of first index.
             mementoStateHistory.remove(0);
             mementoStateHistory.remove(1);
+            cursor = mementoStateHistory.size() - 1;
         }
         // check to see if we are in a possible redo state, if so we clear
         // all states from the current pointer.

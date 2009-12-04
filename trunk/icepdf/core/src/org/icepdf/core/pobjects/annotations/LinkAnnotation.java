@@ -150,7 +150,7 @@ public class LinkAnnotation extends Annotation {
      *         annotation.
      */
     public Destination getDestination() {
-        Object obj = library.getObject(entries, DESTINATION_KEY.getName());
+        Object obj = getObject(DESTINATION_KEY);
         if (obj != null) {
             return new Destination(library, obj);
         }

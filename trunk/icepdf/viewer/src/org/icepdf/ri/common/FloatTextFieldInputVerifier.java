@@ -30,21 +30,56 @@
  * this file under either the MPL or the LGPL License."
  *
  */
-package org.icepdf.ri.common.annotation;
+package org.icepdf.ri.common;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * All annotation and action property panels have a common method for
- * assigning the current annotation component.
+ * Utility method to verify that a components input text is a float number.
  *
  * @since 4.0
  */
-public abstract class AnnotationPanelAdapter extends JPanel
-        implements AnnotationProperties{
+public class FloatTextFieldInputVerifier extends InputVerifier {
+    private int maxLength = 6;
 
-    protected AnnotationPanelAdapter(LayoutManager layout, boolean isDoubleBuffered) {
-        super(layout, isDoubleBuffered);
+
+    public FloatTextFieldInputVerifier() {
+    }
+
+    public FloatTextFieldInputVerifier(int maxLength) {
+        this.maxLength = maxLength;
+    }
+
+    public boolean verify(JComponent comp) {
+        boolean returnValue = true;
+        JTextField textField = (JTextField) comp;
+        String content = textField.getText();
+        // if the string has a valid length
+        if (content.length() != 0 && content.length() < maxLength) {
+            try {
+                // parse the string just to make sure it is a valid number
+                Float.parseFloat(textField.getText());
+            } catch (NumberFormatException e) {
+                returnValue = false;
+            }
+        } else {
+            if (content.length() > 0) {
+                // we don't have to reverify as the keylistener makes
+                // sure that the string is a number.
+                textField.setText(content.substring(0, maxLength));
+            } else {
+                textField.setText("");
+            }
+        }
+        return returnValue;
+    }
+
+    public boolean shouldYieldFocus(JComponent input) {
+        boolean valid = super.shouldYieldFocus(input);
+        if (!valid) {
+            Toolkit.getDefaultToolkit().beep();
+        }
+        return valid;
     }
 }

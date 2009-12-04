@@ -36,8 +36,8 @@ import org.icepdf.core.util.Library;
 
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The <code>Destination</code> class defines a particular view of a
@@ -75,6 +75,16 @@ public class Destination {
     private static final Logger logger =
             Logger.getLogger(Destination.class.toString());
 
+    // Vector destination type formats.
+    public static final Name TYPE_XYZ = new Name("XYZ");
+    public static final Name TYPE_FIT = new Name("Fit");
+    public static final Name TYPE_FITH = new Name("FitH");
+    public static final Name TYPE_FITV = new Name("FitV");
+    public static final Name TYPE_FITR = new Name("FitR");
+    public static final Name TYPE_FITB = new Name("FitB");
+    public static final Name TYPE_FITBH = new Name("FitBH");
+    public static final Name TYPE_FITBV = new Name("FitBV");
+
     // library of all PDF document objects
     private Library library;
 
@@ -84,13 +94,21 @@ public class Destination {
     // Reference object for destination
     private Reference ref;
 
+    // type, /XYZ, /Fit, /FitH... 
+    private Name type;
+
     // Specified by /XYZ in the core, /(left)(top)(zoom)
     private float left = Float.NaN;
+    private float bottom = Float.NaN;
+    private float right = Float.NaN;
     private float top = Float.NaN;
     private float zoom = Float.NaN;
 
+    // named Destination name, can be a name or String
+    private Name namedDestination;
+
     // initiated flag
-    private boolean inited = false;
+    private boolean inited;
 
     /**
      * Creates a new instance of a Destination.
@@ -101,12 +119,13 @@ public class Destination {
     public Destination(Library l, Object h) {
         library = l;
         object = h;
+        init();
     }
 
     /**
      * Initiate the Destination. Retrieve any needed attributes.
      */
-    void init() {
+    private void init() {
 
         // check for initiation
         if (inited) {
@@ -131,6 +150,9 @@ public class Destination {
             } else {
                 s = object.toString();
             }
+
+            // store the name
+            namedDestination = new Name(s);
 
             boolean found = false;
             Catalog catalog = library.getCatalog();
@@ -170,8 +192,15 @@ public class Destination {
     }
 
     /**
+     * Get the dictionary object, name, string or array. 
+     * @return
+     */
+    public Object getObject() {
+        return object;
+    }
+
+    /**
      * Utility method for parsing the Destination attributes
-     * todo implement other destination syntax
      *
      * @param v vector of attributes associated with the Destination
      */
@@ -181,8 +210,14 @@ public class Destination {
         if (v.elementAt(0) instanceof Reference) {
             ref = (Reference) v.elementAt(0);
         }
-        // coordinate of the destination
-        if (v.elementAt(1).equals("XYZ")) {
+        // store type.
+        if (v.elementAt(1) instanceof Name) {
+            type = (Name) v.elementAt(1);
+        } else {
+            type = new Name(v.elementAt(1).toString());
+        }
+        // [page /XYZ left top zoom ]
+        if (type.equals(TYPE_XYZ)) {
             if (!v.elementAt(2).equals("null")) {
                 left = ((Number) v.elementAt(2)).floatValue();
             }
@@ -193,50 +228,161 @@ public class Destination {
                 zoom = ((Number) v.elementAt(4)).floatValue();
             }
         }
-        /**
-         * This section is still very incomplete.   The spec is as follows
-         *
-         * [page /Fit]  Display the page designated by page, with its contents
-         *    magnified just enough to fit the entire page within the window both
-         *    horizontally and vertically. If the required horizontal and vertical
-         *    magnification factors are different, use the smaller of the two,
-         *    centering the page within the window in the other dimension.
-         *
-         * [page /FitH top] Display the page designated by page, with the vertical
-         *     coordinate top positioned at the top edge of the window and the
-         *     contents of the page magnified just enough to fit the entire width
-         *     of the page within the window. [page /FitV left] Display the page
-         *     designated by page, with the horizontal coordinate left positioned
-         *     at the left edge of the window and the contents of the page magnified
-         *     just enough to fit the entire height of the page within the window.
-         *
-         * [page /FitR left bottom right top] Display the page designated by page,
-         *     with its contents magnified just enough to fit the rectangle
-         *     specified by the coordinates left, bottom, right, and top entirely
-         *     within the window both horizontally and vertically. If the required
-         *     horizontal and vertical magnification factors are different, use the smaller of
-         *     the two, centering the rectangle within the window in the other dimension.
-         *
-         * [page /FitB] (PDF 1.1) Display the page designated by page, with its
-         *     contents magnified just enough to fit its bounding box entirely
-         *     within the window both horizontally and vertically. If the required
-         *     horizontal and vertical magnification factors are different, use
-         *     the smaller of the two, centering the bounding box within the window
-         *     in the other dimension.
-         *
-         * [page /FitBH top] (PDF 1.1) Display the page designated by page, with
-         *     the vertical coordinate top positioned at the top edge of the window
-         *     and the contents of the page magnified just enough to fit the
-         *     entire width of its bounding box within the window.
-         *
-         * [page /FitBV left] (PDF 1.1) Display the page designated by page, with
-         *     the horizontal coordinate left positioned at the left edge of the
-         *     window and the contents of the page magnified just enough to fit
-         *     the entire height of its bounding box within the window.
-         *
-         */
-        else if (v.elementAt(1).equals("Fit")) {
+        // [page /FitH top]
+        else if (type.equals(TYPE_FITH)) {
+            if (!v.elementAt(2).equals("null")) {
+                top = ((Number) v.elementAt(2)).floatValue();
+            }
         }
+        // [page /FitR left bottom right top]
+        else if (type.equals(TYPE_FITR)) {
+            if (!v.elementAt(2).equals("null")) {
+                left = ((Number) v.elementAt(2)).floatValue();
+            }
+            if (!v.elementAt(3).equals("null")) {
+                bottom = ((Number) v.elementAt(3)).floatValue();
+            }
+            if (!v.elementAt(4).equals("null")) {
+                right = ((Number) v.elementAt(4)).floatValue();
+            }
+            if (!v.elementAt(5).equals("null")) {
+                top = ((Number) v.elementAt(5)).floatValue();
+            }
+        }
+        // [page /FitB]
+        else if (type.equals(TYPE_FITB)) {
+            // nothing to parse
+        }
+        // [page /FitBH top]
+        else if (type.equals(TYPE_FITBH)) {
+            if (!v.elementAt(2).equals("null")) {
+                top = ((Number) v.elementAt(2)).floatValue();
+            }
+        }
+        // [page /FitBV left]
+        else if (type.equals(TYPE_FITBV)) {
+            if (!v.elementAt(2).equals("null")) {
+                left = ((Number) v.elementAt(2)).floatValue();
+            }
+        }
+    }
+
+    /**
+     * Gets the name of the named destination.
+     *
+     * @return name of destination if present, null otherwise.
+     */
+    public Name getNamedDestination() {
+        return namedDestination;
+    }
+
+    /**
+     * Sets the named destination as a Named destination.  It is assumed
+     * the named destination already exists in the document.
+     *
+     * @param dest destination to associate with.
+     */
+    public void setNamedDestination(Name dest) {
+        namedDestination = dest;
+        // only write out destination as names so we don't have worry about
+        // encryption.
+        object = dest;
+        // re-parse as object should point to a new destination.
+        inited = false;
+        init();
+    }
+
+    /**
+     * Sets the destination syntax to the specified value.  The Destinatoin
+     * object clears the named destination and re initializes itself after the
+     * assignment has been made.
+     *
+     * @param destinationSyntax new vector of destination syntax.
+     */
+    public void setDestinationSyntax(Vector destinationSyntax) {
+        // clear named destination
+        namedDestination = null;
+        object = destinationSyntax;
+        // re-parse as object should point to a new destination.
+        inited = false;
+        init();
+    }
+
+    /**
+     * Utility for creating a /Fit or FitB syntax vector.
+     *
+     * @param page destination page pointer.
+     * @param type type of destionation
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static Vector<Object> destinationSyntax(
+            Reference page, final Name type) {
+        Vector<Object> destSyntax = new Vector<Object>(2);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        return destSyntax;
+    }
+
+    /**
+     * Utility for creating a /FitH, /FitV, /FitBH or /FitBV syntax vector.
+     *
+     * @param page destination page pointer.
+     * @param type type of destionation
+     * @param offset offset coordinate value in page space for specified dest type.
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static Vector<Object> destinationSyntax(
+            Reference page, final Name type, Object offset) {
+        Vector<Object> destSyntax = new Vector<Object>(3);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        destSyntax.add(offset);
+        return destSyntax;
+    }
+
+    /**
+     * Utility for creating a /XYZ syntax vector.
+     *
+     * @param page destination page pointer.
+     * @param type type of destionation
+     * @param left offset coordinate value in page space for specified dest type.
+     * @param top offset coordinate value in page space for specified dest type.
+     * @param zoom page zoom, 0 or null indicates no zoom.
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static Vector<Object> destinationSyntax(
+            Reference page, final Object type, Object left, Object top, Object zoom) {
+        Vector<Object> destSyntax = new Vector<Object>(5);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        destSyntax.add(left);
+        destSyntax.add(top);
+        destSyntax.add(zoom);
+        return destSyntax;
+    }
+
+    /**
+     * Utility for creating a /FitR syntax vector.
+     *
+     * @param page destination page pointer.
+     * @param type type of destionation
+     * @param left offset coordinate value in page space for specified dest type.
+     * @param top offset coordinate value in page space for specified dest type.
+     * @param bottom offset coordinate value in page space for specified dest type.
+     * @param right offset coordinate value in page space for specified dest type.
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static Vector<Object> destinationSyntax(
+            Reference page, final Object type, Object left, Object bottom,
+            Object right, Object top) {
+        Vector<Object> destSyntax = new Vector<Object>(6);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        destSyntax.add(left);
+        destSyntax.add(bottom);
+        destSyntax.add(right);
+        destSyntax.add(top);
+        return destSyntax;
     }
 
     /**
@@ -245,8 +391,6 @@ public class Destination {
      * @return a Reference to the Page Object associated with this destination.
      */
     public Reference getPageReference() {
-        if (!inited)
-            init();
         return ref;
     }
 
@@ -258,8 +402,6 @@ public class Destination {
      *         specified Float.NaN is returned.
      */
     public float getLeft() {
-        if (!inited)
-            init();
         return left;
     }
 
@@ -271,8 +413,6 @@ public class Destination {
      *         specified Float.NaN is returned.
      */
     public float getTop() {
-        if (!inited)
-            init();
         return top;
     }
 
@@ -282,9 +422,92 @@ public class Destination {
      * @return the specified zoom level, Float.NaN if not specified.
      */
     public float getZoom() {
-        if (!inited)
-            init();
         return zoom;
+    }
+
+    /**
+     * Gets the page reference represented by this destination
+     *
+     * @return reference of page that destination should show when executed.
+     */
+    public Reference getRef() {
+        return ref;
+    }
+
+    /**
+     * Gets the type used in a vector of destination syntax.  Will be null
+     * if a named destination is used.
+     *
+     * @return type of destination syntax as defined by class constants.
+     */
+    public Name getType() {
+        return type;
+    }
+
+    /**
+     * Bottom coordinate of a zoom box, if present left, right and top should
+     * also be available.
+     *
+     * @return bottom coordinate of magnifcation box.
+     */
+    public float getBottom() {
+        return bottom;
+    }
+
+    /**
+     * Right coordinate of a zoom box, if present bottom, left and top should
+     * also be available.
+     *
+     * @return rigth coordinate of zoom box
+     */
+    public float getRight() {
+        return right;
+    }
+
+    /**
+     * Get the destination properties encoded in post script form.
+     *
+     * @return either a destination Name or a Vector representing the
+     *         destination
+     */
+    public Object getEncodedDestination() {
+        // write out the destination name
+        if (namedDestination != null) {
+            return namedDestination;
+        }
+        // build and return a fector of changed valued.
+        else if (object instanceof Vector) {
+            Vector<Object> v = new Vector<Object>();
+            if (ref != null) {
+                v.add(ref);
+            }
+            // named dest type
+            if (type != null) {
+                v.add(type);
+            }
+            // left
+            if (left != Float.NaN) {
+                v.add(left);
+            }
+            // bottom
+            if (bottom != Float.NaN) {
+                v.add(bottom);
+            }
+            // right
+            if (right != Float.NaN) {
+                v.add(right);
+            }
+            // top
+            if (top != Float.NaN) {
+                v.add(top);
+            }
+            // zoom
+            if (zoom != Float.NaN) {
+                v.add(zoom);
+            }
+            return v;
+        }
+        return null;
     }
 
     /**
