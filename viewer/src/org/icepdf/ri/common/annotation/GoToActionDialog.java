@@ -167,11 +167,12 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         }
     }
 
+    /**
+     * Utility or saving the complicated state of a GoTo action.
+     */
     private void saveActionState() {
 
-
         Annotation annotation = currentAnnotaiton.getAnnotation();
-
         Destination destination;
 
         // create a new implicit destination
@@ -222,7 +223,8 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         GoToAction action = (GoToAction) annotation.getAction();
 
         // if no previous action then we have a 'new' or old 'dest' that
-        // that is getting updated.
+        // that is getting updated.  VERY IMPORTANT, dest are replaced with
+        // similar GoToActions under the current implementation.
         if (action == null) {
             action = (GoToAction)
                     ActionFactory.buildAction(annotation.getLibrary(),
@@ -241,7 +243,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == okButton) {
-            // todo validate actionState
+            // todo validate action State before save proceeds.
             if (true) {
                 // if all is
                 saveActionState();

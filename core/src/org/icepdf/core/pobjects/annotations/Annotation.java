@@ -347,12 +347,12 @@ public class Annotation extends Dictionary {
      * Dictionary constants for Annotations.
      */
 
-    public static final String TYPE_VALUE = "Annot";
+    public static final Name TYPE_VALUE = new Name("Annot");
 
     /**
      * Annotation subtype and types.
      */
-    public static final String SUBTYPE_LINK = "Link";
+    public static final Name SUBTYPE_LINK = new Name("Link");
 
     /**
      * Border style
@@ -533,9 +533,11 @@ public class Annotation extends Dictionary {
      * @return action to be activated, if no action, null is returned.
      */
     public org.icepdf.core.pobjects.actions.Action getAction() {
-        Hashtable h1 = library.getDictionary(entries, ACTION_KEY.getName());
-        if (h1 != null) {
-            Action action = Action.buildAction(library,h1);
+        Object tmp =library.getDictionary(entries, ACTION_KEY.getName());
+        // initial parse will likely have the action as a dictionary, so we
+        // create the new action object on the fly
+        if (tmp != null && tmp instanceof Hashtable) {
+            Action action = Action.buildAction(library,(Hashtable)tmp);
             // assign reference if applicable
             if (action != null  &&
                     library.isReference(entries, ACTION_KEY.getName())){
@@ -543,6 +545,12 @@ public class Annotation extends Dictionary {
                         library.getReference(entries, ACTION_KEY.getName()));
             }
             return action;
+        }
+        // subsequent new or edit actions will put in a reference and property
+        // dictionary entry.
+        tmp  = getObject(ACTION_KEY);
+        if (tmp != null && tmp instanceof Action){
+            return (Action)tmp;
         }
         return null;
     }
@@ -592,7 +600,7 @@ public class Annotation extends Dictionary {
             }
             // not a reference, we have an inline dictionary and we'll be
             // clearing it later, so we only need to add this annotation
-            // to the state mnager.
+            // to the state manager.
             else {
                 getEntries().remove(ACTION_KEY);
                 stateManager.addChange(new PObject(this, getPObjectReference()));
@@ -613,10 +621,9 @@ public class Annotation extends Dictionary {
 
         // add the new action to the state manager.
         action.setNew(true);
-        stateManager.addChange(new PObject(action.getEntries(),
-                action.getPObjectReference()));
+        stateManager.addChange(new PObject(action, action.getPObjectReference()));
         // add it to the library so we can get it again. 
-        library.addObject(action.getEntries(), action.getPObjectReference());
+        library.addObject(action, action.getPObjectReference());
 
         return action;
     }
@@ -661,7 +668,7 @@ public class Annotation extends Dictionary {
      * @return true if the update was successful, othere; false.
      */
     public boolean updateAction(Action action) {
-        // gen instance of state manager
+        // get instance of state manager
         StateManager stateManager = library.getStateManager();
         if (getObject(ACTION_KEY) != null) {
             Action currentAction = getAction();
