@@ -34,6 +34,8 @@
 
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.pobjects.Document;
 
 import javax.swing.*;
 
@@ -66,5 +68,27 @@ public class ViewerComponentExample {
         // show the component
         applicationFrame.pack();
         applicationFrame.setVisible(true);
+
+        /**
+         * Start of a simple search for the loaded file, which in this case
+         * I'm assuming is the ICEpdf developers guide.
+         */
+        // get the search controller
+        DocumentSearchController searchController =
+                controller.getDocumentSearchController();
+        // add a few terms.
+        searchController.addSearchTerm("ICEpdf", false, false);
+        searchController.addSearchTerm("ICEpdf Features", false, false);
+        searchController.addSearchTerm("Product Contents", true, false);
+        // search the pages in the document or a subset
+        Document document = controller.getDocument();
+        for (int pageIndex = 0; pageIndex < document.getNumberOfPages();
+             pageIndex++) {
+            searchController.searchHighlightPage(pageIndex);
+        }
+
+        // searches can be cleared for the whole document or for for a page.
+//        searchController.clearAllSearchHighlight();
+//        searchController.clearSearchHighlight(pageIndex);
     }
 }
