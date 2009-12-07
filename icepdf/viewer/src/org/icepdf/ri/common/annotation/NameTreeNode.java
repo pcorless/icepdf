@@ -32,13 +32,14 @@
  */
 package org.icepdf.ri.common.annotation;
 
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.NameNode;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.Vector;
+import java.util.ResourceBundle;
+import java.text.MessageFormat;
 
 /**
  * Name tree node.
@@ -51,6 +52,9 @@ public class NameTreeNode extends DefaultMutableTreeNode {
     private StringObject name;
     private Reference reference;
 
+    private ResourceBundle messageBundle;
+    private MessageFormat formatter;
+
     private boolean rootNode;
     private boolean intermidiatNode;
     private boolean leaf;
@@ -61,18 +65,29 @@ public class NameTreeNode extends DefaultMutableTreeNode {
      * Creates a new instance of an OutlineItemTreeNode
      *
      * @param item Contains PDF Outline item data
+     * @param messageBundle ri root message bundle, localized node text. 
      */
-    public NameTreeNode(NameNode item) {
+    public NameTreeNode(NameNode item, ResourceBundle messageBundle) {
         super();
         this.item = item;
+        this.messageBundle = messageBundle;
         if (!item.hasLimits()) {
             rootNode = true;
-            setUserObject("Name Tree");
+            setUserObject(messageBundle.getString(
+                    "viewer.utilityPane.action.dialog.goto.nameTree.root.label"));
         } else {
             intermidiatNode = true;
-            setUserObject(item.getLowerLimit() + " to " + item.getUpperLimit());
+            // setup a patterned message
+            Object[] messageArguments = {
+                    item.getLowerLimit(),
+                    item.getUpperLimit()
+            };
+            if (formatter == null){
+                formatter = new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.action.dialog.goto.nameTree.branch.label"));
+            }
+            setUserObject(formatter.format(messageArguments));
         }
-
     }
 
     public NameTreeNode(StringObject name, Reference ref) {
@@ -138,7 +153,7 @@ public class NameTreeNode extends DefaultMutableTreeNode {
                 for (int i = 0; i < count; i++) {
                     NameNode child = item.getNode(i);
                     NameTreeNode childTreeNode =
-                            new NameTreeNode(child);
+                            new NameTreeNode(child, messageBundle);
                     add(childTreeNode);
                 }
             }
