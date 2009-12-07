@@ -2104,53 +2104,23 @@ public class SwingController
             } else {
                 // save file stream
                 try {
-                    FileOutputStream fileOutputStream = new FileOutputStream(file);
-                    InputStream inputStream = null;
-                    String whence = document.getDocumentLocation();
                     // If we don't know where the file came from, it's because we
-                    //  used Document.setInputStream() or Document.setByteArray()
+                    //  used Document.setInputStream() or Document.setByteArray(),
+                    //  or we used setUrl() with disk caching disabled.
                     //  with no path or URL as the origin.
-                    // Even those methods can give a valid result from
-                    //  Document.getDocumentLocation() if disk caching is enabled,
-                    //  so most likely the PDF data is only being held in RAM,
-                    //  and we need the Document to write the bytes for us.
-                    // Note that we could simply always just do it this way, but
-                    //  when we use the Document directly instead of the filesystem,
-                    //  we lock some internal data structures for a while, which can
-                    //  make everything else less responsive, for large PDF files.
-                    if (whence == null || whence.length() == 0) {
-                        document.writeToOutputStream(fileOutputStream);
-                    }
-                    // If whence is a url
-                    else if (whence.indexOf("://") >= 0) {
-                        URLAccess urlAccess = URLAccess.doURLAccess(whence);
-                        if (urlAccess.errorMessage == null && urlAccess.inputStream != null) {
-                            inputStream = urlAccess.inputStream;
-                        } else {
-                            document.writeToOutputStream(fileOutputStream);
-                        }
-                    }
-                    // Or whence is just a file path
-                    else {
-                        try {
-                            inputStream = new FileInputStream(whence);
-                        }
-                        catch (Exception e) {
-                            document.writeToOutputStream(fileOutputStream);
-                        }
-                    }
-
-                    if (inputStream != null) {
-                        // write the bytes.
-                        byte[] buffer = new byte[4096];
-                        int length;
-                        while ((length = inputStream.read(buffer, 0, buffer.length)) > 0) {
-                            fileOutputStream.write(buffer, 0, length);
-                        }
-                        inputStream.close();
-                    }
-
+                    // Note that we used to detect scenarios where we could access
+                    //  the file directly, or re-download it, to avoid locking our
+                    //  internal data structures for long periods for large PDFs,
+                    //  but that could cause problems with slow network links too,
+                    //  and would complicate the incremental update code, so we're
+                    //  harmonising on this approach.
+                    FileOutputStream fileOutputStream = new FileOutputStream(file);
+                    BufferedOutputStream buf = new BufferedOutputStream(
+                        fileOutputStream, 4096*2);
+                    document.saveToOutputStream(buf);
+                    buf.flush();
                     fileOutputStream.flush();
+                    buf.close();
                     fileOutputStream.close();
                 }
                 catch (MalformedURLException e) {

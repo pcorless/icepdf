@@ -219,7 +219,7 @@ public class BorderStyle extends Dictionary {
      */
     public void setBorderStyle(final String lineStyle) {
         this.borderStyle = lineStyle;
-        entries.put(BORDER_STYLE_KEY, this.borderStyle);
+        entries.put(BORDER_STYLE_KEY, new Name(this.borderStyle));
     }
 
     public boolean isStyleSolid() {
