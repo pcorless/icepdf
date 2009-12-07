@@ -89,6 +89,34 @@ public class PObject {
         return object;
     }
 
+    @Override
+    public int hashCode() {
+        int result = object != null ? object.hashCode() : 0;
+        result = 31 * result + (objectReference != null ? objectReference.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PObject pObject = (PObject) o;
+
+        if (object != null ? !object.equals(pObject.object) : pObject.object != null) {
+            return false;
+        }
+        if (objectReference != null ? !objectReference.equals(pObject.objectReference) : pObject.objectReference != null) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * String representation of this object.  Used mainly for debugging.
      *

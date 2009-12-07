@@ -69,6 +69,12 @@ import java.util.Vector;
  */
 public class PTrailer extends Dictionary {
 
+    // Position in the file. The LazyObjectLoader typically keeps this info
+    // for all PDF objects, but the bootstrapping PTrialer is an exception,
+    // and we need its location for writing incremental updates, so for
+    // consistency we'll have all PTrailers maintain their position.
+    private long position;
+
     // documents cross reference table
     private CrossReference m_CrossReferenceTable;
 
@@ -230,6 +236,21 @@ public class PTrailer extends Dictionary {
      */
     public Vector getID() {
         return (Vector) library.getObject(entries, "ID");
+    }
+
+    /**
+     * @return The position in te file where this trailer is located
+     */
+    public long getPosition() {
+        return position;
+    }
+
+    /**
+     * After this PTrailer is parsed, we store it's location within the PDF
+     * here, for future use.
+     */
+    public void setPosition(long pos) {
+        position = pos;
     }
 
     /**
