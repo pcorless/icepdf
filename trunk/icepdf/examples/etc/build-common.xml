@@ -42,7 +42,7 @@
 
     <property name="compile.source" value="1.5"/>
     <property name="compile.target" value="1.5"/>
-    <property name="compile.debug" value="false"/>
+    <property name="compile.debug" value="true"/>
 
     <property name="productinfo.file" value="ProductInfo.java"/>
     <property name="company" value="ICEsoft Technologies, Inc."/>
