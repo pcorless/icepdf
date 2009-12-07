@@ -107,10 +107,14 @@ public class NameTreeDialog extends JDialog
 
     private void setGui(NameTree nameTree) {
 
+         // dialog title
+         setTitle(messageBundle.getString(
+                "viewer.utilityPane.action.dialog.goto.nameTree.title"));
+
         // build the name tree. 
         nameJTree = new NameJTree();
         nameJTree.setModel(new DefaultTreeModel(
-                new NameTreeNode(nameTree.getRoot())));
+                new NameTreeNode(nameTree.getRoot(), messageBundle)));
         nameJTree.setRootVisible(!nameTree.getRoot().isEmpty());
         nameJTree.addTreeSelectionListener(this);
         JScrollPane nameTreeScroller = new JScrollPane(nameJTree);
