@@ -33,6 +33,11 @@
 package org.icepdf.core.pobjects;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Comparator;
+import java.util.Collection;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class is responsible for keeping track of which object in the document
@@ -111,6 +116,52 @@ public class StateManager {
      */
     public void removeChange(PObject pObject) {
         changes.remove(pObject.getReference());
+    }
+
+    /**
+     * @return An Iterator<PObject> for all the changes objects
+     */
+    public Iterator<PObject> iterator() {
+        return changes.values().iterator();
+    }
+
+    /**
+     * @return An Iterator<PObject> for all the changes objects, sorted
+     */
+    public Iterator<PObject> iteratorSortedByObjectNumber() {
+        Collection<PObject> coll = changes.values();
+        PObject[] arr = coll.toArray(new PObject[coll.size()]);
+        Arrays.sort(arr, new PObjectComparatorByReferenceObjectNumber());
+        List<PObject> sortedList = Arrays.asList(arr);
+        return sortedList.iterator();
+    }
+
+
+    private static class PObjectComparatorByReferenceObjectNumber
+            implements Comparator<PObject> {
+        public int compare(PObject a, PObject b) {
+            if (a == null && b == null)
+                return 0;
+            else if (a == null)
+                return -1;
+            else if (b == null)
+                return 1;
+            Reference ar = a.getReference();
+            Reference br = b.getReference();
+            if (ar == null && br == null)
+                return 0;
+            else if (ar == null)
+                return -1;
+            else if (br == null)
+                return 1;
+            int aron = ar.getObjectNumber();
+            int bron = br.getObjectNumber();
+            if (aron < bron)
+                return -1;
+            else if (aron > bron)
+                return 1;
+            return 0;
+        }
     }
 }
 

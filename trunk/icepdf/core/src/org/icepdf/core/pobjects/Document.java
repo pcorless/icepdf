@@ -34,6 +34,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.application.ProductInfo;
+import org.icepdf.core.application.Capabilities;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
@@ -503,6 +504,7 @@ public class Document {
                 throw new RuntimeException("Could not find trailer");
             if (trailer.getPrimaryCrossReference() == null)
                 throw new RuntimeException("Could not find cross reference");
+            trailer.setPosition(xrefPosition);
 
             if (documentTrailer == null)
                 documentTrailer = trailer;
@@ -945,8 +947,9 @@ public class Document {
      *
      * @param out OutputStream to which the PDF file bytes are written.
      * @throws IOException if there is some problem reading or writing the PDF data
+     * @return The length of the PDF file copied
      */
-    public void writeToOutputStream(OutputStream out) throws IOException {
+    public long writeToOutputStream(OutputStream out) throws IOException {
         long documentLength = documentSeekableInput.getLength();
         SeekableInputConstrainedWrapper wrapper = new SeekableInputConstrainedWrapper(
                 documentSeekableInput, 0L, documentLength, false);
@@ -970,6 +973,36 @@ public class Document {
             catch (IOException e) {
             }
         }
+        return documentLength;
+    }
+
+    /**
+     * Copies the pre-existing PDF file, and appends an incremental update for
+     * any edits, to the specified OutputStream. For the pre-existing PDF
+     * content copying, writeToOutputStream(OutputStream out) is used.
+     *
+     * @param out OutputStream to which the PDF file bytes are written.
+     * @throws IOException if there is some problem reading or writing the PDF data
+     * @return The length of the PDF file saved
+     */
+    public long saveToOutputStream(OutputStream out) throws IOException {
+        long documentLength = writeToOutputStream(out);
+        long appendedLength = appendIncrementalUpdate(out, documentLength);
+        return documentLength + appendedLength;
+    }
+
+    /**
+     * If ICEpdf Pro, then use append an incremental update of any edits.
+     *
+     * @param out OutputStream to which the incremental update bytes are written.
+     * @param documentLength Length of the PDF file sp far, before the incremental update.
+     * @return The number of bytes written for the incremental update.
+     * @throws IOException
+     */
+    protected long appendIncrementalUpdate(OutputStream out, long documentLength)
+            throws IOException {
+        return Capabilities.appendIncrementalUpdate(
+            out, documentLength, stateManager, pTrailer);
     }
 
     /**

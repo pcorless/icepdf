@@ -135,6 +135,8 @@ public class LazyObjectLoader implements MemoryManagerDelegate {
                 if (obj instanceof PObject)
                     obj = ((PObject) obj).getObject();
                 trailer = (PTrailer) obj;
+                if (trailer != null)
+                    trailer.setPosition(position);
                 m_SeekableInput.seekAbsolute(savedPosition);
             }
         }
