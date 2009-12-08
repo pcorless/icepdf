@@ -1825,6 +1825,15 @@ public class SwingController
         // initiates the view layout model, page coordinates and preferred size
         documentViewController.setDocument(document);
 
+        // Set the default zoom level from the properties file
+        PropertiesManager propertiesManager = windowManagementCallback.getProperties();
+        float defaultZoom = (float)PropertiesManager.checkAndStoreDoubleProperty(propertiesManager,
+                                                                                 PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
+        documentViewController.setZoom(defaultZoom);
+
+        // Apply any ViewerPreferences from the doc
+        applyViewerPreferences(catalog, propertiesManager);
+
         // Only show utility panel if there is an outline
         OutlineItem item = null;
         Outlines outlines = document.getCatalog().getOutlines();
@@ -3010,6 +3019,73 @@ public class SwingController
             }
             catch (NumberFormatException nfe) {
                 logger.log(Level.FINE, "Error selecting page number.");
+            }
+        }
+    }
+
+    /**
+     * Method to try to read any ViewerPreferences present in the document, and apply them
+     * Otherwise we will try to check the properties file for any overriding to these values
+     *
+     * @param catalog to lookup view preferences from
+     * @param propertiesManager to check properties in
+     */
+    protected void applyViewerPreferences(Catalog catalog, PropertiesManager propertiesManager) {
+        if (catalog == null) {
+            return;
+        }
+
+        ViewerPreferences viewerPref = catalog.getViewerPreferences();
+
+        // Hide the toolbar?
+        if ((viewerPref != null) && (viewerPref.hasHideToolbar())) {
+            if (viewerPref.getHideToolbar()) {
+                if (completeToolBar != null) {
+                    completeToolBar.setVisible(false);
+                }
+            }
+        }
+        else {
+            if (completeToolBar != null) {
+                completeToolBar.setVisible(
+                    !PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                                                                    PropertiesManager.PROPERTY_VIEWPREF_HIDETOOLBAR,
+                                                                    false));
+            }
+        }
+
+        // Hide the menubar?
+        if ((viewerPref != null) && (viewerPref.hasHideMenubar())) {
+            if (viewerPref.getHideMenubar()) {
+                if ((viewer != null) && (viewer.getJMenuBar() != null)) {
+                    viewer.getJMenuBar().setVisible(false);
+                }
+            }
+        }
+        else {
+            if ((viewer != null) && (viewer.getJMenuBar() != null)) {
+                viewer.getJMenuBar().setVisible(
+                    !PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                                                                    PropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
+                                                                    false));
+            }
+        }
+
+        // Fit the GUI frame to the size of the document?
+        if ((viewerPref != null) && (viewerPref.hasFitWindow())) {
+            if (viewerPref.getFitWindow()) {
+                if (viewer != null) {
+                    viewer.setSize(
+                            documentViewController.getDocumentView().getDocumentSize());
+                }
+            }
+        }
+        else {
+            if ((PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                                                                PropertiesManager.PROPERTY_VIEWPREF_FITWINDOW,
+                                                                false)) && (viewer != null)) {
+                viewer.setSize(
+                        documentViewController.getDocumentView().getDocumentSize());
             }
         }
     }

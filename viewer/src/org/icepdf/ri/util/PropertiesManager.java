@@ -80,6 +80,14 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_UTILITYPANE_SEARCH = "application.utilitypane.show.search";
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION = "application.utilitypane.show.annotation";
 
+    // properties used for default zoom levels
+    public static final String PROPERTY_DEFAULT_ZOOM_LEVEL = "application.zoom.factor.default";
+
+    // properties used for overriding ViewerPreferences pulled from the document
+    public static final String PROPERTY_VIEWPREF_HIDETOOLBAR = "application.viewerpreferences.hidetoolbar";
+    public static final String PROPERTY_VIEWPREF_HIDEMENUBAR = "application.viewerpreferences.hidemenubar";
+    public static final String PROPERTY_VIEWPREF_FITWINDOW = "application.viewerpreferences.fitwindow";
+
     //the version name, used in about dialog and start-up message
     String versionName = Document.getLibraryVersion();
 
@@ -674,6 +682,66 @@ public class PropertiesManager {
         }
     }
 
+    public static boolean checkAndStoreBooleanProperty(PropertiesManager properties, String propertyName) {
+        return checkAndStoreBooleanProperty(properties, propertyName, true);
+    }
 
+    /**
+     * Method to check the value of a boolean property
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     *  object (using a default value if none was found)
+     *
+     * @param properties to check with
+     * @param propertyName to check for
+     * @param defaultVal to default to if no value is found on a property
+     * @return true if property is true, otherwise false
+     */
+    public static boolean checkAndStoreBooleanProperty(PropertiesManager properties, String propertyName, boolean defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if (properties == null) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        boolean returnValue = properties.getBoolean(propertyName, defaultVal);
+
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        properties.setBoolean(propertyName, returnValue);
+
+        return returnValue;
+    }
+
+    public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName) {
+        return checkAndStoreDoubleProperty(properties, propertyName, 1.0f);
+    }
+
+    /**
+     * Method to check the value of a double property
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     *  object (using a default value if none was found)
+     *
+     * @param properties to check with
+     * @param propertyName to check for
+     * @param defaultVal to default to if no value is found on a property
+     * @return true if property is true, otherwise false
+     */
+    public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName, double defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if (properties == null) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        double returnValue = properties.getDouble(propertyName, defaultVal);
+
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        properties.setDouble(propertyName, returnValue);
+
+        return returnValue;
+    }
 }
 
