@@ -66,6 +66,7 @@ public class PropertiesManager {
     private static final String PROPERTY_DEFAULT_FILE_PATH = "application.defaultFilePath";
     private static final String PROPERTY_DEFAULT_URL = "application.defaultURL";
 
+    // properties used to hide/show toolbars
     public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";
     public static final String PROPERTY_SHOW_TOOLBAR_ZOOM = "application.toolbar.show.zoom";
@@ -73,6 +74,11 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ROTATE = "application.toolbar.show.rotate";
     public static final String PROPERTY_SHOW_TOOLBAR_TOOL = "application.toolbar.show.tool";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION = "application.toolbar.show.annotation";
+
+    // properties used to hide/show utility pane tabs
+    public static final String PROPERTY_SHOW_UTILITYPANE_BOOKMARKS = "application.utilitypane.show.bookmarks";
+    public static final String PROPERTY_SHOW_UTILITYPANE_SEARCH = "application.utilitypane.show.search";
+    public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION = "application.utilitypane.show.annotation";
 
     //the version name, used in about dialog and start-up message
     String versionName = Document.getLibraryVersion();
