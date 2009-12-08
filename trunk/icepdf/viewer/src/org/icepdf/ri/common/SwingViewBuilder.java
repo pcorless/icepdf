@@ -36,6 +36,7 @@ import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.annotation.AnnotationPanel;
 import org.icepdf.ri.images.Images;
+import org.icepdf.ri.util.PropertiesManager;
 import org.icepdf.core.util.Defs;
 
 import javax.swing.*;
@@ -408,7 +409,6 @@ public class SwingViewBuilder {
         // set default view mode type, fit page, fit width, no-fit.
         this.documentPageFitMode = documentPageFitMode;
     }
-
 
     /**
      * This is a standard method for creating a standalone JFrame, that would
@@ -1002,13 +1002,29 @@ public class SwingViewBuilder {
         JToolBar toolbar = new JToolBar();
         toolbar.setLayout(new ToolbarLayout( ToolbarLayout.LEFT));
         commonToolBarSetup(toolbar, true);
-        addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent));
-        addToToolBar(toolbar, buildPageNavigationToolBar());
-        addToToolBar(toolbar, buildZoomToolBar());
-        addToToolBar(toolbar, buildFitToolBar());
-        addToToolBar(toolbar, buildRotateToolBar());
-        addToToolBar(toolbar, buildToolToolBar());
-        addToToolBar(toolbar, buildAnnotationlToolBar());
+
+        // Attempt to get the properties manager so we can configure which toolbars are visible
+        PropertiesManager propertiesManager = null;
+        if (viewerController != null) {
+            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
+        }
+
+        // Build the main set of toolbars based on the property file configuration
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
+            addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent));
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
+            addToToolBar(toolbar, buildPageNavigationToolBar());
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
+            addToToolBar(toolbar, buildZoomToolBar());
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
+            addToToolBar(toolbar, buildFitToolBar());
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
+            addToToolBar(toolbar, buildRotateToolBar());
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
+            addToToolBar(toolbar, buildToolToolBar());
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
+            addToToolBar(toolbar, buildAnnotationlToolBar());
+
         // we only add the configurable font engin in the demo version
         if (isDemo){
             addToToolBar(toolbar, buildDemoToolBar());
@@ -1652,5 +1668,21 @@ public class SwingViewBuilder {
     protected void addToMenuBar(JMenuBar menuBar, JMenu menu) {
         if (menu != null)
             menuBar.add( menu );
+    }
+
+    protected boolean checkProperty(PropertiesManager properties, String propertyName) {
+        // If we don't have a valid PropertiesManager just return true
+        if (properties == null) {
+            return true;
+        }
+
+        // Get the desired property, defaulting to 'true'
+        boolean returnValue = properties.getBoolean(propertyName, true);
+
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        properties.setBoolean(propertyName, returnValue);
+
+        return returnValue;
     }
 }
