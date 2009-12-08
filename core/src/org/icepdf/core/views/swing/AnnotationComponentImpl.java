@@ -264,8 +264,8 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         Rectangle2D rect = annotation.getUserSpaceRectangle();
         Rectangle bounds = getBounds();
         Rectangle2D innerRectangle = new Rectangle2D.Float(
-                bounds.x + resizeBoxSize / 2.0f,
-                bounds.y + resizeBoxSize / 2.0f,
+                bounds.x + (resizeBoxSize / 2.0f),
+                bounds.y + (resizeBoxSize / 2.0f),
                 bounds.width - resizeBoxSize,
                 bounds.height - resizeBoxSize);
         GeneralPath shapePath = new GeneralPath(innerRectangle);
