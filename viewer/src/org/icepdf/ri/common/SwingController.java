@@ -919,6 +919,7 @@ public class SwingController
         // get security information for printing and text extraction
         boolean canPrint = havePermissionToPrint();
         boolean canExtract = havePermissionToExtractContent();
+        boolean canModify = havePermissionToModifyDocument();
 
         reflectPageChangeInComponents();
 
@@ -937,11 +938,10 @@ public class SwingController
 
         // set initial sate for undo/redo edit, afterwards state is set by
         // valueChange events depending on tool selection.
-        // todo fix disabled state.
-//        setEnabled(undoMenuItem, false);
-//        setEnabled(redoMenuItem, false);
-//        setEnabled(copyMenuItem, false);
-//        setEnabled(deleteMenuItem, false);
+        setEnabled(undoMenuItem, false);
+        setEnabled(redoMenuItem, false);
+        setEnabled(copyMenuItem, false);
+        setEnabled(deleteMenuItem, false);
 
         setEnabled(selectAllMenuItem, opened && canExtract);
         setEnabled(deselectAllMenuItem, false);
@@ -1009,9 +1009,9 @@ public class SwingController
         setEnabled(panToolButton, opened);
         setEnabled(zoomInToolButton, opened);
         setEnabled(zoomOutToolButton, opened);
-        setEnabled(textSelectToolButton, opened);
-        setEnabled(selectToolButton, opened);
-        setEnabled(linkAnnotationToolButton, opened);
+        setEnabled(textSelectToolButton, opened && canExtract);
+        setEnabled(selectToolButton, opened && canModify);
+        setEnabled(linkAnnotationToolButton, opened && canModify);
         setEnabled(fontEngineButton, opened);
         setEnabled(facingPageViewContinuousButton, opened);
         setEnabled(singlePageViewContinuousButton, opened);
@@ -1070,6 +1070,18 @@ public class SwingController
         Permissions permissions = securityManager.getPermissions();
         return permissions == null ||
                 permissions.getPermissions(Permissions.CONTENT_EXTRACTION);
+    }
+
+    public boolean havePermissionToModifyDocument() {
+        if (document == null)
+            return false;
+        org.icepdf.core.pobjects.security.SecurityManager securityManager =
+                document.getSecurityManager();
+        if (securityManager == null)
+            return true;
+        Permissions permissions = securityManager.getPermissions();
+        return permissions == null ||
+                permissions.getPermissions(Permissions.MODIFY_DOCUMENT);
     }
 
     private void setEnabled(JComponent comp, boolean ena) {
@@ -3766,21 +3778,24 @@ public class SwingController
         // text selected,
         else if (evt.getPropertyName().equals(PropertyConstants.TEXT_SELECTED)){
             // enable the copy menu
-            setEnabled(copyMenuItem, true);
-            setEnabled(deselectAllMenuItem, true);
+            boolean canExtract = havePermissionToExtractContent();
+            setEnabled(copyMenuItem, canExtract);
+            setEnabled(deselectAllMenuItem, canExtract);
         }
         // text deselected
         else if (evt.getPropertyName().equals(PropertyConstants.TEXT_DESELECTED)){
             // disable the copy menu
+            boolean canExtract = havePermissionToExtractContent();
             setEnabled(copyMenuItem, false);
             setEnabled(deselectAllMenuItem, false);
-            setEnabled(selectAllMenuItem, true);
+            setEnabled(selectAllMenuItem, canExtract);
         }
         // select all
         else if (evt.getPropertyName().equals(PropertyConstants.TEXT_SELECT_ALL)){
+            boolean canExtract = havePermissionToExtractContent();
             setEnabled(selectAllMenuItem, false);
-            setEnabled(deselectAllMenuItem, true);
-            setEnabled(copyMenuItem, true);
+            setEnabled(deselectAllMenuItem, canExtract);
+            setEnabled(copyMenuItem, canExtract);
         }
         // annotation is selected
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_SELECTED)){
