@@ -1029,8 +1029,16 @@ public class SwingViewBuilder {
         if (isDemo){
             addToToolBar(toolbar, buildDemoToolBar());
         }
-        if (viewerController != null)
+
+        // Set the toolbar back to null if no components were added
+        // The result of this will properly disable the necessary menu items for controlling the toolbar
+        if (toolbar.getComponentCount() == 0) {
+            toolbar = null;
+        }
+
+        if ((viewerController != null) && (toolbar != null))
             viewerController.setCompleteToolBar(toolbar);
+        
         return toolbar;
     }
 
@@ -1404,27 +1412,41 @@ public class SwingViewBuilder {
     }
 
     public JTabbedPane buildUtilityTabbedPane() {
-        JComponent outlinesComp = buildOutlineComponents();
-        SearchPanel searchPanel = buildSearchPanel();
-        AnnotationPanel annotationPanel = buildAnnotationPanel();
-        if (outlinesComp == null && searchPanel == null)
-            return null;
         JTabbedPane utilityTabbedPane = new JTabbedPane();
         utilityTabbedPane.setPreferredSize(new Dimension(250, 400));
-        if (outlinesComp != null)
+
+        // Get a properties manager that can be used to configure utility pane visibility
+        PropertiesManager propertiesManager = null;
+        if (viewerController != null) {
+            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
+        }
+
+        // Build the main set of tabs based on the property file configuration
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.bookmarks.tab.title"),
-                    outlinesComp);
-        if (searchPanel != null)
+                    buildOutlineComponents());
+        }
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
-                    searchPanel);
-        if (annotationPanel != null)
+                    buildSearchPanel());
+        }
+        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.link.tab.title"),
-                    annotationPanel);
+                    buildAnnotationPanel());
+        }
+
+        // Ensure something was added to the utility pane, otherwise reset it to null
+        // By doing this we will stop the utility pane management buttons from displaying
+        if (utilityTabbedPane.getComponentCount() == 0) {
+            utilityTabbedPane = null;
+        }
+        
         if (viewerController != null)
             viewerController.setUtilityTabbedPane(utilityTabbedPane);
+
         return utilityTabbedPane;
     }
 

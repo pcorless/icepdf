@@ -984,7 +984,7 @@ public class SwingController
 
         setEnabled(saveAsFileButton, opened);
         setEnabled(printButton, opened && canPrint);
-        setEnabled(searchButton, opened);
+        setEnabled(searchButton, opened && searchPanel != null);
         setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(currentPageNumberTextField, opened && nPages > 1);
         if (numberOfPagesLabel != null) {
@@ -1800,12 +1800,14 @@ public class SwingController
             documentViewController.setViewType(viewType);
         }
 
-        // Page mode by default is UseNone, where other options are, UseOutlines,
-        // UseThumbs, FullScreen (ignore), UseOC(ignore), UseAttachements(ignore);
-        tmp = catalog.getObject("PageMode");
-        if (tmp != null && tmp instanceof Name) {
-            String pageMode = ((Name) tmp).getName();
-            showUtilityPane = pageMode.equalsIgnoreCase("UseOutlines");
+        if (utilityTabbedPane != null) {
+            // Page mode by default is UseNone, where other options are, UseOutlines,
+            // UseThumbs, FullScreen (ignore), UseOC(ignore), UseAttachements(ignore);
+            tmp = catalog.getObject("PageMode");
+            if (tmp != null && tmp instanceof Name) {
+                String pageMode = ((Name) tmp).getName();
+                showUtilityPane = pageMode.equalsIgnoreCase("UseOutlines");
+            }
         }
 
         // initiates the view layout model, page coordinates and preferred size
@@ -1821,19 +1823,26 @@ public class SwingController
             outlinesTree.setRootVisible(!item.isEmpty());
             outlinesTree.setShowsRootHandles(true);
             if (utilityTabbedPane != null && outlinesScrollPane != null) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(outlinesScrollPane),
-                        true);
-                utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
+                if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(outlinesScrollPane),
+                            true);
+                    utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
+                }
             }
         } else {
             if (utilityTabbedPane != null && outlinesScrollPane != null) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(outlinesScrollPane),
-                        false);
+                if (utilityTabbedPane.indexOfComponent(outlinesScrollPane) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(outlinesScrollPane),
+                            false);
+                }
             }
-            if (utilityTabbedPane != null && searchPanel != null) {
-                utilityTabbedPane.setSelectedComponent(searchPanel);
+
+            // Try to select the search panel
+            if (!safelySelectUtilityPanel(searchPanel)) {
+                // If that fails, try to select the annotationPanel
+                safelySelectUtilityPanel(annotationPanel);
             }
         }
         setUtilityPaneVisible(showUtilityPane);
@@ -1848,7 +1857,7 @@ public class SwingController
         }
 
         // disable the annotation properties panel by default
-        if (annotationPanel != null){
+        if (annotationPanel != null) {
             annotationPanel.setEnabled(false);
         }
 
@@ -2898,14 +2907,36 @@ public class SwingController
     }
 
     /**
+     * Method to select the currently visible tab in the utility pane
+     * Because tabs can be hidden via the properties file, we'll want to check first
+     *  whether the desired panel even exists
+     *
+     * @param comp to select
+     * @return true on successful selection
+     */
+    protected boolean safelySelectUtilityPanel(Component comp) {
+        if ((utilityTabbedPane != null) && (comp != null)) {
+            if (utilityTabbedPane.indexOfComponent(comp) > -1) {
+                utilityTabbedPane.setSelectedComponent(comp);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Make the Search pane visible, and if necessary, the utility pane that encloses it
      *
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showSearchPanel() {
         if (utilityTabbedPane != null && searchPanel != null) {
-            // select the searchPanel tab
-            utilityTabbedPane.setSelectedComponent(searchPanel);
+            if (utilityTabbedPane.getSelectedComponent() != searchPanel) {
+                // select the search panel
+                safelySelectUtilityPanel(searchPanel);
+            }
             // make sure the utility pane is visible
             setUtilityPaneVisible(true);
             // request focus
@@ -2933,7 +2964,7 @@ public class SwingController
 
             // select the annotationPanel tab
             if (utilityTabbedPane.getSelectedComponent() != annotationPanel) {
-                utilityTabbedPane.setSelectedComponent(annotationPanel);
+                safelySelectUtilityPanel(annotationPanel);
             }
 
         }
