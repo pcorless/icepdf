@@ -67,7 +67,8 @@ public class PropertyConstants {
             ANNOTATION_FOCUS_GAINED = "annotationFocusGained",
             ANNOTATION_FOCUS_LOST = "annotationFocusLost",
 
-            ANNOTATION_NEW_LINK = "annotationFocusLost"
+            // not in use
+            ANNOTATION_NEW_LINK = "annotationNewLink"
           ;
 
 

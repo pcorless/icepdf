@@ -32,9 +32,12 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.Memento;
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.views.AnnotationComponent;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
@@ -74,13 +77,13 @@ public class AnnotationState implements Memento {
         this.annotationComponent = annotationComponent;
         // test to store previous border color, more properties to follow.
         if (this.annotationComponent != null &&
-                this.annotationComponent.getAnnotation() != null){
+                this.annotationComponent.getAnnotation() != null) {
 
             Annotation annotation = this.annotationComponent.getAnnotation();
             // link type, visible, invisible
             linkType = annotation.getLinkType();
-            if (annotation instanceof LinkAnnotation){
-                highlightStyle = ((LinkAnnotation)annotation).getHighlightMode();
+            if (annotation instanceof LinkAnnotation) {
+                highlightStyle = ((LinkAnnotation) annotation).getHighlightMode();
             }
             lineThickness = annotation.getLineThickness();
             lineStyle = annotation.getLineStyle();
@@ -96,15 +99,15 @@ public class AnnotationState implements Memento {
     }
 
     public AnnotationState(Integer linkType, String highlightStyle,
-                           float lineThickness, String lineStyle, Color color){
+                           float lineThickness, String lineStyle, Color color) {
         this.linkType = linkType;
         this.highlightStyle = highlightStyle;
         this.lineThickness = lineThickness;
         this.lineStyle = lineStyle;
-        this.color =  new Color(color.getRGB());
+        this.color = new Color(color.getRGB());
     }
 
-    public void apply(AnnotationState applyState){
+    public void apply(AnnotationState applyState) {
 
         // apply the new state vars.
         this.linkType = applyState.linkType;
@@ -113,6 +116,13 @@ public class AnnotationState implements Memento {
         this.lineStyle = applyState.lineStyle;
         this.color = new Color(applyState.color.getRGB());
 
+        // store user space rectangle SpaceRectangle.
+        Rectangle2D.Float rect = applyState.userSpaceRectangle;
+        if (rect != null) {
+            userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
+                    rect.width, rect.height);
+        }
+
         // apply the new state to the annotation and schedule a sync
         restore();
 
@@ -120,16 +130,16 @@ public class AnnotationState implements Memento {
 
     /**
      * Restores the AnnotationComponents state to the state stored during the
-     * construction of this object. 
+     * construction of this object.
      */
-    public void restore(){
-        if (annotationComponent.getAnnotation() != null){
+    public void restore() {
+        if (annotationComponent.getAnnotation() != null) {
             // get reference to annotation
             Annotation annotation = annotationComponent.getAnnotation();
 
             // create a new Border style entry as an inline dictionary
-            if (annotation.getBorderStyle() == null){
-               annotation.setBorderStyle(new BorderStyle());
+            if (annotation.getBorderStyle() == null) {
+                annotation.setBorderStyle(new BorderStyle());
             }
 
             // get the easy stuff out of the way
@@ -137,11 +147,8 @@ public class AnnotationState implements Memento {
             if (color != null) {
                 annotation.setColor(color);
             }
-             // apply old user rectangle
-            annotation.getUserSpaceRectangle()
-                    .setRect(userSpaceRectangle);
-            annotation.getEntries().put(Annotation.RECTANGLE_KEY, 
-                    PRectangle.getPRectangleVector(userSpaceRectangle));
+            // apply old user rectangle
+            annotation.setUserSpaceRectangle(userSpaceRectangle);
 
             restoreLineThickness(annotation);
             restoreHighlightStyle(annotation);
@@ -156,20 +163,23 @@ public class AnnotationState implements Memento {
         }
     }
 
-    public void synchronizeState(){
+    public void synchronizeState() {
         // update the document with this change.
         int pageIndex = annotationComponent.getPageIndex();
         Document document = annotationComponent.getDocument();
         Annotation annotation = annotationComponent.getAnnotation();
         PageTree pageTree = document.getPageTree();
-        Page page = pageTree.getPage(pageIndex,this);
-        // todo still some bug here, when undoing a delete
-        if (!annotation.isDeleted()){
+        Page page = pageTree.getPage(pageIndex, this);
+
+        // state behind draw state.
+        if (!annotation.isDeleted()) {
             page.updateAnnotation(annotation);
             // refresh bounds for any resizes
             annotationComponent.refreshDirtyBounds();
             annotationComponent.refreshAnnotationRect();
-        }else{
+        }
+        // todo still some bug here, when undoing a delete, coordinates are one
+        else {
             // mark it as not deleted
             annotation.setDeleted(false);
             // re-add it to the page
@@ -177,16 +187,16 @@ public class AnnotationState implements Memento {
             // finally update the pageComponent so we can see it again.
             annotationComponent.getParentPageView().addAnnotation(annotation);
             // refresh bounds for any resizes
-//            annotationComponent.refreshDirtyBounds();
+            annotationComponent.refreshDirtyBounds();
             annotationComponent.refreshAnnotationRect();
         }
         pageTree.releasePage(page, this);
     }
 
-    private void restoreLineThickness(Annotation annotation){
+    private void restoreLineThickness(Annotation annotation) {
         // check if we need to set line thickness to default value
         if (linkType == Annotation.VISIBLE_RECTANGLE &&
-                lineThickness == 0){
+                lineThickness == 0) {
             lineThickness = 1f;
         }
 
@@ -199,14 +209,14 @@ public class AnnotationState implements Memento {
             }
         }
         // check for a border style
-        if (annotation.getBorderStyle() != null){
+        if (annotation.getBorderStyle() != null) {
             BorderStyle borderStyle = annotation.getBorderStyle();
             borderStyle.setStrokeWidth(lineThickness);
         }
     }
 
-    private void restoreHighlightStyle(Annotation annotation){
-        if (annotation instanceof LinkAnnotation){
+    private void restoreHighlightStyle(Annotation annotation) {
+        if (annotation instanceof LinkAnnotation) {
             LinkAnnotation linkAnnotation = (LinkAnnotation) annotation;
             Object object = linkAnnotation.getObject(
                     LinkAnnotation.HIGHLIGHT_MODE_KEY);
@@ -215,8 +225,7 @@ public class AnnotationState implements Memento {
                 linkAnnotation.getEntries().put(
                         LinkAnnotation.HIGHLIGHT_MODE_KEY,
                         new Name(highlightStyle));
-            }
-            else{
+            } else {
                 // add the new entry
                 linkAnnotation.getEntries().put(
                         LinkAnnotation.HIGHLIGHT_MODE_KEY,
@@ -225,7 +234,7 @@ public class AnnotationState implements Memento {
         }
     }
 
-    private void restoreLineStyle(Annotation annotation){
+    private void restoreLineStyle(Annotation annotation) {
         Object border = annotation.getObject(Annotation.BORDER_KEY);
 
         BorderStyle borderStyle = annotation.getBorderStyle();
@@ -242,9 +251,9 @@ public class AnnotationState implements Memento {
         }
     }
 
-    private void applyInvisibleLinkType(Annotation annotation){
+    private void applyInvisibleLinkType(Annotation annotation) {
         // clear border thickness
-        if (linkType == Annotation.INVISIBLE_RECTANGLE){
+        if (linkType == Annotation.INVISIBLE_RECTANGLE) {
             Object border = annotation.getObject(Annotation.BORDER_KEY);
             if (border != null && border instanceof Vector) {
                 Vector borderProps = (Vector) border;
@@ -253,7 +262,7 @@ public class AnnotationState implements Memento {
                 }
             }
             // check for a border style
-            if (annotation.getBorderStyle() != null){
+            if (annotation.getBorderStyle() != null) {
                 BorderStyle borderStyle = annotation.getBorderStyle();
                 borderStyle.setStrokeWidth(0);
             }
