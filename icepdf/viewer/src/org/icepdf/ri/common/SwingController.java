@@ -1235,11 +1235,13 @@ public class SwingController
                     documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
             documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+            showAnnotationPanel(null);
         } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
             actualToolMayHaveChanged =
                     documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
             documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
             setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+            showAnnotationPanel(null);
         } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
             actualToolMayHaveChanged =
                     documentViewController.setToolMode(
@@ -1260,6 +1262,12 @@ public class SwingController
         if (actualToolMayHaveChanged){
             reflectToolInToolButtons();
         }
+
+        // disabled the annotation edit panels, selection will activate them again. 
+        if (annotationPanel != null){
+            annotationPanel.setEnabled(false);
+        }
+
         // repaint the page views. 
         documentViewController.getViewContainer().repaint();
     }
@@ -1837,6 +1845,11 @@ public class SwingController
                     messageBundle.getString("viewer.window.title.open.default"));
             viewer.setTitle(formatter.format(messageArguments));
 
+        }
+
+        // disable the annotation properties panel by default
+        if (annotationPanel != null){
+            annotationPanel.setEnabled(false);
         }
 
         // set the go to page combo box in the mainToolbar
@@ -2909,8 +2922,10 @@ public class SwingController
     public void showAnnotationPanel(AnnotationComponentImpl selectedAnnotation) {
         if (utilityTabbedPane != null && annotationPanel != null) {
             // Pass the selected annotation to the link panel
-            annotationPanel.setAnnotationComponent(selectedAnnotation);
-            annotationPanel.setEnabled(true);
+            if (selectedAnnotation != null){
+                annotationPanel.setAnnotationComponent(selectedAnnotation);
+                annotationPanel.setEnabled(true);
+            }
             // make sure the utility pane is visible
             if (!isUtilityPaneVisible()){
                 setUtilityPaneVisible(true);
@@ -3752,7 +3767,6 @@ public class SwingController
                     logger.info("selected annotation " + annotationComponent);
                     showAnnotationPanel(annotationComponent);
                 }
-
             }
         }
         // annotation is deselected
@@ -3774,22 +3788,17 @@ public class SwingController
                 AnnotationState oldAnnotationState = (AnnotationState)oldValue;
                 AnnotationState newAnnotationState = (AnnotationState)newValue;
 
+                // saves the state changes back to the document structure.
+                newAnnotationState.apply(newAnnotationState);
+                newAnnotationState.restore();
+
                 // add new states to care taker implementation.
                 documentViewController.getDocumentViewModel()
                         .addMemento(oldAnnotationState,
                                 newAnnotationState);
-
-                // saves the state changes back to the document structure.
-                newAnnotationState.synchronizeState();
             }
             // check to see if undo/redo can be enabled/disabled.
             reflectUndoCommands();
-        }
-        // New link annotation was created with tool.
-        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_NEW_LINK)){
-            // get reference to annotation callback? not sure yet as to correct behaviour
-            // todo remove and clean up documentation for new link property change, call
-            // back is used instead.
         }
     }
 }
