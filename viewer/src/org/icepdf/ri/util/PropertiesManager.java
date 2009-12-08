@@ -66,6 +66,14 @@ public class PropertiesManager {
     private static final String PROPERTY_DEFAULT_FILE_PATH = "application.defaultFilePath";
     private static final String PROPERTY_DEFAULT_URL = "application.defaultURL";
 
+    public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
+    public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";
+    public static final String PROPERTY_SHOW_TOOLBAR_ZOOM = "application.toolbar.show.zoom";
+    public static final String PROPERTY_SHOW_TOOLBAR_FIT = "application.toolbar.show.fit";
+    public static final String PROPERTY_SHOW_TOOLBAR_ROTATE = "application.toolbar.show.rotate";
+    public static final String PROPERTY_SHOW_TOOLBAR_TOOL = "application.toolbar.show.tool";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION = "application.toolbar.show.annotation";
+
     //the version name, used in about dialog and start-up message
     String versionName = Document.getLibraryVersion();
 
@@ -288,7 +296,7 @@ public class PropertiesManager {
             try {
                 FileOutputStream out = new FileOutputStream(propertyFile);
                 try {
-                    props.store(out, "-- ICEbrowser properties --");
+                    props.store(out, "-- ICEpdf properties --");
                 } finally {
                     out.close();
                 }
