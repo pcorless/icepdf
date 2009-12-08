@@ -613,8 +613,14 @@ public class DocumentViewControllerImpl
                 }
             }
 
-            // set appropriate zoom level
-            setZoom(newZoom, null, true);
+            // If we're scrolled all the way to the top, center to top of document when zoom,
+            //  otherwise the view will zoom into the general center of the page
+            if (getVerticalScrollBar().getValue() == 0) {
+                setZoom(newZoom, new Point(0, 0), true);
+            }
+            else {
+                setZoom(newZoom, null, true);
+            }
         }
 
         return changed;
