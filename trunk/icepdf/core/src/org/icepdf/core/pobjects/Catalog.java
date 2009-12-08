@@ -65,10 +65,12 @@ public class Catalog extends Dictionary {
     private Outlines outlines;
     private NameTree nameTree;
     private Dictionary dests;
+    private ViewerPreferences viewerPref;
 
     private boolean outlinesInited = false;
     private boolean namesTreeInited = false;
     private boolean destsInited = false;
+    private boolean viewerPrefInited = false;
 
     // Announce ICEpdf Core
     static {
@@ -208,6 +210,24 @@ public class Catalog extends Dictionary {
         return dests;
     }
 
+    /**
+     * Gets a dictionary of keys and corresponding viewer preferences
+     * This can be used to pull information based on the PDF specification,
+     *  such as HideToolbar or FitWindow
+     *
+     * @return the constructed ViewerPreferences object
+     */
+    public ViewerPreferences getViewerPreferences() {
+        if (!viewerPrefInited) {
+            viewerPrefInited = true;
+            Object o = library.getObject(entries, "ViewerPreferences");
+            if (o != null) {
+                viewerPref = new ViewerPreferences(library, (Hashtable) o);
+                viewerPref.init();
+            }
+        }
+        return viewerPref;
+    }
 
     /**
      * Returns a summary of the Catalog dictionary values.
