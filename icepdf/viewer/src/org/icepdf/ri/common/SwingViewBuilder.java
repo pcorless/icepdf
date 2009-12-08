@@ -1010,19 +1010,19 @@ public class SwingViewBuilder {
         }
 
         // Build the main set of toolbars based on the property file configuration
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
             addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent));
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
             addToToolBar(toolbar, buildPageNavigationToolBar());
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
             addToToolBar(toolbar, buildZoomToolBar());
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
             addToToolBar(toolbar, buildFitToolBar());
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
             addToToolBar(toolbar, buildRotateToolBar());
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
             addToToolBar(toolbar, buildToolToolBar());
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
             addToToolBar(toolbar, buildAnnotationlToolBar());
 
         // we only add the configurable font engin in the demo version
@@ -1422,17 +1422,17 @@ public class SwingViewBuilder {
         }
 
         // Build the main set of tabs based on the property file configuration
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.bookmarks.tab.title"),
                     buildOutlineComponents());
         }
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
                     buildSearchPanel());
         }
-        if (checkProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.link.tab.title"),
                     buildAnnotationPanel());
@@ -1690,21 +1690,5 @@ public class SwingViewBuilder {
     protected void addToMenuBar(JMenuBar menuBar, JMenu menu) {
         if (menu != null)
             menuBar.add( menu );
-    }
-
-    protected boolean checkProperty(PropertiesManager properties, String propertyName) {
-        // If we don't have a valid PropertiesManager just return true
-        if (properties == null) {
-            return true;
-        }
-
-        // Get the desired property, defaulting to 'true'
-        boolean returnValue = properties.getBoolean(propertyName, true);
-
-        // Set the property back into the manager
-        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        properties.setBoolean(propertyName, returnValue);
-
-        return returnValue;
     }
 }
