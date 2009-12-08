@@ -527,6 +527,16 @@ public class Annotation extends Dictionary {
     }
 
     /**
+     * Sets the users page rectangle for this annotation action instance
+     */
+    public void setUserSpaceRectangle(Rectangle2D.Float rect){
+        userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
+                    rect.width, rect.height);
+        getEntries().put(Annotation.RECTANGLE_KEY,
+                    PRectangle.getPRectangleVector(userSpaceRectangle));
+    }
+
+    /**
      * Gets the action to be performed when the annotation is activated.
      * For compatibility with the old org.icepdf.core.pobjects.Annotation.getAction()
      *
@@ -535,7 +545,9 @@ public class Annotation extends Dictionary {
     public org.icepdf.core.pobjects.actions.Action getAction() {
         Object tmp =library.getDictionary(entries, ACTION_KEY.getName());
         // initial parse will likely have the action as a dictionary, so we
-        // create the new action object on the fly
+        // create the new action object on the fly.  However it is also possible
+        // that we are parsing an action that has no type specification and 
+        // thus we can't use the parser to create the new action.
         if (tmp != null && tmp instanceof Hashtable) {
             Action action = Action.buildAction(library,(Hashtable)tmp);
             // assign reference if applicable
@@ -1184,8 +1196,20 @@ public class Annotation extends Dictionary {
         return color;
     }
 
+    /**
+     * Sets the Annotation colour and underlying 
+     * @param color
+     */
     public void setColor(Color color) {
-        this.color = color;
+        this.color = new Color(color.getRGB());
+        // put colour back in to the dictionary
+        float[] compArray = new float[3];
+        this.color.getColorComponents(compArray);
+        Vector<Number> colorValues = new Vector<Number>(3);
+        colorValues.add(compArray[0]);
+        colorValues.add(compArray[1]);
+        colorValues.add(compArray[2]);
+        entries.put(Annotation.COLOR_KEY, colorValues);
     }
 
     private Rectangle2D.Float deriveDrawingRectangle() {
