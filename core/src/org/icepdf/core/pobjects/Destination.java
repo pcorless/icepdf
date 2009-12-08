@@ -98,11 +98,11 @@ public class Destination {
     private Name type;
 
     // Specified by /XYZ in the core, /(left)(top)(zoom)
-    private float left = Float.NaN;
-    private float bottom = Float.NaN;
-    private float right = Float.NaN;
-    private float top = Float.NaN;
-    private float zoom = Float.NaN;
+    private Float left = null;
+    private Float bottom = null;
+    private Float right = null;
+    private Float top = null;
+    private Float zoom = null;
 
     // named Destination name, can be a name or String
     private Name namedDestination;
@@ -218,34 +218,35 @@ public class Destination {
         }
         // [page /XYZ left top zoom ]
         if (type.equals(TYPE_XYZ)) {
-            if (!v.elementAt(2).equals("null")) {
+            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
                 left = ((Number) v.elementAt(2)).floatValue();
             }
-            if (!v.elementAt(3).equals("null")) {
+            if (v.elementAt(3) != null && !v.elementAt(3).equals("null")) {
                 top = ((Number) v.elementAt(3)).floatValue();
             }
-            if (!v.elementAt(4).equals("null") && !v.elementAt(4).equals("0")) {
+            if (v.elementAt(4) != null && !v.elementAt(4).equals("null") &&
+                    !v.elementAt(4).equals("0")) {
                 zoom = ((Number) v.elementAt(4)).floatValue();
             }
         }
         // [page /FitH top]
         else if (type.equals(TYPE_FITH)) {
-            if (!v.elementAt(2).equals("null")) {
+            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
                 top = ((Number) v.elementAt(2)).floatValue();
             }
         }
         // [page /FitR left bottom right top]
         else if (type.equals(TYPE_FITR)) {
-            if (!v.elementAt(2).equals("null")) {
+            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
                 left = ((Number) v.elementAt(2)).floatValue();
             }
-            if (!v.elementAt(3).equals("null")) {
+            if (v.elementAt(3) != null && !v.elementAt(3).equals("null")) {
                 bottom = ((Number) v.elementAt(3)).floatValue();
             }
-            if (!v.elementAt(4).equals("null")) {
+            if (v.elementAt(4) != null && !v.elementAt(4).equals("null")) {
                 right = ((Number) v.elementAt(4)).floatValue();
             }
-            if (!v.elementAt(5).equals("null")) {
+            if (v.elementAt(5) != null && !v.elementAt(5).equals("null")) {
                 top = ((Number) v.elementAt(5)).floatValue();
             }
         }
@@ -255,13 +256,13 @@ public class Destination {
         }
         // [page /FitBH top]
         else if (type.equals(TYPE_FITBH)) {
-            if (!v.elementAt(2).equals("null")) {
+            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
                 top = ((Number) v.elementAt(2)).floatValue();
             }
         }
         // [page /FitBV left]
         else if (type.equals(TYPE_FITBV)) {
-            if (!v.elementAt(2).equals("null")) {
+            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
                 left = ((Number) v.elementAt(2)).floatValue();
             }
         }
@@ -334,9 +335,9 @@ public class Destination {
     public static Vector<Object> destinationSyntax(
             Reference page, final Name type, Object offset) {
         Vector<Object> destSyntax = new Vector<Object>(3);
-        destSyntax.add(page);
-        destSyntax.add(type);
-        destSyntax.add(offset);
+        destSyntax.addElement(page);
+        destSyntax.addElement(type);
+        destSyntax.addElement(offset);
         return destSyntax;
     }
 
@@ -401,7 +402,7 @@ public class Destination {
      * @return the left offset from the top, left position  of the page.  If not
      *         specified Float.NaN is returned.
      */
-    public float getLeft() {
+    public Float getLeft() {
         return left;
     }
 
@@ -412,7 +413,7 @@ public class Destination {
      * @return the top offset from the top, left position of the page.  If not
      *         specified Float.NaN is returned.
      */
-    public float getTop() {
+    public Float getTop() {
         return top;
     }
 
@@ -421,7 +422,7 @@ public class Destination {
      *
      * @return the specified zoom level, Float.NaN if not specified.
      */
-    public float getZoom() {
+    public Float getZoom() {
         return zoom;
     }
 
@@ -450,7 +451,7 @@ public class Destination {
      *
      * @return bottom coordinate of magnifcation box.
      */
-    public float getBottom() {
+    public Float getBottom() {
         return bottom;
     }
 
@@ -460,7 +461,7 @@ public class Destination {
      *
      * @return rigth coordinate of zoom box
      */
-    public float getRight() {
+    public Float getRight() {
         return right;
     }
 

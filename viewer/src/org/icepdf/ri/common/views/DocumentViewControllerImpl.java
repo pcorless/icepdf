@@ -407,7 +407,7 @@ public class DocumentViewControllerImpl
                 setCurrentPageIndex(pageNumber);
 
                 // apply zoom, from destination
-                if (!Float.isNaN(destination.getZoom()) &&
+                if (destination.getZoom() != null &&
                         destination.getZoom() > 0.0f) {
                     setZoom(destination.getZoom(), null, false);
                 }
@@ -422,7 +422,7 @@ public class DocumentViewControllerImpl
 //                System.out.println("page bounds " + pageBounds);
 //                System.out.println("page " + pageNumber);
 //                System.out.println("top/left " + destination.getTop() + " " + destination.getLeft());
-                if (!Float.isNaN(destination.getTop()) && (int) destination.getTop() != 0) {
+                if (destination.getTop() != null && destination.getTop() != 0) {
                     // calculate potential new y value
                     newViewPosition.y = pageBounds.y + pageBounds.height - (int) (destination.getTop() * zoom);
                 }
@@ -431,7 +431,7 @@ public class DocumentViewControllerImpl
                 }
 
                 // Process left destination coordinate
-                if (!Float.isNaN(destination.getLeft()) && (int) destination.getLeft() != 0) {
+                if (destination.getLeft() != null && destination.getLeft() != 0) {
                     // calculate potential new y value
                     newViewPosition.x = pageBounds.x + (int) (destination.getLeft() * zoom);
                 }

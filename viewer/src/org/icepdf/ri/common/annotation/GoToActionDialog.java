@@ -164,6 +164,10 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 // assign name to name label
                 destinationName.setText(dest.getNamedDestination().toString());
             }
+        } else{
+            // apply default fit type for new annotations.
+            applySelectedValue(implicitDestTypeComboBox, Destination.TYPE_FIT);
+            enableFitTypeFields(Destination.TYPE_FIT);
         }
     }
 
@@ -192,24 +196,24 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                     fitType.equals(Destination.TYPE_FITBH) ||
                     fitType.equals(Destination.TYPE_FITV) ||
                     fitType.equals(Destination.TYPE_FITBV)) {
-                Object top = parseFloat(topTextField.getText());
+                Object top = parseDestCoordinate(topTextField.getText());
                 destVector = Destination.destinationSyntax(
                         pageReference, fitType, top);
             }
             // special xyz case
             else if (fitType.equals(Destination.TYPE_XYZ)) {
-                Object left = parseFloat(leftTextField.getText());
-                Object top = parseFloat(topTextField.getText());
-                Object zoom = parseFloat(zoomTextField.getText());
+                Object left = parseDestCoordinate(leftTextField.getText());
+                Object top = parseDestCoordinate(topTextField.getText());
+                Object zoom = parseDestCoordinate(zoomTextField.getText());
                 destVector = Destination.destinationSyntax(
                         pageReference, fitType, left, top, zoom);
             }
             // special FitR
             else if (fitType.equals(Destination.TYPE_FITR)) {
-                Object left = parseFloat(leftTextField.getText());
-                Object bottom = parseFloat(leftTextField.getText());
-                Object right = parseFloat(leftTextField.getText());
-                Object top = parseFloat(leftTextField.getText());
+                Object left = parseDestCoordinate(leftTextField.getText());
+                Object bottom = parseDestCoordinate(leftTextField.getText());
+                Object right = parseDestCoordinate(leftTextField.getText());
+                Object top = parseDestCoordinate(leftTextField.getText());
                 destVector = Destination.destinationSyntax(
                         pageReference, fitType, left, bottom, right, top);
             }
@@ -450,42 +454,63 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     }
 
-    private Object parseFloat(String fieldValue) {
+    /**
+     * Utility for parsing input text coordinates into valide numbers used
+     * for destinations.  If an empty string or Na, we return a null value
+     * which is valid in post script.
+     *
+     * @param fieldValue value to convert to either a number or null.
+     * @return Float if valid fieldValue, Null otherwise.
+     */
+    private Object parseDestCoordinate(String fieldValue) {
         try {
             return Float.parseFloat(fieldValue);
         } catch (NumberFormatException e) {
             // empty on purpose
         }
-        return "null";
+        return null;
+    }
+
+    /**
+     * Utility to return the 
+     * @param coord float value to convert to UI usuable string
+     * @return string value of coord or an empty string if coord is null
+     */
+    private String getDestCoordinate(Float coord){
+        if (coord != null){
+            return String.valueOf(coord);
+        }else{
+            return "";
+        }
     }
 
     private void applyTypeValues(Destination dest, Name type) {
         if (Destination.TYPE_XYZ.equals(type)) {
-            leftTextField.setText(String.valueOf(dest.getLeft()));
-            topTextField.setText(String.valueOf(dest.getTop()));
-            zoomTextField.setText(String.valueOf(dest.getZoom()));
+            leftTextField.setText(getDestCoordinate(dest.getLeft()));
+            topTextField.setText(getDestCoordinate(dest.getTop()));
+            zoomTextField.setText(getDestCoordinate(dest.getZoom()));
         } else if (Destination.TYPE_FIT.equals(type)) {
             // nothing to do
         } else if (Destination.TYPE_FITH.equals(type)) {
             // get top value
-            topTextField.setText(String.valueOf(dest.getTop()));
+            topTextField.setText(getDestCoordinate(dest.getTop()));
         } else if (Destination.TYPE_FITV.equals(type)) {
             // get left value
-            leftTextField.setText(String.valueOf(dest.getLeft()));
+            leftTextField.setText(getDestCoordinate(dest.getLeft()));
         } else if (Destination.TYPE_FITR.equals(type)) {
             // left, bottom right and top.
-            leftTextField.setText(String.valueOf(dest.getLeft()));
-            rightTextField.setText(String.valueOf(dest.getRight()));
-            topTextField.setText(String.valueOf(dest.getTop()));
-            bottomTextField.setText(String.valueOf(dest.getBottom()));
+            leftTextField.setText(getDestCoordinate(dest.getLeft()));
+            rightTextField.setText(getDestCoordinate(dest.getRight()));
+            topTextField.setText(getDestCoordinate(dest.getTop()));
+            bottomTextField.setText(getDestCoordinate(dest.getBottom()));
         } else if (Destination.TYPE_FITB.equals(type)) {
             // nothing to do.
         } else if (Destination.TYPE_FITH.equals(type)) {
             // get the top
-            topTextField.setText(String.valueOf(dest.getTop()));
+            topTextField.setText(getDestCoordinate(dest.getTop()));
         } else if (Destination.TYPE_FITBV.equals(type)) {
             // get the left
-            leftTextField.setText(String.valueOf(dest.getLeft()));
+            leftTextField.setText(getDestCoordinate(dest.getLeft()));
         }
     }
 
@@ -535,6 +560,10 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                     return;
                 if (src == textField) {
                     String fieldValue = textField.getText();
+                    // empty string, no problem we can allow that.
+                    if ("".equals(fieldValue)){
+                        return;
+                    }
                     float currentValue = Float.parseFloat(fieldValue);
                     textField.setText(String.valueOf(currentValue));
                 }
