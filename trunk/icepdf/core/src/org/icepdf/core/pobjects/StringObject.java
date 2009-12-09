@@ -123,6 +123,13 @@ public interface StringObject {
     public void setReference(Reference reference);
 
     /**
+     * Sets the parent PDF object's reference.
+     *
+     * @return returns the reference used for encryption.
+     */
+    public Reference getReference();
+
+    /**
      * Gets the decrypted literal string value of the data using the key provided by the
      * security manager.
      *
