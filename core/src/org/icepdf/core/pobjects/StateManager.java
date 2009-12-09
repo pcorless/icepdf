@@ -38,6 +38,7 @@ import java.util.Comparator;
 import java.util.Collection;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * This class is responsible for keeping track of which object in the document
@@ -51,6 +52,8 @@ import java.util.List;
  * @since 4.0
  */
 public class StateManager {
+    private static final Logger logger =
+        Logger.getLogger(StateManager.class.getName());
 
     // a list is all we might need. 
     private HashMap<Reference, PObject> changes;
@@ -119,10 +122,11 @@ public class StateManager {
     }
 
     /**
-     * @return An Iterator<PObject> for all the changes objects
+     * @return If there are any changes
      */
-    public Iterator<PObject> iterator() {
-        return changes.values().iterator();
+    public boolean isChanged() {
+////if(true) return true;
+        return !changes.isEmpty();
     }
 
     /**
@@ -130,10 +134,25 @@ public class StateManager {
      */
     public Iterator<PObject> iteratorSortedByObjectNumber() {
         Collection<PObject> coll = changes.values();
+/*
+ * This code allows me to force an object to be treated as modified,
+ * so I can debug how we write out that kind of object, before we
+ * add a ui to actually edit it.
+Reference ref = new Reference(10,0);
+Object ob = trailer.getLibrary().getObject(ref);
+logger.severe("Object 10: " + ob + "  ob.class: " + ob.getClass().getName());
+java.util.HashSet<PObject> hs = new java.util.HashSet<PObject>(coll);
+hs.add(new PObject(ob, ref));
+coll = hs;
+*/
         PObject[] arr = coll.toArray(new PObject[coll.size()]);
         Arrays.sort(arr, new PObjectComparatorByReferenceObjectNumber());
         List<PObject> sortedList = Arrays.asList(arr);
         return sortedList.iterator();
+    }
+    
+    public PTrailer getTrailer() {
+        return trailer;
     }
 
 

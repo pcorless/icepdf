@@ -1001,8 +1001,7 @@ public class Document {
      */
     protected long appendIncrementalUpdate(OutputStream out, long documentLength)
             throws IOException {
-        return Capabilities.appendIncrementalUpdate(
-            out, documentLength, stateManager, pTrailer);
+        return Capabilities.appendIncrementalUpdate(this, out, documentLength);
     }
 
     /**
