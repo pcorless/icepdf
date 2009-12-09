@@ -37,14 +37,15 @@ import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.awt.*;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.WeakHashMap;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class represents a basic implemenation of the AnnotationCallback.  This
@@ -150,16 +151,26 @@ public class MyAnnotationCallback implements AnnotationCallback {
             annotationState.setColor(ANNOTATION_VISITED);
             // line width can also be set.
 //            annotation.getBorderStyle().setStrokeWidth(1.0f);
-            annotation.setBorderColor(annotationState.getColor());
+            annotation.setColor(annotationState.getColor());
         }
         // if the annotation is in the cache then we change its appearance to
         // a visited state.
         else {
-            annotation.setBorderColor(ANNOTATION_VISITED);
+            annotation.setColor(ANNOTATION_VISITED);
             annotationHistory.put(annotation.toString(),
-                    new AnnotationState(annotation.getBorderColor(),
+                    new AnnotationState(annotation.getColor(),
                             annotation.getBorderStyle()));
         }
+    }
+
+    /**
+     * New annotation created with view tool.
+     *
+     * @param page page that annotation was added to.
+     * @param rect new annotation bounds.
+     */
+    public void newAnnotation(PageViewComponent page, Rectangle rect) {
+
     }
 
     /**
@@ -172,7 +183,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
      */
     public void pageAnnotationsInitialized(Page page) {
 
-        Vector annotations = page.getAnnotations();
+        ArrayList<Annotation> annotations = page.getAnnotations();
         // no annotation, no problem just return.
         if (annotations == null || annotations.size() == 0) {
             return;
@@ -180,8 +191,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
         // otherwise we loop though the annotation and add our default border
         Annotation annotation;
         for (int i = 0, max = annotations.size(); i < max; i++) {
-            annotation = (Annotation) annotations.get(i);
-            processNullAnnotationDecoration(annotation);
+            processNullAnnotationDecoration(annotations.get(i));
         }
     }
 
@@ -203,7 +213,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
             // if there is a border already we paint it as it.
             if (annotation.getBorderStyle() != null) {
                 annotationHistory.put(annotation.toString(),
-                        new AnnotationState(annotation.getBorderColor(),
+                        new AnnotationState(annotation.getColor(),
                                 annotation.getBorderStyle()));
             }
             // if no border we add our own custom border.
@@ -212,13 +222,13 @@ public class MyAnnotationCallback implements AnnotationCallback {
                 // set default paint styles
                 borderStyle.setBorderStyle(BorderStyle.BORDER_STYLE_DASHED);
                 annotation.setBorderStyle(borderStyle);
-                if (annotation.getBorderColor() == null) {
-                    annotation.setBorderColor(ANNOTATION);
+                if (annotation.getColor() == null) {
+                    annotation.setColor(ANNOTATION);
                 }
                 // add the state to the hash.
                 annotationHistory.put(annotation.toString(),
                         new AnnotationState(
-                                annotation.getBorderColor(), borderStyle));
+                                annotation.getColor(), borderStyle));
             }
 
         }
@@ -227,7 +237,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
         // we apply the previous border style and color.
         else {
             annotation.setBorderStyle(annotationState.getBorderStyle());
-            annotation.setBorderColor(annotationState.getColor());
+            annotation.setColor(annotationState.getColor());
         }
     }
 
