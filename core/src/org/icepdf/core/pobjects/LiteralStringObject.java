@@ -80,15 +80,24 @@ public class LiteralStringObject implements StringObject {
 
     /**
      * <p>Creates a new literal string object so that it represents the same
-     * sequence of character data specifed by the argument.</p>
+     * sequence of character data specifed by the arguments.  The string
+     * value is assumed to be unencrypted and will be encrytped.  The
+     * method #LiteralStringObject(String string) should be used if the string
+     * is allready encrypted. This method is used for creating new
+     * LiteralStringObject's that are created post document parse. </p>
      *
-     * @param string    the initial contents of the literal string object
+     * @param string    the initial contents of the literal string object,
+     *                  unencrypted.
      * @param reference of parent PObject
+     * @param securityManager security manager used ot encrypt the string.
      */
-    public LiteralStringObject(String string, Reference reference) {
+    public LiteralStringObject(String string, Reference reference,
+                               SecurityManager securityManager) {
         // append string data
-        stringData = new StringBuffer(string);
         this.reference = reference;
+        // decrypt the string. 
+        stringData = new StringBuffer(
+                encryption(string, false, securityManager));
     }
 
     /**
@@ -286,26 +295,45 @@ public class LiteralStringObject implements StringObject {
      * @param securityManager security manager associated with parent document.
      */
     public String getDecryptedLiteralString(SecurityManager securityManager) {
+        return encryption(stringData.toString(), true, securityManager);
+    }
+
+    /**
+     * Decryptes or encrtypes a string. 
+     *
+     * @param string string to encrypt or decrypt
+     * @param decrypt true to decrypt string, false otherwise;
+     * @param securityManager security manager for document.
+     * @return encrypted or decrypted string, depends on value of decrypt param.
+     */
+    public String encryption(String string, boolean decrypt,
+                                         SecurityManager securityManager) {
         // get the security manager instance
         if (securityManager != null && reference != null) {
             // get the key
             byte[] key = securityManager.getDecryptionKey();
 
             // convert string to bytes.
-            byte[] textBytes = new byte[stringData.length()];
+            byte[] textBytes = new byte[string.length()];
             for (int i = 0, max = textBytes.length; i < max; i++) {
-                textBytes[i] = (byte) stringData.charAt(i);
+                textBytes[i] = (byte) string.charAt(i);
             }
 
             // Decrypt String
-            textBytes = securityManager.decrypt(reference,
+            if (decrypt){
+                textBytes = securityManager.decrypt(reference,
                     key,
                     textBytes);
+            }else{
+                textBytes = securityManager.encrypt(reference,
+                    key,
+                    textBytes);
+            }
 
             // convert back to a string
             return new String(textBytes);
         }
-        return stringData.toString();
+        return string;
     }
 
 }
