@@ -242,6 +242,8 @@ public class SwingController
     // internationalization messages, loads message for default JVM locale.
     private ResourceBundle messageBundle = null;
 
+    private PropertiesManager propertiesManager;
+
     /**
      * Create a SwingController object, and its associated ViewerModel
      *
@@ -318,6 +320,13 @@ public class SwingController
      */
     public WindowManagementCallback getWindowManagementCallback() {
         return windowManagementCallback;
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController has access to all properties
+     */
+    public void setPropertiesManager(PropertiesManager propertiesManager) {
+        this.propertiesManager = propertiesManager;
     }
 
     /**
@@ -1510,6 +1519,7 @@ public class SwingController
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
+                e.printStackTrace();
             }
             finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
@@ -1826,8 +1836,13 @@ public class SwingController
         // initiates the view layout model, page coordinates and preferred size
         documentViewController.setDocument(document);
 
+        // Refresh the properties manager object if we don't already have one
+        // This would be not null if the UI was constructed manually
+        if ((propertiesManager == null) && (windowManagementCallback != null)) {
+            propertiesManager = windowManagementCallback.getProperties();
+        }
+
         // Set the default zoom level from the properties file
-        PropertiesManager propertiesManager = windowManagementCallback.getProperties();
         float defaultZoom = (float)PropertiesManager.checkAndStoreDoubleProperty(propertiesManager,
                                                                                  PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
         documentViewController.setZoom(defaultZoom);
@@ -2089,10 +2104,56 @@ public class SwingController
 
     /**
      * Utility method for saving a copy of the currently opened
-     * PDF to a file. Shows a file save dialog for the user to
-     * select where to save the file to, and what name to give it.
+     * PDF to a file. This will check all valid permissions and pass off the
+     * save to the saveFile(boolean) method
      */
     public void saveFile() {
+        /*
+        if (!document.getStateManager().isChanged()) {
+            saveFile(true);
+        }
+        else {
+            if (havePermissionToModifyDocument()) {
+                if (Capabilities.isIncrementalUpdatingAvailable()) {
+                    saveFile(true);
+                }
+                else {
+                    if (
+                    org.icepdf.ri.util.Resources.showConfirmDialog(
+                            viewer,
+                            messageBundle,
+                            "viewer.dialog.saveAs.missingPro.title",
+                            "viewer.dialog.saveAs.missingPro.msg")
+                    ) {
+                        saveFile(true);
+                    }
+                }
+            }
+            else {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.saveAs.noPermission.title",
+                        "viewer.dialog.saveAs.noPermission.msg");                
+            }
+        }
+        */
+        saveFile(true);
+    }
+
+    /**
+     * Utility method for saving a copy of the currently opened
+     * PDF to a file. Shows a file save dialog for the user to
+     * select where to save the file to, and what name to give it.
+     * 
+     * @param hasPermission true to process save
+     */
+    private void saveFile(boolean hasPermission) {
+        if (!hasPermission) {
+            return;
+        }
+
         // Create and display a file saving dialog
         final JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
@@ -2141,7 +2202,7 @@ public class SwingController
                         "viewer.dialog.saveAs.noExtensionError.title",
                         "viewer.dialog.saveAs.noExtensionError.msg");
 
-                saveFile();
+                saveFile(true);
             } else if (!extension.equals(FileExtensionUtils.pdf)) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -2150,7 +2211,7 @@ public class SwingController
                         "viewer.dialog.saveAs.extensionError.title",
                         "viewer.dialog.saveAs.extensionError.msg",
                         file.getName());
-                saveFile();
+                saveFile(true);
             } else if ((originalFileName != null) &&
                        (originalFileName.equalsIgnoreCase(file.getName()))) {
                 // Ensure a unique filename
@@ -2162,7 +2223,7 @@ public class SwingController
                         "viewer.dialog.saveAs.noneUniqueName.msg",
                         file.getName());
 
-                saveFile();
+                saveFile(true);
             } else {
                 // save file stream
                 try {

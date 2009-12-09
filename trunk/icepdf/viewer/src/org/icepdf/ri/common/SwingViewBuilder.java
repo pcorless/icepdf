@@ -366,6 +366,13 @@ public class SwingViewBuilder {
                 org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
     }
 
+    public SwingViewBuilder(SwingController c, PropertiesManager properties) {
+        this(c, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
+                DocumentViewControllerImpl.ONE_PAGE_VIEW,
+                org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
+        c.setPropertiesManager(properties);
+    }
+
     /**
      * Construct a SwingVewBuilder with all of the default settings
      *
