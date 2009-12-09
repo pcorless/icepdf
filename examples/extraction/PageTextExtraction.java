@@ -34,12 +34,15 @@
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.graphics.text.LineText;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.FileWriter;
 import java.util.Enumeration;
+import java.util.ArrayList;
 
 /**
  * The <code>PageTextExtraction</code> class is an example of how to extract
@@ -76,12 +79,9 @@ public class PageTextExtraction {
             // Get text from the first page of the document, asuming that there
             // is text to extract.
             int pagNumber = 0;
-            Enumeration pageText = document.getPageText(pagNumber).elements();
-            while (pageText.hasMoreElements()){
-                StringBuffer textBlock = (StringBuffer) pageText.nextElement();
-                if (textBlock != null){
-                    fileWriter.write(textBlock.toString());
-                }
+            PageText pageText = document.getPageText(pagNumber);
+            if (pageText != null && pageText.getPageLines() != null){
+                fileWriter.write(pageText.toString());
             }
 
             // close the writer
