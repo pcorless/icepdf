@@ -321,4 +321,45 @@ public class Utils {
             numBytes++;
         return numBytes;
     }
+
+    /**
+     * When converting between String chars and bytes, there's an implied
+     * encoding to be used, dependent on the context and platform. If
+     * none is specified, then String(byte[]) will use the platform's
+     * default encoding. This method is for when encoding is not relevant,
+     * when the String simply holds byte values in each char.
+     * 
+     * @see org.icepdf.core.pobjects.LiteralStringObject
+     * @see org.icepdf.core.pobjects.HexStringObject
+     * @see org.icepdf.core.pobjects.security.StandardEncryption
+     */
+    public static byte[] convertByteCharSequenceToByteArray(CharSequence string) {
+        final int max = string.length();
+        byte[] bytes = new byte[max];
+        for (int i = 0; i < max; i++) {
+            bytes[i] = (byte) string.charAt(i);
+        }
+        return bytes;
+    }
+    
+    /**
+     * When converting between String chars and bytes, there's an implied
+     * encoding to be used, dependent on the context and platform. If
+     * none is specified, then String(byte[]) will use the platform's
+     * default encoding. This method is for when encoding is not relevant,
+     * when the String simply holds byte values in each char.
+     * 
+     * @see org.icepdf.core.pobjects.LiteralStringObject
+     * @see org.icepdf.core.pobjects.HexStringObject
+     * @see org.icepdf.core.pobjects.security.StandardEncryption
+     */
+    public static String convertByteArrayToByteString(byte[] bytes) {
+        final int max = bytes.length;
+        StringBuffer sb = new StringBuffer(max);
+        for (int i = 0; i < max; i++) {
+            int b = ((int) bytes[i]) & 0xFF;
+            sb.append((char)b);
+        }
+        return sb.toString();
+    }
 }

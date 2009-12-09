@@ -34,6 +34,7 @@ package org.icepdf.core.pobjects.security;
 
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.util.Utils;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -64,7 +65,8 @@ class StandardEncryption {
      * < 28 BF 4E 5E 4E 75 8A 41 64 00 4E 56 FF FA 01 08
      * 2E 2E 00 B6 D0 68 3E 80 2F 0C A9 FE 64 53 69 7A >
      */
-    private static final byte[] PADDING = {(byte) 0x28, (byte) 0xBF, (byte) 0x4E,
+    private static final byte[] PADDING = {
+            (byte) 0x28, (byte) 0xBF, (byte) 0x4E,
             (byte) 0x5E, (byte) 0x4E, (byte) 0x75,
             (byte) 0x8A, (byte) 0x41, (byte) 0x64,
             (byte) 0x00, (byte) 0x4E, (byte) 0x56,
@@ -282,26 +284,20 @@ class StandardEncryption {
         md5.update(paddedPassword);
 
         // Step 3: Pass the value of the encryption dictionary's 0 entry
-        String tmp = encryptionDictionary.getBigO();
-        byte[] bigO = new byte[tmp.length()];
-        for (int i = 0; i < tmp.length(); i++) {
-            bigO[i] = (byte) tmp.charAt(i);
-        }
+        byte[] bigO = Utils.convertByteCharSequenceToByteArray(
+            encryptionDictionary.getBigO());
         md5.update(bigO);
 
         // Step 4: treat P as an unsigned 4-byte integer
         for (int i = 0, p = encryptionDictionary.getPermissions(); i < 4; i++,
                 p >>= 8) {
-            md5.update((byte) p);
+            md5.update((byte) (p & 0xFF));
         }
 
         // Step 5: Pass in the first element of the file's file identifies array
         String firstFileID =
                 ((StringObject) encryptionDictionary.getFileID().elementAt(0)).getLiteralString();
-        byte[] fileID = new byte[firstFileID.length()];
-        for (int i = 0; i < firstFileID.length(); i++) {
-            fileID[i] = (byte) firstFileID.charAt(i);
-        }
+        byte[] fileID = Utils.convertByteCharSequenceToByteArray(firstFileID);
         paddedPassword = md5.digest(fileID);
 
         // Step 6: If document metadata is not being encrypted, pass 4 bytes with
@@ -370,10 +366,8 @@ class StandardEncryption {
 
         int passwordLength = Math.min(password.length(), 32);
 
-        byte[] bytePassword = new byte[password.length()];
-        for (int i = 0; i < password.length(); i++) {
-            bytePassword[i] = (byte) password.charAt(i);
-        }
+        byte[] bytePassword =
+            Utils.convertByteCharSequenceToByteArray(password);
         // copy passwords bytes, but truncate the password is > 32 bytes
         System.arraycopy(bytePassword, 0, paddedPassword, 0, passwordLength);
 
@@ -593,10 +587,7 @@ class StandardEncryption {
             // Step 3: Pass the first element of the files identify array to the
             // hash function and finish the hash.
             String firstFileID = ((StringObject) encryptionDictionary.getFileID().elementAt(0)).getLiteralString();
-            byte[] fileID = new byte[firstFileID.length()];
-            for (int i = 0; i < firstFileID.length(); i++) {
-                fileID[i] = (byte) firstFileID.charAt(i);
-            }
+            byte[] fileID = Utils.convertByteCharSequenceToByteArray(firstFileID);
             byte[] encryptData = md5.digest(fileID);
 
             // Step 4: Encrypt the 16 byte result of the hash, using an RC4
@@ -671,12 +662,8 @@ class StandardEncryption {
         // Algorithm 3.5 (Revision 3) using the supplied password string.
         byte[] tmpUValue = calculateUserPassword(userPassword);
 
-        String tmp = encryptionDictionary.getBigU();
-        byte[] bigU = new byte[tmp.length()];
-        for (int i = 0; i < tmp.length(); i++) {
-            bigU[i] = (byte) tmp.charAt(i);
-        }
-
+        byte[] bigU = Utils.convertByteCharSequenceToByteArray(
+            encryptionDictionary.getBigU());
 
         byte[] trunkUValue;
         // compare all 32 bytes.
@@ -717,11 +704,8 @@ class StandardEncryption {
         byte[] decryptedO = null;
         try {
             // get bigO value
-            String tmp = encryptionDictionary.getBigO();
-            byte[] bigO = new byte[tmp.length()];
-            for (int i = 0; i < tmp.length(); i++) {
-                bigO[i] = (byte) tmp.charAt(i);
-            }
+            byte[] bigO = Utils.convertByteCharSequenceToByteArray(
+                encryptionDictionary.getBigO());
             if (encryptionDictionary.getRevisionNumber() == 2) {
                 // Step 2 (R == 2):  decrypt the value of the encryption dictionary
                 // O entry, using an RC4 encryption function with the encryption
@@ -775,11 +759,7 @@ class StandardEncryption {
         // Authenticate this user password using Algorithm 3.6.  If it is found
         // to be correct, the password supplied is the correct owner password.
 
-        String tmpUserPassword = "";
-
-        for (byte aDecryptedO : decryptedO) {
-            tmpUserPassword += (char) aDecryptedO;
-        }
+        String tmpUserPassword = Utils.convertByteArrayToByteString(decryptedO);
         //System.out.println("tmp user password " + tmpUserPassword);
         boolean isValid = authenticateUserPassword(tmpUserPassword);
 
