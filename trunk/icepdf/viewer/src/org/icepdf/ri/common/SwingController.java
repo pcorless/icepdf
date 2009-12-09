@@ -1519,7 +1519,6 @@ public class SwingController
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
-                e.printStackTrace();
             }
             finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
