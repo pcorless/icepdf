@@ -33,6 +33,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.Controller;
+import org.icepdf.core.application.Capabilities;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
@@ -2104,6 +2105,7 @@ public class SwingController
         // See if we can come up with a default file name
         // We want the bytes from whence, but the file name of origin
         String origin = document.getDocumentOrigin();
+        String originalFileName = null;
         if (origin != null) {
             int lastSeparator = Math.max(
                     Math.max(
@@ -2112,9 +2114,13 @@ public class SwingController
                     origin.lastIndexOf(File.separator) // Might not be / or \
             );
             if (lastSeparator >= 0) {
-                String fileName = origin.substring(lastSeparator + 1);
-                if (fileName != null && fileName.length() > 0) {
-                    fileChooser.setSelectedFile(new File(fileName));
+                originalFileName = origin.substring(lastSeparator + 1);
+                if (originalFileName != null && originalFileName.length() > 0) {
+                    // Set the selected file to a slightly modified name of the original
+                    fileChooser.setSelectedFile(new File(generateNewSaveName(originalFileName)));
+                }
+                else {
+                    originalFileName = null;
                 }
             }
         }
@@ -2124,6 +2130,7 @@ public class SwingController
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
+
             // make sure file being opened is valid
             String extension = FileExtensionUtils.getExtension(file);
             if (extension == null) {
@@ -2143,6 +2150,18 @@ public class SwingController
                         "viewer.dialog.saveAs.extensionError.title",
                         "viewer.dialog.saveAs.extensionError.msg",
                         file.getName());
+                saveFile();
+            } else if ((originalFileName != null) &&
+                       (originalFileName.equalsIgnoreCase(file.getName()))) {
+                // Ensure a unique filename
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.saveAs.noneUniqueName.title",
+                        "viewer.dialog.saveAs.noneUniqueName.msg",
+                        file.getName());
+
                 saveFile();
             } else {
                 // save file stream
@@ -2176,6 +2195,17 @@ public class SwingController
                 ViewModel.setDefaultFile(file);
             }
         }
+    }
+
+    protected String generateNewSaveName(String fileName) {
+        if (fileName != null) {
+            // Return the file with "-new" in the filename, before the extension
+            // For example Test.pdf would become Test-new.pdf
+            return fileName.substring(0, fileName.toLowerCase().indexOf(FileExtensionUtils.pdf)-1) +
+                   "-new." + FileExtensionUtils.pdf;
+        }
+
+        return fileName;
     }
 
     /**

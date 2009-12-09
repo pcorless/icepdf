@@ -59,8 +59,11 @@ public class FileExtensionUtils {
     }
 
     public static String getExtension(File f) {
+        return getExtension(f.getName());
+    }
+
+    public static String getExtension(String s) {
         String ext = null;
-        String s = f.getName();
         int i = s.lastIndexOf('.');
 
         if (i > 0 && i < s.length() - 1) {
@@ -68,7 +71,6 @@ public class FileExtensionUtils {
         }
         return ext;
     }
-
 
     private static class ExtensionFileFilter extends FileFilter {
         private String description;
