@@ -35,6 +35,7 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Utils;
 
 /**
  * <p>This class represents a PDF Literal String Object.  Literal String
@@ -314,10 +315,8 @@ public class LiteralStringObject implements StringObject {
             byte[] key = securityManager.getDecryptionKey();
 
             // convert string to bytes.
-            byte[] textBytes = new byte[string.length()];
-            for (int i = 0, max = textBytes.length; i < max; i++) {
-                textBytes[i] = (byte) string.charAt(i);
-            }
+            byte[] textBytes =
+                Utils.convertByteCharSequenceToByteArray(string);
 
             // Decrypt String
             if (decrypt){
@@ -331,7 +330,7 @@ public class LiteralStringObject implements StringObject {
             }
 
             // convert back to a string
-            return new String(textBytes);
+            return Utils.convertByteArrayToByteString(textBytes);
         }
         return string;
     }

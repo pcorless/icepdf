@@ -35,6 +35,7 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Utils;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -326,10 +327,8 @@ public class HexStringObject implements StringObject {
             byte[] key = securityManager.getDecryptionKey();
 
             // convert string to bytes.
-            byte[] textBytes = new byte[stringData.length()];
-            for (int i = 0, max = textBytes.length; i < max; i++) {
-                textBytes[i] = (byte) stringData.charAt(i);
-            }
+            byte[] textBytes =
+                Utils.convertByteCharSequenceToByteArray(stringData);
 
             // Decrypt String
             textBytes = securityManager.decrypt(reference,
@@ -337,7 +336,7 @@ public class HexStringObject implements StringObject {
                     textBytes);
 
             // convert back to a string
-            return new String(textBytes);
+            return Utils.convertByteArrayToByteString(textBytes);
         }
         return getLiteralString();
     }
