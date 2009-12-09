@@ -55,7 +55,7 @@ public class URIAction extends Action {
     public static final Name URI_KEY = new Name("URI");
 
     // uniform resource identifier to be resolved.
-    private String URI;
+    private StringObject URI;
 
     // specifies whether to track the mouse position.
     private boolean isMap;
@@ -68,12 +68,11 @@ public class URIAction extends Action {
      */
     public URIAction(Library l, Hashtable h) {
         super(l, h);
-        // URI should alwasy be text, but there have been examples of
+        // URI should always be text, but there have been examples of
         // Hex encoded uri values.
         Object actionURI = getObject(URI_KEY);
         if (actionURI instanceof StringObject) {
-            StringObject tmp = (StringObject) actionURI;
-            URI = tmp.getDecryptedLiteralString(library.securityManager);
+            URI = (StringObject) actionURI;
         }
     }
 
@@ -83,9 +82,10 @@ public class URIAction extends Action {
      * @param URI an string value except null.
      */
     public void setURI(String URI) {
+        StringObject tmp = new LiteralStringObject(URI, getPObjectReference());
         // StringObject detection should allow writer to pick on encryption.
-        entries.put(URIAction.URI_KEY, new LiteralStringObject(URI));
-        this.URI = URI;
+        entries.put(URIAction.URI_KEY, tmp);
+        this.URI = tmp;
     }
 
     /**
@@ -94,7 +94,7 @@ public class URIAction extends Action {
      * @return uniform resouce.
      */
     public String getURI() {
-        return URI;
+        return URI.getDecryptedLiteralString(library.securityManager);
     }
 
     /**

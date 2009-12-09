@@ -134,7 +134,7 @@ public class NameNode extends Dictionary {
         if (tmp instanceof StringObject) {
             StringObject nameText = (StringObject) tmp;
             String data = nameText.getDecryptedLiteralString(library.securityManager);
-            return new LiteralStringObject(data);
+            return new LiteralStringObject(data, nameText.getReference());
         }
         return null;
     }

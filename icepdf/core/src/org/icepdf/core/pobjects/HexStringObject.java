@@ -305,6 +305,15 @@ public class HexStringObject implements StringObject {
     }
 
     /**
+     * Sets the parent PDF object's reference.
+     *
+     * @return returns the reference used for encryption.
+     */
+    public Reference getReference(){
+        return reference;
+    }
+
+    /**
      * Gets the decrypted literal string value of the data using the key provided by the
      * security manager.
      *

@@ -80,6 +80,19 @@ public class LiteralStringObject implements StringObject {
 
     /**
      * <p>Creates a new literal string object so that it represents the same
+     * sequence of character data specifed by the argument.</p>
+     *
+     * @param string    the initial contents of the literal string object
+     * @param reference of parent PObject
+     */
+    public LiteralStringObject(String string, Reference reference) {
+        // append string data
+        stringData = new StringBuffer(string);
+        this.reference = reference;
+    }
+
+    /**
+     * <p>Creates a new literal string object so that it represents the same
      * sequence of character data specifed by the argument. The first and last
      * characters of the StringBuffer are removed.  This constructor should
      * only be used in the context of the parser which has leading and ending
@@ -255,6 +268,15 @@ public class LiteralStringObject implements StringObject {
      */
     public void setReference(Reference reference) {
         this.reference = reference;
+    }
+
+    /**
+     * Sets the parent PDF object's reference.
+     *
+     * @return returns the reference used for encryption.
+     */
+    public Reference getReference() {
+        return reference;
     }
 
     /**
