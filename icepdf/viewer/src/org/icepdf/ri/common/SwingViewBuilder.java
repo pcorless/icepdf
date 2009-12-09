@@ -1005,7 +1005,8 @@ public class SwingViewBuilder {
 
         // Attempt to get the properties manager so we can configure which toolbars are visible
         PropertiesManager propertiesManager = null;
-        if (viewerController != null) {
+        if (viewerController != null &&
+                viewerController.getWindowManagementCallback() != null) {
             propertiesManager = viewerController.getWindowManagementCallback().getProperties();
         }
 
@@ -1417,7 +1418,8 @@ public class SwingViewBuilder {
 
         // Get a properties manager that can be used to configure utility pane visibility
         PropertiesManager propertiesManager = null;
-        if (viewerController != null) {
+        if (viewerController != null && 
+                viewerController.getWindowManagementCallback() != null) {
             propertiesManager = viewerController.getWindowManagementCallback().getProperties();
         }
 
