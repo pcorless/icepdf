@@ -34,8 +34,6 @@
 
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
-import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.pobjects.Document;
 
 import javax.swing.*;
 
@@ -43,7 +41,7 @@ import javax.swing.*;
  * The <code>ViewerComponentExample</code> class is an example of how to use
  * <code>SwingController</code> and <code>SwingViewBuilder</code>
  * to build a PDF viewer component.  A file specified at the command line is
- * opened in a JFrame which contains the viewer component. 
+ * opened in a JFrame which contains the viewer component.
  *
  * @since 2.0
  */
@@ -55,40 +53,18 @@ public class ViewerComponentExample {
         // build a component controller
         SwingController controller = new SwingController();
 
-        SwingViewBuilder factory = new SwingViewBuilder( controller );
+        SwingViewBuilder factory = new SwingViewBuilder(controller);
 
         JPanel viewerComponentPanel = factory.buildViewerPanel();
 
         JFrame applicationFrame = new JFrame();
-        applicationFrame.getContentPane().add( viewerComponentPanel );
+        applicationFrame.getContentPane().add(viewerComponentPanel);
 
         // Now that the GUI is all in place, we can try openning a PDF
-        controller.openDocument( filePath );
+        controller.openDocument(filePath);
 
         // show the component
         applicationFrame.pack();
         applicationFrame.setVisible(true);
-
-        /**
-         * Start of a simple search for the loaded file, which in this case
-         * I'm assuming is the ICEpdf developers guide.
-         */
-        // get the search controller
-        DocumentSearchController searchController =
-                controller.getDocumentSearchController();
-        // add a few terms.
-        searchController.addSearchTerm("ICEpdf", false, false);
-        searchController.addSearchTerm("ICEpdf Features", false, false);
-        searchController.addSearchTerm("Product Contents", true, false);
-        // search the pages in the document or a subset
-        Document document = controller.getDocument();
-        for (int pageIndex = 0; pageIndex < document.getNumberOfPages();
-             pageIndex++) {
-            searchController.searchHighlightPage(pageIndex);
-        }
-
-        // searches can be cleared for the whole document or for for a page.
-//        searchController.clearAllSearchHighlight();
-//        searchController.clearSearchHighlight(pageIndex);
     }
 }
