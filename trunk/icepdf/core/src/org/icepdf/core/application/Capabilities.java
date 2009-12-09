@@ -2,6 +2,8 @@ package org.icepdf.core.application;
 
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.PTrailer;
+import org.icepdf.core.pobjects.Document;
+
 import java.io.OutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -28,8 +30,7 @@ public class Capabilities {
             IncrementalUpdate_appendIncrementalUpdate =
                 incUpdateClass.getMethod(
                     "appendIncrementalUpdate",
-                    new Class[] {OutputStream.class, Long.TYPE,
-                                 StateManager.class, PTrailer.class});
+                    new Class[] {Document.class, OutputStream.class, Long.TYPE});
             logger.log(Level.FINE, "Incremental updates supported");
         }
         catch(ClassNotFoundException e) {
@@ -46,14 +47,13 @@ public class Capabilities {
     }
 
     public static long appendIncrementalUpdate(
-        OutputStream out, long documentLength,
-        StateManager stateManager, PTrailer pTrailer)
+        Document document, OutputStream out, long documentLength)
             throws IOException {
         long ret = 0;
         if (IncrementalUpdate_appendIncrementalUpdate != null) {
             try {
                 ret = (Long) IncrementalUpdate_appendIncrementalUpdate.invoke(
-                    null, out, documentLength, stateManager, pTrailer);
+                    null, document, out, documentLength);
             }
             catch(IllegalAccessException e) {
                 logger.log(Level.SEVERE,
