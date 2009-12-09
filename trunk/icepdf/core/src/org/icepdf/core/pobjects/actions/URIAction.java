@@ -68,12 +68,6 @@ public class URIAction extends Action {
      */
     public URIAction(Library l, Hashtable h) {
         super(l, h);
-        // URI should always be text, but there have been examples of
-        // Hex encoded uri values.
-        Object actionURI = getObject(URI_KEY);
-        if (actionURI instanceof StringObject) {
-            URI = (StringObject) actionURI;
-        }
     }
 
     /**
@@ -82,7 +76,8 @@ public class URIAction extends Action {
      * @param URI an string value except null.
      */
     public void setURI(String URI) {
-        StringObject tmp = new LiteralStringObject(URI, getPObjectReference());
+        StringObject tmp = new LiteralStringObject(
+                URI, getPObjectReference(), library.securityManager);
         // StringObject detection should allow writer to pick on encryption.
         entries.put(URIAction.URI_KEY, tmp);
         this.URI = tmp;
@@ -94,6 +89,12 @@ public class URIAction extends Action {
      * @return uniform resouce.
      */
     public String getURI() {
+        // URI should always be text, but there have been examples of
+        // Hex encoded uri values.
+        Object actionURI = getObject(URI_KEY);
+        if (actionURI instanceof StringObject) {
+            URI = (StringObject) actionURI;
+        }
         return URI.getDecryptedLiteralString(library.securityManager);
     }
 

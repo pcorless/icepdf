@@ -52,8 +52,8 @@ public class NameNode extends Dictionary {
     private Vector namesAndValues;
     private Vector kidsReferences;
     private Vector kidsNodes;
-    private StringObject lowerLimit;
-    private StringObject upperLimit;
+    private String lowerLimit;
+    private String upperLimit;
 
     /**
      * @param l
@@ -108,11 +108,11 @@ public class NameNode extends Dictionary {
         return kidsNodes;
     }
 
-    public StringObject getLowerLimit() {
+    public String getLowerLimit() {
         return lowerLimit;
     }
 
-    public StringObject getUpperLimit() {
+    public String getUpperLimit() {
         return upperLimit;
     }
 
@@ -123,18 +123,25 @@ public class NameNode extends Dictionary {
         // We need to look at each key and encrypt any Text objects which
         // is every second object
         for (int i = 0; i < namesAndValues.size(); i += 2) {
-            Object tmp = namesAndValues.get(i);
-            tmp = decryptIfText(tmp);
-            namesAndValues.set(i, tmp);
+            namesAndValues.set(i,
+                    decryptIfText(namesAndValues.get(i)));
         }
     }
 
-
-    private StringObject decryptIfText(Object tmp) {
+    /**
+     * Decyptes the node String object and returns a String value of the node
+     * which is used to find names in the name tree. We only do this once
+     * for the notes names vector.
+     * @param tmp
+     * @return
+     */
+    private String decryptIfText(Object tmp) {
         if (tmp instanceof StringObject) {
             StringObject nameText = (StringObject) tmp;
-            String data = nameText.getDecryptedLiteralString(library.securityManager);
-            return new LiteralStringObject(data, nameText.getReference());
+            return nameText.getDecryptedLiteralString(library.securityManager);
+        }
+        else if (tmp instanceof String){
+            return (String)tmp;
         }
         return null;
     }
