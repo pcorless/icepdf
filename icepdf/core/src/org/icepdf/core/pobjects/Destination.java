@@ -145,7 +145,6 @@ public class Destination {
             // Make sure to decrypt this attribute
             if (object instanceof StringObject) {
                 StringObject stringObject = (StringObject) object;
-                stringObject.getDecryptedLiteralString(library.securityManager);
                 s = stringObject.getDecryptedLiteralString(library.securityManager);
             } else {
                 s = object.toString();
