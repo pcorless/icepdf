@@ -2107,16 +2107,24 @@ public class SwingController
      * save to the saveFile(boolean) method
      */
     public void saveFile() {
-        /*
-        if (!document.getStateManager().isChanged()) {
-            saveFile(true);
-        }
-        else {
-            if (havePermissionToModifyDocument()) {
+        // Ensure we actually CAN save the document in the first place
+        if (havePermissionToModifyDocument()) {
+            // Determine if the file was even changed
+            // If it wasn't, just resave the original with a new name (basically a file copy)
+            if (!document.getStateManager().isChanged()) {
+                saveFile(true);
+            }
+            // Otherwise we'll attempt to save the incremental changes
+            else {
+                // Determine if we have incremental updates available
+                // This is a Professional Version feature, so if we don't have it
+                //  then warn the user and still give them a chance to save a copy
                 if (Capabilities.isIncrementalUpdatingAvailable()) {
-                    saveFile(true);
+                    saveFile(false);
                 }
                 else {
+                    // Warn the user of their lack of Professional Version, but give them
+                    //  a chance to save the document anyways as an original copy
                     if (
                     org.icepdf.ri.util.Resources.showConfirmDialog(
                             viewer,
@@ -2128,17 +2136,15 @@ public class SwingController
                     }
                 }
             }
-            else {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.saveAs.noPermission.title",
-                        "viewer.dialog.saveAs.noPermission.msg");                
-            }
         }
-        */
-        saveFile(true);
+        else {
+            org.icepdf.ri.util.Resources.showMessageDialog(
+                    viewer,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    messageBundle,
+                    "viewer.dialog.saveAs.noPermission.title",
+                    "viewer.dialog.saveAs.noPermission.msg");
+        }
     }
 
     /**
@@ -2146,13 +2152,9 @@ public class SwingController
      * PDF to a file. Shows a file save dialog for the user to
      * select where to save the file to, and what name to give it.
      * 
-     * @param hasPermission true to process save
+     * @param saveCopy to either save a direct copy or persist all updates
      */
-    private void saveFile(boolean hasPermission) {
-        if (!hasPermission) {
-            return;
-        }
-
+    private void saveFile(boolean saveCopy) {
         // Create and display a file saving dialog
         final JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
@@ -2200,8 +2202,7 @@ public class SwingController
                         messageBundle,
                         "viewer.dialog.saveAs.noExtensionError.title",
                         "viewer.dialog.saveAs.noExtensionError.msg");
-
-                saveFile(true);
+                saveFile(saveCopy);
             } else if (!extension.equals(FileExtensionUtils.pdf)) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -2210,7 +2211,7 @@ public class SwingController
                         "viewer.dialog.saveAs.extensionError.title",
                         "viewer.dialog.saveAs.extensionError.msg",
                         file.getName());
-                saveFile(true);
+                saveFile(saveCopy);
             } else if ((originalFileName != null) &&
                        (originalFileName.equalsIgnoreCase(file.getName()))) {
                 // Ensure a unique filename
@@ -2221,8 +2222,7 @@ public class SwingController
                         "viewer.dialog.saveAs.noneUniqueName.title",
                         "viewer.dialog.saveAs.noneUniqueName.msg",
                         file.getName());
-
-                saveFile(true);
+                saveFile(saveCopy);
             } else {
                 // save file stream
                 try {
@@ -2239,7 +2239,20 @@ public class SwingController
                     FileOutputStream fileOutputStream = new FileOutputStream(file);
                     BufferedOutputStream buf = new BufferedOutputStream(
                         fileOutputStream, 4096*2);
-                    document.saveToOutputStream(buf);
+
+                    // We should either save a copy of the file (necessary due to
+                    //  missing incremental update support, or no Professional Version, etc.
+                    // Otherwise we attempt to save all the changes
+                    // Note that 'saveToOutputStream' could simply be called as it
+                    //  will already check whether a copy should be saved or not,
+                    //  but both methods are demonstrated for the sake of clarity
+                    if (saveCopy) {
+                        document.writeToOutputStream(buf);
+                    }
+                    else {
+                        document.saveToOutputStream(buf);
+                    }
+
                     buf.flush();
                     fileOutputStream.flush();
                     buf.close();
