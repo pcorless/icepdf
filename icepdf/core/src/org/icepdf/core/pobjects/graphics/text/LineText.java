@@ -53,7 +53,7 @@ public class LineText extends AbstractText implements TextSelect {
     }
 
     public Rectangle2D.Float getBounds() {
-        // lazy load the boundsas the calculation is very expensive
+        // lazy load the bounds as the calculation is very expensive
         if (bounds == null) {
             // word bounds build from child word bounds.
             for (WordText word : words) {
@@ -63,13 +63,17 @@ public class LineText extends AbstractText implements TextSelect {
                     bounds.add(word.getBounds());
                 }
             }
+            // empty line text check, return empty bound.
+            if (bounds == null){
+                bounds = new Rectangle2D.Float();
+            }
         }
         return bounds;
     }
 
 
     public GeneralPath getGeneralPath() {
-        // general path is caluculated after the pages has been parsed, again
+        // general path is calculated after the pages has been parsed, again
         // expensive so we only want to do it when we have to.
         if (generalPath == null) {
             generalPath = new GeneralPath(getBounds());
