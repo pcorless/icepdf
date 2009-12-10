@@ -123,6 +123,11 @@ public class ObjectStream extends Stream {
                 Reference ref = new Reference(objectNumber, 0);
                 library.addObject(ob, ref);
             }
+            // assign object reference, needed for encrypting and state saving
+            if (ob != null && ob instanceof Dictionary){
+                ((Dictionary)ob).setPObjectReference(
+                        new Reference(objectNumber, 0));
+            }
 
 //System.out.println("ObjectStream.loadObject()  ob: " + ob + ",  ob.class: " + ob.getClass().getName());
             gotSomething = (ob != null);
