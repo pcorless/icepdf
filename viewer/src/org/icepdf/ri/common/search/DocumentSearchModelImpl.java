@@ -179,13 +179,14 @@ public class DocumentSearchModelImpl {
     public void clearSearchResults(int page) {
         // clear highlighted state for this page index. 
         WeakReference<PageText> pageReference = searchResultCache.get(page);
-        PageText currentPageText = pageReference.get();
-        if (currentPageText != null) {
-            currentPageText.clearHighlighted();
+        if (pageReference != null){
+            PageText currentPageText = pageReference.get();
+            if (currentPageText != null) {
+                currentPageText.clearHighlighted();
+            }
         }
         // clear caches.
         searchResultCache.remove(page);
-        searchTerms.clear();
     }
 
     /**
