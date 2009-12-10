@@ -91,6 +91,10 @@ public class ViewerApplet extends JApplet {
         // create a controller and a swing factory
         controller = new SwingController();
         SwingViewBuilder factory = new SwingViewBuilder( controller );
+        // add interactive mouse link annotation support via callback
+        controller.getDocumentViewController().setAnnotationCallback(
+                new org.icepdf.ri.common.MyAnnotationCallback(
+                        controller.getDocumentViewController()));
 
         // build viewer component and add it to the applet content pane.
         getContentPane().add( factory.buildViewerPanel() );
