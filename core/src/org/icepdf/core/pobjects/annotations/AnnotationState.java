@@ -137,30 +137,40 @@ public class AnnotationState implements Memento {
             // get reference to annotation
             Annotation annotation = annotationComponent.getAnnotation();
 
-            // create a new Border style entry as an inline dictionary
-            if (annotation.getBorderStyle() == null) {
-                annotation.setBorderStyle(new BorderStyle());
-            }
-
-            // get the easy stuff out of the way
-            // apply old border color
-            if (color != null) {
-                annotation.setColor(color);
-            }
-            // apply old user rectangle
-            annotation.setUserSpaceRectangle(userSpaceRectangle);
-
-            restoreLineThickness(annotation);
-            restoreHighlightStyle(annotation);
-            restoreLineStyle(annotation);
-
-            // we do this last as it set the line thickness to zero regardless
-            // of restore values if linkType == Annotation.INVISIBLE_RECTANGLE
-            applyInvisibleLinkType(annotation);
+            restore(annotation);
 
             // update the document with current state.
             synchronizeState();
         }
+    }
+
+    /**
+     * Restores the annotation state in this instance to the Annotation
+     * specified as a param. This method is ment to bue used in
+     * {@link #AnnotationState(Integer, String, float, String, java.awt.Color)} 
+     * @param annotation  annotation to retore state to.
+     */
+    public void restore(Annotation annotation){
+        // create a new Border style entry as an inline dictionary
+        if (annotation.getBorderStyle() == null) {
+            annotation.setBorderStyle(new BorderStyle());
+        }
+
+        // get the easy stuff out of the way
+        // apply old border color
+        if (color != null) {
+            annotation.setColor(color);
+        }
+        // apply old user rectangle
+        annotation.setUserSpaceRectangle(userSpaceRectangle);
+
+        restoreLineThickness(annotation);
+        restoreHighlightStyle(annotation);
+        restoreLineStyle(annotation);
+
+        // we do this last as it set the line thickness to zero regardless
+        // of restore values if linkType == Annotation.INVISIBLE_RECTANGLE
+        applyInvisibleLinkType(annotation);
     }
 
     public void synchronizeState() {

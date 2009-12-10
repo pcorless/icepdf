@@ -34,20 +34,25 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.PRectangle;
+import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.util.Hashtable;
-import java.util.Vector;
+import java.util.logging.Logger;
 
 /**
- * Factory for build annotations
+ * Factory for build annotations.
+ * <p/>
+ * Note: Currently only Link annotations are supported.
  *
  * @since 4.0
  */
 public class AnnotationFactory {
+
+    private static final Logger logger =
+            Logger.getLogger(AnnotationFactory.class.toString());
 
     public static final int LINK_ANNOTATION = 1;
 
@@ -79,40 +84,37 @@ public class AnnotationFactory {
         // set default link annotation values. 
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_LINK);
-        // copy over properties
-        if (annotationState != null) {
-            // todo still need to hook up property coping for new annotations ....
-        }
-        // some defaults just for display purposes.
-        else {
-            entries.put(Annotation.SUBTYPE_KEY, Annotation.SUBTYPE_LINK);
-
-            // /C [ 1 0 0 ]
-            Vector<Number> properties = new Vector<Number>();
-            properties.add(1);
-            properties.add(0);
-            properties.add(0);
-            entries.put(Annotation.COLOR_KEY, properties);
-            // /Border [ 0 0 1 ]
-            properties = new Vector<Number>();
-            properties.add(0);
-            properties.add(0);
-            properties.add(1);
-            entries.put(Annotation.BORDER_KEY, properties);
-        }
         // coordinates
         if (rect != null) {
-            entries.put(Annotation.RECTANGLE_KEY, 
+            entries.put(Annotation.RECTANGLE_KEY,
                     PRectangle.getPRectangleVector(rect));
         } else {
             entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
         }
+        // build up a link annotation
+        if (type == LINK_ANNOTATION) {
+            // we only support one type of annotation creation for now
+            LinkAnnotation linkAnnotation = new LinkAnnotation(library, entries);
+            linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            linkAnnotation.setNew(true);
 
-        // we only support one type of annotation creation for now
-        LinkAnnotation linkAnnotation = new LinkAnnotation(library, entries);
-        linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        linkAnnotation.setNew(true);
-        return linkAnnotation;
+            // apply state
+            if (annotationState != null) {
+                annotationState.restore(linkAnnotation);
+            }
+            // some defaults just for display purposes.
+            else {
+                annotationState = new AnnotationState(
+                        Annotation.VISIBLE_RECTANGLE,
+                        LinkAnnotation.HIGHLIGHT_INVERT, 1f,
+                        BorderStyle.BORDER_STYLE_SOLID, Color.RED);
+                annotationState.restore(linkAnnotation);
+            }
+            return linkAnnotation;
+        } else {
+            logger.warning("Unsupported Annotation type. ");
+            return null;
+        }
 
     }
 }
