@@ -530,10 +530,12 @@ public class Annotation extends Dictionary {
      * Sets the users page rectangle for this annotation action instance
      */
     public void setUserSpaceRectangle(Rectangle2D.Float rect){
-        userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
-                    rect.width, rect.height);
-        getEntries().put(Annotation.RECTANGLE_KEY,
-                    PRectangle.getPRectangleVector(userSpaceRectangle));
+        if (userSpaceRectangle != null){
+            userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
+                        rect.width, rect.height);
+            getEntries().put(Annotation.RECTANGLE_KEY,
+                        PRectangle.getPRectangleVector(userSpaceRectangle));
+        }
     }
 
     /**
