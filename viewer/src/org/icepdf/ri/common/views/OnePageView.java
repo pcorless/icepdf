@@ -140,6 +140,13 @@ public class OnePageView extends AbstractDocumentView {
                 pageViewComponent.invalidate();
             }
             documentScrollpane.revalidate();
+
+            // make sure we have setup all pages with callback call.
+            for( PageViewComponent pageViewCom : pageComponents ){
+                if (pageViewCom != null){
+                    pageViewCom.setDocumentViewCallback(this);
+                }
+            }
         }
     }
 
