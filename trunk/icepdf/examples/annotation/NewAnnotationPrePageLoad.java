@@ -42,6 +42,7 @@ import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 
@@ -51,7 +52,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 /**
- * The <code>NewAnnotation</code> class is an example of how to use
+ * The <code>NewAnnotationPostPageLoad</code> class is an example of how to use
  * <code>DocumentSearchController</code> to find search terms in a
  * Document and convert the found words to annotations.
  * <p/>
@@ -67,14 +68,13 @@ import java.util.Vector;
  * annotation but optionally can be compiled to build GotoActions to 'goto'
  * the last page of the document when executed.
  * <p/>
- * The annotation are created before the Document view is created.  If the annotation
- * where created after the document view was created an difference approach would
- * be needed the new annotations.  For exn example of this see
- * {@link org.icepdf.ri.common.MyAnnotationCallback#newAnnotation(org.icepdf.core.views.PageViewComponent, java.awt.Rectangle)}  }
- * example implementation as it creates a new AnnotationComponent. 
+ * The annotation are created before the Document view is created so we
+ * have to create new annotation slightly differently then if we where adding
+ * them after the view was created. 
+ *
  * @since 4.0
  */
-public class NewAnnotation {
+public class NewAnnotationPrePageLoad {
     public static void main(String[] args) {
 
         if (args.length < 2) {
@@ -130,6 +130,10 @@ public class NewAnnotation {
             pageCount = document.getNumberOfPages();
         }
 
+        /**
+         * Apply the search -> annotation results before the gui is build
+         */
+
         // new annotation look and feel
         AnnotationState annotationState =
                 new AnnotationState(Annotation.VISIBLE_RECTANGLE,
@@ -137,7 +141,7 @@ public class NewAnnotation {
                         BorderStyle.BORDER_STYLE_SOLID, Color.GRAY);
 
         // list of founds words to print out
-        ArrayList<WordText> foundWords = null;
+        ArrayList<WordText> foundWords;
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             // get the search results for this page
             foundWords = searchController.searchPage(pageIndex);
