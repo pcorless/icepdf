@@ -166,6 +166,13 @@ public class TwoPageView extends AbstractDocumentView {
                 }
             }
             documentScrollpane.validate();
+
+            // make sure we have setup all pages with callback call.
+            for( PageViewComponent pageViewCom : pageComponents ){
+                if (pageViewCom != null){
+                    pageViewCom.setDocumentViewCallback(this);
+                }
+            }
         }
     }
 
