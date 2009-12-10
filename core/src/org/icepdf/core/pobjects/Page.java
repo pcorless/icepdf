@@ -639,6 +639,15 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public Annotation addAnnotation(Annotation newAnnotation) {
 
+        // make sure the page annotations have been initialized.
+        if (!isInited) {
+            try {
+                initPageAnnotations();
+            } catch (InterruptedException e) {
+                logger.warning("Annotation Initialization interupted");
+            }
+        }
+
         StateManager stateManager = library.getStateManager();
 
         Object annots = library.getObject(entries, ANNOTS_KEY.getName());
@@ -718,6 +727,15 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public void deleteAnnotation(Annotation annot) {
 
+        // make sure the page annotations have been initialized.
+        if (!isInited) {
+            try {
+                initPageAnnotations();
+            } catch (InterruptedException e) {
+                logger.warning("Annotation Initialization interupted");
+            }
+        }
+
         StateManager stateManager = library.getStateManager();
 
         Object annots = getObject(ANNOTS_KEY);
@@ -767,6 +785,15 @@ public class Page extends Dictionary implements MemoryManageable {
         // bail on null annotations
         if (annotation == null){
             return false;
+        }
+
+        // make sure the page annotations have been initialized.
+        if (!isInited) {
+            try {
+                initPageAnnotations();
+            } catch (InterruptedException e) {
+                logger.warning("Annotation Initialization interupted");
+            }
         }
 
         StateManager stateManager = library.getStateManager();
