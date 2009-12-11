@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head>
-<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"><title>ICEpdf v3.1.2 Release Notes</title>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1"><title>ICEpdf v4.0 Beta Release Notes</title>
 
 <style type="text/css">
 body, td, th, input {
@@ -45,9 +45,10 @@ font-size: 110%
 <td width="78%">
 <h1 style="border-bottom: 0pt none; margin-left: 16px; margin-top: 8px;">
 ICEpdf<sup> <small>&reg;</small> </sup> </h1>
+
 <h2 style="border-bottom: 0pt none; font-weight: bold; margin-left: 16px;">
-v3.1.2 Release Notes</h2>
-<p style="margin-left: 16px; margin-bottom: 12px;">November 16th, 2009</p>
+v4.0 Beta Release Notes</h2>
+<p style="margin-left: 16px; margin-bottom: 12px;">December 11th, 2009</p>
 </td>
 <td align="center" valign="middle" width="22%">
 <img alt="ICEpdf Logo" src="images/icepdf-logo-release-notes.gif" style="" height="100" width="81"><br>
@@ -59,12 +60,12 @@ v3.1.2 Release Notes</h2>
 <div><br>
 <h2><a name="Overview"></a>Overview</h2>
 This document contains the following sections:<br>
+
 <ul>
-<li><a href="#Changes_312">Changes in v3.1.2(This Release)</a></li>
-<li><a href="#Changes_311">Changes in v3.1.1</a></li>
-<li><a href="#Changes_31">Changes in v3.1 </a></li>
-<li><a href="#Changes_30">Changes in v3.0 </a></li>
-<li><a href="#MigrationNotes">2.x to 3.x Migration
+<li><a href="#Changes_30">Changes in v4.0 (This Release)</a></li>
+<li><a href="#MigrationNotes1">3.x to 4.x Migration
+Notes </a></li>
+<li><a href="#MigrationNotes2">2.x to 4.x Migration
 Notes </a></li>
 <li><a href="#Known_Issues">Known Issues</a><br>
 <ul>
@@ -73,119 +74,22 @@ Notes </a></li>
 </li>
 <li><a href="#Support">Support</a></li>
 <li><a href="#About_ICEpdf">About ICEpdf </a></li>
+
 <li><a href="#License_Management">License
 Information</a></li>
 </ul>
 <br>
-<!-- Start v3.1.2 release notes-->
-<h2><a name="Changes_312"></a>Changes in v3.1.2 (This Release)</h2>
-<p>ICEpdf v3.1.2 is a maintenance release featuring numerous fixes and improvements.</p>
-<p>Review the <a href="#Known_Issues">Known Issues</a>
-prior to using this release. Review the <a href="#MigrationNotes">Migration
-Notes</a> if you plan to use an existing ICEpdf 2.7.x application with 3.1.x.</p>
-<p>Please report any issues with this release to the ICEpdf
-<a target="_blank" href="http://www.icefaces.org/JForum/">forums</a>
-or the ICEpdf <a target="_blank" href="http://jira.icefaces.org/browse/PDF">
-JIRA issue tracker</a>.</p>
-<h3><span style="font-weight: bold;">Notable Improvements &amp; Enhancements</span></h3>
-<ul class="contentIndent">
-	<li><p><span style="font-weight: bold;">Rendering Core</span></p></li>
-	<ul>
-		<li>AbstractPageViewComponent Objects now use daemon thread creation for page initialization and painting. </li>	
-  </ul>
-  <li><p><span style="font-weight: bold;">Viewer Application</span></p></li>
-	<ul>
-		<li>Fixed an issue which prevented the Viewer RI toolbars from visibly wrapping to a new line when the viewer 
-			container was resized.</li>	
-  </ul>
-</ul>  
-<p>Refer to the <a href="http://jira.icefaces.org/secure/IssueNavigator.jspa?reset=true&pid=10030&fixfor=10219" target="_blank">
-	ICEpdf JIRA Change Log</a> for detailed information on all the changes included in this release.</p>
-<!-- Start v3.1.1 release notes-->
-<h2><a name="Changes_311"></a>Changes in v3.1.1</h2>
-<p>ICEpdf v3.1.1 is a maintenance release featuring numerous fixes and improvements.</p>
-<p>Review the <a href="#Known_Issues">Known Issues</a>
-prior to using this release. Review the <a href="#MigrationNotes">Migration
-Notes</a> if you plan to use an existing ICEpdf 2.7.x application with 3.1.x.</p>
-<p>Please report any issues with this release to the ICEpdf
-<a target="_blank" href="http://www.icefaces.org/JForum/">forums</a>
-or the ICEpdf <a target="_blank" href="http://jira.icefaces.org/browse/PDF">
-JIRA issue tracker</a>.</p>
-<h3><span style="font-weight: bold;">Notable Improvements &amp; Enhancements</span></h3>
-<ul class="contentIndent">
-	<li><p><span style="font-weight: bold;">Rendering Core</span></p></li>
-	<ul>
-		<li>Fixed a rare issue where some page content could not be correctly reinitialized after 
-			 being disposed of in a low memory environment.</li>
-		<li>Fixed a bug in the Single Page Document view which may cause excesive CPU consumption in 
-			low memory environments.</li>	
-  </ul>
-</ul>  
-<p>Refer to the <a href="http://jira.icefaces.org/secure/IssueNavigator.jspa?reset=true&pid=10030&fixfor=10217" target="_blank">
-	ICEpdf JIRA Change Log</a> for detailed information on all the changes included in this release.</p>
-<!-- Start v3.1.0 release notes-->
-<h2><a name="Changes_31"></a>Changes in v3.1.0</h2>
-<p>ICEpdf v3.1.0 is a maintenance release featuring numerous fixes and improvements.</p>
-<p>Review the <a href="#Known_Issues">Known Issues</a>
-prior to using this release. Review the <a href="#MigrationNotes">Migration
-Notes</a> if you plan to use an existing ICEpdf 2.7.x application with 3.1.x.</p>
-<p>Please report any issues with this release to the ICEpdf
-<a target="_blank" href="http://www.icefaces.org/JForum/">forums</a>
-or the ICEpdf <a target="_blank" href="http://jira.icefaces.org/browse/PDF">
-JIRA issue tracker</a>.</p>
-<h3><span style="font-weight: bold;">Notable Improvements &amp; Enhancements</span></h3>
-<ul class="contentIndent">
-	<li><p><span style="font-weight: bold;">Rendering Core</span></p></li>
-	<ul>
-		<li>Removed XOR draw code from PageViewComponentImpl when displaying 
-			Annotation highlight states. The system property -Dsun.java2d.d3d can now be set to true
-			in JDK 1.6 or higher for enhanced drawing performance on Windows systems.  </li>
-		<li>Improved OS font substitution by constructing fonts with style hinting.</li>	
-		<li>Fixed a refactoring issue that broke drag and drop file loading in the Viewer RI.</li>
-		<li>Improved OS font substitution by correctly applying encoding 
-			   differences to respective character codes and ignoring certain white space characters.</li>
-		<li>Added support for CMap beginbfrange in the format 
-			  <src1> <srcn> [&lt;dest1&gt; &lt;dest2&gt; ... &lt;destn&gt;] to both OS and Pro versions of ICEpdf which 
-			  significantly	improves font substitution and text extraction.</li>
-	  <li>Improved OS font substitution by fixing an error in the Cmap parser 
-	  	which failed to read multiple entries for beginbfchar and beginbfrange definitions.</li>
-		<li>Fixed a font substitution regression in 3.0 which changed the 
-			rendering quality of PDF's that used the named font "TimesNewRomanPSMT".</li>
-		<li>Added support for LZWDecode early change decode parameter which prevented
-			certain PDF documents from being displayed correctly. </li>
-		<li>Improved performance of glyph layout calculations for the OS font layout engine. </li>
-	</ul>
-</ul>
-<ul class="contentIndent">
-	<li>
-		<p><span style="font-weight: bold;">Viewer Application</span></p>
-		<ul>
-			<li>Updated PrintHelper code to ensure that the system's default printer 
-				is always selected when the print dialog is shown.</li>
-	  </ul>
-	</li>
-</ul>
-<ul class="contentIndent">
-	<li>
-		<p><span style="font-weight: bold;">Community Contributor</span></p>
-		<p>Many thanks to ICEpdf community contributer:</p>
-		<ul>
-			<li>Pedro Rivera</li>
-	  </ul>
-	</li>
-</ul>
-<p>Refer to the <a href="http://jira.icefaces.org/secure/IssueNavigator.jspa?reset=true&pid=10030&fixfor=10181" target="_blank">
-	ICEpdf JIRA Change Log</a> for detailed information on all the changes included in this release.</p>
-<!-- Start v3.0.0 release notes-->	
-<h2><a name="Changes_30"></a>Changes in v3.0</h2>
-<p>ICEpdf v3.0 is a certified production release that introduces
-ICEpdf as an open source project. Please visit the community site at
+<h2><a name="Changes_30"></a>Changes in v4.0
+(This Release)</h2>
+<p>ICEpdf v4.0 Beta is a feature-complete preview release.
+Please visit the community site at
 <a target="_blank" href="http://www.icepdf.org">http://www.icepdf.org</a>
 for additional information, demos, and resources.</p>
 <p>Review the <a href="#Known_Issues">Known Issues</a>
-prior to using this release. Review the <a href="#MigrationNotes">Migration
+prior to using this release. Review the <a href="#MigrationNotes1">Migration
 Notes</a>
-if you plan to use an existing ICEpdf application with 3.0.0.</p>
+
+if you plan to use an existing ICEpdf application with 4.0.</p>
 <p>Please report any issues with this release to the ICEpdf
 <a target="_blank" href="http://www.icefaces.org/JForum/">forums</a>
 or the ICEpdf <a target="_blank" href="http://jira.icefaces.org/browse/PDF">
@@ -194,97 +98,118 @@ JIRA issue tracker</a>.</p>
 Improvements &amp; Enhancements</span></h3>
 <ul class="contentIndent">
 <li><span style="font-weight: bold;">Rendering Core</span></li>
+
 </ul>
 <ul>
 <ul>
-<li>Enabling Embedded Font Support
-<ul>
-<li><span style="font-weight: bold;">ICEpdf</span>
-uses java.awt.Font when reading font files for substitution. By default
-java.awt.Font is disabled for reading embedded fonts and can be enable
-with the system property: <span style="font-style: italic;">org.icepdf.core.awtFontLoading=true</span>.
-</li>
-<li><span style="font-weight: bold;">ICEpdf
-Pro</span> allows for unprecedented font reproduction and
-rendering speed. ICEpdf Pro is a commercial product and requires
-icepdf-pro.jar and icepdf-pro-intl.jar libraries. </li>
-</ul>
-</li>
-<li>Java Logging API is now used for all logging operations.</li>
-<li>Ant build scripts are available in the source bundle to
-build both the icepdf-core.jar and icepdf-viewer.jar from source.</li>
-<li>Fixed an issue where a null pointer could be generated
-from the PageViewComponentImpl if an AnnotationCallback was not
-specified. </li>
+	<li>ICEpdf Pro now supports incremental document updates for Link Annotation edits (save modifed PDF documents).</li>
+	<li>Support for JBIG2 image compression.</li>
+	<li>Page initialization and page painter threads are now daemons to insure property JVM exiting.</li>
+	<li>Fixed a rare condition where shared resource could be cleared in a low memory environment.</li>
+	<li>Improvements to CMYK alternate colour space parsing.</li>
+
 </ul>
 </ul>
 <ul class="contentIndent">
 <li>
-<p><span style="font-weight: bold;">Viewer
-Application</span></p>
+<p><span style="font-weight: bold;">Viewer Application</span></p>
 <ul>
-<li>The viewer reference implementation printing code has
-been updated to use the Java Print Service API.</li>
+	<li>New multi-page text selection tool and system clipboard copying.</li> 
+	<li>Search results utility pane now shows search results contextually.</li> 
+	<li>Search results are now show in a highlight state in the document page view.</li> 
+	<li>New Link Annotation tool for creating new annotations.</li>
+	<li>New Select Tool for selecting existing document annotations.</li>
+
+	<li>New ability to view / edit / delete link annotations and attributes using the ICEpdf Viewer RI utility pane.</li>
+	<li>New viewer RI properties file allows for customization of the viewer UI features and functionality without coding.</li>  
+	<li>New Mac OSX UI compatibility improvements.</li>
+	<li>Updated Viewer RI focus management to be less greedy.</li>
+	<li>RI tool bar now wraps as the parent frame is resized.</li>  
 </ul>
 </li>
 </ul>
+
 <ul class="contentIndent">
 <li>
-<p><span style="font-weight: bold;">Examples
-Applications</span></p>
+<p><span style="font-weight: bold;">Example Applications</span></p>
 <ul>
-<li>ICEfaces Example</li>
-<ul>
-<li>New ICEfaces PDF viewing example application.</li>
-<li>Allows users to upload PDF documents and view pages
-within a web browser.</li>
-<li>Utilizes ICEfaces components and direct-to-DOM
-updates. </li>
+	<li>New Automated Annotation Creation Example</li>
+		<ul>
+			<li>Uses the Search API to find text matches.</li>
+			<li>Text matches are converted to annotations with pre defined GoTo or URI actions.</li>
+		</ul>
+
+	</ul>
+	<ul>
+		<li>New Search API Example</li>
+		<ul>
+			<li>Shows how to configure a multiple term search.</li>
+			<li>Opens the viewer RI with search results highlighted. </li>
+		</ul>
+
+	</ul>
+	<ul>
+		<li>New Viewer RI Custom Configuration</li>
+		<ul>
+			<li>Shows how to configure the Viewer RI with a properties file.</li>
+		</ul>
+	</ul>
 </ul>
-</ul>
-</li>
+
 </ul>
 <ul class="contentIndent">
-<li><span style="font-weight: bold;">Documentation</span>
-</li>
+	<li><span style="font-weight: bold;">Documentation</span>
+	</li>
+	<ul>
+		<li><span style="font-weight: bold;">ICEpdf Developer's Guide</span>. 
+			The ICEpdf Developer's is now available <a href="http://wiki.icefaces.org/display/PDF/ICEpdf+Developer%27s+Guide" target="_blank" >
+				online</a>:</li>
+
+		<ul>
+	  	<li>Includes an in-depth discussion of the ICEfpdf architecture and key concepts.</li>
+	   	<li>Discussion of common ICEpdf use-cases and relevant reference and examples.</li>
+	   	<li>Reference materials related to APIs, configuration and examples.</li>
+		</ul>
+	</ul>
 </ul>
-<ul>
-<ul>
-<li><span style="font-weight: bold;">ICEpdf
-Developer's Guide</span>. The ICEpdf Developer's Guide has been
-revised. The following sections have been added/enhanced:&nbsp;</li>
+
 <ul class="contentIndent">
-<li>Product Contents, pg. 2.</li>
-<li>Prerequisites, pg. 7.</li>
-<li>Building ICEpdf from Source, pg. 8.</li>
-<li>Enabling Embedded Font Support, pg. 10.</li>
-<li>System Properties, pg. 11.</li>
-<li>ICEfaces Example, pg. 40.</li>
-<li>Appendix A - Supported PDF Features, pg. 42.</li>
+	<li>
+		<p><span style="font-weight: bold;">Community Contributors</span></p>
+		<p>Many thanks to the following ICEpdf community contributors!</p>
+		<ul>
+			<li>Pedro Rivera</li>
+			<li>Ken Walker</li>
+
+			<li>Roy Van Der Kuil</li>
+	  </ul>
+	</li>
 </ul>
 </ul>
+<p>Refer to the <a href="http://jira.icefaces.org/secure/IssueNavigator.jspa?reset=true&amp;pid=10030&amp;fixfor=10212" target="_blank">
+	ICEpdf JIRA Change Log</a> for detailed information on all the changes included in this release.</p>
 </ul>
-<ul>
-<li><span style="font-weight: bold;">3rd Party
-Libraries</span></li>
-</ul>
-<ul>
-<ul>
-<li>
-<p>The batik jars for SVG output are now included in the <span style="font-family: Courier New,Courier,monospace;">"../icepdf/lib/"</span>
-directory and&nbsp;have been updated to v1.6.</p>
-</li>
-<li>
-<p>The Bouncy Castle jars for Adobe Standard Encryption
-support are now included in the <span style="font-family: Courier New,Courier,monospace;">"../icepdf/lib/"</span>
-directory, and have&nbsp;been updated to v1.4.2</p>
-</li>
-</ul>
-</ul>
+
 <br>
-<h2><a name="MigrationNotes"></a>2.x to 3.x
+<h2><a name="MigrationNotes1"></a>3.x to 4.x
 Migration Notes</h2>
 <br>
+The following changes may affect applications that were originally
+developed with a previous version of ICEpdf.<br>
+<br>
+<h3>ICEpdf Core API</h3>
+<ul>
+<li>When extracting text using the org.icepdf.core.pobjects.Page Object the method not longer turns a Vector
+	of Strings.  Instead it now returns the data structure org.icepdf.core.pobjects.graphics.text.PageText.
+	See class document and the example [install_dir]/icepdf/examples/extraction/PageTextExtraction.java
+	for correct usage. 
+	</li>
+</ul>
+<br>
+<h2><a name="MigrationNotes2"></a>2.x to 4.x
+Migration Notes</h2>
+<br>
+
 The following changes may affect applications that were originally
 developed with a previous version of ICEpdf.<br>
 <br>
@@ -303,20 +228,22 @@ reference implementation.</li>
 under commercial licensing.</li>
 <li>icepdf-pro-int.jar* - Professional font library CMap
 files, available under commercial licensing.</li>
+
 </ul>
 * Denotes JAR files that are only available in ICEpdf Pro commercial
 release. </li>
 </ul>
 <h3>API Packaging Changes</h3>
 <ul>
-<li>ICEpdf 3.0 packaging has been updated to match the domain
-of the new communitiy site <a target="_blank" href="http://www.icepdf.org/">http://www.icepdf.org/</a>.
+<li>ICEpdf 4.0 packaging has been updated to match the domain
+of the new community site <a target="_blank" href="http://www.icepdf.org/">http://www.icepdf.org/</a>.
 </li>
 <li>Please update your applications to reflect the new base
 package name.
 <ul>
 <li>Former package-name: com.icesoft.*</li>
 <li>New package-name: org.icepdf.*</li>
+
 </ul>
 </li>
 <li>The ICEpdf API rendering core is now rooted at
@@ -332,6 +259,7 @@ domain name of the community site <a target="_blank" href="http://www.icepdf.org
 properties to reflect the new base package name.
 <ul>
 <li>Former package-name: com.icesoft.*</li>
+
 <li>New package-name: org.icepdf.*</li>
 </ul>
 </li>
@@ -340,7 +268,7 @@ properties to reflect the new base package name.
 <ul>
 <li>ICEpdf source code has been updated to the JDK 1.5 Java
 language specification to take advantage of numerous features and
-improvements to the Java programming language. As a result ICEpdf v3.0
+improvements to the Java programming language. As a result ICEpdf v4.0
 is not deployable to Java JRE versions older than&nbsp;1.5. </li>
 <li>Older versions of the Java JDK and JRE have been added to
 Sun's end of life and are no longer publicly supported. </li>
@@ -349,15 +277,17 @@ Sun's end of life and are no longer publicly supported. </li>
 December 11th, 2006.</li>
 <li>JDK 1.4.2 reached the end of its service life (EOSL),
 October 11th, 2008.</li>
+
 </ul>
 <li>For more information on Java Platform Migration please see <a target="_blank" href="http://java.sun.com/j2se/JM_White_Paper_R6A.pdf">
 http://java.sun.com/j2se/JM_White_Paper_R6A.pdf.</a></li>
 </ul>
 <h3>Logging System</h3>
 <ul>
-<li>ICEpdf 3.0 now uses Java logging API for all logging tasks.</li>
+<li>ICEpdf 4.0 now uses Java logging API for all logging tasks.</li>
 <li>A sample logging.properties file is included in the
 directory <span style="font-weight: bold;">.../<span>install_dir</span>/icepdf/lib/</span>.</li>
+
 <li>The custom logging properties file can be specified with
 the following system property:
 <ul>
@@ -373,6 +303,7 @@ Platforms</h2>
 <br>
 The ICEpdf product is 100% Java and capable of running on the following
 JVMs:<br>
+
 <br>
 <table style="text-align: left; width: 717px;" border="1" cellpadding="2" cellspacing="2">
 <tbody>
@@ -387,6 +318,7 @@ Linux<br>
 Solaris<br>
 </td>
 <td style="vertical-align: top; font-weight: bold; text-align: center;">
+
 Mac OSX<br>
 </td>
 </tr>
@@ -398,6 +330,7 @@ Mac OSX<br>
 </tr>
 <tr>
 <td style="vertical-align: top;">Sun J2SE 1.6</td>
+
 <td style="vertical-align: top;">Sun J2SE 1.6</td>
 <td style="vertical-align: top;">Sun J2SE 1.6</td>
 <td style="vertical-align: top;">Apple J2SE 1.6</td>
@@ -408,6 +341,7 @@ Mac OSX<br>
 <td style="vertical-align: top;">Sun J2SE 1.7 EA</td>
 <td style="vertical-align: top;">N/A</td>
 </tr>
+
 </tbody>
 </table>
 <br>
@@ -420,17 +354,11 @@ issue tracker.
 <h3><a name="KIGeneral">General</a></h3>
 <ul>
 <li>
-<p>JDK 1.6.0_10 introduced a regression which affects the
-performance of the XOR draw operation in ICEpdf 3.0.1 and earlier. This issue can be resolved with
-the system property -Dsun.java2d.d3d=false. More information on this
-issue can be found at <a target="_blank" href="http://bugs.sun.com/bugdatabase/view_bug.do;jsessionid=1eab0b38c1a1f182447c78f2e988?bug_id=6792551">
-Bug ID 6792551</a>.</p>
-</li>
-<li>
 <p>Batik libraries version 1.7 for SVG export has a known
 issue which will cause a null pointer when using the class
 SVGGraphics2D. Please use Batik version 1.6 or earlier (included in
 this release bundle), <a target="_blank" href="http://xmlgraphics.apache.org/batik/">http://xmlgraphics.apache.org/batik/</a>.</p>
+
 </li>
 <li>
 <p>Depending what version of the Java Advanced Imaging (JAI)
@@ -448,6 +376,7 @@ above.</p>
 <p>For information on commercial support, professional services,
 and training, please visit <a target="_blank" href="http://support.icepdf.org">http://support.icepdf.org</a>.
 </p>
+
 <br>
 <h2><a name="About_ICEpdf"></a>About ICEpdf </h2>
 <p> ICEpdf is an open source Java PDF library ideal for
@@ -466,6 +395,7 @@ Java-to-native integration issues. </li>
 application. </li>
 <li>Render PDFs to image file (PNG, JPEG, GIF) in a server-side
 web application. </li>
+
 <li>Robust, efficient, mature PDF parser.</li>
 <li>Supports all PDF embedded font types (Types 0-3, OpenType,
 TrueType) using the Font Engine included in ICEpdf Pro<sup>1</sup>.
@@ -475,11 +405,12 @@ TrueType) using the Font Engine included in ICEpdf Pro<sup>1</sup>.
 view first page. </li>
 <li>Supports Adobe Standard Security for password-protected
 documents (40 and 128 bit RC4 or AES). </li>
-<li>Protects users against security vunerabilities that can be
+<li>Protects users against security vulnerabilities  that can be
 introduced by use of the native Adobe Acrobat PDF viewer application.</li>
 <li>Support for interactive link annotation actions; uri,
 launch and resource. </li>
 <li>View all markup annotations.</li>
+
 </ul>
 <p><sup>1</sup> ICEpdf is available in two versions;
 ICEpdf, the open source version, and ICEpdf Pro, a commercial version
@@ -494,6 +425,7 @@ The following documents are provided in PDF format:</p>
 <li><span>ICEpdf Developers Guide</span>: This
 guide takes you through product introduction, configuration, usage
 scenarios and reference implementations and examples. </li>
+
 </ol>
 <p> ICEpdf documentation is also available on-line at
 <a target="_blank" class="moz-txt-link-freetext" href="http://documentation.icepdf.org/">
@@ -503,6 +435,7 @@ http://documentation.icepdf.org/</a>.
 <h2><a name="License_Management"></a>License
 Notice</h2>
 <p class="Body">License agreements can be found in the <span style="font-weight: bold;">.../<span>install_dir</span>/</span><span style="font-style: italic; font-weight: bold;"></span><span style="font-weight: bold;">icepdf</span><span style="font-style: italic; font-weight: bold;">/</span><span style="font-weight: bold;">docs/license</span>
+
 directory.</p>
 <p class="Body"> <small><br>
 &copy; Copyright 2005-2009 ICEsoft Technologies, Inc. </small>
