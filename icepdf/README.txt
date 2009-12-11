@@ -1,12 +1,12 @@
-Welcome to ICEpdf!
+<font color="#000000">Welcome to ICEpdf!
 
 
 ICEpdf Documentation
 
-This release includes the following documentation (located in the /icepdf/docs/ folder):
+This release includes the following documentation:
 
 
-ICEpdf Release Notes
+ICEpdf Release Notes (located in the /icepdf/docs/ folder)
 
 Contains:
 
@@ -15,10 +15,10 @@ Contains:
   - IMPORTANT time-saving Known Issues
 
 
-ICEpdf Developer's Guide
+ICEpdf Developer's Guide (located online at http://wiki.icefaces.org/display/PDF/ICEpdf+Developer%27s+Guide)
 
-   - Includes materials targeted for ICEpdf application developers
    - Includes an in-depth discussion of the ICEfpdf architecture and key concepts
+   - Discussion of common ICEpdf use-cases and relevant reference and examples.
    - Reference materials related to APIs, configuration and examples. 
 
 
@@ -27,3 +27,4 @@ Additional Resources
 For more information about ICEpdf, including community forums, tutorials, etc. visit the ICEpdf community site:
 http://www.icepdf.org/
 
+</font>
