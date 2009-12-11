@@ -35,19 +35,16 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.PageText;
-import org.icepdf.core.pobjects.graphics.text.LineText;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.FileWriter;
-import java.util.Enumeration;
-import java.util.ArrayList;
+import java.io.IOException;
 
 /**
  * The <code>PageTextExtraction</code> class is an example of how to extract
  * text from a PDF document.  A file specified at the command line is opened
- * and any text in the first page's content is saved to a text file. 
+ * and any text in the first page's content is saved to a text file.
  *
  * @since 2.0
  */
@@ -76,18 +73,18 @@ public class PageTextExtraction {
             File file = new File("extractedtext.txt");
             FileWriter fileWriter = new FileWriter(file);
 
-            // Get text from the first page of the document, asuming that there
+            // Get text from the first page of the document, assuming that there
             // is text to extract.
             int pagNumber = 0;
             PageText pageText = document.getPageText(pagNumber);
-            if (pageText != null && pageText.getPageLines() != null){
+            if (pageText != null && pageText.getPageLines() != null) {
                 fileWriter.write(pageText.toString());
             }
 
             // close the writer
             fileWriter.close();
 
-        }catch (IOException ex) {
+        } catch (IOException ex) {
             System.out.println("Error writing to file " + ex);
         }
 
