@@ -929,7 +929,11 @@ public final class JBIG2Bitmap {
 //
 //		return bytes;
 		byte[] bytes = new byte[height * line];
-
+        getData(bytes, switchPixelColor);
+		return bytes;
+	}
+    
+    public void getData(byte[] bytes, boolean switchPixelColor) {
 		int count = 0, offset = 0;
 		for (int row = 0; row < height; row++) {
 			for (int col = 0; col < width; col++) {
@@ -950,8 +954,6 @@ public final class JBIG2Bitmap {
 				bytes[i] ^= 0xff;
 			}
 		}
-
-		return bytes;
 	}
 
 	public JBIG2Bitmap getSlice(int x, int y, int width, int height) {

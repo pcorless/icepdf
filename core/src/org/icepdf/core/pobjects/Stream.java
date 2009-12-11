@@ -429,7 +429,7 @@ public class Stream extends Dictionary {
             dctDecode(width, height, colourSpace, bitspercomponent,
                     smaskImage, maskImage, maskMinRGB, maskMaxRGB);
         } else if (shouldUseJBIG2Decode()) {
-            jbig2Decode();
+            jbig2Decode(width, height);
         }
         
 
@@ -720,10 +720,11 @@ public class Stream extends Dictionary {
         }
     }
     
-    private void jbig2Decode() {
+    private void jbig2Decode(int width, int height) {
         BufferedImage tmpImage = null;
         
         try {
+            checkMemory(108*1024);
             org.jpedal.jbig2.JBIG2Decoder decoder = new org.jpedal.jbig2.JBIG2Decoder();
 
             Hashtable decodeparms = library.getDictionary(entries, "DecodeParms");
@@ -737,9 +738,15 @@ public class Stream extends Dictionary {
             }
             
             byte[] data = getDecodedStreamBytes();
+            // Since memory usage inceases 2x (width*height/8), we should see
+            // if there are any intermediate JBIG2Bitmap objects, beyond the
+            // final one, still hanging around. Maybe make decode cleanup after 
+            checkMemory((width+8)*height*22/10); // Between 0.5 and 2.2
             decoder.decodeJBIG2(data);
             data = null;
+            checkMemory((width+8)*height/8);
             tmpImage = decoder.getPageAsBufferedImage(0);
+            decoder = null;
         }
         catch(IOException e) {
             logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
