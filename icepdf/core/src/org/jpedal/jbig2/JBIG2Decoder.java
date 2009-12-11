@@ -157,30 +157,44 @@ public class JBIG2Decoder {
 	public BufferedImage getPageAsBufferedImage(int page) {
 		page++;
 		JBIG2Bitmap pageBitmap = streamDecoder.findPageSegement(page).getPageBitmap();
-
-		byte[] bytes = pageBitmap.getData(true);
+        
+        /*
+         * Initial optimisation attempt, replaced with further efforts, below
+        byte[] bytes = pageBitmap.getData(true);
 
 		if (bytes == null)
 			return null;
 
 		// make a a DEEP copy so we cant alter
-		int len = bytes.length;
-		byte[] copy = new byte[len];
-		System.arraycopy(bytes, 0, copy, 0, len);
+		//int len = bytes.length;
+		//byte[] copy = new byte[len];
+		//System.arraycopy(bytes, 0, copy, 0, len);
+        
+        // Don't make a deep copy, since pageBitmap.getData(boolean)
+        // just allocated the byte[] for us
+        byte[] copy = bytes;
 
 		// byte[] data = pageBitmap.getData(true).clone();
 		int width = pageBitmap.getWidth();
 		int height = pageBitmap.getHeight();
 
-		/** create an image from the raw data */
+		// create an image from the raw data
 		DataBuffer db = new DataBufferByte(copy, copy.length);
 
 		WritableRaster raster = Raster.createPackedRaster(db, width, height, 1, null);
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
 		image.setData(raster);
+        */
+        
 
+		// byte[] data = pageBitmap.getData(true).clone();
+		int width = pageBitmap.getWidth();
+		int height = pageBitmap.getHeight();
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
+        byte[] bytes = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
+        pageBitmap.getData(bytes, true);
 
-		return image;
+        return image;
 	}
 
 	public boolean isNumberOfPagesKnown() {
