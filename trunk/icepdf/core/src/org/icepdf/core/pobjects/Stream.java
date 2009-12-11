@@ -272,6 +272,9 @@ public class Stream extends Dictionary {
                             || filterName.equals("/DCT")
                             || filterName.equals("DCT")) {
                 // Leave empty so our else clause works
+            } else if ( // No short name, since no JBIG2 for inline images
+                    filterName.equals("JBIG2Decode")) {
+                // Leave empty so our else clause works
             } else if (
                     filterName.equals("JPXDecode")) {
                 if (logger.isLoggable(Level.FINE)) {
@@ -373,32 +376,27 @@ public class Stream extends Dictionary {
     }
 
     private boolean shouldUseCCITTFaxDecode() {
-        Vector filterNames = getFilterNames();
-        if (filterNames == null)
-            return false;
-        for (int i = 0; i < filterNames.size(); i++) {
-            String filterName = filterNames.elementAt(i).toString();
-            if (
-                    filterName.equals("CCITTFaxDecode") ||
-                            filterName.equals("/CCF") ||
-                            filterName.equals("CCF")) {
-                return true;
-            }
-        }
-        return false;
+        return containsFilter(new String[] {"CCITTFaxDecode", "/CCF", "CCF"});
     }
 
     private boolean shouldUseDCTDecode() {
+        return containsFilter(new String[] {"DCTDecode", "/DCT", "DCT"});
+    }
+    
+    private boolean shouldUseJBIG2Decode() {
+        return containsFilter(new String[] {"JBIG2Decode"});
+    }
+    
+    private boolean containsFilter(String[] searchFilterNames) {
         Vector filterNames = getFilterNames();
         if (filterNames == null)
             return false;
         for (int i = 0; i < filterNames.size(); i++) {
             String filterName = filterNames.elementAt(i).toString();
-            if (
-                    filterName.equals("DCTDecode") ||
-                            filterName.equals("/DCT") ||
-                            filterName.equals("DCT")) {
-                return true;
+            for (String search : searchFilterNames) {
+                if (search.equals(filterName)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -416,7 +414,7 @@ public class Stream extends Dictionary {
         return filterNames;
     }
 
-    private byte[] decodeCCITTFaxDecodeOrDCTDecodeImage(
+    private byte[] decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeImage(
             int width, int height, PColorSpace colourSpace, int bitspercomponent, Color fill,
             BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
         byte[] data = null;
@@ -430,7 +428,10 @@ public class Stream extends Dictionary {
         } else if (shouldUseDCTDecode()) {
             dctDecode(width, height, colourSpace, bitspercomponent,
                     smaskImage, maskImage, maskMinRGB, maskMaxRGB);
+        } else if (shouldUseJBIG2Decode()) {
+            jbig2Decode();
         }
+        
 
         /*
          * Since we now have the code in place for regetting images
@@ -716,6 +717,45 @@ public class Stream extends Dictionary {
                 image = new ImageCache(library);
             }
             image.setImage(tmpImage);
+        }
+    }
+    
+    private void jbig2Decode() {
+        BufferedImage tmpImage = null;
+        
+        try {
+            org.jpedal.jbig2.JBIG2Decoder decoder = new org.jpedal.jbig2.JBIG2Decoder();
+
+            Hashtable decodeparms = library.getDictionary(entries, "DecodeParms");
+            if (decodeparms != null) {
+                Stream globalsStream = (Stream) library.getObject(decodeparms, "JBIG2Globals");
+                byte[] globals = globalsStream.getDecodedStreamBytes();
+                if (globals != null && globals.length > 0) {
+                    decoder.setGlobalData(globals);
+                    globals = null;
+                }
+            }
+            
+            byte[] data = getDecodedStreamBytes();
+            decoder.decodeJBIG2(data);
+            data = null;
+            tmpImage = decoder.getPageAsBufferedImage(0);
+        }
+        catch(IOException e) {
+            logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
+        }
+        catch(org.jpedal.jbig2.JBIG2Exception e) {
+            logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
+        }
+			
+        if (tmpImage != null) {
+            // write tmpImage to the cache
+            synchronized (imageLock) {
+                if (image == null) {
+                    image = new ImageCache(library);
+                }
+                image.setImage(tmpImage);
+            }
         }
     }
 
@@ -1510,7 +1550,7 @@ public class Stream extends Dictionary {
         // decode the stream is, if value and image are null, the image has
         // has not yet been decoded
         if (image == null) {
-            baCCITTFaxData = decodeCCITTFaxDecodeOrDCTDecodeImage(
+            baCCITTFaxData = decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeImage(
                     width, height, colourSpace, bitspercomponent, fill,
                     smaskImage, maskImage, maskMinRGB, maskMaxRGB);
         }
