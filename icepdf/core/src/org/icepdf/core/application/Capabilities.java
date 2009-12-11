@@ -1,15 +1,14 @@
 package org.icepdf.core.application;
 
-import org.icepdf.core.pobjects.StateManager;
-import org.icepdf.core.pobjects.PTrailer;
 import org.icepdf.core.pobjects.Document;
 
-import java.io.OutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.io.OutputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Logger;
+import java.lang.reflect.Method;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provide a means to applications, such as the RI, for example, to query
@@ -19,49 +18,65 @@ import java.util.logging.Level;
  */
 public class Capabilities {
     private static final Logger logger =
-        Logger.getLogger(Capabilities.class.getName());
-
-    private static Method IncrementalUpdate_appendIncrementalUpdate = null;
-
-    static {
-        try {
-            Class incUpdateClass = Class.forName(
-                "org.icepdf.core.util.IncrementalUpdater");
-            IncrementalUpdate_appendIncrementalUpdate =
-                incUpdateClass.getMethod(
-                    "appendIncrementalUpdate",
-                    new Class[] {Document.class, OutputStream.class, Long.TYPE});
-            logger.log(Level.FINE, "Incremental updates supported");
-        }
-        catch(ClassNotFoundException e) {
-            logger.log(Level.FINE, "Incremental updates not supported");
-        }
-        catch(NoSuchMethodException e) {
-            logger.log(Level.SEVERE,
-                "Incremental updates not supported due to API mismatch", e);
-        }
-    }
+            Logger.getLogger(Capabilities.class.getName());
 
     public static boolean isIncrementalUpdatingAvailable() {
-        return (IncrementalUpdate_appendIncrementalUpdate != null);
+        Constructor fontClassConstructor = null;
+        try {
+            Class incUpdateClass = Class.forName(
+                    "org.icepdf.core.util.IncrementalUpdater");
+            fontClassConstructor =
+                    incUpdateClass.getConstructor();
+            logger.log(Level.FINE, "Incremental updates supported");
+        }
+        catch (ClassNotFoundException e) {
+            logger.log(Level.FINE, "Incremental updates not supported");
+        }
+        catch (NoSuchMethodException e) {
+            logger.log(Level.SEVERE,
+                    "Incremental updates not supported due to API mismatch", e);
+        }
+        return (fontClassConstructor != null);
     }
 
     public static long appendIncrementalUpdate(
-        Document document, OutputStream out, long documentLength)
+            Document document, OutputStream out, long documentLength)
             throws IOException {
+
         long ret = 0;
-        if (IncrementalUpdate_appendIncrementalUpdate != null) {
+        if (isIncrementalUpdatingAvailable()) {
             try {
-                ret = (Long) IncrementalUpdate_appendIncrementalUpdate.invoke(
-                    null, document, out, documentLength);
+                Class incUpdateClass = Class.forName(
+                        "org.icepdf.core.util.IncrementalUpdater");
+
+                Object incrementalUpdate =
+                        incUpdateClass.getConstructor((Class[]) null).newInstance((Object[]) null);
+
+                Method appendIncrementalUpdate =
+                        incrementalUpdate.getClass().getMethod(
+                                "appendIncrementalUpdate",
+                                Document.class, OutputStream.class, Long.TYPE);
+
+                ret = (Long) appendIncrementalUpdate.invoke(
+                        incrementalUpdate, document, out, documentLength);
             }
-            catch(IllegalAccessException e) {
+            catch (IllegalAccessException e) {
                 logger.log(Level.SEVERE,
-                    "Problem with incremental update feature", e);
+                        "Problem with incremental update feature", e);
             }
-            catch(InvocationTargetException e) {
+            catch (InvocationTargetException e) {
                 logger.log(Level.SEVERE,
-                    "Problem with incremental update feature", e);
+                        "Problem with incremental update feature", e);
+            }
+            catch (ClassNotFoundException e) {
+                logger.log(Level.FINE, "Incremental updates not supported");
+            }
+            catch (NoSuchMethodException e) {
+                logger.log(Level.SEVERE,
+                        "Incremental updates not supported due to API mismatch", e);
+            } catch (InstantiationException e) {
+                logger.log(Level.SEVERE,
+                        "Problem with incremental update feature", e);
             }
         }
         return ret;
