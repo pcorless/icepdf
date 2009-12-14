@@ -1846,6 +1846,11 @@ public class SwingController
                                                                                  PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
         documentViewController.setZoom(defaultZoom);
 
+        // Set the default page fit mode
+        setPageFitMode(PropertiesManager.checkAndStoreIntegerProperty(propertiesManager,
+                                                                      PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+                                                                      org.icepdf.core.views.DocumentViewController.PAGE_FIT_NONE), false);
+
         // Apply any ViewerPreferences from the doc
         applyViewerPreferences(catalog, propertiesManager);
 
@@ -3689,8 +3694,8 @@ public class SwingController
         // assign view properties so that they can be saved on close
         org.icepdf.core.views.DocumentViewController viewControl = getDocumentViewController();
         Properties viewProperties = new Properties();
-        viewProperties.setProperty("document.pagefitMode", "" + viewControl.getFitMode());
-        viewProperties.setProperty("document.viewtype", "" + viewControl.getViewMode());
+        viewProperties.setProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, String.valueOf(viewControl.getFitMode()));
+        viewProperties.setProperty("document.viewtype", String.valueOf(viewControl.getViewMode()));
 
         dispose();
 
