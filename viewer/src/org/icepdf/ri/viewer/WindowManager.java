@@ -118,7 +118,7 @@ public class WindowManager implements WindowManagementCallback {
             viewType = getProperties().getInt("document.viewtype",
                     DocumentViewControllerImpl.ONE_PAGE_VIEW);
             pageFit = getProperties().getInt(
-                    "document.pagefitMode",
+                    PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                     DocumentViewController.PAGE_FIT_WINDOW_WIDTH);
         }
         catch (NumberFormatException e) {
@@ -175,7 +175,8 @@ public class WindowManager implements WindowManagementCallback {
             getProperties().setInt("application.height", sz.height);
             getProperties().setInt("application.width", sz.width);
             if (properties != null) {
-                getProperties().set("document.pagefitMode", properties.getProperty("document.pagefitMode"));
+                getProperties().set(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+                                    properties.getProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT));
                 getProperties().set("document.viewtype", properties.getProperty("document.viewtype"));
             }
             getProperties().setDefaultFilePath(ViewModel.getDefaultFilePath());

@@ -66,6 +66,9 @@ public class PropertiesManager {
     private static final String PROPERTY_DEFAULT_FILE_PATH = "application.defaultFilePath";
     private static final String PROPERTY_DEFAULT_URL = "application.defaultURL";
 
+    // default page fit mode
+    public static final String PROPERTY_DEFAULT_PAGEFIT = "document.pagefitMode";
+
     // properties used to hide/show toolbars
     public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";
@@ -740,6 +743,37 @@ public class PropertiesManager {
         // Set the property back into the manager
         // This is necessary in the cases where a property didn't exist, but needs to be added to the file
         properties.setDouble(propertyName, returnValue);
+
+        return returnValue;
+    }
+
+    public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName) {
+        return checkAndStoreIntegerProperty(properties, propertyName, 1);
+    }
+
+    /**
+     * Method to check the value of an int property
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     *  object (using a default value if none was found)
+     *
+     * @param properties to check with
+     * @param propertyName to check for
+     * @param defaultVal to default to if no value is found on a property
+     * @return true if property is true, otherwise false
+     */
+    public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName, int defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if (properties == null) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        int returnValue = properties.getInt(propertyName, defaultVal);
+
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        properties.setInt(propertyName, returnValue);
 
         return returnValue;
     }
