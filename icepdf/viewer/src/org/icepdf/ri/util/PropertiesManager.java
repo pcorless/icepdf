@@ -78,6 +78,13 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_TOOL = "application.toolbar.show.tool";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION = "application.toolbar.show.annotation";
 
+    // properties used to hide/show the utility buttons (open, print, etc.)
+    public static final String PROPERTY_SHOW_UTILITY_OPEN = "application.toolbar.show.utility.open";
+    public static final String PROPERTY_SHOW_UTILITY_SAVE = "application.toolbar.show.utility.save";
+    public static final String PROPERTY_SHOW_UTILITY_PRINT = "application.toolbar.show.utility.print";
+    public static final String PROPERTY_SHOW_UTILITY_SEARCH = "application.toolbar.show.utility.search";
+    public static final String PROPERTY_SHOW_UTILITY_UPANE = "application.toolbar.show.utility.upane";
+
     // properties used to hide/show utility pane tabs
     public static final String PROPERTY_SHOW_UTILITYPANE_BOOKMARKS = "application.utilitypane.show.bookmarks";
     public static final String PROPERTY_SHOW_UTILITYPANE_SEARCH = "application.utilitypane.show.search";
