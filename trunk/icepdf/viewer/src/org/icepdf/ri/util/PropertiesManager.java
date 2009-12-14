@@ -125,8 +125,11 @@ public class PropertiesManager {
     private boolean userRejectedCreatingLocalDataDir;
     private boolean thisExecutionTriedCreatingLocalDataDir;
 
-
     public PropertiesManager(Properties sysProps, ResourceBundle messageBundle) {
+        this(sysProps, null, messageBundle);
+    }
+
+    public PropertiesManager(Properties sysProps, String propPath, ResourceBundle messageBundle) {
         unrecoverableError = true;
         this.sysProps = sysProps;
 
@@ -142,6 +145,10 @@ public class PropertiesManager {
 
         setupLock();
 
+        // Set the property file if we have one
+        if (propPath != null) {
+            propertyFile = new File(propPath);
+        }
         loadProperties();
 
         unrecoverableError = false;
@@ -260,29 +267,37 @@ public class PropertiesManager {
         }
     }
 
-    public synchronized void loadProperties() {
+    private boolean checkPropertyFileValid(File toCheck) {
+        return ((toCheck != null) && (toCheck.exists()) && (toCheck.canRead()));
+    }
 
-        if (dataDir != null) {
-            propertyFile = new File(dataDir, USER_FILENAME);
-            // load properties from last invocation
-            if (propertyFile.exists()) {
+    public synchronized void loadProperties() {
+        // Check if we already have a properties file
+        // This can happen if we had one specified by a command line switch
+        // Otherwise default to the default directory
+        if (!checkPropertyFileValid(propertyFile)) {
+            if (dataDir != null) {
+                propertyFile = new File(dataDir, USER_FILENAME);
+            }
+        }
+
+        // load properties from last invocation
+        if (checkPropertyFileValid(propertyFile)) {
+            try {
+                InputStream in = new FileInputStream(propertyFile);
                 try {
-                    InputStream in = new FileInputStream(propertyFile);
-                    try {
-                        props.load(in);
-                    } finally {
-                        in.close();
-                    }
-                } catch (IOException ex) {
-                    Resources.showMessageDialog(null,
-                            JOptionPane.ERROR_MESSAGE, messageBundle,
-                            "manager.properties.title",
-                            "manager.properties.session.readError", propertyFile.getAbsolutePath());
+                    props.load(in);
+                } finally {
+                    in.close();
                 }
+            } catch (IOException ex) {
+                Resources.showMessageDialog(null,
+                        JOptionPane.ERROR_MESSAGE, messageBundle,
+                        "manager.properties.title",
+                        "manager.properties.session.readError", propertyFile.getAbsolutePath());
             }
         }
     }
-
 
     public synchronized void saveAndEnd() {
         if (dataDir != null) {

@@ -83,6 +83,7 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
+        String contentProperties = "";
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
             if (i == argv.length - 1) { //each argument requires another
@@ -94,6 +95,8 @@ public class Launcher {
                 contentFile = argv[++i].trim();
             } else if (arg.equals("-loadurl")) {
                 contentURL = argv[++i].trim();
+            } else if (arg.equals("-loadproperties")) {
+                contentProperties = argv[++i].trim();
             } else {
                 brokenUsage = true;
                 break;
@@ -110,7 +113,7 @@ public class Launcher {
             System.exit(1);
         }
         // start the viewer
-        run(contentFile, contentURL, messageBundle);
+        run(contentFile, contentURL, contentProperties, messageBundle);
     }
 
     /**
@@ -120,12 +123,18 @@ public class Launcher {
      *                    null.
      * @param contentURL  URL of a file which will be loaded at runtime, can be
      *                    null.
+     * @param contentProperties URI of a properties file which will be used in
+     *                          place of the default path
+     * @param messageBundle messageBundle to pull strings from
      */
-    private static void run(String contentFile, String contentURL, ResourceBundle messageBundle) {
+    private static void run(String contentFile,
+                            String contentURL,
+                            String contentProperties,
+                            ResourceBundle messageBundle) {
 
         // initiate the properties manager.
         Properties sysProps = System.getProperties();
-        propertiesManager = new PropertiesManager(sysProps, messageBundle);
+        propertiesManager = new PropertiesManager(sysProps, contentProperties, messageBundle);
 
         // initiate font Cache manager, reads system font data and stores summary
         // information in a properties file.  If new font are added to the OS
