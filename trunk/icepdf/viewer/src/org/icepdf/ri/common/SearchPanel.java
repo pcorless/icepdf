@@ -375,10 +375,9 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.insets = new Insets(10, 5, 1, 5);
 
         // content Panel
-        JPanel searchPanel = new JPanel(new BorderLayout());
-        searchPanel.setLayout(layout);
+        JPanel searchPanel = new JPanel(layout);
         this.setLayout(new BorderLayout());
-        this.add(searchPanel, BorderLayout.NORTH);
+        this.add(searchPanel, BorderLayout.CENTER);
 
         // add the search label
         addGB(searchPanel, searchLabel, 0, 0, 2, 1);
@@ -448,7 +447,6 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.insets = new Insets(5, 5, 1, 5);
         constraints.fill = GridBagConstraints.HORIZONTAL;
         addGB(searchPanel, progressBar, 0, 10, 2, 1);
-
     }
 
     public void setVisible(boolean flag) {
