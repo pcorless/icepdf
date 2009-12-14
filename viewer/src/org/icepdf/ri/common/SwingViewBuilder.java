@@ -1019,7 +1019,7 @@ public class SwingViewBuilder {
 
         // Build the main set of toolbars based on the property file configuration
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
-            addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent));
+            addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent, propertiesManager));
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
             addToToolBar(toolbar, buildPageNavigationToolBar());
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
@@ -1051,16 +1051,31 @@ public class SwingViewBuilder {
     }
 
     public JToolBar buildUtilityToolBar(boolean embeddableComponent) {
+        return buildUtilityToolBar(embeddableComponent, null);
+    }
+
+    public JToolBar buildUtilityToolBar(boolean embeddableComponent, PropertiesManager propertiesManager) {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         // if embeddable component, we don't want to create the open dialog, as we
         // have no window manager for this case.
-        if (!embeddableComponent)
+        if ((!embeddableComponent) &&
+            (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
             addToToolBar(toolbar, buildOpenFileButton());
-        addToToolBar(toolbar, buildSaveAsFileButton());
-        addToToolBar(toolbar, buildPrintButton());
-        addToToolBar(toolbar, buildSearchButton());
-        addToToolBar(toolbar, buildShowHideUtilityPaneButton());
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
+            addToToolBar(toolbar, buildSaveAsFileButton());
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT))
+            addToToolBar(toolbar, buildPrintButton());
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_SEARCH))
+            addToToolBar(toolbar, buildSearchButton());
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_UPANE))
+            addToToolBar(toolbar, buildShowHideUtilityPaneButton());
+
+        // Don't bother with this toolbar if we don't have any visible buttons
+        if (toolbar.getComponentCount() == 0) {
+            return null;
+        }
+
         return toolbar;
     }
 
