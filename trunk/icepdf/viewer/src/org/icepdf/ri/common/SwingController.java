@@ -3062,14 +3062,19 @@ public class SwingController
      */
     public void showSearchPanel() {
         if (utilityTabbedPane != null && searchPanel != null) {
-            if (utilityTabbedPane.getSelectedComponent() != searchPanel) {
-                // select the search panel
-                safelySelectUtilityPanel(searchPanel);
+            // toggle the utility pane visibility
+            toggleUtilityPaneVisibility();
+
+            // if utility pane is shown then select the search tab and request focus
+            if (isUtilityPaneVisible()) {
+                if (utilityTabbedPane.getSelectedComponent() != searchPanel) {
+                    // select the search panel
+                    safelySelectUtilityPanel(searchPanel);
+                }
+                
+                // request focus
+                searchPanel.requestFocus();
             }
-            // make sure the utility pane is visible
-            setUtilityPaneVisible(true);
-            // request focus
-            searchPanel.requestFocus();
         }
     }
 
