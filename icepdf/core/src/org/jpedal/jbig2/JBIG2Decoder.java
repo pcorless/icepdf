@@ -148,8 +148,12 @@ public class JBIG2Decoder {
 	public void decodeJBIG2(byte[] data) throws IOException, JBIG2Exception {
 		streamDecoder.decodeJBIG2(data);
 	}
+    
+    public void cleanupPostDecode() {
+        streamDecoder.cleanupPostDecode();
+    }
 
-	/**
+    /**
 	 * 
 	 * @param page
 	 * @return

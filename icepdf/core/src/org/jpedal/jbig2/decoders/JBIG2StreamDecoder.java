@@ -195,8 +195,21 @@ public class JBIG2StreamDecoder {
 		segments.clear();
 		bitmaps.clear();
 	}
+    
+    public void cleanupPostDecode() {
+        // Clear away everything but the page segments
+        for (Iterator it = segments.iterator(); it.hasNext();) {
+			Segment segment = (Segment) it.next();
+			SegmentHeader segmentHeader = segment.getSegmentHeader();
+			if (segmentHeader.getSegmentType() != segment.PAGE_INFORMATION) {
+                it.remove();
+            }
+		}
+        
+        bitmaps.clear();
+    }
 
-	private void readSegments() throws IOException, JBIG2Exception {
+    private void readSegments() throws IOException, JBIG2Exception {
 
 		if (JBIG2StreamDecoder.debug)
 			System.out.println("==== Segments ====");
