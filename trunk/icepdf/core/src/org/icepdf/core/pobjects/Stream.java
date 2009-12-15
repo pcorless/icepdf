@@ -738,12 +738,13 @@ public class Stream extends Dictionary {
             }
             
             byte[] data = getDecodedStreamBytes();
-            // Since memory usage inceases 2x (width*height/8), we should see
-            // if there are any intermediate JBIG2Bitmap objects, beyond the
-            // final one, still hanging around. Maybe make decode cleanup after 
             checkMemory((width+8)*height*22/10); // Between 0.5 and 2.2
             decoder.decodeJBIG2(data);
             data = null;
+            // From decoding, memory usage inceases more than (width*height/8),
+            // due to intermediate JBIG2Bitmap objects, used to build the final
+            // one, still hanging around. Cleanup intermediate data-structures.  
+            decoder.cleanupPostDecode();
             checkMemory((width+8)*height/8);
             tmpImage = decoder.getPageAsBufferedImage(0);
             decoder = null;
