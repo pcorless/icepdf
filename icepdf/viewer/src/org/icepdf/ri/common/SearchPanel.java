@@ -377,7 +377,9 @@ public class SearchPanel extends JPanel implements ActionListener,
         // content Panel
         JPanel searchPanel = new JPanel(layout);
         this.setLayout(new BorderLayout());
-        this.add(searchPanel, BorderLayout.CENTER);
+        this.add(new JScrollPane(searchPanel,
+                                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER);
 
         // add the search label
         addGB(searchPanel, searchLabel, 0, 0, 2, 1);
