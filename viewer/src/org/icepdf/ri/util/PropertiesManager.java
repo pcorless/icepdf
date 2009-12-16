@@ -92,6 +92,7 @@ public class PropertiesManager {
 
     // properties used for default zoom levels
     public static final String PROPERTY_DEFAULT_ZOOM_LEVEL = "application.zoom.factor.default";
+    public static final String PROPERTY_ZOOM_RANGES = "application.zoom.range.default";
 
     // properties used for overriding ViewerPreferences pulled from the document
     public static final String PROPERTY_VIEWPREF_HIDETOOLBAR = "application.viewerpreferences.hidetoolbar";
@@ -751,7 +752,7 @@ public class PropertiesManager {
      * @param properties to check with
      * @param propertyName to check for
      * @param defaultVal to default to if no value is found on a property
-     * @return true if property is true, otherwise false
+     * @return double property value
      */
     public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName, double defaultVal) {
         // If we don't have a valid PropertiesManager just return the default value
@@ -782,7 +783,7 @@ public class PropertiesManager {
      * @param properties to check with
      * @param propertyName to check for
      * @param defaultVal to default to if no value is found on a property
-     * @return true if property is true, otherwise false
+     * @return int value of property
      */
     public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName, int defaultVal) {
         // If we don't have a valid PropertiesManager just return the default value
@@ -798,6 +799,70 @@ public class PropertiesManager {
         properties.setInt(propertyName, returnValue);
 
         return returnValue;
+    }
+
+    /**
+     * Method to check the value of a comma separate list of floats property
+     * For example we will convert "0.4f, 0.5f, 0.6f" to a size 3 array with the values as floats
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     *  object (using a default value if none was found)
+     *
+     * @param properties to check with
+     * @param propertyName to check for
+     * @param defaultVal to default to if no value is found on a property
+     * @return array of floats from the property
+     */
+    public static float[] checkAndStoreFloatArrayProperty(PropertiesManager properties, String propertyName, float[] defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if ((properties == null) || (properties.props == null)) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        String propertyString = properties.props.getProperty(propertyName);
+
+        float[] toReturn = defaultVal;
+
+        try{
+            // Ensure we have a property string to parse
+            // Then we'll conver the comma separated property to a list of floats
+            if ((propertyString != null) &&
+                (propertyString.trim().length() > 0)) {
+                String[] split = propertyString.split(",");
+                toReturn = new float[split.length];
+
+                for (int i = 0; i < split.length; i++) {
+                    try{
+                        toReturn[i] = Float.parseFloat(split[i]);
+                    }catch (NumberFormatException failedValue) {
+                        /* ignore as we'll just automatically put a '0' in the invalid space */
+                    }
+                }
+            }
+            // Otherwise convert the defaultVal into a comma separated list
+            // This is done so it can be stored back into the properties file
+            else {
+                StringBuffer commaBuffer = new StringBuffer(defaultVal.length*2);
+
+                for (int i = 0; i < defaultVal.length; i++) {
+                    commaBuffer.append(defaultVal[i]);
+
+                    // Check whether we need a comma
+                    if ((i+1) < defaultVal.length) {
+                        commaBuffer.append(",");
+                    }
+                }
+
+                // Set the property back into the manager
+                // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+                properties.set(propertyName, commaBuffer.toString());
+            }
+        }catch (Exception failedProperty) {
+            /* ignore on failure as we'll just return defaultVal */
+        }
+
+        return toReturn;
     }
 }
 
