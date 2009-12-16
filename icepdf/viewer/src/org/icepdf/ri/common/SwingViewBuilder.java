@@ -368,6 +368,13 @@ public class SwingViewBuilder {
                 org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
     }
 
+    /**
+     * Constructor that accepts a different PropertiesManager and otherwise
+     *  defaults the remaining settings
+     *
+     * @param c SwingController that will interact with the GUI
+     * @param properties PropertiesManager that can customize the UI
+     */
     public SwingViewBuilder(SwingController c, PropertiesManager properties) {
         this(c, properties, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
@@ -393,6 +400,17 @@ public class SwingViewBuilder {
      *
      * @param c SwingController that will interact with the GUI
      */
+    public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
+                            float[] zl, final int documentViewType,
+                            final int documentPageFitMode) {
+        this(c, null, bf, bt, ts, zl, documentViewType, documentPageFitMode);
+    }
+
+    /**
+     * Construct a SwingVewBuilder with whichever settings you desire
+     *
+     * @param c SwingController that will interact with the GUI
+     */
     public SwingViewBuilder(SwingController c, PropertiesManager properties,
                             Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
@@ -404,7 +422,10 @@ public class SwingViewBuilder {
         if (properties != null) {
             viewerController.setPropertiesManager(properties);
             this.propertiesManager = properties;
-        }        
+        }
+
+        // Attempt to override the highlight color from the properties file
+        overrideHighlightColor();
 
         // update View Controller with previewer document page fit and view type info
         DocumentViewControllerImpl documentViewController = (DocumentViewControllerImpl) viewerController.getDocumentViewController();
@@ -1713,6 +1734,29 @@ public class SwingViewBuilder {
             (viewerController != null) &&
             (viewerController.getWindowManagementCallback() != null)) {
             propertiesManager = viewerController.getWindowManagementCallback().getProperties();
+        }
+    }
+
+    /**
+     * Method to attempt to override the system property highlight color
+     * If the current color is blank, we'll try to pull the same property from
+     *  our local propertiesManager and, if found, apply it to the system properties
+     * This affects the search highlight coloring
+     */
+    protected void overrideHighlightColor() {
+        // Attempt to override the default highlight color
+        // We will only attempt this if a -D system parameter was not passed
+        if (Defs.sysProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR) == null) {
+            doubleCheckPropertiesManager();
+
+            // Try to pull the color from our local properties file
+            // If we can find a value, then set it as the system property
+            if (propertiesManager != null) {
+                String newColor = propertiesManager.getString(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR);
+                if (newColor != null) {
+                    Defs.setSystemProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, newColor);
+                }
+            }
         }
     }
 
