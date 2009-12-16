@@ -69,6 +69,9 @@ public class PropertiesManager {
     // default page fit mode
     public static final String PROPERTY_DEFAULT_PAGEFIT = "document.pagefitMode";
 
+    // system properties
+    public static final String SYSPROPERTY_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlightColor";
+
     // properties used to hide/show toolbars
     public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";
