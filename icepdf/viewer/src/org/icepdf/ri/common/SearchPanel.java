@@ -216,7 +216,7 @@ public class SearchPanel extends JPanel implements ActionListener,
         tree.setCellRenderer(renderer);
 
         JScrollPane scrollPane = new JScrollPane(tree);
-        scrollPane.setPreferredSize(new Dimension(150, 250));
+        scrollPane.setPreferredSize(new Dimension(150, 75));
 
         // search Label
         JLabel searchLabel = new JLabel(messageBundle.getString(
