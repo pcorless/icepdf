@@ -1737,6 +1737,12 @@ public class SwingViewBuilder {
         }
     }
 
+    /**
+     * Method to attempt to override the system property highlight color
+     * If the current color is blank, we'll try to pull the same property from
+     *  our local propertiesManager and, if found, apply it to the system properties
+     * This affects the search highlight coloring
+     */
     protected void overrideHighlightColor() {
         // Attempt to override the default highlight color
         // We will only attempt this if a -D system parameter was not passed
