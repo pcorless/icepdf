@@ -368,6 +368,13 @@ public class SwingViewBuilder {
                 org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
     }
 
+    /**
+     * Constructor that accepts a different PropertiesManager and otherwise
+     *  defaults the remaining settings
+     *
+     * @param c SwingController that will interact with the GUI
+     * @param properties PropertiesManager that can customize the UI
+     */
     public SwingViewBuilder(SwingController c, PropertiesManager properties) {
         this(c, properties, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
@@ -388,12 +395,16 @@ public class SwingViewBuilder {
                 null, documentViewType, documentPageFitMode);
     }
 
+    /**
+     * Construct a SwingVewBuilder with whichever settings you desire
+     *
+     * @param c SwingController that will interact with the GUI
+     */
     public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
                             final int documentPageFitMode) {
         this(c, null, bf, bt, ts, zl, documentViewType, documentPageFitMode);
     }
-
 
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
