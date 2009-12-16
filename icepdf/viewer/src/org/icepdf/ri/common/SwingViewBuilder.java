@@ -388,6 +388,13 @@ public class SwingViewBuilder {
                 null, documentViewType, documentPageFitMode);
     }
 
+    public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
+                            float[] zl, final int documentViewType,
+                            final int documentPageFitMode) {
+        this(c, null, bf, bt, ts, zl, documentViewType, documentPageFitMode);
+    }
+
+
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
      *
