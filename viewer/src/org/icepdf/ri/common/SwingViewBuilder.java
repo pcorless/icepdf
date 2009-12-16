@@ -422,7 +422,10 @@ public class SwingViewBuilder {
         if (properties != null) {
             viewerController.setPropertiesManager(properties);
             this.propertiesManager = properties;
-        }        
+        }
+
+        // Attempt to override the highlight color from the properties file
+        overrideHighlightColor();
 
         // update View Controller with previewer document page fit and view type info
         DocumentViewControllerImpl documentViewController = (DocumentViewControllerImpl) viewerController.getDocumentViewController();
@@ -1731,6 +1734,23 @@ public class SwingViewBuilder {
             (viewerController != null) &&
             (viewerController.getWindowManagementCallback() != null)) {
             propertiesManager = viewerController.getWindowManagementCallback().getProperties();
+        }
+    }
+
+    protected void overrideHighlightColor() {
+        // Attempt to override the default highlight color
+        // We will only attempt this if a -D system parameter was not passed
+        if (Defs.sysProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR) == null) {
+            doubleCheckPropertiesManager();
+
+            // Try to pull the color from our local properties file
+            // If we can find a value, then set it as the system property
+            if (propertiesManager != null) {
+                String newColor = propertiesManager.getString(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR);
+                if (newColor != null) {
+                    Defs.setSystemProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, newColor);
+                }
+            }
         }
     }
 
