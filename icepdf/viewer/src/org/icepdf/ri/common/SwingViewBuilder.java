@@ -1227,6 +1227,20 @@ public class SwingViewBuilder {
     }
 
     public JComboBox buildZoomCombBox() {
+        // Get the properties manager in preparation for trying to get the zoom levels
+        PropertiesManager propertiesManager = null;
+        if (viewerController != null &&
+                viewerController.getWindowManagementCallback() != null) {
+            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
+        }
+
+        // Assign any different zoom ranges from the properties file if possible
+        if (propertiesManager != null) {
+            zoomLevels = PropertiesManager.checkAndStoreFloatArrayProperty(propertiesManager,
+                                                                           PropertiesManager.PROPERTY_ZOOM_RANGES,
+                                                                           zoomLevels);
+        }
+
         JComboBox tmp = new JComboBox();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
         tmp.setPreferredSize(new Dimension(75, tmp.getHeight()));
