@@ -344,6 +344,8 @@ public class SwingViewBuilder {
 
     protected ResourceBundle messageBundle;
 
+    protected PropertiesManager propertiesManager;
+
     public static boolean isMacOs;
 
     private static boolean isDemo;
@@ -361,16 +363,15 @@ public class SwingViewBuilder {
      */
     public SwingViewBuilder(SwingController c) {
         // Use all the defaults
-        this(c, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
+        this(c, null, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
                 org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
     }
 
     public SwingViewBuilder(SwingController c, PropertiesManager properties) {
-        this(c, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
+        this(c, properties, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
                 org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
-        c.setPropertiesManager(properties);
     }
 
     /**
@@ -383,7 +384,7 @@ public class SwingViewBuilder {
     public SwingViewBuilder(SwingController c, int documentViewType,
                             int documentPageFitMode) {
         // Use all the defaults
-        this(c, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED,
+        this(c, null, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED,
                 null, documentViewType, documentPageFitMode);
     }
 
@@ -392,12 +393,18 @@ public class SwingViewBuilder {
      *
      * @param c SwingController that will interact with the GUI
      */
-    public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
+    public SwingViewBuilder(SwingController c, PropertiesManager properties,
+                            Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
                             final int documentPageFitMode) {
         viewerController = c;
 
         messageBundle = viewerController.getMessageBundle();
+
+        if (properties != null) {
+            viewerController.setPropertiesManager(properties);
+            this.propertiesManager = properties;
+        }        
 
         // update View Controller with previewer document page fit and view type info
         DocumentViewControllerImpl documentViewController = (DocumentViewControllerImpl) viewerController.getDocumentViewController();
@@ -1011,11 +1018,7 @@ public class SwingViewBuilder {
         commonToolBarSetup(toolbar, true);
 
         // Attempt to get the properties manager so we can configure which toolbars are visible
-        PropertiesManager propertiesManager = null;
-        if (viewerController != null &&
-                viewerController.getWindowManagementCallback() != null) {
-            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
-        }
+        doubleCheckPropertiesManager();
 
         // Build the main set of toolbars based on the property file configuration
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
@@ -1228,18 +1231,12 @@ public class SwingViewBuilder {
 
     public JComboBox buildZoomCombBox() {
         // Get the properties manager in preparation for trying to get the zoom levels
-        PropertiesManager propertiesManager = null;
-        if (viewerController != null &&
-                viewerController.getWindowManagementCallback() != null) {
-            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
-        }
+        doubleCheckPropertiesManager();
 
         // Assign any different zoom ranges from the properties file if possible
-        if (propertiesManager != null) {
-            zoomLevels = PropertiesManager.checkAndStoreFloatArrayProperty(propertiesManager,
-                                                                           PropertiesManager.PROPERTY_ZOOM_RANGES,
-                                                                           zoomLevels);
-        }
+        zoomLevels = PropertiesManager.checkAndStoreFloatArrayProperty(propertiesManager,
+                                                                       PropertiesManager.PROPERTY_ZOOM_RANGES,
+                                                                       zoomLevels);
 
         JComboBox tmp = new JComboBox();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
@@ -1453,11 +1450,7 @@ public class SwingViewBuilder {
         utilityTabbedPane.setPreferredSize(new Dimension(250, 400));
 
         // Get a properties manager that can be used to configure utility pane visibility
-        PropertiesManager propertiesManager = null;
-        if (viewerController != null && 
-                viewerController.getWindowManagementCallback() != null) {
-            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
-        }
+        doubleCheckPropertiesManager();
 
         // Build the main set of tabs based on the property file configuration
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
@@ -1708,6 +1701,18 @@ public class SwingViewBuilder {
                     toolbar.addSeparator();
                 haveMadeAToolBar = true;
             }
+        }
+    }
+
+    /**
+     * Method to try to get the properties manager from the window management callback,
+     *  if we don't already have a propertiesManager object
+     */
+    protected void doubleCheckPropertiesManager() {
+        if ((propertiesManager == null) &&
+            (viewerController != null) &&
+            (viewerController.getWindowManagementCallback() != null)) {
+            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
         }
     }
 
