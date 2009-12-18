@@ -1081,7 +1081,7 @@ public class SwingViewBuilder {
 
     public JToolBar buildCompleteToolBar(boolean embeddableComponent) {
         JToolBar toolbar = new JToolBar();
-        toolbar.setLayout(new ToolbarLayout( ToolbarLayout.LEFT));
+        toolbar.setLayout(new ToolbarLayout( ToolbarLayout.LEFT, 0, 0));
         commonToolBarSetup(toolbar, true);
 
         // Attempt to get the properties manager so we can configure which toolbars are visible
@@ -1573,26 +1573,29 @@ public class SwingViewBuilder {
     public JPanel buildStatusPanel() {
 
         JPanel statusPanel = new JPanel(new BorderLayout());
-
+ 
+        JPanel pgPanel = new JPanel();
         JLabel lbl = new JLabel(" ");
         lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
+        pgPanel.add( lbl);
+        statusPanel.add(pgPanel, BorderLayout.WEST);
+        
+        JPanel viewPanel = new JPanel();
+        viewPanel.add(buildPageViewSinglePageNonConToggleButton());
+        viewPanel.add(buildPageViewSinglePageConToggleButton());
+        viewPanel.add(buildPageViewFacingPageNonConToggleButton());
+        viewPanel.add(buildPageViewFacingPageConToggleButton());    
+        statusPanel.add(viewPanel, BorderLayout.CENTER);
+        viewPanel.setLayout( new ToolbarLayout( ToolbarLayout.RIGHT, 0, 1));
+
         JLabel lbl2 = new JLabel(" ");
         lbl2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5)); // So text isn't at the very edge
-        // layout the components
-        Box horizontalBox = Box.createHorizontalBox();
-        horizontalBox.add(lbl, BorderLayout.WEST);
-        horizontalBox.add(Box.createHorizontalGlue());
-        horizontalBox.add(buildPageViewSinglePageNonConToggleButton());
-        horizontalBox.add(buildPageViewSinglePageConToggleButton());
-        horizontalBox.add(buildPageViewFacingPageNonConToggleButton());
-        horizontalBox.add(buildPageViewFacingPageConToggleButton());
-        horizontalBox.add(lbl2, BorderLayout.EAST);
-
-        statusPanel.add(horizontalBox, BorderLayout.CENTER);
+        statusPanel.add( lbl2, BorderLayout.EAST);
 
         if (viewerController != null) {
             viewerController.setStatusLabel(lbl);
         }
+
         return statusPanel;
     }
 
