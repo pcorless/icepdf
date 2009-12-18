@@ -531,9 +531,55 @@ public class SwingViewBuilder {
         return menuBar;
     }
 
+    protected KeyStroke buildKeyStroke(int keyCode, int modifiers) {
+        return buildKeyStroke(keyCode, modifiers, false);
+    }
+
+    /**
+     * Create and return a KeyStroke with the specified code and modifier
+     * Note this will automatically return null if the PROPERTY_SHOW_KEYBOARD_SHORTCUTS
+     *  property is 'false'
+     *
+     * @param keyCode to build
+     * @param modifiers to build
+     * @param onRelease to build
+     * @return built KeyStroke
+     */
+    protected KeyStroke buildKeyStroke(int keyCode, int modifiers, boolean onRelease) {
+        doubleCheckPropertiesManager();
+        
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                                                       PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
+                                                       true)) {
+            return KeyStroke.getKeyStroke(keyCode, modifiers, onRelease);
+        }
+
+        return null;
+    }
+
+    /**
+     * Return a valid mnemonic for the passed character, unless the
+     *  PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS property is 'false',
+     *  in which case we'll return -1
+     *
+     * @param mnemonic to build
+     * @return built mnemonic
+     */
+    protected int buildMnemonic(char mnemonic) {
+        doubleCheckPropertiesManager();
+
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                                                       PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
+                                                       true)) {
+            return mnemonic;
+        }
+
+        return -1;
+    }
+
     public JMenu buildFileMenu() {
         JMenu fileMenu = new JMenu(messageBundle.getString("viewer.menu.file.label"));
-        fileMenu.setMnemonic(messageBundle.getString("viewer.menu.file.mnemonic").charAt(0));
+        fileMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.file.mnemonic").charAt(0)));
         JMenuItem openFileMenuItem = buildOpenFileMenuItem();
         JMenuItem openURLMenuItem = buildOpenURLMenuItem();
         if (openFileMenuItem != null && openURLMenuItem != null) {
@@ -570,7 +616,7 @@ public class SwingViewBuilder {
     public JMenuItem buildOpenFileMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.open.file.label"),
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_OPEN_FILE, KeyEventConstants.MODIFIER_OPEN_FILE));
+                    buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_FILE, KeyEventConstants.MODIFIER_OPEN_FILE));
         if (viewerController != null && mi != null)
             viewerController.setOpenFileMenuItem(mi);
         return mi;
@@ -579,7 +625,7 @@ public class SwingViewBuilder {
     public JMenuItem buildOpenURLMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.open.URL.label"),
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_OPEN_URL, KeyEventConstants.MODIFIER_OPEN_URL));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_URL, KeyEventConstants.MODIFIER_OPEN_URL));
         if (viewerController != null && mi != null)
             viewerController.setOpenURLMenuItem(mi);
         return mi;
@@ -588,7 +634,7 @@ public class SwingViewBuilder {
     public JMenuItem buildCloseMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.close.label"), null,
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_CLOSE, KeyEventConstants.MODIFIER_CLOSE));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_CLOSE, KeyEventConstants.MODIFIER_CLOSE));
         if (viewerController != null && mi != null)
             viewerController.setCloseMenuItem(mi);
         return mi;
@@ -597,7 +643,7 @@ public class SwingViewBuilder {
     public JMenuItem buildSaveAsFileMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.saveAs.label"), "save",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_SAVE_AS, KeyEventConstants.MODIFIER_SAVE_AS, false));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SAVE_AS, KeyEventConstants.MODIFIER_SAVE_AS, false));
         if (viewerController != null && mi != null)
             viewerController.setSaveAsFileMenuItem(mi);
         return mi;
@@ -646,7 +692,7 @@ public class SwingViewBuilder {
     public JMenuItem buildPrintSetupMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.printSetup.label"), null,
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_PRINT_SETUP, KeyEventConstants.MODIFIER_PRINT_SETUP, false));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_PRINT_SETUP, KeyEventConstants.MODIFIER_PRINT_SETUP, false));
         if (viewerController != null && mi != null)
             viewerController.setPrintSetupMenuItem(mi);
         return mi;
@@ -655,7 +701,7 @@ public class SwingViewBuilder {
     public JMenuItem buildPrintMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.print.label"), "print",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_PRINT, KeyEventConstants.MODIFIER_PRINT));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_PRINT, KeyEventConstants.MODIFIER_PRINT));
         if (viewerController != null && mi != null)
             viewerController.setPrintMenuItem(mi);
         return mi;
@@ -664,7 +710,7 @@ public class SwingViewBuilder {
     public JMenuItem buildExitMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.exit.label"),
-                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_EXIT, KeyEventConstants.MODIFIER_EXIT));
+                null, buildKeyStroke(KeyEventConstants.KEY_CODE_EXIT, KeyEventConstants.MODIFIER_EXIT));
         if (viewerController != null && mi != null)
             viewerController.setExitMenuItem(mi);
         return mi;
@@ -672,7 +718,7 @@ public class SwingViewBuilder {
 
     public JMenu buildEditMenu() {
         JMenu viewMenu = new JMenu(messageBundle.getString("viewer.menu.edit.label"));
-        viewMenu.setMnemonic(messageBundle.getString("viewer.menu.edit.mnemonic").charAt(0));
+        viewMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.edit.mnemonic").charAt(0)));
         addToMenu(viewMenu, buildUndoMenuItem());
         addToMenu(viewMenu, buildRedoMenuItem());
         viewMenu.addSeparator();
@@ -687,7 +733,7 @@ public class SwingViewBuilder {
     public JMenuItem buildUndoMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.undo.label"),
-                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_UNDO,
+                null, buildKeyStroke(KeyEventConstants.KEY_CODE_UNDO,
                         KeyEventConstants.MODIFIER_UNDO));
         if (viewerController != null && mi != null)
             viewerController.setUndoMenuItem(mi);
@@ -697,7 +743,7 @@ public class SwingViewBuilder {
     public JMenuItem buildRedoMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.redo.label"),
-                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_REDO,
+                null, buildKeyStroke(KeyEventConstants.KEY_CODE_REDO,
                         KeyEventConstants.MODIFIER_REDO));
         if (viewerController != null && mi != null)
             viewerController.setReduMenuItem(mi);
@@ -707,7 +753,7 @@ public class SwingViewBuilder {
     public JMenuItem buildCopyMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.copy.label"),
-                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_COPY,
+                null, buildKeyStroke(KeyEventConstants.KEY_CODE_COPY,
                         KeyEventConstants.MODIFIER_COPY));
         if (viewerController != null && mi != null)
             viewerController.setCopyMenuItem(mi);
@@ -717,7 +763,7 @@ public class SwingViewBuilder {
     public JMenuItem buildDeleteMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.delete.label"),
-                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_DELETE,
+                null, buildKeyStroke(KeyEventConstants.KEY_CODE_DELETE,
                         KeyEventConstants.MODIFIER_DELETE));
         if (viewerController != null && mi != null)
             viewerController.setDeleteMenuItem(mi);
@@ -727,7 +773,7 @@ public class SwingViewBuilder {
     public JMenuItem buildSelectAllMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.selectAll.label"),
-                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_SELECT_ALL,
+                null, buildKeyStroke(KeyEventConstants.KEY_CODE_SELECT_ALL,
                         KeyEventConstants.MODIFIER_SELECT_ALL));
         if (viewerController != null && mi != null)
             viewerController.setSelectAllMenuItem(mi);
@@ -737,7 +783,7 @@ public class SwingViewBuilder {
     public JMenuItem buildDeselectAllMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.deselectAll.label"),
-                null, KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_DESELECT_ALL,
+                null, buildKeyStroke(KeyEventConstants.KEY_CODE_DESELECT_ALL,
                         KeyEventConstants.MODIFIER_DESELECT_ALL));
         if (viewerController != null && mi != null)
             viewerController.setDselectAllMenuItem(mi);
@@ -746,7 +792,7 @@ public class SwingViewBuilder {
 
     public JMenu buildViewMenu() {
         JMenu viewMenu = new JMenu(messageBundle.getString("viewer.menu.view.label"));
-        viewMenu.setMnemonic(messageBundle.getString("viewer.menu.view.mnemonic").charAt(0));
+        viewMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.view.mnemonic").charAt(0)));
         addToMenu(viewMenu, buildFitActualSizeMenuItem());
         addToMenu(viewMenu, buildFitPageMenuItem());
         addToMenu(viewMenu, buildFitWidthMenuItem());
@@ -765,7 +811,7 @@ public class SwingViewBuilder {
     public JMenuItem buildFitActualSizeMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.actualSize.label"), "actual_size",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_FIT_ACTUAL, KeyEventConstants.MODIFIER_FIT_ACTUAL));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_FIT_ACTUAL, KeyEventConstants.MODIFIER_FIT_ACTUAL));
         if (viewerController != null && mi != null)
             viewerController.setFitActualSizeMenuItem(mi);
         return mi;
@@ -774,7 +820,7 @@ public class SwingViewBuilder {
     public JMenuItem buildFitPageMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.fitInWindow.label"), "fit_in_window",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_FIT_PAGE, KeyEventConstants.MODIFIER_FIT_PAGE));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_FIT_PAGE, KeyEventConstants.MODIFIER_FIT_PAGE));
         if (viewerController != null && mi != null)
             viewerController.setFitPageMenuItem(mi);
         return mi;
@@ -783,7 +829,7 @@ public class SwingViewBuilder {
     public JMenuItem buildFitWidthMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.fitWidth.label"), "fit_width",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_FIT_WIDTH, KeyEventConstants.MODIFIER_FIT_WIDTH));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_FIT_WIDTH, KeyEventConstants.MODIFIER_FIT_WIDTH));
         if (viewerController != null && mi != null)
             viewerController.setFitWidthMenuItem(mi);
         return mi;
@@ -792,7 +838,7 @@ public class SwingViewBuilder {
     public JMenuItem buildZoomInMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.zoomIn.label"), "round-zoom_in",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_ZOOM_IN, KeyEventConstants.MODIFIER_ZOOM_IN, false));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_ZOOM_IN, KeyEventConstants.MODIFIER_ZOOM_IN, false));
         if (viewerController != null && mi != null)
             viewerController.setZoomInMenuItem(mi);
         return mi;
@@ -801,7 +847,7 @@ public class SwingViewBuilder {
     public JMenuItem buildZoomOutMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.zoomOut.label"), "round-zoom_out",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_ZOOM_OUT, KeyEventConstants.MODIFIER_ZOOM_OUT, false));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_ZOOM_OUT, KeyEventConstants.MODIFIER_ZOOM_OUT, false));
         if (viewerController != null && mi != null)
             viewerController.setZoomOutMenuItem(mi);
         return mi;
@@ -810,7 +856,7 @@ public class SwingViewBuilder {
     public JMenuItem buildRotateLeftMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.rotateLeft.label"), "rotate1",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_ROTATE_LEFT, KeyEventConstants.MODIFIER_ROTATE_LEFT));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_ROTATE_LEFT, KeyEventConstants.MODIFIER_ROTATE_LEFT));
         if (viewerController != null && mi != null)
             viewerController.setRotateLeftMenuItem(mi);
         return mi;
@@ -819,7 +865,7 @@ public class SwingViewBuilder {
     public JMenuItem buildRotateRightMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.view.rotateRight.label"), "rotate2",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_ROTATE_RIGHT, KeyEventConstants.MODIFIER_ROTATE_RIGHT));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_ROTATE_RIGHT, KeyEventConstants.MODIFIER_ROTATE_RIGHT));
         if (viewerController != null && mi != null)
             viewerController.setRotateRightMenuItem(mi);
         return mi;
@@ -841,7 +887,7 @@ public class SwingViewBuilder {
 
     public JMenu buildDocumentMenu() {
         JMenu documentMenu = new JMenu(messageBundle.getString("viewer.menu.document.label"));
-        documentMenu.setMnemonic(messageBundle.getString("viewer.menu.document.mnemonic").charAt(0));
+        documentMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.document.mnemonic").charAt(0)));
         addToMenu(documentMenu, buildFirstPageMenuItem());
         addToMenu(documentMenu, buildPreviousPageMenuItem());
         addToMenu(documentMenu, buildNextPageMenuItem());
@@ -855,7 +901,7 @@ public class SwingViewBuilder {
     public JMenuItem buildFirstPageMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.firstPage.label"), "first",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_FIRST_PAGE, KeyEventConstants.MODIFIER_FIRST_PAGE));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_FIRST_PAGE, KeyEventConstants.MODIFIER_FIRST_PAGE));
         if (viewerController != null && mi != null)
             viewerController.setFirstPageMenuItem(mi);
         return mi;
@@ -864,7 +910,7 @@ public class SwingViewBuilder {
     public JMenuItem buildPreviousPageMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.previousPage.label"), "back",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_PREVIOUS_PAGE, KeyEventConstants.MODIFIER_PREVIOUS_PAGE));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_PREVIOUS_PAGE, KeyEventConstants.MODIFIER_PREVIOUS_PAGE));
         if (viewerController != null && mi != null)
             viewerController.setPreviousPageMenuItem(mi);
         return mi;
@@ -873,7 +919,7 @@ public class SwingViewBuilder {
     public JMenuItem buildNextPageMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.nextPage.label"), "forward",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_NEXT_PAGE, KeyEventConstants.MODIFIER_NEXT_PAGE));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_NEXT_PAGE, KeyEventConstants.MODIFIER_NEXT_PAGE));
         if (viewerController != null && mi != null)
             viewerController.setNextPageMenuItem(mi);
         return mi;
@@ -882,7 +928,7 @@ public class SwingViewBuilder {
     public JMenuItem buildLastPageMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.lastPage.label"), "last",
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_LAST_PAGE, KeyEventConstants.MODIFIER_LAST_PAGE));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_LAST_PAGE, KeyEventConstants.MODIFIER_LAST_PAGE));
         if (viewerController != null && mi != null)
             viewerController.setLastPageMenuItem(mi);
         return mi;
@@ -891,7 +937,7 @@ public class SwingViewBuilder {
     public JMenuItem buildSearchMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.search.label"),
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_SEARCH));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_SEARCH));
         if (viewerController != null && mi != null)
             viewerController.setSearchMenuItem(mi);
         return mi;
@@ -900,7 +946,7 @@ public class SwingViewBuilder {
     public JMenuItem buildGoToPageMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.document.gotToPage.label"),
-                KeyStroke.getKeyStroke(KeyEventConstants.KEY_CODE_GOTO, KeyEventConstants.MODIFIER_GOTO));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_GOTO, KeyEventConstants.MODIFIER_GOTO));
         if (viewerController != null && mi != null)
             viewerController.setGoToPageMenuItem(mi);
         return mi;
@@ -908,7 +954,7 @@ public class SwingViewBuilder {
 
     public JMenu buildWindowMenu() {
         final JMenu windowMenu = new JMenu(messageBundle.getString("viewer.menu.window.label"));
-        windowMenu.setMnemonic(messageBundle.getString("viewer.menu.window.mnemonic").charAt(0));
+        windowMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.window.mnemonic").charAt(0)));
         addToMenu(windowMenu, buildMinimiseAllMenuItem());
         addToMenu(windowMenu, buildBringAllToFrontMenuItem());
         windowMenu.addSeparator();
@@ -934,7 +980,7 @@ public class SwingViewBuilder {
 
     public JMenuItem buildMinimiseAllMenuItem() {
         JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.window.minAll.label"), null);
-        mi.setMnemonic(messageBundle.getString("viewer.menu.window.minAll.mnemonic").charAt(0));
+        mi.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.window.minAll.mnemonic").charAt(0)));
         if (viewerController != null && mi != null)
             viewerController.setMinimiseAllMenuItem(mi);
         return mi;
@@ -942,7 +988,7 @@ public class SwingViewBuilder {
 
     public JMenuItem buildBringAllToFrontMenuItem() {
         JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.window.frontAll.label"), null);
-        mi.setMnemonic(messageBundle.getString("viewer.menu.window.frontAll.mnemonic").charAt(0));
+        mi.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.window.frontAll.mnemonic").charAt(0)));
         if (viewerController != null && mi != null)
             viewerController.setBringAllToFrontMenuItem(mi);
         return mi;
@@ -984,7 +1030,7 @@ public class SwingViewBuilder {
                     miText = "    " + identifier;
                 JMenuItem mi = new JMenuItem(miText);
                 if (mnemonic != null && number.length() == 1)
-                    mi.setMnemonic(number.charAt(0));
+                    mi.setMnemonic(buildMnemonic(number.charAt(0)));
                 if (currWindowIndex == i)
                     mi.setEnabled(false);
                 menu.add(mi);
@@ -1015,7 +1061,7 @@ public class SwingViewBuilder {
 
     public JMenu buildHelpMenu() {
         JMenu helpMenu = new JMenu(messageBundle.getString("viewer.menu.help.label"));
-        helpMenu.setMnemonic(messageBundle.getString("viewer.menu.help.mnemonic").charAt(0));
+        helpMenu.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.help.mnemonic").charAt(0)));
 
         if (!isMacOs) {
             // Not on a Mac, so create the About menu item.
