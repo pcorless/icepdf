@@ -97,6 +97,9 @@ public class PropertiesManager {
     public static final String PROPERTY_DEFAULT_ZOOM_LEVEL = "application.zoom.factor.default";
     public static final String PROPERTY_ZOOM_RANGES = "application.zoom.range.default";
 
+    // property to hide/show menu keyboard accelerator shortcuts
+    public static final String PROPERTY_SHOW_KEYBOARD_SHORTCUTS = "application.menuitem.show.keyboard.shortcuts";
+
     // properties used for overriding ViewerPreferences pulled from the document
     public static final String PROPERTY_VIEWPREF_HIDETOOLBAR = "application.viewerpreferences.hidetoolbar";
     public static final String PROPERTY_VIEWPREF_HIDEMENUBAR = "application.viewerpreferences.hidemenubar";
