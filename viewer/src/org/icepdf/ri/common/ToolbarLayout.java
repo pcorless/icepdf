@@ -110,40 +110,6 @@ class ToolbarLayout implements LayoutManager {
         this.vgap = vgap;
     }
 
-    public Dimension preferredLayoutSize(Container parent) {
-        synchronized(parent.getTreeLock()) {
-            Dimension dim = new Dimension(0,0);
-            int maxWidth = 0;
-            int componentCount = parent.getComponentCount();
-            Insets insets = parent.getInsets();
-            int padWidths = (hgap *2) + insets.left + insets.right;
-
-            for(int i = 0; i < componentCount; i++) {
-                Component c = parent.getComponent(i);
-                if(c.isVisible()) {
-                    Dimension d = c.getPreferredSize();
-                    if((dim.width + d.width + padWidths) <= parent.getWidth()) {
-                        dim.height = Math.max(dim.height, d.height);
-                    } else {
-                        dim.height += vgap + d.height;
-                        dim.width = 0;
-                    }
-                    if(dim.width > 0) {
-                        dim.width += hgap;
-                    }
-                    dim.width += d.width;
-                    if(dim.width > maxWidth) {
-                        maxWidth = dim.width;
-                    }
-                }
-            }
-            dim.width = Math.max(dim.width, maxWidth);
-            dim.width += insets.left + insets.right + 2*hgap;
-            dim.height += insets.top + insets.bottom + 2*vgap;
-            return dim;
-        }
-    }
-
     public Dimension minimumLayoutSize(Container parent) {
         synchronized(parent.getTreeLock()) {
             Dimension dim = new Dimension(0,0);
@@ -166,6 +132,54 @@ class ToolbarLayout implements LayoutManager {
             return dim;
         }
     }
+
+    public Dimension preferredLayoutSize(Container parent) {
+        if (parent.getWidth() == 0) {
+            // Parent has no size yet, ask for enough to fit all toolbar items on one row
+            return minimumLayoutSize(parent);
+
+        } else {
+
+            synchronized(parent.getTreeLock()) {
+                Dimension dim = new Dimension(0,0);
+                int maxWidth = 0;
+                int componentCount = parent.getComponentCount();
+                Insets insets = parent.getInsets();
+                int padWidths = (hgap *2) + insets.left + insets.right;
+
+                for(int i = 0; i < componentCount; i++) {
+                    Component c = parent.getComponent(i);
+                    if(c.isVisible()) {
+                        Dimension d = c.getPreferredSize();
+                        // Does this comp fit in the current toolbar width?
+                        if((dim.width + d.width + padWidths) <= parent.getWidth()) {
+                            // Yes, check to see if the row height needs to grow to fit it.
+                            dim.height = Math.max(dim.height, d.height);
+                        } else {
+                            // No, add height for another toolbar row, reset row width
+                            dim.height += vgap + d.height;
+                            dim.width = 0;
+                        }
+                        if(dim.width > 0) {
+                            // Add hgap between toolbar items
+                            dim.width += hgap;
+                        }
+                        // Add width of this toolbar item to row width
+                        dim.width += d.width;
+                        if(dim.width > maxWidth) {
+                            maxWidth = dim.width;
+                        }
+                    }
+                }
+
+                dim.width = Math.max(dim.width, maxWidth);
+                dim.width += insets.left + insets.right + 2*hgap;
+                dim.height += insets.top + insets.bottom + 2*vgap;
+                return dim;
+            }
+        }
+    }
+
 
     public void layoutContainer(Container parent) {
         synchronized(parent.getTreeLock()) {
