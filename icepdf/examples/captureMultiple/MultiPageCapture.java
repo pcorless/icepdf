@@ -137,7 +137,7 @@ public class MultiPageCapture {
                 int pageHeight = (int) size.getHeight();
                 int[] cmap = new int[] { 0xFF000000, 0xFFFFFFFF };
                 IndexColorModel cm = new IndexColorModel(
-                    1, cmap.length,  cmap, 0, false, Transparency.OPAQUE,
+                    1, cmap.length,  cmap, 0, false, Transparency.BITMASK,
                     DataBuffer.TYPE_BYTE);
                 BufferedImage image = new BufferedImage(
                     pageWidth, pageHeight, BufferedImage.TYPE_BYTE_BINARY, cm);
