@@ -1801,7 +1801,7 @@ public class SwingViewBuilder {
             // Try to pull the color from our local properties file
             // If we can find a value, then set it as the system property
             if (propertiesManager != null) {
-                String newColor = propertiesManager.getString(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR);
+                String newColor = propertiesManager.getString(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, null);
                 if (newColor != null) {
                     Defs.setSystemProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, newColor);
                 }
