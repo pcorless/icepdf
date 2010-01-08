@@ -83,7 +83,7 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
-        String contentProperties = "";
+        String contentProperties = null;
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
             if (i == argv.length - 1) { //each argument requires another
