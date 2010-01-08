@@ -146,17 +146,22 @@ public class PropertiesManager {
             return;
         }
 
+        // Set and load the property file if we have one
+        if (propPath != null) {
+            propertyFile = new File(propPath);
+            loadProperties();
+        }
+
         setupHomeDir(null);
 
         recordMofifTime();
 
         setupLock();
 
-        // Set the property file if we have one
-        if (propPath != null) {
-            propertyFile = new File(propPath);
+        // Ensure at least the default properties get loaded if we haven't already
+        if (propPath == null) {
+            loadProperties();
         }
-        loadProperties();
 
         unrecoverableError = false;
     }

@@ -375,6 +375,31 @@ public class Stream extends Dictionary {
         return null;
     }
 
+    private void copyDecodedStreamBytesIntoRGB(int[] pixels) {
+        byte[] rgb = new byte[3];
+        try {
+            InputStream input = getInputStreamForDecodedStreamBytes();
+            for(int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
+                int argb = 0xFF000000;
+                if (input != null) {
+                    int currRead = input.read(rgb, 0, 3);
+                    if (currRead >= 1)
+                        argb |= ((((int)rgb[0]) << 16) & 0x00FF0000);
+                    if (currRead >= 2)
+                        argb |= ((((int)rgb[1]) << 8) & 0x0000FF00);
+                    if (currRead >= 3)
+                        argb |= (((int)rgb[2]) & 0x000000FF);
+                }
+                pixels[pixelIndex] = argb;
+            }
+            if (input != null)
+                input.close();
+        }
+        catch (IOException e) {
+            logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
+        }
+    }
+    
     private boolean shouldUseCCITTFaxDecode() {
         return containsFilter(new String[] {"CCITTFaxDecode", "/CCF", "CCF"});
     }
@@ -1002,8 +1027,8 @@ public class Stream extends Dictionary {
             }
         }
     }
-
-    private static void alterRasterBGRA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
+    
+    private static void alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
         int smaskHeight = 0;
@@ -1039,17 +1064,13 @@ public class Stream extends Dictionary {
 
         if (smaskRaster == null && maskRaster == null && (maskMinRGB == null || maskMaxRGB == null))
             return;
-
-        int[] rgbaValues = new int[4];
-        int width = wr.getWidth();
-        int height = wr.getHeight();
+        
+        int width = bi.getWidth();
+        int height = bi.getHeight();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, rgbaValues);
-                int blue = rgbaValues[0];
-                int green = rgbaValues[1];
-                int red = rgbaValues[2];
-
+                boolean gotARBG = false;
+                int argb = 0;
                 int alpha = 0xFF;
                 if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
                     // Alpha equals greyscale value of smask
@@ -1060,14 +1081,24 @@ public class Stream extends Dictionary {
                     //  and also for when it's used here, to determine the alpha
                     //  of an image that it's masking
                     alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
-                } else if (blue >= maskMinBlue && blue <= maskMaxBlue &&
+                } else {
+                    gotARBG = true;
+                    argb = bi.getRGB(x, y);
+                    int red = ((argb >> 16) & 0xFF);
+                    int green = ((argb >> 8) & 0xFF);
+                    int blue = (argb & 0xFF);
+                    if (blue >= maskMinBlue && blue <= maskMaxBlue &&
                         green >= maskMinGreen && green <= maskMaxGreen &&
                         red >= maskMinRed && red <= maskMaxRed) {
-                    alpha = 0x00;
+                        alpha = 0x00;
+                    }
                 }
                 if (alpha != 0xFF) {
-                    rgbaValues[3] = alpha;
-                    wr.setPixel(x, y, rgbaValues);
+                    if (!gotARBG)
+                        argb = bi.getRGB(x, y);
+                    argb &= 0x00FFFFFF;
+                    argb |= ((alpha << 24) & 0xFF000000);
+                    bi.setRGB(x, y, argb);
                 }
             }
         }
@@ -1706,58 +1737,15 @@ public class Stream extends Dictionary {
             //System.out.println("Mem BEGIN free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
             if (bitspercomponent == 8) {
                 //System.out.println("Mem  bpc8 free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                Object[] dataAndSize = getDecodedStreamBytesAndSize(
-                        width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
-                byte[] data = (byte[]) dataAndSize[0];
-                int data_length = (Integer) dataAndSize[1];
-                //byte[] data = getDecodedStreamBytes();
-                //int data_length = data.length;
-                int compCount = colorSpaceCompCount;
-
+                checkMemory(width * height * 4);
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
-                if (usingAlpha) {
-                    checkMemory(width * height * 4);
-                    byte[] rgbaData = new byte[width * height * 4];
-                    int srcIndex = 0;
-                    int dstIndex = 0;
-                    int end = data_length - 3;
-                    while (srcIndex < end) {
-                        byte r = data[srcIndex++];
-                        byte g = data[srcIndex++];
-                        byte b = data[srcIndex++];
-                        byte a = (byte) 0xFF;
-                        rgbaData[dstIndex++] = b;
-                        rgbaData[dstIndex++] = g;
-                        rgbaData[dstIndex++] = r;
-                        rgbaData[dstIndex++] = a;
-                    }
-                    data = rgbaData;
-                    compCount = 4;
-                }
-
-                //System.out.println("data_length: " + data_length);
-                //System.out.println("Mem  tba  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                DataBuffer db = new DataBufferByte(data, data_length);
-                //System.out.println("Mem   db  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                int[] bandOffsets = new int[compCount];
-                for (int i = 0; i < compCount; i++)
-                    bandOffsets[i] = i;
-                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, compCount, compCount * width, bandOffsets);
-                //System.out.println("Mem   sm  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
+                int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
+                                        BufferedImage.TYPE_INT_RGB;
+                img = new BufferedImage(width, height, type);
+                int[] data = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
+                copyDecodedStreamBytesIntoRGB(data);
                 if (usingAlpha)
-                    alterRasterBGRA(wr, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
-                //WritableRaster wr = Raster.createInterleavedRaster( db, width, height, colorSpaceCompCount*width, colorSpaceCompCount, bandOffsets, new Point(0,0) );
-                //System.out.println("Mem   wr  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
-                //System.out.println("Mem   cs  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                int[] bits = new int[compCount];
-                for (int i = 0; i < compCount; i++)
-                    bits[i] = bitspercomponent;
-                ColorModel cm = new ComponentColorModel(cs, bits, usingAlpha, false, usingAlpha ? ColorModel.BITMASK : ColorModel.OPAQUE, db.getDataType());
-                //System.out.println("Mem   cm  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                img = new BufferedImage(cm, wr, false, null);
-                //System.out.println("Mem  img  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
+                    alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
             }
         } else if (colourSpace instanceof DeviceCMYK) {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceCMYK");
