@@ -63,6 +63,7 @@ public class ViewerComponentExample {
                         controller.getDocumentViewController()));
 
         JFrame applicationFrame = new JFrame();
+        applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         applicationFrame.getContentPane().add(viewerComponentPanel);
 
         // Now that the GUI is all in place, we can try openning a PDF
