@@ -80,6 +80,9 @@ public class SecurityManager {
 
     // flag for detecting a security provider
     private static boolean foundProvider = false;
+    
+    // flag for detecting JCE
+    private static boolean foundJCE = false;
 
     // Add security provider of choice before Sun RSA provider (if any)
     static {
@@ -109,6 +112,13 @@ public class SecurityManager {
         catch (IllegalAccessException e) {
             logger.log(Level.SEVERE,"Security Handler could not be created");
         }
+        
+        try {
+            Class.forName("javax.crypto.Cipher");
+            foundJCE = true;
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.SEVERE,"Sun JCE Support Not Found");
+        }
     }
 
     /**
@@ -132,10 +142,8 @@ public class SecurityManager {
 
         // Check to make sure that if run under JDK 1.3 that the JCE libraries
         // are installed as extra packages
-        try {
-            Class.forName("javax.crypto.Cipher");
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE,"Sun JCE Support Not Found");
+        if (!foundJCE) {
+            logger.log(Level.SEVERE,"Sun JCE support was not found on classpath");
             throw new PDFSecurityException("Sun JCE Support Not Found");
         }
 

@@ -140,6 +140,7 @@ public class PageText implements TextSelect {
     public void dispose() {
         if (pageLines != null) {
             pageLines.clear();
+            pageLines.trimToSize();
         }
     }
 

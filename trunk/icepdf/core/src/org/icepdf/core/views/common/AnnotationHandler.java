@@ -217,6 +217,7 @@ public class AnnotationHandler extends SelectionBoxHandler
      */
     public void clearSelectedList() {
         selectedAnnotations.clear();
+        selectedAnnotations.trimToSize();
     }
 
     /**

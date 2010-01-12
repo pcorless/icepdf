@@ -86,7 +86,7 @@ public class WordText extends AbstractText implements TextSelect {
 
     public WordText() {
         text = new StringBuffer();
-        glyphs = new ArrayList<GlyphText>();
+        glyphs = new ArrayList<GlyphText>(4);
     }
 
     public boolean isWhiteSpace() {

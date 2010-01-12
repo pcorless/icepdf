@@ -163,6 +163,7 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
 
             //clean up
             visiblePages.clear();
+            visiblePages.trimToSize();
 
             // finally send out event to update page number
             int oldCurrentPage = documentViewModel.getViewCurrentPageIndex();

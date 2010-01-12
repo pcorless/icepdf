@@ -287,12 +287,19 @@ public class CCITTFax {
     private static final short TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO = 1;
 
     private static boolean USE_JAI_IMAGE_LIBRARY = false;
+    private static Method jaiCreate = null;
+    private static Method ssWrapInputStream = null;
+    private static Method roGetAsBufferedImage = null;
 
     static {
         try {
             Class jaiClass = Class.forName("javax.media.jai.JAI");
-            if (jaiClass != null)
-                USE_JAI_IMAGE_LIBRARY = true;
+            jaiCreate = jaiClass.getMethod("create", new Class[]{String.class, ParameterBlock.class});
+            Class ssClass = Class.forName("com.sun.media.jai.codec.SeekableStream");
+            ssWrapInputStream = ssClass.getMethod("wrapInputStream", new Class[]{InputStream.class, Boolean.TYPE});
+            Class roClass = Class.forName("javax.media.jai.RenderedOp");
+            roGetAsBufferedImage = roClass.getMethod("getAsBufferedImage", new Class[]{});
+            USE_JAI_IMAGE_LIBRARY = true;
         }
         catch (Exception e) {
         }
@@ -795,13 +802,9 @@ public class CCITTFax {
             pb.add( s );
             javax.media.jai.RenderedOp op = javax.media.jai.JAI.create( "tiff", pb );
             */
-            Class ssClass = Class.forName("com.sun.media.jai.codec.SeekableStream");
-            Method ssWrapInputStream = ssClass.getMethod("wrapInputStream", new Class[]{InputStream.class, Boolean.TYPE});
             Object com_sun_media_jai_codec_SeekableStream_s = ssWrapInputStream.invoke(null, new Object[]{in, Boolean.TRUE});
             ParameterBlock pb = new ParameterBlock();
             pb.add(com_sun_media_jai_codec_SeekableStream_s);
-            Class jaiClass = Class.forName("javax.media.jai.JAI");
-            Method jaiCreate = jaiClass.getMethod("create", new Class[]{String.class, ParameterBlock.class});
             Object javax_media_jai_RenderedOp_op = jaiCreate.invoke(null, new Object[]{"tiff", pb});
 
             /*
@@ -844,8 +847,6 @@ public class CCITTFax {
                     library.memoryManager.checkMemory((int) (width * height * 2.5));
 
                     /* img = op.getAsBufferedImage(); */
-                    Class roClass = Class.forName("javax.media.jai.RenderedOp");
-                    Method roGetAsBufferedImage = roClass.getMethod("getAsBufferedImage", new Class[]{});
                     img = (BufferedImage) roGetAsBufferedImage.invoke(javax_media_jai_RenderedOp_op, new Object[]{});
                 }
             }

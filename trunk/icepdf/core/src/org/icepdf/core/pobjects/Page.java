@@ -135,7 +135,7 @@ public class Page extends Dictionary implements MemoryManageable {
     private Shapes shapes = null;
 
     // the collection of objects listening for page paint events
-    private Vector<PaintPageListener> paintPageListeners = new Vector<PaintPageListener>();
+    private Vector<PaintPageListener> paintPageListeners = new Vector<PaintPageListener>(8);
 
     // Defines the boundaries of the physical medium on which the page is
     // intended to be displayed on.
@@ -183,6 +183,7 @@ public class Page extends Dictionary implements MemoryManageable {
             // null data collections for page content
             if (annotations != null) {
                 annotations.clear();
+                annotations.trimToSize();
             }
             // work through contents and null any stream that have images in them
             if (contents != null) {
@@ -197,6 +198,7 @@ public class Page extends Dictionary implements MemoryManageable {
                     }
                 }
                 contents.clear();
+                contents.trimToSize();
             }
 
             // work through contents and null any stream that have images in them
@@ -214,6 +216,7 @@ public class Page extends Dictionary implements MemoryManageable {
         // clear vector of listeners
         if (paintPageListeners != null) {
             paintPageListeners.clear();
+            paintPageListeners.trimToSize();
         }
     }
 
@@ -226,7 +229,7 @@ public class Page extends Dictionary implements MemoryManageable {
 
         // if a stream process it as needed
         if (pageContent instanceof Stream) {
-            contents = new Vector<Stream>();
+            contents = new Vector<Stream>(1);
             Stream tmpStream = (Stream) pageContent;
             tmpStream.setPObjectReference(
                     library.getObjectReference(entries, "Contents"));
@@ -235,9 +238,10 @@ public class Page extends Dictionary implements MemoryManageable {
         // if a vector, process it as needed
         else if (pageContent instanceof Vector) {
             Vector conts = (Vector) pageContent;
-            contents = new Vector<Stream>();
+            int sz = conts.size();
+            contents = new Vector<Stream>(Math.max(sz, 1));
             // pull all of the page content references from the library
-            for (int i = 0; i < conts.size(); i++) {
+            for (int i = 0; i < sz; i++) {
                 if (Thread.interrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
@@ -680,7 +684,7 @@ public class Page extends Dictionary implements MemoryManageable {
         }
         // we need to add the a new annots reference
         else {
-            Vector annotsVector = new Vector();
+            Vector annotsVector = new Vector(4);
             annotsVector.add(newAnnotation.getPObjectReference());
 
             // create a new Dictionary of annotaions using an external reference
@@ -1277,7 +1281,7 @@ public class Page extends Dictionary implements MemoryManageable {
 
     /**
      * Gest the PageText data structure for this page using an accelerated
-     * parsing technique that ignores none text elements. This method should
+     * parsing technique that ignores some text elements. This method should
      * be used for straight text extraction.
      *
      * @return vector of Strings of all text objects inside the specified page.
