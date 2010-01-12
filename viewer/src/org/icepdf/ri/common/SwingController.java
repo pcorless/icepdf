@@ -2529,10 +2529,9 @@ public class SwingController
      */
     public void showPrintSetupDialog() {
         PrintHelper printHelper = viewModel.getPrintHelper();
-        if (printHelper == null) {
-            printHelper = new PrintHelper(documentViewController, getPageTree());
-            viewModel.setPrintHelper(printHelper);
-        }
+        // create a new pring helper for this document instance. 
+        printHelper = new PrintHelper(documentViewController, getPageTree());
+        viewModel.setPrintHelper(printHelper);
         viewModel.getPrintHelper().showPrintSetupDialog();
     }
 
@@ -2573,12 +2572,10 @@ public class SwingController
             reenablePrintUI();
             return;
         }
-        // create a new print helper
+        // create a new print helper, one-to-one with document
         PrintHelper printHelper = viewModel.getPrintHelper();
-        if (printHelper == null) {
-            printHelper = new PrintHelper(documentViewController, getPageTree());
-            viewModel.setPrintHelper(printHelper);
-        }
+        printHelper = new PrintHelper(documentViewController, getPageTree());
+        viewModel.setPrintHelper(printHelper);
 
         // set the printer to show a print dialog
         canPrint = printHelper.setupPrintService(
