@@ -75,7 +75,9 @@ public class StateManager {
 
         // number of objects is always one more then the current size and
         // thus the next available number.
-        nextReferenceNumber = trailer.getNumberOfObjects();
+        if (trailer != null){
+            nextReferenceNumber =    trailer.getNumberOfObjects();
+        }
     }
 
     /**
