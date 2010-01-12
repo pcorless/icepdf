@@ -382,12 +382,19 @@ public class Stream extends Dictionary {
             for(int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
                 int argb = 0xFF000000;
                 if (input != null) {
-                    int currRead = input.read(rgb, 0, 3);
-                    if (currRead >= 1)
+                    final int toRead = 3;
+                    int haveRead = 0;
+                    while (haveRead < toRead) {
+                        int currRead = input.read(rgb, haveRead, toRead-haveRead);
+                        if (currRead < 0)
+                            break;
+                        haveRead += currRead;
+                    }
+                    if (haveRead >= 1)
                         argb |= ((((int)rgb[0]) << 16) & 0x00FF0000);
-                    if (currRead >= 2)
+                    if (haveRead >= 2)
                         argb |= ((((int)rgb[1]) << 8) & 0x0000FF00);
-                    if (currRead >= 3)
+                    if (haveRead >= 3)
                         argb |= (((int)rgb[2]) & 0x000000FF);
                 }
                 pixels[pixelIndex] = argb;
