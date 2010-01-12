@@ -57,6 +57,12 @@ public abstract class PColorSpace extends Dictionary {
     public abstract int getNumComponents();
 
 
+    public String getDescription() {
+        String name = getClass().getName();
+        int index = name.lastIndexOf('.');
+        return name.substring(index + 1);
+    }
+    
     /**
      * @param l
      * @param h

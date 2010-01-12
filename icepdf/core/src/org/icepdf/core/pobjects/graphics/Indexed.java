@@ -97,6 +97,13 @@ public class Indexed extends PColorSpace {
         return 1;
     }
 
+    public String getDescription() {
+        String desc = super.getDescription();
+        if (colorSpace != null)
+            desc = desc + ":" + colorSpace.getDescription();
+        return desc;
+    }
+
     /**
      * Initiate the Indexed Colour Object
      */
