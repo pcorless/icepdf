@@ -49,10 +49,11 @@ public class ActionFactory {
 
     public static final int GOTO_ACTION = 1;
     public static final int URI_ACTION = 2;
+    public static final int LAUNCH_ACTION = 3;
 
     /**
      * Creates a new ACTION object of the type specified by the type constant.
-     * Currently there are only two supporte action types; GoTo and URI.
+     * Currently there are only two supporte action types; GoTo, Launch and URI.
      * <p/>
      * This call adds the new action object to the document library as well
      * as the document StateManager.
@@ -84,6 +85,15 @@ public class ActionFactory {
             // add a null uri string entry
             entries.put(URIAction.URI_KEY, "");
             URIAction action = new URIAction(library, entries);
+            action.setPObjectReference(stateManager.getNewReferencNumber());
+            return action;
+        } else if (LAUNCH_ACTION == type) {
+            // set default link annotation values.
+            entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
+            entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_LAUNCH);
+            // add a null file string entry
+            entries.put(LaunchAction.FILE_KEY, "");
+            LaunchAction action = new LaunchAction(library, entries);
             action.setPObjectReference(stateManager.getNewReferencNumber());
             return action;
         }

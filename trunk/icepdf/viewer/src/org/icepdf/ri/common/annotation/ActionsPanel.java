@@ -37,6 +37,7 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
+import org.icepdf.core.pobjects.actions.LaunchAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
@@ -85,6 +86,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private String destinationLabel;
     private String uriActionLabel;
     private String goToActionLabel;
+    private String launchActionLabel;
 
     // Goto action dialog
     private GoToActionDialog goToActionDialog;
@@ -107,6 +109,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         destinationLabel = messageBundle.getString("viewer.utilityPane.action.type.destination.label");
         uriActionLabel = messageBundle.getString("viewer.utilityPane.action.type.uriAction.label");
         goToActionLabel = messageBundle.getString("viewer.utilityPane.action.type.goToAction.label");
+        launchActionLabel = messageBundle.getString("viewer.utilityPane.action.type.launchAction.label");
     }
 
     /**
@@ -211,6 +214,10 @@ public class ActionsPanel extends AnnotationPanelAdapter
                         ActionFactory.GOTO_ACTION),
                 new ActionChoice(
                         messageBundle.getString(
+                                "viewer.utilityPane.action.type.launchAction.label"),
+                        ActionFactory.LAUNCH_ACTION),
+                new ActionChoice(
+                        messageBundle.getString(
                                 "viewer.utilityPane.action.type.uriAction.label"),
                         ActionFactory.URI_ACTION)};
         ActionChoice actionType = (ActionChoice) JOptionPane.showInputDialog(
@@ -223,7 +230,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         if (actionType != null &&
                 actionType.getActionType() == ActionFactory.GOTO_ACTION) {
             // create new instance of dialog if it hasn't been created.
-            showGoToActionDialog(true);
+            showGoToActionDialog();
         }
         // create and show a new URI action
         else if (actionType != null &&
@@ -246,6 +253,29 @@ public class ActionsPanel extends AnnotationPanelAdapter
                         messageBundle.getString(
                                 "viewer.utilityPane.action.type.uriAction.label"),
                         uriAction));
+            }
+        }
+        // create and show a new launch action
+        else if (actionType != null &&
+                actionType.getActionType() == ActionFactory.LAUNCH_ACTION) {
+            // show URI dialog
+            String fileString = showLaunchActionDialog(null);
+            // finally do all the lifting for adding a new action for the
+            // current action
+            if (fileString != null && currentAnnotaiton != null) {
+                // create a new instance of the action type
+                LaunchAction launchAction = (LaunchAction)
+                        ActionFactory.buildAction(
+                                currentAnnotaiton.getAnnotation().getLibrary(),
+                                ActionFactory.LAUNCH_ACTION);
+                // get action and add the new action
+                launchAction.setExternalFile(fileString);
+                currentAnnotaiton.getAnnotation().addAction(launchAction);
+                // add the new action to the list.
+                actionListModel.addElement(new ActionEntry(
+                        messageBundle.getString(
+                                "viewer.utilityPane.action.type.launchAction.label"),
+                        launchAction));
             }
         }
     }
@@ -274,7 +304,20 @@ public class ActionsPanel extends AnnotationPanelAdapter
         // show goto dialog for goToAction or link annotation dest
         else if (action instanceof GoToAction || action == null){
             // goToAction dialog handles the save action processing
-            showGoToActionDialog(false);
+            showGoToActionDialog();
+        }
+        // show URI edit pane
+        if (action instanceof LaunchAction) {
+            LaunchAction launchAction = (LaunchAction) action;
+            String oldLaunchValue = launchAction.getExternalFile();
+            String newLaunchValue = showLaunchActionDialog(oldLaunchValue);
+            // finally do all the lifting to edit a launch change.
+            if (newLaunchValue != null &&
+                    !oldLaunchValue.equals(newLaunchValue)) {
+                // create a new instance of the action type
+                launchAction.setExternalFile(newLaunchValue);
+                currentAnnotaiton.getAnnotation().updateAction(launchAction);
+            }
         }
     }
 
@@ -326,7 +369,26 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 oldURIValue);
     }
 
-    private void showGoToActionDialog(boolean isNew){
+    /**
+     * Utility to show the LaunchAction dialog for add and edits.
+     *
+     * @param oldLaunchValue default value to show in dialog text field.
+     * @return new values typed by user.
+     */
+    private String showLaunchActionDialog(String oldLaunchValue) {
+        return (String) JOptionPane.showInputDialog(
+                controller.getViewerFrame(),
+                messageBundle.getString(
+                        "viewer.utilityPane.action.dialog.launch.msgs"),
+                messageBundle.getString(
+                        "viewer.utilityPane.action.dialog.launch.title"),
+                JOptionPane.PLAIN_MESSAGE, null, null,
+                oldLaunchValue);
+    }
+
+
+
+    private void showGoToActionDialog(){
         // create new instance of dialog if it hasn't been created.
         if (goToActionDialog != null){
             goToActionDialog.dispose();
@@ -422,6 +484,8 @@ public class ActionsPanel extends AnnotationPanelAdapter
             actionListModel.addElement(new ActionEntry(goToActionLabel, action));
         } else if (action instanceof URIAction) {
             actionListModel.addElement(new ActionEntry(uriActionLabel, action));
+        } else if (action instanceof LaunchAction) {
+            actionListModel.addElement(new ActionEntry(launchActionLabel, action));
         }
         // todo check for an next entry
     }
