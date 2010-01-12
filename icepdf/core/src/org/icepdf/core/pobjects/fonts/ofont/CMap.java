@@ -445,24 +445,21 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
 //            System.out.println(cMapType);
 //        }
 
-        // simple check for init call
-        if (cIdSystemInfo != null) {
-            // for ToUnicode we only need to look at bfChar and bfRange.
-            // bfChar values have a higher precedent then bfRange.
+        // for ToUnicode we only need to look at bfChar and bfRange.
+        // bfChar values have a higher precedent then bfRange.
 
-            // check bfChar
-            if (bfChars != null) {
-                Integer tmp = bfChars.get((int)charMap);
-                if (tmp != null) {
-                    return (char) tmp.intValue();
-                }
+        // check bfChar
+        if (bfChars != null) {
+            Integer tmp = bfChars.get((int)charMap);
+            if (tmp != null) {
+                return (char) tmp.intValue();
             }
-            // check bfRange for matches, there may be many ranges to check
-            if (bfRange != null) {
-                for (CMapRange aBfRange : bfRange) {
-                    if (aBfRange.inRange(charMap)) {
-                        return (char) aBfRange.getCMapValue(charMap);
-                    }
+        }
+        // check bfRange for matches, there may be many ranges to check
+        if (bfRange != null) {
+            for (CMapRange aBfRange : bfRange) {
+                if (aBfRange.inRange(charMap)) {
+                    return (char) aBfRange.getCMapValue(charMap);
                 }
             }
         }
