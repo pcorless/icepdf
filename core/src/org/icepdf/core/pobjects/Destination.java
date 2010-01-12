@@ -477,7 +477,7 @@ public class Destination {
         }
         // build and return a fector of changed valued.
         else if (object instanceof Vector) {
-            Vector<Object> v = new Vector<Object>();
+            Vector<Object> v = new Vector<Object>(7);
             if (ref != null) {
                 v.add(ref);
             }
