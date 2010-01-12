@@ -94,20 +94,20 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
      * annotation panel and action panel.  If the annotation is null default
      * panels are created.
      *
-     * @param annotaiton annotation properites to show in UI, can be null;
+     * @param annotation annotation properites to show in UI, can be null;
      */
-    public void setAnnotationComponent(AnnotationComponentImpl annotaiton) {
+    public void setAnnotationComponent(AnnotationComponentImpl annotation) {
 
         // remove and add the action panel for action type.
         if (annotationPropertyPanel != null){
             annotationPanel.remove(annotationPropertyPanel);
-            annotationPropertyPanel = buildAnnotationPropertyPanel(annotaiton);
-            annotationPropertyPanel.setAnnotationComponent(annotaiton);
+            annotationPropertyPanel = buildAnnotationPropertyPanel(annotation);
+            annotationPropertyPanel.setAnnotationComponent(annotation);
             addGB(annotationPanel, annotationPropertyPanel, 0, 0, 1, 1);
         }
 
         // add the new action
-        actionsPanel.setAnnotationComponent(annotaiton);
+        actionsPanel.setAnnotationComponent(annotation);
 
         revalidate();
     }
