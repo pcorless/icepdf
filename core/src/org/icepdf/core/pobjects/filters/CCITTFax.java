@@ -38,6 +38,7 @@ import org.icepdf.core.io.ZeroPaddedInputStream;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
+import org.icepdf.core.tag.Tagger;
 
 import java.awt.*;
 import java.awt.image.*;
@@ -274,6 +275,13 @@ public class CCITTFax {
     private static final short TIFF_COMPRESSION_GROUP3_1D = 2;
     private static final short TIFF_COMPRESSION_GROUP3_2D = 3;
     private static final short TIFF_COMPRESSION_GROUP4 = 4;
+
+    private static final String[] TIFF_COMPRESSION_NAMES = new String[] {
+        "TIFF_COMPRESSION_NONE_default",
+        "TIFF_COMPRESSION_GROUP3_1D",
+        "TIFF_COMPRESSION_GROUP3_2D",
+        "TIFF_COMPRESSION_GROUP4"
+    };
 
     private static final short TIFF_PHOTOMETRIC_INTERPRETATION_WHITE_IS_ZERO_default = 0;
     private static final short TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO = 1;
@@ -741,8 +749,11 @@ public class CCITTFax {
                     fakeHeaderBytesIn = new ByteArrayInputStream(fakeHeaderBytes);
                     sin = new org.icepdf.core.io.SequenceInputStream(fakeHeaderBytesIn, input);
                     img = deriveBufferedImageFromTIFFBytes(sin, library, lengthOfCompressedData, width, height);
-                    if (img != null)
+                    if (img != null) {
+                        if (Tagger.tagging)
+                            Tagger.tagImage("CCITTFaxDecode_JAI_TIFF_COMPRESSION=" + TIFF_COMPRESSION_NAMES[compression]);
                         break;
+                    }
                 }
             }
         } else {
@@ -753,6 +764,12 @@ public class CCITTFax {
         }
 
         if (img != null) {
+            if (Tagger.tagging) {
+                Tagger.tagImage("HandledBy=CCITTFaxDecode_JAI");
+                Tagger.tagImage("CCITTFaxDecode_DecodeParms_BlackIs1=" + blackIs1Obj);
+                Tagger.tagImage("CCITTFaxDecode_DecodeParms_K=" + k);
+                Tagger.tagImage("CCITTFaxDecode_hasHeader=" + hasHeader);
+            }
             img = applyImageMaskAndDecodeArray(img, imageMask, blackIs1Obj, decodeArray, fill);
         }
 
@@ -851,6 +868,8 @@ public class CCITTFax {
         // If the image we actually have is monochrome, and so is useful as an image mask
         ColorModel cm = img.getColorModel();
         if (cm instanceof IndexColorModel && cm.getPixelSize() == 1) {
+            if (Tagger.tagging)
+                Tagger.tagImage("CCITTFaxDecode_ImageMaskDecode=JAI_MANUAL");
             // From PDF 1.6 spec, concerning ImageMask and Decode array:
             // [0 1] (the default for an image mask), a sample value of 0 marks
             //       the page with the current color, and a 1 leaves the previous
