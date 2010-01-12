@@ -290,11 +290,17 @@ public class NameNode extends Dictionary {
     }
 
     public void dispose() {
-        if (namesAndValues != null)
+        if (namesAndValues != null) {
             namesAndValues.clear();
-        if (kidsReferences != null)
+            namesAndValues.trimToSize();
+        }
+        if (kidsReferences != null) {
             kidsReferences.clear();
-        if (kidsNodes != null)
+            kidsReferences.trimToSize();
+        }
+        if (kidsNodes != null) {
             kidsNodes.clear();
+            kidsNodes.trimToSize();
+        }
     }
 }

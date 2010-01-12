@@ -100,6 +100,7 @@ public class PageTree extends Dictionary {
         if (kidsReferences != null) {
             if (!cache) {
                 kidsReferences.clear();
+                kidsReferences.trimToSize();
             }
         }
         if (kidsPageAndPages != null) {
@@ -111,6 +112,7 @@ public class PageTree extends Dictionary {
             }
             if (!cache) {
                 kidsPageAndPages.clear();
+                kidsPageAndPages.trimToSize();
             }
         }
         /*

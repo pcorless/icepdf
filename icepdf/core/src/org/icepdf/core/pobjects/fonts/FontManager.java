@@ -347,6 +347,7 @@ public class FontManager {
     public void clearFontList() {
         if (fontList != null) {
             fontList.clear();
+            fontList.trimToSize();
         }
     }
 

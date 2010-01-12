@@ -49,7 +49,7 @@ public class LineText extends AbstractText implements TextSelect {
     private ArrayList<WordText> words;
 
     public LineText() {
-        words = new ArrayList<WordText>();
+        words = new ArrayList<WordText>(16);
     }
 
     public Rectangle2D.Float getBounds() {

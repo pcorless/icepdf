@@ -458,7 +458,7 @@ public class Stream extends Dictionary {
         Vector filterNames = null;
         Object o = library.getObject(entries, "Filter");
         if (o instanceof Name) {
-            filterNames = new Vector();
+            filterNames = new Vector(1);
             filterNames.addElement(o);
         } else if (o instanceof Vector) {
             filterNames = (Vector) o;
@@ -1614,7 +1614,7 @@ public class Stream extends Dictionary {
         // parse decode information
         Vector decode = (Vector) library.getObject(entries, "Decode");
         if (decode == null) {
-            decode = new Vector();
+            decode = new Vector(2);
             decode.addElement(new Float(0));
             decode.addElement(new Float(1));
             if (Tagger.tagging)

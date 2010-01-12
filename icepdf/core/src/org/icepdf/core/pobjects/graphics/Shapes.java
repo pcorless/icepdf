@@ -158,6 +158,7 @@ public class Shapes {
         }
         // one more try to free up some memory
         images.clear();
+        images.trimToSize();
 
         //System.out.println("   Shapes Shapes vector  size " + images.size());
         if (shapes != null){

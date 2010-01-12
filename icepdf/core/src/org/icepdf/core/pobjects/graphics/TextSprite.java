@@ -299,6 +299,7 @@ public class TextSprite {
      */
     public void dispose() {
         glyphTexts.clear();
+        glyphTexts.trimToSize();
         strokeColor = null;
         font = null;
     }

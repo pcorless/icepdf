@@ -71,7 +71,7 @@ public class DocumentSearchModelImpl {
      * Creates a new instance with empty searchterms and search result caches.
      */
     public DocumentSearchModelImpl() {
-        searchResultCache = new HashMap<Integer, WeakReference<PageText>>();
+        searchResultCache = new HashMap<Integer, WeakReference<PageText>>(256);
         searchTerms = new ArrayList<SearchTerm>();
     }
 

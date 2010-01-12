@@ -378,12 +378,20 @@ public class Parser {
                 // Found an array
                 else if (nextToken.equals("]")) {
                     deepnessCount--;
-                    Vector v = new Vector();
-                    Object obj = stack.pop();
-                    while (!((obj instanceof String)
-                            && (obj.equals("[")))) {
-                        v.insertElementAt(obj, 0);
-                        obj = stack.pop();
+                    final int searchPosition = stack.search("[");
+                    final int size = searchPosition - 1;
+                    Vector v = new Vector(size > 0 ? size : 1);
+                    if (size > 0)
+                        v.setSize(size);
+                    if (searchPosition > 0) {
+                        for (int i = size-1; i >= 0; i--) {
+                            Object obj = stack.pop();
+                            v.set(i, obj);
+                        }
+                        stack.pop(); // "["
+                    }
+                    else {
+                        stack.clear();
                     }
                     stack.push(v);
                 } else if (nextToken.equals("<<")) {
@@ -582,6 +590,7 @@ public class Parser {
                     v.addElement(o1);
                     o1 = getStreamObject();
                 }
+                v.trimToSize();
                 o = v;
             }
         }
