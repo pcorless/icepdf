@@ -1543,6 +1543,7 @@ public class ContentParser {
             SeekableInputConstrainedWrapper streamInputWrapper =
                     new SeekableInputConstrainedWrapper(sbais, 0L, data.length, true);
             Stream st = new Stream(library, iih, streamInputWrapper);
+            st.setInlineImage(true);
             //System.out.println("----------> ContentParser creating image from stream");
             BufferedImage im = st.getImage(graphicState.getFillColor(), resources, true);
             st.dispose(false);

@@ -32,6 +32,8 @@
  */
 package org.icepdf.core.pobjects;
 
+import java.io.Serializable;
+
 /**
  * <p>The <code>Reference</code> class represents a PDF object reference number.
  * A reference is made of two components:</p>
@@ -46,7 +48,7 @@ package org.icepdf.core.pobjects;
  *
  * @since 1.0
  */
-public class Reference {
+public class Reference implements Serializable {
     // object number
     int objf = 0;
     // object generation number.

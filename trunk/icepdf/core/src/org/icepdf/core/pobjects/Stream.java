@@ -40,6 +40,7 @@ import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.ImageCache;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.tag.Tagger;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageDecoder;
 
@@ -81,6 +82,9 @@ public class Stream extends Dictionary {
 
     // reference of stream, needed for encryption support
     private Reference pObjectReference = null;
+    
+    // Inline image, from a content stream
+    private boolean inlineImage;
 
     // minimum dimension which will enable image scaling
     private static boolean scaleImages;
@@ -172,6 +176,22 @@ public class Stream extends Dictionary {
      */
     public Reference getPObjectReference() {
         return pObjectReference;
+    }
+
+    /**
+     * Marks this stream as being constructed from an inline image
+     * definition in a content stream 
+     */
+    public void setInlineImage(boolean inlineImage) {
+        this.inlineImage = inlineImage;
+    }
+    
+    /**
+     * @return Whether this stream was constructed from an inline image
+     * definition in a content stream
+     */
+    public boolean isInlineImage() {
+        return inlineImage;
     }
 
     boolean isImageSubtype() {
@@ -445,6 +465,61 @@ public class Stream extends Dictionary {
         }
         return filterNames;
     }
+    
+    private Vector getNormalisedFilterNames() {
+        Vector filterNames = getFilterNames();
+        if (filterNames == null)
+            return null;
+        
+        for (int i = 0; i < filterNames.size(); i++) {
+            String filterName = filterNames.elementAt(i).toString();
+
+            if (filterName.equals("FlateDecode")
+                    || filterName.equals("/Fl")
+                    || filterName.equals("Fl")) {
+                filterName = "FlateDecode";
+            }
+            else if (
+                    filterName.equals("LZWDecode")
+                    || filterName.equals("/LZW")
+                    || filterName.equals("LZW")) {
+                filterName = "LZWDecode";
+            }
+            else if (
+                    filterName.equals("ASCII85Decode")
+                    || filterName.equals("/A85")
+                    || filterName.equals("A85")) {
+                filterName = "ASCII85Decode";
+            }
+            else if (
+                    filterName.equals("ASCIIHexDecode")
+                    || filterName.equals("/AHx")
+                    || filterName.equals("AHx")) {
+                filterName = "ASCIIHexDecode";
+            }
+            else if (
+                    filterName.equals("RunLengthDecode")
+                    || filterName.equals("/RL")
+                    || filterName.equals("RL")) {
+                filterName = "RunLengthDecode";
+            }
+            else if (
+                    filterName.equals("CCITTFaxDecode")
+                    || filterName.equals("/CCF")
+                    || filterName.equals("CCF")) {
+                filterName = "CCITTFaxDecode";
+            }
+            else if (
+                    filterName.equals("DCTDecode")
+                    || filterName.equals("/DCT")
+                    || filterName.equals("DCT")) {
+                filterName = "DCTDecode";
+            }
+            // There aren't short names for JBIG2Decode or JPXDecode
+            filterNames.set(i, filterName);
+        }
+        return filterNames;
+    }
 
     private byte[] decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeImage(
             int width, int height, PColorSpace colourSpace, int bitspercomponent, Color fill,
@@ -452,15 +527,21 @@ public class Stream extends Dictionary {
         byte[] data = null;
 
         if (shouldUseCCITTFaxDecode()) {
+            if (Tagger.tagging)
+                Tagger.tagImage("CCITTFaxDecode");
             // InputStream getInputStreamForStreamBytes();
             boolean worked = nonDecodeCCITTMakeImage(fill);
             if (!worked) {
                 data = ccittfaxDecode(getInputStreamForDecodedStreamBytes());
             }
         } else if (shouldUseDCTDecode()) {
+            if (Tagger.tagging)
+                Tagger.tagImage("DCTDecode");
             dctDecode(width, height, colourSpace, bitspercomponent,
                     smaskImage, maskImage, maskMinRGB, maskMaxRGB);
         } else if (shouldUseJBIG2Decode()) {
+            if (Tagger.tagging)
+                Tagger.tagImage("JBIG2Decode");
             jbig2Decode(width, height);
         }
         
@@ -545,6 +626,8 @@ public class Stream extends Dictionary {
         catch (IOException ioe) {
             logger.log(Level.FINE, "Problem determining JPEG type: ", ioe);
         }
+        if (Tagger.tagging)
+            Tagger.tagImage("DCTDecode_JpegEncoding=" + JPEG_ENC_NAMES[jpegEncoding]);
         //System.out.println("Stream.dctDecode()  objectNumber: " + getPObjectReference().getObjectNumber());
         //System.out.println("Stream.dctDecode()  jpegEncoding: " + JPEG_ENC_NAMES[jpegEncoding]);
 
@@ -606,8 +689,11 @@ public class Stream extends Dictionary {
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
                     // Instead of assuming that Separation is special, I'll assume that DeviceGray is
-                    if (!(colourSpace instanceof DeviceGray))
+                    if (!(colourSpace instanceof DeviceGray)) {
+                        if (Tagger.tagging)
+                            Tagger.tagImage("DCTDecode_JpegSubEncoding=Y");
                         alterRasterY2Gray(wr); //TODO Use smaskImage, maskImage, maskMinRGB, maskMaxRGB or orig comp version here
+                    }
                     tmpImage = makeGrayBufferedImage(wr);
                 } else {
                     //System.out.println("Stream.dctDecode()    Other");
@@ -618,10 +704,14 @@ public class Stream extends Dictionary {
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
                     if (imageDecoder.getJPEGDecodeParam().getEncodedColorID() ==
                             com.sun.image.codec.jpeg.JPEGDecodeParam.COLOR_ID_YCbCrA) {
+                        if (Tagger.tagging)
+                            Tagger.tagImage("DCTDecode_JpegSubEncoding=YCbCrA");
                         // YCbCrA, which is slightly different than YCCK
                         alterRasterYCbCrA2RGBA_new(wr, smaskImage, maskImage); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
                         tmpImage = makeRGBABufferedImage(wr);
                     } else {
+                        if (Tagger.tagging)
+                            Tagger.tagImage("DCTDecode_JpegSubEncoding=YCbCr");
                         alterRasterYCbCr2RGB(wr);
                         tmpImage = makeRGBBufferedImage(wr);
                     }
@@ -631,6 +721,10 @@ public class Stream extends Dictionary {
             }
             catch (Exception e) {
                 logger.log(Level.FINE, "Problem loading JPEG image via JPEGImageDecoder: ", e);
+            }
+            if( tmpImage != null ) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=DCTDecode_SunJPEGImageDecoder");
             }
         }
 
@@ -709,6 +803,10 @@ public class Stream extends Dictionary {
                         Class roClass = Class.forName("javax.media.jai.RenderedOp");
                         Method roGetAsBufferedImage = roClass.getMethod("getAsBufferedImage");
                         tmpImage = (BufferedImage) roGetAsBufferedImage.invoke(javax_media_jai_RenderedOp_op);
+                        if( tmpImage != null ) {
+                            if (Tagger.tagging)
+                                Tagger.tagImage("HandledBy=DCTDecode_JAI");
+                        }
                     }
                 }
             }
@@ -730,8 +828,11 @@ public class Stream extends Dictionary {
                 byte[] data = getDecodedStreamBytes();
                 if (data != null) {
                     Image img = Toolkit.getDefaultToolkit().createImage(data);
-                    if (img != null)
+                    if (img != null) {
                         tmpImage = makeRGBABufferedImageFromImage(img);
+                        if (Tagger.tagging)
+                            Tagger.tagImage("HandledBy=DCTDecode_ToolkitCreateImage");
+                    }
                 }
             }
             catch (Exception e) {
@@ -1420,6 +1521,12 @@ public class Stream extends Dictionary {
 
         if (k < 0) {
             CCITTFax.Group4Decode(in, out, columns, blackIs1);
+            if (Tagger.tagging) {
+                Tagger.tagImage("HandledBy=CCITTFaxDecode_InternalGroup4");
+                Tagger.tagImage("CCITTFaxDecode_DecodeParms_BlackIs1=" + getBlackIs1OrNull(library, decodeparms));
+                Tagger.tagImage("CCITTFaxDecode_DecodeParms_K=" + k);
+                Tagger.tagImage("CCITTFaxDecode_DecodeParms_EncodedByteAlign=" + encodedByteAlignObject);
+            }
         }
         try {
             out.close();
@@ -1456,9 +1563,14 @@ public class Stream extends Dictionary {
      */
     // was synchronized, not think it is needed?
     public BufferedImage getImage(Color fill, Resources resources, boolean allowScaling) {
+        if (Tagger.tagging)
+            Tagger.beginImage(pObjectReference, inlineImage);
         //String debugFill = (fill == null) ? "null" : Integer.toHexString(fill.getRGB());
         //System.out.println("Stream.getImage()  for: " + pObjectReference + "  fill: " + debugFill + "\n  stream: " + this);
 
+        if (Tagger.tagging)
+            Tagger.tagImage("Filter=" + getNormalisedFilterNames());
+        
         // parse colour space
         PColorSpace colourSpace = null;
         Object o = library.getObject(entries, "ColorSpace");
@@ -1469,16 +1581,27 @@ public class Stream extends Dictionary {
         // assume b&w image is no colour space
         if (colourSpace == null) {
             colourSpace = new DeviceGray(library, null);
+            if (Tagger.tagging)
+                Tagger.tagImage("ColorSpace_Implicit_DeviceGray");
         }
+        if (Tagger.tagging)
+            Tagger.tagImage("ColorSpace=" + colourSpace.getDescription());
 
         boolean imageMask = isImageMask();
+        if (Tagger.tagging)
+            Tagger.tagImage("ImageMask=" + imageMask);
         if (imageMask)
             allowScaling = false;
 
         // find out the number of bits in the image
         int bitspercomponent = library.getInt(entries, "BitsPerComponent");
-        if (imageMask && bitspercomponent == 0)
+        if (imageMask && bitspercomponent == 0) {
             bitspercomponent = 1;
+            if (Tagger.tagging)
+                Tagger.tagImage("BitsPerComponent_Implicit_1");
+        }
+        if (Tagger.tagging)
+            Tagger.tagImage("BitsPerComponent=" + bitspercomponent);
 
         // get dimension of image stream
         int width = library.getInt(entries, "Width");
@@ -1494,7 +1617,11 @@ public class Stream extends Dictionary {
             decode = new Vector();
             decode.addElement(new Float(0));
             decode.addElement(new Float(1));
+            if (Tagger.tagging)
+                Tagger.tagImage("Decode_Implicit_01");
         }
+        if (Tagger.tagging)
+            Tagger.tagImage("Decode=" + decode);
 
         BufferedImage smaskImage = null;
         BufferedImage maskImage = null;
@@ -1505,19 +1632,32 @@ public class Stream extends Dictionary {
         Object smaskObj = library.getObject(entries, "SMask");
         Object maskObj = library.getObject(entries, "Mask");
         if (smaskObj instanceof Stream) {
+            if (Tagger.tagging)
+                Tagger.tagImage("SMaskStream");
             Stream smaskStream = (Stream) smaskObj;
             if (smaskStream.isImageSubtype())
                 smaskImage = smaskStream.getImage(fill, resources, false);
         }
         if (smaskImage != null) {
+            if (Tagger.tagging)
+                Tagger.tagImage("SMaskImage");
             allowScaling = false;
         }
         if (maskObj != null && smaskImage == null) {
             if (maskObj instanceof Stream) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("MaskStream");
                 Stream maskStream = (Stream) maskObj;
-                if (maskStream.isImageSubtype())
+                if (maskStream.isImageSubtype()) {
                     maskImage = maskStream.getImage(fill, resources, false);
+                    if (maskImage != null) {
+                        if (Tagger.tagging)
+                            Tagger.tagImage("MaskImage");
+                    }
+                }
             } else if (maskObj instanceof Vector) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("MaskVector");
                 Vector maskVector = (Vector) maskObj;
                 int[] maskMinOrigCompsInt = new int[colorSpaceCompCount];
                 int[] maskMaxOrigCompsInt = new int[colorSpaceCompCount];
@@ -1577,6 +1717,8 @@ public class Stream extends Dictionary {
         }
 //String title = "Image: " + getPObjectReference();
 //CCITTFax.showRenderedImage(img, title);
+        if (Tagger.tagging)
+            Tagger.endImage(pObjectReference);
         return img;
     }
 
@@ -1673,6 +1815,8 @@ public class Stream extends Dictionary {
         if (colourSpace instanceof DeviceGray) {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceGray");
             if (imageMask && bitspercomponent == 1) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_1_ImageMask");
                 Object[] dataAndSize = getDecodedStreamBytesAndSize(
                         width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
                 byte[] data = (byte[]) dataAndSize[0];
@@ -1707,6 +1851,8 @@ public class Stream extends Dictionary {
                         db.getDataType());      // the data type of the array used to represent pixel values. The data type must be either DataBuffer.TYPE_BYTE or DataBuffer.TYPE_USHORT
                 img = new BufferedImage(icm, wr, false, null);
             } else if (bitspercomponent == 1 || bitspercomponent == 2 || bitspercomponent == 4) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_124");
                 Object[] dataAndSize = getDecodedStreamBytesAndSize(
                         width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
                 byte[] data = (byte[]) dataAndSize[0];
@@ -1726,6 +1872,8 @@ public class Stream extends Dictionary {
                 ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             } else if (bitspercomponent == 8) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_8");
                 Object[] dataAndSize = getDecodedStreamBytesAndSize(
                         width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
                 byte[] data = (byte[]) dataAndSize[0];
@@ -1743,9 +1891,13 @@ public class Stream extends Dictionary {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceRGB");
             //System.out.println("Mem BEGIN free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
             if (bitspercomponent == 8) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceRGB_8");
                 //System.out.println("Mem  bpc8 free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 checkMemory(width * height * 4);
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
+                if (Tagger.tagging)
+                    Tagger.tagImage("RasterFromBytes_DeviceRGB_8_alpha=" + usingAlpha);
                 int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
                                         BufferedImage.TYPE_INT_RGB;
                 img = new BufferedImage(width, height, type);
@@ -1758,6 +1910,8 @@ public class Stream extends Dictionary {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceCMYK");
             //System.out.println("Mem BEGIN free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
             if (false && bitspercomponent == 8) {//TODO Look at doing CMYK properly
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceCMYK_8");
                 //System.out.println("Mem  bpc8 free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 Object[] dataAndSize = getDecodedStreamBytesAndSize(
                         width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
@@ -1800,6 +1954,8 @@ public class Stream extends Dictionary {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  Indexed");
             //System.out.println("Mem BEGIN free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
             if (bitspercomponent == 1 || bitspercomponent == 2 || bitspercomponent == 4) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_124");
                 //System.out.println("Mem  bpc< free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 Object[] dataAndSize = getDecodedStreamBytesAndSize(
                         width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
@@ -1833,6 +1989,8 @@ public class Stream extends Dictionary {
                 img = new BufferedImage(cm, wr, false, null);
                 //System.out.println("Mem  img  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
             } else if (bitspercomponent == 8) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_8");
                 //System.out.println("Stream.makeImageWithRasterFromBytes()  Indexed 8");
                 //System.out.println("Mem  bpc8 free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 Object[] dataAndSize = getDecodedStreamBytesAndSize(
@@ -1858,6 +2016,8 @@ public class Stream extends Dictionary {
 
                 boolean usingIndexedAlpha = maskMinIndex >= 0 && maskMaxIndex >= 0;
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
+                if (Tagger.tagging)
+                    Tagger.tagImage("RasterFromBytes_Indexed_8_alpha=" + (usingIndexedAlpha ? "indexed" : (usingAlpha ? "alpha" : "false")));
                 if (usingIndexedAlpha) {
                     for (int i = maskMinIndex; i <= maskMaxIndex; i++)
                         cmap[i] = 0x00000000;
@@ -1927,6 +2087,8 @@ public class Stream extends Dictionary {
             BufferedImage smaskImage,
             BufferedImage maskImage,
             int[] maskMinRGB, int[] maskMaxRGB) {
+        if (Tagger.tagging)
+            Tagger.tagImage("HandledBy=ParseImage");
 
         // store for manipulating bits in image
         int[] imageBits = new int[width];
@@ -1987,6 +2149,8 @@ public class Stream extends Dictionary {
         int bitsPerRow = width * colorSpaceCompCount * bitsPerColour;
         int extraBitsPerRow = bitsPerRow & 0x7;
         if (CCITTFaxDecodeColumnWidthMismatch > 0) {
+            if (Tagger.tagging)
+                Tagger.tagImage("ParseImage_CCITTFaxDecodeColumnWidthMismatch=" + CCITTFaxDecodeColumnWidthMismatch);
             int bitsGivenPerRow = (width + CCITTFaxDecodeColumnWidthMismatch)
                     * colorSpaceCompCount * bitsPerColour;
             int bitsRelevant = bitsPerRow;
