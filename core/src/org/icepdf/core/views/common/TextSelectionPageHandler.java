@@ -63,7 +63,6 @@ import java.util.logging.Logger;
  * The highlight colour by default is #FFF600 but can be set using color or
  * hex values names using the system property "org.icepdf.core.views.page.text.selectionColor"
  * <p/>
- * // todo - use existing selection box as a crop tool.
  *
  * @since 4.0
  */
@@ -72,6 +71,11 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
     private static final Logger logger =
             Logger.getLogger(TextSelectionPageHandler.class.toString());
+
+    /**
+     * Tranparencey value used to simulate text highlighting.
+     */
+    public static final float selectionAlpha = 0.3f;
 
     // text selection colour
     public static Color selectionColor;
@@ -605,8 +609,9 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         AffineTransform prePaintTransform = gg.getTransform();
         Color oldColor = gg.getColor();
         Stroke oldStroke = gg.getStroke();
-        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f));
-        gg.setColor(new Color(0, 119, 255));
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                selectionAlpha));
+        gg.setColor(selectionColor);
         gg.setStroke(new BasicStroke(1.0f));
 
         Page currentPage = pageViewComponent.getPageLock(this);
@@ -621,36 +626,30 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 // paint the sprites
                 GeneralPath textPath;
                 for (LineText lineText : pageText.getPageLines()) {
-                    // paint whole line
-                    if (lineText.isSelected()) {
-                        textPath = new GeneralPath(lineText.getGeneralPath());
-                        textPath.transform(pageTransform);
-                        gg.fill(textPath);
-                    }
-                    // check children for selection
-                    else {
-                        for (WordText wordText : lineText.getWords()) {
-                            // paint whole word
-                            if (wordText.isSelected() || wordText.isHighlighted()) {
-                                textPath = new GeneralPath(wordText.getGeneralPath());
-                                textPath.transform(pageTransform);
-                                // tmp highlight hack.
-                                if (wordText.isHighlighted()) {
-                                    gg.setColor(highlightColor);
-                                }
+                    for (WordText wordText : lineText.getWords()) {
+                        // paint whole word
+                        if (wordText.isSelected() || wordText.isHighlighted()) {
+                            textPath = new GeneralPath(wordText.getGeneralPath());
+                            textPath.transform(pageTransform);
+                            // paint highlight over any selected
+                            if (wordText.isSelected()) {
+                                gg.setColor(selectionColor);
                                 gg.fill(textPath);
-                                if (wordText.isHighlighted()) {
-                                    gg.setColor(selectionColor);
-                                }
                             }
-                            // check children
-                            else {
-                                for (GlyphText glyph : wordText.getGlyphs()) {
-                                    if (glyph.isSelected()) {
-                                        textPath = new GeneralPath(glyph.getGeneralPath());
-                                        textPath.transform(pageTransform);
-                                        gg.fill(textPath);
-                                    }
+                            if (wordText.isHighlighted()) {
+                                gg.setColor(highlightColor);
+                                gg.fill(textPath);
+                            }
+
+                        }
+                        // check children
+                        else {
+                            for (GlyphText glyph : wordText.getGlyphs()) {
+                                if (glyph.isSelected()) {
+                                    textPath = new GeneralPath(glyph.getGeneralPath());
+                                    textPath.transform(pageTransform);
+                                    gg.setColor(selectionColor);
+                                    gg.fill(textPath);
                                 }
                             }
                         }
@@ -662,6 +661,11 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
         // pain selection box
         paintSelectionBox(g);
+
+        // restore graphics state to where we left it. 
+        gg.setTransform(prePaintTransform);
+        gg.setStroke(oldStroke);
+        gg.setColor(oldColor);
 
         // paint words for bounds test.
 //        paintTextBounds(g);
@@ -689,7 +693,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         ArrayList<LineText> pageLines = pageText.getPageLines();
         for (LineText lineText : pageLines) {
 
-            for (WordText wordText : lineText.getWords()) {
+//            for (WordText wordText : lineText.getWords()) {
 //                for (GlyphText glyph : wordText.getGlyphs()) {
 //                    g.setColor(Color.black);
 //                    GeneralPath glyphSpritePath =
@@ -705,7 +709,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 //                    glyphSpritePath.transform(pageTransform);
 //                    gg.draw(glyphSpritePath);
 //                }
-            }
+//            }
             g.setColor(Color.red);
             GeneralPath glyphSpritePath =
                     new GeneralPath(lineText.getGeneralPath());
