@@ -576,37 +576,29 @@ public class DocumentViewControllerImpl
             if (viewportFitMode == PAGE_FIT_ACTUAL_SIZE) {
                 newZoom = 1.0f;
             } else if (viewportFitMode == PAGE_FIT_WINDOW_HEIGHT) {
-                int cw = (documentViewScrollPane == null) ? 0 :
-                        (int) documentViewScrollPane.getViewport().getViewRect().getWidth() - 5;
-                int ch = (documentViewScrollPane == null) ? 0 :
-                        (int) documentViewScrollPane.getViewport().getViewRect().getHeight() - 5;
-                Dimension d = documentView.getDocumentSize();
-                double pw = d.getWidth();
-                double ph = d.getHeight();
+                if (documentView != null && documentViewScrollPane != null) {
+                    float viewportHeight = documentViewScrollPane.getViewport().getViewRect().height;
+                    float pageViewHeight = documentView.getDocumentSize().height;
 
-                // normalize pageViewWidth to 100% so we can calculate the correct zoom
-                float currentZoom = documentViewModel.getViewZoom();
-                pw = Math.abs(pw / (currentZoom));
-                ph = Math.abs(ph / (currentZoom));
+                    // pageViewHeight insert padding on each side.
+                    pageViewHeight += AbstractDocumentView.layoutInserts *2;
 
-                if (cw > 0 && ch > 0 && pw > 0 && ph > 0) {
-                    double zw = cw / (pw * 1.02);
-                    double zh = ch / (ph * 1.02);
-                    newZoom = (float) Math.min(zw, zh);
-                } else {
-                    newZoom = 1.0f;
+                    if (viewportHeight > 0) {
+                        newZoom = (viewportHeight / pageViewHeight);
+                    } else {
+                        newZoom = 1.0f;
+                    }
                 }
             } else if (viewportFitMode == PAGE_FIT_WINDOW_WIDTH) {
                 if (documentView != null && documentViewScrollPane != null) {
-                    int viewportWidth = documentViewScrollPane.getViewport().getViewRect().width;
+                    float viewportWidth = documentViewScrollPane.getViewport().getViewRect().width;
                     float pageViewWidth = documentView.getDocumentSize().width;
 
-                    // normalize pageViewWidth to 100% so we can calculate the correct zoom
-                    float currentZoom = documentViewModel.getViewZoom();
-                    pageViewWidth = Math.abs(pageViewWidth / (currentZoom));
+                    // add insert padding on each side.
+                    pageViewWidth += AbstractDocumentView.layoutInserts *2;
 
                     if (viewportWidth > 0) {
-                        newZoom = (viewportWidth / (pageViewWidth * 1.008f));
+                        newZoom = (viewportWidth / pageViewWidth);
                     } else {
                         newZoom = 1.0f;
                     }

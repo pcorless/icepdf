@@ -74,7 +74,8 @@ public interface DocumentView extends
 
     /**
      * Gets the total size of the document view.  This size will very depending
-     * on the view type.
+     * on the view type.  The size dimension has been normalized to a zoom
+     * factor of 1.0f and rotation is taken care off.
      *
      * @return size of document in pixels for all pages represented in the view.
      */
