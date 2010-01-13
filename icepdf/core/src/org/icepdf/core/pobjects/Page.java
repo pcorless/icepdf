@@ -39,11 +39,15 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.text.GlyphText;
+import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.MemoryManageable;
+import org.icepdf.core.views.common.TextSelectionPageHandler;
 import org.icepdf.core.views.swing.PageViewComponentImpl;
 
 import java.awt.*;
@@ -308,7 +312,7 @@ public class Page extends Dictionary implements MemoryManageable {
                 }
                 // set the object reference, so we can save the state correct
                 // and update any references accordingly. 
-                if (ref != null ){
+                if (ref != null) {
                     a.setPObjectReference(ref);
                 }
 
@@ -422,28 +426,33 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom, PageViewComponentImpl.PagePainter pagePainter) {
-        paint(g, renderHintType, boundary, userRotation, userZoom, pagePainter, true);
+        paint(g, renderHintType, boundary, userRotation, userZoom, pagePainter, true, true);
     }
 
     /**
      * Paints the contents of this page to the graphics context using
      * the specified rotation, zoom, rendering hints and page boundary.
      *
-     * @param g                graphics context to which the page content will be painted.
-     * @param renderHintType   Constant specified by the GraphicsRenderingHints class.
-     *                         There are two possible entries, SCREEN and PRINT, each with configurable
-     *                         rendering hints settings.
-     * @param boundary         Constant specifying the page boundary to use when
-     *                         painting the page content.
-     * @param userRotation     Rotation factor, in degrees, to be applied to the rendered page
-     * @param userZoom         Zoom factor to be applied to the rendered page
-     * @param pagePainter      class which will receive paint events.
-     * @param paintAnnotations true enables the painting of page annotations.  False
-     *                         paints no annotaitons for a given page.
+     * @param g                    graphics context to which the page content will be painted.
+     * @param renderHintType       Constant specified by the GraphicsRenderingHints class.
+     *                             There are two possible entries, SCREEN and PRINT, each with configurable
+     *                             rendering hints settings.
+     * @param boundary             Constant specifying the page boundary to use when
+     *                             painting the page content.
+     * @param userRotation         Rotation factor, in degrees, to be applied to the rendered page
+     * @param userZoom             Zoom factor to be applied to the rendered page
+     * @param pagePainter          class which will receive paint events.
+     * @param paintAnnotations     true enables the painting of page annotations.  False
+     *                             paints no annotaitons for a given page.
+     * @param paintSearchHighlight true enables the painting of search highlight
+     *                             state of text object.  The search controller can
+     *                             be used to easily search and add highlighted state
+     *                             for search terms.
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom,
-                      PageViewComponentImpl.PagePainter pagePainter, boolean paintAnnotations) {
+                      PageViewComponentImpl.PagePainter pagePainter,
+                      boolean paintAnnotations, boolean paintSearchHighlight) {
         if (!isInited) {
             init();
         }
@@ -507,10 +516,38 @@ public class Page extends Dictionary implements MemoryManageable {
                 annot.render(g2, renderHintType, totalRotation, userZoom, false);
             }
         }
-
+        // paint search highlight values
+        if (paintSearchHighlight) {
+            PageText pageText = getViewText();
+            if (pageText != null) {
+                g2.setComposite(AlphaComposite.getInstance(
+                        AlphaComposite.SRC_OVER,
+                        TextSelectionPageHandler.selectionAlpha));
+                // paint the sprites
+                GeneralPath textPath;
+                // iterate over the data structure.
+                for (LineText lineText : pageText.getPageLines()) {
+                    for (WordText wordText : lineText.getWords()) {
+                        // paint whole word
+                        if (wordText.isHighlighted()) {
+                            textPath = new GeneralPath(wordText.getGeneralPath());
+                            g2.setColor(TextSelectionPageHandler.highlightColor);
+                            g2.fill(textPath);
+                        } else {
+                            for (GlyphText glyph : wordText.getGlyphs()) {
+                                if (glyph.isHighlighted()) {
+                                    textPath = new GeneralPath(glyph.getGeneralPath());
+                                    g2.setColor(TextSelectionPageHandler.highlightColor);
+                                    g2.fill(textPath);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         // one last repaint, just to be sure
         notifyPaintPageListeners();
-
     }
 
     /**
@@ -727,7 +764,6 @@ public class Page extends Dictionary implements MemoryManageable {
      * is also added to the state maanger.  If the annotation was new then
      * we just have to update the page and or annot reference as the objects
      * will allready be in the state manager.
-     *
      */
     public void deleteAnnotation(Annotation annot) {
 
@@ -751,16 +787,16 @@ public class Page extends Dictionary implements MemoryManageable {
 
         // check to see if this is an existing annotations, if the annotations
         // is existing then we have to mark either the page or annot ref as chagned.
-        if (!annot.isNew() && !isAnnotAReference){
+        if (!annot.isNew() && !isAnnotAReference) {
             // add the page as state change
             stateManager.addChange(
                     new PObject(this, this.getPObjectReference()));
         }
         // if not new and annot is a ref, we have to add annot ref as changed.
-        else if (!annot.isNew() && isAnnotAReference){
+        else if (!annot.isNew() && isAnnotAReference) {
             stateManager.addChange(
-                        new PObject(annots, library.getObjectReference(
-                                entries, ANNOTS_KEY.getName())));
+                    new PObject(annots, library.getObjectReference(
+                            entries, ANNOTS_KEY.getName())));
         }
         // removed the annotations from the annots vector
         if (annots instanceof Vector) {
@@ -770,7 +806,7 @@ public class Page extends Dictionary implements MemoryManageable {
         }
 
         // remove the annotations form the annotation cache in the page object
-        if (annotations != null){
+        if (annotations != null) {
             annotations.remove(annot);
         }
 
@@ -782,12 +818,13 @@ public class Page extends Dictionary implements MemoryManageable {
     /**
      * Updates the annotation associated with this page.  If the annotation
      * is not in this page then the annotation is no added.
+     *
      * @param annotation annotation object that should be updated for this page.
      * @return true if the update was successful, false otherwise.
      */
     public boolean updateAnnotation(Annotation annotation) {
         // bail on null annotations
-        if (annotation == null){
+        if (annotation == null) {
             return false;
         }
 
@@ -807,18 +844,18 @@ public class Page extends Dictionary implements MemoryManageable {
 
         // make sure annotations is in part of page.
         boolean found = false;
-        for (Reference ref : annots){
-            if (ref.equals(annotation.getPObjectReference())){
+        for (Reference ref : annots) {
+            if (ref.equals(annotation.getPObjectReference())) {
                 found = true;
                 break;
             }
         }
-        if (!found){
+        if (!found) {
             return false;
         }
 
         // check the state manager for an instance of this object
-        if (stateManager.contains(annotation.getPObjectReference())){
+        if (stateManager.contains(annotation.getPObjectReference())) {
             // if found we just have to re add the object, foot work around
             // page and annotations creation has already been done.
             stateManager.addChange(
@@ -826,10 +863,10 @@ public class Page extends Dictionary implements MemoryManageable {
             return true;
         }
         // we have to do the checks for page and annot dictionary entry.
-        else{
+        else {
             // update parent page reference.
             annotation.getEntries().put(Annotation.PARENT_PAGE_KEY,
-                this.getPObjectReference());
+                    this.getPObjectReference());
 
             // add the annotations to the parsed annotations list
             annotations.add(annotation);
