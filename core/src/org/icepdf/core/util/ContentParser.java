@@ -42,9 +42,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
+import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -417,8 +415,17 @@ public class ContentParser {
                                 shapes.add(af);
                                 // 3.) Clip according to the form BBox entry
                                 if (graphicState.getClip() != null) {
-                                    shapes.add(formXObject.getBBox().createIntersection(
-                                            graphicState.getClip().getBounds2D()));
+                                    AffineTransform matrix = formXObject.getMatrix();
+                                    Rectangle2D bbox = formXObject.getBBox();
+                                    Rectangle2D clip = graphicState.getClip().getBounds2D();
+                                    // create inverse of matrix so we can transform
+                                    // the clip to form space.
+                                    matrix = matrix.createInverse();
+                                    // apply the new clip now that they are in the
+                                    // same space.
+                                    Shape shape = matrix.createTransformedShape(clip);
+                                    Rectangle2D formClip = bbox.createIntersection(shape.getBounds2D());
+                                    shapes.add(formClip);
                                 } else {
                                     shapes.add(formXObject.getBBox());
                                 }
@@ -890,7 +897,9 @@ public class ContentParser {
             // eat the result as it a normal occurrence
             logger.finer("End of Content Stream");
         }
-        finally {
+        catch (NoninvertibleTransformException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } finally {
             // End of stream set alpha state back to 1.0f, so that other
             // streams aren't applied an incorrect alpha value.
             setAlpha(shapes, 1.0f);
