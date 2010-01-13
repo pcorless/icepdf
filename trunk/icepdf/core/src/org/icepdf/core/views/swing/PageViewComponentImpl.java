@@ -946,7 +946,7 @@ public class PageViewComponentImpl extends
                         documentViewModel.getPageBoundary(),
                         documentViewModel.getViewRotation(),
                         documentViewModel.getViewZoom(),
-                        pagePainter, false);
+                        pagePainter, false, false);
                 // clean up
                 pageTree.releasePage(page, this);
 
