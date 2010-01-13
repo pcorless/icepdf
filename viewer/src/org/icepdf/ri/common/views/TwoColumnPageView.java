@@ -188,10 +188,9 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        Dimension documentSize = new Dimension();
+        float pageViewWidth = 0;
+        float pageViewHeight = 0;
         if (pagesPanel != null) {
-            double width = pagesPanel.getBounds().getWidth();
-            double height = 0.0;
             // The page index and corresponding component index are approximately equal
             // If the first page is on the right, then there's a spacer on the left,
             //  bumping indexes up by one.
@@ -205,7 +204,9 @@ public class TwoColumnPageView extends AbstractDocumentView {
                     PageViewDecorator pvd = (PageViewDecorator) comp;
                     PageViewComponent pvc = pvd.getPageViewComponent();
                     if (pvc.getPageIndex() == currPageIndex) {
-                        height = Math.max(height, pvd.getPreferredSize().height);
+                        Dimension dim = pvd.getPreferredSize();
+                        pageViewWidth = dim.width;
+                        pageViewHeight = dim.height;
                         foundCurrent = true;
                         break;
                     }
@@ -216,7 +217,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
                 // Determine if the page at (currPageIndex,currCompIndex) was
                 //  on the left or right, so that if there's a page next to
                 //  it, whether it's earlier or later in the component list,
-                //  so we can get it's height and use that for our height
+                //  so we can get it's pageViewHeight and use that for our pageViewHeight
                 //  calculation.
                 // If the other component is past the ends of the component
                 //  list, or not a PageViewDecorator, then current was either
@@ -229,13 +230,29 @@ public class TwoColumnPageView extends AbstractDocumentView {
                     Component comp = pagesPanel.getComponent(otherCompIndex);
                     if (comp instanceof PageViewDecorator) {
                         PageViewDecorator pvd = (PageViewDecorator) comp;
-                        height = Math.max(height, pvd.getPreferredSize().height);
+                        Dimension dim = pvd.getPreferredSize();
+                        pageViewWidth = dim.width;
+                        pageViewHeight = dim.height;
                     }
                 }
             }
-            documentSize.setSize(width, height);
         }
-        return documentSize;
+
+        // normalize the dimensions to a zoom level of zero.
+        float currentZoom = documentViewModel.getViewZoom();
+        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
+        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+
+        // two pages wide, generalization, pages are usually the same size we
+        // don't bother to look at the second pages size for the time being.
+        pageViewWidth *= 2;
+
+        // add any horizontal padding from layout manager
+        pageViewWidth += AbstractDocumentView.horizontalSpace *4;
+        pageViewHeight += AbstractDocumentView.verticalSpace *2;
+
+        return new Dimension((int)pageViewWidth, (int)pageViewHeight);
+
     }
 
     public void paintComponent(Graphics g) {

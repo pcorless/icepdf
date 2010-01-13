@@ -188,11 +188,32 @@ public class OnePageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        Dimension documentSize = new Dimension();
+        float pageViewWidth = 0;
+        float pageViewHeight = 0;
         if (pagesPanel != null) {
-            documentSize.setSize(pagesPanel.getBounds().getSize());
+            int count = pagesPanel.getComponentCount();
+            Component comp;
+            // should only have one page view decorator for single page view.
+            for (int i= 0; i < count; i++){
+                comp = pagesPanel.getComponent(i);
+                if (comp instanceof PageViewDecorator) {
+                    PageViewDecorator pvd = (PageViewDecorator) comp;
+                    Dimension dim = pvd.getPreferredSize();
+                    pageViewWidth = dim.width;
+                    pageViewHeight = dim.height;
+                    break;
+                }
+            }
         }
-        return documentSize;
+        // normalize the dimensions to a zoom level of zero. 
+        float currentZoom = documentViewModel.getViewZoom();
+        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
+        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+
+        // add any horizontal padding from layout manager
+        pageViewWidth += AbstractDocumentView.horizontalSpace *2;
+        pageViewHeight += AbstractDocumentView.verticalSpace *2;
+        return new Dimension((int)pageViewWidth, (int)pageViewHeight);
     }
 
     public void paintComponent(Graphics g) {

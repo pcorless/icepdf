@@ -174,7 +174,8 @@ public class OneColumnPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        Dimension documentSize = new Dimension();
+       float pageViewWidth = 0;
+        float pageViewHeight = 0;
         if (pagesPanel != null) {
             int currCompIndex = documentViewController.getCurrentPageIndex();
             int numComponents = pagesPanel.getComponentCount();
@@ -182,11 +183,21 @@ public class OneColumnPageView extends AbstractDocumentView {
                 Component comp = pagesPanel.getComponent(currCompIndex);
                 if (comp instanceof PageViewDecorator) {
                     PageViewDecorator pvd = (PageViewDecorator) comp;
-                    documentSize.setSize(pvd.getPreferredSize());
+                    Dimension dim = pvd.getPreferredSize();
+                    pageViewWidth = dim.width;
+                    pageViewHeight = dim.height;
                 }
             }
         }
-        return documentSize;
+        // normalize the dimensions to a zoom level of zero.
+        float currentZoom = documentViewModel.getViewZoom();
+        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
+        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+
+        // add any horizontal padding from layout manager
+        pageViewWidth += AbstractDocumentView.horizontalSpace *2;
+        pageViewHeight += AbstractDocumentView.verticalSpace *2;
+        return new Dimension((int)pageViewWidth, (int)pageViewHeight);
     }
 
     public void paintComponent(Graphics g) {
