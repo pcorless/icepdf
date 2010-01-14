@@ -257,9 +257,12 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                     // CIDSystemInfo only has one property which should be
                     // always be hash by definition and our parser result
                     token = parser.getStreamObject();
-                    cIdSystemInfo = (Hashtable) token;
-                    // always followed by a def token;
-                    token = parser.getStreamObject();
+                    if (token instanceof Hashtable){
+                        cIdSystemInfo = (Hashtable) token;
+                        // always followed by a def token;
+                        token = parser.getStreamObject();
+                    }
+                    // ignore any other format that isn't a hash
                 }
                 // find main CMap descriptors
                 if (token instanceof Name) {
