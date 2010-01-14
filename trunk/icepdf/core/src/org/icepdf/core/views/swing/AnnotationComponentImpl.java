@@ -263,14 +263,19 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         // store the new annotation rectangle in its original user space
         Rectangle2D rect = annotation.getUserSpaceRectangle();
         Rectangle bounds = getBounds();
-        Rectangle2D innerRectangle = new Rectangle2D.Float(
-                bounds.x + (resizeBoxSize / 2.0f),
-                bounds.y + (resizeBoxSize / 2.0f),
-                bounds.width - resizeBoxSize,
-                bounds.height - resizeBoxSize);
-        GeneralPath shapePath = new GeneralPath(innerRectangle);
-        shapePath.transform(at);     
-        rect.setRect(shapePath.getBounds());
+//        Rectangle2D innerRectangle = new Rectangle2D.Float(
+//                bounds.x + (resizeBoxSize / 2.0f),
+//                bounds.y + (resizeBoxSize / 2.0f),
+//                bounds.width - resizeBoxSize,
+//                bounds.height - resizeBoxSize);
+//        GeneralPath shapePath = new GeneralPath(innerRectangle);
+        GeneralPath shapePath = new GeneralPath(bounds);
+        shapePath.transform(at);
+        Rectangle2D pageSpaceBound = shapePath.getBounds2D();
+        Rectangle roundedBounds = new Rectangle(
+                (int)Math.round(pageSpaceBound.getX()),(int)Math.round(pageSpaceBound.getY()),
+                (int)Math.round(pageSpaceBound.getWidth()),(int)Math.round(pageSpaceBound.getHeight()));
+        rect.setRect(roundedBounds);
     }
 
     public void validate() {
