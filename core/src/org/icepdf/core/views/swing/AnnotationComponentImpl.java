@@ -234,12 +234,9 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        GeneralPath shapePath = new GeneralPath(
-                annotation.getUserSpaceRectangle());
-        shapePath.transform(at);
-        Rectangle rect = shapePath.getBounds2D().getBounds();
-        setBounds(rect);
         pageViewComponent.releasePageLock(currentPage, this);
+        setBounds(commonBoundsNormalization(new GeneralPath(
+                annotation.getUserSpaceRectangle()), at));
     }
 
     /**
@@ -263,19 +260,27 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         // store the new annotation rectangle in its original user space
         Rectangle2D rect = annotation.getUserSpaceRectangle();
         Rectangle bounds = getBounds();
-//        Rectangle2D innerRectangle = new Rectangle2D.Float(
-//                bounds.x + (resizeBoxSize / 2.0f),
-//                bounds.y + (resizeBoxSize / 2.0f),
-//                bounds.width - resizeBoxSize,
-//                bounds.height - resizeBoxSize);
-//        GeneralPath shapePath = new GeneralPath(innerRectangle);
-        GeneralPath shapePath = new GeneralPath(bounds);
+        rect.setRect(commonBoundsNormalization(new GeneralPath(bounds), at));
+    }
+
+    /**
+     * Normalizes and the given path with the specified transform.  The method
+     * also rounds the Rectangle2D bounds values when creating a new rectangle
+     * instead of trunkating the values.
+     *
+     * @param shapePath path to apply transform to
+     * @param at tranfor to apply to shapePath
+     * @return bound value of the shape path.
+     */
+    private Rectangle commonBoundsNormalization(GeneralPath shapePath,
+                                                AffineTransform at){
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();
-        Rectangle roundedBounds = new Rectangle(
-                (int)Math.round(pageSpaceBound.getX()),(int)Math.round(pageSpaceBound.getY()),
-                (int)Math.round(pageSpaceBound.getWidth()),(int)Math.round(pageSpaceBound.getHeight()));
-        rect.setRect(roundedBounds);
+        return new Rectangle(
+                (int)Math.round(pageSpaceBound.getX()),
+                (int)Math.round(pageSpaceBound.getY()),
+                (int)Math.round(pageSpaceBound.getWidth()),
+                (int)Math.round(pageSpaceBound.getHeight()));
     }
 
     public void validate() {
