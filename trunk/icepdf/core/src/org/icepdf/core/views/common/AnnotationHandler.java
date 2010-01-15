@@ -155,7 +155,10 @@ public class AnnotationHandler extends SelectionBoxHandler
     }
 
     /**
-     * Removes the specified annotation from the page view.
+     * Removes the specified annotation from the page view.  The component
+     * is actually set to invisible.  We need to keep the component around
+     * so that it can be made visible on an undo, as each state var keeps a
+     * reference to the component it is 
      * @param annotation annotation component to removed. 
      */
     public void removeAnnotationComponent(AnnotationComponent annotation){
@@ -163,9 +166,7 @@ public class AnnotationHandler extends SelectionBoxHandler
         if (annotations == null){
             return;
         }
-        this.annotations.remove(annotation);
-        pageViewComponent.remove((Component)annotation);
-
+        ((Component)annotation).setVisible(false);
         // set the new annotation as the selected one.
         documentViewController.assignSelectedAnnotation(null);
     }
@@ -362,10 +363,13 @@ public class AnnotationHandler extends SelectionBoxHandler
 
                 // paint all annotations on top of the content buffer
                 for (AnnotationComponent annotation : annotations) {
-                    annotation.getAnnotation().render(gg2, GraphicsRenderingHints.SCREEN,
-                            documentViewModel.getViewRotation(),
-                            documentViewModel.getViewZoom(),
-                            annotation.hasFocus() && notSelectTool);
+                    if (((Component)annotation).isVisible()){
+                        annotation.getAnnotation().render(gg2,
+                                GraphicsRenderingHints.SCREEN,
+                                documentViewModel.getViewRotation(),
+                                documentViewModel.getViewZoom(),
+                                annotation.hasFocus() && notSelectTool);
+                    }
                 }
                 // post paint clean up.
                 gg2.setColor(oldColor);

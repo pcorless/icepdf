@@ -3996,7 +3996,7 @@ public class SwingController
                 if (annotationComponent != null &&
                     annotationComponent.getAnnotation() != null ){
                     // set the annotationPane with the new annotation component
-                    logger.info("selected annotation " + annotationComponent);
+                    logger.fine("selected annotation " + annotationComponent);
                     showAnnotationPanel(annotationComponent);
                 }
             }
