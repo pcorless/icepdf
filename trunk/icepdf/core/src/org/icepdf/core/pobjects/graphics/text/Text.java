@@ -47,12 +47,6 @@ public interface Text {
 
     public Rectangle2D.Float getBounds();
 
-    public GeneralPath getGeneralPath();
-
-    public boolean contains(AffineTransform pageTransform, Point2D point);
-
-    public boolean intersects(AffineTransform pageTransform, Rectangle2D rect);
-
     public boolean isHighlighted();
 
     public boolean isSelected();

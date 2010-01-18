@@ -32,9 +32,7 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
-import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -50,9 +48,6 @@ import java.awt.geom.Rectangle2D;
  */
 public abstract class AbstractText implements Text {
 
-    // glyph path used for painting highlighted text using 2d.float.
-    protected GeneralPath generalPath;
-
     // white space sentences etc.
     protected Rectangle2D.Float bounds;
 
@@ -66,32 +61,15 @@ public abstract class AbstractText implements Text {
     // highlight hint for quicker painting
     protected boolean hasHighlight;
 
-    public abstract GeneralPath getGeneralPath();
-
+    /**
+     * Gets the bounds of the respective text object.
+     *
+     * @return bounds of text object.
+     */
     public abstract Rectangle2D.Float getBounds();
 
     public void clearBounds() {
-        generalPath = null;
         bounds = null;
-    }
-
-    /**
-     * Creates a new instance of GeneralPath for this AbstractText object and
-     * applies the current pageTransformation to it.  The containment
-     * calculation is then applied the newly tranformed path for the given
-     * point.
-     * <p/>
-     * This method is usually used for text selection via a mouse click interact
-     * for word and sentance selection.
-     *
-     * @param pageTransform page user induced page transform
-     * @param point         point to check containment of in page.
-     * @return true if the point is contained with in this Text instance.
-     */
-    public boolean contains(AffineTransform pageTransform, Point2D point) {
-        GeneralPath shapePath = new GeneralPath(getGeneralPath());
-        shapePath.transform(pageTransform);
-        return shapePath.contains(point);
     }
 
     /**
@@ -102,13 +80,12 @@ public abstract class AbstractText implements Text {
      * <p/>
      * This method is usually used for text selection via a selection box.
      *
-     * @param pageTransform page user induced page transform
-     * @param rect          rectangle to check intersection of in page.
+     * @param rect rectangle to check intersection of in page.
      * @return true if the point is contained with in this Text instance.
      */
-    public boolean intersects(AffineTransform pageTransform, Rectangle2D rect) {
-        GeneralPath shapePath = new GeneralPath(getGeneralPath());
-        shapePath.transform(pageTransform);
+    public boolean intersects(Rectangle2D rect) {
+        // bounds is lazy loaded so getBounds is need to get the value correctly.
+        GeneralPath shapePath = new GeneralPath(getBounds());
         return shapePath.intersects(rect);
     }
 
