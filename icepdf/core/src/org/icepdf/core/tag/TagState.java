@@ -103,7 +103,7 @@ public class TagState implements Serializable {
     }
 
     String describe() {
-        StringBuffer sb = new StringBuffer(4096);
+        StringBuilder sb = new StringBuilder(4096);
         for(Iterator docs = documents.iterator(); docs.hasNext();) {
             TaggedDocument td = (TaggedDocument) docs.next();
             sb.append(td.describe());

@@ -854,7 +854,7 @@ public class PropertiesManager {
             // Otherwise convert the defaultVal into a comma separated list
             // This is done so it can be stored back into the properties file
             else {
-                StringBuffer commaBuffer = new StringBuffer(defaultVal.length*2);
+                StringBuilder commaBuffer = new StringBuilder(defaultVal.length*2);
 
                 for (int i = 0; i < defaultVal.length; i++) {
                     commaBuffer.append(defaultVal[i]);

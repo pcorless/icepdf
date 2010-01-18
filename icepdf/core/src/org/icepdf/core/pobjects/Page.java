@@ -55,7 +55,6 @@ import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -191,15 +190,9 @@ public class Page extends Dictionary implements MemoryManageable {
             }
             // work through contents and null any stream that have images in them
             if (contents != null) {
-                Enumeration pageContent = contents.elements();
                 //System.out.println("   Content size " + contents.size());
-                while (pageContent.hasMoreElements()) {
-                    Object tmp = pageContent.nextElement();
-                    if (tmp instanceof Stream) {
-                        //System.out.println("  -------------> Found stream");
-                        Stream stream = (Stream) tmp;
-                        stream.dispose(cache);
-                    }
+                for (Stream stream : contents) {
+                    stream.dispose(cache);
                 }
                 contents.clear();
                 contents.trimToSize();
@@ -352,11 +345,10 @@ public class Page extends Dictionary implements MemoryManageable {
 
             if (contents != null) {
                 Vector<InputStream> inputStreamsVec = new Vector<InputStream>(contents.size());
-                for (int st = 0, max = contents.size(); st < max; st++) {
-                    Stream stream = contents.elementAt(st);
-                    InputStream input = stream.getInputStreamForDecodedStreamBytes();
+                for (Stream stream : contents) {
                     //byte[] streamBytes = stream.getBytes();
                     //ByteArrayInputStream input = new ByteArrayInputStream(streamBytes);
+                    InputStream input = stream.getInputStreamForDecodedStreamBytes();
                     inputStreamsVec.add(input);
 /*
                     InputStream input = stream.getInputStreamForDecodedStreamBytes();
@@ -1424,7 +1416,7 @@ public class Page extends Dictionary implements MemoryManageable {
     }
 
     public synchronized void removePaintPageListener(PaintPageListener listener) {
-        // add a listener if it is not already registered
+        // remove a listener if it is already registered
         if (paintPageListeners.contains(listener)) {
             paintPageListeners.removeElement(listener);
         }

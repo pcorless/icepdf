@@ -330,7 +330,7 @@ public class DocumentViewControllerImpl
 
     public String getSelectedText() {
 
-        StringBuffer selectedText = new StringBuffer();
+        StringBuilder selectedText = new StringBuilder();
         // regular page selected by user mouse, keyboard or api
         if (!documentViewModel.isSelectAll()) {
             ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =

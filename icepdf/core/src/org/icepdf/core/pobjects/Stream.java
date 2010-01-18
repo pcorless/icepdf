@@ -2384,7 +2384,7 @@ public class Stream extends Dictionary {
      * Return a string description of the object.  Primarly used for debugging.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer(64);
+        StringBuilder sb = new StringBuilder(64);
         sb.append("STREAM= ");
         sb.append(entries);
         if (getPObjectReference() != null) {

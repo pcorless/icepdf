@@ -283,7 +283,7 @@ public class OutlineItem extends Dictionary {
                         ((int) titleText.charAt(0)) == 254 &&
                         ((int) titleText.charAt(1)) == 255) {
 
-                    StringBuffer sb1 = new StringBuffer();
+                    StringBuilder sb1 = new StringBuilder();
 
                     // strip and white space, as the will offset the below algorithm
                     // which assumes the string is made up of two byte chars.
@@ -308,7 +308,7 @@ public class OutlineItem extends Dictionary {
                     }
                     title = sb1.toString();
                 } else if (titleText != null) {
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     Encoding enc = Encoding.getPDFDoc();
                     for (int i = 0; i < titleText.length(); i++) {
                         sb.append(enc.get(titleText.charAt(i)));

@@ -185,7 +185,7 @@ public class TextSprite {
     }
 
     public String toString() {
-        StringBuffer text = new StringBuffer(glyphTexts.size());
+        StringBuilder text = new StringBuilder(glyphTexts.size());
         for (GlyphText glyphText : glyphTexts){
             text.append(glyphText.getUnicode());
         }

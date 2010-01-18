@@ -1299,7 +1299,7 @@ public class Annotation extends Dictionary {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("ANNOTATION= {");
         java.util.Enumeration keys = entries.keys();
         while (keys.hasMoreElements()) {

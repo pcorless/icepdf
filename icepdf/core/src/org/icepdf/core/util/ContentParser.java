@@ -133,7 +133,7 @@ public class ContentParser {
     /**
      * Sets the graphics state object which will be used for the current content
      * parsing.  This method must be called before the parse method is called
-     * otherwise it will have not effect on state of the draw operands.
+     * otherwise it will not have an effect on the state of the draw operands.
      *
      * @param graphicState graphics state of this content stream
      */
@@ -258,7 +258,7 @@ public class ContentParser {
                     else if (tok.equals(PdfOps.S_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.S_TOKEN);
                         if (geometricPath != null) {
-                            commonStroke(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                             geometricPath = null;
                         }
                     }
@@ -528,7 +528,7 @@ public class ContentParser {
                         if (geometricPath != null) {
                             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
                             geometricPath.closePath();
-                            commonStroke(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                             commonFill(shapes, geometricPath);
                         }
                         geometricPath = null;
@@ -647,7 +647,7 @@ public class ContentParser {
 //                        collectTokenFrequency(PdfOps.B_TOKEN);
                         if (geometricPath != null) {
                             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
-                            commonStroke(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                             commonFill(shapes, geometricPath);
                         }
                         geometricPath = null;
@@ -683,7 +683,7 @@ public class ContentParser {
 //                        collectTokenFrequency(PdfOps.s_TOKEN);
                         if (geometricPath != null) {
                             geometricPath.closePath();
-                            commonStroke(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                             geometricPath = null;
                         }
                     }
@@ -705,7 +705,7 @@ public class ContentParser {
                         if (geometricPath != null) {
                             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
                             geometricPath.closePath();
-                            commonStroke(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                             commonFill(shapes, geometricPath);
                         }
                         geometricPath = null;
@@ -774,7 +774,7 @@ public class ContentParser {
 //                        collectTokenFrequency(PdfOps.B_STAR_TOKEN);
                         if (geometricPath != null) {
                             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
-                            commonStroke(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                             commonFill(shapes, geometricPath);
                         }
                         geometricPath = null;
@@ -916,6 +916,8 @@ public class ContentParser {
                 logger.fine("STACK=" + tmp);
             }
         }
+        
+        shapes.contract();
         return shapes;
     }
 
@@ -974,6 +976,7 @@ public class ContentParser {
         }
 //        long endTime = System.currentTimeMillis();
 //        System.out.println("Extraction Duration " + (endTime - startTime));
+        shapes.contract();
         return shapes;
     }
 
@@ -1151,13 +1154,11 @@ public class ContentParser {
                     applyTextScaling(graphicState);
 
                     Vector v = (Vector) stack.pop();
-                    Object currentObject;
                     StringObject stringObject;
                     TextState textState;
                     Number f;
                     float lastTextAdvance = previousAdvance;
-                    for (Enumeration e = v.elements(); e.hasMoreElements();) {
-                        currentObject = e.nextElement();
+                    for (Object currentObject : v) {
                         if (currentObject instanceof StringObject) {
                             stringObject = (StringObject) currentObject;
                             textState = graphicState.getTextState();
@@ -1934,11 +1935,10 @@ public class ContentParser {
             // line and thus we skip out
             if (dashVector.size() > 0) {
                 // convert dash vector to a array of floats
-                Enumeration dashEnum = dashVector.elements();
-                dashArray = new float[dashVector.size()];
-                int count = 0;
-                while (dashEnum.hasMoreElements()) {
-                    dashArray[count++] = ((Number) dashEnum.nextElement()).floatValue();
+                final int sz = dashVector.size();
+                dashArray = new float[sz];
+                for (int i = 0; i < sz; i++) {
+                    dashArray[i] = ((Number) dashVector.get(i)).floatValue();
                 }
             }
             // default to standard black line
@@ -2071,7 +2071,7 @@ public class ContentParser {
      *         string that needs to be drawn
      */
     private Point2D drawString(
-            StringBuffer displayText,
+            StringBuilder displayText,
             Point2D advance,
             float previousAdvance,
             TextState textState,
@@ -2080,7 +2080,7 @@ public class ContentParser {
         // check to see if we are in font substitution mode, if we are
         // then we need to apply toUnicode mappings, to get the correct layout
         // for the substituted glyph
-        StringBuffer unmodifiedDisplayText = new StringBuffer(displayText);
+        StringBuilder unmodifiedDisplayText = new StringBuilder(displayText);
 
         float advanceX = ((Point2D.Float) advance).x;
         float advanceY = ((Point2D.Float) advance).y;
@@ -2307,7 +2307,7 @@ public class ContentParser {
      * @param shapes        current shapes stack
      * @param geometricPath current path.
      */
-    private void commonStroke(Shapes shapes, GeneralPath geometricPath) {
+    private static void commonStroke(GraphicsState graphicState, Shapes shapes, GeneralPath geometricPath) {
 
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintStroking()) {
@@ -2367,7 +2367,7 @@ public class ContentParser {
      * @param alpha alph constant
      * @return tweaked overpring alpha
      */
-    private float commonOverPrintAlpha(float alpha) {
+    private static float commonOverPrintAlpha(float alpha) {
         // if alpha is already present we reduce it and we minimize
         // it if it is already lower then our over paint.  This an approximation
         // only for improved screen representation.
@@ -2491,7 +2491,7 @@ public class ContentParser {
      * @param shapes - current shapes vector to add Alpha Composite to
      * @param alpha  - alpha value, opaque = 1.0f.
      */
-    void setAlpha(Shapes shapes, float alpha) {
+    static void setAlpha(Shapes shapes, float alpha) {
         // Build the alpha composite object and add it to the shapes
         AlphaComposite alphaComposite =
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER,

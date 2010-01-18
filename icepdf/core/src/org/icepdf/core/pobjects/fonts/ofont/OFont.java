@@ -343,7 +343,7 @@ public class OFont implements FontFile {
 
     public String toUnicode(String displayText) {
         // Check string for displayable Glyphs,  try and substitute any failed ones
-        StringBuffer sb = new StringBuffer(displayText.length());
+        StringBuilder sb = new StringBuilder(displayText.length());
         for (int i = 0; i < displayText.length(); i++) {
             // get the first char in the buffer
             char c1 = displayText.charAt(i);

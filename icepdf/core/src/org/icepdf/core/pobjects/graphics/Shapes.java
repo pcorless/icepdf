@@ -71,7 +71,7 @@ public class Shapes {
     }
 
     // Graphics stack for a page's content.
-    protected Vector<Object> shapes = new Vector<Object>(1000, 50);
+    protected Vector<Object> shapes = new Vector<Object>(1000);
     // Vector of images found a page.
     private Vector<Image> images = new Vector<Image>();
     // last colour used during the painting process, avoid unnecessary additions
@@ -144,17 +144,9 @@ public class Shapes {
      * Clean up.
      */
     public void dispose() {
-        Enumeration imageContent = images.elements();
         //System.out.println("   Shapes Images vector size " + images.size());
-        Object tmp;
-        Image image;
-        while (imageContent.hasMoreElements()) {
-            tmp = imageContent.nextElement();
-            if (tmp instanceof Image) {
-                //System.out.println("  -------------> Found images");
-                image = (Image) tmp;
-                image.flush();
-            }
+        for (Image image : images) {
+            image.flush();
         }
         // one more try to free up some memory
         images.clear();
@@ -162,12 +154,10 @@ public class Shapes {
 
         //System.out.println("   Shapes Shapes vector  size " + images.size());
         if (shapes != null){
-            Enumeration shapeContent = shapes.elements();
-            while (shapeContent.hasMoreElements()) {
-                tmp = shapeContent.nextElement();
+            for (Object tmp : shapes) {
                 if (tmp instanceof Image) {
                     //System.out.println("  -------------> Found images");
-                    image = (Image) tmp;
+                    Image image = (Image) tmp;
                     image.flush();
                 } else if (tmp instanceof TextSprite) {
                     ((TextSprite) tmp).dispose();
@@ -198,7 +188,7 @@ public class Shapes {
         if (o instanceof Image) {
             Image image = (Image) o;
             int width = image.getWidth(null);
-            Image scalledImage;
+            Image scaledImage;
             // do image scaling on larger images.  This improves the softness
             // of some images that contains black and white text.
             if (scaleImages) {
@@ -209,17 +199,17 @@ public class Shapes {
                     scaleFactor = 0.5;
                 }
                 if (scaleFactor < 1.0) {
-                    scalledImage = image.getScaledInstance(
+                    scaledImage = image.getScaledInstance(
                             (int) (width * scaleFactor), -1, Image.SCALE_SMOOTH);
                     image.flush();
                 } else {
-                    scalledImage = image;
+                    scaledImage = image;
                 }
             } else {
-                scalledImage = image;
+                scaledImage = image;
             }
-            images.addElement(scalledImage);
-            shapes.add(scalledImage);
+            images.add(scaledImage);
+            shapes.add(scaledImage);
             return;
         }
 
@@ -311,16 +301,16 @@ public class Shapes {
         long lastPaintTime = System.currentTimeMillis();
 
 //        int paintCount = 0;
-        Enumeration shapesEnumeration = shapes.elements();
+        Iterator<Object> shapesEnumeration = shapes.iterator();
         try {
-            while (shapesEnumeration.hasMoreElements() ||
+            while (shapesEnumeration.hasNext() ||
                     (pagePainter != null && pagePainter.isStopPaintingRequested())) {
 
 //                if (pagePainter != null && pagePainter.isStopPaintingRequested()){
 //                    break;
 //                }
 
-                nextShape = shapesEnumeration.nextElement();
+                nextShape = shapesEnumeration.next();
 
                 if (nextShape instanceof TextSprite) {
                     if (((TextSprite) nextShape).intersects(clipArea)) {
@@ -490,5 +480,13 @@ public class Shapes {
      */
     public Vector getImages() {
         return images;
+    }
+    
+    public void contract() {
+        if (shapes != null) {
+            if (shapes.capacity() - shapes.size() > 200) {
+                shapes.trimToSize();
+            }
+        }
     }
 }
