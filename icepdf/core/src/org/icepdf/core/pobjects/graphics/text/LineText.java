@@ -32,7 +32,6 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
-import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
@@ -58,27 +57,18 @@ public class LineText extends AbstractText implements TextSelect {
             // word bounds build from child word bounds.
             for (WordText word : words) {
                 if (bounds == null) {
-                    bounds = word.getBounds();
+                    bounds = new Rectangle2D.Float();
+                    bounds.setRect(word.getBounds());
                 } else {
                     bounds.add(word.getBounds());
                 }
             }
             // empty line text check, return empty bound.
-            if (bounds == null){
+            if (bounds == null) {
                 bounds = new Rectangle2D.Float();
             }
         }
         return bounds;
-    }
-
-
-    public GeneralPath getGeneralPath() {
-        // general path is calculated after the pages has been parsed, again
-        // expensive so we only want to do it when we have to.
-        if (generalPath == null) {
-            generalPath = new GeneralPath(getBounds());
-        }
-        return generalPath;
     }
 
     /**
@@ -132,7 +122,7 @@ public class LineText extends AbstractText implements TextSelect {
      * Adds the specified word to the end of the line collection and makes
      * the new word the currentWord reference.
      *
-     * @param wordText  word to add
+     * @param wordText word to add
      */
     private void addWord(WordText wordText) {
 
@@ -203,6 +193,7 @@ public class LineText extends AbstractText implements TextSelect {
      * Interates over child elements getting the selected text as defined by
      * the child glyphs unicode value. Line breaks and spaces are preserved
      * where possible.
+     *
      * @return StringBuffer of selected text in this line.
      */
     public StringBuffer getSelected() {
