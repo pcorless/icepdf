@@ -35,7 +35,6 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
-import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -63,6 +62,7 @@ public class WordText extends AbstractText implements TextSelect {
     // Space Glyph width fraction, the default is 1/x of the character width,
     // constitutes a potential space between glyphs.
     public static int spaceFraction;
+
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -74,7 +74,6 @@ public class WordText extends AbstractText implements TextSelect {
             }
         }
     }
-
 
     private GlyphText currentGlyph;
     private ArrayList<GlyphText> glyphs;
@@ -99,10 +98,8 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected boolean detectSpace(GlyphText sprite) {
         if (currentGlyph != null) {
-            Rectangle2D.Float bounds1 = (Rectangle2D.Float)
-                    currentGlyph.getGeneralPath().getBounds2D();
-            Rectangle.Float bounds2 = (Rectangle2D.Float)
-                    sprite.getGeneralPath().getBounds2D();
+            Rectangle2D.Float bounds1 = currentGlyph.getBounds();
+            Rectangle.Float bounds2 = sprite.getBounds();
             float space = bounds2.x - (bounds1.x + bounds1.width);
             if (space <= 0) {
                 return false;
@@ -139,10 +136,8 @@ public class WordText extends AbstractText implements TextSelect {
     protected WordText buildSpaceWord(GlyphText sprite) {
 
         // because we are in a normalized user space we can work with ints
-        Rectangle2D.Float bounds1 = (Rectangle2D.Float)
-                currentGlyph.getGeneralPath().getBounds2D();
-        Rectangle.Float bounds2 = (Rectangle2D.Float)
-                sprite.getGeneralPath().getBounds2D();
+        Rectangle2D.Float bounds1 = currentGlyph.getBounds();
+        Rectangle.Float bounds2 = sprite.getBounds();
         float space = bounds2.x - (bounds1.x + bounds1.width);
 
         // max width of previous and next glyph, average can be broken by l or i etc.
@@ -184,13 +179,11 @@ public class WordText extends AbstractText implements TextSelect {
 
         // append the bounds calculation
         if (bounds == null) {
-            bounds = sprite.getBounds();
+            Rectangle2D.Float rect = sprite.getBounds();
+            bounds = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
         } else {
             bounds.add(sprite.getBounds());
         }
-
-        // update general path
-        generalPath = new GeneralPath(bounds);
 
         // append the text that maps up the sprite
         text.append((char) sprite.getUnicode());
@@ -201,20 +194,14 @@ public class WordText extends AbstractText implements TextSelect {
             // increase bounds as glyphs are detected.
             for (GlyphText glyph : glyphs) {
                 if (bounds == null) {
-                    bounds = glyph.getBounds();
+                    bounds = new Rectangle2D.Float();
+                    bounds.setRect(glyph.getBounds());
                 } else {
                     bounds.add(glyph.getBounds());
                 }
             }
         }
         return bounds;
-    }
-
-    public GeneralPath getGeneralPath() {
-        if (generalPath == null) {
-            generalPath = new GeneralPath(getBounds());
-        }
-        return generalPath;
     }
 
     public ArrayList<GlyphText> getGlyphs() {
@@ -262,7 +249,7 @@ public class WordText extends AbstractText implements TextSelect {
 //        } else if (text.toString().equals(""))
 //            return text.toString().replace("", "*");
 //        else {
-            return text.toString();
+        return text.toString();
 //        }
     }
 

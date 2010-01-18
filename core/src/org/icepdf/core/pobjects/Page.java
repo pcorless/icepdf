@@ -530,13 +530,13 @@ public class Page extends Dictionary implements MemoryManageable {
                     for (WordText wordText : lineText.getWords()) {
                         // paint whole word
                         if (wordText.isHighlighted()) {
-                            textPath = new GeneralPath(wordText.getGeneralPath());
+                            textPath = new GeneralPath(wordText.getBounds());
                             g2.setColor(TextSelectionPageHandler.highlightColor);
                             g2.fill(textPath);
                         } else {
                             for (GlyphText glyph : wordText.getGlyphs()) {
                                 if (glyph.isHighlighted()) {
-                                    textPath = new GeneralPath(glyph.getGeneralPath());
+                                    textPath = new GeneralPath(glyph.getBounds());
                                     g2.setColor(TextSelectionPageHandler.highlightColor);
                                     g2.fill(textPath);
                                 }

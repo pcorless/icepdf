@@ -63,7 +63,6 @@ public class GlyphText extends AbstractText {
         this.x = x;
         this.y = y;
         this.bounds = bounds;
-        this.generalPath = new GeneralPath(bounds);
         this.cid = cid;
         this.unicode = unicode;
     }
@@ -75,8 +74,8 @@ public class GlyphText extends AbstractText {
      */
     public void normalizeToUserSpace(AffineTransform af) {
         // map the coordinates from glyph space to user space.
+        GeneralPath generalPath = new GeneralPath(bounds);
         generalPath.transform(af);
-
         bounds = (Rectangle2D.Float) generalPath.getBounds2D();
     }
 
@@ -94,10 +93,6 @@ public class GlyphText extends AbstractText {
 
     public float getY() {
         return y;
-    }
-
-    public GeneralPath getGeneralPath() {
-        return generalPath;
     }
 
     public Rectangle2D.Float getBounds() {
