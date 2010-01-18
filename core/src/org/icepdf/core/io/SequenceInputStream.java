@@ -174,7 +174,7 @@ public class SequenceInputStream extends InputStream {
 
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName());
         sb.append(": ");
 

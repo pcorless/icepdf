@@ -77,7 +77,7 @@ public class TaggedImage implements Serializable {
     }
 
     public String describePages() {
-        StringBuffer sb = new StringBuffer(32);
+        StringBuilder sb = new StringBuilder(32);
         int sz = pages.size();
         for (int i = 0; i < sz; i++) {
             boolean oddIndex = ((i % 2) == 1);
@@ -144,7 +144,7 @@ public class TaggedImage implements Serializable {
     }
 
     String describe() {
-        StringBuffer sb = new StringBuffer(4096);
+        StringBuilder sb = new StringBuilder(4096);
         for(Iterator tgs = tags.iterator(); tgs.hasNext();) {
             String t = (String) tgs.next();
             sb.append(t);

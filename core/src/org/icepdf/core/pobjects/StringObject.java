@@ -62,7 +62,7 @@ public interface StringObject {
      *
      * @return a StringBuffer representing the objects data.
      */
-    public StringBuffer getLiteralStringBuffer();
+    public StringBuilder getLiteralStringBuffer();
 
     /**
      * <p>Gets a literal String representation of this object's data.
@@ -76,7 +76,7 @@ public interface StringObject {
      *
      * @return a StringBufffer representation of the objects data.
      */
-    public StringBuffer getHexStringBuffer();
+    public StringBuilder getHexStringBuffer();
 
     /**
      * <p>Gets a hexadecimal String representation of this object's data. </p>
@@ -106,7 +106,7 @@ public interface StringObject {
      * @return StringBuffer which contains all renderaable characters for the
      *         given font.
      */
-    public StringBuffer getLiteralStringBuffer(final int fontFormat, FontFile font);
+    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
 
     /**
      * The length of the underlying objects data.

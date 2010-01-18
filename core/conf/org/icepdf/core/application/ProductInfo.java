@@ -73,7 +73,7 @@ public class ProductInfo {
      * @return
      */
     public String toString(){
-        StringBuffer info = new StringBuffer();
+        StringBuilder info = new StringBuilder();
         info.append( "\n" );
         info.append( COMPANY );
         info.append( "\n" );
@@ -97,7 +97,7 @@ public class ProductInfo {
     }
 
     public String getVersion(){
-        StringBuffer info = new StringBuffer();
+        StringBuilder info = new StringBuilder();
         info.append( PRIMARY );
         info.append( "." );
         info.append( SECONDARY );

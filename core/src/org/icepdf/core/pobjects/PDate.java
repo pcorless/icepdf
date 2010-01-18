@@ -255,7 +255,7 @@ public class PDate {
      */
     public String toString() {
         if (!notStandardFormat) {
-            StringBuffer sb = new StringBuffer(40);
+            StringBuilder sb = new StringBuilder(40);
             if (getMonth(month).length() > 0)
                 sb.append(getMonth(month));
             if (day.length() > 0)

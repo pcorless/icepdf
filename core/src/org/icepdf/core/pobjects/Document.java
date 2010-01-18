@@ -86,7 +86,7 @@ public class Document {
      * @return version number of ICEpdf's rendering core.
      */
     public static String getLibraryVersion() {
-        return new StringBuffer().append(ProductInfo.PRIMARY).append(".").
+        return new StringBuilder().append(ProductInfo.PRIMARY).append(".").
                 append(ProductInfo.SECONDARY).append(".").
                 append(ProductInfo.TERTIARY).append(" ").
                 append(ProductInfo.RELEASE_TYPE).toString();

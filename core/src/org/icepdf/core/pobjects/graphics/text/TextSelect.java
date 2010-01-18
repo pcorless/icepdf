@@ -41,7 +41,7 @@ public interface TextSelect {
 
     public void clearSelected();
 
-    public StringBuffer getSelected();
+    public StringBuilder getSelected();
 
     public void clearHighlighted();
 

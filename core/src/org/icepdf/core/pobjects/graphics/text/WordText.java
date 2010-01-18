@@ -79,12 +79,12 @@ public class WordText extends AbstractText implements TextSelect {
     private ArrayList<GlyphText> glyphs;
 
     // cached text values.
-    private StringBuffer text;
+    private StringBuilder text;
     // is glyph white space.
     private boolean isWhiteSpace;
 
     public WordText() {
-        text = new StringBuffer();
+        text = new StringBuilder();
         glyphs = new ArrayList<GlyphText>(4);
     }
 
@@ -208,8 +208,8 @@ public class WordText extends AbstractText implements TextSelect {
         return glyphs;
     }
 
-    public StringBuffer getSelected() {
-        StringBuffer selectedText = new StringBuffer();
+    public StringBuilder getSelected() {
+        StringBuilder selectedText = new StringBuilder();
         for (GlyphText glyph : glyphs) {
             if (glyph.isSelected()) {
                 selectedText.append((char) glyph.getUnicode());

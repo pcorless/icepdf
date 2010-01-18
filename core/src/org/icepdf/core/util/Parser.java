@@ -643,7 +643,7 @@ public class Parser {
         } else if (currentChar == '%') {
             // ignore all the characters after a comment token until
             // we get to the end of the line
-            StringBuffer stringBuffer = new StringBuffer();
+            StringBuilder stringBuffer = new StringBuilder();
             do {
                 stringBuffer.append(currentChar);
                 currentByte = reader.read();
@@ -686,7 +686,7 @@ public class Parser {
         reader.reset();
 
         // store the parsed char in the token buffer.
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuffer = new StringBuilder();
         stringBuffer.append(currentChar);
 
         /**
@@ -763,7 +763,7 @@ public class Parser {
                         // and we need to handle it correctly
                         if (Character.isDigit(currentChar)) {
                             // store the read digits
-                            StringBuffer digit = new StringBuffer();
+                            StringBuilder digit = new StringBuilder();
                             digit.append(currentChar);
                             // octals have a max size of 3 digits, we already
                             // have one, so there can be up 2 more digits.
@@ -917,7 +917,7 @@ public class Parser {
     public Object getNumberOrStringWithMark(int maxLength) throws IOException {
         reader.mark(maxLength);
 
-        StringBuffer sb = new StringBuffer(maxLength);
+        StringBuilder sb = new StringBuilder(maxLength);
         boolean readNonWhitespaceYet = false;
         boolean foundDigit = false;
         boolean foundDecimal = false;
@@ -1065,7 +1065,7 @@ public class Parser {
      */
     String hexToString(String hh) {
         hh = hh.substring(1, hh.length() - 1).toUpperCase();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (hh.charAt(0) == 'F'
                 && hh.charAt(1) == 'E'
                 && hh.charAt(2) == 'F'

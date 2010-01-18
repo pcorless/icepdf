@@ -71,7 +71,7 @@ public class Name {
      * @param name the name value of the Name object
      */
     public Name(String name) {
-        this.name = convertHexChars(new StringBuffer(name));
+        this.name = convertHexChars(new StringBuilder(name));
     }
 
     /**
@@ -79,7 +79,7 @@ public class Name {
      *
      * @param name the name value of the Name object
      */
-    public Name(StringBuffer name) {
+    public Name(StringBuilder name) {
 
         this.name = convertHexChars(name);
     }
@@ -138,7 +138,7 @@ public class Name {
      * @param name PDF name object string to be checked for hex codes.
      * @return full ascii encoded name string.
      */
-    private String convertHexChars(StringBuffer name) {
+    private String convertHexChars(StringBuilder name) {
         // we need to search for an instance of # and try and convert to hex
         try {
             int charDd;

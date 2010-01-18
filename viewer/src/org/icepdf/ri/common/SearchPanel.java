@@ -566,7 +566,7 @@ public class SearchPanel extends JPanel implements ActionListener,
      * @return styled html text.
      */
     private static String generateResultPreview(List<WordText> allText) {
-        StringBuffer toReturn = new StringBuffer(HTML_TAG_START);
+        StringBuilder toReturn = new StringBuilder(HTML_TAG_START);
         for (WordText currentText : allText) {
             if (currentText.isHighlighted()) {
                 toReturn.append(BOLD_TAG_START);

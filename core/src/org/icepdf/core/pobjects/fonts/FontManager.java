@@ -370,7 +370,7 @@ public class FontManager {
         // Setup parameters
         FontFile font;
         String path;
-        StringBuffer fontPath;
+        StringBuilder fontPath;
         String fontName;
         String[] fontPaths;
         File directory;
@@ -402,7 +402,7 @@ public class FontManager {
                     fontPaths = directory.list();
                     for (int j = fontPaths.length - 1; j >= 0; j--) {
                         fontName = fontPaths[j];
-                        fontPath = new StringBuffer(25);
+                        fontPath = new StringBuilder(25);
                         fontPath.append(directory.getAbsolutePath()).append(
                                 File.separatorChar).append(fontName);
                         if (logger.isLoggable(Level.FINER)){

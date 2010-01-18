@@ -46,7 +46,7 @@ public abstract class Function implements Expression {
     }
 
     public String describe(int indent) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for(int i = 0; i < indent; i++)
             sb.append("  ");
         String className = getClass().getName();

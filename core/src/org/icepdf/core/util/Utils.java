@@ -132,7 +132,7 @@ public class Utils {
         int presize = length * (addSpaceSeparator ? 3 : 2);
         if (addDelimiterEverNBytes > 0)
             presize += (length / addDelimiterEverNBytes);
-        StringBuffer sb = new StringBuffer(presize);
+        StringBuilder sb = new StringBuilder(presize);
         int delimiterCount = 0;
         int end = offset + length;
         for (int index = offset; index < end; index++) {
@@ -355,7 +355,7 @@ public class Utils {
      */
     public static String convertByteArrayToByteString(byte[] bytes) {
         final int max = bytes.length;
-        StringBuffer sb = new StringBuffer(max);
+        StringBuilder sb = new StringBuilder(max);
         for (int i = 0; i < max; i++) {
             int b = ((int) bytes[i]) & 0xFF;
             sb.append((char)b);

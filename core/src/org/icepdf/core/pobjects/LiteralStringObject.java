@@ -47,7 +47,7 @@ import org.icepdf.core.util.Utils;
 public class LiteralStringObject implements StringObject {
 
     // core data used to represent the literal string information
-    private StringBuffer stringData;
+    private StringBuilder stringData;
 
     private static char[] hexChar = {'0', '1', '2', '3', '4', '5', '6',
             '7', '8', '9', 'a', 'b', 'c', 'd',
@@ -65,7 +65,7 @@ public class LiteralStringObject implements StringObject {
      *              character data.
      */
     public LiteralStringObject(byte[] bytes) {
-        this(new StringBuffer(bytes.length).append(new String(bytes)));
+        this(new StringBuilder(bytes.length).append(new String(bytes)));
     }
 
     /**
@@ -76,7 +76,7 @@ public class LiteralStringObject implements StringObject {
      */
     public LiteralStringObject(String string) {
         // append string data
-        stringData = new StringBuffer(string);
+        stringData = new StringBuilder(string);
     }
 
     /**
@@ -97,7 +97,7 @@ public class LiteralStringObject implements StringObject {
         // append string data
         this.reference = reference;
         // decrypt the string. 
-        stringData = new StringBuffer(
+        stringData = new StringBuilder(
                 encryption(string, false, securityManager));
     }
 
@@ -110,12 +110,12 @@ public class LiteralStringObject implements StringObject {
      *
      * @param stringBuffer the initial contents of the literal string object
      */
-    public LiteralStringObject(StringBuffer stringBuffer) {
+    public LiteralStringObject(StringBuilder stringBuffer) {
         // remove parentheses, passed in by parser
         stringBuffer.deleteCharAt(0);
         stringBuffer.deleteCharAt(stringBuffer.length() - 1);
         // append string data
-        stringData = new StringBuffer(stringBuffer.length());
+        stringData = new StringBuilder(stringBuffer.length());
         stringData.append(stringBuffer.toString());
     }
 
@@ -173,7 +173,7 @@ public class LiteralStringObject implements StringObject {
      * @return a StringBufffer representation of the object's data in hexadecimal
      *         notation.
      */
-    public StringBuffer getHexStringBuffer() {
+    public StringBuilder getHexStringBuffer() {
         return stringToHex(stringData);
     }
 
@@ -183,7 +183,7 @@ public class LiteralStringObject implements StringObject {
      *
      * @return a StringBuffer representation of the object's data.
      */
-    public StringBuffer getLiteralStringBuffer() {
+    public StringBuilder getLiteralStringBuffer() {
         return stringData;
     }
 
@@ -211,11 +211,11 @@ public class LiteralStringObject implements StringObject {
      * @return StringBuffer which contains all renderaable characters for the
      *         given font.
      */
-    public StringBuffer getLiteralStringBuffer(final int fontFormat, FontFile font) {
+    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
         if (fontFormat == Font.SIMPLE_FORMAT) {
             int charOffset = 1;
             int length = getLength();
-            StringBuffer tmp = new StringBuffer(length);
+            StringBuilder tmp = new StringBuilder(length);
             int lastIndex = 0;
             int charValue;
             for (int i = 0; i < length; i += charOffset) {
@@ -233,7 +233,7 @@ public class LiteralStringObject implements StringObject {
             int charOffset = 2;
             int length = getLength();
             int charValue;
-            StringBuffer tmp = new StringBuffer(length);
+            StringBuilder tmp = new StringBuilder(length);
             for (int i = 0; i < length; i += charOffset) {
                 charValue = getUnsignedInt(i, charOffset);
                 if (font.canDisplayEchar((char) charValue)) {
@@ -260,8 +260,8 @@ public class LiteralStringObject implements StringObject {
      * @param string StringBuffer in literal form
      * @return StringBuffer in hexadecial form
      */
-    private StringBuffer stringToHex(StringBuffer string) {
-        StringBuffer hh = new StringBuffer(string.length() * 2);
+    private StringBuilder stringToHex(StringBuilder string) {
+        StringBuilder hh = new StringBuilder(string.length() * 2);
         int charCode;
         for (int i = 0, max = string.length(); i < max; i++) {
             charCode = string.charAt(i);

@@ -35,7 +35,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.Hashtable;
-import java.util.Vector;
 
 /**
  * <p>The <code>NameTree</code> class is similar to the <code>Dictionary</code> class in that

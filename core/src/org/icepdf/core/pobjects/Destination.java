@@ -206,47 +206,56 @@ public class Destination {
     private void parse(Vector v) {
 
         // Assign a Reference
-        if (v.elementAt(0) instanceof Reference) {
-            ref = (Reference) v.elementAt(0);
+        Object ob = v.get(0);
+        if (ob instanceof Reference) {
+            ref = (Reference) ob;
         }
         // store type.
-        if (v.elementAt(1) instanceof Name) {
-            type = (Name) v.elementAt(1);
+        ob = v.get(1);
+        if (ob instanceof Name) {
+            type = (Name) ob;
         } else {
-            type = new Name(v.elementAt(1).toString());
+            type = new Name(ob.toString());
         }
         // [page /XYZ left top zoom ]
         if (type.equals(TYPE_XYZ)) {
-            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
-                left = ((Number) v.elementAt(2)).floatValue();
+            ob = v.get(2);
+            if (ob != null && !ob.equals("null")) {
+                left = ((Number) ob).floatValue();
             }
-            if (v.elementAt(3) != null && !v.elementAt(3).equals("null")) {
-                top = ((Number) v.elementAt(3)).floatValue();
+            ob = v.get(3);
+            if (ob != null && !ob.equals("null")) {
+                top = ((Number) ob).floatValue();
             }
-            if (v.elementAt(4) != null && !v.elementAt(4).equals("null") &&
-                    !v.elementAt(4).equals("0")) {
-                zoom = ((Number) v.elementAt(4)).floatValue();
+            ob = v.get(4);
+            if (ob != null && !ob.equals("null") && !ob.equals("0")) {
+                zoom = ((Number) ob).floatValue();
             }
         }
         // [page /FitH top]
         else if (type.equals(TYPE_FITH)) {
-            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
-                top = ((Number) v.elementAt(2)).floatValue();
+            ob = v.get(2);
+            if (ob != null && !ob.equals("null")) {
+                top = ((Number) ob).floatValue();
             }
         }
         // [page /FitR left bottom right top]
         else if (type.equals(TYPE_FITR)) {
-            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
-                left = ((Number) v.elementAt(2)).floatValue();
+            ob = v.get(2);
+            if (ob != null && !ob.equals("null")) {
+                left = ((Number) ob).floatValue();
             }
-            if (v.elementAt(3) != null && !v.elementAt(3).equals("null")) {
-                bottom = ((Number) v.elementAt(3)).floatValue();
+            ob = v.get(3);
+            if (ob != null && !ob.equals("null")) {
+                bottom = ((Number) ob).floatValue();
             }
-            if (v.elementAt(4) != null && !v.elementAt(4).equals("null")) {
-                right = ((Number) v.elementAt(4)).floatValue();
+            ob = v.get(4);
+            if (ob != null && !ob.equals("null")) {
+                right = ((Number) ob).floatValue();
             }
-            if (v.elementAt(5) != null && !v.elementAt(5).equals("null")) {
-                top = ((Number) v.elementAt(5)).floatValue();
+            ob = v.get(5);
+            if (ob != null && !ob.equals("null")) {
+                top = ((Number) ob).floatValue();
             }
         }
         // [page /FitB]
@@ -255,14 +264,16 @@ public class Destination {
         }
         // [page /FitBH top]
         else if (type.equals(TYPE_FITBH)) {
-            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
-                top = ((Number) v.elementAt(2)).floatValue();
+            ob = v.get(2);
+            if (ob != null && !ob.equals("null")) {
+                top = ((Number) ob).floatValue();                
             }
         }
         // [page /FitBV left]
         else if (type.equals(TYPE_FITBV)) {
-            if (v.elementAt(2) != null && !v.elementAt(2).equals("null")) {
-                left = ((Number) v.elementAt(2)).floatValue();
+            ob = v.get(2);
+            if (ob != null && !ob.equals("null")) {
+                left = ((Number) ob).floatValue();
             }
         }
     }

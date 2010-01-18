@@ -267,10 +267,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 Vector differences = (Vector) library.getObject(encoding, "Differences");
                 if (differences != null) {
                     int c = 0;
-                    for (Enumeration e = differences.elements();
-                         e.hasMoreElements();
-                            ) {
-                        Object oo = e.nextElement();
+                    for (Object oo : differences) {
                         if (oo instanceof Number) {
                             c = ((Number) oo).intValue();
                         } else if (oo instanceof Name) {

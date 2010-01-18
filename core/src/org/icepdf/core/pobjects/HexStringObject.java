@@ -53,7 +53,7 @@ public class HexStringObject implements StringObject {
             Logger.getLogger(HexStringObject.class.toString());
 
     // core data used to represent the literal string information
-    private StringBuffer stringData;
+    private StringBuilder stringData;
 
     // Reference is need for standard encryption
     Reference reference;
@@ -68,7 +68,7 @@ public class HexStringObject implements StringObject {
      *              data.
      */
     public HexStringObject(byte[] bytes) {
-        this(new StringBuffer(bytes.length).append(new String(bytes)));
+        this(new StringBuilder(bytes.length).append(new String(bytes)));
     }
 
     /**
@@ -79,12 +79,12 @@ public class HexStringObject implements StringObject {
      *
      * @param stringBuffer the initial contents of the hexadecimal string object
      */
-    public HexStringObject(StringBuffer stringBuffer) {
+    public HexStringObject(StringBuilder stringBuffer) {
         // remove angled brackets, passed in by parser
         stringBuffer.deleteCharAt(0);
         stringBuffer.deleteCharAt(stringBuffer.length() - 1);
         // append string data
-        stringData = new StringBuffer(stringBuffer.length());
+        stringData = new StringBuilder(stringBuffer.length());
         stringData.append(normalizeHex(stringBuffer).toString());
     }
 
@@ -138,7 +138,7 @@ public class HexStringObject implements StringObject {
      *
      * @return a StringBufffer representation of the objects data in hexadecimal.
      */
-    public StringBuffer getHexStringBuffer() {
+    public StringBuilder getHexStringBuffer() {
         return stringData;
     }
 
@@ -148,7 +148,7 @@ public class HexStringObject implements StringObject {
      *
      * @return a StringBuffer representation of the object's data.
      */
-    public StringBuffer getLiteralStringBuffer() {
+    public StringBuilder getLiteralStringBuffer() {
         return hexToString(stringData);
     }
 
@@ -176,11 +176,11 @@ public class HexStringObject implements StringObject {
      * @return StringBuffer which contains all renderaable characters for the
      *         given font.
      */
-    public StringBuffer getLiteralStringBuffer(final int fontFormat, FontFile font) {
+    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
         if (fontFormat == Font.SIMPLE_FORMAT) {
             int charOffset = 2;
             int length = getLength();
-            StringBuffer tmp = new StringBuffer(length);
+            StringBuilder tmp = new StringBuilder(length);
             int lastIndex = 0;
             int charValue;
             for (int i = 0; i < length; i += charOffset) {
@@ -198,7 +198,7 @@ public class HexStringObject implements StringObject {
             int charOffset = 4;
             int length = getLength();
             int charValue;
-            StringBuffer tmp = new StringBuffer(length);
+            StringBuilder tmp = new StringBuilder(length);
             for (int i = 0; i < length; i += charOffset) {
                 charValue = getUnsignedInt(i, charOffset);
                 if (font.canDisplayEchar((char) charValue)) {
@@ -226,7 +226,7 @@ public class HexStringObject implements StringObject {
      * @param hex hex data to normalize
      * @return normalized pure hex StringBuffer
      */
-    private static StringBuffer normalizeHex(StringBuffer hex) {
+    private static StringBuilder normalizeHex(StringBuilder hex) {
         // strip and white space
         int length = hex.length();
         for (int i = 0; i < length; i++) {
@@ -266,15 +266,15 @@ public class HexStringObject implements StringObject {
      * @param hh StringBuffer containing data in hexadecimal form.
      * @return StringBuffer containing data in literal form.
      */
-    private StringBuffer hexToString(StringBuffer hh) {
-        StringBuffer sb;
+    private StringBuilder hexToString(StringBuilder hh) {
+        StringBuilder sb;
         // special case, test for not a 4 byte character code format
         if (!((hh.charAt(0) == 'F' | hh.charAt(0) == 'f')
                 && (hh.charAt(1) == 'E' | hh.charAt(1) == 'e')
                 && (hh.charAt(2) == 'F' | hh.charAt(2) == 'f')
                 && (hh.charAt(3) == 'F') | hh.charAt(3) == 'f')) {
             int length = hh.length();
-            sb = new StringBuffer(length / 2);
+            sb = new StringBuilder(length / 2);
             String subStr;
 
             for (int i = 0; i < length; i = i + 2) {
@@ -286,7 +286,7 @@ public class HexStringObject implements StringObject {
         // otherwise, assume 4 byte character codes
         else {
             int length = hh.length();
-            sb = new StringBuffer(length / 4);
+            sb = new StringBuilder(length / 4);
             String subStr;
             for (int i = 0; i < length; i = i + 4) {
                 subStr = hh.substring(i, i + 4);

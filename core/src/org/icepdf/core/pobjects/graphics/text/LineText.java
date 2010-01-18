@@ -196,8 +196,8 @@ public class LineText extends AbstractText implements TextSelect {
      *
      * @return StringBuffer of selected text in this line.
      */
-    public StringBuffer getSelected() {
-        StringBuffer selectedText = new StringBuffer();
+    public StringBuilder getSelected() {
+        StringBuilder selectedText = new StringBuilder();
         for (WordText word : words) {
             selectedText.append(word.getSelected());
         }
