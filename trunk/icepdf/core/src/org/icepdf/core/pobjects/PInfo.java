@@ -229,7 +229,7 @@ public class PInfo {
     private String cleanString(String text) {
         if (text != null && text.length() > 0) {
             if (((int) text.charAt(0)) == 254 && ((int) text.charAt(1)) == 255) {
-                StringBuffer sb1 = new StringBuffer();
+                StringBuilder sb1 = new StringBuilder();
 
                 // strip and white space, as the will offset the below algorithm
                 // which assumes the string is made up of two byte chars.
@@ -253,7 +253,7 @@ public class PInfo {
                 }
                 text = sb1.toString();
             } else {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 Encoding enc = Encoding.getPDFDoc();
                 for (int i = 0; i < text.length(); i++) {
                     sb.append(enc.get(text.charAt(i)));

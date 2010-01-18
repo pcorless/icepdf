@@ -99,7 +99,7 @@ public class TaggedDocument implements Serializable {
     }
 
     String describe() {
-        StringBuffer sb = new StringBuffer(4096);
+        StringBuilder sb = new StringBuilder(4096);
         sb.append("ORIGIN: ");
         sb.append(origin);
         sb.append("\n");

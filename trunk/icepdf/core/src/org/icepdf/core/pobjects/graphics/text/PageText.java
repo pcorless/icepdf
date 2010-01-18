@@ -117,8 +117,8 @@ public class PageText implements TextSelect {
         }
     }
 
-    public StringBuffer getSelected() {
-        StringBuffer selectedText = new StringBuffer();
+    public StringBuilder getSelected() {
+        StringBuilder selectedText = new StringBuilder();
         for (LineText lineText : pageLines) {
             selectedText.append(lineText.getSelected());
         }
@@ -145,7 +145,7 @@ public class PageText implements TextSelect {
     }
 
     public String toString() {
-        StringBuffer extractedText = new StringBuffer();
+        StringBuilder extractedText = new StringBuilder();
         for (LineText lineText : pageLines) {
 
             for (WordText wordText : lineText.getWords()) {

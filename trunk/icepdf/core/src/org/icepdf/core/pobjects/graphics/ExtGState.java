@@ -314,11 +314,10 @@ public class ExtGState extends Dictionary {
                 // line and thus we skip out
                 if (dashVector.size() > 0) {
                     // conver dash vector to a array of floats
-                    Enumeration dashEnum = dashVector.elements();
-                    dashArray = new float[dashVector.size()];
-                    int count = 0;
-                    while (dashEnum.hasMoreElements()) {
-                        dashArray[count++] = ((Number) dashEnum.nextElement()).floatValue();
+                    final int sz = dashVector.size();
+                    dashArray = new float[sz];
+                    for (int i = 0; i < sz; i++) {
+                        dashArray[i] = ((Number) dashVector.get(i)).floatValue();
                     }
                 }
                 // default to standard black line

@@ -92,7 +92,7 @@ public class FontUtil {
      */
     public static String normalizeString(String name) {
         name = guessFamily(name);
-        StringBuffer normalized = new StringBuffer(name.toLowerCase());
+        StringBuilder normalized = new StringBuilder(name.toLowerCase());
         for (int k = normalized.length() - 1; k >= 0; k--) {
             if (normalized.charAt(k) == 32) {
                 normalized.deleteCharAt(k);

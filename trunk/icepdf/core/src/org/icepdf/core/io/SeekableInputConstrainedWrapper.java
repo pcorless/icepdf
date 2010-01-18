@@ -228,7 +228,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
 
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(super.toString());
         sb.append(" ( ");
         sb.append("pos=").append(filePositionOfStreamData).append(", ");
