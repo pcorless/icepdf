@@ -34,7 +34,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.application.ProductInfo;
-import org.icepdf.core.application.Capabilities;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
@@ -44,6 +43,7 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.LazyObjectLoader;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
+import org.icepdf.core.util.IncrementalUpdater;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -1001,7 +1001,7 @@ public class Document {
      */
     protected long appendIncrementalUpdate(OutputStream out, long documentLength)
             throws IOException {
-        return Capabilities.appendIncrementalUpdate(this, out, documentLength);
+        return IncrementalUpdater.appendIncrementalUpdate(this, out, documentLength);
     }
 
     /**
