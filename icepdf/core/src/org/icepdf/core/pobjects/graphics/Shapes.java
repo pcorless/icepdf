@@ -76,9 +76,9 @@ public class Shapes {
     private Vector<Image> images = new Vector<Image>();
     // last colour used during the painting process, avoid unnecessary additions
     // to the stack.
-    private Color lastColor;
+//    private Color lastColor;
     // last basic stroke used, avoids unnecessary additions to the stack
-    private BasicStroke lastBasicStroke;
+//    private BasicStroke lastBasicStroke;
 
     // the collection of objects listening for page paint events
     private Page parentPage;
@@ -86,14 +86,14 @@ public class Shapes {
     // text extraction data structure
     private PageText pageText = new PageText();
 
-    private static int paintDelay = 250;
+    private static int paintDelay = 200;
 
     // Delay between painting calls.
     static {
         try {
             paintDelay =
                     Defs.intProperty("org.icepdf.core.views.refreshfrequency",
-                            250);
+                            200);
         } catch (NumberFormatException e) {
             logger.log(Level.FINE, "Error reading buffered scale factor");
         }

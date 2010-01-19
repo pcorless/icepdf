@@ -158,19 +158,32 @@ public class PageViewComponentImpl extends
     // horizontal  scale factor to extend buffer
     private static double horizontalScaleFactor;
 
+    // dirty refresh timmer call interval
+    private static int dirtyTimerInterval = 5;
+
+    // graphics configuration
+    private GraphicsConfiguration gc;
+
     static {
         // default value have been assigned.  Keep in mind that larger ratios will
         // result in more memory usage.
         try {
             verticalScaleFactor =
                     Double.parseDouble(Defs.sysProperty("org.icepdf.core.views.buffersize.vertical",
-                            "1.0"));
+                            "1.015"));
 
             horizontalScaleFactor =
                     Double.parseDouble(Defs.sysProperty("org.icepdf.core.views.buffersize.horizontal",
-                            "1.0"));
+                            "1.015"));
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
+        }
+        try {
+            dirtyTimerInterval =
+                    Defs.intProperty("org.icepdf.core.views.timer.interval",
+                            5);
+        } catch (NumberFormatException e) {
+            logger.log(Level.FINE, "Error reading dirty timer interval");
         }
     }
 
@@ -273,7 +286,7 @@ public class PageViewComponentImpl extends
 
         // timer will dictate when buffer repaints can take place
         DirtyTimerAction dirtyTimerAction = new DirtyTimerAction();
-        isDirtyTimer = new Timer(250, dirtyTimerAction);
+        isDirtyTimer = new Timer(dirtyTimerInterval, dirtyTimerAction);
         isDirtyTimer.setInitialDelay(0);
 
         // PageInilizer and painter commands
@@ -377,7 +390,6 @@ public class PageViewComponentImpl extends
 
         g.setColor(pageColor);
         g.fillRect(0, 0, pageSize.width, pageSize.height);
-
 
         if (isPageIntersectViewport() && !isDirtyTimer.isRunning()) {
             isDirtyTimer.start();
@@ -769,7 +781,9 @@ public class PageViewComponentImpl extends
 
             if (MemoryManager.getInstance().checkMemory(neededMemory)) {
                 // create new image and get graphics context from image
-                GraphicsConfiguration gc = getGraphicsConfiguration();
+                if (gc == null){
+                    gc = getGraphicsConfiguration();
+                }
                 if (gc != null && this.isShowing()) {
                     // get the optimal image for the platform
                     pageBufferImage = gc.createCompatibleImage(
@@ -809,7 +823,6 @@ public class PageViewComponentImpl extends
         if ((bufferedPageImageBounds.y + bufferedPageImageBounds.height) > pageSize.height) {
             bufferedPageImageBounds.height = pageSize.height - bufferedPageImageBounds.y;
         }
-
 
         if (pageBufferImage != null) {
             // get graphics context
@@ -875,51 +888,6 @@ public class PageViewComponentImpl extends
                     // restore graphics context.
                     imageGraphics.translate(-xTrans, -yTrans);
                 }
-// The following block was an attempt stop painting during a paint when scrolling.  However
-                // the effect was not easy on the eyes.
-//                else if ( pagePainter.isLastPaintDirty() &&
-//                          pagePainter.isBufferDirty()
-//                          && lastGoodCopyAreaBounds.intersects(normalizedClipBounds)
-//                          && lastGoodCopyAreaBounds.intersects(bufferedPageImageBounds)
-//                        ){
-//                    System.out.println("Copy last good");
-//
-//                    // only want the visible area
-//                    lastGoodCopyAreaBounds.setBounds(lastGoodCopyAreaBounds.intersection(normalizedClipBounds));
-//
-//                    // setup graphics context for copy, we need to use old buffer bounds
-//                    int xTransOld = 0 - oldBufferedPageImageBounds.x;
-//                    int yTransOld = 0 - oldBufferedPageImageBounds.y;
-//
-//                    // copy the old area, relative to whole page
-//                    int dx = oldBufferedPageImageBounds.x - bufferedPageImageBounds.x;
-//                    int dy = oldBufferedPageImageBounds.y - bufferedPageImageBounds.y;
-//
-//                    // notice the appending of xTransOld and yTransOld
-//                    // this is the same as a imageGraphics.translate(xTransOld,yTransOld)
-//                    // but the copyArea method on the mac does not respect the translate, Doh!
-//                    imageGraphics.copyArea(lastGoodCopyAreaBounds.x + xTransOld,
-//                                           lastGoodCopyAreaBounds.y + yTransOld,
-//                                           lastGoodCopyAreaBounds.width,
-//                                           lastGoodCopyAreaBounds.height,
-//                                           dx,
-//                                           dy);
-//
-//                    // calculate the clip to set
-//                    Area copyArea = new Area(lastGoodCopyAreaBounds);
-//                    Area bufferArea = new Area(bufferedPageImageBounds);
-//                    bufferArea.subtract(copyArea);
-//
-//                    // set the new clip, relative to whole page
-//                    imageGraphics.translate(xTrans, yTrans);
-//                    imageGraphics.setClip(bufferArea);
-//
-//                    // restore graphics context.
-//                    imageGraphics.translate(-xTrans, -yTrans);
-//                }
-//                else if (
-//                            pagePainter.isBufferDirty()
-//                            && pagePainter.isLastPaintDirty()
                 else {
                     // set the new clip, relative to whole page
                     imageGraphics.translate(xTrans, yTrans);
@@ -1160,7 +1128,6 @@ public class PageViewComponentImpl extends
             }
         }
     }
-
 
     private class DirtyTimerAction implements ActionListener {
 
