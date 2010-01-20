@@ -169,7 +169,7 @@ public class DocumentViewControllerImpl
         documentViewScrollPane.getHorizontalScrollBar().setUnitIncrement(20);
 
         // add a delete key functionality for annotation edits.
-        Action doNothing = new AbstractAction() {
+        Action deleteAnnotation = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 if (documentViewModel != null){
                     deleteCurrentAnnotation();
@@ -182,7 +182,7 @@ public class DocumentViewControllerImpl
         inputMap.put(KeyStroke.getKeyStroke("DELETE"),
                                     "removeSelecteAnnotation");
         documentViewScrollPane.getActionMap().put("removeSelecteAnnotation",
-                                     doNothing);
+                                     deleteAnnotation);
     }
 
     public Document getDocument() {
