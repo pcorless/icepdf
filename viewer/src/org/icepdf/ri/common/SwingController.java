@@ -3948,7 +3948,9 @@ public class SwingController
                 if (annotationComponent != null &&
                     annotationComponent.getAnnotation() != null ){
                     // set the annotationPane with the new annotation component
-                    logger.fine("selected annotation " + annotationComponent);
+                    if (logger.isLoggable(Level.FINE)){
+                        logger.fine("selected annotation " + annotationComponent);
+                    }
                     showAnnotationPanel(annotationComponent);
                 }
             }
@@ -3957,7 +3959,9 @@ public class SwingController
         else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_DESELECTED)){
             if (documentViewController.getToolMode() ==
                         DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-                logger.info("deselected current annotation");
+                if (logger.isLoggable(Level.FINE)){
+                    logger.fine("Deselected current annotation");
+                }
                 // disable the delete menu
                 setEnabled(deleteMenuItem, false);
                 if (annotationPanel != null) {

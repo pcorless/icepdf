@@ -981,7 +981,7 @@ public class SwingViewBuilder {
     public JMenuItem buildMinimiseAllMenuItem() {
         JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.window.minAll.label"), null);
         mi.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.window.minAll.mnemonic").charAt(0)));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setMinimiseAllMenuItem(mi);
         return mi;
     }
@@ -989,7 +989,7 @@ public class SwingViewBuilder {
     public JMenuItem buildBringAllToFrontMenuItem() {
         JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.window.frontAll.label"), null);
         mi.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.window.frontAll.mnemonic").charAt(0)));
-        if (viewerController != null && mi != null)
+        if (viewerController != null)
             viewerController.setBringAllToFrontMenuItem(mi);
         return mi;
     }
@@ -1019,7 +1019,10 @@ public class SwingViewBuilder {
                     label = messageBundle.getString("viewer.menu.window." + number + ".label");
                     mnemonic = messageBundle.getString("viewer.menu.window." + number + ".mnemonic");
                 } catch (Exception e) {
-                } // Allows the user to have an arbitrary number of predefined entries
+                    logger.log(Level.FINER,
+                            "Error setting viewer window window title",e);
+                }
+                // Allows the user to have an arbitrary number of predefined entries
                 String identifier = (String) windowDocOriginList.get(i);
                 if (identifier == null)
                     identifier = "";
@@ -1497,10 +1500,14 @@ public class SwingViewBuilder {
         // set the utility pane the left of the split pane
         splitpane.setLeftComponent(buildUtilityTabbedPane());
 
-        // set the viewController embeddedable flag.
-        org.icepdf.core.views.DocumentViewController viewController = viewerController.getDocumentViewController();
+        // set the viewController embeddable flag.
+        org.icepdf.core.views.DocumentViewController viewController =
+                viewerController.getDocumentViewController();
         // will add key event listeners
         viewerController.setIsEmbeddedComponent(embeddableComponent);
+
+        // remove F6 focus management key from the splitpane
+        splitpane.getActionMap().getParent().remove("toggleFocus");
 
         // add the viewControllers doc view container to the split pain
         splitpane.setRightComponent(viewController.getViewContainer());
