@@ -158,7 +158,7 @@ public class PageViewComponentImpl extends
     // horizontal  scale factor to extend buffer
     private static double horizontalScaleFactor;
 
-    // dirty refresh timmer call interval
+    // dirty refresh timer call interval
     private static int dirtyTimerInterval = 5;
 
     // graphics configuration
@@ -180,7 +180,7 @@ public class PageViewComponentImpl extends
         }
         try {
             dirtyTimerInterval =
-                    Defs.intProperty("org.icepdf.core.views.timer.interval",
+                    Defs.intProperty("org.icepdf.core.views.dirtytimer.interval",
                             5);
         } catch (NumberFormatException e) {
             logger.log(Level.FINE, "Error reading dirty timer interval");
@@ -198,9 +198,11 @@ public class PageViewComponentImpl extends
                                  PageTree pageTree, int pageNumber,
                                  JScrollPane parentScrollPane,
                                  int width, int height) {
-        setFocusable(true);
+        // removed focasable until we can build our own focus manager
+        // for moving though a large number of pages.
+//        setFocusable(true);
         // add focus listener
-        addFocusListener(this);
+//        addFocusListener(this);
 
         // needed to propagate mouse events.
         this.documentViewModel = documentViewModel;
@@ -290,7 +292,7 @@ public class PageViewComponentImpl extends
         isDirtyTimer.setInitialDelay(0);
 
         // PageInilizer and painter commands
-        pageInitilizer = new PageInitilizer(this);
+        pageInitilizer = new PageInitilizer();
         pagePainter = new PagePainter();
     }
 
@@ -317,7 +319,6 @@ public class PageViewComponentImpl extends
         // remove annotation listeners.
         removeMouseMotionListener(annotationHandler);
         removeMouseListener(annotationHandler);
-        // todo unhook annotation handler. 
 
         // text selection
         removeMouseMotionListener(textSelectionHandler);
@@ -604,6 +605,7 @@ public class PageViewComponentImpl extends
         // Rotated sideways
         else if (totalRotation == 90 || totalRotation == 270) {
             float temp = width;
+            // width equals hight is ok in this case
             width = height;
             height = temp;
         }
@@ -1073,12 +1075,8 @@ public class PageViewComponentImpl extends
         private boolean isRunning;
         private final Object isRunningLock = new Object();
 
-        private AbstractPageViewComponent pageComponent;
+//        private AbstractPageViewComponent pageComponent;
         private boolean hasBeenQueued;
-
-        private PageInitilizer(AbstractPageViewComponent pageComponent) {
-            this.pageComponent = pageComponent;
-        }
 
         public void run() {
             synchronized (isRunningLock) {

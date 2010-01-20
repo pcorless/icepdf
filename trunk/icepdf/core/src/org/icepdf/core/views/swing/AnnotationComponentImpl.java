@@ -150,15 +150,17 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         this.documentViewModel = documentViewModel;
         this.documentViewController = documentViewController;
         this.annotation = annotation;
-        setFocusable(true);
-        setLayout(new BorderLayout());
 
         addMouseListener(this);
         addMouseMotionListener(this);
 
-        addFocusListener(this);
+        // disabled focus until we are ready to implement our own handler. 
+//        setFocusable(true);
+//        addFocusListener(this);
+
 
         // setup a resizable border.
+        setLayout(new BorderLayout());
         setBorder(resizableBorder);
 
         // set component location and original size.
