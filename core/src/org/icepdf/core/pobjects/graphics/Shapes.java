@@ -417,6 +417,10 @@ public class Shapes {
                                         g.setRenderingHints(renderingHints);
                                         g.drawImage(tmpImage, 0, 0, 1, 1, null);
                                     }
+                                    catch (OutOfMemoryError memErr2) {
+                                        shapesEnumeration.remove();
+                                        logger.log(Level.FINE, "Image too large to draw", memErr);
+                                    }
                                     finally {
                                         renderingHints.put(RenderingHints.KEY_INTERPOLATION, oldInterpolation);
                                         g.setRenderingHints(renderingHints);
