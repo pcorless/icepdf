@@ -353,6 +353,11 @@ public class Annotation extends Dictionary {
      * Annotation subtype and types.
      */
     public static final Name SUBTYPE_LINK = new Name("Link");
+    public static final Name SUBTYPE_LINE = new Name("Line");
+    public static final Name SUBTYPE_SQUARE = new Name("Square");
+    public static final Name SUBTYPE_CIRCLE = new Name("Circle");
+    public static final Name SUBTYPE_POLYGON = new Name("Polygon");
+    public static final Name SUBTYPE_POLYLINE = new Name("Polyline");
 
     /**
      * Border style
@@ -434,6 +439,8 @@ public class Annotation extends Dictionary {
     public static final int VISIBLE_RECTANGLE = 1;
     public static final int INVISIBLE_RECTANGLE = 0;
 
+    // type of annotation
+    protected Name subtype;
     // borders style of the annotation, can be null
     protected BorderStyle borderStyle;
     // border defined by vector
@@ -442,6 +449,8 @@ public class Annotation extends Dictionary {
     protected Color color;
     // annotation bounding rectangle in user space.
     protected Rectangle2D.Float userSpaceRectangle;
+    // test for borderless annotation types
+    protected boolean canDrawBorder;
 
     /**
      * Should only be called from Parser,  Use AnnotationFactory if you
@@ -472,6 +481,16 @@ public class Annotation extends Dictionary {
      */
     public Annotation(Library l, Hashtable h) {
         super(l, h);
+        // type of Annotation
+        subtype = (Name) getObject(SUBTYPE_KEY);
+        
+        // no borders for the followING types,  not really in the
+        // spec for some reason, Acrobat doesn't render them.
+        canDrawBorder = !(SUBTYPE_LINE.equals(subtype) ||
+                            SUBTYPE_CIRCLE.equals(subtype) ||
+                            SUBTYPE_SQUARE.equals(subtype) ||
+                            SUBTYPE_POLYGON.equals(subtype) ||
+                            SUBTYPE_POLYLINE.equals(subtype));
 
         // parse out border style if available
         Hashtable BS = (Hashtable) getObject(BORDER_STYLE_KEY);
@@ -933,10 +952,12 @@ public class Annotation extends Dictionary {
         g.setTransform(at);
         g.setClip(preAppearanceStreamClip);
 
-        if (tabSelected)
+        if (tabSelected){
             renderBorderTabSelected(g);
-        else
+        }
+        else{
             renderBorder(g);
+        }
 
         g.setTransform(oldAT);
         g.setClip(oldClip);
@@ -992,121 +1013,112 @@ public class Annotation extends Dictionary {
 //        }
 
         Color borderColor = getColor();
-        if (borderColor != null)
+        if (borderColor != null){
             g.setColor(borderColor);
+        }
 
         BorderStyle bs = getBorderStyle();
         if (bs != null) {
             float width = bs.getStrokeWidth();
-            if (width > 0.0f) {
+            if (width > 0.0f && borderColor != null && canDrawBorder) {
                 Rectangle2D.Float jrect = deriveBorderDrawingRectangle(width);
 
                 if (bs.isStyleSolid()) {
-                    if (borderColor != null) {
-                        g.setStroke(new BasicStroke(width));
-                        g.draw(jrect);
-                    }
+                    g.setStroke(new BasicStroke(width));
+                    g.draw(jrect);
                 } else if (bs.isStyleDashed()) {
-                    if (borderColor != null) {
-                        BasicStroke stroke = new BasicStroke(
-                                width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                                10.0f, bs.getDashArray(), 0.0f);
-                        g.setStroke(stroke);
-                        g.draw(jrect);
-                    }
+                    BasicStroke stroke = new BasicStroke(
+                            width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+                            10.0f, bs.getDashArray(), 0.0f);
+                    g.setStroke(stroke);
+                    g.draw(jrect);
                 } else if (bs.isStyleBeveled()) {
-                    if (borderColor != null) {
-                        jrect = deriveDrawingRectangle();
+                    jrect = deriveDrawingRectangle();
 
-                        g.setStroke(new BasicStroke(1.0f));
-                        Line2D.Double line;
+                    g.setStroke(new BasicStroke(1.0f));
+                    Line2D.Double line;
 
-                        // Upper top
-                        g.setColor(BorderStyle.LIGHT);
-                        line = new Line2D.Double( // Top line
-                                jrect.getMinX() + 1.0, jrect.getMaxY() - 1.0, jrect.getMaxX() - 2.0, jrect.getMaxY() - 1.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Left line
-                                jrect.getMinX() + 1.0f, jrect.getMinY() + 2.0, jrect.getMinX() + 1.0f, jrect.getMaxY() - 1.0);
-                        g.draw(line);
+                    // Upper top
+                    g.setColor(BorderStyle.LIGHT);
+                    line = new Line2D.Double( // Top line
+                            jrect.getMinX() + 1.0, jrect.getMaxY() - 1.0, jrect.getMaxX() - 2.0, jrect.getMaxY() - 1.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Left line
+                            jrect.getMinX() + 1.0f, jrect.getMinY() + 2.0, jrect.getMinX() + 1.0f, jrect.getMaxY() - 1.0);
+                    g.draw(line);
 
-                        // Inner top
-                        g.setColor(BorderStyle.LIGHTEST);
-                        line = new Line2D.Double( // Top line
-                                jrect.getMinX() + 2.0, jrect.getMaxY() - 2.0, jrect.getMaxX() - 3.0, jrect.getMaxY() - 2.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Left line
-                                jrect.getMinX() + 2.0f, jrect.getMinY() + 3.0, jrect.getMinX() + 2.0f, jrect.getMaxY() - 2.0);
-                        g.draw(line);
+                    // Inner top
+                    g.setColor(BorderStyle.LIGHTEST);
+                    line = new Line2D.Double( // Top line
+                            jrect.getMinX() + 2.0, jrect.getMaxY() - 2.0, jrect.getMaxX() - 3.0, jrect.getMaxY() - 2.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Left line
+                            jrect.getMinX() + 2.0f, jrect.getMinY() + 3.0, jrect.getMinX() + 2.0f, jrect.getMaxY() - 2.0);
+                    g.draw(line);
 
-                        // Inner bottom
-                        g.setColor(BorderStyle.DARK);
-                        line = new Line2D.Double( // Bottom line
-                                jrect.getMinX() + 2.0, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0, jrect.getMinY() + 2.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Right line
-                                jrect.getMaxX() - 2.0f, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0f, jrect.getMaxY() - 2.0);
-                        g.draw(line);
+                    // Inner bottom
+                    g.setColor(BorderStyle.DARK);
+                    line = new Line2D.Double( // Bottom line
+                            jrect.getMinX() + 2.0, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0, jrect.getMinY() + 2.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Right line
+                            jrect.getMaxX() - 2.0f, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0f, jrect.getMaxY() - 2.0);
+                    g.draw(line);
 
-                        // Lower bottom
-                        g.setColor(BorderStyle.DARKEST);
-                        line = new Line2D.Double( // Bottom line
-                                jrect.getMinX() + 1.0, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0, jrect.getMinY() + 1.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Right line
-                                jrect.getMaxX() - 1.0f, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0f, jrect.getMaxY() - 1.0);
-                        g.draw(line);
-                    }
+                    // Lower bottom
+                    g.setColor(BorderStyle.DARKEST);
+                    line = new Line2D.Double( // Bottom line
+                            jrect.getMinX() + 1.0, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0, jrect.getMinY() + 1.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Right line
+                            jrect.getMaxX() - 1.0f, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0f, jrect.getMaxY() - 1.0);
+                    g.draw(line);
                 } else if (bs.isStyleInset()) {
-                    if (borderColor != null) {
-                        jrect = deriveDrawingRectangle();
+                    jrect = deriveDrawingRectangle();
 
-                        g.setStroke(new BasicStroke(1.0f));
-                        Line2D.Double line;
+                    g.setStroke(new BasicStroke(1.0f));
+                    Line2D.Double line;
 
-                        // Upper top
-                        g.setColor(BorderStyle.DARK);
-                        line = new Line2D.Double( // Top line
-                                jrect.getMinX() + 1.0, jrect.getMaxY() - 1.0, jrect.getMaxX() - 1.0, jrect.getMaxY() - 1.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Left line
-                                jrect.getMinX() + 1.0f, jrect.getMinY() + 1.0, jrect.getMinX() + 1.0f, jrect.getMaxY() - 1.0);
-                        g.draw(line);
+                    // Upper top
+                    g.setColor(BorderStyle.DARK);
+                    line = new Line2D.Double( // Top line
+                            jrect.getMinX() + 1.0, jrect.getMaxY() - 1.0, jrect.getMaxX() - 1.0, jrect.getMaxY() - 1.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Left line
+                            jrect.getMinX() + 1.0f, jrect.getMinY() + 1.0, jrect.getMinX() + 1.0f, jrect.getMaxY() - 1.0);
+                    g.draw(line);
 
-                        // Inner top
-                        g.setColor(BorderStyle.DARKEST);
-                        line = new Line2D.Double( // Top line
-                                jrect.getMinX() + 2.0, jrect.getMaxY() - 2.0, jrect.getMaxX() - 2.0, jrect.getMaxY() - 2.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Left line
-                                jrect.getMinX() + 2.0f, jrect.getMinY() + 2.0, jrect.getMinX() + 2.0f, jrect.getMaxY() - 2.0);
-                        g.draw(line);
+                    // Inner top
+                    g.setColor(BorderStyle.DARKEST);
+                    line = new Line2D.Double( // Top line
+                            jrect.getMinX() + 2.0, jrect.getMaxY() - 2.0, jrect.getMaxX() - 2.0, jrect.getMaxY() - 2.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Left line
+                            jrect.getMinX() + 2.0f, jrect.getMinY() + 2.0, jrect.getMinX() + 2.0f, jrect.getMaxY() - 2.0);
+                    g.draw(line);
 
-                        // Inner bottom
-                        g.setColor(BorderStyle.LIGHTEST);
-                        line = new Line2D.Double( // Bottom line
-                                jrect.getMinX() + 3.0, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0, jrect.getMinY() + 2.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Right line
-                                jrect.getMaxX() - 2.0f, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0f, jrect.getMaxY() - 3.0);
-                        g.draw(line);
+                    // Inner bottom
+                    g.setColor(BorderStyle.LIGHTEST);
+                    line = new Line2D.Double( // Bottom line
+                            jrect.getMinX() + 3.0, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0, jrect.getMinY() + 2.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Right line
+                            jrect.getMaxX() - 2.0f, jrect.getMinY() + 2.0, jrect.getMaxX() - 2.0f, jrect.getMaxY() - 3.0);
+                    g.draw(line);
 
-                        // Lower bottom
-                        g.setColor(BorderStyle.LIGHT);
-                        line = new Line2D.Double( // Bottom line
-                                jrect.getMinX() + 2.0, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0, jrect.getMinY() + 1.0);
-                        g.draw(line);
-                        line = new Line2D.Double( // Right line
-                                jrect.getMaxX() - 1.0f, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0f, jrect.getMaxY() - 2.0);
-                        g.draw(line);
-                    }
+                    // Lower bottom
+                    g.setColor(BorderStyle.LIGHT);
+                    line = new Line2D.Double( // Bottom line
+                            jrect.getMinX() + 2.0, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0, jrect.getMinY() + 1.0);
+                    g.draw(line);
+                    line = new Line2D.Double( // Right line
+                            jrect.getMaxX() - 1.0f, jrect.getMinY() + 1.0, jrect.getMaxX() - 1.0f, jrect.getMaxY() - 2.0);
+                    g.draw(line);
                 } else if (bs.isStyleUnderline()) {
-                    if (borderColor != null) {
-                        g.setStroke(new BasicStroke(width));
-                        Line2D.Double line = new Line2D.Double(
-                                jrect.getMinX(), jrect.getMinY(), jrect.getMaxX(), jrect.getMinY());
-                        g.draw(line);
-                    }
+                    g.setStroke(new BasicStroke(width));
+                    Line2D.Double line = new Line2D.Double(
+                            jrect.getMinX(), jrect.getMinY(), jrect.getMaxX(), jrect.getMinY());
+                    g.draw(line);
                 }
             }
         } else {
@@ -1162,7 +1174,7 @@ public class Annotation extends Dictionary {
                 }
             } else {
                 // Draw a solid rectangle, 1 pixel wide
-                if (borderColor != null) {
+                if (borderColor != null && SUBTYPE_LINK.equals(subtype)) {
                     float width = 1.0f;
                     Rectangle2D.Float jrect = deriveBorderDrawingRectangle(width);
                     g.setStroke(new BasicStroke(width));

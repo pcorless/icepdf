@@ -152,7 +152,7 @@ public class BorderStyle extends Dictionary {
     private float strokeWidth = 1.0f;
 
     // border style, default is solid
-    private String borderStyle = BORDER_STYLE_SOLID;
+    private String borderStyle = null;
 
     // dash array
     private float[] dashArray = DEFAULT_DASH_ARRAY;
@@ -223,23 +223,23 @@ public class BorderStyle extends Dictionary {
     }
 
     public boolean isStyleSolid() {
-        return borderStyle.equals(BORDER_STYLE_SOLID);
+        return BORDER_STYLE_SOLID.equals(borderStyle);
     }
 
     public boolean isStyleDashed() {
-        return borderStyle.equals(BORDER_STYLE_DASHED);
+        return BORDER_STYLE_DASHED.equals(borderStyle);
     }
 
     public boolean isStyleBeveled() {
-        return borderStyle.equals(BORDER_STYLE_BEVELED);
+        return BORDER_STYLE_BEVELED.equals(borderStyle);
     }
 
     public boolean isStyleInset() {
-        return borderStyle.equals(BORDER_STYLE_INSET);
+        return BORDER_STYLE_INSET.equals(borderStyle);
     }
 
     public boolean isStyleUnderline() {
-        return borderStyle.equals(BORDER_STYLE_UNDERLINE);
+        return BORDER_STYLE_UNDERLINE.equals(borderStyle);
     }
 
     public void setDashArray(float[] dashArray) {
