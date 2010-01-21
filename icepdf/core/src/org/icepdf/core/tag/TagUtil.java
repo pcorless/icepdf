@@ -50,6 +50,9 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.HashMap;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * @author mcollette
@@ -68,6 +71,14 @@ public class TagUtil {
             }
             else {
                 System.out.println("Need 2 arguments for -catalog option: contentRoot and catalogFile");
+            }
+        }
+        else if (args.length >= 1 && args[0].equals("-prune")) {
+            if (args.length >= 3) {
+                prune(args[1], args[2]);
+            }
+            else {
+                System.out.println("Need 2 arguments for -prune option: oldCatalogFile newCatalogFile");
             }
         }
         else if (args.length >= 1 && args[0].equals("-tag")) {
@@ -108,7 +119,7 @@ public class TagUtil {
             return;
         }
 
-        ArrayList allFiles = new ArrayList(1024);
+        ArrayList<File> allFiles = new ArrayList<File>(1024);
 //System.out.println("contentRoot: " + contentRoot);
         System.out.println("Cataloging list of PDFs...");
         File contentRootFile = new File(contentRoot);
@@ -133,6 +144,135 @@ public class TagUtil {
         }
     }
 
+    public static void prune(String oldCatalogFile, String newCatalogFile) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        }
+        catch(NoSuchAlgorithmException e) {
+            System.out.println("Problem getting SHA-256 digest: " + e);
+            return;
+        }
+
+        ObjectOutputStream newOutput = null;
+        try {
+            FileOutputStream fos = new FileOutputStream(newCatalogFile);
+            BufferedOutputStream bos = new BufferedOutputStream(fos, 4096*4);
+            newOutput = new ObjectOutputStream(bos);
+        }
+        catch(IOException e) {
+            System.out.println("Problem openning newCatalogFile: " + e);
+        }
+
+        ArrayList<File> allFiles = null;
+        try {
+            FileInputStream fis = new FileInputStream(oldCatalogFile);
+            BufferedInputStream bis = new BufferedInputStream(fis, 4096*4);
+            ObjectInputStream ois = new ObjectInputStream(bis);
+            allFiles = (ArrayList<File>) ois.readObject();
+            ois.close();
+        }
+        catch(IOException e) {
+            System.out.println("Problem openning oldCatalogFile: " + e);
+            return;
+        }
+        catch(ClassNotFoundException e) {
+            System.out.println("Problem reading catalog from ["+oldCatalogFile+"]: " + e);
+            return;
+        }
+
+        System.out.println("Found " + allFiles.size() + " PDF files to process");
+        
+        ArrayList<File> prunedFiles = new ArrayList<File>(Math.max(allFiles.size(), 1));
+        HashMap<FileHash, String> hash2path =
+                new HashMap<FileHash, String>(allFiles.size());
+        HashMap<String, ArrayList<DuplicateEntry>> duplicatePaths =
+                new HashMap<String, ArrayList<DuplicateEntry>>();
+        
+        byte[] buffer = new byte[8*1024];
+        int numMissing = 0;
+        int numDuplicates = 0;
+        long then = 0;
+        for(int i = 0; i < allFiles.size(); i++) {
+            File file = allFiles.get(i);
+            String path = file.getAbsolutePath();
+            long now = System.currentTimeMillis();
+            if ((now - then) >= 5000L) {
+                then = now;
+                System.out.println("Commencing processing file " + (i+1) + " of " + allFiles.size());
+                //System.out.println(path);
+            }
+            if (!file.exists()) {
+                System.out.println("Removed non-existant '"+path+"'");
+                numMissing++;
+                continue;
+            }
+//System.out.println(path);
+            try {
+                FileInputStream fis = new FileInputStream(file);
+                digest.reset();
+                while (true) {
+                    int read = fis.read(buffer);
+                    if (read < 0)
+                        break;
+                    digest.update(buffer, 0, read);
+                }
+                fis.close();
+            }
+            catch(IOException e) {
+                System.out.println("Problem hashing '"+path+"' : " + e);
+            }
+
+            FileHash fh = new FileHash(digest.digest(), file.length());
+            String originalPath = hash2path.get(fh);
+            if (originalPath == null) {
+                hash2path.put(fh, path);
+                prunedFiles.add(file);
+            }
+            else {
+                ArrayList<DuplicateEntry> duplicates = duplicatePaths.get(originalPath);
+                if (duplicates == null) {
+                    duplicates = new ArrayList<DuplicateEntry>();
+                    duplicatePaths.put(originalPath, duplicates);
+                }
+                DuplicateEntry de = new DuplicateEntry(originalPath, path, i);
+                duplicates.add(de);
+                numDuplicates++;
+//System.out.println("DUPLICATE: " + path);
+//System.out.println("       OF: " + originalPath);
+            }
+        }
+        prunedFiles.trimToSize();
+        System.out.println("Finished processing " + allFiles.size() + " PDF files. Found " + numDuplicates + " duplicates, and " + numMissing + " missing.");
+        
+        /*
+        for (int i = 0; i < allFiles.size(); i++) {
+            File file = (File) allFiles.get(i);
+            String path = file.getAbsolutePath();
+            ArrayList<DuplicateEntry> duplicates = duplicatePaths.get(path);
+            if (duplicates == null)
+                continue;
+            System.out.println("ORIGINAL: " + (new Date((new File(path)).lastModified())) + "\t" + path);
+            for (int j = 0; j < duplicates.size(); j++) {
+                System.out.println("     DUP: " + (new Date((new File(duplicates.get(j).duplicatePath)).lastModified())) + "\t" + duplicates.get(j).duplicatePath);
+            }
+        }
+        */
+        
+        for(File file : prunedFiles) {
+            System.out.println(file.getAbsolutePath());
+        }
+
+        try {
+            newOutput.writeObject(prunedFiles);
+            newOutput.flush();
+            newOutput.close();
+        }
+        catch(IOException e) {
+            System.out.println("Problem saving newCatalogFile: " + e);
+        }
+    }
+
     public static void tag(String catalogFile, String tagFile) {
         ObjectOutputStream tagOutput = null;
         try {
@@ -150,6 +290,7 @@ public class TagUtil {
             BufferedInputStream bis = new BufferedInputStream(fis, 4096*4);
             ObjectInputStream ois = new ObjectInputStream(bis);
             allFiles = (ArrayList) ois.readObject();
+            ois.close();
         }
         catch(IOException e) {
             System.out.println("Problem openning catalogFile: " + e);
@@ -171,10 +312,14 @@ public class TagUtil {
                 System.out.println("Commencing tagging file " + (i+1) + " of " + allFiles.size());
                 System.out.println(path);
             }
+            //long before = System.currentTimeMillis();
             tagPdf(path);
-//System.out.println("Used memory: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
+            //long after = System.currentTimeMillis();
+            //System.out.println("Duration: " + (after-before));
+            System.out.println("Used memory: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()));
         }
         System.out.println("Finished tagging " + allFiles.size() + " PDF files");
+        //if (true) return;
 
         try {
             TagState state = Tagger.getTagState();
@@ -232,11 +377,11 @@ public class TagUtil {
         }
     }
 
-    private static void recursivelyCatalogPDFs(java.util.ArrayList allFiles, File directory) {
+    private static void recursivelyCatalogPDFs(java.util.ArrayList<File> allFiles, File directory) {
         File[] children = directory.listFiles();
         if(children != null && children.length > 0) {
-            java.util.ArrayList directories = new java.util.ArrayList(children.length);
-            java.util.ArrayList files = new java.util.ArrayList(children.length);
+            java.util.ArrayList<File> directories = new java.util.ArrayList<File>(children.length);
+            java.util.ArrayList<File> files = new java.util.ArrayList<File>(children.length);
             for(int i = 0; i < children.length; i++) {
                 if(children[i].isDirectory()) {
                     String name = children[i].getName();
@@ -258,7 +403,7 @@ public class TagUtil {
         }
     }
 
-    private static void addFileIfIsPDF(java.util.List list, File file) {
+    private static void addFileIfIsPDF(java.util.List<File> list, File file) {
         if (file.getName().toLowerCase().endsWith(".pdf"))
             list.add(file);
     }
@@ -288,5 +433,54 @@ public class TagUtil {
             }
         }
         pdfDoc.dispose();
+    }
+
+
+    private static class FileHash {
+        private byte[] digestBytes;
+        private long fileLength;
+        private int hash;
+        
+        FileHash(byte[] digestBytes, long fileLength) {
+            this.digestBytes = digestBytes;
+            this.fileLength = fileLength;
+            
+            hash = (int) (fileLength ^ (fileLength >> 32));
+            for (int i = digestBytes.length - 1; i >= 0; i--) {
+                hash = 31 * hash + digestBytes[i];
+            }
+        }
+        
+        public int hashCode() {
+            return hash;
+        }
+        
+        public boolean equals(Object other) {
+            if (other instanceof FileHash) {
+                FileHash fh = (FileHash) other;
+                if (hash != fh.hash || fileLength != fh.fileLength)
+                    return false;
+                if (digestBytes.length != fh.digestBytes.length)
+                    return false;
+                for (int i = digestBytes.length - 1; i >= 0; i--) {
+                    if (digestBytes[i] != fh.digestBytes[i])
+                        return false;
+                }
+                return true;
+            }
+            return false;
+        }
+    }
+    
+    private static class DuplicateEntry {
+        String originalPath;
+        String duplicatePath;
+        int duplicateIndex;
+        
+        DuplicateEntry(String originalPath, String duplicatePath, int duplicateIndex) {
+            this.originalPath = originalPath;
+            this.duplicatePath = duplicatePath;
+            this.duplicateIndex = duplicateIndex;
+        }
     }
 }
