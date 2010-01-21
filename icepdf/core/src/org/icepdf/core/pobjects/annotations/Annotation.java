@@ -972,7 +972,7 @@ public class Annotation extends Dictionary {
     }
 
     // TODO add support for rollover and down states..
-    protected void renderAppearanceStream(Graphics2D g) {
+     protected void renderAppearanceStream(Graphics2D g) {
         Object AP = getObject(APPEARANCE_STREAM_KEY);
         if (AP instanceof Hashtable) {
             Object N = library.getObject(
@@ -989,9 +989,31 @@ public class Annotation extends Dictionary {
 //g.draw( newRect );
                 Form form = (Form) N;
                 form.init();
+
+                // step 1. appearance bounding box (BBox) is transformed, using
+                // Matrix, to produce a quadrilateral with arbitrary orientation.
                 AffineTransform matrix = form.getMatrix();
-                if (matrix != null)
-                    g.transform(matrix);
+                Rectangle2D bbox = form.getBBox();
+                Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
+
+                // Step 2. matrix a is computed that scales and translates the
+                // transformed appearance box (tBbox) to align with the edges of
+                // the annotation's rectangle (Ret).
+                Rectangle2D rect  =  getUserSpaceRectangle();
+                AffineTransform tAs = AffineTransform.getScaleInstance(
+                        (rect.getWidth() / tBbox.getWidth()),
+                        (rect.getHeight() / tBbox.getHeight()));
+                  // something not quite right here.
+//                AffineTransform tAt = AffineTransform.getTranslateInstance(
+//                        (tBbox.getX() - rect.getX()),
+//                        (tBbox.getY() - rect.getY()));
+//                tAs.concatenate(tAt);
+                // Step 3. matrix is concatenated with A to form a matrix AA
+                // that maps from the appearance's coordinate system to the
+                // annotation's rectangle in default user space.
+                tAs.concatenate(matrix);
+                g.transform(tAs);
+
 //System.out.println("Form: " + form.getEntries());
 //String str = new String( form.getBytes() );
 //System.out.println( str );
