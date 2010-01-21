@@ -78,9 +78,6 @@ public class SecurityManager {
     // Pointer to class which implements the SecurityHandler interface
     private SecurityHandler securityHandler = null;
 
-    // flag for detecting a security provider
-    private static boolean foundProvider = false;
-    
     // flag for detecting JCE
     private static boolean foundJCE = false;
 
@@ -102,15 +99,14 @@ public class SecurityManager {
             // try and create a new provider
             Object provider = Class.forName(defaultSecurityProvider).newInstance();
             Security.insertProviderAt((Provider) provider, 2);
-            foundProvider = true;
         } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE,"Security Handler Not found");
+            logger.log(Level.WARNING,"Security provider not found");
         }
         catch (InstantiationException e) {
-            logger.log(Level.SEVERE,"Security Handler could not be instantiated");
+            logger.log(Level.WARNING,"Security provider could not be instantiated");
         }
         catch (IllegalAccessException e) {
-            logger.log(Level.SEVERE,"Security Handler could not be created");
+            logger.log(Level.WARNING,"Security provider could not be created");
         }
         
         try {
@@ -145,12 +141,6 @@ public class SecurityManager {
         if (!foundJCE) {
             logger.log(Level.SEVERE,"Sun JCE support was not found on classpath");
             throw new PDFSecurityException("Sun JCE Support Not Found");
-        }
-
-        // throw security error
-        if (!foundProvider) {
-            logger.log(Level.SEVERE,"Security Provider was not found on classpath.");
-            throw new PDFSecurityException("Security Provider Not Found.");
         }
 
         // create dictionary for document
