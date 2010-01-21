@@ -104,7 +104,9 @@ public class AnnotationState implements Memento {
         this.highlightStyle = highlightStyle;
         this.lineThickness = lineThickness;
         this.lineStyle = lineStyle;
-        this.color = new Color(color.getRGB());
+        if (color != null){
+            this.color = new Color(color.getRGB());
+        }
     }
 
     public void apply(AnnotationState applyState) {
@@ -114,7 +116,13 @@ public class AnnotationState implements Memento {
         this.highlightStyle = applyState.highlightStyle;
         this.lineThickness = applyState.lineThickness;
         this.lineStyle = applyState.lineStyle;
-        this.color = new Color(applyState.color.getRGB());
+        if (applyState.color != null){
+            this.color = new Color(applyState.color.getRGB());
+        }
+        // otherwise aassign a default color.
+        else{
+            this.color = Color.BLACK;
+        }
 
         // store user space rectangle SpaceRectangle.
         Rectangle2D.Float rect = applyState.userSpaceRectangle;
@@ -133,7 +141,8 @@ public class AnnotationState implements Memento {
      * construction of this object.
      */
     public void restore() {
-        if (annotationComponent.getAnnotation() != null) {
+        if (annotationComponent!= null &&
+                annotationComponent.getAnnotation() != null) {
             // get reference to annotation
             Annotation annotation = annotationComponent.getAnnotation();
 

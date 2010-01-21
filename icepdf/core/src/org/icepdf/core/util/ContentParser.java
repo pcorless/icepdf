@@ -437,7 +437,8 @@ public class ContentParser {
                                     shapes.add(formXObject.getShapes().getImages());
                                 }
                                 // update text sprites with geometric path state
-                                if (formXObject.getShapes().getPageText() != null) {
+                                if (formXObject.getShapes() != null &&
+                                        formXObject.getShapes().getPageText() != null) {
                                     // normalize each sprite.
                                     formXObject.getShapes().getPageText()
                                             .applyXObjectTransform(graphicState.getCTM());
