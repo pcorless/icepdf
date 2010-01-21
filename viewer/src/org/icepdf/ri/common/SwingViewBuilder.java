@@ -1586,12 +1586,17 @@ public class SwingViewBuilder {
         lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
         pgPanel.add( lbl);
         statusPanel.add(pgPanel, BorderLayout.WEST);
-        
+
         JPanel viewPanel = new JPanel();
-        viewPanel.add(buildPageViewSinglePageNonConToggleButton());
-        viewPanel.add(buildPageViewSinglePageConToggleButton());
-        viewPanel.add(buildPageViewFacingPageNonConToggleButton());
-        viewPanel.add(buildPageViewFacingPageConToggleButton());    
+        // Only add actual buttons to the view panel if requested by the properties file
+        // Regardless we'll add the parent JPanel, to preserve the same layout behaviour
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                                                           PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
+            viewPanel.add(buildPageViewSinglePageNonConToggleButton());
+            viewPanel.add(buildPageViewSinglePageConToggleButton());
+            viewPanel.add(buildPageViewFacingPageNonConToggleButton());
+            viewPanel.add(buildPageViewFacingPageConToggleButton());
+        }
         statusPanel.add(viewPanel, BorderLayout.CENTER);
         viewPanel.setLayout( new ToolbarLayout( ToolbarLayout.RIGHT, 0, 1));
 
