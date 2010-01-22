@@ -75,7 +75,7 @@ public class ViewerApplet extends JApplet {
      */
     public void init() {
 
-        // Open a url if availabl
+        // Open a url if available
         URL documentURL = null;
         String url = getParameter("url");
         if (url == null || url.length() == 0){
