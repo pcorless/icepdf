@@ -46,8 +46,8 @@ import java.awt.*;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The <code>PrintHelper</code> class is utility class to aid developers in
@@ -65,7 +65,7 @@ public class PrintHelper implements Printable {
     private PageTree pageTree;
     private float userRotation;
 
-    private boolean printFitToMargin = false;
+    private boolean printFitToMargin;
     private int printingCurrentPage;
     private int totalPagesToPrint;
 
@@ -75,36 +75,34 @@ public class PrintHelper implements Printable {
     private HashPrintRequestAttributeSet printRequestAttributeSet;
 
     /**
-     * Creates a new <code>PrintHelper</code> instance.
+     * Creates a new <code>PrintHelper</code> instance defaulting the
+     * paper size to Letter and the print quality to Draft.
      *
      * @param viewController document view controller
      * @param pageTree       doucment page tree.
      */
     public PrintHelper(DocumentViewController viewController, PageTree pageTree) {
+        this(viewController, pageTree, MediaSizeName.NA_LETTER, PrintQuality.DRAFT);
+    }
+
+    /**
+     * Creates a new <code>PrintHelper</code> instance using the specified
+     * media sized and print quality.
+     *
+     * @param viewController document view controller
+     * @param pageTree       doucment page tree.
+     * @param paperSizeName  MediaSizeName constant of paper size to print to.
+     * @param printQuality   quality of the print job, draft, quality etc.
+     */
+    public PrintHelper(DocumentViewController viewController, PageTree pageTree,
+                       final MediaSizeName paperSizeName,
+                       final PrintQuality printQuality) {
         this.viewController = viewController;
         this.pageTree = pageTree;
         this.userRotation = this.viewController.getRotation();
 
         // find available printers
-        services =
-                PrintServiceLookup.lookupPrintServices(
-                        DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
-        // check for a default service and make sure it is at index 0. the lookupPrintServices does not
-        // aways put the default printer first in the array. 
-        PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
-        if (defaultService != null && services.length > 1){
-            PrintService printService;
-            for (int i=1, max= services.length; i < max; i++){
-                printService = services[i];
-                if (printService.equals(defaultService)){
-                    // found the default printer, now swap it with the first index. 
-                    PrintService tmp = services[0];
-                    services[0] = defaultService;
-                    services[i] = tmp;
-                    break;
-                }
-            }
-        }
+        services = lookForPrintServices();
 
         // default printing properties.
         // Print and document attributes sets.
@@ -112,16 +110,16 @@ public class PrintHelper implements Printable {
                 new HashPrintRequestAttributeSet();
         docAttributeSet = new HashDocAttributeSet();
 
-        // unix compression attribute where applicable
-        printRequestAttributeSet.add(PrintQuality.DRAFT);
+        // assign print quality.
+        printRequestAttributeSet.add(printQuality);
 
         // change paper
-        printRequestAttributeSet.add(MediaSizeName.NA_LETTER);
-        docAttributeSet.add(MediaSizeName.NA_LETTER);
+        printRequestAttributeSet.add(paperSizeName);
+        docAttributeSet.add(paperSizeName);
 
         // setting margins to full paper size as PDF have their own margins
         MediaSize mediaSize =
-                MediaSize.getMediaSizeForName(MediaSizeName.NA_LEGAL);
+                MediaSize.getMediaSizeForName(paperSizeName);
         float[] size = mediaSize.getSize(MediaSize.INCH);
         printRequestAttributeSet
                 .add(new MediaPrintableArea(0, 0, size[0], size[1],
@@ -134,9 +132,120 @@ public class PrintHelper implements Printable {
 
         // display paper size.
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Paper Size: " + MediaSizeName.NA_LEGAL.getName() +
+            logger.fine("Paper Size: " + paperSizeName.getName() +
                     " " + size[0] + " x " + size[1]);
         }
+    }
+
+    /**
+     * Creates a new <code>PrintHelper</code> instance using the specified
+     * doc and print attribute sets.  This constructor offers the most flexibility
+     * as it allows the attributes sets to be pre configured.  This method
+     * should only be used by advanced users.
+     *
+     * @param viewController           document view controller
+     * @param pageTree                 doucment page tree.
+     * @param docAttributeSet          MediaSizeName constant of paper size to print to.
+     * @param printRequestAttributeSet quality of the print job, draft, quality etc.
+     */
+    public PrintHelper(DocumentViewController viewController, PageTree pageTree,
+                       HashDocAttributeSet docAttributeSet,
+                       HashPrintRequestAttributeSet printRequestAttributeSet) {
+        this.viewController = viewController;
+        this.pageTree = pageTree;
+        this.userRotation = this.viewController.getRotation();
+        // blindly assign doc and print attribute sets.
+        this.docAttributeSet = docAttributeSet;
+        this.printRequestAttributeSet = printRequestAttributeSet;
+        // find available printers
+        services = lookForPrintServices();
+        // default setup, all pages, shrink to fit and no dialog.
+        setupPrintService(0, this.pageTree.getNumberOfPages(), 1, true, false);
+    }
+
+    /**
+     * Configures the PrinterJob instance with the specified parameters.
+     *
+     * @param startPage             start of page range, zero-based index.
+     * @param endPage               end of page range, one-based index.
+     * @param copies                number of copies of pages in print range.
+     * @param shrinkToPrintableArea true, to enable shrink to fit printable area;
+     *                              false, otherwise.
+     * @param showPrintDialog       true, to display a print setup dialog when this method
+     *                              is initiated; false, otherwise.  This dialog will be shown after the
+     *                              page dialog if it is visible.
+     * @return true if print setup should continue, false if printing was cancelled
+     *         by user interaction with optional print dialog.
+     */
+    public boolean setupPrintService(int startPage,
+                                     int endPage,
+                                     int copies,
+                                     boolean shrinkToPrintableArea,
+                                     boolean showPrintDialog) {
+        // make sure our printable doc knows how many pages to print
+        // Has to be set before printerJob.printDialog(), so it can show to
+        // the user which pages it can print
+        printFitToMargin = shrinkToPrintableArea;
+
+        // set the number of pages
+        printRequestAttributeSet.add(new PageRanges(startPage + 1, endPage + 1));
+        // setup number of
+        printRequestAttributeSet.add(new Copies(copies));
+
+        // show the print dialog, return false if the user cancels/closes the
+        // dialog.
+        if (showPrintDialog) {
+            printService = getSetupDialog();
+            return printService != null;
+        } else {// no dialog and thus printing will continue.
+            return true;
+        }
+    }
+
+    /**
+     * Configures the PrinterJob instance with the specified parameters.
+     *
+     * @param printService          print service to print document to.
+     * @param startPage             start of page range, zero-based index.
+     * @param endPage               end of page range, one-based index.
+     * @param copies                number of copies of pages in print range.
+     * @param shrinkToPrintableArea true, to enable shrink to fit printable area;
+     *                              false, otherwise.
+     */
+    public void setupPrintService(PrintService printService,
+                                  int startPage,
+                                  int endPage,
+                                  int copies,
+                                  boolean shrinkToPrintableArea) {
+
+        // make sure our printable doc knows how many pages to print
+        // Has to be set before printerJob.printDialog(), so it can show to
+        //  the user which pages it can print
+        printFitToMargin = shrinkToPrintableArea;
+
+        // set the number of pages
+        printRequestAttributeSet.add(new PageRanges(startPage + 1, endPage + 1));
+        // setup number of
+        printRequestAttributeSet.add(new Copies(copies));
+
+        this.printService = printService;
+    }
+
+    /**
+     * Configures the PrinterJob instance with the specified parameters.  this
+     * method should only be used by advanced users.
+     *
+     * @param printService             print service to print document to.
+     * @param printRequestAttributeSet print jobt attribute set.
+     * @param shrinkToPrintableArea    true, to enable shrink to fit printable area;
+     *                                 false, otherwise.
+     */
+    public void setupPrintService(PrintService printService,
+                                  HashPrintRequestAttributeSet printRequestAttributeSet,
+                                  boolean shrinkToPrintableArea) {
+        printFitToMargin = shrinkToPrintableArea;
+        this.printRequestAttributeSet = printRequestAttributeSet;
+        this.printService = printService;
     }
 
     /**
@@ -146,6 +255,26 @@ public class PrintHelper implements Printable {
      */
     public PrintHelper(SwingController controller) {
         this(controller.getDocumentViewController(), controller.getPageTree());
+    }
+
+    /**
+     * Utility for showing print dialog for the current printService.  If no
+     * print service is assigned the first print service is used to create
+     * the print dialog.
+     */
+    public void showPrintSetupDialog() {
+        PrinterJob pj = PrinterJob.getPrinterJob();
+        if (printService == null && services != null &&
+                services.length > 0 && services[0] != null) {
+            printService = services[0];
+        }
+        try {
+            pj.setPrintService(printService);
+            // Step 2: Pass the settings to a page dialog and print dialog.
+            pj.pageDialog(printRequestAttributeSet);
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Error creating page setup dialog.", e);
+        }
     }
 
     /**
@@ -165,6 +294,49 @@ public class PrintHelper implements Printable {
      */
     public int getNumberOfPages() {
         return totalPagesToPrint;
+    }
+
+    /**
+     * Gets the fit to margin property.  If enabled the page is scaled to fit
+     * the paper size maxing out on the smallest paper dimension. 
+     *
+     * @return true if fit to margin is enabled.
+     */
+    public boolean isPrintFitToMargin() {
+        return printFitToMargin;
+    }
+
+    /**
+     * Users rotation specified for the print job.
+     * @return float value representing rotation, 0 is 0 degrees.
+     */
+    public float getUserRotation() {
+        return userRotation;
+    }
+
+    /**
+     * Gets the document attributes currently in use.
+     * @return current document attributes.
+     */
+    public HashDocAttributeSet getDocAttributeSet() {
+        return docAttributeSet;
+    }
+
+    /**
+     * Gets the print request attribute sets.
+     * @return attribute set
+     */
+    public HashPrintRequestAttributeSet getPrintRequestAttributeSet() {
+        return printRequestAttributeSet;
+    }
+
+    /**
+     * Gets the currently assigned print service.
+     *
+     * @return current print service, can be null.
+     */
+    public PrintService getPrintService() {
+        return printService;
     }
 
     /**
@@ -248,71 +420,6 @@ public class PrintHelper implements Printable {
         pageTree.releasePage(currentPage, this);
 
         return Printable.PAGE_EXISTS;
-    }
-
-    /**
-     * Configures the PrinterJob instance with the specified parameters.
-     *
-     * @param startPage             start of page range, zero-based index.
-     * @param endPage               end of page range, one-based index.
-     * @param copies                number of copies of pages in print range.
-     * @param shrinkToPrintableArea true, to enable shrink to fit printable area;
-     *                              false, otherwise.
-     * @param showPrintDialog       true, to display a print setup dialog when this method
-     *                              is initiated; false, otherwise.  This dialog will be shown after the
-     *                              page dialog if it is visible.
-     * @return true if print setup should continue, false if printing was cancelled
-     *         by user interaction with optional print dialog.
-     */
-    public boolean setupPrintService(int startPage,
-                                     int endPage,
-                                     int copies,
-                                     boolean shrinkToPrintableArea,
-                                     boolean showPrintDialog) {
-
-        // make sure our printable doc knows how many pages to print
-        // Has to be set before printerJob.printDialog(), so it can show to
-        //  the user which pages it can print
-        printFitToMargin = shrinkToPrintableArea;
-
-        // set the number of pages
-        printRequestAttributeSet.add(new PageRanges(startPage + 1, endPage + 1));
-        // setup number of
-        printRequestAttributeSet.add(new Copies(copies));
-
-        // show the print dialog, return false if the user cancels/closes the
-        // dialog. 
-        if (showPrintDialog) {
-            printService = getSetupDialog();
-            return printService != null;
-        } else {// no dialog and thus printing will continue.
-            return true;
-        }
-    }
-
-    public void showPrintSetupDialog() {
-        PrinterJob pj = PrinterJob.getPrinterJob();
-        if (printService == null && services != null &&
-                services.length > 0 && services[0] != null) {
-            printService = services[0];
-        }
-        try {
-            pj.setPrintService(printService);
-            // Step 2: Pass the settings to a page dialog and print dialog.
-            pj.pageDialog(printRequestAttributeSet);
-        } catch (Throwable e) {
-            logger.log(Level.FINE, "Error creating page setup dialog.", e);
-        }
-    }
-
-    private PrintService getSetupDialog() {
-        final int offset = 50;
-        return ServiceUI.printDialog(null,
-                viewController.getViewContainer().getX() + offset,
-                viewController.getViewContainer().getY() + offset,
-                services, services[0],
-                DocFlavor.SERVICE_FORMATTED.PRINTABLE,
-                printRequestAttributeSet);
     }
 
     /**
@@ -400,16 +507,47 @@ public class PrintHelper implements Printable {
 
     }
 
+    private PrintService getSetupDialog() {
+        final int offset = 50;
+        return ServiceUI.printDialog(null,
+                viewController.getViewContainer().getX() + offset,
+                viewController.getViewContainer().getY() + offset,
+                services, services[0],
+                DocFlavor.SERVICE_FORMATTED.PRINTABLE,
+                printRequestAttributeSet);
+    }
 
-    private void calculateTotalPagesToPrint(){
+    private void calculateTotalPagesToPrint() {
         // iterate over page ranges to find out how many pages are to
         // be printed
         PageRanges pageRanges = (PageRanges)
                 printRequestAttributeSet.get(PageRanges.class);
-        totalPagesToPrint =  0;
-        for (int[] ranges : pageRanges.getMembers()){
+        totalPagesToPrint = 0;
+        for (int[] ranges : pageRanges.getMembers()) {
             totalPagesToPrint += ranges[1] - ranges[0] + 1;
         }
+    }
+
+    private PrintService[] lookForPrintServices() {
+        PrintService[] services = PrintServiceLookup.lookupPrintServices(
+                DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
+        // check for a default service and make sure it is at index 0. the lookupPrintServices does not
+        // aways put the default printer first in the array.
+        PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
+        if (defaultService != null && services.length > 1) {
+            PrintService printService;
+            for (int i = 1, max = services.length; i < max; i++) {
+                printService = services[i];
+                if (printService.equals(defaultService)) {
+                    // found the default printer, now swap it with the first index.
+                    PrintService tmp = services[0];
+                    services[0] = defaultService;
+                    services[i] = tmp;
+                    break;
+                }
+            }
+        }
+        return services;
     }
 
 }
