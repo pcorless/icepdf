@@ -100,13 +100,13 @@ public class SecurityManager {
             Object provider = Class.forName(defaultSecurityProvider).newInstance();
             Security.insertProviderAt((Provider) provider, 2);
         } catch (ClassNotFoundException e) {
-            logger.log(Level.WARNING,"Security provider not found");
+            logger.log(Level.FINE,"Optional BouncyCastle security provider not found");
         }
         catch (InstantiationException e) {
-            logger.log(Level.WARNING,"Security provider could not be instantiated");
+            logger.log(Level.FINE,"Optional BouncyCastle security provider could not be instantiated");
         }
         catch (IllegalAccessException e) {
-            logger.log(Level.WARNING,"Security provider could not be created");
+            logger.log(Level.FINE,"Optional BouncyCastle security provider could not be created");
         }
         
         try {
