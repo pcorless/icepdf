@@ -75,7 +75,7 @@
               overwrite="true"/>
     </target>
 
-    <target name="build.all" depends="jar, javadoc" />
+    <target name="build.all" depends="jar" />
 
     <target name="compile">
         <compile/>

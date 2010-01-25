@@ -58,7 +58,7 @@
         <compile />
     </target>
 
-    <target name="build.all" depends="jar, javadoc" />
+    <target name="build.all" depends="jar" />
 
     <target name="clean" description="clean the directory">
         <clean />
