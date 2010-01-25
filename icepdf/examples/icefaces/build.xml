@@ -92,10 +92,6 @@
             <fileset dir="${icepdf.lib.dir}" includes="*.jar" />
 
         </copy>
-        <!-- copy over developers build -->
-        <copy overwrite="true"
-              file="../../docs/DevelopersGuide.pdf"
-              tofile="./web/WEB-INF/demos/ICEpdf Developers Guide.pdf" /> 
         <!-- ICEpdf Developers Guide.pdf -->
         <build.war web.xml="./web/WEB-INF/web.xml" />
 
