@@ -65,12 +65,6 @@
                 "
             />
 
-     <patternset id="icepdf.lib.bouncy.jars"
-                includes="
-                bcprov-jdk15.jar
-                "
-            />
-
     <path id="compile.run.classpath">
         <pathelement location="${build.classes.dir}"/>
         <fileset dir="${build.lib.dir}" >
