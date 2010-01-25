@@ -156,7 +156,7 @@
             <delete file="@{bundle.file}"/>
 
             <ice:zip destfile="@{bundle.file}">
-                <zipfileset dir="@{path}" includes="README.txt, examples/"
+                <zipfileset dir="@{path}" includes="ReadMe.html, examples/"
                             excludes="**/bin.bundle.properties"
                             prefix="@{zip.bundle.prefix}"/>
             </ice:zip>
