@@ -67,7 +67,7 @@
                 <attribute name="Main-Class"
                            value="org.icepdf.ri.viewer.Main"/>
                 <attribute name="Class-Path"
-                           value="icepdf-core.jar icepdf-viewer.jar icepdf-pro.jar icepdf-pro-intl.jar bcprov-jdk15.jar batik-awt-util.jar batik-dom.jar batik-svg-dom.jar batik-svggen.jar batik-util.jar batik-xml.jar"/>
+                           value="icepdf-core.jar icepdf-viewer.jar icepdf-pro.jar icepdf-pro-intl.jar batik-awt-util.jar batik-dom.jar batik-svg-dom.jar batik-svggen.jar batik-util.jar batik-xml.jar"/>
             </add.manifest.elements>
         </build.jar>
 
