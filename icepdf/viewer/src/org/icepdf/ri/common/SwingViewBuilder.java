@@ -507,7 +507,7 @@ public class SwingViewBuilder {
 
 
     public JMenuBar buildCompleteMenuBar() {
-      
+
         JMenuBar menuBar = new JMenuBar();
         addToMenuBar(menuBar, buildFileMenu());
         addToMenuBar(menuBar, buildEditMenu());
@@ -547,7 +547,7 @@ public class SwingViewBuilder {
      */
     protected KeyStroke buildKeyStroke(int keyCode, int modifiers, boolean onRelease) {
         doubleCheckPropertiesManager();
-        
+
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
                                                        PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
                                                        true)) {
@@ -1119,7 +1119,7 @@ public class SwingViewBuilder {
 
         if ((viewerController != null) && (toolbar != null))
             viewerController.setCompleteToolBar(toolbar);
-        
+
         return toolbar;
     }
 
@@ -1428,7 +1428,7 @@ public class SwingViewBuilder {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         addToToolBar(toolbar, buildFontEngineButton());
-        return toolbar;    
+        return toolbar;
     }
 
     public JToggleButton buildPanToolButton() {
@@ -1456,7 +1456,7 @@ public class SwingViewBuilder {
                 messageBundle.getString("viewer.toolbar.tool.select.label"),
                 messageBundle.getString("viewer.toolbar.tool.select.tooltip"),
                 "select", buttonFont);
-        if (viewerController != null && btn != null)      
+        if (viewerController != null && btn != null)
             viewerController.setSelectToolButton(btn);
         return btn;
     }
@@ -1548,7 +1548,7 @@ public class SwingViewBuilder {
         if (utilityTabbedPane.getComponentCount() == 0) {
             utilityTabbedPane = null;
         }
-        
+
         if (viewerController != null)
             viewerController.setUtilityTabbedPane(utilityTabbedPane);
 
@@ -1580,7 +1580,7 @@ public class SwingViewBuilder {
     public JPanel buildStatusPanel() {
 
         JPanel statusPanel = new JPanel(new BorderLayout());
- 
+
         JPanel pgPanel = new JPanel();
         JLabel lbl = new JLabel(" ");
         lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
@@ -1695,7 +1695,7 @@ public class SwingViewBuilder {
         JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
-        tmp.setPreferredSize(new Dimension(24, 24));
+        tmp.setPreferredSize(new Dimension(26, 26));
         tmp.setRolloverEnabled(true);
 
         tmp.setIcon(new ImageIcon(Images.get(imageName + "_n.gif")));
