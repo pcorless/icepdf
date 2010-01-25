@@ -39,16 +39,18 @@ import org.icepdf.ri.common.PrintHelper;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
-import javax.print.*;
-import javax.print.attribute.HashDocAttributeSet;
-import javax.print.attribute.HashPrintRequestAttributeSet;
-import javax.print.attribute.standard.*;
+import javax.print.DocFlavor;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.PrintQuality;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The PrintServices class is an example of how to use JDK 1.4+ print
@@ -56,9 +58,12 @@ import java.util.logging.Level;
  * client machine and asks the user which one they whish to print to.  Once the
  * user enters their choice the printing process is started.</p>
  * <p/>
- * <p>Jusing JDK 1.4 or higher should reduce the print spools size when compared
- * to earlier Sun JDK's.  This example requires JDK 1.5 or higher</p>
- * <p/>
+ * <p>As of ICEpdf 3.0 the PrintHelper class was implemented using print
+ * services. This examples show how the to configue and print using the
+ * PrintHelper class.  Gernally the page settings are defined with the page
+ * constructor followed by a call to printHelper.setupPrintService(...) to
+ * setup the printing job.  The Print helper can be used in a headless mode
+ * or in a GUI.</p>
  * <p>A PDF documents full path must be specified when the application starts.
  * The following is an example of how the applications is started</p>
  * <p/>
@@ -83,7 +88,6 @@ public class PrintServices {
         // setup for input from command line
         BufferedReader stdin =
                 new BufferedReader(new InputStreamReader(System.in));
-
         /**
          * Find Available printers
          */
@@ -93,10 +97,10 @@ public class PrintServices {
 
         int selectedPrinter = 0;
         // ask the user which printer they want, only quite when they type
-        // q, otherwise just keep aksing them which printer to use.
+        // q, otherwise just keep asking them which printer to use.
         while (!(selectedPrinter > 0 && selectedPrinter <= services.length)) {
             System.out.println(
-                    "Please select the printer your wish to print to (q to quit):");
+                    "Please select the printer number your wish to print to (q to quit):");
             int printerIndex = 1;
             for (int i = 0, max = services.length - 1; i < max; i++) {
                 System.out.println(
@@ -144,76 +148,49 @@ public class PrintServices {
                         selectedService.getName());
         Class[] supportedAttributes =
                 selectedService.getSupportedAttributeCategories();
-        for (int i = 0, max = supportedAttributes.length - 1; i < max; i++) {
+        for (int i = 0, max = supportedAttributes.length; i < max; i++) {
             System.out.println("   " + supportedAttributes[i].getName() +
                     ":= " +
                     selectedService.getDefaultAttributeValue(
                             supportedAttributes[i]));
         }
 
-        /**
-         * Create PrinterJob
-         */
-        DocPrintJob printerJob = selectedService.createPrintJob();
-
-        // Print and document attributes sets.
-        HashPrintRequestAttributeSet printRequestAttributeSet =
-                new HashPrintRequestAttributeSet();
-        HashDocAttributeSet docAttributeSet = new HashDocAttributeSet();
-
-        // unix compression attribute where applicable
-//        printRequestAttributeSet.add(Compression.COMPRESS);
-        printRequestAttributeSet.add(PrintQuality.DRAFT);
-
-        // change paper
-        printRequestAttributeSet.add(MediaSizeName.NA_LEGAL);
-        docAttributeSet.add(MediaSizeName.NA_LEGAL);
-
-        // setting margins to full paper size as PDF have their own margins
-        MediaSize mediaSize =
-                MediaSize.getMediaSizeForName(MediaSizeName.NA_LEGAL);
-        float[] size = mediaSize.getSize(MediaSize.INCH);
-        printRequestAttributeSet
-                .add(new MediaPrintableArea(0, 0, size[0], size[1],
-                        MediaPrintableArea.INCH));
-        docAttributeSet.add(new MediaPrintableArea(0, 0, size[0], size[1],
-                MediaPrintableArea.INCH));
-
-        // display paper size.
-        if (logger.isLoggable(Level.INFO)){
-            logger.info("Paper Size: " + MediaSizeName.NA_LEGAL.getName() +
-                " " + size[0] + " x " + size[1]);
-        }
-
-        printRequestAttributeSet.add(new PageRanges(1, 5 ));
-
         // Open the document, create a PrintHelper and finally print the document
         Document pdf = new Document();
 
         try {
             // load the file specified by the command line
-            pdf.setFile(args[0]);
+            String filePath;
+            if (args.length > 0) {
+                filePath = args[0];
+            } else {
+                throw new FileNotFoundException("Specify a PDF document.");
+            }
+            pdf.setFile(filePath);
             SwingController sc = new SwingController();
             DocumentViewController vc = new DocumentViewControllerImpl(sc);
             vc.setDocument(pdf);
 
-            // create a new print helper
-            PrintHelper printHelper = new PrintHelper(vc, pdf.getPageTree());
-            printHelper.setupPrintService(0, 10, 1, true, false);
+            // create a new print helper with a specified paper size and print
+            // quality
+            PrintHelper printHelper = new PrintHelper(vc, pdf.getPageTree(),
+                    MediaSizeName.NA_LEGAL, PrintQuality.DRAFT);
+            // try and print pages 1 - 10, 1 copy, scale to fit paper.
+            printHelper.setupPrintService(selectedService, 0, 9, 1, true);
             // print the document
             printHelper.print();
 
-
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "PDF file not found.", e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error loading PDF file", e);
         } catch (PDFSecurityException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING,
+                    "PDF security exception, unspported encryption type.", e);
         } catch (PDFException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error loading PDF document.", e);
         } catch (PrintException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error Printing document.", e);
         } finally {
             pdf.dispose();
         }

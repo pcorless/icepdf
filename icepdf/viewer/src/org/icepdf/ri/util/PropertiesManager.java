@@ -81,6 +81,9 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_TOOL = "application.toolbar.show.tool";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION = "application.toolbar.show.annotation";
 
+    // properties used to hide/show status bar buttons
+    public static final String PROPERTY_SHOW_STATUSBAR_VIEWMODE = "application.statusbar.show.viewmode";
+
     // properties used to hide/show the utility buttons (open, print, etc.)
     public static final String PROPERTY_SHOW_UTILITY_OPEN = "application.toolbar.show.utility.open";
     public static final String PROPERTY_SHOW_UTILITY_SAVE = "application.toolbar.show.utility.save";
