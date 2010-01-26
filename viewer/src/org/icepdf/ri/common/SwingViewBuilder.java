@@ -1577,38 +1577,56 @@ public class SwingViewBuilder {
         return annotationPanel;
     }
 
+    /**
+     * Builds the status bar panel containing a status label on the left and
+     * view mode controls on the right.  The status bar can be shown or
+     * hidden completely using the view property 'application.statusbar=true|false'
+     * and the two child frame elements can be controlled using
+     * 'application.statusbar.show.statuslabel=true|false' and
+     * 'application.statusbar.show.viewmode=true|false'.  The default value
+     * for all properties is 'true'.
+     * @return status panel JPanel if visible, null if the proeprty
+     *        'application.statusbar=false' is set. 
+     */
     public JPanel buildStatusPanel() {
-
-        JPanel statusPanel = new JPanel(new BorderLayout());
-
-        JPanel pgPanel = new JPanel();
-        JLabel lbl = new JLabel(" ");
-        lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
-        pgPanel.add( lbl);
-        statusPanel.add(pgPanel, BorderLayout.WEST);
-
-        JPanel viewPanel = new JPanel();
-        // Only add actual buttons to the view panel if requested by the properties file
-        // Regardless we'll add the parent JPanel, to preserve the same layout behaviour
+        // check to see if the status bars should be built.
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
-                                                           PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
-            viewPanel.add(buildPageViewSinglePageNonConToggleButton());
-            viewPanel.add(buildPageViewSinglePageConToggleButton());
-            viewPanel.add(buildPageViewFacingPageNonConToggleButton());
-            viewPanel.add(buildPageViewFacingPageConToggleButton());
+                PropertiesManager.PROPERTY_SHOW_STATUSBAR)) {
+            JPanel statusPanel = new JPanel(new BorderLayout());
+
+            if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                    PropertiesManager.PROPERTY_SHOW_STATUSBAR_STATUSLABEL)) {
+                JPanel pgPanel = new JPanel();
+                JLabel lbl = new JLabel(" ");
+                lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
+                pgPanel.add( lbl);
+                statusPanel.add(pgPanel, BorderLayout.WEST);
+                // set status label callback
+                if (viewerController != null) {
+                    viewerController.setStatusLabel(lbl);
+                }
+            }
+
+            JPanel viewPanel = new JPanel();
+            // Only add actual buttons to the view panel if requested by the properties file
+            // Regardless we'll add the parent JPanel, to preserve the same layout behaviour
+            if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                                                               PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
+                viewPanel.add(buildPageViewSinglePageNonConToggleButton());
+                viewPanel.add(buildPageViewSinglePageConToggleButton());
+                viewPanel.add(buildPageViewFacingPageNonConToggleButton());
+                viewPanel.add(buildPageViewFacingPageConToggleButton());
+            }
+            statusPanel.add(viewPanel, BorderLayout.CENTER);
+            viewPanel.setLayout( new ToolbarLayout( ToolbarLayout.RIGHT, 0, 1));
+
+            JLabel lbl2 = new JLabel(" ");
+            lbl2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5)); // So text isn't at the very edge
+            statusPanel.add( lbl2, BorderLayout.EAST);
+
+            return statusPanel;
         }
-        statusPanel.add(viewPanel, BorderLayout.CENTER);
-        viewPanel.setLayout( new ToolbarLayout( ToolbarLayout.RIGHT, 0, 1));
-
-        JLabel lbl2 = new JLabel(" ");
-        lbl2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5)); // So text isn't at the very edge
-        statusPanel.add( lbl2, BorderLayout.EAST);
-
-        if (viewerController != null) {
-            viewerController.setStatusLabel(lbl);
-        }
-
-        return statusPanel;
+        return null;
     }
 
     public JToggleButton buildPageViewSinglePageConToggleButton() {
