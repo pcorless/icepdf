@@ -107,8 +107,10 @@ public class SearchController {
              pageIndex++) {
             foundWords = searchController.searchPage(pageIndex);
             System.out.println("Page " + pageIndex);
-            for (WordText wordText : foundWords){
-                System.out.println("    found hit: " + wordText.toString());
+            if (foundWords != null){
+                for (WordText wordText : foundWords){
+                    System.out.println("    found hit: " + wordText.toString());
+                }
             }
         }
 
