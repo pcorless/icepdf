@@ -54,7 +54,7 @@ import java.util.Hashtable;
  */
 public class Outlines extends Dictionary {
     // number of child outline items
-    private int count;
+    private Integer count;
 
     // needed for future dispose implementation.
     //private OutlineItem rootOutlineItem;
@@ -79,7 +79,7 @@ public class Outlines extends Dictionary {
      * @return root outline item.
      */
     public OutlineItem getRootOutlineItem() {
-        if (count == 0)
+        if (count == null)
             return null;
         return new OutlineItem(library, entries);
     }
