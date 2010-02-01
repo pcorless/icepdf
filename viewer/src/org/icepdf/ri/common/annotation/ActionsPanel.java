@@ -130,6 +130,10 @@ public class ActionsPanel extends AnnotationPanelAdapter
         if (annotaiton.getAnnotation() != null &&
                 annotaiton.getAnnotation().getAction() != null) {
             addActionToList(annotaiton.getAnnotation().getAction());
+            // select first item in list. 
+            if (actionListModel.size() > 0){
+                actionList.setSelectedIndex(0);
+            }
         }
         // check to see if the link annotation "dest" key is present. as
         // we'll edit this field with the goToAction dialog

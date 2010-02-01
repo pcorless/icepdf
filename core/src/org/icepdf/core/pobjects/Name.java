@@ -71,7 +71,9 @@ public class Name {
      * @param name the name value of the Name object
      */
     public Name(String name) {
-        this.name = convertHexChars(new StringBuilder(name));
+        if (name != null){
+            this.name = convertHexChars(new StringBuilder(name));
+        }
     }
 
     /**
