@@ -462,18 +462,23 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         }
         // if still null, shouldn't be, assigned the basefont name
         if (font == null) {
-            font = new OFont(java.awt.Font.getFont(basefont,
-                    new java.awt.Font(basefont,
-                            java.awt.Font.PLAIN,
-                            12)));
-            basefont = font.getName();
+            try{
+                font = new OFont(java.awt.Font.getFont(basefont,
+                        new java.awt.Font(basefont,
+                                java.awt.Font.PLAIN,
+                                12)));
+                basefont = font.getName();
+            }catch(Exception e){
+                if (logger.isLoggable(Level.WARNING)) {
+                    logger.warning("Error creating awt.font for: " + entries);
+                }
+            }
         }
-
         // If the font substitutions failed then we want to try and pick the proper
         // font family based on what the font name best matches up with none
         // font family font names.  if all else fails use serif as it is the most'
         // common font.
-        if (!isFontSubstitution &&
+        if (!isFontSubstitution && font != null &&
                 font.getName().toLowerCase().indexOf(font.getFamily().toLowerCase()) < 0) {
             // see if we working with a sans serif font
             if ((font.getName().toLowerCase().indexOf("times new roman") != -1 ||
@@ -525,6 +530,12 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                         font.getStyle(), (int) font.getSize()));
                 basefont = "serif";
             }
+        }
+        // finally if we have an empty font then we default to serif so that
+        // we can try and render the character codes. 
+        if (font == null){
+            font = new OFont(new java.awt.Font("serif",java.awt.Font.PLAIN,12));
+            basefont = "serif";
         }
 
         // setup encoding and widths.
