@@ -2078,11 +2078,6 @@ public class ContentParser {
             TextState textState,
             Shapes shapes) {
 
-        // check to see if we are in font substitution mode, if we are
-        // then we need to apply toUnicode mappings, to get the correct layout
-        // for the substituted glyph
-        StringBuilder unmodifiedDisplayText = new StringBuilder(displayText);
-
         float advanceX = ((Point2D.Float) advance).x;
         float advanceY = ((Point2D.Float) advance).y;
 
@@ -2154,9 +2149,7 @@ public class ContentParser {
                 currentY = advanceY + lasty;
             }
             // check in Unicode cMap exists
-            boolean isToUnicode = textState.currentfont.getToUnicode() != null;
-            int charValue = isToUnicode ? textState.currentfont.getToUnicode()
-                    .toSelector(unmodifiedDisplayText.charAt(i)) : currentChar;
+            int charValue = textState.currentfont.toUnicode(currentChar);
 
             // get normalized from from text sprite
             GlyphText glyphText = textSprites.addText(currentChar, (char) charValue,
