@@ -34,6 +34,8 @@ package org.icepdf.ri.util;
 
 import javax.swing.*;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Bare Bones Browser Launch for Java<br> Utility class to open a web page from
@@ -47,8 +49,20 @@ import java.lang.reflect.Method;
  */
 public class BareBonesBrowserLaunch {
 
+private static final Logger logger =
+            Logger.getLogger(BareBonesBrowserLaunch.class.toString());
+
+
     private static final String errMsg =
             "Error attempting to launch web browser";
+
+    public static final String FILE_PREFIX = "file://";
+
+    private static String os;
+
+    static{
+        os = System.getProperty("os.name").toLowerCase();
+    }
 
     /**
      * Opens the specified web page in a web browser
@@ -56,18 +70,21 @@ public class BareBonesBrowserLaunch {
      * @param url An absolute URL of a web page (ex: "http://www.google.com/")
      */
     public static void openURL(String url) {
-        String osName = System.getProperty("os.name");
         try {
-            if (osName.startsWith("Mac OS")) {
+            if (logger.isLoggable(Level.FINE)){
+                logger.fine("Opening URL: " + url);
+            }
+
+            if (isMac()) {
                 Class fileMgr = Class.forName("com.apple.eio.FileManager");
                 Method openURL = fileMgr.getDeclaredMethod("openURL",
                         new Class[]{
                                 String.class});
-                openURL.invoke(null, new Object[]{url});
-            } else if (osName.startsWith("Windows"))
+                openURL.invoke(null, url);
+            } else if (isWindows())
                 Runtime.getRuntime()
                         .exec("rundll32 url.dll,FileProtocolHandler " + url);
-            else { //assume Unix or Linux
+            else if(isUnix()) {
                 String[] browsers = {
                         "firefox", "opera", "konqueror", "epiphany", "mozilla",
                         "netscape"};
@@ -83,12 +100,42 @@ public class BareBonesBrowserLaunch {
                 else
                     Runtime.getRuntime().exec(new String[]{browser, url});
             }
+            else{
+                JOptionPane.showMessageDialog(null, errMsg );
+            }
         }
         catch (Exception e) {
             JOptionPane.showMessageDialog(null, errMsg + ":\n" +
                     e.getLocalizedMessage());
         }
     }
+
+
+    /**
+     * Opens the specified file path using the OS's preferred application binding
+     *
+     * @param filePath to open on host OS.
+     */
+    public static void openFile(String filePath) {
+        openURL(FILE_PREFIX + filePath);
+    }
+
+    public static boolean isWindows() {
+        //windows
+        return (os.indexOf("win") >= 0);
+
+    }
+
+    public static boolean isMac() {
+        //Mac
+        return (os.indexOf("mac") >= 0);
+    }
+
+    public static boolean isUnix() {
+        //linux or unix
+        return (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0);
+    }
+
 
 }
 
