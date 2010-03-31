@@ -1079,7 +1079,7 @@ public class Page extends Dictionary implements MemoryManageable {
         }
         // encase of bad usage, default to crop box
         else {
-            userSpecifiedBox = cropBox;
+            userSpecifiedBox = (PRectangle) getBleedBox();
         }
 
         // just in case, make sure we return a non null boundary
