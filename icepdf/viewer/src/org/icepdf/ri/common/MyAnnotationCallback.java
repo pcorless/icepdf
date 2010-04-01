@@ -38,8 +38,8 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.PageViewComponent;
@@ -47,6 +47,7 @@ import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.awt.*;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -103,7 +104,12 @@ public class MyAnnotationCallback implements AnnotationCallback {
                 } else if (action instanceof GoToRAction) {
 
                 } else if (action instanceof LaunchAction) {
-
+                    LaunchAction launchAction = (LaunchAction) action;
+                    String file = launchAction.getExternalFile();
+                    String location =
+                            documentViewController.getDocument().getDocumentLocation();
+                    location = location.substring(0, location.lastIndexOf(File.separator) + 1);
+                    BareBonesBrowserLaunch.openFile(location + file);
                 }
 
             }
@@ -173,8 +179,6 @@ public class MyAnnotationCallback implements AnnotationCallback {
         // saves the state changes back to the document structure.
         newAnnotationState.apply(newAnnotationState);
         newAnnotationState.restore();
-
-        // todo add undo for newly created annotations. 
 
         // finally change the current tool to the annotation selection
         documentViewController.getParentController().setDocumentToolMode(

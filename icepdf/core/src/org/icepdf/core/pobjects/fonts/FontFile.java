@@ -76,6 +76,8 @@ public interface FontFile {
 
     public String toUnicode(String displayText);
 
+    public char toUnicode(char displayChar);
+
     /**
      * Returns name of nfont, such as "Times".
      */

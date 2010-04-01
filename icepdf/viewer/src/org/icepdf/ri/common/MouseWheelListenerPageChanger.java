@@ -36,6 +36,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractDocumentView;
 
 import javax.swing.*;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 
@@ -100,27 +101,31 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
                         scrollpane.getVerticalScrollBar().isVisible())
                         ? scrollpane.getVerticalScrollBar()
                         : null;
-        int amount = e.getScrollAmount();
-        int rotation = e.getWheelRotation();
-        // Scrolling down
-        if (amount > 0 && rotation > 0) {
-            if (visibleVerticalScrollBar != null) {
-                int value = visibleVerticalScrollBar.getModel().getValue();
-                int extent = visibleVerticalScrollBar.getModel().getExtent();
-                int max = visibleVerticalScrollBar.getModel().getMaximum();
-                if (value + extent >= max)
+
+        // Scrolling down but only if the ctrl mask isn't present.
+        if (!((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK)){
+            int amount = e.getScrollAmount();
+            int rotation = e.getWheelRotation();
+            
+            if (amount > 0 && rotation > 0) {
+                if (visibleVerticalScrollBar != null) {
+                    int value = visibleVerticalScrollBar.getModel().getValue();
+                    int extent = visibleVerticalScrollBar.getModel().getExtent();
+                    int max = visibleVerticalScrollBar.getModel().getMaximum();
+                    if (value + extent >= max)
+                        deltaPage = documentView.getPreviousPageIncrement();
+                } else
                     deltaPage = documentView.getPreviousPageIncrement();
-            } else
-                deltaPage = documentView.getPreviousPageIncrement();
-        }
-        // Up
-        else if (amount > 0 && rotation < 0) {
-            if (visibleVerticalScrollBar != null) {
-                int value = visibleVerticalScrollBar.getModel().getValue();
-                if (value <= 0)
+            }
+            // Up
+            else if (amount > 0 && rotation < 0) {
+                if (visibleVerticalScrollBar != null) {
+                    int value = visibleVerticalScrollBar.getModel().getValue();
+                    if (value <= 0)
+                        deltaPage = -documentView.getPreviousPageIncrement();
+                } else
                     deltaPage = -documentView.getPreviousPageIncrement();
-            } else
-                deltaPage = -documentView.getPreviousPageIncrement();
+            }
         }
 
 

@@ -40,16 +40,16 @@ import org.icepdf.core.pobjects.graphics.TextState;
 import java.awt.*;
 import java.awt.Font;
 import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphMetrics;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
-import java.awt.font.GlyphMetrics;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.Map;
 import java.util.HashMap;
-import java.util.logging.Logger;
+import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * OFont is an awt Font wrapper used to aid in the paint of glyphs.
@@ -137,7 +137,7 @@ public class OFont implements FontFile {
     public FontFile deriveFont(AffineTransform at) {
         OFont font = new OFont(this);
         // clear font metric cache if we change the font's transform
-        if (!font.getTransform().equals(this.awtFont.getTransform())){
+        if (!font.getTransform().equals(this.awtFont.getTransform())) {
             this.echarAdvanceCache.clear();
         }
         font.awtFont = this.awtFont.deriveFont(at);
@@ -153,7 +153,7 @@ public class OFont implements FontFile {
     public FontFile deriveFont(float pointsize) {
         OFont font = new OFont(this);
         // clear font metric cache if we change the font's size
-        if (font.getSize() != pointsize){
+        if (font.getSize() != pointsize) {
             this.echarAdvanceCache.clear();
         }
         font.awtFont = this.awtFont.deriveFont(pointsize);
@@ -172,15 +172,15 @@ public class OFont implements FontFile {
         Point2D.Float echarAdvance = echarAdvanceCache.get(text);
 
         // generate metrics is needed
-        if (echarAdvance == null){
+        if (echarAdvance == null) {
 
             // the glyph vector should be created using any toUnicode value if present, as this is what we
             // are drawing, the method also does a check to apply differences if toUnicode is null.
             char echGlyph = getCMapping(ech);
 
             GlyphVector glyphVector = awtFont.createGlyphVector(
-                new FontRenderContext(new AffineTransform(), true, true),
-                String.valueOf(echGlyph));
+                    new FontRenderContext(new AffineTransform(), true, true),
+                    String.valueOf(echGlyph));
 
             FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
             TextLayout textLayout = new TextLayout(String.valueOf(echGlyph), awtFont, frc);
@@ -198,7 +198,7 @@ public class OFont implements FontFile {
                     new Point2D.Float(advance, advanceY));
         }
         // returned cashed value
-        else{
+        else {
             advance = echarAdvance.x;
             advanceY = echarAdvance.y;
         }
@@ -240,7 +240,7 @@ public class OFont implements FontFile {
      * @param character character to retreive width of
      * @return width of the given <code>character</code>
      */
-    private char getCharDiff(char character) {
+    public char getCharDiff(char character) {
         if (cMap != null && character < cMap.length) {
             return cMap[character];
         } else {
@@ -345,56 +345,58 @@ public class OFont implements FontFile {
         // Check string for displayable Glyphs,  try and substitute any failed ones
         StringBuilder sb = new StringBuilder(displayText.length());
         for (int i = 0; i < displayText.length(); i++) {
-            // get the first char in the buffer
-            char c1 = displayText.charAt(i);
+            // Updated with displayable glyph when possible
+            sb.append(toUnicode(displayText.charAt(i)));
+        }
+        return sb.toString();
+    }
 
-            // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
-            // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
-            // differences.
-            char c = toUnicode==null?getCharDiff(c1):c1;
+    public char toUnicode(char c1) {
+        // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
+        // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
+        // differences.
+        char c = toUnicode == null ? getCharDiff(c1) : c1;
 
-            // The problem here is that some CMaping only work properly if the
-            // embedded font is working properly, so that's how this logic works.
+        // The problem here is that some CMaping only work properly if the
+        // embedded font is working properly, so that's how this logic works.
 
-            //System.out.print((int)c + " (" + (char)c + ")");
-            // check for CMap ToUnicode properties.
-            c = getCMapping(c);
-            //System.out.print(" -> " + (int)c + " (" + (char)c + ")");
-            //System.out.println();
+        //System.out.print((int)c + " (" + (char)c + ")");
+        // check for CMap ToUnicode properties.
+        c = getCMapping(c);
+        //System.out.print(" -> " + (int)c + " (" + (char)c + ")");
+        //System.out.println();
 
-            // try alternat representation of character
-            if (!awtFont.canDisplay(c)) {
-                c |= 0xF000;
-            }
-            // correct the character c if possible
+        // try alternat representation of character
+        if (!awtFont.canDisplay(c)) {
+            c |= 0xF000;
+        }
+        // correct the character c if possible
 //            if (!textState.font.font.canDisplay(c) && textState.font.font.canDisplay(c1)) {
 //                c = c1;
 //            }
 
-            // due to different character encoding for invalid embedded fonts
-            // the proper font can not always be found
-            if (!awtFont.canDisplay(c)) {
+        // due to different character encoding for invalid embedded fonts
+        // the proper font can not always be found
+        if (!awtFont.canDisplay(c)) {
 
-                // try and find a similar symbol that can be displayed.
-                c = findAlternateSymbol(c);
+            // try and find a similar symbol that can be displayed.
+            c = findAlternateSymbol(c);
 //                System.out.println(c + " + " + (int) c + " " +
 //                                   textState.currentfont.getName() + " " +
 //                                   textState.font.font );
-            }
-
-            // Debug code, show any undisplayable glyphs
-            if (log.isLoggable(Level.FINER)) {
-                if (!awtFont.canDisplay(c)) {
-                    log.finer(
-                            ((int) c1) + " " + Character.toString(c1) + " " +
-                                    (int) c + " " + c + " " + awtFont);
-                    //+ " " + textState.font.font + " " + textState.font.font.getNumGlyphs());
-                }
-            }
-            // Updated with displayable glyph when possible
-            sb.append(c);
         }
-        return sb.toString();
+
+        // Debug code, show any undisplayable glyphs
+        if (log.isLoggable(Level.FINER)) {
+            if (!awtFont.canDisplay(c)) {
+                log.finer(
+                        ((int) c1) + " " + Character.toString(c1) + " " +
+                                (int) c + " " + c + " " + awtFont);
+                //+ " " + textState.font.font + " " + textState.font.font.getNumGlyphs());
+            }
+        }
+        return c;
     }
+
 
 }

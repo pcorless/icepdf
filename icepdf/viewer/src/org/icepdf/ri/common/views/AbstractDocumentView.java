@@ -47,9 +47,7 @@ import org.icepdf.core.views.swing.AbstractPageViewComponent;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -68,7 +66,7 @@ import java.beans.PropertyChangeEvent;
  */
 public abstract class AbstractDocumentView
         extends JComponent
-        implements DocumentView, PropertyChangeListener {
+        implements DocumentView, PropertyChangeListener, MouseWheelListener {
 
     private static final Logger logger =
             Logger.getLogger(AbstractDocumentView.class.toString());
@@ -138,6 +136,9 @@ public abstract class AbstractDocumentView
         // add mouse manipulator listeners.
         addMouseListener(this);
         addMouseMotionListener(this);
+
+        // wheel listener
+        documentScrollpane.addMouseWheelListener(this);
 
         // add custom tools
         // panning
@@ -218,6 +219,9 @@ public abstract class AbstractDocumentView
 //        removeMouseListener(panningHandler);
         removeMouseMotionListener(zoomHandler);
         removeMouseListener(zoomHandler);
+
+        // wheel listener
+        documentScrollpane.removeMouseWheelListener(this);
     }
 
     /**
@@ -473,6 +477,27 @@ public abstract class AbstractDocumentView
                 documentViewModel.getViewToolMode() ==
                         DocumentViewModel.DISPLAY_TOOL_PAN) {
             panningHandler.mouseMoved(e);
+        }
+    }
+
+    /**
+     * Handles ctl-wheelmouse for document zooming.
+     *
+     * @param e mouse wheel event. 
+     */
+    public void mouseWheelMoved(MouseWheelEvent e) {
+        int rotation = e.getWheelRotation();
+        // turn off scroll on zoom and then back on again next time
+        // the wheel is used with out the ctrl mask.
+        if ((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK ) {
+            documentScrollpane.setWheelScrollingEnabled(false);
+            if (rotation > 0){
+                documentViewController.setZoomOut();
+            }else{
+                documentViewController.setZoomIn();
+            }
+        }else{
+            documentScrollpane.setWheelScrollingEnabled(true);
         }
     }
 
