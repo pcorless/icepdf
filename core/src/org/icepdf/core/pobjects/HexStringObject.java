@@ -261,12 +261,19 @@ public class HexStringObject implements StringObject {
     }
 
     /**
-     * Utility method for converting a hexadecimal string to a litteral string.
+     * Utility method for converting a hexadecimal string to a literal string.
      *
      * @param hh StringBuffer containing data in hexadecimal form.
      * @return StringBuffer containing data in literal form.
      */
     private StringBuilder hexToString(StringBuilder hh) {
+
+        // make sure we have a valid hex value to convert to string.
+        // can't decrypt an empty string.
+        if (hh != null && hh.length() == 0){
+            return new StringBuilder();
+        }
+
         StringBuilder sb;
         // special case, test for not a 4 byte character code format
         if (!((hh.charAt(0) == 'F' | hh.charAt(0) == 'f')
