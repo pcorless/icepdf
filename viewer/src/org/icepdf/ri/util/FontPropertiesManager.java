@@ -38,6 +38,8 @@ import org.icepdf.core.pobjects.fonts.FontManager;
 import javax.swing.*;
 import java.io.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -56,6 +58,9 @@ import java.util.*;
  * @since 2.0
  */
 public class FontPropertiesManager {
+
+    private static final Logger logger =
+            Logger.getLogger(FontPropertiesManager.class.toString());
 
     private static final String DEFAULT_HOME_DIR = ".icesoft/icepdf_viewer";
     private static final String LOCK_FILE = "_syslock";
@@ -117,11 +122,18 @@ public class FontPropertiesManager {
                         in.close();
                     }
                 } catch (IOException ex) {
-                    Resources.showMessageDialog(null,
-                            JOptionPane.ERROR_MESSAGE, messageBundle,
-                            "fontManager.properties.title",
-                            "manager.properties.session.readError",
-                            ex);
+                    // check to make sure the storage relate dialogs can be shown
+                    if (getBoolean("application.showLocalStorageDialogs", true)){
+                        Resources.showMessageDialog(null,
+                                JOptionPane.ERROR_MESSAGE, messageBundle,
+                                "fontManager.properties.title",
+                                "manager.properties.session.readError",
+                                ex);
+                    }
+                    // log the error
+                    if (logger.isLoggable(Level.WARNING)){
+                        logger.log(Level.WARNING, "Error loading font properties cache", ex);
+                    }
                 } catch (IllegalArgumentException e) {
                     // propblem parsing fontProps, reread teh file
                     setupDefaultProperties();
@@ -147,10 +159,17 @@ public class FontPropertiesManager {
                 }
                 recordMofifTime();
             } catch (IOException ex) {
-                Resources.showMessageDialog(null,
-                        JOptionPane.ERROR_MESSAGE, messageBundle,
-                        "fontManager.properties.title",
-                        "manager.properties.saveError", ex);
+                // check to make sure the storage relate dialogs can be shown
+                if (getBoolean("application.showLocalStorageDialogs", true)){
+                    Resources.showMessageDialog(null,
+                            JOptionPane.ERROR_MESSAGE, messageBundle,
+                            "fontManager.properties.title",
+                            "manager.properties.saveError", ex);
+                }
+                // log the error
+                if (logger.isLoggable(Level.WARNING)){
+                    logger.log(Level.WARNING, "Error saving font properties cache", ex); 
+                }
             }
         }
     }
@@ -176,10 +195,12 @@ public class FontPropertiesManager {
                 dir.delete();
                 if (!dir.mkdir()) {
                     dir = null;
-                    Resources.showMessageDialog(null,
-                            JOptionPane.ERROR_MESSAGE, messageBundle,
-                            "fontManager.properties.title",
-                            "manager.properties.session.nolock", LOCK_FILE);
+                    if (getBoolean("application.showLocalStorageDialogs", true)){
+                        Resources.showMessageDialog(null,
+                                JOptionPane.ERROR_MESSAGE, messageBundle,
+                                "fontManager.properties.title",
+                                "manager.properties.session.nolock", LOCK_FILE);
+                    }
                 }
 
             }
@@ -198,11 +219,16 @@ public class FontPropertiesManager {
             fontProps = fontManager.getFontProperties();
 
         } catch (Exception ex) {
-            Resources.showMessageDialog(null,
-                    JOptionPane.ERROR_MESSAGE, messageBundle,
-                    "fontManager.properties.title",
-                    "manager.properties.session.readError",
-                    ex);
+            if (getBoolean("application.showLocalStorageDialogs", true)){
+                Resources.showMessageDialog(null,
+                        JOptionPane.ERROR_MESSAGE, messageBundle,
+                        "fontManager.properties.title",
+                        "manager.properties.session.readError",
+                        ex);
+            }// log the error
+            if (logger.isLoggable(Level.WARNING)){
+                logger.log(Level.WARNING, "Error loading default properties", ex);
+            }
             return false;
         }
         return true;
@@ -242,11 +268,14 @@ public class FontPropertiesManager {
             } else {
                 dataDir.mkdirs();
                 if (!dataDir.isDirectory()) {
-                    Resources.showMessageDialog(null,
-                            JOptionPane.ERROR_MESSAGE, messageBundle,
-                            "fontManager.properties.title",
-                            "manager.properties.failedCreation",
-                            dataDir.getAbsolutePath());
+                    // check to make sure that dialog should be shown on the error.
+                    if (getBoolean("application.showLocalStorageDialogs", true)){
+                        Resources.showMessageDialog(null,
+                                JOptionPane.ERROR_MESSAGE, messageBundle,
+                                "fontManager.properties.title",
+                                "manager.properties.failedCreation",
+                                dataDir.getAbsolutePath());
+                    }
                     dataDir = null;
                 }
             }
