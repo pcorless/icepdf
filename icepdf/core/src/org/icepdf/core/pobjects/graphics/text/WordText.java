@@ -154,8 +154,11 @@ public class WordText extends AbstractText implements TextSelect {
                 bounds1.x + bounds1.width,
                 bounds1.y,
                 spaceWidth, bounds1.height);
-        // consider just using one space with a wider bound
-        for (int i = 0; i < spaces; i++) {
+        // todo: consider just using one space with a wider bound
+        // Max out the spaces in the case the spaces value scale factor was
+        // not correct.  We can end up with a very large number of spaces being
+        // inserted in some cases. 
+        for (int i = 0; i < spaces && i < 50; i++) {
             spaceText = new GlyphText((float) offset,
                     currentGlyph.getY(),
                     new Rectangle2D.Float(spaceBounds.x,
