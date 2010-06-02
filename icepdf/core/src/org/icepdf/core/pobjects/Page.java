@@ -1408,18 +1408,23 @@ public class Page extends Dictionary implements MemoryManageable {
         dispose(true);
     }
 
-    public synchronized void addPaintPageListener(PaintPageListener listener) {
-        // add a listener if it is not already registered
-        if (!paintPageListeners.contains(listener)) {
-            paintPageListeners.addElement(listener);
+    public void addPaintPageListener( PaintPageListener listener ) {
+      // add a listener if it is not already registered
+      synchronized ( paintPageListeners ) {
+        if ( !paintPageListeners.contains( listener ) ) {
+          paintPageListeners.addElement( listener );
         }
+      }
     }
 
-    public synchronized void removePaintPageListener(PaintPageListener listener) {
-        // remove a listener if it is already registered
-        if (paintPageListeners.contains(listener)) {
-            paintPageListeners.removeElement(listener);
+    public void removePaintPageListener( PaintPageListener listener ) {
+      // remove a listener if it is already registered
+      synchronized ( paintPageListeners ) {
+        if ( paintPageListeners.contains( listener ) ) {
+          paintPageListeners.removeElement( listener );
         }
+
+      }
     }
 
     public void notifyPaintPageListeners() {
