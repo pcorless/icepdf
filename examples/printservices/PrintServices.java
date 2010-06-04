@@ -102,7 +102,7 @@ public class PrintServices {
             System.out.println(
                     "Please select the printer number your wish to print to (q to quit):");
             int printerIndex = 1;
-            for (int i = 0, max = services.length - 1; i < max; i++) {
+            for (int i = 0, max = services.length - 1; i <= max; i++) {
                 System.out.println(
                         "  " + printerIndex++ + ". " + services[i].getName());
             }
