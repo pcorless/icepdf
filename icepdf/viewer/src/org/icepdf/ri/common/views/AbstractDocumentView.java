@@ -489,7 +489,9 @@ public abstract class AbstractDocumentView
         int rotation = e.getWheelRotation();
         // turn off scroll on zoom and then back on again next time
         // the wheel is used with out the ctrl mask.
-        if ((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK ) {
+        if ((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK 
+                ||
+             (e.getModifiers() & InputEvent.META_MASK) == InputEvent.META_MASK ) {
             documentScrollpane.setWheelScrollingEnabled(false);
             if (rotation > 0){
                 documentViewController.setZoomOut();
