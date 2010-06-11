@@ -2309,9 +2309,9 @@ public class ContentParser {
         }
 
         // found a PatternColor
-        if (graphicState.getFillColorSpace() instanceof PatternColor) {
+        if (graphicState.getStrokeColorSpace() instanceof PatternColor) {
             // Create a pointer to the pattern colour
-            PatternColor patternColor = (PatternColor) graphicState.getFillColorSpace();
+            PatternColor patternColor = (PatternColor) graphicState.getStrokeColorSpace();
             // grab the pattern from the colour
             Pattern pattern = patternColor.getPattern();
             // Start processing tiling pattern
