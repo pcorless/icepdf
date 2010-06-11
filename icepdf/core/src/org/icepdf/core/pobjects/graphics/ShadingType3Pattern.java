@@ -137,7 +137,7 @@ public class ShadingType3Pattern extends ShadingPattern {
 
         float t0 = domain.get(0).floatValue();
         float t1 = domain.get(1).floatValue();
-        float s[] = new float[]{0.0f, 0.5f, 1.0f};
+        float s[] = new float[]{0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
 
         Point2D.Float center = new Point2D.Float(
                 ((Number) coords.get(0)).floatValue(),
@@ -147,8 +147,8 @@ public class ShadingType3Pattern extends ShadingPattern {
                 ((Number) coords.get(3)).floatValue(),
                 ((Number) coords.get(4)).floatValue());
 
-        float radius = ((Number) coords.get(5)).floatValue();
-        float radius2 = ((Number) coords.get(3)).floatValue();
+        float radius = ((Number) coords.get(2)).floatValue();
+        float radius2 = ((Number) coords.get(5)).floatValue();
 
         // approximation, as we don't full support radial point via the paint
         // class. 
@@ -160,12 +160,14 @@ public class ShadingType3Pattern extends ShadingPattern {
         Color color1 = calculateColour(colorSpace, s[0], t0, t1);
         Color color2 = calculateColour(colorSpace, s[1], t0, t1);
         Color color3 = calculateColour(colorSpace, s[2], t0, t1);
+        Color color4 = calculateColour(colorSpace, s[3], t0, t1);
+        Color color5 = calculateColour(colorSpace, s[4], t0, t1);
 
-        if (color1 == null || color2 == null || color3 == null) {
+        if (color1 == null || color2 == null) {
             return;
         }
         // Construct a LinearGradientPaint object to be use by java2D
-        Color[] colors = {color1, color3, color2};
+        Color[] colors = {color1, color2, color3, color4, color5};
 
         radialGradientPaint = new RadialGradientPaint(
                 center, radius,
