@@ -138,64 +138,125 @@ public class ShadingType2Pattern extends ShadingPattern {
         float t1 = ((Number) domain.get(1)).floatValue();
 
         // first off, create the two needed start and end points of the line
-        Point2D.Float point1 = new Point2D.Float(
+        Point2D.Float startPoint = new Point2D.Float(
                 ((Number) coords.get(0)).floatValue(),
                 ((Number) coords.get(1)).floatValue());
 
-        Point2D.Float point2 = new Point2D.Float(
+        Point2D.Float endPoint = new Point2D.Float(
                 ((Number) coords.get(2)).floatValue(),
                 ((Number) coords.get(3)).floatValue());
 
-        // calculate mid point so we have another colour other then the end points
-        // to calculate a colour for.
-        // todo: replace with equation of line to caluclate any point along line...
-        Point2D.Float point3 = new Point2D.Float(
-                (point2.x + point1.x) / 2.0f, (point2.y + point1.y) / 2.0f);
-
-        Point2D.Float point4 = new Point2D.Float(
-                (point3.x + point1.x) / 2.0f, (point3.y + point1.y) / 2.0f);
-
-        Point2D.Float point5 = new Point2D.Float(
-                (point2.x + point3.x) / 2.0f, (point2.y + point3.y) / 2.0f);
-
-        // get the number off components in the colour
-        Color color1 = calculateColour(colorSpace, point1, point1, point2, t0, t1);
-        Color color2 = calculateColour(colorSpace, point2, point1, point2, t0, t1);
-        Color color3 = calculateColour(colorSpace, point3, point1, point2, t0, t1);
-//        Color color4 = calculateColour(colorSpace, point4, point1, point2, t0, t1);
-//        Color color5 = calculateColour(colorSpace, point5, point1, point2, t0, t1);
-
-//        System.out.println("color 1: " + color1);
-//        System.out.println("color 2: " + color4);
-//        System.out.println("color 3: " + color3);
-//        System.out.println("color 4: " + color5);
-//        System.out.println("color 5: " + color2);
-
-        if (color1 == null || color2 == null || color3 == null) {
-            return;
+        // corner case where a pdf engine give zero zero coords which batik
+        // can't handle so we pad it slightly.
+        if (startPoint.equals(endPoint)) {
+            endPoint.x++;
         }
-        // Construct a LinearGradientPaint object to be use by java2D
-        float[] dist = {t0, t1 / 2.0f, t1};
-        Color[] colors = {color1, color3, color2};
+
+        // calculate colour based on points that make up the line, 10 is a good
+        // number for speed and gradient quality. 
+        int numberOfPoints = 10;
+        Color[] colors = calculateColorPoints(numberOfPoints, startPoint, endPoint, t0, t1);
+        float[] dist = calculateDomainEntries(numberOfPoints, t0, t1);
+
         linearGradientPaint = new LinearGradientPaint(
-                point1, point2, dist, colors,
+                startPoint, endPoint, dist, colors,
                 MultipleGradientPaint.NO_CYCLE,
                 MultipleGradientPaint.LINEAR_RGB,
                 matrix);
         inited = true;
     }
 
+    /**
+     * Calculates x number of points on long the line defined by the start and
+     * end point.
+     *
+     * @param numberOfPoints number of points to generate.
+     * @param startPoint     start of line segment.
+     * @param endPoint       end of line segment.
+     * @return list of points found on line
+     */
+    private Color[] calculateColorPoints(int numberOfPoints,
+                                         Point2D.Float startPoint,
+                                         Point2D.Float endPoint,
+                                         float t0, float t1) {
+        // calculate the slope
+        float m = (startPoint.y - endPoint.y) / (startPoint.x - endPoint.x);
+        // calculate the y intercept
+        float b = startPoint.y - (m * startPoint.x);
+
+        // let calculate x points between startPoint.x and startPoint.y that
+        // are on the line using y = mx + b.
+        Color[] color;
+        // if we don't have a y-axis line we can uses y=mx + b to get our points.
+        if (!Float.isInfinite(m)) {
+            float xDiff = (endPoint.x - startPoint.x) / numberOfPoints;
+            float xOffset = startPoint.x;
+            color = new Color[numberOfPoints + 1];
+            Point2D.Float point;
+            for (int i = 0, max = color.length; i < max; i++) {
+                point = new Point2D.Float(xOffset, (m * xOffset) + b);
+                color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
+                xOffset += xDiff;
+            }
+        }
+        // otherwise we have a infinite m and can just pick y values
+        else {
+            float yDiff = (endPoint.y - startPoint.y) / numberOfPoints;
+            float yOffset = startPoint.y;
+            color = new Color[numberOfPoints + 1];
+            Point2D.Float point;
+            for (int i = 0, max = color.length; i < max; i++) {
+                point = new Point2D.Float(0, yOffset);
+                color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
+                yOffset += yDiff;
+            }
+        }
+        return color;
+    }
+
+    /**
+     * Calculate domain entries givent the number of point between t0 and t1
+     *
+     * @param numberOfPoints number of points to calculate
+     * @param t0             lower limit
+     * @param t1             upper limit
+     * @return array of floats the evenly divide t0 and t1, length is
+     *         numberOfPoints + 1
+     */
+    private float[] calculateDomainEntries(int numberOfPoints, float t0, float t1) {
+
+        float offset = 1.0f / numberOfPoints;
+        float[] domainEntries = new float[numberOfPoints + 1];
+
+        domainEntries[0] = t0;
+        for (int i = 1, max = domainEntries.length; i < max; i++) {
+            domainEntries[i] = domainEntries[i - 1] + offset;
+        }
+        domainEntries[domainEntries.length - 1] = t1;
+        return domainEntries;
+    }
+
+    /**
+     * Calculate the colours value of the point xy on the line point1 and point2.
+     *
+     * @param colorSpace colour space to apply to the function output
+     * @param xy point to calcualte the colour of.
+     * @param point1 start of gradient line
+     * @param point2 end of gradient line.
+     * @param t0 domain min
+     * @param t1 domain max
+     * @return colour derived from the input parameters.
+     */
     private Color calculateColour(PColorSpace colorSpace, Point2D.Float xy,
                                   Point2D.Float point1, Point2D.Float point2,
                                   float t0, float t1) {
-
         // find colour at point 1
         float xPrime = linearMapping(xy, point1, point2);
         float t = parametrixValue(xPrime, t0, t1, extend);
         // find colour at point 2
         float[] input = new float[1];
         input[0] = t;
-
+        // apply the function to the given input
         if (function != null) {
             float[] output = function.calculate(input);
 
@@ -217,7 +278,7 @@ public class ShadingType2Pattern extends ShadingPattern {
 
     /**
      * Colour blend function to be applied to a point on the line with endpoints
-     * poin1 and point1 for a given point x,y.
+     * point1 and point1 for a given point x,y.
      *
      * @param xy     point to linearize.
      * @param point1 end point of line
@@ -233,8 +294,10 @@ public class ShadingType2Pattern extends ShadingPattern {
         float y1 = point2.y;
         float top = (((x1 - x0) * (x - x0)) + ((y1 - y0) * (y - y0)));
         float bottom = (((x1 - x0) * (x1 - x0)) + ((y1 - y0) * (y1 - y0)));
-
-        return top / bottom;
+        // have a couple corner cases where 1.00000046 isn't actually 1.0
+        // so I'm going to tweak the calculation to have 3 decimals.
+        int map = (int) ((top / bottom) * 100);
+        return map / 100.0f;
     }
 
     /**
