@@ -269,6 +269,16 @@ public class GraphicsState {
     // Fill alpha constant for "ca" or non-stroking alpha
     private float fillAlpha = 1.0f;
 
+    // Transparency grouping changes which transparency rule is applied.
+    // Normally it is simply a SRC_OVER rule but the group can also have isolated
+    // and knockout values that directly affect which rule is used for the
+    // transparency.
+    private int alphaRule = AlphaComposite.SRC_OVER;
+
+    private boolean transparencyGroup;
+    private boolean isolated;
+    private boolean knockOut;
+
     // Color space of the fill color, non-stroking colour.
     private PColorSpace fillColorSpace = new DeviceGray(null, null);
 
@@ -343,6 +353,11 @@ public class GraphicsState {
         overprintMode = parentGraphicsState.getOverprintMode();
         overprintOther = parentGraphicsState.isOverprintOther();
         overprintStroking = parentGraphicsState.isOverprintStroking();
+
+        // copy the alpha rules
+        fillAlpha = parentGraphicsState.getFillAlpha();
+        strokeAlpha = parentGraphicsState.getStrokeAlpha();
+        alphaRule = parentGraphicsState.getAlphaRule();
 
     }
 
@@ -729,6 +744,38 @@ public class GraphicsState {
 
     public void setOverprintOther(boolean overprintOther) {
         this.overprintOther = overprintOther;
+    }
+
+    public int getAlphaRule() {
+        return alphaRule;
+    }
+
+    public void setAlphaRule(int alphaRule) {
+        this.alphaRule = alphaRule;
+    }
+
+    public boolean isTransparencyGroup() {
+        return transparencyGroup;
+    }
+
+    public void setTransparencyGroup(boolean transparencyGroup) {
+        this.transparencyGroup = transparencyGroup;
+    }
+
+    public boolean isIsolated() {
+        return isolated;
+    }
+
+    public void setIsolated(boolean isolated) {
+        this.isolated = isolated;
+    }
+
+    public boolean isKnockOut() {
+        return knockOut;
+    }
+
+    public void setKnockOut(boolean knockOut) {
+        this.knockOut = knockOut;
     }
 }
 

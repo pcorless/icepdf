@@ -44,8 +44,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Form XObject class. Not currently part of the public api.
@@ -67,15 +67,29 @@ public class Form extends Stream {
     private GraphicsState graphicsState;
     private Resources resources;
     private Resources parentResource;
+    // transparency grouping data
+    private boolean transparencyGroup;
+    private boolean isolated;
+    private boolean knockOut;
     private boolean inited = false;
 
     /**
-     * @param l
-     * @param h
-     * @param streamInputWrapper
+     * Creates a new instance of the xObject.
+     * @param l document library
+     * @param h xObject dictionary entries.
+     * @param streamInputWrapper content stream of image or post script commands.
      */
     public Form(Library l, Hashtable h, SeekableInputConstrainedWrapper streamInputWrapper) {
         super(l, h, streamInputWrapper);
+
+        // check for grouping flags so we can do special handling during the
+        // xform content stream parsing.
+        Hashtable group = library.getDictionary(entries, "Group");
+        if (group != null) {
+            transparencyGroup = true;
+            isolated = library.getBoolean(group, "I");
+            knockOut = library.getBoolean(group, "K");
+        }
     }
 
     /**
@@ -104,7 +118,7 @@ public class Form extends Stream {
     public void completed() {
         // null the reference, the shapes are refered to in the
         // parent page and will be disposed of later if needed.
-        shapes = null;
+//        shapes = null;
         if (resources != null) {
             resources.removeReference(this);
             resources = null;
@@ -194,6 +208,7 @@ public class Form extends Stream {
                     in.close();
                 }
                 catch (IOException e) {
+                    // intentionally left blank.
                 }
             }
         }
@@ -201,23 +216,60 @@ public class Form extends Stream {
     }
 
     /**
-     * @return
+     * Gets the shapes that where parsed from the content stream.
+     *
+     * @return shapes object for xObject.
      */
     public Shapes getShapes() {
         return shapes;
     }
 
     /**
-     * @return
+     * Gets the bounding box for the xObject.
+     *
+     * @return rectangle in PDF coordinate space representing xObject bounds.
      */
     public Rectangle2D getBBox() {
         return bbox;
     }
 
     /**
-     * @return
+     * Gets the optional matrix which describes how to convert the coordinate
+     * system in xObject space to the parent coordinates space.
+     *
+     * @return affine transform representing the xObject's pdf to xObject space
+     *         transform.
      */
     public AffineTransform getMatrix() {
         return matrix;
+    }
+
+    /**
+     * If the xObject has a transparency group flag.
+     *
+     * @return true if a transparency group exists, false otherwise.
+     */
+    public boolean isTransparencyGroup() {
+        return transparencyGroup;
+    }
+
+    /**
+     * Only present if a transparency group is present.  Isolated groups are
+     * composed on a fully transparent back drop rather then the groups.
+     *
+     * @return true if the transparency group is isolated.
+     */
+    public boolean isIsolated() {
+        return isolated;
+    }
+
+    /**
+     * Only present if a transparency group is present.  Knockout groups individual
+     * elements composed with the groups initial back drop rather then the stack.
+     * 
+     * @return true if the transparency group is a knockout.
+     */
+    public boolean isKnockOut() {
+        return knockOut;
     }
 }

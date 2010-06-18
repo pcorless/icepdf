@@ -47,7 +47,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Stack;
 import java.util.Vector;
@@ -275,7 +274,7 @@ public class ContentParser {
                     else if (tok.equals(PdfOps.BT_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.BT_TOKEN);
                         // set graphics state alpha back to 1.0f for text
-                        setAlpha(shapes, 1.0f);
+                        setAlpha(shapes, graphicState.getAlphaRule(), 1.0f);
                         // start parseText, which parses until ET is reached
                         yBTstart = parseText(parser, shapes, yBTstart);
                     }
@@ -402,7 +401,16 @@ public class ContentParser {
                             Form formXObject = resources.getForm(xobjectName);
                             if (formXObject != null) {
                                 // init formXobject
-                                formXObject.setGraphicsState(new GraphicsState(graphicState));
+                                GraphicsState xformGraphicsState =
+                                        new GraphicsState(graphicState);
+                                formXObject.setGraphicsState(xformGraphicsState);
+                                if (formXObject.isTransparencyGroup()) {
+                                    // assign the state to the graphic state for later
+                                    // processing during the paint
+                                    xformGraphicsState.setTransparencyGroup(formXObject.isTransparencyGroup());
+                                    xformGraphicsState.setIsolated(formXObject.isIsolated());
+                                    xformGraphicsState.setKnockOut(formXObject.isKnockOut());
+                                }
                                 // according to spec the formXObject might not have
                                 // resources reference as a result we pass in the current
                                 // one in the hope that any resources can be found.
@@ -424,14 +432,29 @@ public class ContentParser {
                                     // apply the new clip now that they are in the
                                     // same space.
                                     Shape shape = matrix.createTransformedShape(clip);
-                                    Rectangle2D formClip = bbox.createIntersection(shape.getBounds2D());
-                                    shapes.add(formClip);
+                                    shapes.add(bbox.createIntersection(shape.getBounds2D()));
                                 } else {
                                     shapes.add(formXObject.getBBox());
                                 }
                                 shapes.addClipCommand();
                                 // 4.) Paint the graphics objects in font stream.
-                                shapes.add(formXObject.getShapes());
+                                setAlpha(shapes, graphicState.getAlphaRule(),
+                                        graphicState.getFillAlpha());
+                                // If we have a transparency group we paint it
+                                // slightly different then a regular xObject as we
+                                // need to capture the alpha which is only possible
+                                // by paint the xObject to an image.
+                                if (formXObject.isTransparencyGroup()) {
+                                    // add the hold form for further processing.
+                                    shapes.add(formXObject);
+                                }
+                                // the down side of painting to an image is that we
+                                // lose quality if there is a affine transform, so
+                                // if it isn't a group transparency we paint old way
+                                // by just adding the objects to the shapes stack.
+                                else {
+                                    shapes.add(formXObject.getShapes());
+                                }
                                 // makes sure we add xobject images so we can extract them.
                                 if (formXObject.getShapes() != null) {
                                     shapes.add(formXObject.getShapes().getImages());
@@ -854,7 +877,9 @@ public class ContentParser {
                                 pattern.init();
                                 // we paint the shape and color shading as defined
                                 // by the pattern dictionary and respect the current clip
-                                setAlpha(shapes, graphicState.getFillAlpha());
+                                setAlpha(shapes,
+                                        graphicState.getAlphaRule(),
+                                        graphicState.getFillAlpha());
                                 shapes.add(pattern.getPaint());
                                 shapes.add(graphicState.getClip());
                                 shapes.addFillCommand();
@@ -903,7 +928,7 @@ public class ContentParser {
         } finally {
             // End of stream set alpha state back to 1.0f, so that other
             // streams aren't applied an incorrect alpha value.
-            setAlpha(shapes, 1.0f);
+            setAlpha(shapes, AlphaComposite.SRC_OVER, 1.0f);
         }
 //        long endTime = System.currentTimeMillis();
 //        System.out.println("Paring Duration " + (endTime - startTime));
@@ -917,7 +942,7 @@ public class ContentParser {
                 logger.fine("STACK=" + tmp);
             }
         }
-        
+
         shapes.contract();
         return shapes;
     }
@@ -2305,7 +2330,14 @@ public class ContentParser {
 
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintStroking()) {
-            setAlpha(shapes, commonOverPrintAlpha(graphicState.getStrokeAlpha()));
+            setAlpha(shapes, graphicState.getAlphaRule(),
+                    commonOverPrintAlpha(graphicState.getStrokeAlpha()));
+        }
+        // The knockout effect can only be achieved by changing the alpha
+        // composite to source.  I don't have a test case for this for stroke
+        // but what we do for stroke is usually what we do for fill...
+        else if (graphicState.isKnockOut()) {
+            setAlpha(shapes, AlphaComposite.SRC, graphicState.getStrokeAlpha());
         }
 
         // found a PatternColor
@@ -2323,13 +2355,15 @@ public class ContentParser {
                 TilingPattern tilingPattern = (TilingPattern) pattern;
                 if (tilingPattern.getPaintType() ==
                         TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                    setAlpha(shapes, graphicState.getFillAlpha());
+                    setAlpha(shapes, graphicState.getAlphaRule(),
+                            graphicState.getFillAlpha());
                     shapes.add(tilingPattern.getUnColored());
                     shapes.add(geometricPath);
                     shapes.addDrawCommand();
                 } else if (tilingPattern.getPaintType() ==
                         TilingPattern.PAINTING_TYPE_COLORED_TILING_PATTERN) {
-                    setAlpha(shapes, graphicState.getFillAlpha());
+                    setAlpha(shapes, graphicState.getAlphaRule(),
+                            graphicState.getFillAlpha());
                     shapes.add(tilingPattern.getFirstColor());
                     shapes.add(geometricPath);
                     shapes.addDrawCommand();
@@ -2337,20 +2371,20 @@ public class ContentParser {
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init();
-                setAlpha(shapes, graphicState.getFillAlpha());
+                setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                 shapes.add(pattern.getPaint());
                 shapes.add(geometricPath);
                 shapes.addDrawCommand();
             }
         } else {
-            setAlpha(shapes, graphicState.getStrokeAlpha());
+            setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getStrokeAlpha());
             shapes.add(graphicState.getStrokeColor());
             shapes.add(geometricPath);
             shapes.addDrawCommand();
         }
         // set alpha back to origional value.
         if (graphicState.isOverprintStroking()) {
-            setAlpha(shapes, graphicState.getFillAlpha());
+            setAlpha(shapes, AlphaComposite.SRC_OVER, graphicState.getFillAlpha());
         }
     }
 
@@ -2359,7 +2393,7 @@ public class ContentParser {
      * representation.
      *
      * @param alpha alph constant
-     * @return tweaked overpring alpha
+     * @return tweaked over printing alpha
      */
     private static float commonOverPrintAlpha(float alpha) {
         // if alpha is already present we reduce it and we minimize
@@ -2386,9 +2420,15 @@ public class ContentParser {
 
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintOther()) {
-            setAlpha(shapes, commonOverPrintAlpha(graphicState.getFillAlpha()));
+            setAlpha(shapes, graphicState.getAlphaRule(),
+                    commonOverPrintAlpha(graphicState.getFillAlpha()));
+        }
+        // The knockout effect can only be achieved by changing the alpha
+        // composite to source.
+        else if (graphicState.isKnockOut()) {
+            setAlpha(shapes, AlphaComposite.SRC, graphicState.getFillAlpha());
         } else {
-            setAlpha(shapes, graphicState.getFillAlpha());
+            setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
 
         // found a PatternColor
@@ -2430,7 +2470,7 @@ public class ContentParser {
         }
         // add old alpha back to stack
         if (graphicState.isOverprintOther()) {
-            setAlpha(shapes, graphicState.getFillAlpha());
+            setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
     }
 
@@ -2483,12 +2523,13 @@ public class ContentParser {
      * Adds a new Alpha Composite object ot the shapes stack.
      *
      * @param shapes - current shapes vector to add Alpha Composite to
+     * @param rule   - rule to apply to the alphaComposite.
      * @param alpha  - alpha value, opaque = 1.0f.
      */
-    static void setAlpha(Shapes shapes, float alpha) {
+    static void setAlpha(Shapes shapes, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes
         AlphaComposite alphaComposite =
-                AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                AlphaComposite.getInstance(rule,
                         alpha);
         shapes.add(alphaComposite);
     }
