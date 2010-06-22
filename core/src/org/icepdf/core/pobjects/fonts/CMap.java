@@ -46,4 +46,14 @@ public interface CMap {
      * @return unicode value of ch if availabe otherwise orgional ch is returned unaltered.
      */
     public char toSelector(char ch);
+
+    /**
+     * Determines if the cid should be interpreted as a one or two byte character.
+     * Some CID fonts use the one byte notation but the two byte is the most
+     * common bar far.
+     *
+     * @param cid character code to check length off
+     * @return true if the cid should be considered as having a one byte length.
+     */
+    public boolean isOneByte(int cid);
 }

@@ -113,6 +113,9 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
      */
     private int[][] codeSpaceRange;
 
+    // determine if cmap is using one or two byte character maps.
+    private boolean oneByte;
+
     /**
      * Defines mappings from character codes to Unicode characters in the
      * associated font. Expressed in UTF-16BE encoding.
@@ -175,6 +178,10 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
     public CMap(Library l, Hashtable h, InputStream cMapInputStream) {
         super(l, h);
         this.cMapInputStream = cMapInputStream;
+    }
+
+    public boolean isOneByte(int cid){
+        return oneByte;
     }
 
     /**
@@ -306,9 +313,13 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                             // high end of range
                             token = parser.getStreamObject();
                             hexToken = (StringObject) token;
-                            int endRange = hexToken.getUnsignedInt(0, hexToken.getLength());
+                            int length = hexToken.getLength();
+                            int endRange = hexToken.getUnsignedInt(0, length);
                             codeSpaceRange[i][0] = startRange;
                             codeSpaceRange[i][1] = endRange;
+                            if (length == 2){
+                                oneByte = true;
+                            }
                         }
                     }
                     // find bfChars

@@ -235,6 +235,9 @@ public class LiteralStringObject implements StringObject {
             int charValue;
             StringBuilder tmp = new StringBuilder(length);
             for (int i = 0; i < length; i += charOffset) {
+                if (font.getToUnicode().isOneByte(i)){
+                    charOffset = 1;
+                }
                 charValue = getUnsignedInt(i, charOffset);
                 if (font.canDisplayEchar((char) charValue)) {
                     tmp.append((char) charValue);
