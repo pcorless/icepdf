@@ -350,6 +350,9 @@ public class PrintHelper implements Printable {
      */
     public int print(Graphics printGraphics, PageFormat pageFormat, int pageIndex) {
 
+        System.out.println("Page " + pageIndex + " clip " +
+                printGraphics.getClip() + " Thread " + Thread.currentThread());
+        
         // update the pageCount
         if (printingCurrentPage != pageIndex) {
             printingCurrentPage = pageIndex + 1;
@@ -523,8 +526,20 @@ public class PrintHelper implements Printable {
         PageRanges pageRanges = (PageRanges)
                 printRequestAttributeSet.get(PageRanges.class);
         totalPagesToPrint = 0;
+        // we need to loop over the multiple ranges as commas can be used
+        // to specify more then one range.  Make sure the specified pages
+        // fall with in the range allowed by the document.
+        int start, end;
         for (int[] ranges : pageRanges.getMembers()) {
-            totalPagesToPrint += ranges[1] - ranges[0] + 1;
+            start = ranges[0];
+            end =  ranges[1];
+            if (start < 1){
+                start = 1;
+            }
+            if (end > pageTree.getNumberOfPages()){
+                end = pageTree.getNumberOfPages();
+            }
+            totalPagesToPrint += end - start + 1;
         }
     }
 
