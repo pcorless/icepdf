@@ -37,6 +37,7 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -588,9 +589,17 @@ public class GraphicsState {
             // update the clip with the new value
             clip = (Area) area.clone();
 
-            // add new clip shape to stack
-            shapes.add(area.clone());
-            shapes.addClipCommand();
+            // add the new clip to the stack but check first for a potential
+            // clip intersection issue where small clips will not be painted
+            // at low zoom numbers.
+            Rectangle2D bounds = area.getBounds2D();
+            if (bounds.getWidth() < 1 || bounds.getHeight() < 1){
+                shapes.add(bounds);
+                shapes.addClipCommand();
+            }else{
+                shapes.add(area.clone());
+                shapes.addClipCommand();
+            }
         } else {
             // add a null clip for a null shape, should not normally happen
             clip = null;
