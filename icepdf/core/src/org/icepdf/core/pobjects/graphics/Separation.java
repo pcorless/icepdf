@@ -128,16 +128,10 @@ public class Separation extends PColorSpace {
      * @return new RGB colour composed from the components array.
      */
     public Color getColor(float[] components) {
-        // return the named colour if it was resolved, otherwise assemble the
-        // alternative colour. 
-        if (namedColor != null) {
-            return namedColor;
-        }
-
         // the function couldn't be initiated then use the alternative colour
         // space.  The alternate colour space can be any device or CIE-based
         // colour space. However Separation is usually specified using only one
-        // component so we must generate
+        // component so we must generate the output colour
         if (tintTransform == null) {
             float colour = components[0];
             // copy the colour values into the needed length of the alternate colour
@@ -147,7 +141,14 @@ public class Separation extends PColorSpace {
             }
             return alternate.getColor(alternateColour);
         }
-        float y[] = tintTransform.calculate(components);
-        return alternate.getColor(reverse(y));
+        if (alternate != null){
+            float y[] = tintTransform.calculate(components);
+            return alternate.getColor(reverse(y));
+        }
+        // return the named colour if it was resolved, otherwise assemble the
+        // alternative colour.
+        // -- Only applies to subtractive devices, screens are additive but I'm
+        // leaving this in encase something goes horribly wrong.
+        return namedColor;
     }
 }
