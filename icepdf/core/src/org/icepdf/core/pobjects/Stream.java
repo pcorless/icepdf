@@ -32,18 +32,21 @@
  */
 package org.icepdf.core.pobjects;
 
+import com.sun.image.codec.jpeg.JPEGCodec;
+import com.sun.image.codec.jpeg.JPEGImageDecoder;
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.filters.*;
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.tag.Tagger;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.ImageCache;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.tag.Tagger;
-import com.sun.image.codec.jpeg.JPEGCodec;
-import com.sun.image.codec.jpeg.JPEGImageDecoder;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
@@ -51,9 +54,10 @@ import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Vector;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The Stream class is responsible for decoding stream contents and returning
@@ -82,7 +86,7 @@ public class Stream extends Dictionary {
 
     // reference of stream, needed for encryption support
     private Reference pObjectReference = null;
-    
+
     // Inline image, from a content stream
     private boolean inlineImage;
 
@@ -180,15 +184,15 @@ public class Stream extends Dictionary {
 
     /**
      * Marks this stream as being constructed from an inline image
-     * definition in a content stream 
+     * definition in a content stream
      */
     public void setInlineImage(boolean inlineImage) {
         this.inlineImage = inlineImage;
     }
-    
+
     /**
      * @return Whether this stream was constructed from an inline image
-     * definition in a content stream
+     *         definition in a content stream
      */
     public boolean isInlineImage() {
         return inlineImage;
@@ -221,7 +225,7 @@ public class Stream extends Dictionary {
     public InputStream getInputStreamForDecodedStreamBytes() {
         // Make sure that the stream actually has data to decode, if it doesn't
         // make it null and return.
-        if (streamInput == null ||  streamInput.getLength() < 1) {
+        if (streamInput == null || streamInput.getLength() < 1) {
             return null;
         }
 
@@ -295,21 +299,9 @@ public class Stream extends Dictionary {
             } else if ( // No short name, since no JBIG2 for inline images
                     filterName.equals("JBIG2Decode")) {
                 // Leave empty so our else clause works
-            } else if (
+            } else if ( // No short name, since no JPX for inline images
                     filterName.equals("JPXDecode")) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "UNSUPPORTED:" + filterName + " " + entries);
-                }
-                if (input != null) {
-                    try {
-                        input.close();
-                    }
-                    catch (IOException e) {
-                        logger.log(Level.FINE,
-                                "Problem closing stream for unsupported JPXDecode");
-                    }
-                }
-                return null;
+                // Leave empty so our else clause works
             } else {
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine("UNSUPPORTED:" + filterName + " " + entries);
@@ -399,23 +391,23 @@ public class Stream extends Dictionary {
         byte[] rgb = new byte[3];
         try {
             InputStream input = getInputStreamForDecodedStreamBytes();
-            for(int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
+            for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
                 int argb = 0xFF000000;
                 if (input != null) {
                     final int toRead = 3;
                     int haveRead = 0;
                     while (haveRead < toRead) {
-                        int currRead = input.read(rgb, haveRead, toRead-haveRead);
+                        int currRead = input.read(rgb, haveRead, toRead - haveRead);
                         if (currRead < 0)
                             break;
                         haveRead += currRead;
                     }
                     if (haveRead >= 1)
-                        argb |= ((((int)rgb[0]) << 16) & 0x00FF0000);
+                        argb |= ((((int) rgb[0]) << 16) & 0x00FF0000);
                     if (haveRead >= 2)
-                        argb |= ((((int)rgb[1]) << 8) & 0x0000FF00);
+                        argb |= ((((int) rgb[1]) << 8) & 0x0000FF00);
                     if (haveRead >= 3)
-                        argb |= (((int)rgb[2]) & 0x000000FF);
+                        argb |= (((int) rgb[2]) & 0x000000FF);
                 }
                 pixels[pixelIndex] = argb;
             }
@@ -426,19 +418,23 @@ public class Stream extends Dictionary {
             logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
         }
     }
-    
+
     private boolean shouldUseCCITTFaxDecode() {
-        return containsFilter(new String[] {"CCITTFaxDecode", "/CCF", "CCF"});
+        return containsFilter(new String[]{"CCITTFaxDecode", "/CCF", "CCF"});
     }
 
     private boolean shouldUseDCTDecode() {
-        return containsFilter(new String[] {"DCTDecode", "/DCT", "DCT"});
+        return containsFilter(new String[]{"DCTDecode", "/DCT", "DCT"});
     }
-    
+
     private boolean shouldUseJBIG2Decode() {
-        return containsFilter(new String[] {"JBIG2Decode"});
+        return containsFilter(new String[]{"JBIG2Decode"});
     }
-    
+
+    private boolean shouldUseJPXDecode() {
+        return containsFilter(new String[]{"JPXDecode"});
+    }
+
     private boolean containsFilter(String[] searchFilterNames) {
         Vector filterNames = getFilterNames();
         if (filterNames == null)
@@ -465,12 +461,12 @@ public class Stream extends Dictionary {
         }
         return filterNames;
     }
-    
+
     private Vector getNormalisedFilterNames() {
         Vector filterNames = getFilterNames();
         if (filterNames == null)
             return null;
-        
+
         for (int i = 0; i < filterNames.size(); i++) {
             String filterName = filterNames.elementAt(i).toString();
 
@@ -478,41 +474,35 @@ public class Stream extends Dictionary {
                     || filterName.equals("/Fl")
                     || filterName.equals("Fl")) {
                 filterName = "FlateDecode";
-            }
-            else if (
+            } else if (
                     filterName.equals("LZWDecode")
-                    || filterName.equals("/LZW")
-                    || filterName.equals("LZW")) {
+                            || filterName.equals("/LZW")
+                            || filterName.equals("LZW")) {
                 filterName = "LZWDecode";
-            }
-            else if (
+            } else if (
                     filterName.equals("ASCII85Decode")
-                    || filterName.equals("/A85")
-                    || filterName.equals("A85")) {
+                            || filterName.equals("/A85")
+                            || filterName.equals("A85")) {
                 filterName = "ASCII85Decode";
-            }
-            else if (
+            } else if (
                     filterName.equals("ASCIIHexDecode")
-                    || filterName.equals("/AHx")
-                    || filterName.equals("AHx")) {
+                            || filterName.equals("/AHx")
+                            || filterName.equals("AHx")) {
                 filterName = "ASCIIHexDecode";
-            }
-            else if (
+            } else if (
                     filterName.equals("RunLengthDecode")
-                    || filterName.equals("/RL")
-                    || filterName.equals("RL")) {
+                            || filterName.equals("/RL")
+                            || filterName.equals("RL")) {
                 filterName = "RunLengthDecode";
-            }
-            else if (
+            } else if (
                     filterName.equals("CCITTFaxDecode")
-                    || filterName.equals("/CCF")
-                    || filterName.equals("CCF")) {
+                            || filterName.equals("/CCF")
+                            || filterName.equals("CCF")) {
                 filterName = "CCITTFaxDecode";
-            }
-            else if (
+            } else if (
                     filterName.equals("DCTDecode")
-                    || filterName.equals("/DCT")
-                    || filterName.equals("DCT")) {
+                            || filterName.equals("/DCT")
+                            || filterName.equals("DCT")) {
                 filterName = "DCTDecode";
             }
             // There aren't short names for JBIG2Decode or JPXDecode
@@ -521,7 +511,7 @@ public class Stream extends Dictionary {
         return filterNames;
     }
 
-    private byte[] decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeImage(
+    private byte[] decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeOrJPXDecodeImage(
             int width, int height, PColorSpace colourSpace, int bitspercomponent, Color fill,
             BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
         byte[] data = null;
@@ -543,8 +533,12 @@ public class Stream extends Dictionary {
             if (Tagger.tagging)
                 Tagger.tagImage("JBIG2Decode");
             jbig2Decode(width, height);
+        } else if (shouldUseJPXDecode()) {
+            if (Tagger.tagging)
+                Tagger.tagImage("JPXDecode");
+            jpxDecode();
         }
-        
+
 
         /*
          * Since we now have the code in place for regetting images
@@ -722,7 +716,7 @@ public class Stream extends Dictionary {
             catch (Exception e) {
                 logger.log(Level.FINE, "Problem loading JPEG image via JPEGImageDecoder: ", e);
             }
-            if( tmpImage != null ) {
+            if (tmpImage != null) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=DCTDecode_SunJPEGImageDecoder");
             }
@@ -732,7 +726,7 @@ public class Stream extends Dictionary {
             bufferedInput.close();
         }
         catch (IOException e) {
-            logger.log(Level.FINE, "Error closing image stream.",e);
+            logger.log(Level.FINE, "Error closing image stream.", e);
         }
 
         if (tmpImage == null) {
@@ -803,7 +797,7 @@ public class Stream extends Dictionary {
                         Class roClass = Class.forName("javax.media.jai.RenderedOp");
                         Method roGetAsBufferedImage = roClass.getMethod("getAsBufferedImage");
                         tmpImage = (BufferedImage) roGetAsBufferedImage.invoke(javax_media_jai_RenderedOp_op);
-                        if( tmpImage != null ) {
+                        if (tmpImage != null) {
                             if (Tagger.tagging)
                                 Tagger.tagImage("HandledBy=DCTDecode_JAI");
                         }
@@ -811,14 +805,14 @@ public class Stream extends Dictionary {
                 }
             }
             catch (Exception e) {
-                logger.log(Level.FINE,"Problem loading JPEG image via JAI: ", e);
+                logger.log(Level.FINE, "Problem loading JPEG image via JAI: ", e);
             }
 
             try {
                 input.close();
             }
             catch (IOException e) {
-                logger.log(Level.FINE,"Problem closing image stream. ", e);
+                logger.log(Level.FINE, "Problem closing image stream. ", e);
             }
         }
 
@@ -852,12 +846,18 @@ public class Stream extends Dictionary {
             image.setImage(tmpImage);
         }
     }
-    
+
+    /**
+     * Utility method to decode JBig2 images.
+     *
+     * @param width  width of image
+     * @param height height of image
+     */
     private void jbig2Decode(int width, int height) {
         BufferedImage tmpImage = null;
-        
+
         try {
-            checkMemory(108*1024);
+            checkMemory(108 * 1024);
             org.jpedal.jbig2.JBIG2Decoder decoder = new org.jpedal.jbig2.JBIG2Decoder();
 
             Hashtable decodeparms = library.getDictionary(entries, "DecodeParms");
@@ -869,26 +869,65 @@ public class Stream extends Dictionary {
                     globals = null;
                 }
             }
-            
+
             byte[] data = getDecodedStreamBytes();
-            checkMemory((width+8)*height*22/10); // Between 0.5 and 2.2
+            checkMemory((width + 8) * height * 22 / 10); // Between 0.5 and 2.2
             decoder.decodeJBIG2(data);
             data = null;
             // From decoding, memory usage inceases more than (width*height/8),
             // due to intermediate JBIG2Bitmap objects, used to build the final
             // one, still hanging around. Cleanup intermediate data-structures.  
             decoder.cleanupPostDecode();
-            checkMemory((width+8)*height/8);
+            checkMemory((width + 8) * height / 8);
             tmpImage = decoder.getPageAsBufferedImage(0);
             decoder = null;
         }
-        catch(IOException e) {
+        catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
         }
-        catch(org.jpedal.jbig2.JBIG2Exception e) {
+        catch (org.jpedal.jbig2.JBIG2Exception e) {
             logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
         }
-			
+
+        if (tmpImage != null) {
+            // write tmpImage to the cache
+            synchronized (imageLock) {
+                if (image == null) {
+                    image = new ImageCache(library);
+                }
+                image.setImage(tmpImage);
+            }
+        }
+    }
+
+    /**
+     * Utility method to decode JPEG2000 images.
+     */
+    private void jpxDecode() {
+        BufferedImage tmpImage = null;
+
+        try {
+            // Verify that ImageIO can read JPEG2000
+            Iterator<ImageReader> iterator = ImageIO.getImageReadersByFormatName("JPEG2000");
+            if (!iterator.hasNext()) {
+                logger.info(
+                        "ImageIO missing required plug-in to read JPEG 2000 images. " +
+                                "You can download the JAI ImageIO Tools from: " +
+                                "https://jai-imageio.dev.java.net/");
+                return;
+            }
+
+            // decode the image.
+            byte[] data = getDecodedStreamBytes();
+            ImageInputStream imageInputStream = ImageIO.createImageInputStream(
+                    new ByteArrayInputStream(data));
+            tmpImage = ImageIO.read(imageInputStream);
+
+        }
+        catch (IOException e) {
+            logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
+        }
+
         if (tmpImage != null) {
             // write tmpImage to the cache
             synchronized (imageLock) {
@@ -1135,7 +1174,7 @@ public class Stream extends Dictionary {
             }
         }
     }
-    
+
     private static void alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
@@ -1172,7 +1211,7 @@ public class Stream extends Dictionary {
 
         if (smaskRaster == null && maskRaster == null && (maskMinRGB == null || maskMaxRGB == null))
             return;
-        
+
         int width = bi.getWidth();
         int height = bi.getHeight();
         for (int y = 0; y < height; y++) {
@@ -1196,8 +1235,8 @@ public class Stream extends Dictionary {
                     int green = ((argb >> 8) & 0xFF);
                     int blue = (argb & 0xFF);
                     if (blue >= maskMinBlue && blue <= maskMaxBlue &&
-                        green >= maskMinGreen && green <= maskMaxGreen &&
-                        red >= maskMinRed && red <= maskMaxRed) {
+                            green >= maskMinGreen && green <= maskMaxGreen &&
+                            red >= maskMinRed && red <= maskMaxRed) {
                         alpha = 0x00;
                     }
                 }
@@ -1351,7 +1390,7 @@ public class Stream extends Dictionary {
             }
 
             //System.out.println("Segment: " + Integer.toHexString( ((int)segmentType)&0xFF ));
-            int length = (( (data[index] << 8)) & 0xFF00) + (((int) data[index + 1]) & 0xFF);
+            int length = (((data[index] << 8)) & 0xFF00) + (((int) data[index + 1]) & 0xFF);
             //System.out.println("   Length: " + length + "    Index: " + index);
 
             // APP14 (Might be Adobe file)
@@ -1570,7 +1609,7 @@ public class Stream extends Dictionary {
 
         if (Tagger.tagging)
             Tagger.tagImage("Filter=" + getNormalisedFilterNames());
-        
+
         // parse colour space
         PColorSpace colourSpace = null;
         Object o = library.getObject(entries, "ColorSpace");
@@ -1738,7 +1777,7 @@ public class Stream extends Dictionary {
         // decode the stream is, if value and image are null, the image has
         // has not yet been decoded
         if (image == null) {
-            baCCITTFaxData = decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeImage(
+            baCCITTFaxData = decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeOrJPXDecodeImage(
                     width, height, colourSpace, bitspercomponent, fill,
                     smaskImage, maskImage, maskMinRGB, maskMaxRGB);
         }
@@ -1778,7 +1817,7 @@ public class Stream extends Dictionary {
                     return img;
             }
             catch (Exception e) {
-                logger.log(Level.FINE,"Error building image raster.", e);
+                logger.log(Level.FINE, "Error building image raster.", e);
             }
         }
 
@@ -1899,9 +1938,9 @@ public class Stream extends Dictionary {
                 if (Tagger.tagging)
                     Tagger.tagImage("RasterFromBytes_DeviceRGB_8_alpha=" + usingAlpha);
                 int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
-                                        BufferedImage.TYPE_INT_RGB;
+                        BufferedImage.TYPE_INT_RGB;
                 img = new BufferedImage(width, height, type);
-                int[] data = ((DataBufferInt)img.getRaster().getDataBuffer()).getData();
+                int[] data = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoRGB(data);
                 if (usingAlpha)
                     alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
