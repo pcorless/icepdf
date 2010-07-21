@@ -287,7 +287,14 @@ public class Shapes {
      * @param pagePainter parent page painter
      */
     public synchronized void paint(Graphics2D g, PageViewComponentImpl.PagePainter pagePainter) {
-
+        
+        // disable clipping, helps with printing issues on windows where the
+        // clip can sometimes blank a whole page.  This should only be used as
+        // a lost resort.  Buffering to an image is another way to avoid the clip
+        // problem.
+        boolean disableClipping =
+                Defs.sysPropertyBoolean("org.icepdf.core.paint.disableClipping",
+                        false);
         Shape shape = null;
         AffineTransform base = new AffineTransform(g.getTransform());
         Shape clip = g.getClip();
@@ -361,7 +368,7 @@ public class Shapes {
                     g.setClip(clip);
                     // apply the af, which places the clip in the correct location
                     g.setTransform(af);
-                    if (shape != null) {
+                    if (shape != null && !disableClipping) {
                         // clip outline
                         //                    g.setComposite(AlphaComposite.getInstance(rule, 1.0f));
                         //                    Color tmp = g.getColor();
