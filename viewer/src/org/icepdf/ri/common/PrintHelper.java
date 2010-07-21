@@ -43,6 +43,7 @@ import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
@@ -349,9 +350,6 @@ public class PrintHelper implements Printable {
      * @return A status code of Printable.NO_SUCH_PAGE or Printable.PAGE_EXISTS
      */
     public int print(Graphics printGraphics, PageFormat pageFormat, int pageIndex) {
-
-        System.out.println("Page " + pageIndex + " clip " +
-                printGraphics.getClip() + " Thread " + Thread.currentThread());
         
         // update the pageCount
         if (printingCurrentPage != pageIndex) {
@@ -416,9 +414,17 @@ public class PrintHelper implements Printable {
 
         // Paint the page content
         currentPage.paint(printGraphics,
-                Page.BOUNDARY_CROPBOX,
                 GraphicsRenderingHints.PRINT,
+                Page.BOUNDARY_CROPBOX,
                 rotation, zoomFactor);
+
+        // Paint content to page buffer to reduce spool size but quality will suffer.
+//        Image image = viewController.getDocument().getPageImage(pageIndex,
+//                GraphicsRenderingHints.PRINT,
+//                Page.BOUNDARY_CROPBOX,
+//                rotation, zoomFactor);
+//        printGraphics.drawImage(image,0,0,null);
+//        image.flush();
 
         pageTree.releasePage(currentPage, this);
 
