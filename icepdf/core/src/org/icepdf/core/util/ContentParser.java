@@ -2462,7 +2462,7 @@ public class ContentParser {
                 graphicState = graphicState.restore();
                 // 1x1 tiles don't seem to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
-                if ((tilingPattern.getBBox().getWidth() > 1 &&
+                if ((tilingPattern.getBBox().getWidth() > 1 ||
                         tilingPattern.getBBox().getHeight() > 1) ){
                     shapes.add(tilingPattern);
                 }
