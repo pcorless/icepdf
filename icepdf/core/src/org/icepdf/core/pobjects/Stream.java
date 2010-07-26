@@ -47,6 +47,7 @@ import org.icepdf.core.util.Library;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
@@ -73,6 +74,14 @@ public class Stream extends Dictionary {
 
     private static final Logger logger =
             Logger.getLogger(Stream.class.toString());
+
+    // system environment keys.
+    private static GraphicsEnvironment graphicEnvironment =
+            GraphicsEnvironment.getLocalGraphicsEnvironment();
+    private static GraphicsDevice defaultScreenDevice =
+            graphicEnvironment.getDefaultScreenDevice();
+    private static GraphicsConfiguration graphicsConfiguration =
+            defaultScreenDevice.getDefaultConfiguration();
 
     // original byte stream that has not been decoded
     private SeekableInputConstrainedWrapper streamInput;
@@ -1488,30 +1497,84 @@ public class Stream extends Dictionary {
         return img;
     }
 
-    private BufferedImage makeRGBABufferedImageFromImage(Image img) {
-        BufferedImage ret = null;
-        int width = img.getWidth(null);
-        int height = img.getHeight(null);
-        int count = 0;
-        while (width < 0 || height < 0) {
-            try {
-                Thread.sleep(50L);
-            } catch (InterruptedException ie) {
+    // This method returns a buffered image with the contents of an image from
+    // java almanac
+    private BufferedImage makeRGBABufferedImageFromImage(Image image) {
+
+        if (image instanceof BufferedImage) {
+            return (BufferedImage)image;
+        }
+        // This code ensures that all the pixels in the image are loaded
+        image = new ImageIcon(image).getImage();
+        // Determine if the image has transparent pixels; for this method's
+        // implementation, see Determining If an Image Has Transparent Pixels
+        boolean hasAlpha = hasAlpha(image);
+        // Create a buffered image with a format that's compatible with the screen
+        BufferedImage bImage = null;
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gs = ge.getDefaultScreenDevice();
+        GraphicsConfiguration gc = gs.getDefaultConfiguration();
+        try {
+            // Determine the type of transparency of the new buffered image
+            int transparency = Transparency.OPAQUE;
+            if (hasAlpha) {
+                transparency = Transparency.BITMASK;
             }
-            width = img.getWidth(null);
-            height = img.getHeight(null);
-            if (++count > 20)
-                break;
+            // Create the buffered image
+            int width = image.getWidth(null);
+            int height = image.getHeight(null);
+            if (width == -1 || height == -1 ){
+                return null;
+            }
+            bImage = gc.createCompatibleImage(
+                image.getWidth(null), image.getHeight(null), transparency);
+        } catch (HeadlessException e) {
+            // The system does not have a screen
         }
-        if (width >= 0 && height >= 0) {
-            checkMemory(width * height * 4); // RGBA
-            ret = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics g = ret.getGraphics();
-            g.drawImage(img, 0, 0, null);
-            g.dispose();
-            img.flush();
+        if (bImage == null) {
+            // Create a buffered image using the default color model
+            int type = BufferedImage.TYPE_INT_RGB;
+            if (hasAlpha) {
+                type = BufferedImage.TYPE_INT_ARGB;
+            }
+            int width = image.getWidth(null);
+            int height = image.getHeight(null);
+            if (width == -1 || height == -1 ){
+                return null;
+            }
+            bImage = new BufferedImage(width, height, type);
         }
-        return ret;
+        // Copy image to buffered image
+        Graphics g = bImage.createGraphics();
+        // Paint the image onto the buffered image
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
+        image.flush();
+        return bImage;
+    }
+
+    // returns true if the specified image has transparent pixels, from
+    // java almanac
+    private static boolean hasAlpha(Image image) {
+        // If buffered image, the color model is readily available
+        if (image instanceof BufferedImage) {
+            BufferedImage bimage = (BufferedImage)image;
+            return bimage.getColorModel().hasAlpha();
+        }
+        // Use a pixel grabber to retrieve the image's color model;
+        // grabbing a single pixel is usually sufficient
+        PixelGrabber pg = new PixelGrabber(image, 0, 0, 1, 1, false);
+        try {
+            pg.grabPixels();
+        } catch (InterruptedException e) {
+        }
+        // Get the image's color model
+        ColorModel cm = pg.getColorModel();
+        if (cm != null){
+            return cm.hasAlpha();
+        }else {
+            return true;
+        }
     }
 
     private boolean nonDecodeCCITTMakeImage(Color fill) {
