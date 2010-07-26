@@ -1750,6 +1750,7 @@ public class ContentParser {
                         colour[nCount] = ((Number) stack.pop()).floatValue();
                         nCount++;
                     }
+                    graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(colour));
                     tilingPattern.setUnColored(
                             graphicState.getStrokeColorSpace().getColor(colour));
                 }
@@ -1834,6 +1835,8 @@ public class ContentParser {
                     }
                     // fill colour to be used when painting. 
                     graphicState.setFillColor(graphicState.getFillColorSpace().getColor(colour));
+                    tilingPattern.setUnColored(
+                            graphicState.getFillColorSpace().getColor(colour));
                 }
             }
         } else if (o instanceof Number) {
@@ -2349,29 +2352,36 @@ public class ContentParser {
             // Start processing tiling pattern
             if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_TILING) {
-                // todo finish tiling work:
-                // currently no support for tiling, but we can still try
-                // and fill using the specified uncoloured value.
+                // currently not doing any special handling for colour or uncoloured
+                // paint, as it done when the scn or sc tokens are parsed.
                 TilingPattern tilingPattern = (TilingPattern) pattern;
-                if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                    setAlpha(shapes, graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
-                    shapes.add(tilingPattern.getUnColored());
-                    shapes.add(geometricPath);
-                    shapes.addDrawCommand();
-                } else if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_COLORED_TILING_PATTERN) {
-                    setAlpha(shapes, graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
-                    shapes.add(tilingPattern.getFirstColor());
-                    shapes.add(geometricPath);
-                    shapes.addDrawCommand();
+                // 1.)save the graphics context
+                graphicState = graphicState.save();
+                // 2.) install the graphic state
+                tilingPattern.setParentGraphicState(graphicState);
+                tilingPattern.init();
+                // 4.) Restore the saved graphics state
+                graphicState = graphicState.restore();
+                // 1x1 tiles don't seem to paint so we'll resort to using the
+                // first pattern colour or the uncolour.
+                if ((tilingPattern.getBBox().getWidth() > 1 &&
+                        tilingPattern.getBBox().getHeight() > 1) ){
+                    shapes.add(tilingPattern);
                 }
+                else{
+                    // draw partial fill colour
+                    if (tilingPattern.getPaintType() ==
+                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
+                        shapes.add(tilingPattern.getUnColored());
+                    }else{
+                        shapes.add(tilingPattern.getFirstColor());
+                    }
+                }
+                shapes.add(geometricPath);
+                shapes.addDrawCommand();
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init();
-                setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                 shapes.add(pattern.getPaint());
                 shapes.add(geometricPath);
                 shapes.addDrawCommand();
@@ -2416,7 +2426,7 @@ public class ContentParser {
      * @param shapes        current shapes stack
      * @param geometricPath current path.
      */
-    private void commonFill(Shapes shapes, GeneralPath geometricPath) {
+    private void commonFill(Shapes shapes, GeneralPath geometricPath) throws NoninvertibleTransformException {
 
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintOther()) {
@@ -2440,21 +2450,33 @@ public class ContentParser {
             // Start processing tiling pattern
             if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_TILING) {
-                // currently no support for tiling, but we can still try
-                // and fill using the specified uncoloured value.
+                // currently not doing any special handling for colour or uncoloured
+                // paint, as it done when the scn or sc tokens are parsed.
                 TilingPattern tilingPattern = (TilingPattern) pattern;
-                if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                    shapes.add(tilingPattern.getUnColored());
-                    shapes.add(geometricPath);
-                    shapes.addFillCommand();
-                } else if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_COLORED_TILING_PATTERN) {
-                    tilingPattern.init();
-                    shapes.add(tilingPattern.getFirstColor());
-                    shapes.add(geometricPath);
-                    shapes.addFillCommand();
+                // 1.)save the graphics context
+                graphicState = graphicState.save();
+                // 2.) install the graphic state
+                tilingPattern.setParentGraphicState(graphicState);
+                tilingPattern.init();
+                // 4.) Restore the saved graphics state
+                graphicState = graphicState.restore();
+                // 1x1 tiles don't seem to paint so we'll resort to using the
+                // first pattern colour or the uncolour.
+                if ((tilingPattern.getBBox().getWidth() > 1 &&
+                        tilingPattern.getBBox().getHeight() > 1) ){
+                    shapes.add(tilingPattern);
                 }
+                else{
+                    // draw partial fill colour
+                    if (tilingPattern.getPaintType() ==
+                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
+                        shapes.add(tilingPattern.getUnColored());
+                    }else{
+                        shapes.add(tilingPattern.getFirstColor());
+                    }
+                }
+                shapes.add(geometricPath);
+                shapes.addFillCommand();
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init();

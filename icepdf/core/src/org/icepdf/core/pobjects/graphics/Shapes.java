@@ -458,6 +458,8 @@ public class Shapes {
                 // then painting the image using which ever alph rule is on the
                 // shapes stack.
                 else if (nextShape instanceof Form) {
+                    //todo move logic into form object. 
+
                     Form xForm = (Form)nextShape;
 
                     Rectangle2D bBox = xForm.getBBox();
@@ -492,6 +494,11 @@ public class Shapes {
 
                 } else if (nextShape instanceof Color) {
                     g.setColor((Color) nextShape);
+                }
+                // handle tiled painting
+                else if (nextShape instanceof TilingPattern) {
+                    TilingPattern tilingPattern = (TilingPattern)nextShape;
+                    tilingPattern.paintPattern(g, parentPage);
                 }
 //                else if (Debug.ex){
 //                    Debug.p("Found unhandled Shapes Operand ");
