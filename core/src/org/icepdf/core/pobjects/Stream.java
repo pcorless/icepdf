@@ -2420,6 +2420,16 @@ public class Stream extends Dictionary {
     }
 
     /**
+     * Allow access to seakable intput so that pattern object can
+     * be corrrectly created.
+     *
+     * @return stream istnaces SeekableInputConstrainedWrapper
+     */
+    public SeekableInputConstrainedWrapper getStreamInput() {
+        return streamInput;
+    }
+
+    /**
      * Return a string description of the object.  Primarly used for debugging.
      */
     public String toString() {
