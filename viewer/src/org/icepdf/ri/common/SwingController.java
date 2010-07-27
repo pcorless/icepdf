@@ -1480,8 +1480,11 @@ public class SwingController
 
                 // load the document
                 document = new Document();
-                document.setSecurityCallback(
-                        new MyGUISecurityCallback(viewer, messageBundle));
+                // create default security callback is user has not created one
+                if (documentViewController.getSecurityCallback() == null){
+                    document.setSecurityCallback(
+                            new MyGUISecurityCallback(viewer, messageBundle));
+                }
                 document.setFile(pathname);
 
                 commonNewDocumentHandling(pathname);
@@ -1601,8 +1604,11 @@ public class SwingController
 
                 // load the document
                 document = new Document();
-                document.setSecurityCallback(
-                        new MyGUISecurityCallback(viewer, messageBundle));
+                // create default security callback is user has not created one
+                if (documentViewController.getSecurityCallback() == null){
+                    document.setSecurityCallback(
+                            new MyGUISecurityCallback(viewer, messageBundle));
+                }
                 document.setUrl(location);
 
                 commonNewDocumentHandling(location.getPath());
@@ -1673,8 +1679,11 @@ public class SwingController
 
                 // load the document
                 document = new Document();
-                document.setSecurityCallback(
-                        new MyGUISecurityCallback(viewer, messageBundle));
+                // create default security callback is user has not created one
+                if (documentViewController.getSecurityCallback() == null){
+                    document.setSecurityCallback(
+                            new MyGUISecurityCallback(viewer, messageBundle));
+                }
                 document.setInputStream(inputStream, pathOrURL);
 
                 commonNewDocumentHandling(description);
@@ -1742,8 +1751,11 @@ public class SwingController
 
                 // load the document
                 document = new Document();
-                document.setSecurityCallback(
-                        new MyGUISecurityCallback(viewer, messageBundle));
+                // create default security callback is user has not created one
+                if (documentViewController.getSecurityCallback() == null){
+                    document.setSecurityCallback(
+                            new MyGUISecurityCallback(viewer, messageBundle));
+                }
                 document.setByteArray(data, offset, length, pathOrURL);
 
                 commonNewDocumentHandling(description);
