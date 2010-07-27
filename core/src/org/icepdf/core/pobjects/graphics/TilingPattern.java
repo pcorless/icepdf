@@ -39,6 +39,7 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
@@ -365,17 +366,19 @@ public class TilingPattern extends Stream implements Pattern {
             g.setPaint(patternPaint);
 
             // show it in a frame
-            //                    final JFrame f = new JFrame("Test");
-            //                    f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            //                    f.getContentPane().add(new JComponent() {
-            //                        @Override
-            //                        public void paint(Graphics g_) {
-            //                            super.paint(g_);
-            //                            g_.drawImage(bi, 0, 0, f);
-            //                        }
-            //                    });
-            //                    f.setSize(new Dimension(800, 800));
-            //                    f.setVisible(true);
+//            final JFrame f = new JFrame("Test");
+//            f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+//            f.getContentPane().add(new JComponent() {
+//                @Override
+//                public void paint(Graphics g_) {
+//                    super.paint(g_);
+//                    g_.drawImage(bi, 0, 0, f);
+//                }
+//            });
+//            f.setSize(new Dimension(800, 800));
+//            f.setVisible(true);
+            // post paint cleanup
+            canvas.dispose();
             bi.flush();
         } else {
             g.setPaint(patternPaint);

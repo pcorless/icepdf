@@ -310,6 +310,9 @@ public class Resources extends Dictionary {
             if (attribute != null && attribute instanceof TilingPattern) {
                 return (TilingPattern) attribute;
             }
+            else  if (attribute != null && attribute instanceof Stream) {
+                return new TilingPattern((Stream)attribute);
+            }
             // ShaddingPatterns will not have a stream but still need to parsed
             else if (attribute != null && attribute instanceof Hashtable) {
                 return ShadingPattern.getShadingPattern(library,
