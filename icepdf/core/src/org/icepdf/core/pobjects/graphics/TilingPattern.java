@@ -39,7 +39,6 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
@@ -228,6 +227,7 @@ public class TilingPattern extends Stream implements Pattern {
      * a best guess at which colour to use for stroking or non stroking
      * operations
      */
+
     public Color getFirstColor() {
         // find and cache first colour found in stack
         if (shapes != null && unColored == null) {
@@ -340,7 +340,7 @@ public class TilingPattern extends Stream implements Pattern {
                 // pattern cell. Java texture paint can't take a transform
                 // when painting so this will have to do.
                 if (matrix.getShearX() > 0 ||
-                        matrix.getShearY() > 0){
+                        matrix.getShearY() > 0) {
                     canvas.translate(bBox.getWidth(), 0);
                     tilingShapes.paint(canvas);
                     canvas.translate(0, -bBox.getHeight());
