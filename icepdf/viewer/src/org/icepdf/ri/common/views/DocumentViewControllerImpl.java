@@ -34,6 +34,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.Controller;
+import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
@@ -153,6 +154,7 @@ public class DocumentViewControllerImpl
     protected SwingController viewerController;
 
     protected AnnotationCallback annotationCallback;
+    protected SecurityCallback securityCallback;
 
     protected PropertyChangeSupport changes = new PropertyChangeSupport(this);
 
@@ -262,6 +264,10 @@ public class DocumentViewControllerImpl
         this.annotationCallback = annotationCallback;
     }
 
+    public void setSecurityCallback(SecurityCallback securityCallback){
+        this.securityCallback = securityCallback;
+    }
+
     public void clearSelectedAnnotations(){
         if (documentViewModel.getCurrentAnnotation() != null){
             documentViewModel.getCurrentAnnotation().setSelected(false);
@@ -364,6 +370,15 @@ public class DocumentViewControllerImpl
      */
     public AnnotationCallback getAnnotationCallback() {
         return annotationCallback;
+    }
+
+    /**
+     * Gets the security callback.
+     *
+     * @return security callback associated with this document.
+     */
+    public SecurityCallback getSecurityCallback(){
+        return securityCallback;
     }
 
     public DocumentView getDocumentView() {

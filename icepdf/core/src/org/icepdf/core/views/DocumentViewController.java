@@ -34,6 +34,7 @@ package org.icepdf.core.views;
 
 import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.Controller;
+import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
@@ -175,6 +176,8 @@ public interface DocumentViewController {
 
     public void setAnnotationCallback(AnnotationCallback annotationCallback);
 
+    public void setSecurityCallback(SecurityCallback securityCallback);
+
     public void deleteCurrentAnnotation();
 
     public void undo();
@@ -182,6 +185,8 @@ public interface DocumentViewController {
     public void redo();
 
     public AnnotationCallback getAnnotationCallback();
+
+    public SecurityCallback getSecurityCallback();
 
     public DocumentViewModel getDocumentViewModel();
 
