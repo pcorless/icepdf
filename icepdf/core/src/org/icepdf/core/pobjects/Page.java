@@ -445,8 +445,12 @@ public class Page extends Dictionary implements MemoryManageable {
                       float userRotation, float userZoom,
                       PageViewComponentImpl.PagePainter pagePainter,
                       boolean paintAnnotations, boolean paintSearchHighlight) {
-        if (!isInited) {
+        if (!isInited && pagePainter == null) {
             init();
+        }else if (!isInited && pagePainter != null){
+            // make sure we don't do a page init on the awt thread in the viewer
+            // ri, let the
+            return;
         }
 
         Graphics2D g2 = (Graphics2D) g;
