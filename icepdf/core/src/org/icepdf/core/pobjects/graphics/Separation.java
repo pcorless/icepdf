@@ -141,7 +141,7 @@ public class Separation extends PColorSpace {
             }
             return alternate.getColor(alternateColour);
         }
-        if (alternate != null){
+        if (alternate != null && !(alternate instanceof DeviceCMYK)){
             float y[] = tintTransform.calculate(components);
             return alternate.getColor(reverse(y));
         }
