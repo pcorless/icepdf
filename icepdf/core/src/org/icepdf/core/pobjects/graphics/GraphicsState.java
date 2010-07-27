@@ -592,14 +592,15 @@ public class GraphicsState {
             // add the new clip to the stack but check first for a potential
             // clip intersection issue where small clips will not be painted
             // at low zoom numbers.
-            Rectangle2D bounds = area.getBounds2D();
-            if (bounds.getWidth() < 1 || bounds.getHeight() < 1){
-                shapes.add(bounds);
-                shapes.addClipCommand();
-            }else{
+//            Rectangle2D bounds = area.getBounds2D();
+//            if (bounds.getWidth() < 0.005f ||
+//                    bounds.getHeight() < 0.0005f){
+//                shapes.add(bounds);
+//                shapes.addClipCommand();
+//            }else{
                 shapes.add(area.clone());
                 shapes.addClipCommand();
-            }
+//            }
         } else {
             // add a null clip for a null shape, should not normally happen
             clip = null;
