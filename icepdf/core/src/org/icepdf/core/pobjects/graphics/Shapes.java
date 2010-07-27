@@ -63,6 +63,8 @@ public class Shapes {
     private static final Logger logger =
             Logger.getLogger(Shapes.class.toString());
 
+    private static int paintDelay = 200;
+
     // allow scaling of large images to improve clarity on screen
     private static boolean scaleImages;
 
@@ -71,6 +73,15 @@ public class Shapes {
         scaleImages =
                 Defs.sysPropertyBoolean("org.icepdf.core.scaleImages",
                         true);
+
+        try {
+            // Delay between painting calls.
+            paintDelay =
+                    Defs.intProperty("org.icepdf.core.views.refreshfrequency",
+                            200);
+        } catch (NumberFormatException e) {
+            logger.log(Level.FINE, "Error reading buffered scale factor");
+        }
     }
 
     // Graphics stack for a page's content.
@@ -88,19 +99,6 @@ public class Shapes {
 
     // text extraction data structure
     private PageText pageText = new PageText();
-
-    private static int paintDelay = 200;
-
-    // Delay between painting calls.
-    static {
-        try {
-            paintDelay =
-                    Defs.intProperty("org.icepdf.core.views.refreshfrequency",
-                            200);
-        } catch (NumberFormatException e) {
-            logger.log(Level.FINE, "Error reading buffered scale factor");
-        }
-    }
 
     /**
      * Classes used to make the paint process a little easier, when poping object
@@ -295,6 +293,10 @@ public class Shapes {
         boolean disableClipping =
                 Defs.sysPropertyBoolean("org.icepdf.core.paint.disableClipping",
                         false);
+        // disables alpha painting.
+        boolean disableAlpha =
+                Defs.sysPropertyBoolean("org.icepdf.core.paint.disableAlpha",
+                        false);
         Shape shape = null;
         AffineTransform base = new AffineTransform(g.getTransform());
         Shape clip = g.getClip();
@@ -353,7 +355,8 @@ public class Shapes {
                     // update current clip shape
                     if (g.getClip() != null)
                         clipArea = new Area(g.getClip());
-                } else if (nextShape instanceof AlphaComposite) {
+                } else if (nextShape instanceof AlphaComposite &&
+                        !disableAlpha) {
                     g.setComposite((AlphaComposite) nextShape);
                 } else if (nextShape instanceof Paint) {
                     g.setPaint((Paint) nextShape);
