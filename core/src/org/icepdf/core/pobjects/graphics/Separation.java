@@ -141,9 +141,19 @@ public class Separation extends PColorSpace {
             }
             return alternate.getColor(alternateColour);
         }
-        if (alternate != null && !(alternate instanceof DeviceCMYK)){
+        if (alternate != null){
             float y[] = tintTransform.calculate(components);
-            return alternate.getColor(reverse(y));
+            Color color =alternate.getColor(reverse(y));
+            // we have one corner case where the named colour is black where
+            // where the alternate colour white, can't figure it out and we
+            // only have this one special case.  In PDF we generally favour
+            // black as it prints a lot better then white....
+            if (namedColor != null){
+                if (namedColor.equals(Color.BLACK) && color.equals(Color.WHITE)){
+                    return Color.BLACK;
+                }
+            }
+            return color;
         }
         // return the named colour if it was resolved, otherwise assemble the
         // alternative colour.
