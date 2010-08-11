@@ -2493,8 +2493,16 @@ public class SwingController
      */
     public void showPrintSetupDialog() {
         PrintHelper printHelper = viewModel.getPrintHelper();
-        // create a new pring helper for this document instance. 
-        printHelper = new PrintHelper(documentViewController, getPageTree());
+        // create a new pring helper for this document instance
+        if (printHelper == null) {
+            printHelper = new PrintHelper(documentViewController, getPageTree());
+        }
+        // reuse previous print attributes if they exist. 
+        else {
+            printHelper = new PrintHelper(documentViewController, getPageTree(),
+                    printHelper.getDocAttributeSet(),
+                    printHelper.getPrintRequestAttributeSet());
+        }
         viewModel.setPrintHelper(printHelper);
         viewModel.getPrintHelper().showPrintSetupDialog();
     }
