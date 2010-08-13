@@ -50,6 +50,7 @@ import javax.imageio.stream.ImageInputStream;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.color.ColorSpace;
+import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
@@ -545,7 +546,8 @@ public class Stream extends Dictionary {
         } else if (shouldUseJPXDecode()) {
             if (Tagger.tagging)
                 Tagger.tagImage("JPXDecode");
-            jpxDecode();
+            jpxDecode(width, height, colourSpace, bitspercomponent, fill,
+                smaskImage, maskImage, maskMinRGB, maskMaxRGB);
         }
 
 
@@ -910,11 +912,24 @@ public class Stream extends Dictionary {
     }
 
     /**
+     * Creates a new instance of a Dictionary.
+     *
+     * @param library document library.
+     * @param entries dictionary entries.
+     */
+    public Stream(Library library, Hashtable entries) {
+        super(library, entries);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    /**
      * Utility method to decode JPEG2000 images.
      */
-    private void jpxDecode() {
-        BufferedImage tmpImage = null;
+    private void jpxDecode(int width, int height, PColorSpace colourSpace,
+                           int bitspercomponent, Color fill,
+                           BufferedImage smaskImage, BufferedImage maskImage,
+                           int[] maskMinRGB, int[] maskMaxRGB ) {
 
+        BufferedImage tmpImage = null;
         try {
             // Verify that ImageIO can read JPEG2000
             Iterator<ImageReader> iterator = ImageIO.getImageReadersByFormatName("JPEG2000");
@@ -931,6 +946,10 @@ public class Stream extends Dictionary {
             ImageInputStream imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
             tmpImage = ImageIO.read(imageInputStream);
+            // check for a mask value
+            if (maskImage != null){
+                applyExplicitMask(tmpImage, maskImage);
+            }
 
         }
         catch (IOException e) {
@@ -1182,6 +1201,89 @@ public class Stream extends Dictionary {
                 wr.setPixel(x, y, rgbaValues);
             }
         }
+    }
+
+    /**
+     * Explicit Masking algorithm, as of PDF 1.3.  The entry in an image dictionary
+     * may be an image mask, as described under "Stencil Masking", which serves as
+     * an explicit mask fo rthe primary or base image.  The base image and the
+     * image mask need not have the same resolution (width, height), but since
+     * all images are defined on the unit square in user space, their boundaries on the
+     * page will conincide; that is, they will overlay each other.
+     * <p/>
+     * The image mask indicates indicates which places on the page are to be painted
+     * and which are to be masked out (left unchanged).  Unmasked areas are painted
+     * with the corresponding portions of the base image; masked areas are not.
+     *
+     * @param baseImage
+     * @param maskImage
+     */
+    private static void applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
+        // check to see if we need to scale the mask to match the size of the
+        // base image.
+        int baseWidth =  baseImage.getWidth();
+        int baseHeight = baseImage.getHeight();
+        int maskWidth = maskImage.getWidth();
+        int maskHeight = maskImage.getHeight();
+
+        if (baseWidth != maskWidth || baseHeight != maskHeight){
+            // calculate scale factors.
+            double scaleX = baseWidth / (double)maskWidth;
+            double scaleY = baseHeight / (double)maskHeight;
+            // scale the mask to match the base image.
+            AffineTransform tx = new AffineTransform();
+            tx.scale(scaleX, scaleY);
+            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+            BufferedImage sbim = op.filter(maskImage, null);
+            maskImage.flush();
+            maskImage = sbim;
+        }
+        // apply the mask by simply painting white to the base image where
+        // the mask specified no colour. 
+        for (int y = 0; y < baseHeight; y++) {
+            for (int x = 0; x < baseWidth; x++) {
+                int maskPixel = maskImage.getRGB(x, y);
+                if (maskPixel == -1){
+                    baseImage.setRGB(x, y, Color.WHITE.getRGB());
+                }
+            }
+        }
+
+//        int width = maskImage.getWidth();
+//        int height = maskImage.getHeight();
+//        final BufferedImage bi = new BufferedImage(width,height, BufferedImage.TYPE_INT_RGB);
+//        for (int y = 0; y < height; y++) {
+//            for (int x = 0; x < width; x++) {
+//                if (maskImage.getRGB(x,y) != -1){
+//                    bi.setRGB(x, y, Color.red.getRGB());
+//                }
+//                else{
+//                    bi.setRGB(x, y, Color.green.getRGB());
+//                }
+//            }
+//        }
+//        final JFrame f = new JFrame("Test");
+//        f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+//
+//        JComponent image = new JComponent() {
+//            @Override
+//            public void paint(Graphics g_) {
+//                super.paint(g_);
+//                g_.drawImage(bi, 0, 0, f);
+//            }
+//        };
+//        image.setPreferredSize(new Dimension(bi.getWidth(), bi.getHeight()));
+//        image.setSize(new Dimension(bi.getWidth(), bi.getHeight()));
+//
+//        JPanel test  =new JPanel();
+//        test.setPreferredSize(new Dimension(1200,1200));
+//        JScrollPane tmp = new JScrollPane(image);
+//        tmp.revalidate();
+//        f.setSize(new Dimension(800, 800));
+//        f.getContentPane().add(tmp);
+//        f.validate();
+//        f.setVisible(true);
+        
     }
 
     private static void alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
