@@ -76,14 +76,6 @@ public class Stream extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Stream.class.toString());
 
-    // system environment keys.
-    private static GraphicsEnvironment graphicEnvironment =
-            GraphicsEnvironment.getLocalGraphicsEnvironment();
-    private static GraphicsDevice defaultScreenDevice =
-            graphicEnvironment.getDefaultScreenDevice();
-    private static GraphicsConfiguration graphicsConfiguration =
-            defaultScreenDevice.getDefaultConfiguration();
-
     // original byte stream that has not been decoded
     private SeekableInputConstrainedWrapper streamInput;
 
@@ -1613,10 +1605,12 @@ public class Stream extends Dictionary {
         boolean hasAlpha = hasAlpha(image);
         // Create a buffered image with a format that's compatible with the screen
         BufferedImage bImage = null;
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gs = ge.getDefaultScreenDevice();
-        GraphicsConfiguration gc = gs.getDefaultConfiguration();
         try {
+            // graphics environment calls can through headless exceptions so
+            // proceed with caution. 
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice gs = ge.getDefaultScreenDevice();
+            GraphicsConfiguration gc = gs.getDefaultConfiguration();
             // Determine the type of transparency of the new buffered image
             int transparency = Transparency.OPAQUE;
             if (hasAlpha) {
