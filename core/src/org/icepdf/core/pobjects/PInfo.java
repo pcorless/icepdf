@@ -34,6 +34,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.ofont.Encoding;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Library;
 
 import java.util.Hashtable;
 
@@ -51,10 +52,7 @@ import java.util.Hashtable;
  *
  * @since 1.1
  */
-public class PInfo {
-
-    // attributes for this core object
-    private Hashtable attributes = null;
+public class PInfo extends Dictionary {
 
     // security manager need for decrypting strings.
     private SecurityManager securityManager;
@@ -62,11 +60,12 @@ public class PInfo {
     /**
      * Create a new instance of a <code>PInfo</code> object.
      *
-     * @param attributes info attributes.
+     * @param library document library
+     * @param entries entries for this object dictionary. 
      */
-    public PInfo(SecurityManager securityManager, Hashtable attributes) {
-        this.attributes = attributes;
-        this.securityManager = securityManager;
+    public PInfo(Library library, Hashtable entries){
+        super(library, entries);
+        securityManager = library.getSecurityManager();
     }
 
     /**
@@ -76,7 +75,12 @@ public class PInfo {
      * @return value of the plug-in extension.
      */
     public Object getCustomExtension(String name) {
-        return attributes.get(name);
+        Object value = library.getObject(entries, name);
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
+            return cleanString(text.getDecryptedLiteralString(securityManager));
+        }
+        return value;
     }
 
     /**
@@ -85,13 +89,15 @@ public class PInfo {
      * @return the documents title.
      */
     public String getTitle() {
-        Object tmp = attributes.get("Title");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "Title");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return cleanString(text.getDecryptedLiteralString(securityManager));
-        } else {
-            return "";
         }
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
@@ -100,13 +106,15 @@ public class PInfo {
      * @return author name.
      */
     public String getAuthor() {
-        Object tmp = attributes.get("Author");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "Author");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return cleanString(text.getDecryptedLiteralString(securityManager));
-        } else {
-            return "";
         }
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
@@ -115,13 +123,15 @@ public class PInfo {
      * @return documents subject.
      */
     public String getSubject() {
-        Object tmp = attributes.get("Subject");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "Subject");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return cleanString(text.getDecryptedLiteralString(securityManager));
-        } else {
-            return "";
         }
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
@@ -130,13 +140,15 @@ public class PInfo {
      * @return documents keywords.
      */
     public String getKeywords() {
-        Object tmp = attributes.get("Keywords");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "Keywords");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return cleanString(text.getDecryptedLiteralString(securityManager));
-        } else {
-            return "";
         }
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
@@ -146,13 +158,15 @@ public class PInfo {
      * @return creator name.
      */
     public String getCreator() {
-        Object tmp = attributes.get("Creator");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "Creator");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return cleanString(text.getDecryptedLiteralString(securityManager));
-        } else {
-            return "";
         }
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
@@ -162,13 +176,15 @@ public class PInfo {
      * @return producer name.
      */
     public String getProducer() {
-        Object tmp = attributes.get("Producer");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "Producer");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return cleanString(text.getDecryptedLiteralString(securityManager));
-        } else {
-            return "";
         }
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
@@ -177,9 +193,9 @@ public class PInfo {
      * @return creation date.
      */
     public PDate getCreationDate() {
-        Object tmp = attributes.get("CreationDate");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "CreationDate");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
         return null;
@@ -191,9 +207,9 @@ public class PInfo {
      * @return modification date.
      */
     public PDate getModDate() {
-        Object tmp = attributes.get("ModDate");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "ModDate");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return new PDate(securityManager, text.getDecryptedLiteralString(securityManager));
         }
         return null;
@@ -213,18 +229,22 @@ public class PInfo {
      * @return trapped name.
      */
     public String getTrappingInformation() {
-        Object tmp = attributes.get("Trapped");
-        if (tmp != null && tmp instanceof StringObject) {
-            StringObject text = (StringObject) tmp;
+        Object value = library.getObject(entries, "Trapped");
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
             return cleanString(text.getDecryptedLiteralString(securityManager));
-        } else {
-            return "";
         }
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
      * Utility method for removing extra characters associated with 4 byte
      * characters codes.
+     * @param text string to clean
+     * @return cleaned 
      */
     private String cleanString(String text) {
         if (text != null && text.length() > 0) {

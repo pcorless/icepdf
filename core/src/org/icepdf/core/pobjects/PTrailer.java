@@ -221,7 +221,7 @@ public class PTrailer extends Dictionary {
     public PInfo getInfo() {
         Object info = library.getObject(entries, "Info");
         if (info instanceof Hashtable) {
-            return new PInfo(library.getSecurityManager(), (Hashtable) info);
+            return new PInfo(library, (Hashtable) info);
         } else {
             return null;
         }
