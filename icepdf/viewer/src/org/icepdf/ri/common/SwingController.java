@@ -53,6 +53,8 @@ import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.common.annotation.AnnotationPanel;
 import org.icepdf.ri.util.*;
 
+import javax.print.attribute.standard.MediaSize;
+import javax.print.attribute.standard.PrintQuality;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -2119,8 +2121,8 @@ public class SwingController
 
     /**
      * Utility method for saving a copy of the currently opened
-     * PDF to a file. This will check all valid permissions and 
-     * show a file save dialog for the user to select where to 
+     * PDF to a file. This will check all valid permissions and
+     * show a file save dialog for the user to select where to
      * save the file to, and what name to give it.
      */
     public void saveFile() {
@@ -2134,7 +2136,7 @@ public class SwingController
                     "viewer.dialog.saveAs.noPermission.msg");
             return;
         }
-        
+
         // Create and display a file saving dialog
         final JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
@@ -2544,9 +2546,37 @@ public class SwingController
             reenablePrintUI();
             return;
         }
-        // create a new print helper, one-to-one with document
+        // create a new print helper, one-to-one with document, make sure that
+        // previous printer properties are preserved. default values listed
+        // below are for NA_letter in millimeters.
         PrintHelper printHelper = viewModel.getPrintHelper();
-        printHelper = new PrintHelper(documentViewController, getPageTree());
+        if ( printHelper == null ){
+            int printMediaUnit =
+                    PropertiesManager.checkAndStoreIntegerProperty(
+                            propertiesManager,
+                            PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT,
+                            1000);
+            double printMediaWidth =
+                    PropertiesManager.checkAndStoreDoubleProperty(
+                            propertiesManager,
+                            PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH,
+                            215.9);
+            double printMediaHeight =
+                    PropertiesManager.checkAndStoreDoubleProperty(
+                            propertiesManager,
+                            PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT,
+                            279.4);
+            // create the new print help
+            printHelper = new PrintHelper(documentViewController, getPageTree(),
+                    MediaSize.findMedia((float) printMediaWidth,
+                            (float) printMediaHeight,
+                            printMediaUnit),
+                    PrintQuality.NORMAL);
+        }else {
+            printHelper = new PrintHelper(documentViewController, getPageTree(),
+                    printHelper.getDocAttributeSet(),
+                    printHelper.getPrintRequestAttributeSet());
+        }
         viewModel.setPrintHelper(printHelper);
 
         // set the printer to show a print dialog
@@ -3040,7 +3070,7 @@ public class SwingController
                     // select the search panel
                     safelySelectUtilityPanel(searchPanel);
                 }
-                
+
                 // request focus
                 searchPanel.requestFocus();
             }
@@ -3923,7 +3953,7 @@ public class SwingController
      * Listen for property change events from the page view.  This method
      * acts like a mediator passing on the new states to the interested parties.
      *
-     * @param evt property change event 
+     * @param evt property change event
      */
     public void propertyChange(PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();

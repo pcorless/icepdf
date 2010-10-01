@@ -70,6 +70,11 @@ public class PropertiesManager {
     // default page fit mode
     public static final String PROPERTY_DEFAULT_PAGEFIT = "document.pagefitMode";
 
+    // default print media size.
+    public static final String PROPERTY_PRINT_MEDIA_SIZE_WIDTH = "document.print.mediaSize.width";
+    public static final String PROPERTY_PRINT_MEDIA_SIZE_HEIGHT = "document.print.mediaSize.height";
+    public static final String PROPERTY_PRINT_MEDIA_SIZE_UNIT = "document.print.mediaSize.unit";
+
     // system properties
     public static final String SYSPROPERTY_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlightColor";
 
