@@ -1199,7 +1199,7 @@ public class Stream extends Dictionary {
     /**
      * Explicit Masking algorithm, as of PDF 1.3.  The entry in an image dictionary
      * may be an image mask, as described under "Stencil Masking", which serves as
-     * an explicit mask fo rthe primary or base image.  The base image and the
+     * an explicit mask for the primary or base image.  The base image and the
      * image mask need not have the same resolution (width, height), but since
      * all images are defined on the unit square in user space, their boundaries on the
      * page will conincide; that is, they will overlay each other.
@@ -1214,15 +1214,15 @@ public class Stream extends Dictionary {
     private static void applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
         // check to see if we need to scale the mask to match the size of the
         // base image.
-        int baseWidth =  baseImage.getWidth();
+        int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
         int maskWidth = maskImage.getWidth();
         int maskHeight = maskImage.getHeight();
 
-        if (baseWidth != maskWidth || baseHeight != maskHeight){
+        if (baseWidth != maskWidth || baseHeight != maskHeight) {
             // calculate scale factors.
-            double scaleX = baseWidth / (double)maskWidth;
-            double scaleY = baseHeight / (double)maskHeight;
+            double scaleX = baseWidth / (double) maskWidth;
+            double scaleY = baseHeight / (double) maskHeight;
             // scale the mask to match the base image.
             AffineTransform tx = new AffineTransform();
             tx.scale(scaleX, scaleY);
@@ -1232,7 +1232,8 @@ public class Stream extends Dictionary {
             maskImage = sbim;
         }
         // apply the mask by simply painting white to the base image where
-        // the mask specified no colour. 
+        // the mask specified no colour.
+        baseImage = Stream.makeGrayBufferedImage(baseImage.getWritableTile(0,0));
         for (int y = 0; y < baseHeight; y++) {
             for (int x = 0; x < baseWidth; x++) {
                 int maskPixel = maskImage.getRGB(x, y);
