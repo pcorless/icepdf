@@ -2245,12 +2245,26 @@ public class SwingController
         }
     }
 
+    /**
+     * Generates a file name based on the original file name but appends "-new".
+     * If new file extsion exists a ".pdf" is automatically added.
+     *
+     * @param fileName file name that new file name is dirived from.
+     * @return original file name with the "-new" appended to it. 
+     */
     protected String generateNewSaveName(String fileName) {
         if (fileName != null) {
             // Return the file with "-new" in the filename, before the extension
             // For example Test.pdf would become Test-new.pdf
-            return fileName.substring(0, fileName.toLowerCase().indexOf(FileExtensionUtils.pdf)-1) +
-                   "-new." + FileExtensionUtils.pdf;
+            int endIndex = fileName.toLowerCase().indexOf(FileExtensionUtils.pdf)-1;
+            String result;
+            if (endIndex < 0){
+              result = fileName + "-new." + FileExtensionUtils.pdf;
+            } else {
+                result = fileName.substring(0, endIndex) + "-new." +
+                        FileExtensionUtils.pdf;
+            }
+            return result;
         }
 
         return fileName;
