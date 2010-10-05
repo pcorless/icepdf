@@ -342,8 +342,10 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         // assign font name for descriptor
         if (fontDescriptor != null && fontDescriptor.getFontName().length() > 0) {
-            basefont = fontDescriptor.getFontName();
-            basefont = cleanFontName(basefont);
+            String name = fontDescriptor.getFontName();
+            if (name != null ){
+                basefont = cleanFontName(name);
+            }
         }
 
         // checking flags for set bits.
@@ -373,8 +375,10 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     // this may help improve the display of some fonts.
                     if (fontDescriptor == null) {
                         fontDescriptor = desendant.fontDescriptor;
-                        basefont = fontDescriptor.getFontName();
-                        basefont = cleanFontName(basefont);
+                        String name = fontDescriptor.getFontName();
+                        if (name != null ){
+                            basefont = cleanFontName(name);
+                        }
                     }
                 }
             }
