@@ -128,16 +128,20 @@ public class FontDescriptor extends Dictionary {
     }
 
     /**
-     * Returns the PostScript name of the font.
+     * Returns the PostScript name of the getfont.
      *
-     * @return PostScript name of font.
+     * @return PostScript name of font. null if the font name dictionary
+     * does not exsist
      */
     public String getFontName() {
         Object value = library.getObject(entries, FONT_NAME);
         if (value instanceof Name) {
             return ((Name) value).getName();
         }
-        return FONT_NAME;
+        else if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 
     /**
