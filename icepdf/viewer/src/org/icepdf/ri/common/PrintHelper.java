@@ -379,7 +379,12 @@ public class PrintHelper implements Printable {
         // should be rotating the page so that it prints correctly
         float rotation = userRotation;
         boolean isDefaultRotation = true;
-        if (pageWidth > pageHeight) {
+        if ((pageWidth > pageHeight &&
+                pageFormat.getOrientation() == PageFormat.PORTRAIT )
+              // auto rotation for landscape. 
+//            (pageHeight > pageFormat.getImageableWidth() &&
+//                pageFormat.getOrientation() == PageFormat.LANDSCAPE )
+                ) {
             // rotate clockwise 90 degrees
             isDefaultRotation = false;
             rotation -= 90;
