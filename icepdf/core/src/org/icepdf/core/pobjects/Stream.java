@@ -53,7 +53,10 @@ import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.awt.image.renderable.ParameterBlock;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -82,9 +85,6 @@ public class Stream extends Dictionary {
     // Images object created from stream
     private ImageCache image = null;
     private final Object imageLock = new Object();
-
-    private boolean isCCITTFaxDecodeWithoutEncodedByteAlign = false;
-    private int CCITTFaxDecodeColumnWidthMismatch = 0;
 
     // reference of stream, needed for encryption support
     private Reference pObjectReference = null;
@@ -187,6 +187,8 @@ public class Stream extends Dictionary {
     /**
      * Marks this stream as being constructed from an inline image
      * definition in a content stream
+     *
+     * @param inlineImage true indicate inline image.
      */
     public void setInlineImage(boolean inlineImage) {
         this.inlineImage = inlineImage;
@@ -206,10 +208,11 @@ public class Stream extends Dictionary {
     }
 
     /**
-     * Utility Method to check if the <code>memoryNeeded</code> can be allowcated,
+     * Utility Method to check if the <code>memoryNeeded</code> can be allocated,
      * and if not, try and free up the needed amount of memory
      *
-     * @param memoryNeeded
+     * @param memoryNeeded amount of memory to check for availability.
+     * @return true if the request number of bytes are free.
      */
     private boolean checkMemory(int memoryNeeded) {
         return library.memoryManager.checkMemory(memoryNeeded);
@@ -223,6 +226,8 @@ public class Stream extends Dictionary {
      * estimated size of the decoded stream.  Because many of the Filter
      * algorithms use compression,  further research must be done to try and
      * find the average amount of memory used by each of the algorithms.
+     *
+     * @return inputstream that has been decoded as defined by the streams filters.
      */
     public InputStream getInputStreamForDecodedStreamBytes() {
         // Make sure that the stream actually has data to decode, if it doesn't
@@ -351,6 +356,7 @@ public class Stream extends Dictionary {
      * is not necessarily exactly sized, and may be larger. Therefore the returned
      * Integer gives the actual valid size
      *
+     * @param presize potencial size to associate with byte array.
      * @return Object[] { byte[] data, Integer sizeActualData }
      */
     private Object[] getDecodedStreamBytesAndSize(int presize) {
@@ -513,56 +519,6 @@ public class Stream extends Dictionary {
         return filterNames;
     }
 
-    private byte[] decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeOrJPXDecodeImage(
-            int width, int height, PColorSpace colourSpace, int bitspercomponent, Color fill,
-            BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
-        byte[] data = null;
-
-        if (shouldUseCCITTFaxDecode()) {
-            if (Tagger.tagging)
-                Tagger.tagImage("CCITTFaxDecode");
-            // InputStream getInputStreamForStreamBytes();
-            boolean worked = nonDecodeCCITTMakeImage(fill);
-            if (!worked) {
-                data = ccittfaxDecode(getInputStreamForDecodedStreamBytes());
-            }
-        } else if (shouldUseDCTDecode()) {
-            if (Tagger.tagging)
-                Tagger.tagImage("DCTDecode");
-            dctDecode(width, height, colourSpace, bitspercomponent,
-                    smaskImage, maskImage, maskMinRGB, maskMaxRGB);
-        } else if (shouldUseJBIG2Decode()) {
-            if (Tagger.tagging)
-                Tagger.tagImage("JBIG2Decode");
-            jbig2Decode(width, height);
-        } else if (shouldUseJPXDecode()) {
-            if (Tagger.tagging)
-                Tagger.tagImage("JPXDecode");
-            jpxDecode(width, height, colourSpace, bitspercomponent, fill,
-                smaskImage, maskImage, maskMinRGB, maskMaxRGB);
-        }
-
-
-        /*
-         * Since we now have the code in place for regetting images
-         * from the original bytes, I don't think we should throw
-         * away the bytes in favour of the image anymore
-         
-        // clear this byte cache if we have our image
-        if( image != null ) {
-            try {
-                streamInput.dispose();
-            }
-            catch(IOException e) {
-                if( Debug.ex )
-                    Debug.ex( e );
-            }
-        }
-        */
-
-        return data;
-    }
-
     /**
      * Despose of references to images and decoded byte streams.
      * Memory optimization
@@ -584,8 +540,6 @@ public class Stream extends Dictionary {
                 image.dispose(cache, (streamInput != null));
                 if (!cache || !image.isCachedSomehow()) {
                     image = null;
-                    isCCITTFaxDecodeWithoutEncodedByteAlign = false;
-                    CCITTFaxDecodeColumnWidthMismatch = 0;
                 }
             }
         }
@@ -596,8 +550,11 @@ public class Stream extends Dictionary {
      * encoded in the JPEG baseline format.  Because DCTDecode only deals
      * with images, the instance of image is update instead of decoded
      * stream.
+     *
+     * @return buffered images representation of the decoded JPEG data.  Null
+     *         if the image could not be properly decoded.
      */
-    private void dctDecode(
+    private BufferedImage dctDecode(
             int width, int height, PColorSpace colourSpace, int bitspercomponent,
             BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
         // BIS's buffer size should be equal to mark() size, and greater than data size (below)
@@ -840,14 +797,7 @@ public class Stream extends Dictionary {
         //long endUsedMem = (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory());
         //long endTime = System.currentTimeMillis();
         //System.out.println("Mem used: " + (endUsedMem-beginUsedMem) + ",\ttime: " + (endTime-beginTime));
-
-        // write tmpImage to the cache
-        synchronized (imageLock) {
-            if (image == null) {
-                image = new ImageCache(library);
-            }
-            image.setImage(tmpImage);
-        }
+        return tmpImage;
     }
 
     /**
@@ -855,8 +805,10 @@ public class Stream extends Dictionary {
      *
      * @param width  width of image
      * @param height height of image
+     * @return buffered image of decoded jbig2 image stream.   Null if an error
+     *         occured during decode.
      */
-    private void jbig2Decode(int width, int height) {
+    private BufferedImage jbig2Decode(int width, int height) {
         BufferedImage tmpImage = null;
 
         try {
@@ -878,9 +830,9 @@ public class Stream extends Dictionary {
             checkMemory((width + 8) * height * 22 / 10); // Between 0.5 and 2.2
             decoder.decodeJBIG2(data);
             data = null;
-            // From decoding, memory usage inceases more than (width*height/8),
+            // From decoding, memory usage increases more than (width*height/8),
             // due to intermediate JBIG2Bitmap objects, used to build the final
-            // one, still hanging around. Cleanup intermediate data-structures.  
+            // one, still hanging around. Cleanup intermediate data-structures.
             decoder.cleanupPostDecode();
             checkMemory((width + 8) * height / 8);
             tmpImage = decoder.getPageAsBufferedImage(0);
@@ -893,15 +845,7 @@ public class Stream extends Dictionary {
             logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
         }
 
-        if (tmpImage != null) {
-            // write tmpImage to the cache
-            synchronized (imageLock) {
-                if (image == null) {
-                    image = new ImageCache(library);
-                }
-                image.setImage(tmpImage);
-            }
-        }
+        return tmpImage;
     }
 
     /**
@@ -916,12 +860,23 @@ public class Stream extends Dictionary {
 
     /**
      * Utility method to decode JPEG2000 images.
+     *
+     * @param width            width of image.
+     * @param height           height of image.
+     * @param colourSpace      colour space to apply to image.
+     * @param bitsPerComponent bits used to represent a colour
+     * @param fill             fill colour used in last draw operand.
+     * @param maskImage        image mask if any, can be null.
+     * @param sMaskImage       image smask if any, can be null.
+     * @param maskMinRGB       mask minimum rgb value, optional.
+     * @param maskMaxRGB       mask maximum rgb value, optional.
+     * @return buffered image of the jpeg2000 image stream.  Null if a problem
+     *         occurred during the decode.
      */
-    private void jpxDecode(int width, int height, PColorSpace colourSpace,
-                           int bitspercomponent, Color fill,
-                           BufferedImage smaskImage, BufferedImage maskImage,
-                           int[] maskMinRGB, int[] maskMaxRGB ) {
-
+    private BufferedImage jpxDecode(int width, int height, PColorSpace colourSpace,
+                                    int bitsPerComponent, Color fill,
+                                    BufferedImage sMaskImage, BufferedImage maskImage,
+                                    int[] maskMinRGB, int[] maskMaxRGB) {
         BufferedImage tmpImage = null;
         try {
             // Verify that ImageIO can read JPEG2000
@@ -931,16 +886,15 @@ public class Stream extends Dictionary {
                         "ImageIO missing required plug-in to read JPEG 2000 images. " +
                                 "You can download the JAI ImageIO Tools from: " +
                                 "https://jai-imageio.dev.java.net/");
-                return;
+                return null;
             }
-
             // decode the image.
             byte[] data = getDecodedStreamBytes();
             ImageInputStream imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
             tmpImage = ImageIO.read(imageInputStream);
             // check for a mask value
-            if (maskImage != null){
+            if (maskImage != null) {
                 applyExplicitMask(tmpImage, maskImage);
             }
 
@@ -949,15 +903,7 @@ public class Stream extends Dictionary {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
         }
 
-        if (tmpImage != null) {
-            // write tmpImage to the cache
-            synchronized (imageLock) {
-                if (image == null) {
-                    image = new ImageCache(library);
-                }
-                image.setImage(tmpImage);
-            }
-        }
+        return tmpImage;
     }
 
     private static void alterRasterCMYK2BGRA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage) {
@@ -1208,8 +1154,8 @@ public class Stream extends Dictionary {
      * and which are to be masked out (left unchanged).  Unmasked areas are painted
      * with the corresponding portions of the base image; masked areas are not.
      *
-     * @param baseImage
-     * @param maskImage
+     * @param baseImage base image in which the mask weill be applied to
+     * @param maskImage image mask to be applied to base image.
      */
     private static void applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
         // check to see if we need to scale the mask to match the size of the
@@ -1233,11 +1179,11 @@ public class Stream extends Dictionary {
         }
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
-        baseImage = Stream.makeGrayBufferedImage(baseImage.getWritableTile(0,0));
+        baseImage = Stream.makeGrayBufferedImage(baseImage.getWritableTile(0, 0));
         for (int y = 0; y < baseHeight; y++) {
             for (int x = 0; x < baseWidth; x++) {
                 int maskPixel = maskImage.getRGB(x, y);
-                if (maskPixel == -1){
+                if (maskPixel == -1) {
                     baseImage.setRGB(x, y, Color.WHITE.getRGB());
                 }
             }
@@ -1277,7 +1223,7 @@ public class Stream extends Dictionary {
 //        f.getContentPane().add(tmp);
 //        f.validate();
 //        f.setVisible(true);
-        
+
     }
 
     private static void alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -1595,10 +1541,11 @@ public class Stream extends Dictionary {
 
     // This method returns a buffered image with the contents of an image from
     // java almanac
+
     private BufferedImage makeRGBABufferedImageFromImage(Image image) {
 
         if (image instanceof BufferedImage) {
-            return (BufferedImage)image;
+            return (BufferedImage) image;
         }
         // This code ensures that all the pixels in the image are loaded
         image = new ImageIcon(image).getImage();
@@ -1609,7 +1556,7 @@ public class Stream extends Dictionary {
         BufferedImage bImage = null;
         try {
             // graphics environment calls can through headless exceptions so
-            // proceed with caution. 
+            // proceed with caution.
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             GraphicsDevice gs = ge.getDefaultScreenDevice();
             GraphicsConfiguration gc = gs.getDefaultConfiguration();
@@ -1621,11 +1568,11 @@ public class Stream extends Dictionary {
             // Create the buffered image
             int width = image.getWidth(null);
             int height = image.getHeight(null);
-            if (width == -1 || height == -1 ){
+            if (width == -1 || height == -1) {
                 return null;
             }
             bImage = gc.createCompatibleImage(
-                image.getWidth(null), image.getHeight(null), transparency);
+                    image.getWidth(null), image.getHeight(null), transparency);
         } catch (HeadlessException e) {
             // The system does not have a screen
         }
@@ -1637,7 +1584,7 @@ public class Stream extends Dictionary {
             }
             int width = image.getWidth(null);
             int height = image.getHeight(null);
-            if (width == -1 || height == -1 ){
+            if (width == -1 || height == -1) {
                 return null;
             }
             bImage = new BufferedImage(width, height, type);
@@ -1653,93 +1600,76 @@ public class Stream extends Dictionary {
 
     // returns true if the specified image has transparent pixels, from
     // java almanac
+
     private static boolean hasAlpha(Image image) {
         // If buffered image, the color model is readily available
         if (image instanceof BufferedImage) {
-            BufferedImage bimage = (BufferedImage)image;
-            return bimage.getColorModel().hasAlpha();
+            BufferedImage bufferedImage = (BufferedImage) image;
+            return bufferedImage.getColorModel().hasAlpha();
         }
         // Use a pixel grabber to retrieve the image's color model;
         // grabbing a single pixel is usually sufficient
-        PixelGrabber pg = new PixelGrabber(image, 0, 0, 1, 1, false);
+        PixelGrabber pixelGrabber = new PixelGrabber(image, 0, 0, 1, 1, false);
         try {
-            pg.grabPixels();
+            pixelGrabber.grabPixels();
         } catch (InterruptedException e) {
+            // fail quietly
         }
         // Get the image's color model
-        ColorModel cm = pg.getColorModel();
-        if (cm != null){
-            return cm.hasAlpha();
-        }else {
-            return true;
-        }
-    }
-
-    private boolean nonDecodeCCITTMakeImage(Color fill) {
-        BufferedImage tmpImage =
-                CCITTFax.attemptDeriveBufferedImageFromBytes(this, library, entries, fill);
-        // Either we have a fully ready RenderedImage...
-        if (tmpImage != null) {
-            // write tmpImage to the cache
-            synchronized (imageLock) {
-                if (image == null) {
-                    image = new ImageCache(library);
-                }
-                image.setImage(tmpImage);
-            }
-            return true;
-        }
-        return false;
+        ColorModel cm = pixelGrabber.getColorModel();
+        return cm == null || cm.hasAlpha();
     }
 
     /**
-     * CCITT fax decode algorithm.
+     * CCITT fax decode algorithm, decodes the stream into a valid image
+     * stream that can be used to create a BufferedImage.
      *
-     * @param in stream to decode
-     * @return decoded stream
+     * @param width  of image
+     * @param height height of image.
+     * @return decoded stream bytes.
      */
-    private byte[] ccittfaxDecode(InputStream in) {
-        // get decode parameters from stream properties
-        Hashtable decodeparms = library.getDictionary(entries, "DecodeParms");
-        float k = library.getFloat(decodeparms, "K");
+    private byte[] ccittFaxDecode(int width, int height) {
+
+        byte[] streamData = getDecodedStreamBytes();
+        Hashtable decodeParms = library.getDictionary(entries, "DecodeParms");
+        float k = library.getFloat(decodeParms, "K");
         // default value is always false
-        boolean blackIs1 = getBlackIs1(library, decodeparms);
+        boolean blackIs1 = getBlackIs1(library, decodeParms);
         // get value of key if it is available.
         boolean encodedByteAlign = false;
-        Object encodedByteAlignObject = library.getObject(decodeparms, "EncodedByteAlign");
+        Object encodedByteAlignObject = library.getObject(decodeParms, "EncodedByteAlign");
         if (encodedByteAlignObject instanceof Boolean) {
             encodedByteAlign = (Boolean) encodedByteAlignObject;
         }
-        int columns = library.getInt(decodeparms, "Columns");
-        int width = library.getInt(entries, "Width");
-        int height = library.getInt(entries, "Height");
+        int columns = library.getInt(decodeParms, "Columns");
+        int rows = library.getInt(decodeParms, "Rows");
 
-        // setup streams based on stream properties
-        int memoryNeeded = width * height / 8;
-        checkMemory(memoryNeeded);
-        ByteArrayOutputStream out = new ByteArrayOutputStream(memoryNeeded);
-
-        if (k < 0) {
-            CCITTFax.Group4Decode(in, out, columns, blackIs1);
-            if (Tagger.tagging) {
-                Tagger.tagImage("HandledBy=CCITTFaxDecode_InternalGroup4");
-                Tagger.tagImage("CCITTFaxDecode_DecodeParms_BlackIs1=" + getBlackIs1OrNull(library, decodeparms));
-                Tagger.tagImage("CCITTFaxDecode_DecodeParms_K=" + k);
-                Tagger.tagImage("CCITTFaxDecode_DecodeParms_EncodedByteAlign=" + encodedByteAlignObject);
+        if (columns == 0) {
+            columns = width;
+        }
+        if (rows == 0) {
+            rows = height;
+        }
+        int size = rows * ((columns + 7) >> 3);
+        byte[] decodedStreamData = new byte[size];
+        CCITTFaxDecoder decoder = new CCITTFaxDecoder(1, columns, rows);
+        decoder.setAlign(encodedByteAlign);
+        // pick three three possible fax encoding.
+        if (k == 0) {
+            decoder.decodeT41D(decodedStreamData, streamData, 0, rows);
+        } else if (k > 0) {
+            decoder.decodeT42D(decodedStreamData, streamData, 0, rows);
+        } else if (k < 0) {
+            decoder.decodeT6(decodedStreamData, streamData, 0, rows);
+        }
+        // check the black is value flag, no one likes inverted colours.
+        if (!blackIs1) {
+            // toggle the byte data invert colour, not bit operand.
+            for (int i = 0; i < decodedStreamData.length; i++) {
+                decodedStreamData[i] = (byte) ~decodedStreamData[i];
             }
         }
-        try {
-            out.close();
-            out.flush();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (!encodedByteAlign)
-            isCCITTFaxDecodeWithoutEncodedByteAlign = true;
-        if (columns > width)
-            CCITTFaxDecodeColumnWidthMismatch = columns - width;
-        return out.toByteArray();
+        return decodedStreamData;
     }
 
     /**
@@ -1755,10 +1685,14 @@ public class Stream extends Dictionary {
     }
 
     /**
-     * Gets the image object for the given resource.
+     * Gets the image object for the given resource.  This method can optionally
+     * scale an image to reduce the total memory foot print or to increase the
+     * perceived render quality on screen at low zoom levels.
      *
-     * @param fill      color value of image
-     * @param resources resouces containing image reference
+     * @param fill         color value of image
+     * @param resources    resouces containing image reference
+     * @param allowScaling true indicates that the image will be scaled, fals
+     *                     no scaling.
      * @return new image object
      */
     // was synchronized, not think it is needed?
@@ -1922,28 +1856,39 @@ public class Stream extends Dictionary {
         return img;
     }
 
+    /**
+     * Utility to to the image work, the public version pretty much just
+     * parses out image dictionary parameters.  This method start the actual
+     * image decoding.
+     * @param colourSpace colour space of image.
+     * @param fill fill color to aply to image from current graphics context.
+     * @param width width of image.
+     * @param height heigth of image
+     * @param colorSpaceCompCount colour space component count, 1, 3, 4 etc. 
+     * @param bitsPerComponent number of bits that represent one component.
+     * @param imageMask boolean flag to use image mask or not.
+     * @param decode decode array, 1,0 or 0,1 can effect colour interpretation.
+     * @param smaskImage smaask image value, optional.
+     * @param maskImage buffered image image mask to apply to decoded image, optional.
+     * @param maskMinRGB max rgb values for the mask
+     * @param maskMaxRGB min rgb values for the mask.
+     * @param maskMinIndex max indexed colour values for the mask.
+     * @param maskMaxIndex min indexed colour values for the mask.
+     * @return buffered image of decoded image stream, null if an error occured.
+     */
     private BufferedImage getImage(
             PColorSpace colourSpace, Color fill,
             int width, int height,
             int colorSpaceCompCount,
-            int bitspercomponent,
+            int bitsPerComponent,
             boolean imageMask,
             Vector decode,
             BufferedImage smaskImage,
             BufferedImage maskImage,
             int[] maskMinRGB, int[] maskMaxRGB,
             int maskMinIndex, int maskMaxIndex) {
-        byte[] baCCITTFaxData = null;
 
-        // decode the stream is, if value and image are null, the image has
-        // has not yet been decoded
-        if (image == null) {
-            baCCITTFaxData = decodeCCITTFaxDecodeOrDCTDecodeOrJBIG2DecodeOrJPXDecodeImage(
-                    width, height, colourSpace, bitspercomponent, fill,
-                    smaskImage, maskImage, maskMinRGB, maskMaxRGB);
-        }
-
-        // return cached image
+        // return cached image if we have already.
         if (image != null) {
             // If Stream.dispose(true) was called since last call to Stream.getPageImage(),
             //   then might have to read from file
@@ -1954,50 +1899,108 @@ public class Stream extends Dictionary {
             //  out our "image" field
             BufferedImage img = null;
             synchronized (imageLock) {
-                if (image != null)
+                if (image != null) {
                     img = image.readImage();
+                }
             }
-            if (img != null)
+            if (img != null) {
                 return img;
+            }
         }
 
-        if (baCCITTFaxData == null) {
+        // No image cash yet, so we decode known image types.
+        if (image == null) {
+            BufferedImage decodedImage = null;
+
+            // JPEG writes out image if successful
+            if (shouldUseDCTDecode()) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("DCTDecode");
+                decodedImage = dctDecode(width, height, colourSpace, bitsPerComponent,
+                        smaskImage, maskImage, maskMinRGB, maskMaxRGB);
+            }
+            // JBIG2 writes out image if successful
+            else if (shouldUseJBIG2Decode()) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("JBIG2Decode");
+                decodedImage = jbig2Decode(width, height);
+            }
+            // JPEG2000 writes out image if successful
+            else if (shouldUseJPXDecode()) {
+                if (Tagger.tagging)
+                    Tagger.tagImage("JPXDecode");
+                decodedImage = jpxDecode(width, height, colourSpace, bitsPerComponent, fill,
+                        smaskImage, maskImage, maskMinRGB, maskMaxRGB);
+            }
+
+            // finally if we have something then we return it.
+            if (decodedImage != null) {
+                // write tmpImage to the cache
+                return decodedImage;
+            }
+        }
+
+        byte[] data;
+        int dataLength;
+        // CCITTfax data is raw byte decode.
+        if (shouldUseCCITTFaxDecode()) {
+            if (Tagger.tagging)
+                Tagger.tagImage("CCITTFaxDecode");
+            // InputStream getInputStreamForStreamBytes();
+            data = ccittFaxDecode(width, height);
+            dataLength = data.length;
+        }
+        // no further processing needed we can just get the stream bytes using
+        // normal filter decompression.
+        else {
+            Object[] dataAndSize = getDecodedStreamBytesAndSize(
+                    width * height
+                            * colourSpace.getNumComponents()
+                            * bitsPerComponent / 8);
+            data = (byte[]) dataAndSize[0];
+            dataLength = (Integer) dataAndSize[1];
+        }
+        // finally push the bytes though the common image processor
+        if (data != null) {
             try {
-                BufferedImage img = makeImageWithRasterFromBytes(
+                BufferedImage decodedImage = makeImageWithRasterFromBytes(
                         colourSpace, fill,
                         width, height,
                         colorSpaceCompCount,
-                        bitspercomponent,
+                        bitsPerComponent,
                         imageMask,
                         decode,
                         smaskImage,
                         maskImage,
                         maskMinRGB, maskMaxRGB,
-                        maskMinIndex, maskMaxIndex);
-                if (img != null)
-                    return img;
+                        maskMinIndex, maskMaxIndex,
+                        data, dataLength);
+                // if we have something then we can decode it.
+                if (decodedImage != null) {
+                    return decodedImage;
+                }
             }
             catch (Exception e) {
                 logger.log(Level.FINE, "Error building image raster.", e);
             }
         }
 
-        // decodes the image stream and returns an image object
-        BufferedImage im = parseImage(
+        // decodes the image stream and returns an image object. Legacy fallback
+        // code, should never get here, put there are always corner cases. .
+        BufferedImage decodedImage = parseImage(
                 width,
                 height,
                 colourSpace,
                 imageMask,
                 fill,
-                bitspercomponent,
+                bitsPerComponent,
                 decode,
-                baCCITTFaxData,
+                data,
                 smaskImage,
                 maskImage,
                 maskMinRGB, maskMaxRGB);
-        return im;
+        return decodedImage;
     }
-
 
     private BufferedImage makeImageWithRasterFromBytes(
             PColorSpace colourSpace,
@@ -2010,28 +2013,24 @@ public class Stream extends Dictionary {
             BufferedImage smaskImage,
             BufferedImage maskImage,
             int[] maskMinRGB, int[] maskMaxRGB,
-            int maskMinIndex, int maskMaxIndex) {
+            int maskMinIndex, int maskMaxIndex, byte[] data, int dataLength) {
         BufferedImage img = null;
         if (colourSpace instanceof DeviceGray) {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceGray");
             if (imageMask && bitspercomponent == 1) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_1_ImageMask");
-                Object[] dataAndSize = getDecodedStreamBytesAndSize(
-                        width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
-                byte[] data = (byte[]) dataAndSize[0];
-                int data_length = (Integer) dataAndSize[1];
                 //byte[] data = getDecodedStreamBytes();
                 //int data_length = data.length;
-                DataBuffer db = new DataBufferByte(data, data_length);
-                WritableRaster wr = Raster.createPackedRaster(db, width, height, bitspercomponent, new Point(0, 0));
+                DataBuffer db = new DataBufferByte(data, dataLength);
+                WritableRaster wr = Raster.createPackedRaster(db, width, height,
+                        bitspercomponent, new Point(0, 0));
 
                 // From PDF 1.6 spec, concerning ImageMask and Decode array:
                 // [0 1] (the default for an image mask), a sample value of 0 marks
                 //       the page with the current color, and a 1 leaves the previous
                 //       contents unchanged.
                 // [1 0] Is the reverse
-
                 // In case alpha transparency doesn't work, it'll paint white opaquely
                 boolean defaultDecode = (0.0f == ((Number) decode.elementAt(0)).floatValue());
                 //int a = Color.white.getRGB();
@@ -2053,13 +2052,9 @@ public class Stream extends Dictionary {
             } else if (bitspercomponent == 1 || bitspercomponent == 2 || bitspercomponent == 4) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_124");
-                Object[] dataAndSize = getDecodedStreamBytesAndSize(
-                        width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
-                byte[] data = (byte[]) dataAndSize[0];
-                int data_length = (Integer) dataAndSize[1];
                 //byte[] data = getDecodedStreamBytes();
                 //int data_length = data.length;
-                DataBuffer db = new DataBufferByte(data, data_length);
+                DataBuffer db = new DataBufferByte(data, dataLength);
                 WritableRaster wr = Raster.createPackedRaster(db, width, height, bitspercomponent, new Point(0, 0));
                 int[] cmap = null;
                 if (bitspercomponent == 1) {
@@ -2074,13 +2069,9 @@ public class Stream extends Dictionary {
             } else if (bitspercomponent == 8) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_8");
-                Object[] dataAndSize = getDecodedStreamBytesAndSize(
-                        width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
-                byte[] data = (byte[]) dataAndSize[0];
-                int data_length = (Integer) dataAndSize[1];
                 //byte[] data = getDecodedStreamBytes();
                 //int data_length = data.length;
-                DataBuffer db = new DataBufferByte(data, data_length);
+                DataBuffer db = new DataBufferByte(data, dataLength);
                 SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
                 WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
                 ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
@@ -2101,8 +2092,8 @@ public class Stream extends Dictionary {
                 int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
                         BufferedImage.TYPE_INT_RGB;
                 img = new BufferedImage(width, height, type);
-                int[] data = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-                copyDecodedStreamBytesIntoRGB(data);
+                int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+                copyDecodedStreamBytesIntoRGB(dataToRGB);
                 if (usingAlpha)
                     alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
             }
@@ -2113,15 +2104,11 @@ public class Stream extends Dictionary {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceCMYK_8");
                 //System.out.println("Mem  bpc8 free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                Object[] dataAndSize = getDecodedStreamBytesAndSize(
-                        width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
-                byte[] data = (byte[]) dataAndSize[0];
-                int data_length = (Integer) dataAndSize[1];
                 //byte[] data = getDecodedStreamBytes();
                 //int data_length = data.length;
                 //System.out.println("data_length: " + data_length);
                 //System.out.println("Mem  tba  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                DataBuffer db = new DataBufferByte(data, data_length);
+                DataBuffer db = new DataBufferByte(data, dataLength);
                 //System.out.println("Mem   db  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 int[] bandOffsets = new int[colorSpaceCompCount];
                 for (int i = 0; i < colorSpaceCompCount; i++)
@@ -2132,15 +2119,15 @@ public class Stream extends Dictionary {
                 //WritableRaster wr = Raster.createInterleavedRaster( db, width, height, colorSpaceCompCount*width, colorSpaceCompCount, bandOffsets, new Point(0,0) );
                 //System.out.println("Mem   wr  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 ColorSpace cs = null;
-                try {
-                    //cs = new ColorSpaceCMYK(); //ColorSpace.getInstance( ColorSpace.CS_PYCC );//ColorSpace.TYPE_CMYK );
-                    ///cs = ColorSpaceWrapper.getICCColorSpaceInstance("C:\\Documents and Settings\\Mark Collette\\IdeaProjects\\TestJAI\\CMYK.pf");
-                }
-                catch (Exception csex) {
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Problem loading CMYK ColorSpace");
-                    }
-                }
+//                try {
+                //cs = new ColorSpaceCMYK(); //ColorSpace.getInstance( ColorSpace.CS_PYCC );//ColorSpace.TYPE_CMYK );
+                ///cs = ColorSpaceWrapper.getICCColorSpaceInstance("C:\\Documents and Settings\\Mark Collette\\IdeaProjects\\TestJAI\\CMYK.pf");
+//                }
+//                catch (Exception csex) {
+//                    if (logger.isLoggable(Level.FINE)) {
+//                        logger.fine("Problem loading CMYK ColorSpace");
+//                    }
+//                }
                 //System.out.println("Mem   cs  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 int[] bits = new int[colorSpaceCompCount];
                 for (int i = 0; i < colorSpaceCompCount; i++)
@@ -2157,15 +2144,11 @@ public class Stream extends Dictionary {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_124");
                 //System.out.println("Mem  bpc< free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                Object[] dataAndSize = getDecodedStreamBytesAndSize(
-                        width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
-                byte[] data = (byte[]) dataAndSize[0];
-                int data_length = (Integer) dataAndSize[1];
                 //byte[] data = getDecodedStreamBytes();
                 //int data_length = data.length;
                 //System.out.println("          data_length: " + data_length);
                 //System.out.println("Mem  tba  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                DataBuffer db = new DataBufferByte(data, data_length);
+                DataBuffer db = new DataBufferByte(data, dataLength);
                 //System.out.println("Mem   db  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                 WritableRaster wr = Raster.createPackedRaster(db, width, height, bitspercomponent, new Point(0, 0));
                 //System.out.println("Mem   wr  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
@@ -2193,10 +2176,6 @@ public class Stream extends Dictionary {
                     Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_8");
                 //System.out.println("Stream.makeImageWithRasterFromBytes()  Indexed 8");
                 //System.out.println("Mem  bpc8 free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                Object[] dataAndSize = getDecodedStreamBytesAndSize(
-                        width * height * colourSpace.getNumComponents() * bitspercomponent / 8);
-                byte[] data = (byte[]) dataAndSize[0];
-                int data_length = (Integer) dataAndSize[1];
 //System.out.println("data_length: " + data_length);
 //System.out.println( org.icepdf.core.util.Utils.convertByteArrayToHexString(data, true) );
                 //byte[] data = getDecodedStreamBytes();
@@ -2221,7 +2200,7 @@ public class Stream extends Dictionary {
                 if (usingIndexedAlpha) {
                     for (int i = maskMinIndex; i <= maskMaxIndex; i++)
                         cmap[i] = 0x00000000;
-                    DataBuffer db = new DataBufferByte(data, data_length);
+                    DataBuffer db = new DataBufferByte(data, dataLength);
                     SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
                     ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, true, -1, db.getDataType());
@@ -2229,8 +2208,7 @@ public class Stream extends Dictionary {
                 } else if (usingAlpha) {
                     checkMemory(width * height * 4);
                     int[] rgbaData = new int[width * height];
-                    int end = data_length;
-                    for (int index = 0; index < end; index++) {
+                    for (int index = 0; index < dataLength; index++) {
                         int cmapIndex = (data[index] & 0xFF);
                         rgbaData[index] = cmap[cmapIndex];
                     }
@@ -2246,7 +2224,7 @@ public class Stream extends Dictionary {
                 } else {
                     //System.out.println("          data.length: " + data.length);
                     //System.out.println("Mem  tba  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
-                    DataBuffer db = new DataBufferByte(data, data_length);
+                    DataBuffer db = new DataBufferByte(data, dataLength);
                     //System.out.println("Mem   db  free: " + Runtime.getRuntime().freeMemory() + ",\ttotal:" + Runtime.getRuntime().totalMemory() + ",\tused: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) + ",\ttime: " + System.currentTimeMillis());
                     SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
@@ -2341,21 +2319,6 @@ public class Stream extends Dictionary {
         // Create the memory hole where where the buffered image will be writen
         // too, bit by painfull bit.
         BufferedImage bim = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-        // If a row of data takes up a fractional number of bytes,
-        //  due to each component taking up less than 8 bits, then
-        //  (unless CCITTFaxDecode) we want to read past the pad bits
-        //  so that the next row starts on a byte boundary again
-        int bitsPerRow = width * colorSpaceCompCount * bitsPerColour;
-        int extraBitsPerRow = bitsPerRow & 0x7;
-        if (CCITTFaxDecodeColumnWidthMismatch > 0) {
-            if (Tagger.tagging)
-                Tagger.tagImage("ParseImage_CCITTFaxDecodeColumnWidthMismatch=" + CCITTFaxDecodeColumnWidthMismatch);
-            int bitsGivenPerRow = (width + CCITTFaxDecodeColumnWidthMismatch)
-                    * colorSpaceCompCount * bitsPerColour;
-            int bitsRelevant = bitsPerRow;
-            extraBitsPerRow = bitsGivenPerRow - bitsRelevant;
-        }
 
         // create the buffer and get the first series of bytes from the cached
         // stream
@@ -2470,18 +2433,6 @@ public class Stream extends Dictionary {
                 }
                 // Assign the new bits for this pixel
                 bim.setRGB(0, y, width, 1, imageBits, 0, 1);
-
-                // CCITTFaxDecode does not use pad bits to make rows
-                //  start on byte boundaries, so in that case do not
-                //  skip the bits, since they are not "extra"
-                // If we're not CCITTFaxDecode, or if we are and the
-                //  EncodedByteAlign flag is set, then skip any extra
-                //  bits to take us to the next byte boundary
-                if (extraBitsPerRow > 0 &&
-                        (isCCITTFaxDecodeWithoutEncodedByteAlign == false ||
-                                CCITTFaxDecodeColumnWidthMismatch > 0)) {
-                    in.getBits(extraBitsPerRow);
-                }
             }
             // final clean up.
             in.close();
