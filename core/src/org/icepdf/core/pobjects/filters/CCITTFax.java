@@ -64,6 +64,7 @@ import java.util.logging.Level;
  * Group 3 One-Dimensional (G31D)
  * Group 3 Two-Dimensional (G32D) - not implemented
  * Group 4 Two-Dimensional (G42D)
+ * @deprecated as of version 4.1.1 of ICEpdf core.
  */
 public class CCITTFax {
 
