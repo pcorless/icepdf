@@ -893,6 +893,23 @@ public class Stream extends Dictionary {
             ImageInputStream imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
             tmpImage = ImageIO.read(imageInputStream);
+
+            // apply respective colour models to the JPEG2000 image. 
+            if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
+                WritableRaster wr = tmpImage.getRaster();
+                alterRasterRGB2PColorSpace(wr, colourSpace);
+                tmpImage = makeRGBBufferedImage(wr);
+            } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
+                WritableRaster wr = tmpImage.getRaster();
+                alterRasterCMYK2BGRA(wr, sMaskImage, maskImage);
+                tmpImage = makeRGBABufferedImage(wr);
+            } else if ((colourSpace instanceof DeviceGray ||
+                    colourSpace instanceof Indexed)
+                    && bitsPerComponent == 8) {
+                WritableRaster wr = tmpImage.getRaster();
+                tmpImage = makeGrayBufferedImage(wr);
+            }
+
             // check for a mask value
             if (maskImage != null) {
                 applyExplicitMask(tmpImage, maskImage);
@@ -1179,7 +1196,6 @@ public class Stream extends Dictionary {
         }
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
-        baseImage = Stream.makeGrayBufferedImage(baseImage.getWritableTile(0, 0));
         for (int y = 0; y < baseHeight; y++) {
             for (int x = 0; x < baseWidth; x++) {
                 int maskPixel = maskImage.getRGB(x, y);
