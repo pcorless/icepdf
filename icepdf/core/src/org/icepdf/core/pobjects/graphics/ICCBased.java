@@ -32,24 +32,26 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.awt.color.ICC_Profile;
 import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * put your documentation comment here
  */
 public class ICCBased extends PColorSpace {
 
-    private static final Logger logger = 
+    private static final Logger logger =
             Logger.getLogger(ICCBased.class.toString());
 
     int numcomp;
@@ -93,6 +95,17 @@ public class ICCBased extends PColorSpace {
         try {
             stream.init();
             in = stream.getInputStreamForDecodedStreamBytes();
+            if (logger.isLoggable(Level.FINEST)) {
+                String content;
+                if (in instanceof SeekableInput) {
+                    content = Utils.getContentFromSeekableInput((SeekableInput) in, false);
+                } else {
+                    InputStream[] inArray = new InputStream[]{in};
+                    content = Utils.getContentAndReplaceInputStream(inArray, false);
+                    in = inArray[0];
+                }
+                logger.finest("Content = " + content);
+            }
             if (in != null) {
                 ICC_Profile profile = ICC_Profile.getInstance(in);
                 colorSpace = new ICC_ColorSpace(profile);
@@ -107,6 +120,17 @@ public class ICCBased extends PColorSpace {
             catch (IOException e) {
             }
         }
+    }
+
+    /**
+     * Get the alternative colour specified by the N dictionary entry.  DeviceGray,
+     * DeviceRGB, or DeviceCMYK, depending on whether the value of N is  1, 3
+     * or 4, respectively.
+     *
+     * @return PDF colour space represented by the N (number of components)key.
+     */
+    public PColorSpace getAlternate() {
+        return alternate;
     }
 
     /**
@@ -140,8 +164,9 @@ public class ICCBased extends PColorSpace {
                     float[] fvalue = new float[n];
                     int toCopy = n;
                     int fLength = f.length;
-                    if (fLength < toCopy) ;
-                    toCopy = fLength;
+                    if (fLength < toCopy) {
+                        toCopy = fLength;
+                    }
                     for (int i = 0; i < toCopy; i++) {
                         float curr = f[fLength - 1 - i];
                         if (curr < 0.0f)
@@ -154,7 +179,7 @@ public class ICCBased extends PColorSpace {
                     int value = (0xFF000000) |
                             ((((int) (frgbvalue[0] * 255)) & 0xFF) << 16) |
                             ((((int) (frgbvalue[1] * 255)) & 0xFF) << 8) |
-                            ((((int) (frgbvalue[2] * 255)) & 0xFF) << 0);
+                            ((((int) (frgbvalue[2] * 255)) & 0xFF));
                     Color c = new Color(value);
 
                     // Update the cache
@@ -180,8 +205,14 @@ public class ICCBased extends PColorSpace {
         return alternate.getColor(f);
     }
 
+    public ColorSpace getColorSpace() {
+        return colorSpace;
+    }
+
     /**
-     * @return
+     * Gets the number of components specified by the N entry.
+     *
+     * @return number of colour components in color space
      */
     public int getNumComponents() {
         return numcomp;

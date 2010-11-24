@@ -894,6 +894,22 @@ public class Stream extends Dictionary {
                     new ByteArrayInputStream(data));
             tmpImage = ImageIO.read(imageInputStream);
 
+            // check for an instance of ICCBased, we don't currently support
+            // this colour mode well so we'll used the alternative colour
+            if (colourSpace instanceof ICCBased) {
+                ICCBased iccBased = (ICCBased) colourSpace;
+                if (iccBased.getAlternate() != null) {
+                    // set the alternate as the current
+                    colourSpace = iccBased.getAlternate();
+                }
+                // try to process the ICC colour space
+                else {
+                    ColorSpace cs = iccBased.getColorSpace();
+                    ColorConvertOp cco = new ColorConvertOp(cs, null);
+                    tmpImage = cco.filter(tmpImage, null);
+                }
+            }
+
             // apply respective colour models to the JPEG2000 image. 
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
@@ -942,32 +958,43 @@ public class Stream extends Dictionary {
             maskHeight = maskRaster.getHeight();
         }
 
+        // this convoluted cymk->rgba method is from DeviceCMYK class.
+        float inCyan, inMagenta, inYellow, inBlack;
+        double c, m, y2, aw, ac, am, ay, ar, ag, ab;
+        float outRed, outGreen, outBlue;
+        int rValue, gValue, bValue, alpha;
         int[] values = new int[4];
         int width = wr.getWidth();
         int height = wr.getHeight();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 wr.getPixel(x, y, values);
-                int cValue = values[0];
-                int mValue = values[1];
-                int yValue = values[2];
-                int kValue = values[3];
 
-                int maxOrig = Math.max(cValue, Math.max(mValue, yValue));
-                kValue = ((255 - maxOrig) * kValue) / 255;
-                cValue += kValue;
-                mValue += kValue;
-                yValue += kValue;
-                cValue = Math.max(0, Math.min(255, cValue));
-                mValue = Math.max(0, Math.min(255, mValue));
-                yValue = Math.max(0, Math.min(255, yValue));
-                //cValue = (int) ( 255 * Math.pow(cValue/255.0, 0.65) );
-                //mValue = (int) ( 255 * Math.pow(mValue/255.0, 0.65) );
-                //yValue = (int) ( 255 * Math.pow(yValue/255.0, 0.65) );
-                int rValue = 255 - cValue;
-                int gValue = 255 - mValue;
-                int bValue = 255 - yValue;
-                int alpha = 0xFF;
+                inCyan = values[0] / 255.0f;
+                inMagenta = values[1] / 255.0f;
+                inYellow = values[2] / 255.0f;
+                inBlack = values[3] / 255.0f;
+
+                c = Math.min(1.0, inCyan + inBlack);
+                m = Math.min(1.0, inMagenta + inBlack);
+                y2 = Math.min(1.0, inYellow + inBlack);
+                aw = (1 - c) * (1 - m) * (1 - y2);
+                ac = c * (1 - m) * (1 - y2);
+                am = (1 - c) * m * (1 - y2);
+                ay = (1 - c) * (1 - m) * y2;
+                ar = (1 - c) * m * y2;
+                ag = c * (1 - m) * y2;
+                ab = c * m * (1 - y2);
+
+                outRed = (float) (aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
+                outGreen = (float) (aw + 0.6196 * ac + ay + 0.5176 * ag);
+                outBlue = (float) (aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
+
+                rValue = (int) (outRed * 255);
+                gValue = (int) (outGreen * 255);
+                bValue = (int) (outBlue * 255);
+                alpha = 0xFF;
+
                 if (y < smaskHeight && x < smaskWidth && smaskRaster != null)
                     alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
                 else if (y < maskHeight && x < maskWidth && maskRaster != null) {
@@ -1516,14 +1543,35 @@ public class Stream extends Dictionary {
         return jpegEncoding;
     }
 
+    /**
+     * Utility to build an RGBA buffered image using the specified raster and
+     * a Transparency.OPAQUE transparency model. 
+     *
+     * @param wr           writable raster of image.
+     * @return constructed image.
+     */
     private static BufferedImage makeRGBABufferedImage(WritableRaster wr) {
+        return makeRGBABufferedImage(wr, Transparency.OPAQUE);
+    }
+
+    /**
+     * Utility to build an RGBA buffered image using the specified raster and
+     * transparency type.
+     *
+     * @param wr           writable raster of image.
+     * @param transparency any valid Transparency interface type. Bitmask,
+     *                     opaque and translusent.
+     * @return constructed image.
+     */
+    private static BufferedImage makeRGBABufferedImage(WritableRaster wr,
+                                                       final int transparency) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[4];
         for (int i = 0; i < bits.length; i++)
             bits[i] = 8;
         ColorModel cm = new ComponentColorModel(
                 cs, bits, true, false,
-                ColorModel.OPAQUE,
+                transparency,
                 wr.getTransferType());
         BufferedImage img = new BufferedImage(cm, wr, false, null);
         return img;
@@ -1876,20 +1924,21 @@ public class Stream extends Dictionary {
      * Utility to to the image work, the public version pretty much just
      * parses out image dictionary parameters.  This method start the actual
      * image decoding.
-     * @param colourSpace colour space of image.
-     * @param fill fill color to aply to image from current graphics context.
-     * @param width width of image.
-     * @param height heigth of image
-     * @param colorSpaceCompCount colour space component count, 1, 3, 4 etc. 
-     * @param bitsPerComponent number of bits that represent one component.
-     * @param imageMask boolean flag to use image mask or not.
-     * @param decode decode array, 1,0 or 0,1 can effect colour interpretation.
-     * @param smaskImage smaask image value, optional.
-     * @param maskImage buffered image image mask to apply to decoded image, optional.
-     * @param maskMinRGB max rgb values for the mask
-     * @param maskMaxRGB min rgb values for the mask.
-     * @param maskMinIndex max indexed colour values for the mask.
-     * @param maskMaxIndex min indexed colour values for the mask.
+     *
+     * @param colourSpace         colour space of image.
+     * @param fill                fill color to aply to image from current graphics context.
+     * @param width               width of image.
+     * @param height              heigth of image
+     * @param colorSpaceCompCount colour space component count, 1, 3, 4 etc.
+     * @param bitsPerComponent    number of bits that represent one component.
+     * @param imageMask           boolean flag to use image mask or not.
+     * @param decode              decode array, 1,0 or 0,1 can effect colour interpretation.
+     * @param smaskImage          smaask image value, optional.
+     * @param maskImage           buffered image image mask to apply to decoded image, optional.
+     * @param maskMinRGB          max rgb values for the mask
+     * @param maskMaxRGB          min rgb values for the mask.
+     * @param maskMinIndex        max indexed colour values for the mask.
+     * @param maskMaxIndex        min indexed colour values for the mask.
      * @return buffered image of decoded image stream, null if an error occured.
      */
     private BufferedImage getImage(
