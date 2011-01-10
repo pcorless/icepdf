@@ -816,13 +816,14 @@ public class Stream extends Dictionary {
             org.jpedal.jbig2.JBIG2Decoder decoder = new org.jpedal.jbig2.JBIG2Decoder();
 
             Hashtable decodeparms = library.getDictionary(entries, "DecodeParms");
-            if (decodeparms != null && decodeparms.contains("JBIG2Globals")) {
-                Stream globalsStream =
-                        (Stream) library.getObject(decodeparms, "JBIG2Globals");
-                byte[] globals = globalsStream.getDecodedStreamBytes();
-                if (globals != null && globals.length > 0) {
-                    decoder.setGlobalData(globals);
-                    globals = null;
+            if (decodeparms != null) {
+                Stream globalsStream = (Stream) library.getObject(decodeparms, "JBIG2Globals");
+                if (globalsStream != null){
+                    byte[] globals = globalsStream.getDecodedStreamBytes();
+                    if (globals != null && globals.length > 0) {
+                        decoder.setGlobalData(globals);
+                        globals = null;
+                    }
                 }
             }
 
