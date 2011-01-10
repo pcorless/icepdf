@@ -910,7 +910,7 @@ public class Stream extends Dictionary {
                 }
             }
 
-            // apply respective colour models to the JPEG2000 image. 
+            // apply respective colour models to the JPEG2000 image.
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
                 alterRasterRGB2PColorSpace(wr, colourSpace);
@@ -1545,7 +1545,7 @@ public class Stream extends Dictionary {
 
     /**
      * Utility to build an RGBA buffered image using the specified raster and
-     * a Transparency.OPAQUE transparency model. 
+     * a Transparency.OPAQUE transparency model.
      *
      * @param wr           writable raster of image.
      * @return constructed image.
@@ -1719,11 +1719,18 @@ public class Stream extends Dictionary {
         CCITTFaxDecoder decoder = new CCITTFaxDecoder(1, columns, rows);
         decoder.setAlign(encodedByteAlign);
         // pick three three possible fax encoding.
-        if (k == 0) {
-            decoder.decodeT41D(decodedStreamData, streamData, 0, rows);
-        } else if (k > 0) {
-            decoder.decodeT42D(decodedStreamData, streamData, 0, rows);
-        } else if (k < 0) {
+        try {
+            if (k == 0) {
+                decoder.decodeT41D(decodedStreamData, streamData, 0, rows);
+            } else if (k > 0) {
+                decoder.decodeT42D(decodedStreamData, streamData, 0, rows);
+            } else if (k < 0) {
+                decoder.decodeT6(decodedStreamData, streamData, 0, rows);
+            }
+        } catch (Exception e) {
+            logger.warning("Error decoding CCITTFax image k: " + k );
+            // IText 5.03 doesn't correctly assign a k value for the deocde,
+            // as  result we can try one more time using the T6.
             decoder.decodeT6(decodedStreamData, streamData, 0, rows);
         }
         // check the black is value flag, no one likes inverted colours.
