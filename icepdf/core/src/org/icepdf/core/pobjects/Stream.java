@@ -1045,6 +1045,15 @@ public class Stream extends Dictionary {
         }
     }
 
+    /**
+     * The basic idea is that we do a fuzzy colour conversion from YCCK to
+     * BGRA.  The conversion is not perfect giving a bit of a greenish hue to the
+     * image in question.  I've tweaked the core Adobe algorithm ot give slightly
+     * "better" colour representation but it does seem to make red a little light.
+     * @param wr  image stream to convert colour space.
+     * @param smaskImage smask used to apply alpha values.
+     * @param maskImage maks image for drop out.
+     */
     private static void alterRasterYCCK2BGRA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
@@ -1065,7 +1074,7 @@ public class Stream extends Dictionary {
         }
 
         int[] origValues = new int[4];
-        int[] rgbaValues = new int[4];
+        double[] rgbaValues = new double[4];
         int width = wr.getWidth();
         int height = wr.getHeight();
         for (int y = 0; y < height; y++) {
@@ -1077,29 +1086,53 @@ public class Stream extends Dictionary {
                 int Cr = origValues[2];
                 int K = origValues[3];
 
-                Y -= K;
+
+                Y = Y - K; // gives a darker image,  instead of just Y.
                 int Cr_128 = Cr - 128;
                 int Cb_128 = Cb - 128;
 
-                int rVal = Y + (1370705 * Cr_128 / 1000000);
-                int gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
-                int bVal = Y + (1732446 * Cb_128 / 1000000);
+                // adobe conversion for CCIR Rec. 601-1 standard.
+                // http://partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf
+//                double rVal = Y + (1.4020 * Cr_128);
+//                double gVal = Y - (.3441363 * Cb_128) - (.71413636 * Cr_128);
+//                double bVal = Y + (1.772 * Cb_128);
 
-                /*
-                // Formula used in JPEG standard. Gives pretty similar results
-                //int rVal = Y + (1402000 * Cr_128/ 1000000);
-                //int gVal = Y - (344140 * Cb_128 / 1000000) - (714140 * Cr_128 / 1000000);
-                //int bVal = Y + (1772000 * Cb_128 / 1000000);
-                */
+                // intel codecs, http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
+                // Intel IPP conversion for JPEG codec.
+//                double rVal = Y + (1.402 * Cr) - 179.456;
+//                double gVal = Y - (0.34414 * Cb) - (.71413636 * Cr) + 135.45984;
+//                double bVal = Y + (1.772 * Cb) - 226.816;
 
+                // ICEsoft custom algorithm, results may vary, res are a little
+                // off but over all a better conversion/ then the stoke algorithms.
+                double rVal = Y + (1.4020 * Cr_128);
+                double gVal = Y + (.14414 * Cb_128) + (.11413636  * Cr_128);
+                double bVal = Y + (1.772 * Cb_128);
+
+                // Intel IPP conversion for ITU-R BT.601 for video
+                // default 16, higher more green and darker blacks, lower less
+                // green hue and lighter blacks.
+//                double kLight = (1.164 * (Y -16 ));
+//                double rVal = kLight + (1.596 * Cr_128);
+//                double gVal = kLight - (0.392 * Cb_128) - (0.813 * Cr_128);
+//                double bVal = kLight + (1.017 * Cb_128);
+                // intel PhotoYCC Color Model [0.1],  not a likely candidate for jpegs.
+//                double y1 = Y/255.0;
+//                double c1 = Cb/255.0;
+//                double c2 = Cr/255.0;
+//                double rVal = ((0.981 * y1) + (1.315 * (c2 - 0.537))) *255.0;
+//                double gVal = ((0.981 * y1) - (0.311 * (c1 - 0.612))- (0.669 * (c2 - 0.537))) *255.0;
+//                double bVal = ((0.981 * y1) + (1.601 * (c1 - 0.612))) *255.0;
+
+                // check the range an convert as needed.
                 byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
                 byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
                 byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
                 int alpha = 0xFF;
-                if (y < smaskHeight && x < smaskWidth && smaskRaster != null)
+                if (y < smaskHeight && x < smaskWidth && smaskRaster != null){
                     alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
-                else if (y < maskHeight && x < maskWidth && maskRaster != null) {
-                    // When making an ImageMask, the alpha channnel is setup so that
+                }else if (y < maskHeight && x < maskWidth && maskRaster != null) {
+                    // When making an ImageMask, the alpha channel is setup so that
                     //  it both works correctly for the ImageMask being painted,
                     //  and also for when it's used here, to determine the alpha
                     //  of an image that it's masking
