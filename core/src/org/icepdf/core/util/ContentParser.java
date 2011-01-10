@@ -424,15 +424,16 @@ public class ContentParser {
                                 // 3.) Clip according to the form BBox entry
                                 if (graphicState.getClip() != null) {
                                     AffineTransform matrix = formXObject.getMatrix();
-                                    Rectangle2D bbox = formXObject.getBBox();
-                                    Rectangle2D clip = graphicState.getClip().getBounds2D();
+                                    Area bbox = new Area(formXObject.getBBox());
+                                    Area clip = graphicState.getClip();
                                     // create inverse of matrix so we can transform
                                     // the clip to form space.
                                     matrix = matrix.createInverse();
                                     // apply the new clip now that they are in the
                                     // same space.
                                     Shape shape = matrix.createTransformedShape(clip);
-                                    shapes.add(bbox.createIntersection(shape.getBounds2D()));
+                                    bbox.intersect(new Area(shape));
+                                    shapes.add(bbox);
                                 } else {
                                     shapes.add(formXObject.getBBox());
                                 }
