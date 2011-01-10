@@ -974,7 +974,10 @@ public class Stream extends Dictionary {
                 inCyan = values[0] / 255.0f;
                 inMagenta = values[1] / 255.0f;
                 inYellow = values[2] / 255.0f;
-                inBlack = values[3] / 255.0f;
+                // lessen the amount of black, standard 255 fraction is too dark
+                // increasing the denominator has the same affect of lighting up
+                // the image.
+                inBlack = (values[3] / 425.0f);
 
                 c = Math.min(1.0, inCyan + inBlack);
                 m = Math.min(1.0, inMagenta + inBlack);
