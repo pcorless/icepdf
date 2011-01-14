@@ -185,7 +185,7 @@ public class AFM {
     private float[] widths = new float[255];
     private int[] fontBBox = new int[4];
     private float italicAngle = 0;
-    private int maxWidth = 0;
+    private float maxWidth = 0;
     private int avgWidth = 0;
     private int flags = 0;
 
@@ -246,7 +246,7 @@ public class AFM {
         return widths;
     }
 
-    public int getMaxWidth() {
+    public float getMaxWidth() {
         return maxWidth;
     }
 
@@ -296,9 +296,9 @@ public class AFM {
             else if (s1.equalsIgnoreCase("C")) {
                 int c = Integer.parseInt(st.nextToken());
                 while (!st.nextToken().equals("WX")) ;
-                int wx = Integer.parseInt(st.nextToken());
+                float wx = Integer.parseInt(st.nextToken()) / 1000f;
                 if (c >= 0 && c < 255) {
-                    widths[count] = wx;
+                    widths[count] = wx ;
                     // update max
                     if (wx > maxWidth) {
                         maxWidth = wx;
