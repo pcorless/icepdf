@@ -341,9 +341,9 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         }
 
         // assign font name for descriptor
-        if (fontDescriptor != null && fontDescriptor.getFontName().length() > 0) {
+        if (fontDescriptor != null) {
             String name = fontDescriptor.getFontName();
-            if (name != null ){
+            if (name != null && name.length() > 0){
                 basefont = cleanFontName(name);
             }
         }
@@ -536,7 +536,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             }
         }
         // finally if we have an empty font then we default to serif so that
-        // we can try and render the character codes. 
+        // we can try and render the character codes.
         if (font == null){
             font = new OFont(new java.awt.Font("serif",java.awt.Font.PLAIN,12));
             basefont = "serif";
