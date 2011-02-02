@@ -458,7 +458,7 @@ public class PrintHelper implements Printable {
             printService.createPrintJob().print(
                     new SimpleDoc(this,
                             DocFlavor.SERVICE_FORMATTED.PRINTABLE,
-                            docAttributeSet),
+                            null),
                     printRequestAttributeSet);
         } else {
             logger.fine("No print could be found to print to.");
@@ -483,7 +483,7 @@ public class PrintHelper implements Printable {
             printerJob.print(
                     new SimpleDoc(this,
                             DocFlavor.SERVICE_FORMATTED.PRINTABLE,
-                            docAttributeSet),
+                            null),
                     printRequestAttributeSet);
 
             return (CancelablePrintJob) printerJob;
@@ -511,7 +511,7 @@ public class PrintHelper implements Printable {
             printerJob.print(
                     new SimpleDoc(this,
                             DocFlavor.SERVICE_FORMATTED.PRINTABLE,
-                            docAttributeSet),
+                            null),
                     printRequestAttributeSet);
 
             printJobWatcher.waitForDone();
