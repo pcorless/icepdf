@@ -53,7 +53,6 @@ import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.common.annotation.AnnotationPanel;
 import org.icepdf.ri.util.*;
 
-import javax.management.StringValueExp;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSize;
@@ -2607,8 +2606,9 @@ public class SwingController
     }
 
     /**
-     * Loads/set the default printer properties.
-     * @return a MediaSizeName that is 
+     * Loads/set the media size name derived from the properties manager.
+     * Otherwise a default paper size of NA Letter is returned
+     * @return a MediaSizeName given the conditions above.
      */
     private MediaSizeName loadDefaultPrinterProperties(){
         int printMediaUnit =
@@ -2645,7 +2645,8 @@ public class SwingController
 
         Object printAttributeSet = printRequestAttributeSet.get(Media.class);
 
-        if (printAttributeSet instanceof MediaSizeName){
+        if (propertiesManager != null &&
+                printAttributeSet instanceof MediaSizeName){
             MediaSizeName paper = (MediaSizeName)printAttributeSet;
             MediaSize mediaSize = MediaSize.getMediaSizeForName(paper);
             // write out the new page size property values.
