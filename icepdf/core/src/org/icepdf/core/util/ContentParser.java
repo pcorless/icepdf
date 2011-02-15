@@ -553,8 +553,8 @@ public class ContentParser {
                         if (geometricPath != null) {
                             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
                             geometricPath.closePath();
-                            commonStroke(graphicState, shapes, geometricPath);
                             commonFill(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                         }
                         geometricPath = null;
                     }
@@ -672,8 +672,8 @@ public class ContentParser {
 //                        collectTokenFrequency(PdfOps.B_TOKEN);
                         if (geometricPath != null) {
                             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
-                            commonStroke(graphicState, shapes, geometricPath);
                             commonFill(shapes, geometricPath);
+                            commonStroke(graphicState, shapes, geometricPath);
                         }
                         geometricPath = null;
                     }
