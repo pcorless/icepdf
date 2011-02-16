@@ -469,6 +469,8 @@ public class ContentParser {
                                 }
                                 shapes.addNoClipCommand();
                                 formXObject.completed();
+                                // clean up resource used by this form object
+                                formXObject.disposeResources(true);
                             }
                             //  5.) Restore the saved graphics state
                             graphicState = graphicState.restore();
