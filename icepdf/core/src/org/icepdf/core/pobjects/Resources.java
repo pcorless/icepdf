@@ -66,7 +66,6 @@ public class Resources extends Dictionary {
     Hashtable patterns;
     Hashtable shading;
     Hashtable extGStates;
-    private Hashtable<String, Image> images = new Hashtable<String, Image>();
 
     // reference count to keep track of how many objects reference this resource.
     private int referenceCount;
@@ -131,20 +130,6 @@ public class Resources extends Dictionary {
             }
         }
 
-        // remove all images.
-        if (images != null) {
-            Enumeration shapeContent = images.elements();
-            // find all shapes that are images
-            while (shapeContent.hasMoreElements()) {
-                Object image = shapeContent.nextElement();
-                if (image instanceof Image) {
-                    Image tmp = (Image) image;
-                    tmp.flush();
-                }
-            }
-            // clear hash to free max memory
-            images.clear();
-        }
         // NOTE: Make sure not to clear fonts, color spaces, pattern,
         // or extGStat's as this hold reverences to object not the actual
         // object. The only images contain object with a lot of memory
@@ -242,11 +227,7 @@ public class Resources extends Dictionary {
      * @return
      */
     public Image getImage(String s, Color fill) {
-        // check image has for image
-        Image image = images.get(s);
-        if (image != null) {
-            return image;
-        }
+
         // check xobjects for stream
         Stream st = (Stream) library.getObject(xobjects, s);
         if (st == null) {
@@ -257,15 +238,14 @@ public class Resources extends Dictionary {
             return null;
         }
         // lastly return the images.
+        Image image = null;
         try {
             image = st.getImage(fill, this, true);
+            // clean up the stream's resources.
+            st.dispose(true);
         }
         catch (Exception e) {
             logger.log(Level.FINE, "Error getting image by name: " + s, e);
-        }
-
-        if (image != null && !st.isImageMask()) {
-            images.put(s, image);
         }
         return image;
     }

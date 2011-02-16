@@ -32,20 +32,13 @@
  */
 package org.icepdf.core.util;
 
-import com.sun.image.codec.jpeg.ImageFormatException;
-import com.sun.image.codec.jpeg.JPEGCodec;
-import com.sun.image.codec.jpeg.JPEGImageDecoder;
-import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
+import javax.imageio.ImageIO;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,25 +77,23 @@ public class ImageCache {
     // cache manager reference
     private CacheManager cacheManager = null;
 
-    // flag for image scalling, only want to scale it once
+    // flag for image scaling, only want to scale it once
     private boolean isScaled = false;
 
     // If caching is disabled, it is stored in memory with this var
     private BufferedImage imageStore;
 
-    // disable/inable file cahcing
+    // disable/enable file caching
     private static boolean isCachingEnabled;
 
     // disable/inable file cahcing, overrides fileCachingSize.
     private static boolean scaleImages;
 
-    // ImageIO read method via reflection
-    private static Method imageIOReadMethod = null;
-
-    // ImageIO write method via reflection
-    private static Method imageIOWriteMethod = null;
 
     static {
+        // NOTE: currently disabled as file caching tends to slow things down more
+        // then it helps.
+
         // sets if file caching is enabled or disabled.
         isCachingEnabled =
                 Defs.sysPropertyBoolean("org.icepdf.core.imagecache.enabled",
@@ -112,34 +103,6 @@ public class ImageCache {
         scaleImages =
                 Defs.sysPropertyBoolean("org.icepdf.core.scaleImages",
                         true);
-
-        // Use Java 1.4 by default unless otherwise specified.
-        if (Defs.sysPropertyBoolean("org.icepdf.core.imagecache.use14", true)) {
-            //Is the java 1.4 Image loading subsystem present?
-            try {
-                // class we are looking for
-                Class imageIO = Class.forName("javax.imageio.ImageIO");
-
-                // Build ImageIO's read method
-                Class readArgs[] = new Class[1];
-                readArgs[0] = File.class;
-                imageIOReadMethod = imageIO.getMethod("read", readArgs);
-
-                // Build ImageIO's write method
-                Class writeArgs[] = new Class[3];
-                writeArgs[0] = RenderedImage.class;
-                writeArgs[1] = String.class;
-                writeArgs[2] = File.class;
-                imageIOWriteMethod = imageIO.getMethod("write", writeArgs);
-
-            }
-            catch (Throwable t) {
-                logger.fine("ImageCache: Java 1.4 Imaging subsystem not found.");
-                // set to null as we will use old 1.3 method on detetion of null
-                imageIOReadMethod = null;
-                imageIOWriteMethod = null;
-            }
-        }
 
     }
 
@@ -167,9 +130,10 @@ public class ImageCache {
      * Write the <code>image</code> to a temporary file in the users temp
      * directory.
      *
-     * @param image image to be cached.
+     * @param image      image to be cached.
+     * @param useCaching use caching when saving image.
      */
-    public void setImage(BufferedImage image, boolean useCaching) {
+    private void setImage(BufferedImage image, boolean useCaching) {
         try {
             if (useCaching && isCached && imageStore == image)
                 return;
@@ -177,8 +141,6 @@ public class ImageCache {
                 imageStore.flush();
                 imageStore = null;
             }
-
-            imageStore = image;
 
             // if caching, write the image to file;
             if (useCaching) {//isCachingEnabled) {
@@ -191,40 +153,15 @@ public class ImageCache {
                 // Delete temp file on exits, but dispose should do this too
                 tempFile.deleteOnExit();
 
-                // Java 1.4
-                if (imageIOWriteMethod != null) {
-                    Object[] writeArgs = new Object[3];
-                    writeArgs[0] = image;
-                    writeArgs[1] = "png";
-                    writeArgs[2] = tempFile;
-                    try {
-                        imageIOWriteMethod.invoke(null, writeArgs);
-                    }
-                    catch (Throwable t) {
-                        logger.fine("ImageCache: Java 1.4 Imaging subsystem write failure: " + t);
-                    }
-                }
-                // Java 1.3 loading methods
-                else {
-                    // Create a writable file channel
-                    FileOutputStream fileOutputStream =
-                            new FileOutputStream(tempFile.getAbsolutePath(), false);
-                    // create encoder
-                    JPEGImageEncoder encoder =
-                            JPEGCodec.createJPEGEncoder(fileOutputStream);
-                    // encode the image
-                    encoder.encode(image);
-
-                    // clean up the stream data.
-                    fileOutputStream.flush();
-                    fileOutputStream.close();
-                }
+                ImageIO.write(image, "png", tempFile);
 
                 // clean up the stream
                 length = tempFile.length();
                 // set cached flag
                 isCached = true;
             } else {
+                // use the store to keep track of the image.
+                imageStore = image;
                 isCached = false;
             }
         } catch (IOException e) {
@@ -246,37 +183,8 @@ public class ImageCache {
         if (isCached) {//isCachingEnabled) {
             BufferedImage image = null;
             try {
-                // Java 1.4
-                if (imageIOReadMethod != null) {
-                    Object[] readArgs = new Object[1];
-                    readArgs[0] = tempFile;
-                    try {
-                        image = (BufferedImage) imageIOReadMethod.invoke(null, readArgs);
-                    }
-                    catch (Throwable t) {
-                        logger.log(Level.FINE,
-                                "ImageCache: Java 1.4 Imaging subsystem read failure.", t);
-                    }
-                }
-                // Java 1.3
-                else {
-                    try {
-                        // create readable file channel
-                        FileInputStream fileInputStream = new FileInputStream(tempFile);
-                        // read image from file
-                        JPEGImageDecoder encoder =
-                                JPEGCodec.createJPEGDecoder(fileInputStream);
-                        // encode the image
-                        image = encoder.decodeAsBufferedImage();
 
-                        // clean up the stream
-                        fileInputStream.close();
-                    }
-                    catch (ImageFormatException e) {
-                        logger.log(Level.FINE,
-                                "Error decoding ImageCache cached image.", e);
-                    }
-                }
+                image = ImageIO.read(tempFile);
                 // get length of temp file
                 length = tempFile.length();
 
@@ -284,7 +192,7 @@ public class ImageCache {
                 logger.log(Level.FINE,
                         "Error creating ImageCache temporary file ", e);
             }
-            imageStore = image;
+            // imageStore = image;
             return image;
         }
         return null;

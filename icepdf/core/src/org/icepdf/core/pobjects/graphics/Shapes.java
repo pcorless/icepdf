@@ -170,6 +170,7 @@ public class Shapes {
                 }
             }
             shapes.clear();
+            shapes.trimToSize();
             shapes = null;
         }
 
