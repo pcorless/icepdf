@@ -34,6 +34,7 @@ package org.icepdf.core.util;
 
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
@@ -269,7 +270,7 @@ public class ImageCache {
         */
 
         double imageScale = 1.0;
-        // do a little scalling on a the buffer
+        // do a little scaling on a the buffer
         if ((width >= 500 || height >= 500) &&
                 (width < 1000 || height < 1000)) {
             imageScale = 0.80;
@@ -288,14 +289,13 @@ public class ImageCache {
         } else if ((width >= 3000 || height >= 3000)) {
             imageScale = 0.30;
         }
-
-        if (imageScale != 1.0) {
+        // scale the image
+        if (imageScale < 1.0) {
             AffineTransform tx = new AffineTransform();
             tx.scale(imageScale, imageScale);
             AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
             BufferedImage sbim = op.filter(bim, null);
             bim.flush();
-            bim = null;
             bim = sbim;
         }
 
