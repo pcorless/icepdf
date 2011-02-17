@@ -243,8 +243,10 @@ public class Page extends Dictionary implements MemoryManageable {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
                 Stream tmpStream = (Stream) library.getObject((Reference) conts.elementAt(i));
-                tmpStream.setPObjectReference((Reference) conts.elementAt(i));
-                contents.addElement(tmpStream);
+                if (tmpStream != null){
+                    tmpStream.setPObjectReference((Reference) conts.elementAt(i));
+                    contents.addElement(tmpStream);
+                }
             }
         }
     }
@@ -447,7 +449,7 @@ public class Page extends Dictionary implements MemoryManageable {
                       boolean paintAnnotations, boolean paintSearchHighlight) {
         if (!isInited && pagePainter == null) {
             init();
-        }else if (!isInited && pagePainter != null){
+        }else if (!isInited ){
             // make sure we don't do a page init on the awt thread in the viewer
             // ri, let the
             return;
