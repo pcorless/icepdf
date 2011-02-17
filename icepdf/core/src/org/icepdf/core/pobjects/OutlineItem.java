@@ -294,12 +294,11 @@ public class OutlineItem extends Dictionary {
                             hexTmp = hexTmp + titleText.charAt(i);
                         }
                     }
-                    byte title1[] = hexTmp.getBytes();
-
-                    for (int i = 2; i < title1.length; i += 2) {
+                    // convert teh unicode to characters.
+                    for (int i = 2; i < hexTmp.length(); i += 2) {
                         try {
-                            int b1 = ((int) title1[i]) & 0xFF;
-                            int b2 = ((int) title1[i + 1]) & 0xFF;
+                            int b1 = ((int) hexTmp.charAt(i)) & 0xFF;
+                            int b2 = ((int) hexTmp.charAt(i + 1)) & 0xFF;
                             //System.err.println(b1 + " " + b2);
                             sb1.append((char) (b1 * 256 + b2));
                         } catch (Exception ex) {
