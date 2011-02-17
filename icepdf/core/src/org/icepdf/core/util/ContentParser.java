@@ -36,7 +36,7 @@ import org.icepdf.core.io.SeekableByteArrayInputStream;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.*;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -2049,6 +2049,23 @@ public class ContentParser {
         Name name2 = (Name) stack.pop();
         // build the new font and initialize it.
         graphicState.getTextState().font = resources.getFont(name2.getName());
+        // in the rare case that the font can't be found then we try and build
+        // one so the document can be rendered in some shape or form.
+        if (graphicState.getTextState().font == null){
+            // get the first pages resources, no need to lock the page, already locked.
+            Resources res = resources.getLibrary().getCatalog().getPageTree().getPage(0,null).getResources();
+            // try and get a font off the first page.
+            Object pageFonts = res.getEntries().get("Font");
+            if (pageFonts instanceof Hashtable){
+                // get first font
+                graphicState.getTextState().font =
+                    (org.icepdf.core.pobjects.fonts.Font)resources.getLibrary()
+                            .getObject(((Hashtable)pageFonts).elements().nextElement());
+                // might get a null pointer but we'll get on on deriveFont too
+                graphicState.getTextState().font.init();
+            }
+            // if no fonts found then we just bail and accept the null pointer
+        }
         graphicState.getTextState().currentfont =
                 graphicState.getTextState().font.getFont().deriveFont(size);
     }
