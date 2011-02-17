@@ -101,7 +101,7 @@ public class AnnotationHandler extends SelectionBoxHandler
     /**
      * Initializes the annotation components given the annotations collections.
      *
-     * @param annotations annotations to wrap with annotaitons components.
+     * @param annotations annotations to wrap with annotations components.
      */
     public void initializeAnnotationComponents(ArrayList<Annotation> annotations){
 
@@ -109,9 +109,7 @@ public class AnnotationHandler extends SelectionBoxHandler
             this.annotations = new ArrayList<AnnotationComponent>(annotations.size());
             AnnotationComponentImpl comp;
             for (Annotation annotation : annotations) {
-                if (!(annotation.getFlagReadOnly() ||
-                        annotation.getFlagLocked() ||
-                        annotation.getFlagInvisible() ||
+                if (!(annotation.getFlagInvisible() ||
                         annotation.getFlagHidden())) {
                     comp = new AnnotationComponentImpl(annotation,
                             documentViewController,
@@ -136,9 +134,7 @@ public class AnnotationHandler extends SelectionBoxHandler
             annotations = new ArrayList<AnnotationComponent>();
         }
         // make sure we don't add the following types.
-        if (!(annotation.getFlagReadOnly() ||
-                annotation.getFlagLocked() ||
-                annotation.getFlagInvisible() ||
+        if (!(annotation.getFlagInvisible() ||
                 annotation.getFlagHidden())) {
             AnnotationComponentImpl comp = new AnnotationComponentImpl(annotation,
                     documentViewController,

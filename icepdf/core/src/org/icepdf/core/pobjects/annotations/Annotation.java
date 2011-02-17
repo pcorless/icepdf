@@ -1324,6 +1324,13 @@ public class Annotation extends Dictionary {
         return ((getInt(FLAG_KEY.getName()) & 0x0040) != 0);
     }
 
+    /**
+     * A locked annotation can not be deleted or its properties  such
+     * as position and size to be modified by the user. This property does not
+     * restrict annotation contents such as the value of a form field.
+     *
+     * @return true if locked, false otherwise.
+     */
     public boolean getFlagLocked() {
         return ((getInt(FLAG_KEY.getName()) & 0x0080) != 0);
     }
