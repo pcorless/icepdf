@@ -333,7 +333,9 @@ public class Shapes {
                         if (currentTime - lastPaintTime > paintDelay) {
 //                            paintCount++;
                             lastPaintTime = currentTime;
-                            parentPage.notifyPaintPageListeners();
+                            if (parentPage != null){
+                                parentPage.notifyPaintPageListeners();
+                            }
                         }
                     }
                 } else if (nextShape instanceof Shape) {
