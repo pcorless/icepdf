@@ -533,6 +533,8 @@ public class Stream extends Dictionary {
                     logger.log(Level.FINE, "Error disposing stream.", e);
                 }
                 streamInput = null;
+            }else{
+                library.removeObject(this.getPObjectReference());
             }
         }
         synchronized (imageLock) {
