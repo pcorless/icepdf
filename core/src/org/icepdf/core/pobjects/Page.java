@@ -34,6 +34,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
+import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.io.SequenceInputStream;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -43,10 +44,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
-import org.icepdf.core.util.ContentParser;
-import org.icepdf.core.util.GraphicsRenderingHints;
-import org.icepdf.core.util.Library;
-import org.icepdf.core.util.MemoryManageable;
+import org.icepdf.core.util.*;
 import org.icepdf.core.views.common.TextSelectionPageHandler;
 import org.icepdf.core.views.swing.PageViewComponentImpl;
 
@@ -91,6 +89,7 @@ public class Page extends Dictionary implements MemoryManageable {
             Logger.getLogger(Page.class.toString());
 
     public static final Name ANNOTS_KEY = new Name("Annots");
+    public static final Name CONTENTS_KEY = new Name("Contents");
 
     /**
      * Defines the boundaries of the physical medium on which the page is
@@ -209,6 +208,21 @@ public class Page extends Dictionary implements MemoryManageable {
                 resources.dispose(cache, this);
                 resources = null;
             }
+            // clean up references in library to avoid slow bleed
+            if (cache){
+                // remove the page
+                library.removeObject(this.getPObjectReference());
+                // annotations
+                Object tmp = entries.get(ANNOTS_KEY.getName());
+                if (tmp != null && tmp instanceof Vector){
+                    Vector annots = (Vector)tmp;
+                    for (Object ref: annots){
+                        if (ref instanceof Reference){
+                            library.removeObject((Reference)ref);
+                        }
+                    }
+                }
+            }
         }
         // clear vector of listeners
         if (paintPageListeners != null) {
@@ -222,14 +236,14 @@ public class Page extends Dictionary implements MemoryManageable {
     }
 
     private void initPageContents() throws InterruptedException {
-        Object pageContent = library.getObject(entries, "Contents");
+        Object pageContent = library.getObject(entries, CONTENTS_KEY.getName());
 
         // if a stream process it as needed
         if (pageContent instanceof Stream) {
             contents = new Vector<Stream>(1);
             Stream tmpStream = (Stream) pageContent;
             tmpStream.setPObjectReference(
-                    library.getObjectReference(entries, "Contents"));
+                    library.getObjectReference(entries, CONTENTS_KEY.getName()));
             contents.addElement(tmpStream);
         }
         // if a vector, process it as needed
@@ -329,6 +343,11 @@ public class Page extends Dictionary implements MemoryManageable {
             }
 //try { throw new RuntimeException("Page.init() ****"); } catch(Exception e) { e.printStackTrace(); }
 
+            // do a little clean up to keep the mem footprint small
+            boolean lowMemory =  MemoryManager.getInstance().isLowMemory();
+            if (lowMemory && logger.isLoggable(Level.FINER)){
+                logger.finer("Low memory conditions encountered, clearing page cache");
+            }
 
             // get pages resources
             initPageResources();

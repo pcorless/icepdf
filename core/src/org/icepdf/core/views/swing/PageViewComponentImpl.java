@@ -781,7 +781,10 @@ public class PageViewComponentImpl extends
             int neededMemory = bufferedPageImageBounds.width *
                     bufferedPageImageBounds.height * 3;
 
-            if (MemoryManager.getInstance().checkMemory(neededMemory)) {
+            // clear the need memory to create buffer
+            MemoryManager.getInstance().checkMemory(neededMemory);
+            // go create the buffer regardless of freemem.
+            if (true) {
                 // create new image and get graphics context from image
                 if (gc == null){
                     gc = getGraphicsConfiguration();

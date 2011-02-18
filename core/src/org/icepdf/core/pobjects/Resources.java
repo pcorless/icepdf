@@ -38,6 +38,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -155,7 +156,27 @@ public class Resources extends Dictionary {
                 }
             }
         }
+        // remove refernces from library
+        clearResource(colorspaces);
+        clearResource(fonts);
+        clearResource(xobjects);
+        clearResource(patterns);
+        clearResource(shading);
+        clearResource(extGStates);
         return true;
+    }
+
+    private void clearResource(Hashtable resource){
+        if (resource != null){
+            Set keys = resource.keySet();
+            Object value;
+            for (Object key : keys){
+                value = resource.get(key);
+                if (value instanceof Reference){
+                    library.removeObject((Reference)value);
+                }
+            }
+        }
     }
 
     /**

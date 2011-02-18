@@ -101,6 +101,9 @@ public class Form extends Stream {
         if (shapes != null){
             shapes.dispose();
         }
+        if (cache){
+            library.removeObject(this.getPObjectReference());
+        }
         // get rid of the resources.
         disposeResources(cache);
     }
