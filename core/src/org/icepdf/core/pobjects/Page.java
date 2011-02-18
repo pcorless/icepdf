@@ -209,16 +209,16 @@ public class Page extends Dictionary implements MemoryManageable {
                 resources = null;
             }
             // clean up references in library to avoid slow bleed
-            if (cache){
+            if (cache) {
                 // remove the page
                 library.removeObject(this.getPObjectReference());
                 // annotations
                 Object tmp = entries.get(ANNOTS_KEY.getName());
-                if (tmp != null && tmp instanceof Vector){
-                    Vector annots = (Vector)tmp;
-                    for (Object ref: annots){
-                        if (ref instanceof Reference){
-                            library.removeObject((Reference)ref);
+                if (tmp != null && tmp instanceof Vector) {
+                    Vector annots = (Vector) tmp;
+                    for (Object ref : annots) {
+                        if (ref instanceof Reference) {
+                            library.removeObject((Reference) ref);
                         }
                     }
                 }
@@ -257,7 +257,7 @@ public class Page extends Dictionary implements MemoryManageable {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
                 Stream tmpStream = (Stream) library.getObject((Reference) conts.elementAt(i));
-                if (tmpStream != null){
+                if (tmpStream != null) {
                     tmpStream.setPObjectReference((Reference) conts.elementAt(i));
                     contents.addElement(tmpStream);
                 }
@@ -344,8 +344,8 @@ public class Page extends Dictionary implements MemoryManageable {
 //try { throw new RuntimeException("Page.init() ****"); } catch(Exception e) { e.printStackTrace(); }
 
             // do a little clean up to keep the mem footprint small
-            boolean lowMemory =  MemoryManager.getInstance().isLowMemory();
-            if (lowMemory && logger.isLoggable(Level.FINER)){
+            boolean lowMemory = MemoryManager.getInstance().isLowMemory();
+            if (lowMemory && logger.isLoggable(Level.FINER)) {
                 logger.finer("Low memory conditions encountered, clearing page cache");
             }
 
@@ -388,16 +388,13 @@ public class Page extends Dictionary implements MemoryManageable {
                 try {
                     ContentParser cp = new ContentParser(library, resources);
                     shapes = cp.parse(sis);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     shapes = new Shapes();
                     logger.log(Level.FINE, "Error initializing Page.", e);
-                }
-                finally {
+                } finally {
                     try {
                         sis.close();
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         logger.log(Level.FINE, "Error closing page stream.", e);
                     }
                 }
@@ -468,7 +465,7 @@ public class Page extends Dictionary implements MemoryManageable {
                       boolean paintAnnotations, boolean paintSearchHighlight) {
         if (!isInited && pagePainter == null) {
             init();
-        }else if (!isInited ){
+        } else if (!isInited) {
             // make sure we don't do a page init on the awt thread in the viewer
             // ri, let the
             return;
@@ -1198,6 +1195,47 @@ public class Page extends Dictionary implements MemoryManageable {
     }
 
     /**
+     * Returns the decoded content stream for this page instance.  A page instance
+     * can have more then one content stream associated with it.
+     *
+     * @return An array of decoded content stream.  Each index in the array
+     *         represents one content stream.  Null return and null String array
+     *         values are possible.
+     */
+    public String[] getDecodedContentSteam() {
+        // Some PDF's won't have any content for a given page.
+        try {
+            initPageContents();
+
+            if (contents == null) {
+                return null;
+            }
+            String[] decodedContentStream = new String[contents.size()];
+            int i = 0;
+            for (Stream stream : contents) {
+                InputStream input = stream.getInputStreamForDecodedStreamBytes();
+                String content;
+                if (input instanceof SeekableInput) {
+                    content = Utils.getContentFromSeekableInput((SeekableInput) input, false);
+                } else {
+                    InputStream[] inArray = new InputStream[]{input};
+                    content = Utils.getContentAndReplaceInputStream(inArray, false);
+                }
+                decodedContentStream[i] = content;
+                input.close();
+                i++;
+            }
+            return decodedContentStream;
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, "Error initializing page Contents.", e);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error closing content stream");
+        }
+        return null;
+    }
+
+
+    /**
      * Gets the media box boundary defined by this page.  The media box is a
      * required page entry and can be inherited from its parent page tree.
      *
@@ -1383,15 +1421,12 @@ public class Page extends Dictionary implements MemoryManageable {
                     ContentParser cp = new ContentParser(library, resources);
                     // custom parsing for text extraction, should be faster
                     textBlockShapes = cp.parseTextBlocks(sis);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.log(Level.FINE, "Error getting page text.", e);
-                }
-                finally {
+                } finally {
                     try {
                         sis.close();
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         logger.log(Level.FINE, "Error closing page stream.", e);
                     }
                 }
@@ -1433,23 +1468,23 @@ public class Page extends Dictionary implements MemoryManageable {
         dispose(true);
     }
 
-    public void addPaintPageListener( PaintPageListener listener ) {
-      // add a listener if it is not already registered
-      synchronized ( paintPageListeners ) {
-        if ( !paintPageListeners.contains( listener ) ) {
-          paintPageListeners.addElement( listener );
+    public void addPaintPageListener(PaintPageListener listener) {
+        // add a listener if it is not already registered
+        synchronized (paintPageListeners) {
+            if (!paintPageListeners.contains(listener)) {
+                paintPageListeners.addElement(listener);
+            }
         }
-      }
     }
 
-    public void removePaintPageListener( PaintPageListener listener ) {
-      // remove a listener if it is already registered
-      synchronized ( paintPageListeners ) {
-        if ( paintPageListeners.contains( listener ) ) {
-          paintPageListeners.removeElement( listener );
-        }
+    public void removePaintPageListener(PaintPageListener listener) {
+        // remove a listener if it is already registered
+        synchronized (paintPageListeners) {
+            if (paintPageListeners.contains(listener)) {
+                paintPageListeners.removeElement(listener);
+            }
 
-      }
+        }
     }
 
     public void notifyPaintPageListeners() {
