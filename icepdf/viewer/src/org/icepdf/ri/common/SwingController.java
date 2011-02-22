@@ -1244,58 +1244,61 @@ public class SwingController
      * @see #getDocumentViewToolMode
      */
     public void setDisplayTool(final int argToolName) {
+        try{
+            boolean actualToolMayHaveChanged = false;
+            if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_PAN) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_HAND_OPEN);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+            }  else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(
+                                DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_ZOOM_IN);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(
+                                DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_ZOOM_OUT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_WAIT) {
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_WAIT);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_NONE) {
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+            }
+            if (actualToolMayHaveChanged){
+                reflectToolInToolButtons();
+            }
 
-        boolean actualToolMayHaveChanged = false;
-        if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_PAN) {
-            actualToolMayHaveChanged =
-                    documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
-            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_HAND_OPEN);
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION) {
-            actualToolMayHaveChanged =
-                    documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
-            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        }  else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-            actualToolMayHaveChanged =
-                    documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
-            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-            showAnnotationPanel(null);
-        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
-            actualToolMayHaveChanged =
-                    documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
-            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-            showAnnotationPanel(null);
-        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
-            actualToolMayHaveChanged =
-                    documentViewController.setToolMode(
-                            DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
-            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_ZOOM_IN);
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT) {
-            actualToolMayHaveChanged =
-                    documentViewController.setToolMode(
-                            DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT);
-            documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_ZOOM_OUT);
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_WAIT) {
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_WAIT);
-        } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_NONE) {
-            setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
-        }
-        if (actualToolMayHaveChanged){
-            reflectToolInToolButtons();
-        }
+            // disabled the annotation edit panels, selection will activate them again.
+            if (annotationPanel != null){
+                annotationPanel.setEnabled(false);
+            }
 
-        // disabled the annotation edit panels, selection will activate them again. 
-        if (annotationPanel != null){
-            annotationPanel.setEnabled(false);
+            // repaint the page views.
+            documentViewController.getViewContainer().repaint();
+        }catch(java.awt.HeadlessException e){
+            e.printStackTrace();
         }
-
-        // repaint the page views. 
-        documentViewController.getViewContainer().repaint();
     }
 
 
