@@ -1046,9 +1046,10 @@ public class Document {
 
     /**
      * Exposes a page's PageText object which can be used to get text with
-     * in the PDF document.  The PageText.toString() is the simpleset way to
+     * in the PDF document.  The PageText.toString() is the simplest way to
      * get a pages text.  This utility call does not parse the whole stream
      * and is best suited for text extraction functionality as it faster then
+     * #getPageViewText(int).
      *
      * @param pageNumber Page number of page in which text extraction will act on.
      *                   The page number is zero-based.
@@ -1069,8 +1070,8 @@ public class Document {
 
     /**
      * Exposes a page's PageText object which can be used to get text with
-     * in the PDF document.  The PageText.toString() is the simpleset way to
-     * get a pages text.  The pageText heirarch can be used to search for
+     * in the PDF document.  The PageText.toString() is the simplest way to
+     * get a pages text.  The pageText hierarchy can be used to search for
      * selected text or used to set text as highlighted.
      *
      * @param pageNumber Page number of page in which text extraction will act on.

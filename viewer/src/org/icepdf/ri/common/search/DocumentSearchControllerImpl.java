@@ -32,6 +32,7 @@
  */
 package org.icepdf.ri.common.search;
 
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -41,7 +42,6 @@ import org.icepdf.ri.common.SwingController;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -52,8 +52,14 @@ import java.util.logging.Level;
  * search results.
  * <p/>
  * This implementation uses simple search algorithm that will work well for most
- * users. This class can be exteded and the method {@link #searchHighlightPage(int)}
- * can be overridden for custom search implmentations.
+ * users. This class can be extended and the method {@link #searchHighlightPage(int)}
+ * can be overridden for custom search implementations.
+ * <p/>
+ * The DocumentSearchControllerImpl can be constructed to be used with the
+ * Viewer RI source code via the constructor that takes a SwingController as
+ * a parameter.  The second variation is ended for a headless environment where
+ * Swing is not needed, the constructor for this instance takes a Document
+ * as a parameter.
  *
  * @since 4.0
  */
@@ -66,16 +72,29 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     protected DocumentSearchModelImpl searchModel;
     // parent controller used to get at RI controllers and models.
     protected SwingController viewerController;
+    // assigned document for headless searching.
+    protected Document document;
 
     /**
-     * Create a news instnace of search controller. A search model is created
-     * for this instanc.e
+     * Create a news instance of search controller. A search model is created
+     * for this instance.
      *
      * @param viewerController parent controller/mediator.
      */
     public DocumentSearchControllerImpl(SwingController viewerController) {
         this.viewerController = viewerController;
         searchModel = new DocumentSearchModelImpl();
+    }
+
+    /**
+     * Create a news instance of search controller intended to be used in a
+     * headless environment.  A search model is created for this instance.
+     *
+     * @param document document to search.
+     */
+    public DocumentSearchControllerImpl(Document document) {
+        searchModel = new DocumentSearchModelImpl();
+        this.document = document;
     }
 
     /**
@@ -129,8 +148,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int hitCount = 0;
 
         // get our our page text reference
-        PageText pageText = viewerController.getDocument()
-                .getPageText(pageIndex);
+        PageText pageText = null;
+        if (viewerController != null){
+            pageText = viewerController.getDocument().getPageText(pageIndex);
+        }else if (document != null){
+            pageText = document.getPageViewText(pageIndex);
+        }
 
         // some pages just don't have any text. 
         if (pageText == null){
@@ -257,8 +280,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<LineText>searchHits = new ArrayList<LineText>();
 
         // get our our page text reference
-        PageText pageText = viewerController.getDocument()
-                .getPageText(pageIndex);
+        PageText pageText = null;
+        if (viewerController != null){
+            pageText = viewerController.getDocument().getPageText(pageIndex);
+        }else if (document != null){
+            pageText = document.getPageViewText(pageIndex);
+        }
 
         // some pages just don't have any text.
         if (pageText == null){
