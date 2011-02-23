@@ -558,7 +558,9 @@ public class Stream extends Dictionary {
      */
     private BufferedImage dctDecode(
             int width, int height, PColorSpace colourSpace, int bitspercomponent,
-            BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
+            BufferedImage smaskImage, BufferedImage maskImage,
+            int[] maskMinRGB, int[] maskMaxRGB, Vector<Integer> decode) {
+
         // BIS's buffer size should be equal to mark() size, and greater than data size (below)
         InputStream input = getInputStreamForDecodedStreamBytes();
         // Used to just read 1000, but found a PDF that included thumbnails first
@@ -634,7 +636,7 @@ public class Stream extends Dictionary {
                     WritableRaster wr = (r instanceof WritableRaster)
                             ? (WritableRaster) r : r.createCompatibleWritableRaster();
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
-                    alterRasterYCCK2BGRA(wr, smaskImage, maskImage); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
+                    alterRasterYCCK2BGRA(wr, smaskImage, maskImage, decode, bitspercomponent); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
                     tmpImage = makeRGBABufferedImage(wr);
                 } else if (jpegEncoding == JPEG_ENC_GRAY && bitspercomponent == 8) {
                     //System.out.println("Stream.dctDecode()    JPEG_ENC_GRAY");
@@ -1060,7 +1062,11 @@ public class Stream extends Dictionary {
      * @param smaskImage smask used to apply alpha values.
      * @param maskImage maks image for drop out.
      */
-    private static void alterRasterYCCK2BGRA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage) {
+    private static void alterRasterYCCK2BGRA(WritableRaster wr,
+                                             BufferedImage smaskImage,
+                                             BufferedImage maskImage,
+                                             Vector<Integer> decode,
+                                             int bitsPerComponent) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
         int smaskHeight = 0;
@@ -1079,23 +1085,28 @@ public class Stream extends Dictionary {
             maskHeight = maskRaster.getHeight();
         }
 
-        int[] origValues = new int[4];
+        float[] origValues;
         double[] rgbaValues = new double[4];
+
         int width = wr.getWidth();
         int height = wr.getHeight();
+        int maxValue = ((int) Math.pow(2, bitsPerComponent)) - 1;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, origValues);
+                // apply decode param.
+                origValues = getNormalizedComponents(
+                        (byte[])wr.getDataElements(x,y,null),
+                        decode,
+                        maxValue);
 
-                int Y = origValues[0];
-                int Cb = origValues[1];
-                int Cr = origValues[2];
-                int K = origValues[3];
-
+                float Y = origValues[0] * 255;
+                float Cb = origValues[1] * 255;
+                float Cr = origValues[2] * 255;
+                float K = origValues[3] * 255;
 
                 Y = Y - K; // gives a darker image,  instead of just Y.
-                int Cr_128 = Cr - 128;
-                int Cb_128 = Cb - 128;
+                float Cr_128 = Cr - 128;
+                float Cb_128 = Cb - 128;
 
                 // adobe conversion for CCIR Rec. 601-1 standard.
                 // http://partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf
@@ -1153,6 +1164,49 @@ public class Stream extends Dictionary {
                 wr.setPixel(x, y, rgbaValues);
             }
         }
+    }
+
+    /**
+     * Apply the Decode Array domain for each colour component.
+     * @param pixels colour to process by decode
+     * @param decode decode array for colour space
+     * @param xMax domain max for the second point on the interpolation line
+     * always (2<sup>bitsPerComponent</sup> - 1).
+     * @return
+     */
+    private static float[] getNormalizedComponents(
+            byte[] pixels,
+            Vector<Integer> decode, int xMax) {
+        float[] normComponents = new float[pixels.length];
+        int val;
+        float yMin;
+        float yMax;
+        // interpolate each colour component for the given decode domain.
+        for (int i = 0; i < pixels.length; i++) {
+            val = pixels[i] & 0xff;
+            yMin = decode.get(i * 2).floatValue();
+            yMax = decode.get((i * 2) + 1).floatValue();
+            normComponents[i] =
+                    interpolate(val, 0, xMax, yMin, yMax);
+        }
+        return normComponents;
+    }
+
+    /**
+     * Interpolation function, generic. Converts a value x between xMin and xMax
+     * to a corresponding value y between yMin and yMax.
+     *
+     * @param x    converts a value x
+     * @param xMin xMin value in formula
+     * @param xMax xMax value in formula
+     * @param yMin yMin value in formula
+     * @param yMax yMax value in formula
+     * @return interpolated value x as defined by the project along the lines defined
+     *         by point (xMin, yMin) and (xMax, yMax).
+     */
+    private static float interpolate(float x, float xMin, float xMax,
+                                     float yMin, float yMax) {
+        return yMin + ((x - xMin) * (yMax - yMin) / (xMax - xMin));
     }
 
     private static void alterRasterYCbCrA2RGBA_new(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage) {
@@ -1347,6 +1401,7 @@ public class Stream extends Dictionary {
 
         int width = bi.getWidth();
         int height = bi.getHeight();
+
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 boolean gotARBG = false;
@@ -1858,9 +1913,13 @@ public class Stream extends Dictionary {
         // parse decode information
         Vector decode = (Vector) library.getObject(entries, "Decode");
         if (decode == null) {
-            decode = new Vector(2);
-            decode.addElement(new Float(0));
-            decode.addElement(new Float(1));
+            int depth = colourSpace.getNumComponents();
+            decode = new Vector<Float>(depth);
+            // add a decode param for each colour channel.
+            for (int i= 0; i < depth; i++){
+                decode.addElement(0);
+                decode.addElement(1);
+            }
             if (Tagger.tagging)
                 Tagger.tagImage("Decode_Implicit_01");
         }
@@ -2028,7 +2087,7 @@ public class Stream extends Dictionary {
                 if (Tagger.tagging)
                     Tagger.tagImage("DCTDecode");
                 decodedImage = dctDecode(width, height, colourSpace, bitsPerComponent,
-                        smaskImage, maskImage, maskMinRGB, maskMaxRGB);
+                        smaskImage, maskImage, maskMinRGB, maskMaxRGB, decode);
             }
             // JBIG2 writes out image if successful
             else if (shouldUseJBIG2Decode()) {
