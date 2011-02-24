@@ -329,6 +329,30 @@ public class OFont implements FontFile {
         GlyphVector glyphVector = awtFont.createGlyphVector(frc, displayText);
         glyphVector.setGlyphPosition(0, new Point2D.Float(x, y));
 
+        // Iterate through displayText to calculate the the new advance value if
+        // the displayLength is greater then one character. This in sures that
+        // cid -> String will get displayed correctly.
+        int displayLength = displayText.length();
+        float lastx;
+        if (displayLength > 1){
+            Point2D p;
+            float advance = 0;
+            for (int i = 0; i < displayText.length(); i++) {
+                // Position of the specified glyph relative to the origin of glyphVector
+                p = glyphVector.getGlyphPosition(i);
+                lastx = (float) p.getX();
+                // add fonts rise to the to glyph position (sup,sub scripts)
+                glyphVector.setGlyphPosition(
+                        i,
+                        new Point2D.Double(lastx + advance, p.getY()));
+
+                // subtract the advance because we will be getting it from the fonts width
+                float adv1 = glyphVector.getGlyphMetrics(i).getAdvance();
+                double adv2 = echarAdvance(displayText.charAt(i)).getX();
+                advance += -adv1 + adv2 + lastx;
+            }
+        }
+
         if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                 TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
             g.fill(glyphVector.getOutline());
@@ -351,22 +375,27 @@ public class OFont implements FontFile {
         return sb.toString();
     }
 
-    public char toUnicode(char c1) {
+    public String toUnicode(char c1) {
         // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
         // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
         // differences.
         char c = toUnicode == null ? getCharDiff(c1) : c1;
 
-        // The problem here is that some CMaping only work properly if the
+        // The problem here is that some CMapping only work properly if the
         // embedded font is working properly, so that's how this logic works.
 
         //System.out.print((int)c + " (" + (char)c + ")");
-        // check for CMap ToUnicode properties.
+        // check for CMap ToUnicode properties, if so we return it, no point
+        // jumping though the other hoops.
+        if (toUnicode != null) {
+            return toUnicode.toUnicode(c);
+        }
+        // otherwise work with a single char
         c = getCMapping(c);
         //System.out.print(" -> " + (int)c + " (" + (char)c + ")");
         //System.out.println();
 
-        // try alternat representation of character
+        // try alternate representation of character
         if (!awtFont.canDisplay(c)) {
             c |= 0xF000;
         }
@@ -395,7 +424,7 @@ public class OFont implements FontFile {
                 //+ " " + textState.font.font + " " + textState.font.font.getNumGlyphs());
             }
         }
-        return c;
+        return String.valueOf(c);
     }
 
 
