@@ -128,10 +128,9 @@ public class FontDescriptor extends Dictionary {
     }
 
     /**
-     * Returns the PostScript name of the getfont.
+     * Returns the PostScript name of the font.
      *
-     * @return PostScript name of font. null if the font name dictionary
-     * does not exsist
+     * @return PostScript name of font.
      */
     public String getFontName() {
         Object value = library.getObject(entries, FONT_NAME);
@@ -331,7 +330,7 @@ public class FontDescriptor extends Dictionary {
             }
         }
         // catch everything, we can fall back to font substitution if a failure
-        // occurs. 
+        // occurs.
         catch (Throwable e) {
             logger.log(Level.FINE, "Error Reading Embedded Font ", e);
         }

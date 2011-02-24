@@ -2196,11 +2196,11 @@ public class ContentParser {
                 currentX = advanceX - (newAdvanceX / 2.0f);
                 currentY = advanceY + lasty;
             }
-            // check in Unicode cMap exists
-            int charValue = textState.currentfont.toUnicode(currentChar);
 
             // get normalized from from text sprite
-            GlyphText glyphText = textSprites.addText(currentChar, (char) charValue,
+            GlyphText glyphText = textSprites.addText(
+                    String.valueOf(currentChar), // cid
+                    textState.currentfont.toUnicode(currentChar), // unicode value
                     currentX, currentY, newAdvanceX);
             shapes.getPageText().addGlyph(glyphText);
 

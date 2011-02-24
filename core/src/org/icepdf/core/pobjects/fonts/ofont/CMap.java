@@ -386,7 +386,6 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                                 bfRange.add(new CMapRange(startRange,
                                         endRange,
                                         (Vector) token));
-                                break;
                             } else {
                                 hexToken = (StringObject) token;
                                 Integer offset = hexToken.getUnsignedInt(0, hexToken.getLength());
@@ -442,6 +441,25 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         }
     }
 
+    public String toUnicode(char ch){
+        // check bfChar
+        if (bfChars != null) {
+            Integer tmp = bfChars.get((int)ch);
+            if (tmp != null) {
+                return String.valueOf((char) tmp.intValue());
+            }
+        }
+        // check bfRange for matches, there may be many ranges to check
+        if (bfRange != null) {
+            for (CMapRange aBfRange : bfRange) {
+                if (aBfRange.inRange(ch)) {
+                    return String.valueOf(aBfRange.getCMapValue(ch));
+                }
+            }
+        }
+        return String.valueOf(ch);
+    }
+
     /**
      * The method is called when ever a character code is incounter that has a
      * FontDescriptor that defines a ToUnicode CMap.  The <code>charMap</code>
@@ -473,7 +491,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         if (bfRange != null) {
             for (CMapRange aBfRange : bfRange) {
                 if (aBfRange.inRange(charMap)) {
-                    return (char) aBfRange.getCMapValue(charMap);
+                    return aBfRange.getCMapValue(charMap)[0];
                 }
             }
         }
@@ -557,18 +575,30 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
          * @return the mapped CMap value for <code>value</code>, -1 if the
          *         <code>value</code> can not be mapped.
          */
-        public int getCMapValue(int value) {
-            int tmp;
+        public char[] getCMapValue(int value) {
+
             // case of float offset
             if (offsetVecor == null) {
-                tmp = offsetValue + (value - startRange);//value + offsetValue;
+                return new char[]{ (char)(offsetValue + (value - startRange))};//value + offsetValue;
             } else {// case of vector offset
                 // value - startRange will give the index in the vector of the desired
                 // mapping value
                 StringObject hexToken = (StringObject) offsetVecor.elementAt(value - startRange);
-                return  hexToken.getUnsignedInt(0, hexToken.getLength());
+                char[] test = convertToString(hexToken.getLiteralStringBuffer());
+                return test;
             }
-            return tmp;
+        }
+
+        // convert to characters.
+        private char[] convertToString(CharSequence s) {
+            if (s == null && s.length() % 2 != 0) {
+                throw new IllegalArgumentException();
+            }
+            int len = s.length();
+            char[] dest = new char[len / 2];
+            for (int i = 0, j = 0; i < len; i += 2, j++)
+                dest[j] = (char) ((s.charAt(i) << 8) | s.charAt(i + 1));
+            return dest;
         }
 
     }

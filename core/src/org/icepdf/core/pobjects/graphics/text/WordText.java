@@ -113,13 +113,23 @@ public class WordText extends AbstractText implements TextSelect {
     }
 
     protected static boolean detectPunctuation(GlyphText sprite) {
-        int c = sprite.getUnicode();
-        return isPunctuation(c);
+        String glyphText = sprite.getUnicode();
+        if (glyphText != null){
+            int c = sprite.getUnicode().charAt(0);
+            return isPunctuation(c);
+        }else{
+            return false;
+        }
     }
 
     protected static boolean detectWhiteSpace(GlyphText sprite) {
-        int c = sprite.getUnicode();
-        return isWhiteSpace(c);
+        String glyphText = sprite.getUnicode();
+        if (glyphText != null){
+            int c = sprite.getUnicode().charAt(0);
+            return isWhiteSpace(c);
+        }else{
+            return false;
+        }
     }
 
     public static boolean isPunctuation(int c) {
@@ -165,7 +175,7 @@ public class WordText extends AbstractText implements TextSelect {
                             spaceBounds.y,
                             spaceBounds.width,
                             spaceBounds.height),
-                    32, 32);
+                    String.valueOf((char)32), String.valueOf((char)32));
             spaceBounds.x += spaceBounds.width;
             whiteSpace.addText(spaceText);
             whiteSpace.setWhiteSpace(true);
@@ -189,7 +199,7 @@ public class WordText extends AbstractText implements TextSelect {
         }
 
         // append the text that maps up the sprite
-        text.append((char) sprite.getUnicode());
+        text.append(sprite.getUnicode());
     }
 
     public Rectangle2D.Float getBounds() {
@@ -215,7 +225,7 @@ public class WordText extends AbstractText implements TextSelect {
         StringBuilder selectedText = new StringBuilder();
         for (GlyphText glyph : glyphs) {
             if (glyph.isSelected()) {
-                selectedText.append((char) glyph.getUnicode());
+                selectedText.append(glyph.getUnicode());
             }
         }
         return selectedText;

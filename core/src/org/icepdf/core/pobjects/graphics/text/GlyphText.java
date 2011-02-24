@@ -53,13 +53,14 @@ public class GlyphText extends AbstractText {
     private float x, y;
 
     // character code used to represent glyph, maybe ascii or CID value
-    private int cid;
+    private String cid;
 
-    // Unicode/ASCII value that is represented by glyph
-    private int unicode;
+    // Unicode/ASCII value that is represented by glyph, a cid can be
+    // represented by one or more characters.
+    private String unicode;
 
     public GlyphText(float x, float y, Rectangle2D.Float bounds,
-                     int cid, int unicode) {
+                     String cid, String unicode) {
         this.x = x;
         this.y = y;
         this.bounds = bounds;
@@ -79,11 +80,11 @@ public class GlyphText extends AbstractText {
         bounds = (Rectangle2D.Float) generalPath.getBounds2D();
     }
 
-    public int getCid() {
+    public String getCid() {
         return cid;
     }
 
-    public int getUnicode() {
+    public String getUnicode() {
         return unicode;
     }
 

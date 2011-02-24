@@ -94,13 +94,13 @@ public class TextSprite {
      * <p>Adds a new text char to the TextSprite which will pe painted at x, y under
      * the current CTM</p>
      *
-     * @param character character to paint.
+     * @param cid cid to paint.
+     * @param unicode unicode represention of cid.
      * @param x         x-coordinate to paint.
      * @param y         y-coordinate to paint.
-     * @param width     width of character from font.
+     * @param width     width of cid from font.
      */
-    // todo add tranform
-    public GlyphText addText(char character, char unicode, float x, float y, float width) {
+    public GlyphText addText(String cid, String unicode, float x, float y, float width) {
 
         // keep track of the text total bound, important for shapes painting.
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
@@ -131,7 +131,7 @@ public class TextSprite {
 
         // create glyph and normalize bounds.
         GlyphText glyphText =
-                new GlyphText(x, y, glyphBounds, character, unicode);
+                new GlyphText(x, y, glyphBounds, cid, unicode);
         glyphText.normalizeToUserSpace(graphicStateTransform);
         glyphTexts.add(glyphText);
         return glyphText;
@@ -221,9 +221,8 @@ public class TextSprite {
 
             // paint glyph
             font.drawEstring(g2d,
-                    String.valueOf((char) glyphText.getCid()),
-                    glyphText.getX(),
-                    glyphText.getY(),
+                    glyphText.getCid(),
+                    glyphText.getX(), glyphText.getY(),
                     FontFile.LAYOUT_NONE, rmode, strokeColor);
 
             // debug glyph box
