@@ -2555,8 +2555,6 @@ public class ContentParser {
                         0, 0, 1, 0, 0);
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
-        // do the matrix concatenation math
-        af.concatenate(horizontalScalingTransform);
         // add the transformation to the graphics state
         graphicState.set(af);
     }
