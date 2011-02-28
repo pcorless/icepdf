@@ -399,7 +399,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     java.awt.Font f =
                             new java.awt.Font(
                                     aType1Diff[1],
-                                    java.awt.Font.PLAIN,
+                                    style,
                                     12);
                     if (f.getFamily().equals(aType1Diff[2])) {
                         basefont = aType1Diff[1];
@@ -469,7 +469,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             try{
                 font = new OFont(java.awt.Font.getFont(basefont,
                         new java.awt.Font(basefont,
-                                java.awt.Font.PLAIN,
+                                style,
                                 12)));
                 basefont = font.getName();
             }catch(Exception e){
@@ -538,7 +538,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         // finally if we have an empty font then we default to serif so that
         // we can try and render the character codes.
         if (font == null){
-            font = new OFont(new java.awt.Font("serif",java.awt.Font.PLAIN,12));
+            font = new OFont(new java.awt.Font("serif", style, 12));
             basefont = "serif";
         }
 
