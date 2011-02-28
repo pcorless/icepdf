@@ -2568,6 +2568,11 @@ public class ContentParser {
      */
     static void setAlpha(Shapes shapes, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes
+        if (alpha == 0){
+            // zero alpha is actually a cut out effect for the current context
+            // stream
+            rule =  AlphaComposite.SRC_OUT;
+        }
         AlphaComposite alphaComposite =
                 AlphaComposite.getInstance(rule,
                         alpha);
