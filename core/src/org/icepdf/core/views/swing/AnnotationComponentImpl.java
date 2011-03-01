@@ -88,7 +88,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                     "org.icepdf.core.views.page.annotation.highlight.color", "#000000");
             int colorValue = ColorUtil.convertColor(color);
             annotationHighlightColor =
-                    new Color(colorValue > 0 ? colorValue :
+                    new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("000000", 16));
 
         } catch (NumberFormatException e) {

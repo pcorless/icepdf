@@ -86,7 +86,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                     "org.icepdf.core.views.page.text.selectionColor", "#0077FF");
             int colorValue = ColorUtil.convertColor(color);
             selectionColor =
-                    new Color(colorValue > 0 ? colorValue :
+                    new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("0077FF", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
@@ -105,7 +105,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                     "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");
             int colorValue = ColorUtil.convertColor(color);
             highlightColor =
-                    new Color(colorValue > 0 ? colorValue :
+                    new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("FFF600", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
