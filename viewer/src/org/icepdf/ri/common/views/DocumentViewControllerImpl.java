@@ -127,7 +127,7 @@ public class DocumentViewControllerImpl
                     "org.icepdf.core.views.background.color", "#808080");
             int colorValue = ColorUtil.convertColor(color);
             backgroundColor =
-                    new Color(colorValue > 0 ? colorValue :
+                    new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("808080", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
