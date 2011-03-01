@@ -2051,7 +2051,12 @@ public class ContentParser {
         graphicState.getTextState().font = resources.getFont(name2.getName());
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
-        if (graphicState.getTextState().font == null){
+        if (graphicState.getTextState().font == null ||
+                graphicState.getTextState().font.getFont() == null){
+            // turn on the old awt font engine, as we have a null font
+            FontFactory fontFactory = FontFactory.getInstance();
+            boolean awtState = fontFactory.isAwtFontSubstitution();
+            fontFactory.setAwtFontSubstitution(true);
             // get the first pages resources, no need to lock the page, already locked.
             Resources res = resources.getLibrary().getCatalog().getPageTree().getPage(0,null).getResources();
             // try and get a font off the first page.
@@ -2064,6 +2069,8 @@ public class ContentParser {
                 // might get a null pointer but we'll get on on deriveFont too
                 graphicState.getTextState().font.init();
             }
+            // return factory to original state.
+            fontFactory.setAwtFontSubstitution(awtState);
             // if no fonts found then we just bail and accept the null pointer
         }
         graphicState.getTextState().currentfont =
