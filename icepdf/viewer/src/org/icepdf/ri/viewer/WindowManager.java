@@ -106,6 +106,9 @@ public class WindowManager implements WindowManagementCallback {
         SwingController controller = new SwingController(messageBundle);
         controller.setWindowManagementCallback(this);
 
+        // assign properties manager.
+        controller.setPropertiesManager(properties);
+
         // add interactive mouse link annotation support
         controller.getDocumentViewController().setAnnotationCallback(
                 new MyAnnotationCallback(controller.getDocumentViewController()));
@@ -122,7 +125,7 @@ public class WindowManager implements WindowManagementCallback {
                     DocumentViewController.PAGE_FIT_WINDOW_WIDTH);
         }
         catch (NumberFormatException e) {
-            // eating error, as we can contue with out alarm
+            // eating error, as we can continue with out alarm
         }
 
         SwingViewBuilder factory =
