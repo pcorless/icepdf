@@ -1511,6 +1511,13 @@ public class SwingViewBuilder {
 
         // add the viewControllers doc view container to the split pain
         splitpane.setRightComponent(viewController.getViewContainer());
+
+        // apply previously set divider location, default is -1
+        int dividerLocation = PropertiesManager.checkAndStoreIntegerProperty(
+                propertiesManager,
+                PropertiesManager.PROPERTY_DIVIDER_LOCATION, 260);
+        splitpane.setDividerLocation(dividerLocation);
+
         // Add the split pan component to the view controller so that it can
         // manipulate the divider via the controller, hide, show, etc. for
         // utility pane.

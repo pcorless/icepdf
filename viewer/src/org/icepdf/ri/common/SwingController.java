@@ -888,9 +888,13 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setUtilityAndDocumentSplitPane(JSplitPane splitpane) {
-        utilityAndDocumentSplitPane = splitpane;
+    public void setUtilityAndDocumentSplitPane(JSplitPane splitPane) {
+
+        utilityAndDocumentSplitPane = splitPane;
+        // default is to hide the tabbed pane on first load.
         setUtilityPaneVisible(false);
+        // add the valueChangeListener.
+        utilityAndDocumentSplitPane.addPropertyChangeListener(this);
     }
 
     /**
@@ -1843,7 +1847,7 @@ public class SwingController
 
         if (utilityTabbedPane != null) {
             // Page mode by default is UseNone, where other options are, UseOutlines,
-            // UseThumbs, FullScreen (ignore), UseOC(ignore), UseAttachements(ignore);
+            // UseThumbs, FullScreen (ignore), UseOC(ignore), Use Attachements(ignore);
             tmp = catalog.getObject("PageMode");
             if (tmp != null && tmp instanceof Name) {
                 String pageMode = ((Name) tmp).getName();
@@ -1861,14 +1865,16 @@ public class SwingController
         }
 
         // Set the default zoom level from the properties file
-        float defaultZoom = (float)PropertiesManager.checkAndStoreDoubleProperty(propertiesManager,
-                                                                                 PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
+        float defaultZoom = (float)PropertiesManager.checkAndStoreDoubleProperty(
+                propertiesManager,
+                PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
         documentViewController.setZoom(defaultZoom);
 
         // Set the default page fit mode
-        setPageFitMode(PropertiesManager.checkAndStoreIntegerProperty(propertiesManager,
-                                                                      PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
-                                                                      org.icepdf.core.views.DocumentViewController.PAGE_FIT_NONE), false);
+        setPageFitMode(PropertiesManager.checkAndStoreIntegerProperty(
+                propertiesManager,
+                PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+                org.icepdf.core.views.DocumentViewController.PAGE_FIT_NONE), false);
 
         // Apply any ViewerPreferences from the doc
         applyViewerPreferences(catalog, propertiesManager);
@@ -2113,6 +2119,7 @@ public class SwingController
 
         if (utilityAndDocumentSplitPane != null) {
             utilityAndDocumentSplitPane.removeAll();
+            utilityAndDocumentSplitPane.removePropertyChangeListener(this);
         }
 
         statusLabel = null;
@@ -3082,15 +3089,17 @@ public class SwingController
         }
         if (utilityAndDocumentSplitPane != null) {
             if (visible) {
+                // use the last split pane value.
                 utilityAndDocumentSplitPane.setDividerLocation(
                         utilityAndDocumentSplitPaneLastDividerLocation);
-                if (utilityAndDocumentSplitPane.getDividerLocation() < 5)
-                    utilityAndDocumentSplitPane.setDividerLocation(260);
                 utilityAndDocumentSplitPane.setDividerSize(8);
             } else {
+                // if we're hiding the panel then we grab the last know value
+                // and set the width to zero or invisible.
                 int divLoc = utilityAndDocumentSplitPane.getDividerLocation();
-                if (divLoc > 5)
+                if (divLoc > 5){
                     utilityAndDocumentSplitPaneLastDividerLocation = divLoc;
+                }
                 utilityAndDocumentSplitPane.setDividerSize(0);
             }
         }
@@ -4030,20 +4039,21 @@ public class SwingController
     public void propertyChange(PropertyChangeEvent evt) {
         Object newValue = evt.getNewValue();
         Object oldValue = evt.getOldValue();
-        if (evt.getPropertyName().equals(PropertyConstants.DOCUMENT_CURRENT_PAGE)) {
+        String propertyName = evt.getPropertyName();
+        if (propertyName.equals(PropertyConstants.DOCUMENT_CURRENT_PAGE)) {
             if (currentPageNumberTextField != null && newValue instanceof Integer) {
                 updateDocumentView();
             }
         }
         // text selected,
-        else if (evt.getPropertyName().equals(PropertyConstants.TEXT_SELECTED)){
+        else if (propertyName.equals(PropertyConstants.TEXT_SELECTED)){
             // enable the copy menu
             boolean canExtract = havePermissionToExtractContent();
             setEnabled(copyMenuItem, canExtract);
             setEnabled(deselectAllMenuItem, canExtract);
         }
         // text deselected
-        else if (evt.getPropertyName().equals(PropertyConstants.TEXT_DESELECTED)){
+        else if (propertyName.equals(PropertyConstants.TEXT_DESELECTED)){
             // disable the copy menu
             boolean canExtract = havePermissionToExtractContent();
             setEnabled(copyMenuItem, false);
@@ -4051,14 +4061,14 @@ public class SwingController
             setEnabled(selectAllMenuItem, canExtract);
         }
         // select all
-        else if (evt.getPropertyName().equals(PropertyConstants.TEXT_SELECT_ALL)){
+        else if (propertyName.equals(PropertyConstants.TEXT_SELECT_ALL)){
             boolean canExtract = havePermissionToExtractContent();
             setEnabled(selectAllMenuItem, false);
             setEnabled(deselectAllMenuItem, canExtract);
             setEnabled(copyMenuItem, canExtract);
         }
         // annotation is selected
-        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_SELECTED)){
+        else if (propertyName.equals(PropertyConstants.ANNOTATION_SELECTED)){
             // enable the delete menu
             setEnabled(deleteMenuItem, true);
             // get the current selected tool, we only care about the select tool or
@@ -4078,7 +4088,7 @@ public class SwingController
             }
         }
         // annotation is deselected
-        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_DESELECTED)){
+        else if (propertyName.equals(PropertyConstants.ANNOTATION_DESELECTED)){
             if (documentViewController.getToolMode() ==
                         DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
                 if (logger.isLoggable(Level.FINE)){
@@ -4092,7 +4102,7 @@ public class SwingController
             }
         }
         // annotation bounds have changed.
-        else if (evt.getPropertyName().equals(PropertyConstants.ANNOTATION_BOUNDS)){
+        else if (propertyName.equals(PropertyConstants.ANNOTATION_BOUNDS)){
             if (documentViewController.getToolMode() ==
                             DocumentViewModelImpl.DISPLAY_TOOL_SELECTION){
                 AnnotationState oldAnnotationState = (AnnotationState)oldValue;
@@ -4109,6 +4119,19 @@ public class SwingController
             }
             // check to see if undo/redo can be enabled/disabled.
             reflectUndoCommands();
+        }
+        // divider has been moved, save the location as it changes.
+        else if (propertyName.equals(JSplitPane.LAST_DIVIDER_LOCATION_PROPERTY)) {
+            JSplitPane sourceSplitPane = (JSplitPane) evt.getSource();
+            int dividerLocation = (Integer) evt.getNewValue();
+            if (sourceSplitPane.getDividerLocation() != dividerLocation) {
+                if (propertiesManager != null && dividerLocation > 5) {
+                    utilityAndDocumentSplitPaneLastDividerLocation = dividerLocation;
+                    propertiesManager.setInt(
+                            PropertiesManager.PROPERTY_DIVIDER_LOCATION,
+                            utilityAndDocumentSplitPaneLastDividerLocation);
+                }
+            }
         }
     }
 }
