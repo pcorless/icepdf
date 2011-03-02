@@ -42,6 +42,7 @@ import javax.print.*;
 import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.*;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
@@ -521,9 +522,20 @@ public class PrintHelper implements Printable {
 
     }
 
+    /**
+     * Utility for creating a print setup dialog.
+     *
+     * @return print service selected by the user, or null if the user
+     *         cancelled the dialog.
+     */
     private PrintService getSetupDialog() {
         final int offset = 50;
-        return ServiceUI.printDialog(null,
+        // find graphic configuration for the window the viewer is in.
+        Window window = SwingUtilities.getWindowAncestor(
+                viewController.getViewContainer());
+        GraphicsConfiguration graphicsConfiguration =
+                window == null ? null : window.getGraphicsConfiguration();
+        return ServiceUI.printDialog(graphicsConfiguration,
                 viewController.getViewContainer().getX() + offset,
                 viewController.getViewContainer().getY() + offset,
                 services, services[0],
