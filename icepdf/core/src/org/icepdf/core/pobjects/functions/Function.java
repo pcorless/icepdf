@@ -202,7 +202,7 @@ public abstract class Function {
      * @return y value for the given x value on the point define by
      *         (x<sub>min</sub>, y<sub>min</sub>) and (x<sub>max</sub>, y<sub>max</sub>).
      */
-    protected float interpolate(float x, float xmin, float xmax, float ymin, float ymax) {
+    public static float interpolate(float x, float xmin, float xmax, float ymin, float ymax) {
         return ((x - xmin) * (ymax - ymin) / (xmax - xmin)) + ymin;
     }
 
