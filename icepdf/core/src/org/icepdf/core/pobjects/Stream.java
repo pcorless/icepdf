@@ -629,7 +629,7 @@ public class Stream extends Dictionary {
                     WritableRaster wr = (r instanceof WritableRaster)
                             ? (WritableRaster) r : r.createCompatibleWritableRaster();
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
-                    alterRasterYCbCrA2RGBA_new(wr, smaskImage, maskImage, decode, bitspercomponent);
+                    alterRasterYCbCr2RGB(wr, smaskImage, maskImage, decode, bitspercomponent);
                     tmpImage = makeRGBBufferedImage(wr);
                 } else if (jpegEncoding == JPEG_ENC_YCCK && bitspercomponent == 8) {
                     //System.out.println("Stream.dctDecode()    JPEG_ENC_YCCK");
