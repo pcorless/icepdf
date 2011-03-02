@@ -38,6 +38,7 @@ import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.filters.*;
+import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.tag.Tagger;
 import org.icepdf.core.util.Defs;
@@ -628,7 +629,7 @@ public class Stream extends Dictionary {
                     WritableRaster wr = (r instanceof WritableRaster)
                             ? (WritableRaster) r : r.createCompatibleWritableRaster();
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
-                    alterRasterYCbCr2RGB(wr);
+                    alterRasterYCbCrA2RGBA_new(wr, smaskImage, maskImage, decode, bitspercomponent);
                     tmpImage = makeRGBBufferedImage(wr);
                 } else if (jpegEncoding == JPEG_ENC_YCCK && bitspercomponent == 8) {
                     //System.out.println("Stream.dctDecode()    JPEG_ENC_YCCK");
@@ -665,16 +666,37 @@ public class Stream extends Dictionary {
                         if (Tagger.tagging)
                             Tagger.tagImage("DCTDecode_JpegSubEncoding=YCbCrA");
                         // YCbCrA, which is slightly different than YCCK
-                        alterRasterYCbCrA2RGBA_new(wr, smaskImage, maskImage); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
+                        alterRasterYCbCrA2RGBA_new(wr, smaskImage, maskImage,
+                                decode, bitspercomponent); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
                         tmpImage = makeRGBABufferedImage(wr);
                     } else {
                         if (Tagger.tagging)
                             Tagger.tagImage("DCTDecode_JpegSubEncoding=YCbCr");
-                        alterRasterYCbCr2RGB(wr);
+                        alterRasterYCbCr2RGB(wr, smaskImage, maskImage, decode, bitspercomponent);
                         tmpImage = makeRGBBufferedImage(wr);
+                        // special case to handle an smask on an RGB image.  In
+                        // such a case we need to copy the rgb and soft mask effect
+                        // to th new ARGB image.
+                        if (smaskImage != null) {
+                            BufferedImage argbImage = new BufferedImage(width,
+                                    height, BufferedImage.TYPE_INT_ARGB);
+                            int[] srcBand = new int[width];
+                            int[] sMaskBand = new int[width];
+                            // iterate over each band to apply the mask
+                            for (int i = 0; i < height; i++) {
+                                tmpImage.getRGB(0, i, width, 1, srcBand, 0, width);
+                                smaskImage.getRGB(0, i, width, 1, sMaskBand, 0, width);
+                                // apply the soft mask blending
+                                for (int j = 0; j < width; j++) {
+                                    sMaskBand[j] = ((sMaskBand[j] & 0xff) << 24)
+                                            | (srcBand[j] & ~0xff000000);
+                                }
+                                argbImage.setRGB(0, i, width, 1, sMaskBand, 0, width);
+                            }
+                            tmpImage.flush();
+                            tmpImage = argbImage;
+                        }
                     }
-                    //alterRasterBGRA( wr, smaskImage, maskImage, maskMinRGB, maskMaxRGB );
-                    //tmpImage = makeRGBABufferedImage( wr );
                 }
             }
             catch (Exception e) {
@@ -1021,28 +1043,37 @@ public class Stream extends Dictionary {
         }
     }
 
-    private static void alterRasterYCbCr2RGB(WritableRaster wr) {
-        int[] values = new int[3];
+    private static void alterRasterYCbCr2RGB(WritableRaster wr,
+                BufferedImage smaskImage, BufferedImage maskImage,
+                Vector<Integer> decode, int bitsPerComponent) {
+        float[] values;
         int width = wr.getWidth();
         int height = wr.getHeight();
+        int maxValue = ((int) Math.pow(2, bitsPerComponent)) - 1;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, values);
+                // apply decode param.
+                values = getNormalizedComponents(
+                        (byte[])wr.getDataElements(x,y,null),
+                        decode,
+                        maxValue);
 
-                int Y = values[0];
-                int Cb = values[1];
-                int Cr = values[2];
+                float Y = values[0] * 255;
+                float Cb = values[1] * 255;
+                float Cr = values[2] * 255;
 
-                int Cr_128 = Cr - 128;
-                int Cb_128 = Cb - 128;
+                float Cr_128 = Cr - 128;
+                float Cb_128 = Cb - 128;
 
-                int rVal = Y + (1370705 * Cr_128 / 1000000);
-                int gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
-                int bVal = Y + (1732446 * Cb_128 / 1000000);
+                float rVal = Y + (1370705 * Cr_128 / 1000000);
+                float gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
+                float bVal = Y + (1732446 * Cb_128 / 1000000);
 
                 byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
                 byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
                 byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
+
+                // apply mask and smask values.
 
                 values[0] = rByte;
                 values[1] = gByte;
@@ -1187,29 +1218,15 @@ public class Stream extends Dictionary {
             yMin = decode.get(i * 2).floatValue();
             yMax = decode.get((i * 2) + 1).floatValue();
             normComponents[i] =
-                    interpolate(val, 0, xMax, yMin, yMax);
+                    Function.interpolate(val, 0, xMax, yMin, yMax);
         }
         return normComponents;
     }
 
-    /**
-     * Interpolation function, generic. Converts a value x between xMin and xMax
-     * to a corresponding value y between yMin and yMax.
-     *
-     * @param x    converts a value x
-     * @param xMin xMin value in formula
-     * @param xMax xMax value in formula
-     * @param yMin yMin value in formula
-     * @param yMax yMax value in formula
-     * @return interpolated value x as defined by the project along the lines defined
-     *         by point (xMin, yMin) and (xMax, yMax).
-     */
-    private static float interpolate(float x, float xMin, float xMax,
-                                     float yMin, float yMax) {
-        return yMin + ((x - xMin) * (yMax - yMin) / (xMax - xMin));
-    }
 
-    private static void alterRasterYCbCrA2RGBA_new(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage) {
+    private static void alterRasterYCbCrA2RGBA_new(WritableRaster wr,
+                BufferedImage smaskImage, BufferedImage maskImage,
+                Vector<Integer> decode, int bitsPerComponent) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
         int smaskHeight = 0;
@@ -1228,25 +1245,31 @@ public class Stream extends Dictionary {
             maskHeight = maskRaster.getHeight();
         }
 
-        int[] origValues = new int[4];
+        float[] origValues = new float[4];
         int[] rgbaValues = new int[4];
         int width = wr.getWidth();
         int height = wr.getHeight();
+        int maxValue = ((int) Math.pow(2, bitsPerComponent)) - 1;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 wr.getPixel(x, y, origValues);
+                // apply decode param.
+                origValues = getNormalizedComponents(
+                        (byte[])wr.getDataElements(x,y,null),
+                        decode,
+                        maxValue);
 
-                int Y = origValues[0];
-                int Cb = origValues[1];
-                int Cr = origValues[2];
-                int K = origValues[3];
+                float Y = origValues[0];
+                float Cb = origValues[1];
+                float Cr = origValues[2];
+                float K = origValues[3];
                 Y = K - Y;
-                int Cr_128 = Cr - 128;
-                int Cb_128 = Cb - 128;
+                float Cr_128 = Cr - 128;
+                float Cb_128 = Cb - 128;
 
-                int rVal = Y + (1370705 * Cr_128 / 1000000);
-                int gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
-                int bVal = Y + (1732446 * Cb_128 / 1000000);
+                float rVal = Y + (1370705 * Cr_128 / 1000000);
+                float gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
+                float bVal = Y + (1732446 * Cb_128 / 1000000);
 
                 /*
                 // Formula used in JPEG standard. Gives pretty similar results
@@ -1258,7 +1281,7 @@ public class Stream extends Dictionary {
                 byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
                 byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
                 byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
-                int alpha = K;
+                float alpha = K;
                 if (y < smaskHeight && x < smaskWidth && smaskRaster != null)
                     alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
                 else if (y < maskHeight && x < maskWidth && maskRaster != null) {
@@ -1272,7 +1295,7 @@ public class Stream extends Dictionary {
                 rgbaValues[0] = rByte;
                 rgbaValues[1] = gByte;
                 rgbaValues[2] = bByte;
-                rgbaValues[3] = alpha;
+                rgbaValues[3] = (int)alpha;
 
                 wr.setPixel(x, y, rgbaValues);
             }
@@ -1911,10 +1934,10 @@ public class Stream extends Dictionary {
         int colorSpaceCompCount = colourSpace.getNumComponents();
 
         // parse decode information
-        Vector decode = (Vector) library.getObject(entries, "Decode");
+        Vector<Integer> decode = (Vector) library.getObject(entries, "Decode");
         if (decode == null) {
             int depth = colourSpace.getNumComponents();
-            decode = new Vector<Float>(depth);
+            decode = new Vector<Integer>(depth);
             // add a decode param for each colour channel.
             for (int i= 0; i < depth; i++){
                 decode.addElement(0);
@@ -2197,6 +2220,8 @@ public class Stream extends Dictionary {
                         bitspercomponent, new Point(0, 0));
 
                 // From PDF 1.6 spec, concerning ImageMask and Decode array:
+                // todo we nee dot apply the decode method generically as we do
+                // it in different places different ways.
                 // [0 1] (the default for an image mask), a sample value of 0 marks
                 //       the page with the current color, and a 1 leaves the previous
                 //       contents unchanged.
@@ -2242,11 +2267,28 @@ public class Stream extends Dictionary {
                 //byte[] data = getDecodedStreamBytes();
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
-                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(),
+                        width, height, 1, width, new int[]{0});
                 WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
+                // apply decode array manually
+                float[] origValues = new float[3];
+                int maxValue = ((int) Math.pow(2, bitspercomponent)) - 1;
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        wr.getPixel(x, y, origValues);
+                        origValues = getNormalizedComponents(
+                                (byte[])wr.getDataElements(x,y,null), decode, maxValue);
+                        float gray = origValues[0] *255;
+                        byte rByte = (gray < 0) ? (byte) 0 : (gray > 255) ? (byte) 0xFF : (byte) gray;
+                        origValues[0] = rByte;
+                        wr.setPixel(x, y, origValues);
+                    }
+                }
                 ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-                ColorModel cm = new ComponentColorModel(cs, new int[]{bitspercomponent}, false, false, ColorModel.OPAQUE, db.getDataType());
+                ColorModel cm = new ComponentColorModel(cs, new int[]{bitspercomponent},
+                        false, false, ColorModel.OPAQUE, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
+
             }
         } else if (colourSpace instanceof DeviceRGB) {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceRGB");
@@ -2492,7 +2534,7 @@ public class Stream extends Dictionary {
 
         // create the buffer and get the first series of bytes from the cached
         // stream
-        BitStream in = null;
+        BitStream in;
         if (baCCITTFaxData != null) {
             in = new BitStream(new ByteArrayInputStream(baCCITTFaxData));
         } else {
