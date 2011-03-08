@@ -37,8 +37,8 @@ import org.icepdf.core.pobjects.Dictionary;
 import java.util.Vector;
 
 /**
- * <p>Type 3 Function (PDF 1.3) defines a stitching of the subdomains of
- * serveral 1-input functionsto produce a single new 1-input function.</p>
+ * <p>Type 3 Function (PDF 1.3) defines a stitching of the sub-domains of
+ * several 1-input functions to produce a single new 1-input function.</p>
  *
  * @author ICEsoft Technologies Inc.
  * @since 3.0
