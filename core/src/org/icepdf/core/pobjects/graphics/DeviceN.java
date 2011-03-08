@@ -79,7 +79,9 @@ public class DeviceN extends PColorSpace {
 
     public Color getColor(float[] f) {
         if (func == null) {
-            if (alternate.getNumComponents() > f.length) {
+            // try alternative colour for CMYK
+            int comps = alternate.getNumComponents();
+            if (comps > f.length && comps == 4) {
                 float[] ftmp = new float[alternate.getNumComponents()];
                 for (int index = 0; index < f.length && index < names.size(); index++) {
                     if (names.get(index).equals("Cyan")) {
@@ -96,7 +98,11 @@ public class DeviceN extends PColorSpace {
                     }
                 }
                 f = ftmp;
+                float y[] = new float[alternate.getNumComponents()];
+                System.arraycopy(f, 0, y, 0, Math.min(y.length, f.length));
+                return alternate.getColor(y);
             }
+            // process the alternative colour
             float y[] = new float[alternate.getNumComponents()];
             System.arraycopy(f, 0, y, 0, Math.min(y.length, f.length));
             return alternate.getColor(y);
