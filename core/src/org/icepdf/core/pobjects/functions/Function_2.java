@@ -34,6 +34,7 @@ package org.icepdf.core.pobjects.functions;
 
 import org.icepdf.core.pobjects.Dictionary;
 
+import java.util.Arrays;
 import java.util.Vector;
 
 /**
@@ -153,10 +154,10 @@ public class Function_2 extends Function {
 
     public String toString() {
         return "FunctionType: " + functionType +
-                "\n    domain: " + domain +
-                "\n     range: " + range +
+                "\n    domain: " + Arrays.toString(domain) +
+                "\n     range: " + Arrays.toString(range) +
                 "\n         N: " + N +
-                "\n        C0: " + C0 +
-                "\n        C1: " + C1;
+                "\n        C0: " + Arrays.toString(C0) +
+                "\n        C1: " + Arrays.toString(C1);
     }
 }
