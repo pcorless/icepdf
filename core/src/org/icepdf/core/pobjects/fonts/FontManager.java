@@ -332,6 +332,7 @@ public class FontManager {
                     throw new IllegalArgumentException(errorString);
                 }
             }
+            sortFontListByName();
         }
         catch (Throwable e) {
             logger.log(Level.FINE, "Error setting font properties ", e);
@@ -427,6 +428,7 @@ public class FontManager {
                 }
             }
         }
+        sortFontListByName();
     }
 
     /**
@@ -900,5 +902,17 @@ public class FontManager {
             style += " Plain";
         }
         return style;
+    }
+
+    /**
+     * Sorts the fontList of system fonts by font name or the first element
+     * int the object[] store.
+     */
+    private static void sortFontListByName(){
+        Collections.sort(fontList, new Comparator<Object[]>() {
+            public int compare(Object[] o1, Object[] o2) {
+                return ((String)o1[0]).compareTo((String)o2[0]);
+            }
+        });
     }
 }
