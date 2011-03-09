@@ -2208,6 +2208,17 @@ public class Stream extends Dictionary {
             int[] maskMinRGB, int[] maskMaxRGB,
             int maskMinIndex, int maskMaxIndex, byte[] data, int dataLength) {
         BufferedImage img = null;
+
+        // check if the ICCBased colour has an alternative that
+        // we might support for decoding with a colorModel.
+        if (colourSpace instanceof ICCBased) {
+            ICCBased iccBased = (ICCBased) colourSpace;
+            if (iccBased.getAlternate() != null) {
+                // set the alternate as the current
+                colourSpace = iccBased.getAlternate();
+            }
+        }
+
         if (colourSpace instanceof DeviceGray) {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceGray");
             if (imageMask && bitspercomponent == 1) {
