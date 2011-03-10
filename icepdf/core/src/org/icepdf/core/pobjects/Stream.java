@@ -37,6 +37,7 @@ import com.sun.image.codec.jpeg.JPEGImageDecoder;
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.io.ZeroPaddedInputStream;
 import org.icepdf.core.pobjects.filters.*;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.pobjects.graphics.*;
@@ -2125,6 +2126,15 @@ public class Stream extends Dictionary {
                 decodedImage = jpxDecode(width, height, colourSpace, bitsPerComponent, fill,
                         smaskImage, maskImage, maskMinRGB, maskMaxRGB);
             }
+            // CCITTFax load via JAI, if this fails we have other non JAI
+            // CCITTFax code to fall back on.
+            else if (shouldUseCCITTFaxDecode()){
+                 if (Tagger.tagging)
+                    Tagger.tagImage("CCITTFaxDecode JAI");
+                decodedImage =
+                    CCITTFax.attemptDeriveBufferedImageFromBytes(this, library,
+                            entries, fill);
+            }
 
             // finally if we have something then we return it.
             if (decodedImage != null) {
@@ -2139,7 +2149,6 @@ public class Stream extends Dictionary {
         if (shouldUseCCITTFaxDecode()) {
             if (Tagger.tagging)
                 Tagger.tagImage("CCITTFaxDecode");
-            // InputStream getInputStreamForStreamBytes();
             data = ccittFaxDecode(width, height);
             dataLength = data.length;
         }
