@@ -91,7 +91,7 @@ public class FontManager {
                     {"AvantGarde-BookOblique", "URWGothicL-BookObli", "Arial"},
                     {"AvantGarde-Demi", "URWGothicL-Demi", "Arial"},
                     {"AvantGarde-DemiOblique", "URWGothicL-DemiObli", "Arial"},
-                    {"Helvetica", "Arial", "ArialMT", "NimbusSanL-Regu", "Nimbus Sans L"},
+                    {"Helvetica", "Helvetica", "Arial", "ArialMT", "NimbusSanL-Regu", "Nimbus Sans L"},
 //             {"Helvetica", "NimbusSanL-Regu", "Nimbus Sans L", "Arial", "ArialMT"},  // known problem in Phelps nfont engine
                     {"Helvetica-Oblique", "NimbusSanL-ReguItal", "Nimbus Sans L", "Helvetica,Italic", "Helvetica-Italic", "Arial,Italic", "Arial-Italic", "Arial-ItalicMT"},
 //             {"Helvetica-Bold", "NimbusSanL-Bold", "Nimbus Sans L", "Helvetica-Black", "Helvetica,Bold", "Arial,Bold", "Arial-Bold", "Arial-BoldMT"},  // known problem in Phelps nfont engine
@@ -672,6 +672,7 @@ public class FontManager {
                             baseName.equals("starsymbol")
                             || baseName.equals("arial-black")
                             || baseName.equals("arial-blackitalic")
+                            || baseName.equals("new")
                             // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
                             || baseName.equals("timesnewromanps")
                             ) {
