@@ -777,38 +777,24 @@ public class PageViewComponentImpl extends
                 pageBufferImage.flush();
             }
 
-            // checkMemroy, but before we flush the old
-            int neededMemory = bufferedPageImageBounds.width *
-                    bufferedPageImageBounds.height * 3;
-
-            // clear the need memory to create buffer
-            MemoryManager.getInstance().checkMemory(neededMemory);
-            // go create the buffer regardless of freemem.
-            if (true) {
-                // create new image and get graphics context from image
-                if (gc == null){
-                    gc = getGraphicsConfiguration();
-                }
-                if (gc != null && this.isShowing()) {
-                    // get the optimal image for the platform
-                    pageBufferImage = gc.createCompatibleImage(
-                            bufferedPageImageBounds.width,
-                            bufferedPageImageBounds.height);
-                    // paint white, try to avoid black flicker
-                    Graphics g = pageBufferImage.getGraphics();
-                    g.setColor(pageColor);
-                    g.fillRect(0, 0, pageSize.width, pageSize.height);
-                }
-
-                bufferedPageImageReference =
-                        new SoftReference<Image>(pageBufferImage);
-            } else {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.info("Error creating buffer, not enough memory: page " + pageIndex);
-                }
-                // mark as dirty, so that it tries again to create buffer
-                currentZoom = -1;
+            // create new image and get graphics context from image
+            if (gc == null){
+                gc = getGraphicsConfiguration();
             }
+            if (gc != null && this.isShowing()) {
+                // get the optimal image for the platform
+                pageBufferImage = gc.createCompatibleImage(
+                        bufferedPageImageBounds.width,
+                        bufferedPageImageBounds.height);
+                // paint white, try to avoid black flicker
+                Graphics g = pageBufferImage.getGraphics();
+                g.setColor(pageColor);
+                g.fillRect(0, 0, pageSize.width, pageSize.height);
+            }
+
+            bufferedPageImageReference =
+                    new SoftReference<Image>(pageBufferImage);
+
             // IMPORTANT! we don't won't to do a copy area if the page state is dirty.
             pagePainter.setIsBufferDirty(false);
         }
@@ -1043,7 +1029,7 @@ public class PageViewComponentImpl extends
                 createBufferedPageImage(this);
             }
             catch (Throwable e) {
-                logger.log(Level.FINE,
+                logger.log(Level.WARNING,
                         "Error creating buffer, page: " + pageIndex, e);
 
                 // mark as dirty, so that it tries again to create buffer
@@ -1102,7 +1088,7 @@ public class PageViewComponentImpl extends
                 pageTree.releasePage(page, this);
             }
             catch (Throwable e) {
-                logger.log(Level.FINE,
+                logger.log(Level.WARNING,
                         "Error initiating page: " + pageIndex, e);
                 // make sure we don't try to re-initialize
                 pageInitilizer.setHasBeenQueued(true);
@@ -1165,7 +1151,7 @@ public class PageViewComponentImpl extends
                     }
                     catch (InterruptedException ex) {
                         pageInitilizer.setHasBeenQueued(false);
-                        if (logger.isLoggable(Level.FINE)) {
+                        if (logger.isLoggable(Level.WARNING)) {
                             logger.fine("Page Initialization Interrupted: " + pageIndex);
                         }
                     }
@@ -1188,7 +1174,7 @@ public class PageViewComponentImpl extends
                     }
                     catch (InterruptedException ex) {
                         pagePainter.setHasBeenQueued(false);
-                        if (logger.isLoggable(Level.FINE)) {
+                        if (logger.isLoggable(Level.WARNING)) {
                             logger.fine("Page Painter Interrupted: " + pageIndex);
                         }
                     }
