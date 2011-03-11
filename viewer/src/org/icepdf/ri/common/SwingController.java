@@ -2601,7 +2601,7 @@ public class SwingController
                 0,
                 document.getNumberOfPages() - 1,
                 1,           // default number of copies.
-                true,        // shrink to printable area
+                viewModel.isShrinkToPrintableArea(),        // shrink to printable area
                 withDialog  // show print dialogl
         );
         // save new printer attributes to properties
