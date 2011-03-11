@@ -273,8 +273,6 @@ public class ContentParser {
                     // an ET.
                     else if (tok.equals(PdfOps.BT_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.BT_TOKEN);
-                        // set graphics state alpha back to 1.0f for text
-                        setAlpha(shapes, graphicState.getAlphaRule(), 1.0f);
                         // start parseText, which parses until ET is reached
                         yBTstart = parseText(parser, shapes, yBTstart);
                     }
@@ -1061,6 +1059,8 @@ public class ContentParser {
                         textState = graphicState.getTextState();
                         // apply text scaling
                         applyTextScaling(graphicState);
+                        // apply transparency
+                        setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                         // draw string will take care of text pageText construction
                         Point2D.Float d = (Point2D.Float) drawString(
                                 stringObject.getLiteralStringBuffer(
@@ -1181,7 +1181,8 @@ public class ContentParser {
 
                     // apply text scaling
                     applyTextScaling(graphicState);
-
+                    // apply transparency
+                    setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                     Vector v = (Vector) stack.pop();
                     StringObject stringObject;
                     TextState textState;
