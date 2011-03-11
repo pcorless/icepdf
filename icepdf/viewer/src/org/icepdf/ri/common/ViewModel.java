@@ -32,16 +32,13 @@
  */
 package org.icepdf.ri.common;
 
-import javax.print.attribute.HashDocAttributeSet;
-import javax.print.attribute.HashPrintRequestAttributeSet;
-import java.awt.print.PageFormat;
-import java.awt.print.Paper;
-import java.awt.print.PrinterJob;
 import java.io.File;
 
 /**
  * Data model for the view, which maintains state on how a Document is being
  * presented to the user.
+ * <p/>
+ * The default value of isShrinkToPrintableArea is true.
  *
  * @author Mark Collette
  * @since 2.0
@@ -53,6 +50,9 @@ public class ViewModel {
 
     // Store current URL path
     private static String defaultURL = null;
+
+    // store for shrink to fit setting for SwingController prints.
+    private boolean isShrinkToPrintableArea = true;
 
     private PrintHelper printHelper;
 
@@ -94,5 +94,27 @@ public class ViewModel {
 
     public void setPrintHelper(PrintHelper printHelper) {
         this.printHelper = printHelper;
+    }
+
+    /**
+     * Indicates the currently stored state of the shrink to fit printable area
+     * property.
+     *
+     * @return true, to enable shrink to fit printable area;
+     *         false, otherwise.
+     */
+    public boolean isShrinkToPrintableArea() {
+        return isShrinkToPrintableArea;
+    }
+
+    /**
+     * Can be set before a SwingController.print() is called to enable/disable
+     * shrink to fit printable area.
+     *
+     * @param shrinkToPrintableArea true, to enable shrink to fit printable area;
+     *                              false, otherwise.
+     */
+    public void setShrinkToPrintableArea(boolean shrinkToPrintableArea) {
+        isShrinkToPrintableArea = shrinkToPrintableArea;
     }
 }
