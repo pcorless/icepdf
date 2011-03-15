@@ -37,8 +37,8 @@ import org.icepdf.core.util.FontUtil;
 
 import java.io.File;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The <code>FontManager</code> class is responsible for finding available
@@ -333,8 +333,7 @@ public class FontManager {
                 }
             }
             sortFontListByName();
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             logger.log(Level.FINE, "Error setting font properties ", e);
             throw new IllegalArgumentException(errorString);
         }
@@ -406,7 +405,7 @@ public class FontManager {
                         fontPath = new StringBuilder(25);
                         fontPath.append(directory.getAbsolutePath()).append(
                                 File.separatorChar).append(fontName);
-                        if (logger.isLoggable(Level.FINER)){
+                        if (logger.isLoggable(Level.FINER)) {
                             logger.finer("Trying to load font file: " + fontPath);
                         }
                         // try loading the font
@@ -616,11 +615,39 @@ public class FontManager {
             return font;
         }
 
-        // if all else fails return first font in fontList, this should never
-        // happen, but just in case.
+        // if all else fails return first font in fontList with matching style,
+        // this should never happen, but just in case.
         if (fontList.size() > 0) {
-            Object[] fontData = fontList.get(0);
-            font = buildFont((String) fontData[3]);
+            Object[] fontData;
+            boolean found = false;
+            int decorations = guessFontStyle(name);
+            int style;
+            // get first font that has a matching style
+            for (int i = fontList.size() - 1; i >= 0; i--) {
+                fontData = fontList.get(i);
+                style = (Integer) fontData[2];
+                if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                        ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
+                    found = true;
+                } else if (((decorations & BOLD) == BOLD) &&
+                        ((style & BOLD) == BOLD)) {
+                    found = true;
+                } else if (((decorations & ITALIC) == ITALIC) &&
+                        ((style & ITALIC) == ITALIC)) {
+                    found = true;
+                } else if (((decorations & PLAIN) == PLAIN) &&
+                        ((style & PLAIN) == PLAIN)) {
+                    found = true;
+                }
+                if (found){
+                    font = buildFont((String) fontData[3]);
+                    break;
+                }
+            }
+            if (!found){
+                fontData = fontList.get(0);
+                font = buildFont((String) fontData[3]);
+            }
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Font Substitution: Found failed " + name + " " + font.getName());
             }
@@ -805,7 +832,8 @@ public class FontManager {
             // important, add style information
             font = findFont("lucidasanstypewriter-" + getFontSytle(decorations, flags), 0);
         }
-        // if all else fails go with the serif as it is the most common font family
+        // first try get the first match based on the style type and finally on failure
+        // failure go with the serif as it is the most common font family
         else {
 //            System.out.println("Decorations " + decorations);
 //            System.out.println("flags " + flags);
@@ -909,10 +937,10 @@ public class FontManager {
      * Sorts the fontList of system fonts by font name or the first element
      * int the object[] store.
      */
-    private static void sortFontListByName(){
+    private static void sortFontListByName() {
         Collections.sort(fontList, new Comparator<Object[]>() {
             public int compare(Object[] o1, Object[] o2) {
-                return ((String)o1[0]).compareTo((String)o2[0]);
+                return ((String) o1[0]).compareTo((String) o2[0]);
             }
         });
     }
