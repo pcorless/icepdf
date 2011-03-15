@@ -37,7 +37,6 @@ import com.sun.image.codec.jpeg.JPEGImageDecoder;
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ConservativeSizingByteArrayOutputStream;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
-import org.icepdf.core.io.ZeroPaddedInputStream;
 import org.icepdf.core.pobjects.filters.*;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.pobjects.graphics.*;
@@ -1208,7 +1207,7 @@ public class Stream extends Dictionary {
      */
     private static float[] getNormalizedComponents(
             byte[] pixels,
-            Vector<Integer> decode, int xMax) {
+            Vector decode, int xMax) {
         float[] normComponents = new float[pixels.length];
         int val;
         float yMin;
@@ -1216,8 +1215,8 @@ public class Stream extends Dictionary {
         // interpolate each colour component for the given decode domain.
         for (int i = 0; i < pixels.length; i++) {
             val = pixels[i] & 0xff;
-            yMin = decode.get(i * 2).floatValue();
-            yMax = decode.get((i * 2) + 1).floatValue();
+            yMin = ((Number)decode.get(i * 2)).floatValue();
+            yMax = ((Number)decode.get((i * 2) + 1)).floatValue();
             normComponents[i] =
                     Function.interpolate(val, 0, xMax, yMin, yMax);
         }
@@ -1678,7 +1677,7 @@ public class Stream extends Dictionary {
      *
      * @param wr           writable raster of image.
      * @param transparency any valid Transparency interface type. Bitmask,
-     *                     opaque and translusent.
+     *                     opaque and translucent.
      * @return constructed image.
      */
     private static BufferedImage makeRGBABufferedImage(WritableRaster wr,
