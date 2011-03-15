@@ -1445,6 +1445,8 @@ public class ContentParser {
 
                     // apply text scaling
                     applyTextScaling(graphicState);
+                    // apply transparency
+                    setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
 
                     shift = 0;
                     previousAdvance = 0;
@@ -1479,6 +1481,8 @@ public class ContentParser {
 
                     // apply text scaling
                     applyTextScaling(graphicState);
+                    // apply transparency
+                    setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
 
                     shift = 0;
                     previousAdvance = 0;
@@ -2143,7 +2147,7 @@ public class ContentParser {
 
         // Postion of previous Glyph, all relative to text block
         float lastx = 0, lasty = 0;
-        // Make sure that the prevous advanceX is greater then then where we
+        // Make sure that the previous advanceX is greater then then where we
         // are going to place the next glyph,  see not 57 in 1.6 spec for more
         // information.
         char currentChar = displayText.charAt(0);
@@ -2557,12 +2561,18 @@ public class ContentParser {
      * @param graphicState current graphics state.
      */
     private static void applyTextScaling(GraphicsState graphicState) {
-        // apply horizontal scaling if any.
-        AffineTransform horizontalScalingTransform =
-                new AffineTransform(graphicState.getTextState().hScalling,
-                        0, 0, 1, 0, 0);
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
+        // numerous test cases show that -1 values flip the layout axis but
+        // any other application of width is compounded stretching the layout
+        // still something slightly off with this calculation
+        if (graphicState.getTextState().hScalling < 0){
+            // apply horizontal scaling if any.
+            AffineTransform horizontalScalingTransform =
+                    new AffineTransform(graphicState.getTextState().hScalling,
+                            0, 0, 1, 0, 0);
+            af.concatenate(horizontalScalingTransform);
+        }
         // add the transformation to the graphics state
         graphicState.set(af);
     }
