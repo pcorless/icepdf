@@ -940,7 +940,7 @@ public class FontManager {
     private static void sortFontListByName() {
         Collections.sort(fontList, new Comparator<Object[]>() {
             public int compare(Object[] o1, Object[] o2) {
-                return ((String) o1[0]).compareTo((String) o2[0]);
+                return ((String) o2[0]).compareTo((String) o1[0]);
             }
         });
     }
