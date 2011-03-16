@@ -81,7 +81,8 @@
 
     <target name="build.all" description="Creates ICEpdf source and binary bundles.">
         <ice:subant target="build.all">
-        <fileset dir="." includes="*/build.xml"/>
+        <fileset dir="./core" includes="build.xml" />
+        <fileset dir="./viewer" includes="build.xml" />
     </ice:subant>
     </target>
 
