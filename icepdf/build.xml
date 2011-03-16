@@ -141,6 +141,9 @@
 
                 <zipfileset dir="@{path}/lib" excludes=""
                             prefix="@{zip.bundle.prefix}/lib"/>
+                            
+                <zipfileset dir="@{path}/maven2" excludes=""
+                            prefix="@{zip.bundle.prefix}/maven2"/>
 
                 <add.zip.elements/>
             </ice:zip>
