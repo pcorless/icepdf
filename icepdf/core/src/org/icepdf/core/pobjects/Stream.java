@@ -1254,10 +1254,12 @@ public class Stream extends Dictionary {
             for (int x = 0; x < width; x++) {
                 wr.getPixel(x, y, origValues);
                 // apply decode param.
-                origValues = getNormalizedComponents(
-                        (byte[])wr.getDataElements(x,y,null),
-                        decode,
-                        maxValue);
+                // couldn't quite get this one right, doesn't decode
+                // as I would have thought.
+//                origValues = getNormalizedComponents(
+//                        (byte[])wr.getDataElements(x,y,null),
+//                        decode,
+//                        maxValue);
 
                 float Y = origValues[0];
                 float Cb = origValues[1];
