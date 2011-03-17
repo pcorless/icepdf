@@ -35,6 +35,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 
@@ -358,6 +359,7 @@ public class Annotation extends Dictionary {
     public static final Name SUBTYPE_CIRCLE = new Name("Circle");
     public static final Name SUBTYPE_POLYGON = new Name("Polygon");
     public static final Name SUBTYPE_POLYLINE = new Name("Polyline");
+    public static final Name SUBTYPE_HIGHLIGHT = new Name("Highlight");
 
     /**
      * Border style
@@ -1019,7 +1021,22 @@ public class Annotation extends Dictionary {
 //System.out.println( str );
                 Shapes shapes = form.getShapes();
 //System.out.println("Shapes: " + shapes + "  count: " + shapes.getShapesCount());
+                // check to see if we are painting highlight annotations.
+                // if so we add some transparency to the context.
+                boolean isTransparency = Defs.sysPropertyBoolean("org.icepdf.core.paint.disableAlpha");
+                if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)){
+                    g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
+                    // remove other alpha defs from parsing
+                    Defs.setSystemProperty("org.icepdf.core.paint.disableAlpha","true");
+                }
+                // regular paint
                 shapes.paint(g);
+                // switch transparency back to the default value
+                if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)){
+                    // remove other alpha defs from parsing
+                    Defs.setSystemProperty("org.icepdf.core.paint.disableAlpha",
+                            String.valueOf(isTransparency));
+                }
             }
         }
     }
