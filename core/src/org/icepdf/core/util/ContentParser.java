@@ -1965,7 +1965,7 @@ public class ContentParser {
         float[] dashArray;
         try {
             // pop dashPhase off the stack
-            dashPhase = ((Number) stack.pop()).floatValue();
+            dashPhase = Math.abs(((Number) stack.pop()).floatValue());
             // pop the dashVector of the stack
             Vector dashVector = (Vector) stack.pop();
             // if the dash vector size is zero we have a default none dashed
@@ -1975,7 +1975,7 @@ public class ContentParser {
                 final int sz = dashVector.size();
                 dashArray = new float[sz];
                 for (int i = 0; i < sz; i++) {
-                    dashArray[i] = ((Number) dashVector.get(i)).floatValue();
+                    dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
                 }
             }
             // default to standard black line
