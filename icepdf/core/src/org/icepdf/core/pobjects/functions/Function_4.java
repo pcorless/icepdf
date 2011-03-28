@@ -41,6 +41,7 @@ import org.icepdf.core.util.Utils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Hashtable;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,6 +68,9 @@ public class Function_4 extends Function {
     // decoded content that makes up the type 4 functions.
     private String functionContent;
 
+    // cache for calculated colour values
+    private Hashtable<String, float[]> resultCache;
+
     public Function_4(Dictionary d) {
         super(d);
         // decode the stream for parsing.
@@ -83,6 +87,8 @@ public class Function_4 extends Function {
         } else {
             logger.warning("Type 4 function operands could not be found.");
         }
+        // cache for type 4 function results.
+        resultCache = new Hashtable<String, float[]>();
     }
 
     /**
@@ -93,8 +99,14 @@ public class Function_4 extends Function {
      */
     public float[] calculate(float[] x) {
 
-        InputStream content = new ByteArrayInputStream(functionContent.getBytes());
+        // check the cache in case we've already made the calculation.
+        String colourKey = calculateColourKey(x);
+        if (resultCache.containsKey(colourKey)) {
+            return resultCache.get(colourKey);
+        }
 
+        // setup the lexer stream
+        InputStream content = new ByteArrayInputStream(functionContent.getBytes());
         Lexer lex = new Lexer();
         lex.setInputStream(content);
 
@@ -118,6 +130,21 @@ public class Function_4 extends Function {
             y[i] = Math.min(Math.max((Float) stack.elementAt(i),
                     range[2 * i]), range[2 * i + 1]);
         }
+        // add the new value to the cache.
+        resultCache.put(colourKey, y);
         return y;
+    }
+
+    /**
+     * Utility for creating a comparable colour key for colour components.
+     * @param colours one or more colour values,  usually maxes out at four.
+     * @return concatenation of colour values.
+     */
+    private String calculateColourKey(float[] colours){
+        StringBuilder builder = new StringBuilder();
+        for (float colour : colours){
+            builder.append(colour);
+        }
+        return builder.toString();
     }
 }
