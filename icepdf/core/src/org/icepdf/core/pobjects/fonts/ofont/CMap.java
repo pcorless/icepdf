@@ -32,6 +32,7 @@
  */
 package org.icepdf.core.pobjects.fonts.ofont;
 
+import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
@@ -39,14 +40,13 @@ import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
 import org.icepdf.core.util.Utils;
-import org.icepdf.core.io.SeekableInput;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -120,7 +120,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
      * Defines mappings from character codes to Unicode characters in the
      * associated font. Expressed in UTF-16BE encoding.
      */
-    private Map<Integer, Integer> bfChars;
+    private Map<Integer, char[]> bfChars;
 
     /**
      * Defines mappings from character codes to Unicode character ranges.
@@ -328,7 +328,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                         int numberOfbfChar = (int) Float.parseFloat(previousToken.toString());
                         // there can be multiple char maps so we don't want to override previous values. 
                         if (bfChars == null){
-                            bfChars = new HashMap<Integer, Integer>(numberOfbfChar);
+                            bfChars = new HashMap<Integer, char[]>(numberOfbfChar);
                         }
                         // a range will always have two hex numbers
                         for (int i = 0; i < numberOfbfChar; i++) {
@@ -340,11 +340,10 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                             // cid mapping value
                             token = parser.getStreamObject();
                             hexToken = (StringObject) token;
-                            Integer value = null;
+                            char[] value = null;
                             try {
-                                value = hexToken.getUnsignedInt(0, hexToken.getLength());
-                            }
-                            catch (NumberFormatException e) {
+                                value = convertToString(hexToken.getLiteralStringBuffer());
+                            } catch (NumberFormatException e) {
                                 logger.log(Level.FINE, "CMAP: ", e);
                             }
                             bfChars.put(key, value);
@@ -353,7 +352,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
                     // find bfRange
                     if (stringToken.equalsIgnoreCase("beginbfrange")) {
                         int numberOfbfRanges = (int) Float.parseFloat(previousToken.toString());
-                        if (bfRange == null){
+                        if (bfRange == null) {
                             bfRange = new ArrayList<CMapRange>(numberOfbfRanges);
                         }
                         StringObject hexToken;
@@ -444,9 +443,9 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
     public String toUnicode(char ch){
         // check bfChar
         if (bfChars != null) {
-            Integer tmp = bfChars.get((int)ch);
+            char[] tmp = bfChars.get((int) ch);
             if (tmp != null) {
-                return String.valueOf((char) tmp.intValue());
+                return String.valueOf(tmp);
             }
         }
         // check bfRange for matches, there may be many ranges to check
@@ -482,9 +481,9 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
 
         // check bfChar
         if (bfChars != null) {
-            Integer tmp = bfChars.get((int)charMap);
+            char[] tmp = bfChars.get((int) charMap);
             if (tmp != null) {
-                return (char) tmp.intValue();
+                return tmp[0];
             }
         }
         // check bfRange for matches, there may be many ranges to check
@@ -589,17 +588,17 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
             }
         }
 
-        // convert to characters.
-        private char[] convertToString(CharSequence s) {
-            if (s == null && s.length() % 2 != 0) {
-                throw new IllegalArgumentException();
-            }
-            int len = s.length();
-            char[] dest = new char[len / 2];
-            for (int i = 0, j = 0; i < len; i += 2, j++)
-                dest[j] = (char) ((s.charAt(i) << 8) | s.charAt(i + 1));
-            return dest;
-        }
+    }
 
+    // convert to characters.
+    private char[] convertToString(CharSequence s) {
+        if (s == null && s.length() % 2 != 0) {
+            throw new IllegalArgumentException();
+        }
+        int len = s.length();
+        char[] dest = new char[len / 2];
+        for (int i = 0, j = 0; i < len; i += 2, j++)
+            dest[j] = (char) ((s.charAt(i) << 8) | s.charAt(i + 1));
+        return dest;
     }
 }
