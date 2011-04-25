@@ -149,9 +149,63 @@ public class PropertiesManager {
     private boolean thisExecutionTriedCreatingLocalDataDir;
 
     public PropertiesManager(Properties sysProps, ResourceBundle messageBundle) {
-        this(sysProps, null, messageBundle);
+        this(sysProps, new Properties(), messageBundle);
     }
 
+    /**
+     * New instance of properties manager with properties overrides defined
+     * in props.
+     *
+     * @param sysProps      system properties
+     * @param props         Properties object containing properties that will be applied
+     *                      over the default properties have been setup.
+     * @param messageBundle message bundle for i8n that allows dialogs in this
+     *                      class to correct display the associated language
+     */
+    public PropertiesManager(Properties sysProps, Properties props, ResourceBundle messageBundle) {
+        unrecoverableError = true;
+        this.sysProps = sysProps;
+
+        this.messageBundle = messageBundle;
+
+        // load default properties from viewer jar and assigned to defaultProps.
+        if (!setupDefaultProperties()) {
+            return;
+        }
+
+        // copy over any properties defined in props.
+        if (props != null) {
+            Enumeration keys = props.keys();
+            String key;
+            while (keys.hasMoreElements()) {
+                key = (String) keys.nextElement();
+                this.props.setProperty(key, props.getProperty(key));
+            }
+        }
+
+        // create default home directory
+        setupHomeDir(null);
+
+        // load persisted properties saved in users home directory.
+        loadProperties();
+
+        recordMofifTime();
+
+        setupLock();
+
+        unrecoverableError = false;
+
+    }
+
+    /**
+     * New instance of properties manager with properties overrides defined
+     * in an external file defined by propPath.
+     * @param sysProps      system properties
+     * @param propPath      Properties file containing properties that will be applied
+     *                      over the default properties have been setup.
+     * @param messageBundle message bundle for i8n that allows dialogs in this
+     *                      class to correct display the associated language
+     */
     public PropertiesManager(Properties sysProps, String propPath, ResourceBundle messageBundle) {
         unrecoverableError = true;
         this.sysProps = sysProps;
@@ -196,7 +250,7 @@ public class PropertiesManager {
             }
         } catch (IOException ex) {
             // check to make sure the storage relate dialogs can be shown
-            if (getBoolean("application.showLocalStorageDialogs", true)){
+            if (getBoolean("application.showLocalStorageDialogs", true)) {
                 Resources.showMessageDialog(null,
                         JOptionPane.ERROR_MESSAGE, messageBundle,
                         "manager.properties.title",
@@ -204,7 +258,7 @@ public class PropertiesManager {
                         DEFAULT_PROP_FILE);
             }
             // log the error
-            if (logger.isLoggable(Level.WARNING)){
+            if (logger.isLoggable(Level.WARNING)) {
                 logger.log(Level.WARNING, "Error loading default properties cache", ex);
             }
             return false;
@@ -267,7 +321,7 @@ public class PropertiesManager {
                 dataDir.mkdirs();
                 if (!dataDir.isDirectory()) {
                     // check to make sure that dialog should be shown on the error.  
-                    if (getBoolean("application.showLocalStorageDialogs", true)){
+                    if (getBoolean("application.showLocalStorageDialogs", true)) {
                         Resources.showMessageDialog(null,
                                 JOptionPane.ERROR_MESSAGE, messageBundle,
                                 "manager.properties.title",
@@ -295,7 +349,7 @@ public class PropertiesManager {
                 if (!dir.mkdir()) {
                     dir = null;
                     // check to make sure that dialog should be shown on the error.
-                    if (getBoolean("application.showLocalStorageDialogs", true)){
+                    if (getBoolean("application.showLocalStorageDialogs", true)) {
                         Resources.showMessageDialog(null,
                                 JOptionPane.ERROR_MESSAGE, messageBundle,
                                 "manager.properties.title",
@@ -333,14 +387,14 @@ public class PropertiesManager {
                 }
             } catch (IOException ex) {
                 // check to make sure the storage relate dialogs can be shown
-                if (getBoolean("application.showLocalStorageDialogs", true)){
+                if (getBoolean("application.showLocalStorageDialogs", true)) {
                     Resources.showMessageDialog(null,
                             JOptionPane.ERROR_MESSAGE, messageBundle,
                             "manager.properties.title",
                             "manager.properties.session.readError", propertyFile.getAbsolutePath());
                 }
                 // log the error
-                if (logger.isLoggable(Level.WARNING)){
+                if (logger.isLoggable(Level.WARNING)) {
                     logger.log(Level.WARNING, "Error loading properties cache", ex);
                 }
             }
@@ -390,14 +444,14 @@ public class PropertiesManager {
                 recordMofifTime();
             } catch (IOException ex) {
                 // check to make sure the storage relate dialogs can be shown
-                if (getBoolean("application.showLocalStorageDialogs", true)){
+                if (getBoolean("application.showLocalStorageDialogs", true)) {
                     Resources.showMessageDialog(null,
                             JOptionPane.ERROR_MESSAGE, messageBundle,
                             "manager.properties.title",
                             "manager.properties.saveError", ex);
                 }
                 // log the error
-                if (logger.isLoggable(Level.WARNING)){
+                if (logger.isLoggable(Level.WARNING)) {
                     logger.log(Level.WARNING, "Error saving properties cache", ex);
                 }
             }
@@ -426,14 +480,14 @@ public class PropertiesManager {
                 }
             } catch (IOException ex) {
                 // check to make sure the storage relate dialogs can be shown
-                if (getBoolean("application.showLocalStorageDialogs", true)){
+                if (getBoolean("application.showLocalStorageDialogs", true)) {
                     Resources.showMessageDialog(null,
                             JOptionPane.ERROR_MESSAGE, messageBundle,
                             "manager.properties.title",
                             "manager.properties.saveError", ex);
                 }
                 // log the error
-                if (logger.isLoggable(Level.WARNING)){
+                if (logger.isLoggable(Level.WARNING)) {
                     logger.log(Level.WARNING, "Error saving properties cache", ex);
                 }
             }
@@ -777,11 +831,11 @@ public class PropertiesManager {
      * Method to check the value of a boolean property
      * This is meant to be used for configuration via the properties file
      * After the property has been checked, it will be stored back into the Properties
-     *  object (using a default value if none was found)
+     * object (using a default value if none was found)
      *
-     * @param properties to check with
+     * @param properties   to check with
      * @param propertyName to check for
-     * @param defaultVal to default to if no value is found on a property
+     * @param defaultVal   to default to if no value is found on a property
      * @return true if property is true, otherwise false
      */
     public static boolean checkAndStoreBooleanProperty(PropertiesManager properties, String propertyName, boolean defaultVal) {
@@ -808,11 +862,11 @@ public class PropertiesManager {
      * Method to check the value of a double property
      * This is meant to be used for configuration via the properties file
      * After the property has been checked, it will be stored back into the Properties
-     *  object (using a default value if none was found)
+     * object (using a default value if none was found)
      *
-     * @param properties to check with
+     * @param properties   to check with
      * @param propertyName to check for
-     * @param defaultVal to default to if no value is found on a property
+     * @param defaultVal   to default to if no value is found on a property
      * @return double property value
      */
     public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName, double defaultVal) {
@@ -839,11 +893,11 @@ public class PropertiesManager {
      * Method to check the value of an int property
      * This is meant to be used for configuration via the properties file
      * After the property has been checked, it will be stored back into the Properties
-     *  object (using a default value if none was found)
+     * object (using a default value if none was found)
      *
-     * @param properties to check with
+     * @param properties   to check with
      * @param propertyName to check for
-     * @param defaultVal to default to if no value is found on a property
+     * @param defaultVal   to default to if no value is found on a property
      * @return int value of property
      */
     public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName, int defaultVal) {
@@ -867,11 +921,11 @@ public class PropertiesManager {
      * For example we will convert "0.4f, 0.5f, 0.6f" to a size 3 array with the values as floats
      * This is meant to be used for configuration via the properties file
      * After the property has been checked, it will be stored back into the Properties
-     *  object (using a default value if none was found)
+     * object (using a default value if none was found)
      *
-     * @param properties to check with
+     * @param properties   to check with
      * @param propertyName to check for
-     * @param defaultVal to default to if no value is found on a property
+     * @param defaultVal   to default to if no value is found on a property
      * @return array of floats from the property
      */
     public static float[] checkAndStoreFloatArrayProperty(PropertiesManager properties, String propertyName, float[] defaultVal) {
@@ -885,18 +939,18 @@ public class PropertiesManager {
 
         float[] toReturn = defaultVal;
 
-        try{
+        try {
             // Ensure we have a property string to parse
             // Then we'll conver the comma separated property to a list of floats
             if ((propertyString != null) &&
-                (propertyString.trim().length() > 0)) {
+                    (propertyString.trim().length() > 0)) {
                 String[] split = propertyString.split(",");
                 toReturn = new float[split.length];
 
                 for (int i = 0; i < split.length; i++) {
-                    try{
+                    try {
                         toReturn[i] = Float.parseFloat(split[i]);
-                    }catch (NumberFormatException failedValue) {
+                    } catch (NumberFormatException failedValue) {
                         /* ignore as we'll just automatically put a '0' in the invalid space */
                     }
                 }
@@ -904,13 +958,13 @@ public class PropertiesManager {
             // Otherwise convert the defaultVal into a comma separated list
             // This is done so it can be stored back into the properties file
             else {
-                StringBuilder commaBuffer = new StringBuilder(defaultVal.length*2);
+                StringBuilder commaBuffer = new StringBuilder(defaultVal.length * 2);
 
                 for (int i = 0; i < defaultVal.length; i++) {
                     commaBuffer.append(defaultVal[i]);
 
                     // Check whether we need a comma
-                    if ((i+1) < defaultVal.length) {
+                    if ((i + 1) < defaultVal.length) {
                         commaBuffer.append(",");
                     }
                 }
@@ -919,7 +973,7 @@ public class PropertiesManager {
                 // This is necessary in the cases where a property didn't exist, but needs to be added to the file
                 properties.set(propertyName, commaBuffer.toString());
             }
-        }catch (Exception failedProperty) {
+        } catch (Exception failedProperty) {
             /* ignore on failure as we'll just return defaultVal */
         }
 
