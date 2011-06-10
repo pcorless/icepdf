@@ -129,7 +129,7 @@ public class LiteralStringObject implements StringObject {
      */
     public int getUnsignedInt(int start, int offset) {
         if (start < 0 || stringData.length() < (start + offset))
-            return 0;
+            return stringData.charAt(0);
 
         if (offset == 1) {
             return stringData.charAt(start);
@@ -213,6 +213,8 @@ public class LiteralStringObject implements StringObject {
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
         if (fontFormat == Font.SIMPLE_FORMAT) {
+            return stringData;
+        } else if (fontFormat == Font.CID_FORMAT) {
             int charOffset = 1;
             int length = getLength();
             StringBuilder tmp = new StringBuilder(length);
@@ -221,27 +223,11 @@ public class LiteralStringObject implements StringObject {
             for (int i = 0; i < length; i += charOffset) {
                 charValue = getUnsignedInt(i - lastIndex, lastIndex + charOffset);
                 // it is possible to have some cid's that are zero
-                if (charValue >= 0) {//&& font.canDisplayEchar((char)charValue)){
+                if (charValue > 0 && font.canDisplayEchar((char)charValue)){
                     tmp.append((char) charValue);
                     lastIndex = 0;
                 } else {
                     lastIndex += charOffset;
-                }
-            }
-            return tmp;
-        } else if (fontFormat == Font.CID_FORMAT) {
-            int charOffset = 2;
-            int length = getLength();
-            int charValue;
-            StringBuilder tmp = new StringBuilder(length);
-            for (int i = 0; i < length; i += charOffset) {
-                if (font.getToUnicode()!= null &&
-                        font.getToUnicode().isOneByte(i)){
-                    charOffset = 1;
-                }
-                charValue = getUnsignedInt(i, charOffset);
-                if (font.canDisplayEchar((char) charValue)) {
-                    tmp.append((char) charValue);
                 }
             }
             return tmp;
