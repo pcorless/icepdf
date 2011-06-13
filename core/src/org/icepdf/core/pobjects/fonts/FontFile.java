@@ -143,4 +143,5 @@ public interface FontFile {
                                      float y, long layout, int mode,
                                      Color strokecolor);
 
+    public boolean isOneByteEncoding();
 }

@@ -177,7 +177,25 @@ public class HexStringObject implements StringObject {
      *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT) {
+        if (fontFormat == Font.SIMPLE_FORMAT && font.isOneByteEncoding()){
+            int charOffset = 1;
+            int length = getLength();
+            StringBuilder tmp = new StringBuilder(length);
+            int lastIndex = 0;
+            int charValue;
+            for (int i = 0; i < length; i += charOffset) {
+                charValue = getUnsignedInt(i - lastIndex, lastIndex + charOffset);
+                // this is important, currently no examples of 0 cid's
+                if (charValue > 0 && font.canDisplayEchar((char) charValue)) {
+                    tmp.append((char) charValue);
+                    lastIndex = 0;
+                } else {
+                    lastIndex += charOffset;
+                }
+            }
+            return tmp;
+        }
+        else if (fontFormat == Font.SIMPLE_FORMAT ) {
             int charOffset = 2;
             int length = getLength();
             StringBuilder tmp = new StringBuilder(length);

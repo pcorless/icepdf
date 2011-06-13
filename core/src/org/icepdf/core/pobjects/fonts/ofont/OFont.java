@@ -427,5 +427,7 @@ public class OFont implements FontFile {
         return String.valueOf(c);
     }
 
-
+    public boolean isOneByteEncoding(){
+        return false;
+    }
 }

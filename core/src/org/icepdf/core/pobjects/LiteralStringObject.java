@@ -212,10 +212,11 @@ public class LiteralStringObject implements StringObject {
      *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT) {
+
+        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding()) {
             return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
-            int charOffset = 1;
+            int charOffset = 2;
             int length = getLength();
             StringBuilder tmp = new StringBuilder(length);
             int lastIndex = 0;
