@@ -66,8 +66,8 @@ import java.util.Hashtable;
  * identifies the alternate color space, which can be any device or
  * CIE-based color space but not another special color space (Pattern,
  * Indexed, Separation, or DeviceN).</li>
- * <li>The <i>tintTransform</i> parameter must be a function (currently only suppports
- * type 0 and type2 ). During subsequent painting operations, an application
+ * <li>The <i>tintTransform</i> parameter must be a function.
+ * During subsequent painting operations, an application
  * calls this function to transform a tint value into color component values
  * in the alternate color space. The function is called with the tint value
  * and must return the corresponding color component values. That is, the
@@ -143,17 +143,7 @@ public class Separation extends PColorSpace {
         }
         if (alternate != null){
             float y[] = tintTransform.calculate(components);
-            Color color =alternate.getColor(reverse(y));
-            // we have one corner case where the named colour is black where
-            // where the alternate colour white, can't figure it out and we
-            // only have this one special case.  In PDF we generally favour
-            // black as it prints a lot better then white....
-            if (namedColor != null){
-                if (namedColor.equals(Color.BLACK) && color.equals(Color.WHITE)){
-                    return Color.BLACK;
-                }
-            }
-            return color;
+            return alternate.getColor(reverse(y));
         }
         // return the named colour if it was resolved, otherwise assemble the
         // alternative colour.
