@@ -843,7 +843,11 @@ public class Stream extends Dictionary {
 
             Hashtable decodeparms = library.getDictionary(entries, "DecodeParms");
             if (decodeparms != null) {
-                Stream globalsStream = (Stream) library.getObject(decodeparms, "JBIG2Globals");
+                Stream globalsStream = null;
+                Object jbigGlobals = library.getObject(decodeparms, "JBIG2Globals");
+                if (jbigGlobals instanceof Stream){
+                    globalsStream = (Stream) library.getObject(decodeparms, "JBIG2Globals");
+                }
                 if (globalsStream != null){
                     byte[] globals = globalsStream.getDecodedStreamBytes();
                     if (globals != null && globals.length > 0) {
