@@ -1141,9 +1141,12 @@ public class Stream extends Dictionary {
                 float Y = origValues[0] * 255;
                 float Cb = origValues[1] * 255;
                 float Cr = origValues[2] * 255;
-                float K = origValues[3] * 255;
+//                float K = origValues[3] * 255;
 
-                Y = Y - K; // gives a darker image,  instead of just Y.
+                // removing alteration for now as some samples are too dark.
+               // Y *= .95; // gives a darker image,  as y approaches zero,
+                         // the image becomes darke
+
                 float Cr_128 = Cr - 128;
                 float Cb_128 = Cb - 128;
 
