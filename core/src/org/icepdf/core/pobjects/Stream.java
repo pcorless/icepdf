@@ -654,6 +654,10 @@ public class Stream extends Dictionary {
                         alterRasterY2Gray(wr); //TODO Use smaskImage, maskImage, maskMinRGB, maskMaxRGB or orig comp version here
                     }
                     tmpImage = makeGrayBufferedImage(wr);
+                    // apply mask value
+                    if (maskImage != null){
+                        applyExplicitMask(tmpImage, maskImage);
+                    }
                 } else {
                     //System.out.println("Stream.dctDecode()    Other");
                     //tmpImage = imageDecoder.decodeAsBufferedImage();
@@ -1348,7 +1352,7 @@ public class Stream extends Dictionary {
         for (int y = 0; y < baseHeight; y++) {
             for (int x = 0; x < baseWidth; x++) {
                 int maskPixel = maskImage.getRGB(x, y);
-                if (maskPixel == -1) {
+                if (maskPixel == -1 || maskPixel == 0xffffff) {
                     baseImage.setRGB(x, y, Color.WHITE.getRGB());
                 }
             }
@@ -2313,7 +2317,9 @@ public class Stream extends Dictionary {
                 ColorModel cm = new ComponentColorModel(cs, new int[]{bitspercomponent},
                         false, false, ColorModel.OPAQUE, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
-
+                if (maskImage != null){
+                    applyExplicitMask(img, maskImage);
+                }
             }
         } else if (colourSpace instanceof DeviceRGB) {
             //System.out.println("Stream.makeImageWithRasterFromBytes()  DeviceRGB");
