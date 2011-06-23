@@ -32,6 +32,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 
@@ -41,20 +42,33 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 /**
- * DeviceN Color Space.
+ * DeviceN colour spaces shall be defined in a similar way to Separation colour
+ * spaces—in fact, a Separationcolour space can be defined as a DeviceN colour
+ * space with only one component.
+ * <p/>
+ * A DeviceN colour space shall be specified as follows:
+ * [/DeviceN names alternateSpace tintTransform]
+ * or
+ * [/DeviceN names alternateSpace tintTransform attributes]
+ * <p/>
+ * It is a four- or five-element array whose first element shall be the colour
+ * space family name DeviceN. The remaining elements shall be parameters that a
+ * DeviceN colour space requires.
  */
 public class DeviceN extends PColorSpace {
-    Vector names;
+    Vector<Name> names;
     PColorSpace alternate;
-    Function func;
+    Function tintTransform;
     Hashtable<Object, Object> colorants = new Hashtable<Object, Object>();
     PColorSpace colorspaces[];
+
+    boolean foundCMYK;
 
     DeviceN(Library l, Hashtable h, Object o1, Object o2, Object o3, Object o4) {
         super(l, h);
         names = (Vector) o1;
         alternate = getColorSpace(l, o2);
-        func = Function.getFunction(l, l.getObject(o3));
+        tintTransform = Function.getFunction(l, l.getObject(o3));
         if (o4 != null) {
             Hashtable h1 = (Hashtable) library.getObject(o4);
             Hashtable h2 = (Hashtable) library.getObject(h1, "Colorants");
@@ -71,6 +85,26 @@ public class DeviceN extends PColorSpace {
         for (int i = 0; i < colorspaces.length; i++) {
             colorspaces[i] = (PColorSpace) colorants.get(names.elementAt(i).toString());
         }
+        // check to see if cymk is specified int the names, if so we can
+        // uses the cmyk colour space directly, otherwise we fallback to the alternative
+        // and hope it was setup correctly.
+        if (names.size() == 4){
+            int cmykCount = 0;
+            for (Name name : names) {
+                if (name.getName().toLowerCase().startsWith("c")) {
+                    cmykCount++;
+                } else if (name.getName().toLowerCase().startsWith("m")) {
+                    cmykCount++;
+                } else if (name.getName().toLowerCase().startsWith("y")) {
+                    cmykCount++;
+                } else if (name.getName().toLowerCase().startsWith("b")) {
+                    cmykCount++;
+                }
+                if (cmykCount == 4) {
+                    foundCMYK = true;
+                }
+            }
+        }
     }
 
     public int getNumComponents() {
@@ -78,40 +112,12 @@ public class DeviceN extends PColorSpace {
     }
 
     public Color getColor(float[] f) {
-        if (func == null) {
-            // try alternative colour for CMYK
-            int comps = alternate.getNumComponents();
-            if (comps > f.length && comps == 4) {
-                float[] ftmp = new float[alternate.getNumComponents()];
-                for (int index = 0; index < f.length && index < names.size(); index++) {
-                    if (names.get(index).equals("Cyan")) {
-                        ftmp[0] = f[index];
-                    }
-                    else if (names.get(index).equals("Magenta")) {
-                        ftmp[1] = f[index];
-                    }
-                    else if (names.get(index).equals("Yellow")) {
-                        ftmp[2] = f[index];
-                    }
-                    else if (names.get(index).equals("Black")) {
-                        ftmp[3] = f[index];
-                    }
-                }
-                f = ftmp;
-                float y[] = new float[alternate.getNumComponents()];
-                System.arraycopy(f, 0, y, 0, Math.min(y.length, f.length));
-                return alternate.getColor(y);
-            }
-            // process the alternative colour
-            float y[] = new float[alternate.getNumComponents()];
-            System.arraycopy(f, 0, y, 0, Math.min(y.length, f.length));
-            return alternate.getColor(y);
+        if (foundCMYK){
+            return new DeviceCMYK(null, null).getColor(f);
+        }else {
+            float y[] = tintTransform.calculate(f);
+            return alternate.getColor(reverse(y));
         }
-        float y[] = func.calculate(f);
-        if (colorspaces[0] != null) {
-            return colorspaces[0].getColor(reverse(y));
-        }
-        return alternate.getColor(reverse(y));
     }
 }
 
