@@ -1574,7 +1574,7 @@ public class Stream extends Dictionary {
 
                 byte yByte = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
 
-                values[0] = 255 - (int) yByte;
+                values[0] = (int) yByte;
 
                 wr.setPixel(x, y, values);
             }
