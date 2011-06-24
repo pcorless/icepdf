@@ -648,7 +648,8 @@ public class Stream extends Dictionary {
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
                     // Instead of assuming that Separation is special, I'll assume that DeviceGray is
-                    if (!(colourSpace instanceof DeviceGray)) {
+                    if (!(colourSpace instanceof DeviceGray) &&
+                            !(colourSpace instanceof ICCBased)) {
                         if (Tagger.tagging)
                             Tagger.tagImage("DCTDecode_JpegSubEncoding=Y");
                         alterRasterY2Gray(wr); //TODO Use smaskImage, maskImage, maskMinRGB, maskMaxRGB or orig comp version here
@@ -1573,16 +1574,14 @@ public class Stream extends Dictionary {
         int[] values = new int[1];
         int width = wr.getWidth();
         int height = wr.getHeight();
+        int Y;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 wr.getPixel(x, y, values);
-
-                int Y = values[0];
-
-                byte yByte = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
-
-                values[0] = (int) yByte;
-
+                Y = values[0];
+                Y = 255 - Y;
+                Y = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
+                values[0] = Y;
                 wr.setPixel(x, y, values);
             }
         }
