@@ -705,7 +705,19 @@ public class Parser {
             if (!inString) {
                 reader.mark(1);
             }
-            // get the next byte and corresponeding char
+
+            // PDF-215, try to sniff out missing space between tokens and numbers
+            // in a content stream.  The fix only addressed a character followed
+            // by a number.  It's legal for a /Name object to have mixed content
+            // so we need to check for / at the start of the string.
+            if ( !(inString || hexString) &&
+                currentChar > 65 && (nextChar >=48 && nextChar <= 57) &&
+                    stringBuffer.charAt(0) != '/'){
+                reader.reset();
+                break;
+            }
+
+            // get the next byte and corresponding char
             currentByte = reader.read();
             // if ther are no more bytes (-1) then we should return previous
             // stringBuffer value, otherwise the last grouping of tokens will
