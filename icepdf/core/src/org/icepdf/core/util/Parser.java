@@ -710,8 +710,8 @@ public class Parser {
             // in a content stream.  The fix only addressed a character followed
             // by a number.  It's legal for a /Name object to have mixed content
             // so we need to check for / at the start of the string.
-            if ( !(inString || hexString) &&
-                currentChar > 65 && (nextChar >=48 && nextChar <= 57) &&
+            if ( !(inString || hexString) && currentChar != 'd' &&
+                currentChar > 65  && (nextChar >=48 && nextChar <= 57) &&
                     stringBuffer.charAt(0) != '/'){
                 reader.reset();
                 break;
