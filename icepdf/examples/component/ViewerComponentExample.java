@@ -32,10 +32,17 @@
  */
 
 
+import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.ri.common.ComponentKeyBinding;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.swing.*;
+import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  * The <code>ViewerComponentExample</code> class is an example of how to use
@@ -56,6 +63,9 @@ public class ViewerComponentExample {
         SwingViewBuilder factory = new SwingViewBuilder(controller);
 
         JPanel viewerComponentPanel = factory.buildViewerPanel();
+
+        // add copy keyboard command
+        ComponentKeyBinding.install(controller, viewerComponentPanel);
 
         // add interactive mouse link annotation support via callback
         controller.getDocumentViewController().setAnnotationCallback(
