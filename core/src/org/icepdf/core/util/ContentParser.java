@@ -1057,8 +1057,6 @@ public class ContentParser {
                     if (tjValue instanceof StringObject) {
                         stringObject = (StringObject) tjValue;
                         textState = graphicState.getTextState();
-                        // apply text scaling
-                        applyTextScaling(graphicState);
                         // apply transparency
                         setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                         // draw string will take care of text pageText construction
@@ -1100,7 +1098,9 @@ public class ContentParser {
                     shift = 0;
                     previousAdvance = 0;
                     advance.setLocation(0, 0);
-                    graphicState.translate(x, -y);
+                    // x,y are expressed in unscaled text space so we need to
+                    // apply the transform
+                    graphicState.translate(x * graphicState.getTextState().hScalling,  -y );
                     float newY = (float) graphicState.getCTM().getTranslateY();
                     // capture x coord of BT y offset, tm, Td, TD.
                     if (isYstart) {
@@ -1147,6 +1147,9 @@ public class ContentParser {
                     graphicState.set(af);
                     graphicState.scale(1, -1);
 
+                    // apply text size.
+                    applyTextScaling(graphicState);
+
                     // text extraction logic
 
                     // capture x coord of BT y offset, tm, Td, TD.
@@ -1179,8 +1182,6 @@ public class ContentParser {
                 else if (nextToken.equals(PdfOps.TJ_TOKEN)) {
 //                    collectTokenFrequency(PdfOps.TJ_TOKEN);
 
-                    // apply text scaling
-                    applyTextScaling(graphicState);
                     // apply transparency
                     setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                     Vector v = (Vector) stack.pop();
@@ -1443,8 +1444,6 @@ public class ContentParser {
 //                    collectTokenFrequency(PdfOps.SINGLE_QUOTE_TOKEN);
                     graphicState.translate(-shift, graphicState.getTextState().leading);
 
-                    // apply text scaling
-                    applyTextScaling(graphicState);
                     // apply transparency
                     setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
 
@@ -1479,8 +1478,6 @@ public class ContentParser {
                     graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
                     graphicState.translate(-shift, graphicState.getTextState().leading);
 
-                    // apply text scaling
-                    applyTextScaling(graphicState);
                     // apply transparency
                     setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
 
@@ -2094,6 +2091,8 @@ public class ContentParser {
             float hScaling = ((Number) ob).floatValue();
             // values is represented in percent but we want it as a none percent
             graphicState.getTextState().hScalling = hScaling / 100f;
+            // apply text size.
+            applyTextScaling(graphicState);
         }
     }
 
@@ -2563,16 +2562,16 @@ public class ContentParser {
     private static void applyTextScaling(GraphicsState graphicState) {
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
-        // numerous test cases show that -1 values flip the layout axis but
-        // any other application of width is compounded stretching the layout
-        // still something slightly off with this calculation
-        if (graphicState.getTextState().hScalling < 0){
-            // apply horizontal scaling if any.
-            AffineTransform horizontalScalingTransform =
-                    new AffineTransform(graphicState.getTextState().hScalling,
-                            0, 0, 1, 0, 0);
-            af.concatenate(horizontalScalingTransform);
-        }
+        // the mystery continues,  it appears that only the negative or positive
+        // value of tz is actually used.  If the original non 1 number is used the
+        // layout will be messed up.
+        graphicState.getTextState().hScalling =
+                graphicState.getTextState().hScalling >= 0?1:-1;
+        AffineTransform horizontalScalingTransform =
+                new AffineTransform(
+                        graphicState.getTextState().hScalling,
+                        0, 0, 1, 0, 0);
+        af.concatenate(horizontalScalingTransform);
         // add the transformation to the graphics state
         graphicState.set(af);
     }
