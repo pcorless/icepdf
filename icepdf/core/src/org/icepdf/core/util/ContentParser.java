@@ -388,105 +388,7 @@ public class ContentParser {
                     // the XObject's Subtype entry, which may be Image , Form, or PS
                     else if (tok.equals(PdfOps.Do_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.Do_TOKEN);
-                        String xobjectName = ((Name) (stack.pop())).getName();
-                        // Form XObject
-                        if (resources.isForm(xobjectName)) {
-                            // Do operator steps:
-                            //  1.)save the graphics context
-                            graphicState = graphicState.save();
-                            // Try and find the named reference 'xobjectName', pass in a copy
-                            // of the current graphics state for the new content stream
-                            Form formXObject = resources.getForm(xobjectName);
-                            if (formXObject != null) {
-                                // init formXobject
-                                GraphicsState xformGraphicsState =
-                                        new GraphicsState(graphicState);
-                                formXObject.setGraphicsState(xformGraphicsState);
-                                if (formXObject.isTransparencyGroup()) {
-                                    // assign the state to the graphic state for later
-                                    // processing during the paint
-                                    xformGraphicsState.setTransparencyGroup(formXObject.isTransparencyGroup());
-                                    xformGraphicsState.setIsolated(formXObject.isIsolated());
-                                    xformGraphicsState.setKnockOut(formXObject.isKnockOut());
-                                }
-                                // according to spec the formXObject might not have
-                                // resources reference as a result we pass in the current
-                                // one in the hope that any resources can be found.
-                                formXObject.setParentResources(resources);
-                                formXObject.init();
-                                // 2.) concatenate matrix entry with the current CTM
-                                AffineTransform af =
-                                        new AffineTransform(graphicState.getCTM());
-                                af.concatenate(formXObject.getMatrix());
-                                shapes.add(af);
-                                // 3.) Clip according to the form BBox entry
-                                if (graphicState.getClip() != null) {
-                                    AffineTransform matrix = formXObject.getMatrix();
-                                    Area bbox = new Area(formXObject.getBBox());
-                                    Area clip = graphicState.getClip();
-                                    // create inverse of matrix so we can transform
-                                    // the clip to form space.
-                                    matrix = matrix.createInverse();
-                                    // apply the new clip now that they are in the
-                                    // same space.
-                                    Shape shape = matrix.createTransformedShape(clip);
-                                    bbox.intersect(new Area(shape));
-                                    shapes.add(bbox);
-                                } else {
-                                    shapes.add(formXObject.getBBox());
-                                }
-                                shapes.addClipCommand();
-                                // 4.) Paint the graphics objects in font stream.
-                                setAlpha(shapes, graphicState.getAlphaRule(),
-                                        graphicState.getFillAlpha());
-                                // If we have a transparency group we paint it
-                                // slightly different then a regular xObject as we
-                                // need to capture the alpha which is only possible
-                                // by paint the xObject to an image.
-                                if (formXObject.isTransparencyGroup()) {
-                                    // add the hold form for further processing.
-                                    shapes.add(formXObject);
-                                }
-                                // the down side of painting to an image is that we
-                                // lose quality if there is a affine transform, so
-                                // if it isn't a group transparency we paint old way
-                                // by just adding the objects to the shapes stack.
-                                else {
-                                    shapes.add(formXObject.getShapes());
-                                }
-                                // makes sure we add xobject images so we can extract them.
-                                if (formXObject.getShapes() != null) {
-                                    shapes.add(formXObject.getShapes().getImages());
-                                }
-                                // update text sprites with geometric path state
-                                if (formXObject.getShapes() != null &&
-                                        formXObject.getShapes().getPageText() != null) {
-                                    // normalize each sprite.
-                                    formXObject.getShapes().getPageText()
-                                            .applyXObjectTransform(graphicState.getCTM());
-                                }
-                                shapes.addNoClipCommand();
-                                formXObject.completed();
-                                // clean up resource used by this form object
-                                formXObject.disposeResources(true);
-                            }
-                            //  5.) Restore the saved graphics state
-                            graphicState = graphicState.restore();
-                        }
-                        // Image XObject
-                        else {
-                            Image im = resources.getImage(xobjectName,
-                                    graphicState.getFillColor());
-                            if (im != null) {
-                                AffineTransform af =
-                                        new AffineTransform(graphicState.getCTM());
-                                graphicState.scale(1, -1);
-                                graphicState.translate(0, -1);
-                                // add the image
-                                shapes.add(im);
-                                graphicState.set(af);
-                            }
-                        }
+                        consume_Do(graphicState, stack, shapes, resources, true);
                     }
 
                     // Fill the path, using the even-odd rule to determine the
@@ -988,6 +890,11 @@ public class ContentParser {
                     // to ensure we can result toUnicode values.
                     else if (tok.equals(PdfOps.Tf_TOKEN)) {
                         consume_Tf(graphicState, stack, resources);
+                        stack.clear();
+                    }
+                    // pick up on xObject content streams.
+                    else if (tok.equals(PdfOps.Do_TOKEN)){
+                        consume_Do(graphicState, stack, shapes, resources, false);
                         stack.clear();
                     }
                 } else {
@@ -1954,6 +1861,125 @@ public class ContentParser {
         // Mark the stroke as being changed and store state in the
         // shapes object
         setStroke(shapes, graphicState);
+    }
+
+    /**
+     * Process the xObject content.
+     *
+     * @param graphicState graphic state to appent
+     * @param stack stack of object being parsed.
+     * @param shapes shapes object.
+     * @param resources associated resources.
+     * @param viewParse true indicates parsing is for a normal view.  If false
+     * the consumption of Do will skip Image based xObjects for performance.
+     */
+    private static void consume_Do(GraphicsState graphicState, Stack stack,
+                                Shapes shapes, Resources resources,
+                                boolean viewParse){
+        // collectTokenFrequency(PdfOps.Do_TOKEN);
+        String xobjectName = ((Name) (stack.pop())).getName();
+        // Form XObject
+        if (resources.isForm(xobjectName)) {
+            // Do operator steps:
+            //  1.)save the graphics context
+            graphicState = graphicState.save();
+            // Try and find the named reference 'xobjectName', pass in a copy
+            // of the current graphics state for the new content stream
+            Form formXObject = resources.getForm(xobjectName);
+            if (formXObject != null) {
+                // init formXobject
+                GraphicsState xformGraphicsState =
+                        new GraphicsState(graphicState);
+                formXObject.setGraphicsState(xformGraphicsState);
+                if (formXObject.isTransparencyGroup()) {
+                    // assign the state to the graphic state for later
+                    // processing during the paint
+                    xformGraphicsState.setTransparencyGroup(formXObject.isTransparencyGroup());
+                    xformGraphicsState.setIsolated(formXObject.isIsolated());
+                    xformGraphicsState.setKnockOut(formXObject.isKnockOut());
+                }
+                // according to spec the formXObject might not have
+                // resources reference as a result we pass in the current
+                // one in the hope that any resources can be found.
+                formXObject.setParentResources(resources);
+                formXObject.init();
+                // 2.) concatenate matrix entry with the current CTM
+                AffineTransform af =
+                        new AffineTransform(graphicState.getCTM());
+                af.concatenate(formXObject.getMatrix());
+                shapes.add(af);
+                // 3.) Clip according to the form BBox entry
+                if (graphicState.getClip() != null) {
+                    AffineTransform matrix = formXObject.getMatrix();
+                    Area bbox = new Area(formXObject.getBBox());
+                    Area clip = graphicState.getClip();
+                    // create inverse of matrix so we can transform
+                    // the clip to form space.
+                    try {
+                        matrix = matrix.createInverse();
+                    } catch (NoninvertibleTransformException e) {
+                        logger.warning("Error create xObject matrix inverse");
+                    }
+                    // apply the new clip now that they are in the
+                    // same space.
+                    Shape shape = matrix.createTransformedShape(clip);
+                    bbox.intersect(new Area(shape));
+                    shapes.add(bbox);
+                } else {
+                    shapes.add(formXObject.getBBox());
+                }
+                shapes.addClipCommand();
+                // 4.) Paint the graphics objects in font stream.
+                setAlpha(shapes, graphicState.getAlphaRule(),
+                        graphicState.getFillAlpha());
+                // If we have a transparency group we paint it
+                // slightly different then a regular xObject as we
+                // need to capture the alpha which is only possible
+                // by paint the xObject to an image.
+                if (formXObject.isTransparencyGroup()) {
+                    // add the hold form for further processing.
+                    shapes.add(formXObject);
+                }
+                // the down side of painting to an image is that we
+                // lose quality if there is a affine transform, so
+                // if it isn't a group transparency we paint old way
+                // by just adding the objects to the shapes stack.
+                else {
+                    shapes.add(formXObject.getShapes());
+                }
+                // makes sure we add xobject images so we can extract them.
+                if (formXObject.getShapes() != null) {
+                    shapes.add(formXObject.getShapes().getImages());
+                }
+                // update text sprites with geometric path state
+                if (formXObject.getShapes() != null &&
+                        formXObject.getShapes().getPageText() != null) {
+                    // normalize each sprite.
+                    formXObject.getShapes().getPageText()
+                            .applyXObjectTransform(graphicState.getCTM());
+                }
+                shapes.addNoClipCommand();
+                formXObject.completed();
+                // clean up resource used by this form object
+                formXObject.disposeResources(true);
+            }
+            //  5.) Restore the saved graphics state
+            graphicState = graphicState.restore();
+        }
+        // Image XObject
+        else if (viewParse) {
+            Image im = resources.getImage(xobjectName,
+                    graphicState.getFillColor());
+            if (im != null) {
+                AffineTransform af =
+                        new AffineTransform(graphicState.getCTM());
+                graphicState.scale(1, -1);
+                graphicState.translate(0, -1);
+                // add the image
+                shapes.add(im);
+                graphicState.set(af);
+            }
+        }
     }
 
     private static void consume_d(GraphicsState graphicState, Stack stack, Shapes shapes) {
