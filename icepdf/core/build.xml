@@ -82,6 +82,18 @@
         </replace>
     </target>
 
+    <target name="src-jar" depends="" >
+        <jar destfile="${build.dir}/icepdf-core-sources.jar">
+            <fileset dir="${src.dir}" includes="**/*.java"/>
+        </jar>
+    </target>
+
+    <target name="javadoc-jar" depends="javadoc" >
+        <jar destfile="${build.dir}/icepdf-core-javadoc.jar">
+            <fileset dir="${build.dir}/javadocs" includes="**/*"/>
+        </jar>
+    </target>
+
     <target name="javadoc">
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="false" useexternalfile="true" failonerror="true"
