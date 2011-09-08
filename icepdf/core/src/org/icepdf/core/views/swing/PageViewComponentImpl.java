@@ -103,9 +103,9 @@ public class PageViewComponentImpl extends
         try {
             String color = Defs.sysProperty(
                     "org.icepdf.core.views.page.paper.color", "#FFFFFF");
-            int colorValue = ColorUtil.convertNamedColor(color);
+            int colorValue = ColorUtil.convertColor(color);
             pageColor =
-                    new Color(colorValue > 0 ? colorValue :
+                    new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("FFFFFF", 16));
 
         } catch (NumberFormatException e) {
