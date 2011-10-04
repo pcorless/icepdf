@@ -1827,9 +1827,18 @@ public class ContentParser {
             graphicState.set(af);
             // update the clip, translate by this CM
             graphicState.updateClipCM(new AffineTransform(a, b, c, d, e, f));
-        } else {
+        }
+        // apply the cm just as we would a tm
+        else {
             // update the textBlockBase with the cm matrix
-            textBlockBase.concatenate(new AffineTransform(a, b, c, d, e, f));
+            AffineTransform af = new AffineTransform(textBlockBase);
+            // apply the transform
+            graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
+            af.concatenate(graphicState.getTextState().tmatrix);
+            graphicState.set(af);
+            graphicState.scale(1, -1);
+            // apply text size.
+            applyTextScaling(graphicState);
         }
     }
 
