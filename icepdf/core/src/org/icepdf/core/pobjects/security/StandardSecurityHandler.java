@@ -32,9 +32,11 @@
  */
 package org.icepdf.core.pobjects.security;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 
 import java.io.InputStream;
+import java.util.Hashtable;
 
 /**
  * <p>ICEpdf's standard security handler allows access permissions and up to two passwords
@@ -113,14 +115,14 @@ import java.io.InputStream;
 public class StandardSecurityHandler extends SecurityHandler {
 
     // StandardEncryption holds algorithms specific to adobe standard encryption
-    private StandardEncryption standardEnryption = null;
+    private StandardEncryption standardEncryption = null;
 
     // encryption key used for encryption,  Standard encryption is symmetric, so
     // only one key is needed.
-    private byte[] encryptionKey = null;
+    private byte[] encryptionKey;
 
     // initiated flag
-    private boolean initiated = false;
+    private boolean initiated;
 
     // string to store password used for decoding, the user password is always
     // used for encryption, never the user password.
@@ -134,14 +136,14 @@ public class StandardSecurityHandler extends SecurityHandler {
 
     public boolean isAuthorized(String password) {
 
-        boolean value = standardEnryption.authenticateUserPassword(password);
+        boolean value = standardEncryption.authenticateUserPassword(password);
         // check password against user password
         if (!value) {
             // check password against owner password
-            value = standardEnryption.authenticateOwnerPassword(password);
+            value = standardEncryption.authenticateOwnerPassword(password);
             // Get user, password, as it is used for generating encryption keys
             if (value) {
-                this.password = standardEnryption.getUserPassword();
+                this.password = standardEncryption.getUserPassword();
             }
         } else {
             // assign password for future use
@@ -152,12 +154,12 @@ public class StandardSecurityHandler extends SecurityHandler {
 
     public boolean isOwnerAuthorized(String password) {
         // owner password is not stored as it is not used for decryption
-        return standardEnryption.authenticateOwnerPassword(password);
+        return standardEncryption.authenticateOwnerPassword(password);
     }
 
     public boolean isUserAuthorized(String password) {
         // owner password is not stored as it is not used for decryption
-        boolean value = standardEnryption.authenticateUserPassword(password);
+        boolean value = standardEncryption.authenticateUserPassword(password);
         if (value) {
             this.password = password;
         }
@@ -168,9 +170,21 @@ public class StandardSecurityHandler extends SecurityHandler {
                           byte[] encryptionKey,
                           byte[] data) {
 
+        // check if crypt filters are being used and find out if V2 or AESV2
+        String algorithmType;
+        if (encryptionDictionary.getCryptFilter() != null){
+            CryptFilterEntry cryptFilterEntry =
+                    encryptionDictionary.getCryptFilter().getCryptFilterByName(
+                            encryptionDictionary.getStrF());
+
+            algorithmType = cryptFilterEntry.getCryptFilterMethod().getName();
+        } else{
+            algorithmType = algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
+        }
+
         // use the general encryption algorithm for encryption
-        return standardEnryption.generalEncryptionAlgorithm(
-                objectReference, encryptionKey, data);
+        return standardEncryption.generalEncryptionAlgorithm(
+                objectReference, encryptionKey, algorithmType, data);
     }
 
     public byte[] decrypt(Reference objectReference,
@@ -183,9 +197,40 @@ public class StandardSecurityHandler extends SecurityHandler {
     public InputStream getEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
+            Hashtable decodeParams,
             InputStream input) {
-        return standardEnryption.generalEncryptionInputStream(
-                objectReference, encryptionKey, input);
+
+        // find the name of the crypt filter used in the CF dictionary
+        CryptFilterEntry cryptFilter = null;
+        if (decodeParams != null){
+            Name filterName = (Name)decodeParams.get("Name");
+            // identity means don't use the cryprt filter or encryption at all
+            // for the stream.
+            if (filterName.equals("Identity")){
+                return input;
+            }else{
+                // find the filter name in the encryption dictionary
+                cryptFilter = encryptionDictionary.
+                        getCryptFilter().getCryptFilterByName(filterName);
+
+            }
+        }
+        // We default to the method specified in by StrmF in the security dictionary
+        else if (encryptionDictionary.getCryptFilter() != null){
+            cryptFilter = encryptionDictionary.getCryptFilter().getCryptFilterByName(
+                    encryptionDictionary.getStmF());
+        }
+
+        // get the method used for the general encryption algorithm
+        String algorithmType;
+        if (cryptFilter != null){
+            algorithmType = cryptFilter.getCryptFilterMethod().getName();
+        }else{
+            algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
+        }
+
+        return standardEncryption.generalEncryptionInputStream(
+                objectReference, encryptionKey, algorithmType, input);
     }
 
     public byte[] getEncryptionKey() {
@@ -195,7 +240,7 @@ public class StandardSecurityHandler extends SecurityHandler {
             this.init();
         }
         // calculate the encryptionKey based on the given user name
-        encryptionKey = standardEnryption.encryptionKeyAlgorithm(
+        encryptionKey = standardEncryption.encryptionKeyAlgorithm(
                 password,
                 encryptionDictionary.getKeyLength());
 
@@ -220,7 +265,7 @@ public class StandardSecurityHandler extends SecurityHandler {
 
     public void init() {
         // initiate a new instance
-        standardEnryption = new StandardEncryption(encryptionDictionary);
+        standardEncryption = new StandardEncryption(encryptionDictionary);
         // initiate permissions
         permissions = new Permissions(encryptionDictionary);
         permissions.init();
@@ -229,7 +274,7 @@ public class StandardSecurityHandler extends SecurityHandler {
     }
 
     public void dispose() {
-        standardEnryption = null;
+        standardEncryption = null;
         encryptionKey = null;
         permissions = null;
         // update flag

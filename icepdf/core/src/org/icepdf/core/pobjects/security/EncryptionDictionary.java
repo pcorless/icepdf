@@ -33,6 +33,7 @@
 package org.icepdf.core.pobjects.security;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 
@@ -298,6 +299,8 @@ public class EncryptionDictionary extends Dictionary {
     // encryption algorithms
     private Vector fileID = null;
 
+    private CryptFilter cryptFilter;
+
     /**
      * Creates a new Encryption Dictionary object.
      *
@@ -345,8 +348,24 @@ public class EncryptionDictionary extends Dictionary {
     }
 
     /**
-     * Gets the code specifying the algorithm to be used in encrypting and
-     * decrypting the document
+     * Gets a code specifying the algorithm to be used in encrypting and
+     * decrypting the document:
+     * <ul>
+     * <li>0 An algorithm that is undocumented. This value shall not be used.</li>
+     * <li>1 "Algorithm 1: Encryption of data using the RC4 or AES algorithms"
+     * in 7.6.2, "General Encryption Algorithm," with an encryption key length
+     * of 40 bits; see below.</li>
+     * <li>2 (PDF 1.4) "Algorithm 1: Encryption of data using the RC4 or AES
+     * algorithms"in 7.6.2, "General Encryption Algorithm," but permitting
+     * encryption key lengths greater than 40 bits.</li>
+     * <li>3(PDF 1.4) An unpublished algorithm that permits encryption key
+     * lengths ranging from 40 to 128 bits. This value shall not appear in a
+     * conforming PDF file.</li>
+     * <li>4(PDF 1.5) The security handler defines the use of encryption and
+     * decryption in the document, using the rules specified by the CF, StmF,
+     * and StrF entries. The default value if this entry is omitted shall be
+     * 0, but when present should be a value of 1 or greater.</li>
+     * </ul>
      *
      * @return encryption version.
      */
@@ -421,15 +440,95 @@ public class EncryptionDictionary extends Dictionary {
         return library.getInt(entries, "P");
     }
 
-/**
- * Entries common to all public-key dictionaries
- * todo: add named accessor methods
- */
 
-/**
- * Entries common to all crypt filters dictionaries
- * todo: add named accessor methods
- */
+    /**
+     * (Optional; meaningful only when the value of V is 4; PDF 1.5)
+     * A dictionary whose keys shall be crypt filter names and whose values
+     * shall be the corresponding crypt filter dictionaries (see Table 25).
+     * Every crypt filter used in the document shall have an entry in this
+     * dictionary, except for the standard crypt filter names (see Table 26).
+     * <p/>
+     * The conforming reader shall ignore entries in CF dictionary with the keys
+     * equal to those listed in Table 26 and use properties of the respective
+     * standard crypt filters.
+     *
+     * @return crypt filter object if found, null otherwise.
+     */
+    public CryptFilter getCryptFilter() {
+        if (cryptFilter == null) {
+            Hashtable tmp = (Hashtable) library.getObject(entries, "CF");
+            if (tmp != null) {
+                cryptFilter = new CryptFilter(library, tmp);
+                return cryptFilter;
+            }
+        }
+        return cryptFilter;
+    }
+
+    /**
+     * (Optional; meaningful only when the value of V is 4; PDF 1.5)
+     * The name of the crypt filter that shall be used by default when decrypting
+     * streams. The name shall be a key in the CF dictionary or a standard crypt
+     * filter name specified in Table 26. All streams in the document, except
+     * for cross-reference streams (see 7.5.8, "Cross-Reference Streams") or
+     * streams that have a Crypt entry in their Filterarray (see Table 6),
+     * shall be decrypted by the security handler, using this crypt filter.
+     * <p/>
+     * Default value: Identity.
+     * <p/>
+     *
+     * @return name of the default stream filter name.
+     */
+    public Name getStmF() {
+        Object tmp = library.getObject(entries, "StmF");
+        if (tmp != null && tmp instanceof Name) {
+            return (Name) tmp;
+        }
+        return null;
+    }
+
+
+    /**
+     * (Optional; meaningful only when the value of V is 4; PDF 1.5)
+     * The name of the crypt filter that shall be used when decrypting all
+     * strings in the document. The name shall be a key in the CF dictionary or
+     * a standard crypt filter name specified in Table 26.
+     * <p/>
+     * Default value: Identity.
+     *
+     * @return name of the default string filter name.
+     */
+     public Name getStrF() {
+        Object tmp = library.getObject(entries, "StrF");
+        if (tmp != null && tmp instanceof Name) {
+            return (Name) tmp;
+        }
+        return null;
+    }
+
+    /**
+     * (Optional; meaningful only when the value of V is 4; PDF 1.6) The name
+     * of the crypt filter that shall be used when encrypting embedded file
+     * streams that do not have their own crypt filter specifier; it shall
+     * correspond to a key in the CFdictionary or a standard crypt filter name
+     * specified in Table 26.
+     * <p/>
+     * This entry shall be provided by the security handler. Conforming writers
+     * shall respect this value when encrypting embedded files, except for
+     * embedded file streams that have their own crypt filter specifier. If
+     * this entry is not present, and the embedded file stream does not contain
+     * a crypt filter specifier, the stream shall be encrypted using the default
+     * stream crypt filter specified by StmF.
+     *
+     * EFF:name
+     */
+    public Name getEEF() {
+        Object tmp = library.getObject(entries, "EEF");
+        if (tmp != null && tmp instanceof Name) {
+            return (Name) tmp;
+        }
+        return null;
+    }
 
 /**
  * Class utility methods
@@ -438,7 +537,7 @@ public class EncryptionDictionary extends Dictionary {
     /**
      * Gets any dictionary key specified by the key parameter.
      *
-     * @param key named key to retreive from dictionary.
+     * @param key named key to retrieve from dictionary.
      * @return return keys value if found; null, otherwise.
      */
     public Object getValue(Object key) {
@@ -462,9 +561,9 @@ public class EncryptionDictionary extends Dictionary {
                 "  V: " + getVersion() + " \n" +
                 "  P: " + getPermissions() + " \n" +
                 "  Length:" + getKeyLength() + " \n" +
-                "  CF: " + "not done yet" + " \n" +
-                "  StmF: " + "not done yet" + " \n" +
-                "  StrF: " + "not done yet" + " \n" +
+                "  CF: " + cryptFilter + " \n" +
+                "  StmF: " + getStmF() + " \n" +
+                "  StrF: " + getStrF() + " \n" +
                 "  R: " + getRevisionNumber() + " \n" +
                 "  O: " + getBigO() + " \n" +
                 "  U: " + getBigU() + " \n" +
