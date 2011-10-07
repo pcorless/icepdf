@@ -244,16 +244,18 @@ public class SecurityManager {
      * @param objectReference         PDF objects number and revision number
      * @param encryptionKey           encryption key used to decrypt the data
      * @param input                   InputStream giving access to encrypted data
+     * @param decodeParams                   crypt filter optional parameters, can be null.
      * @param returnInputIfNullResult If results end up being null, then return input instead of null
      * @return InputStream giving access to decrypted data
      */
     public InputStream getEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
+            Hashtable decodeParams,
             InputStream input,
             boolean returnInputIfNullResult) {
         InputStream result = securityHandler.getEncryptionInputStream(
-                objectReference, encryptionKey, input);
+                objectReference, encryptionKey, decodeParams, input);
         if (returnInputIfNullResult && result == null)
             result = input;
         return result;

@@ -37,13 +37,16 @@ import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Utils;
 
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * PDF's standard security handler allows access permissions and up to two passwords
@@ -59,6 +62,29 @@ class StandardEncryption {
 
     private static final Logger logger =
             Logger.getLogger(StandardEncryption.class.toString());
+
+    /**
+     * The application shall not decrypt data but shall direct the input stream
+     * to the security handler for decryption (NO SUPPORT)
+     */
+    public static final String ENCRYPTION_TYPE_NONE = "None";
+
+    /**
+     * The application shall ask the security handler for the encryption key and
+     * shall implicitly decrypt data with "Algorithm 1: Encryption of data using
+     * the RC4 or AES algorithms", using the RC4 algorithm.
+     */
+    public static final String ENCRYPTION_TYPE_V2 = "V2";
+
+    /**
+     * (PDF 1.6) The application shall ask the security handler for the
+     * encryption key and shall implicitly decrypt data with "Algorithm 1:
+     * Encryption of data using the RC4 or AES algorithms", using the AES
+     * algorithm in Cipher Block Chaining (CBC) mode with a 16-byte block size
+     * and an initialization vector that shall be randomly generated and placed
+     * as the first 16 bytes in the stream or string.
+     */
+    public static final String ENCRYPTION_TYPE_AES_V2 = "AESV2";
 
     /**
      * Padding String used in PDF encryption related algorithms
@@ -77,6 +103,13 @@ class StandardEncryption {
             (byte) 0x2F, (byte) 0x0C, (byte) 0xA9,
             (byte) 0xFE, (byte) 0x64, (byte) 0x53,
             (byte) 0x69, (byte) 0x7A};
+
+    private static final byte[] AES_sAIT = {
+            (byte)0x73, // s
+            (byte)0x41, // A
+            (byte)0x6C, // I
+            (byte)0x54  // T
+     };
 
     // Stores data about encryption
     private EncryptionDictionary encryptionDictionary;
@@ -108,15 +141,20 @@ class StandardEncryption {
     /**
      * General encryption algorithm 3.1 for encryption of data using an
      * encryption key.
+     * todo add type, attribute for crypt filters, v2 or AESV2.
      */
     public byte[] generalEncryptionAlgorithm(Reference objectReference,
                                              byte[] encryptionKey,
+                                             String algorithmType,
                                              byte[] inputData) {
 
         if (objectReference == null || encryptionKey == null ||
                 inputData == null) {
             // throw security exception
         }
+
+        // RC4 or AES algorithm detection
+        boolean isRc4 = algorithmType.equals(ENCRYPTION_TYPE_V2);
 
         // optimization, if the encryptionKey and objectReference are the
         // same there is no reason to calculate a new key.
@@ -126,7 +164,7 @@ class StandardEncryption {
             this.objectReference = objectReference;
 
             // Step 1 to 3, bytes
-            byte[] step3Bytes = resetObjectReference(objectReference);
+            byte[] step3Bytes = resetObjectReference(objectReference, isRc4);
 
             // Step 4: Use the first (n+5) byes, up to a max of 16 from the MD5
             // hash
@@ -139,12 +177,34 @@ class StandardEncryption {
         byte[] finalData = null; // return data if all goes well
         try {
             // Use above as key for the RC4 encryption function.
-            SecretKeySpec key = new SecretKeySpec(rc4Key, "RC4");
-            Cipher rc4 = Cipher.getInstance("RC4");
-            rc4.init(Cipher.DECRYPT_MODE, key);
+            if (isRc4) {
+                // Use above as key for the RC4 encryption function.
+                SecretKeySpec key = new SecretKeySpec(rc4Key, "RC4");
+                Cipher rc4 = Cipher.getInstance("RC4");
+                rc4.init(Cipher.DECRYPT_MODE, key);
 
-            // finally add the stream or string data
-            finalData = rc4.doFinal(inputData);
+                // finally add the stream or string data
+                finalData = rc4.doFinal(inputData);
+            }else{
+                SecretKeySpec key = new SecretKeySpec(rc4Key, "AES");
+                Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+                // calculate 16 byte initialization vector.
+                byte[] initialisationVector = new byte[16];
+                System.arraycopy(inputData, 0, initialisationVector, 0, 16);
+
+                // trim the input
+                byte[] intermData = new byte[inputData.length - 16];
+                System.arraycopy(inputData, 16, intermData, 0, inputData.length);
+
+                final IvParameterSpec iVParameterSpec =
+                    new IvParameterSpec(initialisationVector);
+
+                aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
+
+                // finally add the stream or string data
+                finalData = aes.doFinal(intermData);
+            }
 
         } catch (NoSuchAlgorithmException ex) {
             logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
@@ -156,6 +216,8 @@ class StandardEncryption {
             logger.log(Level.FINE, "NoSuchPaddingException.", ex);
         } catch (InvalidKeyException ex) {
             logger.log(Level.FINE, "InvalidKeyException.", ex);
+        }  catch (InvalidAlgorithmParameterException ex) {
+            logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
         }
 
         return finalData;
@@ -168,11 +230,15 @@ class StandardEncryption {
     public InputStream generalEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
+            final String algorithmType,
             InputStream input) {
         if (objectReference == null || encryptionKey == null || input == null) {
             // throw security exception
             return null;
         }
+
+        // RC4 or AES algorithm detection
+        boolean isRc4 = algorithmType.equals(ENCRYPTION_TYPE_V2);
 
         // optimization, if the encryptionKey and objectReference are the
         // same there is no reason to calculate a new key.
@@ -182,7 +248,7 @@ class StandardEncryption {
             this.objectReference = objectReference;
 
             // Step 1 to 3, bytes
-            byte[] step3Bytes = resetObjectReference(objectReference);
+            byte[] step3Bytes = resetObjectReference(objectReference, isRc4);
 
             // Step 4: Use the first (n+5) byes, up to a max of 16 from the MD5
             // hash
@@ -194,19 +260,43 @@ class StandardEncryption {
         // Set up an RC4 cipher and try to decrypt:
         try {
             // Use above as key for the RC4 encryption function.
-            SecretKeySpec key = new SecretKeySpec(rc4Key, "RC4");
-            Cipher rc4 = Cipher.getInstance("RC4");
-            rc4.init(Cipher.DECRYPT_MODE, key);
+            if (isRc4) {
+                SecretKeySpec key = new SecretKeySpec(rc4Key, "RC4");
+                Cipher rc4 = Cipher.getInstance("RC4");
+                rc4.init(Cipher.DECRYPT_MODE, key);
 
-            // finally add the stream or string data
-            CipherInputStream cin = new CipherInputStream(input, rc4);
-            return cin;
+                // finally add the stream or string data
+                CipherInputStream cin = new CipherInputStream(input, rc4);
+                return cin;
+            }
+            // use above a key for the AES encryption function.
+            else {
+                SecretKeySpec key = new SecretKeySpec(rc4Key, "AES");
+                Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+                // calculate 16 byte initialization vector.
+                byte[] initialisationVector = new byte[16];
+                input.read(initialisationVector);
+
+                final IvParameterSpec iVParameterSpec =
+                    new IvParameterSpec(initialisationVector);
+
+                aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
+
+                // finally add the stream or string data
+                CipherInputStream cin = new CipherInputStream(input, aes);
+                return cin;
+            }
         } catch (NoSuchAlgorithmException ex) {
             logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         } catch (NoSuchPaddingException ex) {
             logger.log(Level.FINE, "NoSuchPaddingException.", ex);
         } catch (InvalidKeyException ex) {
             logger.log(Level.FINE, "InvalidKeyException.", ex);
+        } catch (InvalidAlgorithmParameterException ex) {
+            logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
+        } catch (IOException ex) {
+            logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
         }
 
         return null;
@@ -222,22 +312,40 @@ class StandardEncryption {
      * generation number in that order, low-order byte first. (n is 5 unless
      * the value of V in the encryption dictionary is greater than 1, in which
      * case the n is the value of Length divided by 8.)
+     * <br />
+     * If using the AES algorithm, extend the encryption key an additional
+     * 4 bytes by adding the value “sAlT”, which corresponds to the hexadecimal
+     * values 0x73, 0x41, 0x6C, 0x54. (This addition is done for backward
+     * compatibility and is not intended to provide additional security.)
      * </ul>
      *
      * @param objectReference pdf object reference or the identifier of the
      *                        inderect object in the case of a string.
+     * @param isRc4           if true use the RC4 stream cipher, if false use the AES
+     *                        symmetric block cipher.
      * @return Byte [] manipulated as specified.
      */
-    public byte[] resetObjectReference(Reference objectReference) {
+    public byte[] resetObjectReference(Reference objectReference, boolean isRc4) {
 
         // Step 1: separate object and generation numbers for objectReference
         int objectNumber = objectReference.getObjectNumber();
         int generationNumber = objectReference.getGenerationNumber();
 
         // Step 2:
-        int n = encryptionKey.length;
+        // v > 1 n is the value of Length divided by 8.
+        int n = 5;
+        if (encryptionDictionary.getVersion() > 1){
+            n = encryptionDictionary.getKeyLength() / 8 ;//enencryptionKey.length;
+        }
         // extend the original n-byte encryption key to n + 5 bytes
-        byte[] step2Bytes = new byte[n + 5];
+
+        int paddingLength = 5;
+        if (!isRc4){
+            paddingLength += 4;
+        }
+
+        byte[] step2Bytes = new byte[n + paddingLength];
+
         // make the copy
         System.arraycopy(encryptionKey, 0, step2Bytes, 0, n);
 
@@ -249,12 +357,19 @@ class StandardEncryption {
         step2Bytes[n + 3] = (byte) (generationNumber & 0xff);
         step2Bytes[n + 4] = (byte) (generationNumber >> 8 & 0xff);
 
+        // if using AES algorithm extend by four bytes "sAIT" (0x73, 0x41, 0x6c, 0x54)
+        if (!isRc4){
+            step2Bytes[n+5] = AES_sAIT[0];
+            step2Bytes[n+6] = AES_sAIT[1];
+            step2Bytes[n+7] = AES_sAIT[2];
+            step2Bytes[n+8] = AES_sAIT[3];
+        }
+
         // Step 3: Initialize the MD5 hash function and pass in step2Bytes
         MessageDigest md5 = null;
         try {
             md5 = MessageDigest.getInstance("MD5");
-        }
-        catch (NoSuchAlgorithmException builtin) {
+        } catch (NoSuchAlgorithmException builtin) {
         }
         // and pass in padded password from step 1
         md5.update(step2Bytes);
@@ -276,8 +391,7 @@ class StandardEncryption {
         MessageDigest md5 = null;
         try {
             md5 = MessageDigest.getInstance("MD5");
-        }
-        catch (NoSuchAlgorithmException ex) {
+        } catch (NoSuchAlgorithmException ex) {
             logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         }
         // and pass in padded password from step 1
@@ -285,7 +399,7 @@ class StandardEncryption {
 
         // Step 3: Pass the value of the encryption dictionary's 0 entry
         byte[] bigO = Utils.convertByteCharSequenceToByteArray(
-            encryptionDictionary.getBigO());
+                encryptionDictionary.getBigO());
         md5.update(bigO);
 
         // Step 4: treat P as an unsigned 4-byte integer
@@ -308,8 +422,8 @@ class StandardEncryption {
 
         // Step 8: Do the following 50 times: take the output from the previous
         // MD5 hash and pass it as ainput into a new MD5 hash;
-        // only for R = 3
-        if (encryptionDictionary.getRevisionNumber() == 3) {
+        // only for R >= 3
+        if (encryptionDictionary.getRevisionNumber() >= 3) {
             for (int i = 0; i < 50; i++) {
                 paddedPassword = md5.digest(paddedPassword);
             }
@@ -322,10 +436,14 @@ class StandardEncryption {
         // n = 5 when R = 2
         if (encryptionDictionary.getRevisionNumber() == 2) {
             out = new byte[n];
-        } else if (encryptionDictionary.getRevisionNumber() == 3) {
+        } else if (encryptionDictionary.getRevisionNumber() >= 3) {
             n = keyLength / 8;
             out = new byte[n];
         }
+        if (n > paddedPassword.length){
+            n = paddedPassword.length;
+        }
+
         // truncate out to the appropriate value
         System.arraycopy(paddedPassword,
                 0,
@@ -367,7 +485,7 @@ class StandardEncryption {
         int passwordLength = Math.min(password.length(), 32);
 
         byte[] bytePassword =
-            Utils.convertByteCharSequenceToByteArray(password);
+                Utils.convertByteCharSequenceToByteArray(password);
         // copy passwords bytes, but truncate the password is > 32 bytes
         System.arraycopy(bytePassword, 0, paddedPassword, 0, passwordLength);
 
@@ -411,8 +529,7 @@ class StandardEncryption {
         MessageDigest md5 = null;
         try {
             md5 = MessageDigest.getInstance("MD5");
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             logger.log(Level.FINE, "Could not fint MD5 Digest", e);
         }
         // and pass in padded password from step 1
@@ -421,7 +538,7 @@ class StandardEncryption {
         // Step 3: Do the following 50 times: take the output from the previous
         // MD5 hash and pass it as input into a new MD5 hash;
         // only for R = 3
-        if (encryptionDictionary.getRevisionNumber() == 3) {
+        if (encryptionDictionary.getRevisionNumber() >= 3) {
             for (int i = 0; i < 50; i++) {
                 paddedOwnerPassword = md5.digest(paddedOwnerPassword);
             }
@@ -434,9 +551,13 @@ class StandardEncryption {
 
         // grap the needed n bytes.
         int dataSize = 5; // default for R == 2
-        if (encryptionDictionary.getRevisionNumber() == 3) {
+        if (encryptionDictionary.getRevisionNumber() >= 3) {
             dataSize = encryptionDictionary.getKeyLength() / 8;
         }
+        if (dataSize > paddedOwnerPassword.length){
+            dataSize = paddedOwnerPassword.length;
+        }
+
         // truncate the byte array RC4 encryption key
         byte[] encryptionKey = new byte[dataSize];
 
@@ -469,7 +590,7 @@ class StandardEncryption {
             // each byte of the encryption key in step 4 and performing an XOR
             // operation between that byte and the single-byte value of the
             // iteration counter
-            if (encryptionDictionary.getRevisionNumber() == 3) {
+            if (encryptionDictionary.getRevisionNumber() >= 3) {
 
                 // key to be made on each interaction
                 byte[] indexedKey = new byte[encryptionKey.length];
@@ -491,8 +612,7 @@ class StandardEncryption {
 
         } catch (NoSuchAlgorithmException ex) {
             logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
-        }
-        catch (NoSuchPaddingException ex) {
+        } catch (NoSuchPaddingException ex) {
             logger.log(Level.FINE, "NoSuchPaddingException.", ex);
         } catch (InvalidKeyException ex) {
             logger.log(Level.FINE, "InvalidKeyException.", ex);
@@ -569,7 +689,7 @@ class StandardEncryption {
             return finalData;
         }
         // algorithm 3.5 steps, 2 - 6
-        else if (encryptionDictionary.getRevisionNumber() == 3) {
+        else if (encryptionDictionary.getRevisionNumber() >= 3) {
             // Step 2: Initialize the MD5 hash function and pass the 32-byte
             // padding string shown in step 1 of Algorithm 3.2 as input to
             // this function
@@ -577,9 +697,8 @@ class StandardEncryption {
             MessageDigest md5 = null;
             try {
                 md5 = MessageDigest.getInstance("MD5");
-            }
-            catch (NoSuchAlgorithmException e) {
-                logger.log(Level.FINE, "MD5 digester could not be found",e);
+            } catch (NoSuchAlgorithmException e) {
+                logger.log(Level.FINE, "MD5 digester could not be found", e);
             }
             // and pass in padded password 32-byte padding string
             md5.update(paddedUserPassword);
@@ -631,8 +750,7 @@ class StandardEncryption {
 
             } catch (NoSuchAlgorithmException ex) {
                 logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
-            }
-            catch (NoSuchPaddingException ex) {
+            } catch (NoSuchPaddingException ex) {
                 logger.log(Level.FINE, "NoSuchPaddingException.", ex);
             } catch (InvalidKeyException ex) {
                 logger.log(Level.FINE, "InvalidKeyException.", ex);
@@ -663,7 +781,7 @@ class StandardEncryption {
         byte[] tmpUValue = calculateUserPassword(userPassword);
 
         byte[] bigU = Utils.convertByteCharSequenceToByteArray(
-            encryptionDictionary.getBigU());
+                encryptionDictionary.getBigU());
 
         byte[] trunkUValue;
         // compare all 32 bytes.
@@ -671,7 +789,7 @@ class StandardEncryption {
             trunkUValue = new byte[32];
             System.arraycopy(tmpUValue, 0, trunkUValue, 0, trunkUValue.length);
         }
-        // truncate to first 16 bytes for R = 3
+        // truncate to first 16 bytes for R >= 3
         else {
             trunkUValue = new byte[16];
             System.arraycopy(tmpUValue, 0, trunkUValue, 0, trunkUValue.length);
@@ -705,7 +823,7 @@ class StandardEncryption {
         try {
             // get bigO value
             byte[] bigO = Utils.convertByteCharSequenceToByteArray(
-                encryptionDictionary.getBigO());
+                    encryptionDictionary.getBigO());
             if (encryptionDictionary.getRevisionNumber() == 2) {
                 // Step 2 (R == 2):  decrypt the value of the encryption dictionary
                 // O entry, using an RC4 encryption function with the encryption
@@ -717,13 +835,13 @@ class StandardEncryption {
                 rc4.init(Cipher.DECRYPT_MODE, key);
                 decryptedO = rc4.doFinal(bigO);
             }
-            // Step 2 (R == 3): Do the following 19 times: Take the output from the previous
+            // Step 2 (R >= 3): Do the following 19 times: Take the output from the previous
             // invocation of the RC4 function and pass it as input to a new
             // invocation of the function; use an encryption key generated by taking
             // each byte of the encryption key in step 4 and performing an XOR
             // operation between that byte and the single-byte value of the
             // iteration counter
-            else {//if (encryptionDictionary.getRevisionNumber() == 3){
+            else {//if (encryptionDictionary.getRevisionNumber() >= 3){
                 // key to be made on each interaction
                 byte[] indexedKey = new byte[encryptionKey.length];
 
