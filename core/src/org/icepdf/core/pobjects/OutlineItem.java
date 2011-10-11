@@ -285,20 +285,11 @@ public class OutlineItem extends Dictionary {
 
                     StringBuilder sb1 = new StringBuilder();
 
-                    // strip and white space, as the will offset the below algorithm
-                    // which assumes the string is made up of two byte chars.
-                    String hexTmp = "";
-                    for (int i = 0; i < titleText.length(); i++) {
-                        char c = titleText.charAt(i);
-                        if (!((c == '\t') || (c == '\r') || (c == '\n'))) {
-                            hexTmp = hexTmp + titleText.charAt(i);
-                        }
-                    }
                     // convert teh unicode to characters.
-                    for (int i = 2; i < hexTmp.length(); i += 2) {
+                    for (int i = 2; i < titleText.length(); i += 2) {
                         try {
-                            int b1 = ((int) hexTmp.charAt(i)) & 0xFF;
-                            int b2 = ((int) hexTmp.charAt(i + 1)) & 0xFF;
+                            int b1 = ((int) titleText.charAt(i)) & 0xFF;
+                            int b2 = ((int) titleText.charAt(i + 1)) & 0xFF;
                             //System.err.println(b1 + " " + b2);
                             sb1.append((char) (b1 * 256 + b2));
                         } catch (Exception ex) {
