@@ -33,16 +33,20 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.actions.*;
+import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -485,14 +489,14 @@ public class Annotation extends Dictionary {
         super(l, h);
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
-        
+
         // no borders for the followING types,  not really in the
         // spec for some reason, Acrobat doesn't render them.
         canDrawBorder = !(SUBTYPE_LINE.equals(subtype) ||
-                            SUBTYPE_CIRCLE.equals(subtype) ||
-                            SUBTYPE_SQUARE.equals(subtype) ||
-                            SUBTYPE_POLYGON.equals(subtype) ||
-                            SUBTYPE_POLYLINE.equals(subtype));
+                SUBTYPE_CIRCLE.equals(subtype) ||
+                SUBTYPE_SQUARE.equals(subtype) ||
+                SUBTYPE_POLYGON.equals(subtype) ||
+                SUBTYPE_POLYLINE.equals(subtype));
 
         // parse out border style if available
         Hashtable BS = (Hashtable) getObject(BORDER_STYLE_KEY);
@@ -550,12 +554,12 @@ public class Annotation extends Dictionary {
     /**
      * Sets the users page rectangle for this annotation action instance
      */
-    public void setUserSpaceRectangle(Rectangle2D.Float rect){
-        if (userSpaceRectangle != null){
+    public void setUserSpaceRectangle(Rectangle2D.Float rect) {
+        if (userSpaceRectangle != null) {
             userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
-                        rect.width, rect.height);
+                    rect.width, rect.height);
             getEntries().put(Annotation.RECTANGLE_KEY,
-                        PRectangle.getPRectangleVector(userSpaceRectangle));
+                    PRectangle.getPRectangleVector(userSpaceRectangle));
         }
     }
 
@@ -566,16 +570,16 @@ public class Annotation extends Dictionary {
      * @return action to be activated, if no action, null is returned.
      */
     public org.icepdf.core.pobjects.actions.Action getAction() {
-        Object tmp =library.getDictionary(entries, ACTION_KEY.getName());
+        Object tmp = library.getDictionary(entries, ACTION_KEY.getName());
         // initial parse will likely have the action as a dictionary, so we
         // create the new action object on the fly.  However it is also possible
         // that we are parsing an action that has no type specification and 
         // thus we can't use the parser to create the new action.
         if (tmp != null && tmp instanceof Hashtable) {
-            Action action = Action.buildAction(library,(Hashtable)tmp);
+            Action action = Action.buildAction(library, (Hashtable) tmp);
             // assign reference if applicable
-            if (action != null  &&
-                    library.isReference(entries, ACTION_KEY.getName())){
+            if (action != null &&
+                    library.isReference(entries, ACTION_KEY.getName())) {
                 action.setPObjectReference(
                         library.getReference(entries, ACTION_KEY.getName()));
             }
@@ -583,9 +587,9 @@ public class Annotation extends Dictionary {
         }
         // subsequent new or edit actions will put in a reference and property
         // dictionary entry.
-        tmp  = getObject(ACTION_KEY);
-        if (tmp != null && tmp instanceof Action){
-            return (Action)tmp;
+        tmp = getObject(ACTION_KEY);
+        if (tmp != null && tmp instanceof Action) {
+            return (Action) tmp;
         }
         return null;
     }
@@ -708,7 +712,7 @@ public class Annotation extends Dictionary {
         if (getObject(ACTION_KEY) != null) {
             Action currentAction = getAction();
             // check if we are updating an existing instance
-            if (!currentAction.similar(action)){
+            if (!currentAction.similar(action)) {
                 stateManager.addChange(new PObject(action,
                         action.getPObjectReference()));
                 currentAction.setDeleted(true);
@@ -718,7 +722,7 @@ public class Annotation extends Dictionary {
             // add the action to the annotation
             getEntries().put(ACTION_KEY, action.getPObjectReference());
             stateManager.addChange(new PObject(action,
-                        action.getPObjectReference()));
+                    action.getPObjectReference()));
 
             return true;
         }
@@ -954,10 +958,9 @@ public class Annotation extends Dictionary {
         g.setTransform(at);
         g.setClip(preAppearanceStreamClip);
 
-        if (tabSelected){
+        if (tabSelected) {
             renderBorderTabSelected(g);
-        }
-        else{
+        } else {
             renderBorder(g);
         }
 
@@ -974,7 +977,7 @@ public class Annotation extends Dictionary {
     }
 
     // TODO add support for rollover and down states..
-     protected void renderAppearanceStream(Graphics2D g) {
+    protected void renderAppearanceStream(Graphics2D g) {
         Object AP = getObject(APPEARANCE_STREAM_KEY);
         if (AP instanceof Hashtable) {
             Object N = library.getObject(
@@ -985,27 +988,54 @@ public class Annotation extends Dictionary {
                     N = library.getObject((Hashtable) N, AS.toString());
             }
 
+            Shapes shapes = null;
+            AffineTransform matrix = null;
+            Rectangle2D bbox = null;
+            // n should be a Form but we have a few cases of Stream
             if (N instanceof Form) {
+                Form form = (Form) N;
+                form.init();
+                matrix = form.getMatrix();
+                bbox = form.getBBox();
+            } else if (N instanceof Stream) {
+
+                Stream stream = (Stream) N;
+                Resources res = library.getResources(stream.getEntries(), "Resources");
+                bbox = library.getRectangle(stream.getEntries(), "BBox");
+                matrix = new AffineTransform();
+                InputStream sis = stream.getInputStreamForDecodedStreamBytes();
+                try {
+                    ContentParser cp = new ContentParser(library, res);
+                    shapes = cp.parse(sis);
+                } catch (Exception e) {
+                    shapes = new Shapes();
+                    logger.log(Level.FINE, "Error initializing Page.", e);
+                } finally {
+                    try {
+                        sis.close();
+                    } catch (IOException e) {
+                        logger.log(Level.FINE, "Error closing page stream.", e);
+                    }
+                }
+            }
+            if (shapes != null) {
 //g.setColor( Color.blue );
 //Rectangle2D.Double newRect = deriveDrawingRectangle();
 //g.draw( newRect );
-                Form form = (Form) N;
-                form.init();
+
 
                 // step 1. appearance bounding box (BBox) is transformed, using
                 // Matrix, to produce a quadrilateral with arbitrary orientation.
-                AffineTransform matrix = form.getMatrix();
-                Rectangle2D bbox = form.getBBox();
                 Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
 
                 // Step 2. matrix a is computed that scales and translates the
                 // transformed appearance box (tBbox) to align with the edges of
                 // the annotation's rectangle (Ret).
-                Rectangle2D rect  =  getUserSpaceRectangle();
+                Rectangle2D rect = getUserSpaceRectangle();
                 AffineTransform tAs = AffineTransform.getScaleInstance(
                         (rect.getWidth() / tBbox.getWidth()),
                         (rect.getHeight() / tBbox.getHeight()));
-                  // something not quite right here.
+                // something not quite right here.
 //                AffineTransform tAt = AffineTransform.getTranslateInstance(
 //                        (tBbox.getX() - rect.getX()),
 //                        (tBbox.getY() - rect.getY()));
@@ -1019,20 +1049,19 @@ public class Annotation extends Dictionary {
 //System.out.println("Form: " + form.getEntries());
 //String str = new String( form.getBytes() );
 //System.out.println( str );
-                Shapes shapes = form.getShapes();
 //System.out.println("Shapes: " + shapes + "  count: " + shapes.getShapesCount());
                 // check to see if we are painting highlight annotations.
                 // if so we add some transparency to the context.
                 boolean isTransparency = Defs.sysPropertyBoolean("org.icepdf.core.paint.disableAlpha");
-                if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)){
+                if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
                     g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
                     // remove other alpha defs from parsing
-                    Defs.setSystemProperty("org.icepdf.core.paint.disableAlpha","true");
+                    Defs.setSystemProperty("org.icepdf.core.paint.disableAlpha", "true");
                 }
                 // regular paint
                 shapes.paint(g);
                 // switch transparency back to the default value
-                if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)){
+                if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
                     // remove other alpha defs from parsing
                     Defs.setSystemProperty("org.icepdf.core.paint.disableAlpha",
                             String.valueOf(isTransparency));
@@ -1052,7 +1081,7 @@ public class Annotation extends Dictionary {
 //        }
 
         Color borderColor = getColor();
-        if (borderColor != null){
+        if (borderColor != null) {
             g.setColor(borderColor);
         }
 
@@ -1250,7 +1279,8 @@ public class Annotation extends Dictionary {
     }
 
     /**
-     * Sets the Annotation colour and underlying 
+     * Sets the Annotation colour and underlying
+     *
      * @param color
      */
     public void setColor(Color color) {
