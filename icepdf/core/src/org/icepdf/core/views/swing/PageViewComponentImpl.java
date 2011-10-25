@@ -114,6 +114,10 @@ public class PageViewComponentImpl extends
 
     }
 
+    // turn off page image buffer proxy loading.
+    private static boolean enablePageLoadingProxy =
+            Defs.booleanProperty("org.icepdf.core.views.page.proxy",true);
+
     private PageTree pageTree;
     private JScrollPane parentScrollPane;
     private int pageIndex;
@@ -392,8 +396,15 @@ public class PageViewComponentImpl extends
         g.setColor(pageColor);
         g.fillRect(0, 0, pageSize.width, pageSize.height);
 
-        if (isPageIntersectViewport() && !isDirtyTimer.isRunning()) {
+        // multi thread page load
+        if (enablePageLoadingProxy && isPageIntersectViewport() && !isDirtyTimer.isRunning()) {
             isDirtyTimer.start();
+        }
+        // single threaded load of page content on awt thread (no flicker)
+        else if (!enablePageLoadingProxy && isPageIntersectViewport() &&
+                (isPageStateDirty() || isBufferDirty())){
+            pageInitilizer.run();
+            pagePainter.run();
         }
 
         // Update clip data
@@ -1023,20 +1034,18 @@ public class PageViewComponentImpl extends
             synchronized (isRunningLock) {
                 isRunning = true;
                 hasBeenQueued = false;
-            }
 
-            try {
-                createBufferedPageImage(this);
-            }
-            catch (Throwable e) {
-                logger.log(Level.WARNING,
-                        "Error creating buffer, page: " + pageIndex, e);
+                try {
+                    createBufferedPageImage(this);
+                }
+                catch (Throwable e) {
+                    logger.log(Level.WARNING,
+                            "Error creating buffer, page: " + pageIndex, e);
 
-                // mark as dirty, so that it tries again to create buffer
-                currentZoom = -1;
-            }
+                    // mark as dirty, so that it tries again to create buffer
+                    currentZoom = -1;
+                }
 
-            synchronized (isRunningLock) {
                 isStopRequested = false;
                 isRunning = false;
             }
@@ -1068,34 +1077,34 @@ public class PageViewComponentImpl extends
         private boolean hasBeenQueued;
 
         public void run() {
+
+
             synchronized (isRunningLock) {
                 isRunning = true;
-            }
 
-            try {
-                Page page = pageTree.getPage(pageIndex, this);
-                page.init();
-                // add annotation components to container, this only done
-                // once, but Annotation state can be refreshed with the api
-                // when needed.
-                annotationHandler.initializeAnnotationComponents(
-                        page.getAnnotations());
-                // fire page annotation initialized callback
-                if (documentViewController.getAnnotationCallback() != null) {
-                    documentViewController.getAnnotationCallback()
-                            .pageAnnotationsInitialized(page);
+                try {
+                    Page page = pageTree.getPage(pageIndex, this);
+                    page.init();
+                    // add annotation components to container, this only done
+                    // once, but Annotation state can be refreshed with the api
+                    // when needed.
+                    annotationHandler.initializeAnnotationComponents(
+                            page.getAnnotations());
+                    // fire page annotation initialized callback
+                    if (documentViewController.getAnnotationCallback() != null) {
+                        documentViewController.getAnnotationCallback()
+                                .pageAnnotationsInitialized(page);
+                    }
+                    pageTree.releasePage(page, this);
                 }
-                pageTree.releasePage(page, this);
-            }
-            catch (Throwable e) {
-                logger.log(Level.WARNING,
-                        "Error initiating page: " + pageIndex, e);
-                // make sure we don't try to re-initialize
-                pageInitilizer.setHasBeenQueued(true);
-                return;
-            }
+                catch (Throwable e) {
+                    logger.log(Level.WARNING,
+                            "Error initiating page: " + pageIndex, e);
+                    // make sure we don't try to re-initialize
+                    pageInitilizer.setHasBeenQueued(true);
+                    return;
+                }
 
-            synchronized (isRunningLock) {
                 pageInitilizer.setHasBeenQueued(false);
                 isRunning = false;
             }
