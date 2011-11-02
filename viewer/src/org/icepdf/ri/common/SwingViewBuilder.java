@@ -1534,17 +1534,26 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         // Build the main set of tabs based on the property file configuration
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.bookmarks.tab.title"),
                     buildOutlineComponents());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
                     buildSearchPanel());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_THUMBNAILS)) {
+            utilityTabbedPane.add(
+                    messageBundle.getString("viewer.utilityPane.thumbs.tab.title"),
+                    buildThumbsPanel());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.link.tab.title"),
                     buildAnnotationPanel());
@@ -1568,6 +1577,14 @@ public class SwingViewBuilder {
         if (viewerController != null)
             viewerController.setOutlineComponents(tree, scroll);
         return scroll;
+    }
+
+    public ThumbnailsPanel buildThumbsPanel(){
+        ThumbnailsPanel thumbsPanel = new ThumbnailsPanel(viewerController);
+        if (viewerController != null){
+            viewerController.setThumbnailsPanel(thumbsPanel);
+        }
+        return thumbsPanel;
     }
 
     public SearchPanel buildSearchPanel() {

@@ -415,6 +415,22 @@ public class Page extends Dictionary implements MemoryManageable {
 
     }
 
+    /**
+     * Gets a Thumbnail object associated with this page.  If no Thumbnail
+     * entry exists then null is returned.
+     *
+     * @return thumbnail object of this page, null if no thumbnail value is
+     *         encoded.
+     */
+    public Thumbnail getThumbnail() {
+        Object thumb = library.getObject(entries, "Thumb");
+        if (thumb != null && thumb instanceof Stream) {
+            return new Thumbnail(library, entries);
+        } else {
+            return null;
+        }
+    }
+
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom) {
         paint(g, renderHintType, boundary, userRotation, userZoom, null);
