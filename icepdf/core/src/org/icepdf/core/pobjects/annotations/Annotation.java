@@ -949,6 +949,8 @@ public class Annotation extends Dictionary {
             }
         }
 
+        GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
+        g.setRenderingHints(grh.getRenderingHints(renderHintType));
         g.setTransform(at);
         Shape preAppearanceStreamClip = g.getClip();
         g.clip(deriveDrawingRectangle());
@@ -995,6 +997,7 @@ public class Annotation extends Dictionary {
             if (N instanceof Form) {
                 Form form = (Form) N;
                 form.init();
+                shapes = form.getShapes();
                 matrix = form.getMatrix();
                 bbox = form.getBBox();
             } else if (N instanceof Stream) {
