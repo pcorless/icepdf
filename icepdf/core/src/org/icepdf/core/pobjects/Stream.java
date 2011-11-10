@@ -246,15 +246,9 @@ public class Stream extends Dictionary {
         int bufferSize = Math.min(Math.max((int) streamLength, 64), 16 * 1024);
         input = new java.io.BufferedInputStream(input, bufferSize);
 
-        // Search for crypt dictionary entry and decode params so that
-        // named filters can be assigned correctly.
         if (library.securityManager != null) {
-            // check see of there is a decodeParams for a crypt filter.
-            Hashtable decodeParams = library.getDictionary(entries,"DecodeParam");
             input = library.getSecurityManager().getEncryptionInputStream(
-                    getPObjectReference(), library.getSecurityManager().getDecryptionKey(),
-                    decodeParams,
-                    input, true);
+                    getPObjectReference(), library.getSecurityManager().getDecryptionKey(), input, true);
         }
 
         // Get the filter name for the encoding type, which can be either
@@ -861,7 +855,7 @@ public class Stream extends Dictionary {
                 }
                 if (globalsStream != null){
                     byte[] globals = globalsStream.getDecodedStreamBytes();
-                    if (globals != null && globals.length > 0 ) {
+                    if (globals != null && globals.length > 0) {
                         decoder.setGlobalData(globals);
                         globals = null;
                     }

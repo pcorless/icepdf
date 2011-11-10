@@ -35,7 +35,6 @@ package org.icepdf.core.pobjects.security;
 import org.icepdf.core.pobjects.Reference;
 
 import java.io.InputStream;
-import java.util.Hashtable;
 
 /**
  * Defines common behaviors for Security Handlers.
@@ -71,7 +70,6 @@ public abstract class SecurityHandler implements SecurityHandlerInterface {
     public abstract InputStream getEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
-            Hashtable decodeparams,
             InputStream input);
 
     public abstract byte[] getEncryptionKey();
