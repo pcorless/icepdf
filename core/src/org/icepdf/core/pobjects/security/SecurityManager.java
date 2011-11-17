@@ -148,7 +148,7 @@ public class SecurityManager {
                 new EncryptionDictionary(library, encryptionDictionary, fileID);
 
         // create security Handler based on dictionary entries.
-        if (encryptDictionary.getPerferredSecurityHandlerName().
+        if (encryptDictionary.getPreferredSecurityHandlerName().
                 equalsIgnoreCase("Standard")) {
             securityHandler = new StandardSecurityHandler(encryptDictionary);
             // initiate the handler

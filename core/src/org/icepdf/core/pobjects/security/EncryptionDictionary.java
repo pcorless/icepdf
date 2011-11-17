@@ -334,7 +334,7 @@ public class EncryptionDictionary extends Dictionary {
      *
      * @return handler name.
      */
-    public String getPerferredSecurityHandlerName() {
+    public String getPreferredSecurityHandlerName() {
         return library.getName(entries, "Filter");
     }
 
@@ -343,7 +343,7 @@ public class EncryptionDictionary extends Dictionary {
      *
      * @return handler sub-name.
      */
-    public String getPerferredSecurityHandlerSubName() {
+    public String getPreferredSecurityHandlerSubName() {
         return library.getName(entries, "SubFilter");
     }
 
@@ -386,8 +386,6 @@ public class EncryptionDictionary extends Dictionary {
         }
         return length;
     }
-
-    // Needed CF, stmF, StrF,
 
 /**
  * Entries added for standard encryption dictionaries
@@ -556,8 +554,8 @@ public class EncryptionDictionary extends Dictionary {
     public String toString() {
         return "Encryption Dictionary:  \n" +
                 "  fileID: " + getFileID() + " \n" +
-                "  Filter: " + getPerferredSecurityHandlerName() + " \n" +
-                "  SubFilter: " + getPerferredSecurityHandlerSubName() + " \n" +
+                "  Filter: " + getPreferredSecurityHandlerName() + " \n" +
+                "  SubFilter: " + getPreferredSecurityHandlerSubName() + " \n" +
                 "  V: " + getVersion() + " \n" +
                 "  P: " + getPermissions() + " \n" +
                 "  Length:" + getKeyLength() + " \n" +
