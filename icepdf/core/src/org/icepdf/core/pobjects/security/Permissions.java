@@ -197,7 +197,6 @@ public class Permissions {
     private int permissionFlags = 0xFFFFF0C0;
 
     // Revision of standard encryption algorithms
-    // todo, figure out what revisions is fixed.
     private int revision = 2;
 
     // Initiated flag
@@ -210,6 +209,7 @@ public class Permissions {
      */
     public Permissions(EncryptionDictionary dictionary) {
         this.permissionFlags = dictionary.getPermissions();
+        revision = dictionary.getRevisionNumber();
     }
 
     /**

@@ -76,6 +76,8 @@ class StandardEncryption {
      */
     public static final String ENCRYPTION_TYPE_V2 = "V2";
 
+    public static final String ENCRYPTION_TYPE_V3 = "V2";
+
     /**
      * (PDF 1.6) The application shall ask the security handler for the
      * encryption key and shall implicitly decrypt data with "Algorithm 1:
@@ -141,16 +143,22 @@ class StandardEncryption {
     /**
      * General encryption algorithm 3.1 for encryption of data using an
      * encryption key.
-     * todo add type, attribute for crypt filters, v2 or AESV2.
+     * // todo: implement AESV3
+     * @param objectReference object number of object being encrypted
+     * @param encryptionKey encryption key for document
+     * @param algorithmType V2 or AESV2 standard encryption encryption types.
+     * @param inputData date to encrypted/decrypt.
+     * @return encrypted/decrypted data.
      */
     public byte[] generalEncryptionAlgorithm(Reference objectReference,
                                              byte[] encryptionKey,
-                                             String algorithmType,
+                                             final String algorithmType,
                                              byte[] inputData) {
 
         if (objectReference == null || encryptionKey == null ||
                 inputData == null) {
             // throw security exception
+            return null;
         }
 
         // RC4 or AES algorithm detection
@@ -195,7 +203,7 @@ class StandardEncryption {
 
                 // trim the input
                 byte[] intermData = new byte[inputData.length - 16];
-                System.arraycopy(inputData, 16, intermData, 0, inputData.length);
+                System.arraycopy(inputData, 16, intermData, 0, intermData.length);
 
                 final IvParameterSpec iVParameterSpec =
                     new IvParameterSpec(initialisationVector);
@@ -689,7 +697,8 @@ class StandardEncryption {
             return finalData;
         }
         // algorithm 3.5 steps, 2 - 6
-        else if (encryptionDictionary.getRevisionNumber() >= 3) {
+        else if (encryptionDictionary.getRevisionNumber() >= 3 &&
+                  encryptionDictionary.getRevisionNumber() < 5) {
             // Step 2: Initialize the MD5 hash function and pass the 32-byte
             // padding string shown in step 1 of Algorithm 3.2 as input to
             // this function
@@ -763,7 +772,11 @@ class StandardEncryption {
             System.arraycopy(PADDING, 0, finalData, 16, 16);
 
             return finalData;
-        } else {
+        }
+        else if (encryptionDictionary.getRevisionNumber() == 5){
+            logger.warning("Standard Encryption algorithm v5 (AESV3) is not supported");
+            return null;
+        }else {
             return null;
         }
     }
@@ -790,9 +803,12 @@ class StandardEncryption {
             System.arraycopy(tmpUValue, 0, trunkUValue, 0, trunkUValue.length);
         }
         // truncate to first 16 bytes for R >= 3
-        else {
+        else if (encryptionDictionary.getRevisionNumber() >= 3 &&
+                encryptionDictionary.getRevisionNumber() < 5) {
             trunkUValue = new byte[16];
             System.arraycopy(tmpUValue, 0, trunkUValue, 0, trunkUValue.length);
+        }else{
+            return false;
         }
 
         // Step 2: If the result of step 1 is equal o the value of the

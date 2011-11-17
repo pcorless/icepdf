@@ -179,7 +179,7 @@ public class StandardSecurityHandler extends SecurityHandler {
 
             algorithmType = cryptFilterEntry.getCryptFilterMethod().getName();
         } else{
-            algorithmType = algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
+            algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
         }
 
         // use the general encryption algorithm for encryption
