@@ -201,10 +201,14 @@ public class HexStringObject implements StringObject {
             StringBuilder tmp = new StringBuilder(length);
             int lastIndex = 0;
             int charValue;
+            int offset;
             for (int i = 0; i < length; i += charOffset) {
-                charValue = getUnsignedInt(i - lastIndex, lastIndex + charOffset);
-                // this is important, currently no examples of 0 cid's
-                if (charValue > 0 && font.canDisplayEchar((char) charValue)) {
+                offset = lastIndex + charOffset;
+                charValue = getUnsignedInt(i - lastIndex, offset);
+                // 0 cid is valid, so we have ot be careful we don't exclude the
+                // cid 00 = 0 or 0000 = 0, not 0000 = 00.
+                if (!(offset < length && charValue == 0) &&
+                        font.canDisplayEchar((char) charValue)) {
                     tmp.append((char) charValue);
                     lastIndex = 0;
                 } else {
