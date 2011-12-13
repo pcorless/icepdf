@@ -497,6 +497,10 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         return charMap;
     }
 
+    public char toSelector(char charMap, boolean isCFF) {
+        return toSelector(charMap);
+    }
+
     /**
      * Help class to store data for a CMap bfrange value.  CMap bfranges come
      * in two flavours but there both share a start and end range value.
