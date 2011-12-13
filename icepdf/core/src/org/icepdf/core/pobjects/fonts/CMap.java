@@ -47,6 +47,8 @@ public interface CMap {
      */
     public char toSelector(char ch);
 
+    public char toSelector(char ch, boolean isCFF);
+
     /**
      * Maps the character id to an underlying to unicode table. This method should
      * be called when looking for a unicode value for a CID.  This method differs
