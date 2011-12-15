@@ -84,7 +84,7 @@ public class LiteralStringObject implements StringObject {
      * sequence of character data specifed by the arguments.  The string
      * value is assumed to be unencrypted and will be encrytped.  The
      * method #LiteralStringObject(String string) should be used if the string
-     * is allready encrypted. This method is used for creating new
+     * is all ready encrypted. This method is used for creating new
      * LiteralStringObject's that are created post document parse. </p>
      *
      * @param string    the initial contents of the literal string object,

@@ -85,7 +85,7 @@ public class HexStringObject implements StringObject {
         stringBuffer.deleteCharAt(stringBuffer.length() - 1);
         // append string data
         stringData = new StringBuilder(stringBuffer.length());
-        stringData.append(normalizeHex(stringBuffer).toString());
+        stringData.append(stringBuffer);
     }
 
     /**
@@ -177,25 +177,8 @@ public class HexStringObject implements StringObject {
      *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT && font.isOneByteEncoding()){
-            int charOffset = 1;
-            int length = getLength();
-            StringBuilder tmp = new StringBuilder(length);
-            int lastIndex = 0;
-            int charValue;
-            for (int i = 0; i < length; i += charOffset) {
-                charValue = getUnsignedInt(i - lastIndex, lastIndex + charOffset);
-                // this is important, currently no examples of 0 cid's
-                if (charValue > 0 && font.canDisplayEchar((char) charValue)) {
-                    tmp.append((char) charValue);
-                    lastIndex = 0;
-                } else {
-                    lastIndex += charOffset;
-                }
-            }
-            return tmp;
-        }
-        else if (fontFormat == Font.SIMPLE_FORMAT ) {
+        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding() ) {
+            stringData = new StringBuilder(normalizeHex(stringData, 2).toString());
             int charOffset = 2;
             int length = getLength();
             StringBuilder tmp = new StringBuilder(length);
@@ -217,6 +200,7 @@ public class HexStringObject implements StringObject {
             }
             return tmp;
         } else if (fontFormat == Font.CID_FORMAT) {
+            stringData = new StringBuilder(normalizeHex(stringData, 4).toString());
             int charOffset = 4;
             int length = getLength();
             int charValue;
@@ -246,9 +230,10 @@ public class HexStringObject implements StringObject {
      * ensure that the length is an even length.
      *
      * @param hex hex data to normalize
+     * @param step 2 or 4 character codes.
      * @return normalized pure hex StringBuffer
      */
-    private static StringBuilder normalizeHex(StringBuilder hex) {
+    private static StringBuilder normalizeHex(StringBuilder hex, int step) {
         // strip and white space
         int length = hex.length();
         for (int i = 0; i < length; i++) {
@@ -259,12 +244,16 @@ public class HexStringObject implements StringObject {
             }
         }
         length = hex.length();
-        // add 0's to uneven length
-        if (length % 2 != 0) {
-            hex.append('0');
+        if (step == 2){
+            // add 0's to uneven length
+            if (length % 2 != 0) {
+                hex.append('0');
+            }
         }
-        if (length > 2 && length % 4 != 0) {
-            hex.append("00");
+        if (step == 4){
+            if (length % 4 != 0) {
+                hex.append("00");
+            }
         }
         return hex;
     }
