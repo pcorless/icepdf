@@ -66,7 +66,7 @@ public class LexerText {
 
         try {
 //           new LexerText().test5();
-            new LexerText().test5();
+            new LexerText().test8();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -175,6 +175,36 @@ public class LexerText {
         // ready output array
         float y[] = new float[n];
 
+        System.out.println();
+        float value;
+        for (int i = 0; i < n; i++) {
+            value = (Float) lex.getStack().elementAt(i);
+            y[i] = Math.min(Math.max(value, range[2 * i]), range[2 * i + 1]);
+            System.out.print(y[i] + ", ");
+        }
+        System.out.println();
+    }
+
+    public void test8() throws IOException {
+        String test =
+                "{3 copy pop 0 exch pop exch pop 4 1 roll 3 copy exch pop exch " +
+                        "pop 5 1 roll 3 copy pop 0 exch 2 copy lt {exch} if pop exch pop 6 1 roll " +
+                        "pop 0 exch pop exch 2 copy lt {exch} if pop 4 1 roll}";
+
+        InputStream function_4 = new ByteArrayInputStream(test.getBytes());
+        Lexer lex = new Lexer();
+        lex.setInputStream(function_4);
+        lex.parse(new float[]{0.86f, 0.07999998f, 0.0f});
+
+        System.out.println("result: " + lex.getStack().toString());
+
+        // length of output array
+        int n = 4;
+        float[] range = new float[]{0,1,0,1,0,1,0,1};
+        // ready output array
+        float y[] = new float[n];
+
+        // domain = 0, 1, 0, 1, 0, 1
         System.out.println();
         float value;
         for (int i = 0; i < n; i++) {
