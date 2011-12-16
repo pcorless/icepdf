@@ -73,7 +73,7 @@ public class HexStringObject implements StringObject {
 
     /**
      * <p>Creates a new hexadecimal string object so that it represents the same
-     * sequence of character data specifed by the argument. This constructor should
+     * sequence of character data specified by the argument. This constructor should
      * only be used in the context of the parser which has leading and ending
      * angled brackets which are removed by this method.</p>
      *
@@ -85,7 +85,7 @@ public class HexStringObject implements StringObject {
         stringBuffer.deleteCharAt(stringBuffer.length() - 1);
         // append string data
         stringData = new StringBuilder(stringBuffer.length());
-        stringData.append(stringBuffer);
+        stringData.append(normalizeHex(stringBuffer, 2).toString());
     }
 
     /**
