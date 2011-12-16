@@ -240,6 +240,12 @@ public class Lexer {
             } else {
                 // execute the operand
                 operand.eval(stack);
+                // check if we need to evaluate the top of the stack for a
+                // previously stored expression {operands... n}.
+                if (stack.peek() instanceof Operator){
+                    operand = (Operator)stack.pop();
+                    operand.eval(stack);
+                }
             }
         }
         parseNextState();

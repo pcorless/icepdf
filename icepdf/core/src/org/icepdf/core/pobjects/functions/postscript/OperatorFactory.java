@@ -109,8 +109,8 @@ public class OperatorFactory {
                             boolean bool1 = (Boolean) stack.pop();
                             stack.push(bool1 && bool2);
                         } else {
-                            int val1 = (Integer) value;
-                            int val2 = (Integer) stack.pop();
+                            int val1 = ((Float) value).intValue();
+                            int val2 = ((Float) stack.pop()).intValue();
                             stack.push(val1 & val2);
                         }
                     }
@@ -188,8 +188,8 @@ public class OperatorFactory {
             case OperatorNames.OP_COPY:
                 operator = new Operator(OperatorNames.OP_COPY) {
                     public void eval(Stack stack) {
-                        int n = (Integer) stack.pop();
-                        int top = stack.size() - 1;
+                        int n = ((Float) stack.pop()).intValue();
+                        int top = stack.size();
                         for (int i = top - n; i < top; i++) {
                             stack.push(stack.get(i));
                         }
@@ -209,7 +209,7 @@ public class OperatorFactory {
                     public void eval(Stack stack) {
                         // doesn't really convert to int but not a bit deal for
                         // java in general.
-                        int number = (Integer) stack.pop();
+                        int number = ((Float) stack.pop()).intValue();
                         stack.push(number);
                     }
                 };
