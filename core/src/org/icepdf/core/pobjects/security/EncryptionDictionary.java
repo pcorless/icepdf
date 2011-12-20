@@ -301,6 +301,11 @@ public class EncryptionDictionary extends Dictionary {
 
     private CryptFilter cryptFilter;
 
+    // Revision 5 authentication holders as they are passwords
+    // are validate when the key is calculated.
+    private boolean isAuthenticatedUserPassword;
+    private boolean isAuthenticatedOwnerPassword;
+
     /**
      * Creates a new Encryption Dictionary object.
      *
@@ -408,7 +413,7 @@ public class EncryptionDictionary extends Dictionary {
     public String getBigO() {
         Object tmp = library.getObject(entries, "O");
         if (tmp instanceof StringObject) {
-            return ((StringObject) library.getObject(entries, "O")).getLiteralString();
+            return ((StringObject) tmp).getLiteralString();
         } else {
             return null;
         }
@@ -528,7 +533,80 @@ public class EncryptionDictionary extends Dictionary {
         return null;
     }
 
-/**
+
+    /**
+     * Gets the 32-byte string, based on the owner and user passwords, that is
+     * used in the computing the encryption key.
+     *
+     * @return 32-byte string representing the key OE.
+     */
+    public String getBigOE() {
+        Object tmp = library.getObject(entries, "OE");
+        if (tmp instanceof StringObject) {
+            return ((StringObject) library.getObject(entries, "OE")).getLiteralString();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the 32-byte string, based on the user password, that is
+     * used in the computing the encryption key.
+     *
+     * @return 32-byte string representing the key UE.
+     */
+    public String getBigUE() {
+        Object tmp = library.getObject(entries, "UE");
+        if (tmp instanceof StringObject) {
+            return ((StringObject) library.getObject(entries, "UE")).getLiteralString();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * A16-byte string, encrypted with the file encryption key, that contains an
+     * encrypted copy of the permission flags.
+     *
+     * @return 16-byte string representing the key Perms.
+     */
+    public String getPerms() {
+        Object tmp = library.getObject(entries, "Perms");
+        if (tmp instanceof StringObject) {
+            return ((StringObject) library.getObject(entries, "Perms")).getLiteralString();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Indicates whether the document-level metadata stream (see Section 10.2.2,
+     * "Metadata Streams") is to be encrypted. Applications should respect
+     * this value.
+     *
+     * @return true if document-level metadata is encrypted
+     */
+    public boolean isEncryptMetaData() {
+        return library.getBoolean(entries, "EncryptMetadata");
+    }
+
+    protected boolean isAuthenticatedUserPassword() {
+        return isAuthenticatedUserPassword;
+    }
+
+    protected void setAuthenticatedUserPassword(boolean authenticatedUserPassword) {
+        isAuthenticatedUserPassword = authenticatedUserPassword;
+    }
+
+    protected boolean isAuthenticatedOwnerPassword() {
+        return isAuthenticatedOwnerPassword;
+    }
+
+    protected void setAuthenticatedOwnerPassword(boolean authenticatedOwnerPassword) {
+        isAuthenticatedOwnerPassword = authenticatedOwnerPassword;
+    }
+
+    /**
  * Class utility methods
  */
 
@@ -565,6 +643,8 @@ public class EncryptionDictionary extends Dictionary {
                 "  R: " + getRevisionNumber() + " \n" +
                 "  O: " + getBigO() + " \n" +
                 "  U: " + getBigU() + " \n" +
+                " UE: " + getBigUE() + " \n" +
+                " OE: " + getBigOE() + " \n" +
                 "  Recipients: " + "not done yet" + " \n" +
                 "  ";
     }
