@@ -135,35 +135,53 @@ public class StandardSecurityHandler extends SecurityHandler {
     }
 
     public boolean isAuthorized(String password) {
-
-        boolean value = standardEncryption.authenticateUserPassword(password);
-        // check password against user password
-        if (!value) {
-            // check password against owner password
-            value = standardEncryption.authenticateOwnerPassword(password);
-            // Get user, password, as it is used for generating encryption keys
-            if (value) {
-                this.password = standardEncryption.getUserPassword();
+        if (encryptionDictionary.getRevisionNumber() < 5){
+            boolean value = standardEncryption.authenticateUserPassword(password);
+            // check password against user password
+            if (!value) {
+                // check password against owner password
+                value = standardEncryption.authenticateOwnerPassword(password);
+                // Get user, password, as it is used for generating encryption keys
+                if (value) {
+                    this.password = standardEncryption.getUserPassword();
+                }
+            } else {
+                // assign password for future use
+                this.password = password;
             }
-        } else {
-            // assign password for future use
+            return value;
+        }else if (encryptionDictionary.getRevisionNumber() == 5){
+            // try and calculate the document key.
+            byte[] encryptionKey = standardEncryption.encryptionKeyAlgorithm(
+                                        password,
+                                        encryptionDictionary.getKeyLength());
             this.password = password;
+            return encryptionKey != null;
+        }else{
+            return false;
         }
-        return value;
     }
 
     public boolean isOwnerAuthorized(String password) {
         // owner password is not stored as it is not used for decryption
-        return standardEncryption.authenticateOwnerPassword(password);
+        if (encryptionDictionary.getRevisionNumber() < 5){
+            return standardEncryption.authenticateOwnerPassword(password);
+        }else{
+            return encryptionDictionary.isAuthenticatedOwnerPassword();
+        }
     }
 
     public boolean isUserAuthorized(String password) {
         // owner password is not stored as it is not used for decryption
-        boolean value = standardEncryption.authenticateUserPassword(password);
-        if (value) {
-            this.password = password;
+        if (encryptionDictionary.getRevisionNumber() < 5){
+            boolean value = standardEncryption.authenticateUserPassword(password);
+            if (value) {
+                this.password = password;
+            }
+            return value;
+        }else{
+            return encryptionDictionary.isAuthenticatedUserPassword();
         }
-        return value;
     }
 
     public byte[] encrypt(Reference objectReference,
