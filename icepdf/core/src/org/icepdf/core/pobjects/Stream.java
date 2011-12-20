@@ -58,6 +58,8 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -849,44 +851,60 @@ public class Stream extends Dictionary {
         BufferedImage tmpImage = null;
 
         try {
-            checkMemory(108 * 1024);
-            org.jpedal.jbig2.JBIG2Decoder decoder = new org.jpedal.jbig2.JBIG2Decoder();
+            Class jbig2DecoderClass = Class.forName("org.jpedal.jbig2.JBIG2Decoder");
+            // create instance of decoder
+            Constructor jbig2DecoderClassConstructor =
+                        jbig2DecoderClass.getDeclaredConstructor();
+            Object jbig2Decoder = jbig2DecoderClassConstructor.newInstance();
 
-            Hashtable decodeparms = library.getDictionary(entries, "DecodeParms");
-            if (decodeparms != null) {
+            checkMemory(108 * 1024);
+            // get the decode params form the stream
+            Hashtable decodeParms = library.getDictionary(entries, "DecodeParms");
+            if (decodeParms != null) {
                 Stream globalsStream = null;
-                Object jbigGlobals = library.getObject(decodeparms, "JBIG2Globals");
+                Object jbigGlobals = library.getObject(decodeParms, "JBIG2Globals");
                 if (jbigGlobals instanceof Stream){
-                    globalsStream = (Stream) library.getObject(decodeparms, "JBIG2Globals");
+                    globalsStream = (Stream) library.getObject(decodeParms, "JBIG2Globals");
                 }
                 if (globalsStream != null){
                     byte[] globals = globalsStream.getDecodedStreamBytes();
                     if (globals != null && globals.length > 0 ) {
-                        decoder.setGlobalData(globals);
+                        // invoked ecoder.setGlobalData(globals);
+                        Class partypes[] = new Class[1];
+                        partypes[0] = byte[].class;
+                        Object arglist[] = new Object[1];
+                        arglist[0] = globals;
+                        Method setGlobalData =
+                                jbig2DecoderClass.getMethod("setGlobalData", partypes);
+                        setGlobalData.invoke(jbig2Decoder, arglist);
                         globals = null;
                     }
                 }
             }
-
+            // decode the data stream, decoder.decodeJBIG2(data);
             byte[] data = getDecodedStreamBytes();
             checkMemory((width + 8) * height * 22 / 10); // Between 0.5 and 2.2
-            decoder.decodeJBIG2(data);
+            Class argTypes[] = new Class[]{byte[].class};
+            Object arglist[] = new Object[]{data};
+            Method decodeJBIG2 = jbig2DecoderClass.getMethod("decodeJBIG2", argTypes);
+            decodeJBIG2.invoke(jbig2Decoder, arglist);
             data = null;
             // From decoding, memory usage increases more than (width*height/8),
             // due to intermediate JBIG2Bitmap objects, used to build the final
             // one, still hanging around. Cleanup intermediate data-structures.
-            decoder.cleanupPostDecode();
-            checkMemory((width + 8) * height / 8);
-            tmpImage = decoder.getPageAsBufferedImage(0);
-            decoder = null;
-        }
-        catch (IOException e) {
-            logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
-        }
-        catch (org.jpedal.jbig2.JBIG2Exception e) {
-            logger.log(Level.FINE, "Problem loading JBIG2 image: ", e);
-        }
+            // decoder.cleanupPostDecode();
+            Method cleanupPostDecode = jbig2DecoderClass.getMethod("cleanupPostDecode");
+            cleanupPostDecode.invoke(jbig2Decoder);
 
+            // final try an fetch the image. tmpImage = decoder.getPageAsBufferedImage(0);
+            checkMemory((width + 8) * height / 8);
+            argTypes = new Class[]{Integer.TYPE};
+            arglist = new Object[]{0};
+            Method getPageAsBufferedImage = jbig2DecoderClass.getMethod("getPageAsBufferedImage", argTypes);
+            tmpImage = (BufferedImage)getPageAsBufferedImage.invoke(jbig2Decoder, arglist);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Problem loading JBIG2 image library: ", e);
+        }
         return tmpImage;
     }
 
