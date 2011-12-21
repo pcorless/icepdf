@@ -1,34 +1,16 @@
 /*
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ * Copyright 2006-2012 ICEsoft Technologies Inc.
  *
- * "The contents of this file are subject to the Mozilla Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations under
- * the License.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * The Original Code is ICEpdf 3.0 open source software code, released
- * May 1st, 2009. The Initial Developer of the Original Code is ICEsoft
- * Technologies Canada, Corp. Portions created by ICEsoft are Copyright (C)
- * 2004-2011 ICEsoft Technologies Canada, Corp. All Rights Reserved.
- *
- * Contributor(s): _____________________.
- *
- * Alternatively, the contents of this file may be used under the terms of
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"
- * License), in which case the provisions of the LGPL License are
- * applicable instead of those above. If you wish to allow use of your
- * version of this file only under the terms of the LGPL License and not to
- * allow others to use your version of this file under the MPL, indicate
- * your decision by deleting the provisions above and replace them with
- * the notice and other provisions required by the LGPL License. If you do
- * not delete the provisions above, a recipient may use your version of
- * this file under either the MPL or the LGPL License."
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
  */
 package org.icepdf.core.pobjects.graphics;
 
@@ -197,31 +179,6 @@ public class DeviceCMYK extends PColorSpace {
     /**
      * Current runner for conversion that looks closest to acrobat.
      * The algorithm is a little expensive but it does the best approximation.
-     * the algorithm was taken from the Xpdf project (http://www.foolabs.com/xpdf/).
-     * <p/>
-     * <p/>
-     * #if 0	// standard/simple algorithm
-     * outRed = clip01( (1.0 - inCyan) * (1.0 - inBlack) );
-     * outGreen = clip01( (1.0 - inMagenta) * (1.0 - inBlack) );
-     * outBlue = clip01( (1.0 - inYellow) * (1.0 - inBlack) );
-     * #else	// from Xpdf
-     * double c, m, y, aw, ac, am, ay, ar, ag, ab;
-     * <p/>
-     * c = clip01( inCyan + inBlack );
-     * m = clip01( inMagenta + inBlack );
-     * y = clip01( inYellow + inBlack );
-     * aw = (1-c) * (1-m) * (1-y);
-     * ac = c * (1-m) * (1-y);
-     * am = (1-c) * m * (1-y);
-     * ay = (1-c) * (1-m) * y;
-     * ar = (1-c) * m * y;
-     * ag = c * (1-m) * y;
-     * ab = c * m * (1-y);
-     * outRed = clip01(aw + 0.9137*am + 0.9961*ay + 0.9882*ar);
-     * outGreen = clip01(aw + 0.6196*ac + ay + 0.5176*ag);
-     * outBlue = clip01(aw + 0.7804*ac + 0.5412*am + 0.0667*ar +
-     * 0.2118*ag + 0.4863*ab);
-     * #endif
      *
      * @param f 4 component values of the cmyk, assumes compoents between
      *          0.0 and 1.0
