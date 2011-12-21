@@ -39,7 +39,8 @@
               location="conf/org/icepdf/core/application"/>
     <property name="productinfo.dest"
               location="src/org/icepdf/core/application"/>
-
+    
+    <!-- core jar containing core and jbig2 library -->
     <target name="jar" depends="compile" description="Creates ICEpdf core jar.">
         <!-- jar file name -->
         <property name="jar.file.name" value="icepdf-core.jar"/>
@@ -53,12 +54,62 @@
         <copy file="${dist.dir}/${jar.file.name}" todir="${build.lib.dir}"
               overwrite="true"/>
     </target>
+    
+    <!-- core jar without the jbig2 library -->
+    <target name="core-jar" depends="compile-core-only" description="Creates ICEpdf core jar without jbig2.">
+        <!-- jar file name, name collision, replacing with static name -->
+        <!--<property name="jar.file.name" value="icepdf-core.jar"/>-->
+
+        <build.jar jar.file.name="icepdf-core.jar" >
+            <add.jar.src.includes>
+                <include name="org/icepdf/core/pobjects/fonts/afm/"/>
+                <exclude name="org/jpedal/"/>
+            </add.jar.src.includes>
+            <!-- exclude the jbig src -->
+        </build.jar>
+
+        <copy file="${dist.dir}/icepdf-core.jar" todir="${build.lib.dir}"
+              overwrite="true"/>
+    </target>
+    
+    <!-- extra jar containing only the jbig2 library -->
+    <target name="extra-jar" depends="compile-extra-only" description="Creates ICEpdf extra jar.">
+        <!-- jar file name, name collision, replacing with static name  -->
+        <!--<property name="jar.file.name" value="icepdf-extra.jar"/>-->
+
+        <build.jar jar.file.name="icepdf-extra.jar" >
+            <add.jar.src.includes >
+                <exclude name="org/icepdf/"/>
+            </add.jar.src.includes>
+        </build.jar>
+
+        <copy file="${dist.dir}/icepdf-extra.jar" todir="${build.lib.dir}"
+              overwrite="true"/>
+    </target>
 
     <target name="compile" depends="update.product.info">
         <compile />
     </target>
+    
+    <target name="compile-core-only" depends="update.product.info">
+        <delete includeemptydirs="true" quiet="true">
+            <fileset dir="${build.dir}"/>
+        </delete>
+        <compile
+            src.javac.excludes="org/jpedal/" />
+    </target>
+    
+    <target name="compile-extra-only" depends="update.product.info">
+        <delete includeemptydirs="true" quiet="true">
+            <fileset dir="${build.dir}"/>
+        </delete>
+        <compile
+            src.javac.excludes="org/icepdf/" />
+    </target>
 
     <target name="build.all" depends="jar" />
+
+    <target name="build.all.extra" depends="extra-jar, core-jar" />
 
     <target name="clean" description="clean the directory">
         <clean />
