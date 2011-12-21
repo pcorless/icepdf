@@ -902,8 +902,11 @@ public class Stream extends Dictionary {
             arglist = new Object[]{0};
             Method getPageAsBufferedImage = jbig2DecoderClass.getMethod("getPageAsBufferedImage", argTypes);
             tmpImage = (BufferedImage)getPageAsBufferedImage.invoke(jbig2Decoder, arglist);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Problem loading JBIG2 image library: ", e);
+        }catch (ClassNotFoundException e) {
+            logger.warning("JBIG2 image library could not be found");
+        }
+        catch (Exception e) {
+            logger.log(Level.WARNING, "Problem loading JBIG2 image: ", e);
         }
         return tmpImage;
     }
