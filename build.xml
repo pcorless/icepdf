@@ -81,9 +81,21 @@
 
     <target name="build.all" description="Creates ICEpdf source and binary bundles.">
         <ice:subant target="build.all">
-        <fileset dir="./core" includes="build.xml" />
-        <fileset dir="./viewer" includes="build.xml" />
-    </ice:subant>
+            <fileset dir="./core" includes="build.xml" />
+            <fileset dir="./viewer" includes="build.xml" />
+        </ice:subant>
+    </target>
+
+    <target name="build.all.extra" description="Creates ICEpdf extra source and binary bundles.">
+        <ice:subant target="core-jar">
+            <fileset dir="./core" includes="build.xml" />
+        </ice:subant>
+        <ice:subant target="extra-jar">
+            <fileset dir="./core" includes="build.xml" />
+        </ice:subant>
+        <ice:subant target="build.all">
+            <fileset dir="./viewer" includes="build.xml" />
+        </ice:subant>
     </target>
 
     <target name="build.bin" description="Creates ICEpdf binary bundle.">
@@ -169,12 +181,18 @@
 
     <macrodef name="build.bin.bundle">
         <attribute name="path" default="."/>
+        <attribute name="target" default=""/>
         <element name="add.ant.elements" optional="true"/>
 
         <sequential>
             
+            <ice:subant target="@{target}">
+                <filelist dir="@{path}" files="core"/>
+                <propertyset refid="product.info"/>
+            </ice:subant>
+
             <ice:subant>
-                <filelist dir="@{path}" files="core, viewer"/>
+                <filelist dir="@{path}" files="viewer"/>
                 <propertyset refid="product.info"/>
             </ice:subant>
 
