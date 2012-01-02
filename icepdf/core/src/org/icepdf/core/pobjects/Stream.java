@@ -627,7 +627,9 @@ public class Stream extends Dictionary {
                     WritableRaster wr = (r instanceof WritableRaster)
                             ? (WritableRaster) r : r.createCompatibleWritableRaster();
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
-                    alterRasterYCCK2BGRA(wr, smaskImage, maskImage, decode, bitspercomponent); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
+                    // YCCK to RGB works better if an CMYK intermediate is used, but slower.
+                    alterRasterYCCK2CMYK(wr, decode,bitspercomponent);
+                    alterRasterCMYK2BGRA(wr, smaskImage, maskImage);
                     tmpImage = makeRGBABufferedImage(wr);
                 } else if (jpegEncoding == JPEG_ENC_GRAY && bitspercomponent == 8) {
                     //System.out.println("Stream.dctDecode()    JPEG_ENC_GRAY");
@@ -1005,9 +1007,10 @@ public class Stream extends Dictionary {
 
         // this convoluted cymk->rgba method is from DeviceCMYK class.
         float inCyan, inMagenta, inYellow, inBlack;
+        float lastCyan = 0, lastMagenta = 0, lastYellow = 0, lastBlack = 0;
         double c, m, y2, aw, ac, am, ay, ar, ag, ab;
         float outRed, outGreen, outBlue;
-        int rValue, gValue, bValue, alpha;
+        int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
         int[] values = new int[4];
         int width = wr.getWidth();
         int height = wr.getHeight();
@@ -1021,27 +1024,35 @@ public class Stream extends Dictionary {
                 // lessen the amount of black, standard 255 fraction is too dark
                 // increasing the denominator has the same affect of lighting up
                 // the image.
-                inBlack = (values[3] / 425.0f);
+                inBlack = (values[3] / 768.0f);
 
-                c = Math.min(1.0, inCyan + inBlack);
-                m = Math.min(1.0, inMagenta + inBlack);
-                y2 = Math.min(1.0, inYellow + inBlack);
-                aw = (1 - c) * (1 - m) * (1 - y2);
-                ac = c * (1 - m) * (1 - y2);
-                am = (1 - c) * m * (1 - y2);
-                ay = (1 - c) * (1 - m) * y2;
-                ar = (1 - c) * m * y2;
-                ag = c * (1 - m) * y2;
-                ab = c * m * (1 - y2);
+                if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
+                        inYellow == lastYellow && inBlack == lastBlack)){
 
-                outRed = (float) (aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
-                outGreen = (float) (aw + 0.6196 * ac + ay + 0.5176 * ag);
-                outBlue = (float) (aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
+                    c = clip(0, 1, inCyan + inBlack);
+                    m = clip(0, 1, inMagenta + inBlack);
+                    y2 = clip(0, 1, inYellow + inBlack);
+                    aw = (1 - c) * (1 - m) * (1 - y2);
+                    ac = c * (1 - m) * (1 - y2);
+                    am = (1 - c) * m * (1 - y2);
+                    ay = (1 - c) * (1 - m) * y2;
+                    ar = (1 - c) * m * y2;
+                    ag = c * (1 - m) * y2;
+                    ab = c * m * (1 - y2);
 
-                rValue = (int) (outRed * 255);
-                gValue = (int) (outGreen * 255);
-                bValue = (int) (outBlue * 255);
-                alpha = 0xFF;
+                    outRed = (float)clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
+                    outGreen = (float)clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
+                    outBlue = (float)clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
+                    rValue = (int) (outRed * 255);
+                    gValue = (int) (outGreen * 255);
+                    bValue = (int) (outBlue * 255);
+                    alpha = 0xFF;
+                }
+                lastCyan = inCyan;
+                lastMagenta  = inMagenta;
+                lastYellow = inYellow;
+                lastBlack =  inBlack;
+
 
                 if (y < smaskHeight && x < smaskWidth && smaskRaster != null)
                     alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
@@ -1214,6 +1225,71 @@ public class Stream extends Dictionary {
                 rgbaValues[3] = alpha;
 
                 wr.setPixel(x, y, rgbaValues);
+            }
+        }
+    }
+
+    /**
+     * The basic idea is that we do a fuzzy colour conversion from YCCK to
+     * CMYK.  The conversion is not perfect but when converted again from
+     * CMYK to RGB the result is much better then going directly from YCCK to
+     * RGB.
+     * @param wr writable raster to alter.
+     * @param decode decode vector.
+     * @param bitsPerComponent bits per component .
+     */
+    private static void alterRasterYCCK2CMYK(WritableRaster wr,
+                                             Vector<Integer> decode,
+                                             int bitsPerComponent) {
+
+        float[] origValues;
+        double[] pixels = new double[4];
+        double Y,Cb,Cr,K;
+        double lastY = 0,lastCb = 0,lastCr = 0,lastK = 0;
+        double c = 0, m = 0, y2 = 0, k = 0;
+
+        int width = wr.getWidth();
+        int height = wr.getHeight();
+        int maxValue = ((int) Math.pow(2, bitsPerComponent)) - 1;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                // apply decode param.
+                origValues = getNormalizedComponents(
+                        (byte[])wr.getDataElements(x,y,null),
+                        decode,
+                        maxValue);
+
+                Y = origValues[0] * 255;
+                Cb = origValues[1] * 255;
+                Cr = origValues[2]* 255;
+                K = origValues[3]* 255;
+
+                if (!(lastY == y && lastCb == Cb && lastCr == Cr && lastK == K )){
+
+                    // intel codecs, http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
+                    // Intel IPP conversion for JPEG codec.
+                    c = 255 - (Y + (1.402 * Cr) - 179.456 );
+                    m = 255 - (Y - (0.34414 * Cb) - (0.71413636 * Cr) + 135.45984);
+                    y2 = 255 - (Y + (1.7718 * Cb) - 226.816);
+                    k = K;
+
+                    c = clip(0,255,c);
+                    m = clip(0,255,m);
+                    y2 = clip(0,255,y2);
+                }
+
+                lastY = y;
+                lastCb = Cb;
+                lastCr = Cr;
+                lastK = K;
+
+                pixels[0] = c;
+                pixels[1] = m;
+                pixels[2] = y2;
+                pixels[3] = k;
+
+                wr.setPixel(x, y, pixels);
             }
         }
     }
@@ -2807,5 +2883,22 @@ public class Stream extends Dictionary {
             sb.append(getPObjectReference());
         }
         return sb.toString();
+    }
+
+    /**
+     * Clips the value according to the specified floor and ceiling.
+     * @param floor floor value of clip
+     * @param ceiling ceiling value of clip
+     * @param value value to clip.
+     * @return clipped value.
+     */
+    private static double clip(double floor, double ceiling, double value) {
+        if (value < floor){
+            value = floor;
+        }
+        if (value > ceiling){
+            value = ceiling;
+        }
+        return value;
     }
 }
