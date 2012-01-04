@@ -41,7 +41,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -79,12 +78,22 @@ public class Stream extends Dictionary {
 
     // minimum dimension which will enable image scaling
     private static boolean scaleImages;
+    
+    // JDK 1.5 imaging order flag and b/r switch
+    private static int redIndex = 0;
+    private static int blueIndex = 2;
 
     static {
         // decide if large images will be scaled
         scaleImages =
                 Defs.sysPropertyBoolean("org.icepdf.core.scaleImages",
                         true);
+        // sniff out jdk 1.5 version
+        String version = System.getProperty("java.version");
+        if (version.contains("1.5")){
+            redIndex  = 2;
+            blueIndex = 0;
+        }
     }
 
     private static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
@@ -1063,9 +1072,9 @@ public class Stream extends Dictionary {
                     //  of an image that it's masking
                     alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
                 }
-                values[0] = bValue;
+                values[redIndex] = rValue;
                 values[1] = gValue;
-                values[2] = rValue;
+                values[blueIndex] = bValue;
                 values[3] = alpha;
                 wr.setPixel(x, y, values);
             }
