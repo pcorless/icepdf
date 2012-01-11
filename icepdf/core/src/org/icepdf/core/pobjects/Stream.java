@@ -620,8 +620,7 @@ public class Stream extends Dictionary {
                     WritableRaster wr = (r instanceof WritableRaster)
                             ? (WritableRaster) r : r.createCompatibleWritableRaster();
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
-                    alterRasterCMYK2BGRA(wr, smaskImage, maskImage); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
-                    tmpImage = makeRGBABufferedImage(wr);
+                    tmpImage = alterRasterCMYK2BGRA(wr, smaskImage, maskImage); //TODO Use maskMinRGB, maskMaxRGB or orig comp version here
                 } else if (jpegEncoding == JPEG_ENC_YCbCr && bitspercomponent == 8) {
                     //System.out.println("Stream.dctDecode()    JPEG_ENC_YCbCr");
                     Raster r = imageDecoder.decodeAsRaster();
@@ -651,7 +650,7 @@ public class Stream extends Dictionary {
                             !(colourSpace instanceof ICCBased)) {
                         if (Tagger.tagging)
                             Tagger.tagImage("DCTDecode_JpegSubEncoding=Y");
-                        alterRasterY2Gray(wr); //TODO Use smaskImage, maskImage, maskMinRGB, maskMaxRGB or orig comp version here
+                        alterRasterY2Gray(wr, bitspercomponent, decode); //TODO Use smaskImage, maskImage, maskMinRGB, maskMaxRGB or orig comp version here
                     }
                     tmpImage = makeGrayBufferedImage(wr);
                     // apply mask value
@@ -930,7 +929,7 @@ public class Stream extends Dictionary {
     private BufferedImage jpxDecode(int width, int height, PColorSpace colourSpace,
                                     int bitsPerComponent, Color fill,
                                     BufferedImage sMaskImage, BufferedImage maskImage,
-                                    int[] maskMinRGB, int[] maskMaxRGB) {
+                                    int[] maskMinRGB, int[] maskMaxRGB, Vector decode) {
         BufferedImage tmpImage = null;
         try {
             // Verify that ImageIO can read JPEG2000
@@ -971,13 +970,15 @@ public class Stream extends Dictionary {
                 tmpImage = makeRGBBufferedImage(wr);
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
-                alterRasterCMYK2BGRA(wr, sMaskImage, maskImage);
-                tmpImage = makeRGBABufferedImage(wr);
+                tmpImage = alterRasterCMYK2BGRA(wr, sMaskImage, maskImage);
             } else if ((colourSpace instanceof DeviceGray ||
                     colourSpace instanceof Indexed)
                     && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
                 tmpImage = makeGrayBufferedImage(wr);
+            } else if (colourSpace instanceof Separation){
+                WritableRaster wr = tmpImage.getRaster();
+                alterRasterY2Gray(wr, bitsPerComponent, decode);
             }
 
             // check for a mask value
@@ -1355,7 +1356,7 @@ public class Stream extends Dictionary {
                     y2 = clip(0,255,y2);
                 }
 
-                lastY = y;
+                lastY = Y;
                 lastCb = Cb;
                 lastCr = Cr;
                 lastK = K;
@@ -1772,16 +1773,19 @@ public class Stream extends Dictionary {
         }
     }
 
-    private static void alterRasterY2Gray(WritableRaster wr) {
+    private static void alterRasterY2Gray(WritableRaster wr, int bitsPerComponent,
+                                          Vector decode) {
         int[] values = new int[1];
         int width = wr.getWidth();
         int height = wr.getHeight();
+        boolean defaultDecode = (0.0f == ((Number) decode.elementAt(0)).floatValue());
+
         int Y;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 wr.getPixel(x, y, values);
                 Y = values[0];
-                Y = 255 - Y;
+                Y = defaultDecode?255 - Y:Y;
                 Y = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
                 values[0] = Y;
                 wr.setPixel(x, y, values);
@@ -2337,7 +2341,7 @@ public class Stream extends Dictionary {
                 if (Tagger.tagging)
                     Tagger.tagImage("JPXDecode");
                 decodedImage = jpxDecode(width, height, colourSpace, bitsPerComponent, fill,
-                        smaskImage, maskImage, maskMinRGB, maskMaxRGB);
+                        smaskImage, maskImage, maskMinRGB, maskMaxRGB, decode);
             }
             // CCITTFax load via JAI, if this fails we have other non JAI
             // CCITTFax code to fall back on.
