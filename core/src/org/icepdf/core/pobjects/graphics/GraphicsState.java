@@ -252,6 +252,9 @@ public class GraphicsState {
     // Fill alpha constant for "ca" or non-stroking alpha
     private float fillAlpha = 1.0f;
 
+    // soft mask information for transparency model
+    private SoftMask softMask;
+
     // Transparency grouping changes which transparency rule is applied.
     // Normally it is simply a SRC_OVER rule but the group can also have isolated
     // and knockout values that directly affect which rule is used for the
@@ -341,6 +344,9 @@ public class GraphicsState {
         fillAlpha = parentGraphicsState.getFillAlpha();
         strokeAlpha = parentGraphicsState.getStrokeAlpha();
         alphaRule = parentGraphicsState.getAlphaRule();
+
+        // smaks
+        softMask = parentGraphicsState.getSoftMask();
 
     }
 
@@ -455,6 +461,11 @@ public class GraphicsState {
 
         if (extGState.getOverprintMode() != null) {
             setOverprintMode(extGState.getOverprintMode().intValue());
+        }
+
+        // save soft mask information
+        if (extGState.getSMask() != null){
+            setSoftMask(extGState.getSMask());
         }
 
         // apply over print logic
@@ -768,6 +779,14 @@ public class GraphicsState {
 
     public void setKnockOut(boolean knockOut) {
         this.knockOut = knockOut;
+    }
+
+    public SoftMask getSoftMask() {
+        return softMask;
+    }
+
+    public void setSoftMask(SoftMask softMask) {
+        this.softMask = softMask;
     }
 }
 
