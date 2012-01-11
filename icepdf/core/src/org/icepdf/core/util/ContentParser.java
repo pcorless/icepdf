@@ -370,7 +370,7 @@ public class ContentParser {
                     // the XObject's Subtype entry, which may be Image , Form, or PS
                     else if (tok.equals(PdfOps.Do_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.Do_TOKEN);
-                        consume_Do(graphicState, stack, shapes, resources, true);
+                        graphicState = consume_Do(graphicState, stack, shapes, resources, true);
                     }
 
                     // Fill the path, using the even-odd rule to determine the
@@ -762,13 +762,20 @@ public class ContentParser {
                                 pattern.init();
                                 // we paint the shape and color shading as defined
                                 // by the pattern dictionary and respect the current clip
-                                setAlpha(shapes,
-                                        graphicState.getAlphaRule(),
-                                        graphicState.getFillAlpha());
+
+                                // apply a rudimentary softmask for an shading .
+                                if (graphicState.getSoftMask() != null){
+                                    setAlpha(shapes,
+                                            graphicState.getAlphaRule(),
+                                            0.50f);
+                                }else{
+                                    setAlpha(shapes,
+                                            graphicState.getAlphaRule(),
+                                            graphicState.getFillAlpha());
+                                }
                                 shapes.add(pattern.getPaint());
                                 shapes.add(graphicState.getClip());
                                 shapes.addFillCommand();
-
                             }
                         }
                     }
@@ -1864,7 +1871,7 @@ public class ContentParser {
      * @param viewParse true indicates parsing is for a normal view.  If false
      * the consumption of Do will skip Image based xObjects for performance.
      */
-    private static void consume_Do(GraphicsState graphicState, Stack stack,
+    private static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
                                 Shapes shapes, Resources resources,
                                 boolean viewParse){
         // collectTokenFrequency(PdfOps.Do_TOKEN);
@@ -1920,9 +1927,19 @@ public class ContentParser {
                     shapes.add(formXObject.getBBox());
                 }
                 shapes.addClipCommand();
+                // apply transparency in a loss manner trying to support
+                // the 2/3 transparency group rules.
+                if (graphicState.getSoftMask() != null){
+                    // apply a rudimentary softmask for an shading .
+                    setAlpha(shapes,
+                            graphicState.getAlphaRule(),
+                            0.50f);
+                }else{
+                    setAlpha(shapes,
+                            graphicState.getAlphaRule(),
+                            graphicState.getFillAlpha());
+                }
                 // 4.) Paint the graphics objects in font stream.
-                setAlpha(shapes, graphicState.getAlphaRule(),
-                        graphicState.getFillAlpha());
                 // If we have a transparency group we paint it
                 // slightly different then a regular xObject as we
                 // need to capture the alpha which is only possible
@@ -1959,6 +1976,7 @@ public class ContentParser {
         }
         // Image XObject
         else if (viewParse) {
+            setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
             Image im = resources.getImage(xobjectName,
                     graphicState.getFillColor());
             if (im != null) {
@@ -1971,6 +1989,7 @@ public class ContentParser {
                 graphicState.set(af);
             }
         }
+        return graphicState;
     }
 
     private static void consume_d(GraphicsState graphicState, Stack stack, Shapes shapes) {

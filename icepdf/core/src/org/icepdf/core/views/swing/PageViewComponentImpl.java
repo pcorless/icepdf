@@ -1016,6 +1016,7 @@ public class PageViewComponentImpl extends
             synchronized (isRunningLock) {
                 isRunning = true;
                 hasBeenQueued = false;
+            }
 
                 try {
                     createBufferedPageImage(this);
@@ -1028,6 +1029,7 @@ public class PageViewComponentImpl extends
                     currentZoom = -1;
                 }
 
+            synchronized (isRunningLock) {
                 isStopRequested = false;
                 isRunning = false;
             }
@@ -1063,6 +1065,7 @@ public class PageViewComponentImpl extends
 
             synchronized (isRunningLock) {
                 isRunning = true;
+            }
 
                 try {
                     Page page = pageTree.getPage(pageIndex, this);
@@ -1087,6 +1090,7 @@ public class PageViewComponentImpl extends
                     return;
                 }
 
+            synchronized (isRunningLock) {
                 pageInitilizer.setHasBeenQueued(false);
                 isRunning = false;
             }

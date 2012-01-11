@@ -16,8 +16,6 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.util.Library;
-
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -384,6 +382,17 @@ public class ExtGState extends Dictionary {
      */
     Number getOverprintMode() {
         return getNumber("OPM");
+    }
+
+
+    public SoftMask getSMask(){
+        Object tmp = library.getObject(entries, "SMask");
+        if (tmp != null && tmp instanceof Hashtable){
+            // create a new SMask dictionary
+            SoftMask softMask = new SoftMask(library, (Hashtable)tmp);
+            return softMask;
+        }
+        return null;
     }
 
 }
