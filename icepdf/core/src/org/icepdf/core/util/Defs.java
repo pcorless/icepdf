@@ -42,7 +42,7 @@ public class Defs {
         }
         catch (SecurityException ex) {
             // recal method so that property change takes effect
-            property(name, defaultValue);
+            logger.log(Level.FINE, "Security exception, property could not be set.", ex);
         }
         return defaultValue;
     }
@@ -150,7 +150,7 @@ public class Defs {
         }
         catch (SecurityException ex) {
             // recall method so that property change takes effect
-            setProperty(property, value);
+            logger.log(Level.FINE, "Security exception, property could not be set.", ex);
         }
     }
 
