@@ -53,7 +53,7 @@ public class Name {
      * @param name the name value of the Name object
      */
     public Name(String name) {
-        if (name != null){
+        if (name != null) {
             this.name = convertHexChars(new StringBuilder(name));
         }
     }
@@ -125,14 +125,11 @@ public class Name {
     private String convertHexChars(StringBuilder name) {
         // we need to search for an instance of # and try and convert to hex
         try {
-            int charDd;
             for (int i = 0; i < name.length(); i++) {
                 if (name.charAt(i) == HEX_CHAR) {
                     // convert digits to hex.
-                    charDd = Integer.parseInt(
-                            name.substring(i + 1, i + 3), 16);
                     name.delete(i, i + 3);
-                    name.insert(i, (char) charDd);
+                    name.insert(i, convert(name.substring(i + 1, i + 3)));
                 }
             }
         } catch (Throwable e) {
@@ -141,8 +138,22 @@ public class Name {
             // string.
             return name.toString();
         }
-
-
         return name.toString();
+    }
+
+    /**
+     * Converts a hext string to formated unicode string.
+     * @param hex 2-digit hex number.
+     * @return
+     */
+    private String convert(String hex) {
+        StringBuilder output = new StringBuilder();
+        output.append("\\u"); // standard unicode format.
+        for (int j = 0, max = 4 - hex.length(); j < max; j++){
+            output.append("0");
+        }
+        output.append(hex.toLowerCase());
+        return output.toString();
+
     }
 }
