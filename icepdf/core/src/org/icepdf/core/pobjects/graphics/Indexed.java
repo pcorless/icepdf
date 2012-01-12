@@ -117,7 +117,12 @@ public class Indexed extends PColorSpace {
     public Color getColor(float[] f) {
         init();
         int index = (int) (f[0] * (cols.length - 1));
-        return cols[index];
+        if (index < cols.length){
+            return cols[index];
+        }else{
+            return cols[(int)f[0]];
+        }
+
     }
 
     public Color[] accessColorTable() {
