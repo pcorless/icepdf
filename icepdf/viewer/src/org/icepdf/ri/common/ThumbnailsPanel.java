@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -28,7 +29,11 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 
 /**
+ * The ThumbnailsPanel class is responsible for showing a document preview
+ * of all pages in a document.  This panel is show as a tab in the utility
+ * panel of the Viewer RI.
  *
+ * @since 4.3
  */
 public class ThumbnailsPanel extends JPanel {
 
@@ -36,18 +41,24 @@ public class ThumbnailsPanel extends JPanel {
 
 
     protected Document currentDocument;
+    
+    protected PropertiesManager propertiesManager;
 
     protected DocumentViewModel documentViewModel;
 
+    protected float thumbNailZoom;
 
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
-
     private SwingController controller;
 
-    public ThumbnailsPanel(SwingController controller) {
+    public ThumbnailsPanel(SwingController controller, 
+                           PropertiesManager propertiesManager) {
         this.controller = controller;
-
+        this.propertiesManager = propertiesManager;
+        // assign thumbnail zoom
+        thumbNailZoom = propertiesManager.getFloat(
+                PropertiesManager.PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM);
     }
 
     public void setDocument(Document document) {
@@ -108,13 +119,14 @@ public class ThumbnailsPanel extends JPanel {
             // also a way to pass in an average document size.
             if (i < MAX_PAGE_SIZE_READ_AHEAD) {
                 pageThumbnailComponent =
-                        new PageThumbnailComponent(controller, scrollPane, pageTree, i);
+                        new PageThumbnailComponent(
+                                controller, scrollPane, pageTree, i, thumbNailZoom);
                 avgPageWidth += pageThumbnailComponent.getPreferredSize().width;
                 avgPageHeight += pageThumbnailComponent.getPreferredSize().height;
             } else if (i > MAX_PAGE_SIZE_READ_AHEAD) {
                 pageThumbnailComponent =
                         new PageThumbnailComponent(controller, scrollPane, pageTree, i,
-                                avgPageWidth, avgPageHeight);
+                                avgPageWidth, avgPageHeight, thumbNailZoom);
             }
             // calculate average page size
             else if (i == MAX_PAGE_SIZE_READ_AHEAD) {
@@ -122,7 +134,7 @@ public class ThumbnailsPanel extends JPanel {
                 avgPageHeight /= (MAX_PAGE_SIZE_READ_AHEAD);
                 pageThumbnailComponent =
                         new PageThumbnailComponent(controller, scrollPane, pageTree, i,
-                                avgPageWidth, avgPageHeight);
+                                avgPageWidth, avgPageHeight, thumbNailZoom);
             }
             pageThumbsPanel.add(pageThumbnailComponent);
         }

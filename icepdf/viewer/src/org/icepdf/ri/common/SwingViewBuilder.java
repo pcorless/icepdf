@@ -1562,7 +1562,8 @@ public class SwingViewBuilder {
     }
 
     public ThumbnailsPanel buildThumbsPanel(){
-        ThumbnailsPanel thumbsPanel = new ThumbnailsPanel(viewerController);
+        ThumbnailsPanel thumbsPanel = new ThumbnailsPanel(viewerController,
+                propertiesManager);
         if (viewerController != null){
             viewerController.setThumbnailsPanel(thumbsPanel);
         }

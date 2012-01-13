@@ -61,6 +61,22 @@ final class Parse {
         return null;
     }
 
+    public static Float parseFloat(String s, ResourceBundle messageBundle) {
+        s = s.trim();
+        try {
+            return new Float(s);
+        } catch (NumberFormatException ex) {
+            if (messageBundle != null) {
+                Resources.showMessageDialog(null,
+                        JOptionPane.INFORMATION_MESSAGE, messageBundle,
+                        "parse.title",
+                        "parse.float",
+                        s);
+            }
+        }
+        return null;
+    }
+
     /**
      * Parse a string into a double number.  Error is added to errorShower.
      *

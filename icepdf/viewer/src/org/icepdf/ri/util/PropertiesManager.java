@@ -92,6 +92,9 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_UTILITYPANE_THUMBNAILS = "application.utilitypane.show.thumbs";
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION = "application.utilitypane.show.annotation";
 
+    // default utility pane thumbnail zoom size for non-embedded files
+    public static final String PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM = "application.utilitypane.thumbnail.zoom";
+
     // properties used for default zoom levels
     public static final String PROPERTY_DEFAULT_ZOOM_LEVEL = "application.zoom.factor.default";
     public static final String PROPERTY_ZOOM_RANGES = "application.zoom.range.default";
@@ -595,6 +598,25 @@ public class PropertiesManager {
     }
 
     /**
+     * Return a float value for the respective <code>propertyName</code>.
+     *
+     * @param propertyName Name of property from the ICEdefault.properties file.
+     * @return double value of the <code>propertyName</code>
+     * @since 6.0
+     */
+    public float getFloat(String propertyName) {
+        Float result = getFloatImpl(propertyName);
+        if (result == null) {
+            Resources.showMessageDialog(null,
+                    JOptionPane.ERROR_MESSAGE, messageBundle,
+                    "manager.properties.title",
+                    "manager.properties.missingProperty", propertyName, result);
+            return 0;
+        }
+        return result.floatValue();
+    }
+
+    /**
      * Return the a double value for the respective <code>propertyName</code>.
      * If the property value is null then the <code>propertyName</code> is removed
      * from the properties object.
@@ -626,8 +648,44 @@ public class PropertiesManager {
         return null;
     }
 
+    /**
+     * Return the a double value for the respective <code>propertyName</code>.
+     * If the property value is null then the <code>propertyName</code> is removed
+     * from the properties object.
+     *
+     * @param propertyName Name of propertie from the ICEdefault.properites file.
+     * @return double value of the <code>propertyName</code>
+     * @since 6.0
+     */
+    private Float getFloatImpl(String propertyName) {
+        String value = (String) props.get(propertyName);
+        if (value != null) {
+            Float result = Parse.parseFloat(value, messageBundle);
+            if (result != null) {
+                return result;
+            }
+            props.remove(propertyName);
+        }
+        value = (String) defaultProps.get(propertyName);
+        if (value != null) {
+            Float result = Parse.parseFloat(value, messageBundle);
+            if (result != null) {
+                return result;
+            }
+            Resources.showMessageDialog(null,
+                    JOptionPane.ERROR_MESSAGE, messageBundle,
+                    "manager.properties.title",
+                    "manager.properties.brokenProperty ", propertyName, value);
+        }
+        return null;
+    }
+
     public void setDouble(String propertyName, double value) {
         set(propertyName, Double.toString(value));
+    }
+
+    public void setFloat(String propertyName, float value) {
+        set(propertyName, Float.toString(value));
     }
 
     public long getLong(String propertyName, long defaultValue) {
