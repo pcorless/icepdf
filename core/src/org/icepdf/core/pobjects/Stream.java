@@ -837,7 +837,7 @@ public class Stream extends Dictionary {
      * @return buffered image of decoded jbig2 image stream.   Null if an error
      *         occured during decode.
      */
-    private BufferedImage jbig2Decode(int width, int height) {
+    private BufferedImage jbig2Decode(int width, int height, Color fill) {
         BufferedImage tmpImage = null;
 
         try {
@@ -994,7 +994,9 @@ public class Stream extends Dictionary {
         return tmpImage;
     }
 
-    private static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage) {
+    private static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr,
+                                                      BufferedImage smaskImage,
+                                                      BufferedImage maskImage) {
 
         int width = wr.getWidth();
         int height = wr.getHeight();
@@ -1036,7 +1038,7 @@ public class Stream extends Dictionary {
 
         // this convoluted cymk->rgba method is from DeviceCMYK class.
         float inCyan, inMagenta, inYellow, inBlack;
-        float lastCyan = 0, lastMagenta = 0, lastYellow = 0, lastBlack = 0;
+        float lastCyan = -1, lastMagenta = -1, lastYellow = -1, lastBlack = -1;
         double c, m, y2, aw, ac, am, ay, ar, ag, ab;
         float outRed, outGreen, outBlue;
         int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
@@ -1322,7 +1324,7 @@ public class Stream extends Dictionary {
         float[] origValues;
         double[] pixels = new double[4];
         double Y,Cb,Cr,K;
-        double lastY = 0,lastCb = 0,lastCr = 0,lastK = 0;
+        double lastY = -1,lastCb = -1,lastCr = -1,lastK = -1;
         double c = 0, m = 0, y2 = 0, k = 0;
 
         int width = wr.getWidth();
@@ -2334,7 +2336,7 @@ public class Stream extends Dictionary {
             else if (shouldUseJBIG2Decode()) {
                 if (Tagger.tagging)
                     Tagger.tagImage("JBIG2Decode");
-                decodedImage = jbig2Decode(width, height);
+                decodedImage = jbig2Decode(width, height, fill);
             }
             // JPEG2000 writes out image if successful
             else if (shouldUseJPXDecode()) {
