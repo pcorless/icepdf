@@ -275,7 +275,7 @@ public class ImageCache {
         if (imageScale < 1.0) {
             AffineTransform tx = new AffineTransform();
             tx.scale(imageScale, imageScale);
-            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
             BufferedImage sbim = op.filter(bim, null);
             bim.flush();
             bim = sbim;

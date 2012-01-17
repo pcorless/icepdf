@@ -1016,7 +1016,7 @@ public class Stream extends Dictionary {
                 // scale the mask to match the base image.
                 AffineTransform tx = new AffineTransform();
                 tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
                 BufferedImage sbim = op.filter(smaskImage, null);
                 smaskImage.flush();
                 smaskImage = sbim;
@@ -1510,7 +1510,7 @@ public class Stream extends Dictionary {
             // scale the mask to match the base image.
             AffineTransform tx = new AffineTransform();
             tx.scale(scaleX, scaleY);
-            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
             BufferedImage sbim = op.filter(maskImage, null);
             maskImage.flush();
             maskImage = sbim;
@@ -1583,7 +1583,7 @@ public class Stream extends Dictionary {
                 // scale the mask to match the base image.
                 AffineTransform tx = new AffineTransform();
                 tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
                 BufferedImage bim = op.filter(bi, null);
                 bi.flush();
                 bi = bim;
