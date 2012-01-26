@@ -39,14 +39,13 @@ public class ThumbnailsPanel extends JPanel {
 
     protected DocumentViewController documentViewController;
 
-
     protected Document currentDocument;
     
     protected PropertiesManager propertiesManager;
 
     protected DocumentViewModel documentViewModel;
 
-    protected float thumbNailZoom;
+    protected float thumbNailZoom = 0.1f; // default zoom is 10%
 
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
@@ -56,9 +55,11 @@ public class ThumbnailsPanel extends JPanel {
                            PropertiesManager propertiesManager) {
         this.controller = controller;
         this.propertiesManager = propertiesManager;
-        // assign thumbnail zoom
-        thumbNailZoom = propertiesManager.getFloat(
+        // assign thumbnail zoom from propertiesManager if available
+        if (propertiesManager != null){
+            thumbNailZoom = propertiesManager.getFloat(
                 PropertiesManager.PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM);
+        }
     }
 
     public void setDocument(Document document) {
