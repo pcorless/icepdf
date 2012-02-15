@@ -15,12 +15,6 @@
 <div xmlns:h="http://java.sun.com/jsf/html"
         xmlns:f="http://java.sun.com/jsf/core"
         xmlns:ice="http://www.icesoft.com/icefaces/component"
-        class="header_container">
-    <div class="header_content">
-        <ice:graphicImage width="436px" height="126px"
-                value="./css/images/banner_icpdf.png"
-                title="#{msgs['template.header.title']}"
-                alt="#{msgs['template.header.title']}"
-                style="float:left"/>
-    </div>
+        class="icepdf-header">
+    <div class="icepdf-logo"></div>
 </div>

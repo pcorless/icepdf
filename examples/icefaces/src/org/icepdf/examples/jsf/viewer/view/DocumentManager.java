@@ -39,7 +39,7 @@ import java.awt.*;
  * DocumentManager is a session scpoed bean responsible for managing the
  * state of PDF documents.  When a new document is loaded it is added to the
  * document history list.  The document state is stored for all documents
- * opened durign the user sesssion but only one document is actually kept
+ * opened during the user session but only one document is actually kept
  * open in memory.
  *
  * @since 3.0
@@ -114,7 +114,7 @@ public class DocumentManager implements DisposableBean {
         // check for demo file in path as an id, we reuse the document state
         for (DocumentState documentSate : demoFilePaths) {
             if (documentSate.getDocumentName().equals(demoFileName)) {
-                currentDocumentState = documentSate;
+                currentDocumentState = new DocumentState(documentSate);
             }
         }
 

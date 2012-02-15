@@ -68,7 +68,7 @@ public class PdfRenderer extends HttpServlet {
                 }
             }
         } catch (Throwable e) {
-            logger.log(Level.FINE, "Error writing image stream.", e);
+            logger.log(Level.WARNING, "Error writing image stream.", e);
             if (bi != null){
                 bi.flush();
             }
