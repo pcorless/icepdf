@@ -117,6 +117,14 @@ public class DocumentState {
         pdfResource = new PDFResource();
     }
 
+    public DocumentState(DocumentState documentState){
+        documentName = documentState.getDocumentName();
+        documentPath = documentState.getDocumentPath();
+        isStateChanged = true;
+        sharedSession = documentState.isSharedSession();
+        pdfResource = new PDFResource();
+    }
+
     /**
      * Open the PDF document wrapped by this object. If their is already a document
      * assigned to this document it is closed before the current documentPath
