@@ -120,6 +120,15 @@ public class Parser {
                 }
                 // mark that we have entered a object declaration
                 else if (nextToken.equals("obj")) {
+                    // a rare parsing error is that endobj is missing, so we need
+                    // to make sure if an object has been parsed that we don't loose it.
+                    if(inObject){
+                        // pop off the object and ref number
+                        stack.pop();
+                        stack.pop();
+                        // return the passed over object on the stack.
+                        return addPObject(library, objectReference);
+                    }
                     // Since we can return objects on "endstream", then we can
                     //  leave straggling "endobj", which would deepnessCount--,
                     //  even though they're done in a separate method invocation
