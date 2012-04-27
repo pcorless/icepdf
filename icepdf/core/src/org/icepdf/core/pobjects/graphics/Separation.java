@@ -110,6 +110,15 @@ public class Separation extends PColorSpace {
      * @return new RGB colour composed from the components array.
      */
     public Color getColor(float[] components) {
+        // there are couple notes in the spec that say that even know namedColor
+        // is for subtractive color devices, if the named colour can be represented
+        // in a additive device then it should be used over the alternate colour.
+        if (namedColor != null &&
+                (namedColor.equals(Color.black) || namedColor.equals(Color.red)||
+                namedColor.equals(Color.green)|| namedColor.equals(Color.blue))){
+            return namedColor;
+        }
+
         // the function couldn't be initiated then use the alternative colour
         // space.  The alternate colour space can be any device or CIE-based
         // colour space. However Separation is usually specified using only one
