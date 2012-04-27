@@ -168,8 +168,13 @@ public class Function_3 extends Function {
             x = function.calculate(x);
         }
 
-
-        return validateAgainstRange(x);
+        // Have seen a few corner cases where the bounds are not defined or are null. There is nothing
+        // in the spec about how to handle this, so the work around below is experimental.
+        if (x != null){
+            return validateAgainstRange(x);
+        }else{
+            return new float[]{1, 1, 1, 1};
+        }
 
     }
 
