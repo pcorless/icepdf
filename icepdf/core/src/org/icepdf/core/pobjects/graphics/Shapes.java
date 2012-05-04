@@ -445,46 +445,7 @@ public class Shapes {
                     ((Shapes) nextShape).paint(g);
                     ((Shapes) nextShape).setPageParent(null);
                 }
-                // Handle the painting of xForm transparency groups, this block
-                // attempts to handle isolated painting by painting to an image
-                // then painting the image using which ever alph rule is on the
-                // shapes stack.
-                else if (nextShape instanceof Form) {
-                    //todo move logic into form object. 
-
-                    Form xForm = (Form)nextShape;
-
-                    Rectangle2D bBox = xForm.getBBox();
-                    int width = (int)bBox.getWidth();
-                    int height = (int)bBox.getHeight();
-                    // corner cases where some bBoxes don't have a dimension.
-                    if (width == 0){
-                        width = 1;
-                    }
-                    if (height == 0){
-                        height = 1;
-                    }
-                    // create the new image to write too.
-                    BufferedImage bi = new BufferedImage(width, height,
-                            BufferedImage.TYPE_INT_ARGB);
-                    Graphics2D canvas = bi.createGraphics();
-                    // copy over the rendering hints
-                    canvas.setRenderingHints(g.getRenderingHints());
-                    // get shapes and paint them.
-                    Shapes xFormShapes = xForm.getShapes();
-                    if (xFormShapes != null){
-                        xFormShapes.setPageParent(parentPage);
-                        // translate the coordinate system as we'll paint the g
-                        // graphic at the correctly location later.
-                        canvas.translate(-(int)bBox.getX(),-(int)bBox.getY());
-                        canvas.setClip(bBox);
-                        xFormShapes.paint(canvas);
-                        xFormShapes.setPageParent(null);
-                    }
-                    // finally paint the graphic using the current gs.
-                    g.drawImage(bi, null, (int)bBox.getX(), (int)bBox.getY());
-
-                } else if (nextShape instanceof Color) {
+                else if (nextShape instanceof Color) {
                     g.setColor((Color) nextShape);
                 }
                 // handle tiled painting

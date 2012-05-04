@@ -1927,34 +1927,11 @@ public class ContentParser {
                     shapes.add(formXObject.getBBox());
                 }
                 shapes.addClipCommand();
-                // apply transparency in a loss manner trying to support
-                // the 2/3 transparency group rules.
-                if (graphicState.getSoftMask() != null){
-                    // apply a rudimentary softmask for an shading .
-                    setAlpha(shapes,
-                            graphicState.getAlphaRule(),
-                            0.50f);
-                }else{
-                    setAlpha(shapes,
-                            graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
-                }
+                setAlpha(shapes,
+                        graphicState.getAlphaRule(),
+                        graphicState.getFillAlpha());
                 // 4.) Paint the graphics objects in font stream.
-                // If we have a transparency group we paint it
-                // slightly different then a regular xObject as we
-                // need to capture the alpha which is only possible
-                // by paint the xObject to an image.
-                if (formXObject.isTransparencyGroup()) {
-                    // add the hold form for further processing.
-                    shapes.add(formXObject);
-                }
-                // the down side of painting to an image is that we
-                // lose quality if there is a affine transform, so
-                // if it isn't a group transparency we paint old way
-                // by just adding the objects to the shapes stack.
-                else {
-                    shapes.add(formXObject.getShapes());
-                }
+                shapes.add(formXObject.getShapes());
                 // makes sure we add xobject images so we can extract them.
                 if (formXObject.getShapes() != null) {
                     shapes.add(formXObject.getShapes().getImages());
@@ -2101,9 +2078,10 @@ public class ContentParser {
             Object pageFonts = res.getEntries().get("Font");
             if (pageFonts instanceof Hashtable){
                 // get first font
+                Reference fontRef = (Reference)((Hashtable)pageFonts).get(name2);
                 graphicState.getTextState().font =
                     (org.icepdf.core.pobjects.fonts.Font)resources.getLibrary()
-                            .getObject(((Hashtable)pageFonts).elements().nextElement());
+                            .getObject(fontRef);
                 // might get a null pointer but we'll get on on deriveFont too
                 graphicState.getTextState().font.init();
             }
@@ -2296,7 +2274,7 @@ public class ContentParser {
             case TextState.MODE_FILL_ADD:
                 drawModeFill(textSprites, shapes, rmode);
                 break;
-            // Stroke Text and add to path for clippsing: 5
+            // Stroke Text and add to path for clipping: 5
             case TextState.MODE_STROKE_ADD:
                 drawModeStroke(textSprites, textState, shapes, rmode);
                 break;
@@ -2621,11 +2599,6 @@ public class ContentParser {
      */
     static void setAlpha(Shapes shapes, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes
-        if (alpha == 0){
-            // zero alpha is actually a cut out effect for the current context
-            // stream
-            rule =  AlphaComposite.SRC_OUT;
-        }
         AlphaComposite alphaComposite =
                 AlphaComposite.getInstance(rule,
                         alpha);
