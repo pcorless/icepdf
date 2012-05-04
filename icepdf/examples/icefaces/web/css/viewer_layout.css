@@ -80,27 +80,18 @@ div.clearer {
 }
 
 /* header begin */
-
-div.header_container {
-    width: 100%;
-    height: 159px;
-    min-width: 730px;
-    background-image: url('./images/banner_bg.png');
-    background-repeat: repeat-x;
-    background-position: left top;
-    float: left;
+div.icepdf-header {
+    background: url("./images/demo-header-bacground.png") no-repeat scroll 0 0 transparent;
+    height: 123px;
     width: 100%;
 }
-
-div.header_content {
-    height: 159px;
-    background-image: url('./images/banner_icepdf_logo.png');
-    background-repeat: no-repeat;
-    background-position: right top;
-    float: left;
-    width: 100%;
+div.icepdf-logo {
+    background: url("./images/icepdf-viewer.png") no-repeat scroll 0 0 transparent;
+    height: 116px;
+    left: -12px;
+    position: relative;
+    width: 600px;
 }
-
 /* header end */
 
 /* body start */
@@ -108,7 +99,7 @@ div.header_content {
 /* provides a continer to center a child div in */
 div.body_container {
     float: left;
-    margin-top: -60px;
+    margin-top: -30px;
     width: 100%;
 }
 
@@ -147,48 +138,6 @@ table.componentTabSetContainer {
     width: 99%;
 }
 
-/* footer begin */
-div.footer_container {
-    float: left;
-    width: 100%;
-    height: 181px;
-    min-width: 705px;
-    background-image: url('./images/footer_bg.gif');
-    background-repeat: repeat-x;
-    background-position: top left;
-    background-color:#06416A;
-}
-
-div.footer_content {
-    height: 181px;
-    background-image: url('./images/footer_snowflake.gif');
-    background-repeat: no-repeat;
-    background-position: bottom right;
-
-}
-
-div.footer_content div{
-   float:left;
-   padding-top:120px;
-   padding-left:20px;
-   color: white;
-}
-div.footer_content a, div.footer_content a:hover{
-   color: #49C3E9;
-   font-weight:bold;
-   text-decoration: none;
-}
-
-div.footer_content a {
-
-}
-
-div.footer_content a:hover {
-    color: white;
-}
-
-/* footer end */
-
 /* controls the appearance of links throughout the application */
 a:link, a:hover, a:visited, a:active {
     font-family: Tahoma, Helvetica, sans-serif;
@@ -224,21 +173,7 @@ li.fileLink {
 }
 
 /* expanble menu */
-.icePnlClpsblHdr {
-    background-image: url('./images/table_col_header.gif');
-}
 
-.icePnlClpsblColpsdHdr {
-    background-image: url('./images/table_col_header.gif');
-}
-
-.icePnlClpsblHdr div {
-    background-image: url('./images/PnlHdr_down.gif');
-}
-
-.icePnlClpsblColpsdHdr div {
-    background-image: url('./images/PnlHdr_collapsed.gif');
-}
 
 .icePnlClpsblCnt {
     background-color: white;
