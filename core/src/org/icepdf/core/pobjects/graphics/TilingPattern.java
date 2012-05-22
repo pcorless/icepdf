@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
@@ -237,6 +238,7 @@ public class TilingPattern extends Stream implements Pattern {
         if (inited) {
             return;
         }
+        inited = true;
 
         // try and find the form's resources dictionary.
         Resources leafResources = library.getResources(entries, "Resources");
@@ -301,6 +303,9 @@ public class TilingPattern extends Stream implements Pattern {
             // copy over the rendering hints
             // get shapes and paint them.
             Shapes tilingShapes = getShapes();
+            // paint the graphic using the current gs.
+            patternPaint = new TexturePaint(bi, bBoxMod);
+            g.setPaint(patternPaint);
             if (tilingShapes != null) {
                 // setup resource parent
                 tilingShapes.setPageParent(parentPage);
