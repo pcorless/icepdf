@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Library;
 
+import javax.media.jai.ColormapOpImage;
 import java.awt.*;
 import java.util.Hashtable;
 
@@ -138,6 +139,8 @@ public class Separation extends PColorSpace {
         if (namedColor != null){
             // apply tint
             tint = components[0];
+            float[] colour = namedColor.getComponents(null);
+            namedColor = new Color(colour[0], colour[1], colour[2], tint);
             return namedColor;
         }
 
