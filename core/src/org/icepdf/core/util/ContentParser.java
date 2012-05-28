@@ -1695,9 +1695,6 @@ public class ContentParser {
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
             graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(f));
-            if (graphicState.getStrokeColorSpace() instanceof Separation){
-                graphicState.setStrokeAlpha(((Separation) graphicState.getStrokeColorSpace()).getTint());
-            }
         }
     }
 
@@ -1781,9 +1778,6 @@ public class ContentParser {
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
             graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f));
-            if (graphicState.getFillColorSpace() instanceof Separation){
-                graphicState.setFillAlpha(((Separation)graphicState.getFillColorSpace()).getTint());
-            }
         }
     }
 
