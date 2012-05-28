@@ -67,6 +67,19 @@ public class Separation extends PColorSpace {
     protected PColorSpace alternate;
     // transform for colour tint, named function type
     protected Function tintTransform;
+    // The special colorant name All shall refer collectively to all colorants
+    // available on an output device, including those for the standard process
+    // colorants. When a Separation space with this colorant name is the current
+    // colour space, painting operators shall apply tint values to all available
+    // colorants at once.
+    private boolean isAll;
+    public static final String COLORANT_ALL = "All";
+    // The special colorant name None shall not produce any visible output.
+    // Painting operations in a Separationspace with this colorant name shall
+    // have no effect on the current page.
+    private boolean isNone;
+    public static final String COLORANT_NONE = "None";
+    private float tint = 1.0f;
 
     /**
      * Create a new Seperation colour space.  Separation is specified using
@@ -81,6 +94,7 @@ public class Separation extends PColorSpace {
     protected Separation(Library l, Hashtable h, Object name, Object alternateSpace, Object tintTransform) {
         super(l, h);
         alternate = getColorSpace(l, alternateSpace);
+
         this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));
         // see if name can be converted to a known colour.
         if (name instanceof Name) {
@@ -90,7 +104,15 @@ public class Separation extends PColorSpace {
             int colorVaue = ColorUtil.convertNamedColor(colorName.toLowerCase());
             if (colorVaue != -1) {
                 namedColor = new Color(colorVaue);
+            }else{
+                // sniff out All or Null
+                if (colorName.equals(COLORANT_ALL)){
+                    isAll = true;
+                }else if (colorName.equals(COLORANT_NONE)){
+                    isNone = true;
+                }
             }
+
         }
     }
 
@@ -104,7 +126,7 @@ public class Separation extends PColorSpace {
     }
 
     /**
-     * Gets the colour in RGB represened by the array of colour components
+     * Gets the colour in RGB represented by the array of colour components
      *
      * @param components array of component colour data
      * @return new RGB colour composed from the components array.
@@ -113,9 +135,9 @@ public class Separation extends PColorSpace {
         // there are couple notes in the spec that say that even know namedColor
         // is for subtractive color devices, if the named colour can be represented
         // in a additive device then it should be used over the alternate colour.
-        if (namedColor != null &&
-                (namedColor.equals(Color.black) || namedColor.equals(Color.red)||
-                namedColor.equals(Color.green)|| namedColor.equals(Color.blue))){
+        if (namedColor != null){
+            // apply tint
+            tint = components[0];
             return namedColor;
         }
 
@@ -141,5 +163,9 @@ public class Separation extends PColorSpace {
         // -- Only applies to subtractive devices, screens are additive but I'm
         // leaving this in encase something goes horribly wrong.
         return namedColor;
+    }
+
+    public float getTint(){
+        return tint;
     }
 }
