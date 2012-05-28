@@ -1025,12 +1025,19 @@ public class ContentParser {
                     shift = 0;
                     previousAdvance = 0;
                     advance.setLocation(0, 0);
-                    float f6 = ((Number) stack.pop()).floatValue();
-                    float f5 = ((Number) stack.pop()).floatValue();
-                    float f4 = ((Number) stack.pop()).floatValue();
-                    float f3 = ((Number) stack.pop()).floatValue();
-                    float f2 = ((Number) stack.pop()).floatValue();
-                    float f1 = ((Number) stack.pop()).floatValue();
+                    // pop carefully, as there are few corner cases where
+                    // the af is split up with a BT or other token
+                    Object next;
+                    // initialize an identity matrix, add parse out the
+                    // numbers we have working from f6 down to f1.
+                    float[] tm = new float[]{1f,0,0,1f,0,0};
+                    for (int i=0,hits = 5, max = stack.size(); hits != -1 && i < max; i++){
+                        next = stack.pop();
+                        if (next instanceof  Number){
+                            tm[hits] = ((Number)next).floatValue();
+                            hits--;
+                        }
+                    }
                     AffineTransform af = new AffineTransform(textBlockBase);
 
                     // grab old values.
@@ -1038,7 +1045,7 @@ public class ContentParser {
                     double oldScaleY = graphicState.getCTM().getScaleY();
 
                     // apply the transform
-                    graphicState.getTextState().tmatrix = new AffineTransform(f1, f2, f3, f4, f5, f6);
+                    graphicState.getTextState().tmatrix = new AffineTransform(tm);
                     af.concatenate(graphicState.getTextState().tmatrix);
                     graphicState.set(af);
                     graphicState.scale(1, -1);
@@ -1050,7 +1057,7 @@ public class ContentParser {
 
                     // capture x coord of BT y offset, tm, Td, TD.
                     if (isYstart) {
-                        yBTStart = f6;
+                        yBTStart = tm[5];//f6;
                         isYstart = false;
                         if (previousBTStart != yBTStart) {
                             pageText.newLine();
@@ -1689,7 +1696,7 @@ public class ContentParser {
             System.arraycopy(colour, 0, f, 0, nCount);
             graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(f));
             if (graphicState.getStrokeColorSpace() instanceof Separation){
-                graphicState.setStrokeAlpha(((Separation)graphicState.getStrokeColorSpace()).getTint());
+                graphicState.setStrokeAlpha(((Separation) graphicState.getStrokeColorSpace()).getTint());
             }
         }
     }
