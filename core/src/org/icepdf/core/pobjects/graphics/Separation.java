@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Library;
 
-import javax.media.jai.ColormapOpImage;
 import java.awt.*;
 import java.util.Hashtable;
 
@@ -105,11 +104,11 @@ public class Separation extends PColorSpace {
             int colorVaue = ColorUtil.convertNamedColor(colorName.toLowerCase());
             if (colorVaue != -1) {
                 namedColor = new Color(colorVaue);
-            }else{
+            } else {
                 // sniff out All or Null
-                if (colorName.equals(COLORANT_ALL)){
+                if (colorName.equals(COLORANT_ALL)) {
                     isAll = true;
-                }else if (colorName.equals(COLORANT_NONE)){
+                } else if (colorName.equals(COLORANT_NONE)) {
                     isNone = true;
                 }
             }
@@ -136,7 +135,7 @@ public class Separation extends PColorSpace {
         // there are couple notes in the spec that say that even know namedColor
         // is for subtractive color devices, if the named colour can be represented
         // in a additive device then it should be used over the alternate colour.
-        if (namedColor != null){
+        if (namedColor != null) {
             // apply tint
             tint = components[0];
             float[] colour = namedColor.getComponents(null);
@@ -157,7 +156,7 @@ public class Separation extends PColorSpace {
             }
             return alternate.getColor(alternateColour);
         }
-        if (alternate != null){
+        if (alternate != null) {
             float y[] = tintTransform.calculate(components);
             return alternate.getColor(reverse(y));
         }
@@ -168,7 +167,7 @@ public class Separation extends PColorSpace {
         return namedColor;
     }
 
-    public float getTint(){
+    public float getTint() {
         return tint;
     }
 }
