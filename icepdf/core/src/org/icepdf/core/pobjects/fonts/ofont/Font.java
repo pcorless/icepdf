@@ -711,7 +711,11 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     for (int j = (Integer) current; j <= (Integer) peek; j++) {
                         // apply Unicode mapping if any
                         currentChar = j;
-                        cidWidths.put(currentChar, (Float) cidWidth.get(i + 2) / 1000f);
+                        if (cidWidth.get(i + 2) instanceof Integer){
+                            cidWidths.put(currentChar, (Integer) cidWidth.get(i + 2) / 1000f);
+                        }else if(cidWidth.get(i + 2) instanceof Float){
+                            cidWidths.put(currentChar, (Float) cidWidth.get(i + 2) / 1000f);
+                        }
                     }
                     i += 2;
                 }
