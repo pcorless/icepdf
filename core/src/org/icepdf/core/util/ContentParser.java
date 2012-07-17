@@ -418,6 +418,7 @@ public class ContentParser {
                             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
                             geometricPath.closePath();
                             graphicState.setClip(geometricPath);
+                            shapes.addClipCommand();
                         }
 
                     }
@@ -936,9 +937,12 @@ public class ContentParser {
         boolean isYstart = true;
         float yBTStart = 0;
 
+        // glyphOutline to support text clipping modes, life span is BT->ET.
+        GlyphOutlineClip glyphOutlineClip = new GlyphOutlineClip();
+
         // start parsing of the BT block
         nextToken = parser.getStreamObject();
-        while (!nextToken.equals("ET")) { // ET - end text object
+        while (!nextToken.equals(PdfOps.ET_TOKEN)) { // ET - end text object
             // add names to the stack, save for later parsing, colour state
             // and graphics state (includes font).
 
@@ -963,7 +967,8 @@ public class ContentParser {
                                 advance,
                                 previousAdvance,
                                 graphicState.getTextState(),
-                                shapes);
+                                shapes,
+                                glyphOutlineClip);
                         graphicState.translate(d.x, 0);
                         shift += d.x;
                         previousAdvance = 0;
@@ -1102,7 +1107,7 @@ public class ContentParser {
                                             textState.font.getSubTypeFormat(),
                                             textState.font.getFont()),
                                     advance, previousAdvance,
-                                    graphicState.getTextState(), shapes);
+                                    graphicState.getTextState(), shapes, glyphOutlineClip);
                             // update the text advance
                             lastTextAdvance = advance.x;
                         } else if (currentObject instanceof Number) {
@@ -1362,7 +1367,7 @@ public class ContentParser {
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             new Point2D.Float(0, 0), 0, graphicState.getTextState(),
-                            shapes);
+                            shapes, glyphOutlineClip);
                     graphicState.translate(d.x, 0);
                     shift += d.x;
 //                    pageText.newLine();
@@ -1394,7 +1399,7 @@ public class ContentParser {
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             new Point2D.Float(0, 0), 0, graphicState.getTextState(),
-                            shapes);
+                            shapes, glyphOutlineClip);
                     graphicState.translate(d.x, 0);
                     shift += d.x;
 //                    pageText.newLine();
@@ -1408,6 +1413,16 @@ public class ContentParser {
             }
 
             nextToken = parser.getStreamObject();
+        }
+        // during a BT -> ET text parse there is a change that we might be
+        // in MODE_ADD or MODE_Fill_Add which require that the we push the
+        // shapes that make up the clipping path to the shapes stack.  When
+        // encountered the path will be used as the current clip.
+        if (!glyphOutlineClip.isEmpty()){
+            // set the clips so further clips can use the clip outline
+            graphicState.setClip(glyphOutlineClip.getGlyphOutlineClip());
+            // add the glyphOutline so the clip can be calculated.
+            shapes.add(glyphOutlineClip);
         }
 
         // get rid of the rest
@@ -2155,7 +2170,8 @@ public class ContentParser {
             Point2D advance,
             float previousAdvance,
             TextState textState,
-            Shapes shapes) {
+            Shapes shapes,
+            GlyphOutlineClip glyphOutlineClip) {
 
         float advanceX = ((Point2D.Float) advance).x;
         float advanceY = ((Point2D.Float) advance).y;
@@ -2279,19 +2295,21 @@ public class ContentParser {
             // Fill text and add to path for clipping: 4
             case TextState.MODE_FILL_ADD:
                 drawModeFill(textSprites, shapes, rmode);
+                glyphOutlineClip.addTextSprite(textSprites);
                 break;
             // Stroke Text and add to path for clipping: 5
             case TextState.MODE_STROKE_ADD:
                 drawModeStroke(textSprites, textState, shapes, rmode);
+                glyphOutlineClip.addTextSprite(textSprites);
                 break;
             // Fill, then stroke text adn add to path for clipping: 6
             case TextState.MODE_FILL_STROKE_ADD:
                 drawModeFillStroke(textSprites, textState, shapes, rmode);
+                glyphOutlineClip.addTextSprite(textSprites);
                 break;
             // Add text to path for clipping: 7
             case TextState.MODE_ADD:
-                textSprites.setRMode(rmode);
-                shapes.add(textSprites);
+                glyphOutlineClip.addTextSprite(textSprites);
                 break;
         }
         return new Point2D.Float(advanceX, advanceY);

@@ -14,7 +14,6 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
@@ -23,8 +22,6 @@ import org.icepdf.core.views.swing.PageViewComponentImpl;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -453,6 +450,17 @@ public class Shapes {
                     TilingPattern tilingPattern = (TilingPattern)nextShape;
                     tilingPattern.paintPattern(g, parentPage);
                 }
+                else if (nextShape instanceof GlyphOutlineClip) {
+                    // save and revert the af for the page so that we can
+                    // paint the converted clip glyph outline.
+                    AffineTransform preTrans = new AffineTransform(g.getTransform());
+                    g.setTransform(base);
+                    // set clip directly but it should be the intersection with the current.
+                    Shape glyphClip = ((GlyphOutlineClip)nextShape).getGlyphOutlineClip();
+                    g.setClip(glyphClip);
+                    g.setTransform(preTrans);
+                    clipArea = new Area(g.getClip());
+                }
 //                else if (Debug.ex){
 //                    Debug.p("Found unhandled Shapes Operand ");
 //                }
@@ -488,7 +496,7 @@ public class Shapes {
 
     /**
      * Gets all the images that where found when parsing the pages' content.  Each
-     * element in the Vector represents a seperate image.
+     * element in the Vector represents a separate image.
      *
      * @return all images in a page's content, if any.
      */

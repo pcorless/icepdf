@@ -306,46 +306,18 @@ public class OFont implements FontFile {
     public void drawEstring(Graphics2D g, String displayText, float x, float y,
                             long layout, int mode, Color strokecolor) {
 
-        displayText = toUnicode(displayText);
-        FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
-        GlyphVector glyphVector = awtFont.createGlyphVector(frc, displayText);
-        glyphVector.setGlyphPosition(0, new Point2D.Float(x, y));
-
-        // Iterate through displayText to calculate the the new advance value if
-        // the displayLength is greater then one character. This in sures that
-        // cid -> String will get displayed correctly.
-        int displayLength = displayText.length();
-        float lastx;
-        if (displayLength > 1){
-            Point2D p;
-            float advance = 0;
-            for (int i = 0; i < displayText.length(); i++) {
-                // Position of the specified glyph relative to the origin of glyphVector
-                p = glyphVector.getGlyphPosition(i);
-                lastx = (float) p.getX();
-                // add fonts rise to the to glyph position (sup,sub scripts)
-                glyphVector.setGlyphPosition(
-                        i,
-                        new Point2D.Double(lastx + advance, p.getY()));
-
-                // subtract the advance because we will be getting it from the fonts width
-                float adv1 = glyphVector.getGlyphMetrics(i).getAdvance();
-                double adv2 = echarAdvance(displayText.charAt(i)).getX();
-                advance += -adv1 + adv2 + lastx;
-            }
-        }
+        Shape outline = getEstringOutline(displayText, x, y);
 
         if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
                 TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-            g.fill(glyphVector.getOutline());
+            g.fill(outline);
         }
         if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
                 TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-            g.draw(glyphVector.getOutline());
+            g.draw(outline);
         }
 
     }
-
 
     public String toUnicode(String displayText) {
         // Check string for displayable Glyphs,  try and substitute any failed ones
@@ -411,5 +383,39 @@ public class OFont implements FontFile {
 
     public boolean isOneByteEncoding(){
         return false;
+    }
+
+    public Shape getEstringOutline(String displayText, float x, float y){
+
+        displayText = toUnicode(displayText);
+        FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+        GlyphVector glyphVector = awtFont.createGlyphVector(frc, displayText);
+        glyphVector.setGlyphPosition(0, new Point2D.Float(x, y));
+
+        // Iterate through displayText to calculate the the new advance value if
+        // the displayLength is greater then one character. This in sures that
+        // cid -> String will get displayed correctly.
+        int displayLength = displayText.length();
+        float lastx;
+        if (displayLength > 1){
+            Point2D p;
+            float advance = 0;
+            for (int i = 0; i < displayText.length(); i++) {
+                // Position of the specified glyph relative to the origin of glyphVector
+                p = glyphVector.getGlyphPosition(i);
+                lastx = (float) p.getX();
+                // add fonts rise to the to glyph position (sup,sub scripts)
+                glyphVector.setGlyphPosition(
+                        i,
+                        new Point2D.Double(lastx + advance, p.getY()));
+
+                // subtract the advance because we will be getting it from the fonts width
+                float adv1 = glyphVector.getGlyphMetrics(i).getAdvance();
+                double adv2 = echarAdvance(displayText.charAt(i)).getX();
+                advance += -adv1 + adv2 + lastx;
+            }
+        }
+
+        return glyphVector.getOutline();
     }
 }

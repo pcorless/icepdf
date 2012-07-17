@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
+import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
@@ -212,7 +213,30 @@ public class TextSprite {
 //            drawGyphBox(g2d, glyphText);
         }
     }
-    /*
+
+    /**
+     * Gets the glyph outline as an Area.  This method is primarily used
+     * for processing text rendering modes 4 - 7.
+     *
+     * @return area representing the glyph outline.
+     */
+    public Area getGlyphOutline(){
+        Area glyphOutline = null;
+        for (GlyphText glyphText : glyphTexts){
+            if (glyphOutline != null){
+                glyphOutline.add(new Area(font.getEstringOutline(
+                        glyphText.getCid(),
+                        glyphText.getX(), glyphText.getY())));
+            }else{
+                glyphOutline = new Area(font.getEstringOutline(
+                        glyphText.getCid(),
+                        glyphText.getX(), glyphText.getY()));
+            }
+        }
+        return glyphOutline;
+    }
+
+  /*
     private void drawBoundBox(Graphics2D gg) {
 
         // draw the characters
@@ -253,7 +277,7 @@ public class TextSprite {
         gg.setStroke(new BasicStroke((float) (scale)));
         gg.setColor(Color.red);
 
-        charOutline = new GeneralPath(glyphSprite.getGeneralPath());
+        charOutline = new GeneralPath(glyphSprite.getBounds());
         gg.draw(charOutline);
 
         gg.setColor(oldColor);

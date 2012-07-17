@@ -19,7 +19,6 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.Rectangle2D;
 import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.logging.Level;
