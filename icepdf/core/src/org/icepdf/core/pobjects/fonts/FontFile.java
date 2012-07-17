@@ -125,5 +125,17 @@ public interface FontFile {
                                      float y, long layout, int mode,
                                      Color strokecolor);
 
+    /**
+     * Get the glyph outline shape for the given estr translated to x,y.
+     *
+     * @param estr text to calculate glyph outline shape
+     * @param x    x coordinate to translate outline shape.
+     * @param y    y coordinate to translate outline shape.
+     * @return glyph outline of the estr.
+     */
+    public Shape getEstringOutline(String estr, float x, float y);
+
     public boolean isOneByteEncoding();
+
+
 }
