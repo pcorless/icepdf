@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
@@ -280,7 +279,7 @@ public class TilingPattern extends Stream implements Pattern {
      */
     public void paintPattern(Graphics2D g, Page parentPage) {
         if (patternPaint == null) {
-            AffineTransform matrixInv = getInvMatrix();
+//            final AffineTransform matrixInv = getInvMatrix();
             Rectangle2D bBoxMod = matrix.createTransformedShape(bBox).getBounds2D();
 
             int width = (int) bBoxMod.getWidth();
@@ -302,53 +301,15 @@ public class TilingPattern extends Stream implements Pattern {
             canvas.setRenderingHints(g.getRenderingHints());
             // copy over the rendering hints
             // get shapes and paint them.
-            Shapes tilingShapes = getShapes();
+            final Shapes tilingShapes = getShapes();
+
+            // add clip for bBoxMod, needed for some shapes painting.
+            canvas.setClip(0,0, (int)bBoxMod.getWidth(), (int)bBoxMod.getHeight());
+
+            // paint the pattern
+            paintPattern(canvas, tilingShapes);
+
             // paint the graphic using the current gs.
-            patternPaint = new TexturePaint(bi, bBoxMod);
-            g.setPaint(patternPaint);
-            if (tilingShapes != null) {
-                // setup resource parent
-                tilingShapes.setPageParent(parentPage);
-                canvas.setClip(0, 0, width, height);
-                // apply the pattern space
-                canvas.setTransform(matrix);
-                // move it back by any shear/rotation distance.
-                canvas.translate(matrixInv.getTranslateX(),
-                        matrixInv.getTranslateY());
-
-                if (paintType == TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                    canvas.setColor(unColored);
-                }
-                // paint the pattern content stream.
-                tilingShapes.paint(canvas);
-
-                // do a little tiling if there is a shear so that we
-                // don't end up with any white space around the rotate
-                // pattern cell. Java texture paint can't take a transform
-                // when painting so this will have to do.
-                if (matrix.getShearX() > 0 ||
-                        matrix.getShearY() > 0) {
-                    canvas.translate(bBox.getWidth(), 0);
-                    tilingShapes.paint(canvas);
-                    canvas.translate(0, -bBox.getHeight());
-                    tilingShapes.paint(canvas);
-                    canvas.translate(-bBox.getWidth(), 0);
-                    tilingShapes.paint(canvas);
-                    canvas.translate(-bBox.getWidth(), 0);
-                    tilingShapes.paint(canvas);
-                    canvas.translate(0, bBox.getHeight());
-                    tilingShapes.paint(canvas);
-                    canvas.translate(0, bBox.getHeight());
-                    tilingShapes.paint(canvas);
-                    canvas.translate(bBox.getWidth(), 0);
-                    tilingShapes.paint(canvas);
-                    canvas.translate(bBox.getWidth(), 0);
-                    tilingShapes.paint(canvas);
-                }
-                // release the page parent
-                tilingShapes.setPageParent(null);
-            }
-            // finally paint the graphic using the current gs.
             patternPaint = new TexturePaint(bi, bBoxMod);
             g.setPaint(patternPaint);
 
@@ -359,7 +320,7 @@ public class TilingPattern extends Stream implements Pattern {
 //                @Override
 //                public void paint(Graphics g_) {
 //                    super.paint(g_);
-//                    g_.drawImage(bi, 0, 0, f);
+//                    paintPattern((Graphics2D)g_, tilingShapes);
 //                }
 //            });
 //            f.setSize(new Dimension(800, 800));
@@ -371,6 +332,48 @@ public class TilingPattern extends Stream implements Pattern {
             g.setPaint(patternPaint);
         }
     }
+
+    private void paintPattern(Graphics2D g2d, Shapes tilingShapes){
+
+        // store previous state so we can draw bounds
+        AffineTransform preAf = g2d.getTransform();
+
+        // apply scale an shear but not translation
+        AffineTransform af = g2d.getTransform();
+        af.setToScale(matrix.getScaleX(), matrix.getScaleY());
+        af.setToShear(matrix.getShearX(), matrix.getShearY());
+        g2d.transform(af);
+        // pain the key pattern
+        tilingShapes.paint(g2d);
+
+        // if we have a shear then we need to pad out the pattern
+        // so we can fill a pattern paint buffer.
+        if (matrix.getShearX() > 0 ||
+                matrix.getShearY() > 0) {
+            g2d.translate(bBox.getWidth(), 0);
+            tilingShapes.paint(g2d);
+            g2d.translate(0, -bBox.getHeight());
+            tilingShapes.paint(g2d);
+            g2d.translate(-bBox.getWidth(), 0);
+            tilingShapes.paint(g2d);
+            g2d.translate(-bBox.getWidth(), 0);
+            tilingShapes.paint(g2d);
+            g2d.translate(0, bBox.getHeight());
+            tilingShapes.paint(g2d);
+            g2d.translate(0, bBox.getHeight());
+            tilingShapes.paint(g2d);
+            g2d.translate(bBox.getWidth(), 0);
+            tilingShapes.paint(g2d);
+            g2d.translate(bBox.getWidth(), 0);
+            tilingShapes.paint(g2d);
+            // highlight key square.
+//            g2d.translate(-bBox.getWidth(), -bBox.getHeight());
+//            g2d.setColor(Color.red);
+//            g2d.draw(bBox);
+        }
+        g2d.setTransform(preAf);
+    }
+
 
     public Paint getPaint() {
         return texturePaint;
