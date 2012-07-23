@@ -678,7 +678,20 @@ public class Parser {
 
         // store the parsed char in the token buffer.
         StringBuilder stringBuffer = new StringBuilder();
-        stringBuffer.append(currentChar);
+
+        if (!inString){
+            if (currentChar < 128){
+                stringBuffer.append(currentChar);
+            }
+            // parser correction for PDF-411, which is valid for file
+            if (currentChar == 'Q' || currentChar == 'q'){
+                reader.read();
+                return stringBuffer.toString();
+            }
+        }else{
+            stringBuffer.append(currentChar);
+        }
+
 
         /**
          * Finally parse the contents of a complex token
@@ -859,8 +872,14 @@ public class Parser {
             }
             // append the current char and keep parsing if needed
             // IgnoreChar is set by the the line split char '\'
-            if (!ignoreChar) {
-                stringBuffer.append(currentChar);
+            if (!ignoreChar ) {
+                if (inString){
+                    stringBuffer.append(currentChar);
+                }
+                // eat any junk characters
+                else if (currentChar < 128){
+                    stringBuffer.append(currentChar);
+                }
             }
             // reset the ignorChar flag
             else {
