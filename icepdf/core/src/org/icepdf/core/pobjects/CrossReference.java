@@ -55,6 +55,9 @@ public class CrossReference {
     private boolean m_bHaveTriedLoadingPrevious;
     private boolean m_bHaveTriedLoadingPeer;
 
+    // offset error for simple file error issue.
+    protected int offset;
+
     public CrossReference() {
 //        m_vXRefEntries = new Vector<Entry>(4096);
         m_hObjectNumber2Entry = new Hashtable<Number, Entry>(4096);
@@ -268,7 +271,7 @@ public class CrossReference {
         }
     }
 
-    public static class UsedEntry extends Entry {
+    public class UsedEntry extends Entry {
         private long m_lFilePositionOfObject;
         private int m_iGenerationNumber;
 
@@ -279,7 +282,7 @@ public class CrossReference {
         }
 
         public long getFilePositionOfObject() {
-            return m_lFilePositionOfObject;
+            return m_lFilePositionOfObject + offset;
         }
 
         public int getGenerationNumber() {
@@ -304,5 +307,9 @@ public class CrossReference {
         public int getIndexWithinObjectStream() {
             return m_iIndexWithinObjectStream;
         }
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 }

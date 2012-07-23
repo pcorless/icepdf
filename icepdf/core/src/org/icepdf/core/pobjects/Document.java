@@ -471,7 +471,8 @@ public class Document {
     private void loadDocumentViaXRefs(SeekableInput in)
             throws PDFException, PDFSecurityException, IOException {
         //if( true ) throw new RuntimeException("Fallback to linear traversal");
-        long xrefPosition = getInitialCrossReferencePosition(in);
+        int offset = skipPastAnyPrefixJunk(in);
+        long xrefPosition = getInitialCrossReferencePosition(in) + offset;
         PTrailer documentTrailer = null;
         while (xrefPosition > 0L) {
             in.seekAbsolute(xrefPosition);
@@ -488,10 +489,11 @@ public class Document {
                 throw new RuntimeException("Could not find cross reference");
             trailer.setPosition(xrefPosition);
 
-            if (documentTrailer == null)
+            if (documentTrailer == null) {
                 documentTrailer = trailer;
-            else
+            }else{
                 documentTrailer.addPreviousTrailer(trailer);
+            }
 
             // If this trailer has everything we need to get started,
             //   then we can lazily load other trailers later
@@ -501,6 +503,11 @@ public class Document {
         }
         if (documentTrailer == null)
             throw new RuntimeException("Could not find document trailer");
+        if (offset > 0){
+            // mark the offset, so that it can be correct for later during
+            // object retrieval.
+            documentTrailer.getCrossReferenceTable().setOffset(offset);
+        }
 
         LazyObjectLoader lol = new LazyObjectLoader(
                 library, in, documentTrailer.getPrimaryCrossReference());
@@ -627,6 +634,10 @@ public class Document {
             library.setLazyObjectLoader(lol);
         }
 
+        // apply the new object offset values so that the object can be retrieved
+        // using the actual index in the file
+        // todo, implement indexer.
+
         pTrailer = documentTrailer;
         library.setCatalog(catalog);
 
@@ -693,6 +704,48 @@ public class Document {
             }
         }
     }
+
+    /**
+     * Skips junk and keeps track of the offset so that later corrections can
+     * be made for object seeks.
+     * @param in input stream to parse.
+     * @return 0 if file header is well formed, otherwise the offset to where
+     * the document header starts.
+     */
+    private int skipPastAnyPrefixJunk(SeekableInput in) {
+        if (!in.markSupported())
+            return 0 ;
+        try {
+            final int scanLength = 2048;
+            final String scanFor = "%PDF-1.";
+            int scanForIndex = 0;
+            in.mark(scanLength);
+            for (int i = 0; i < scanLength; i++) {
+                int data = in.read();
+                if (data < 0) {
+                    in.reset();
+                    return 0;
+                }
+                if (data == scanFor.charAt(scanForIndex)) {
+                    return i;
+                } else {
+                    scanForIndex = 0;
+                }
+            }
+            // Searched through scanLength number of bytes and didn't find it,
+            //  so reset, in case it was never there to find
+            in.reset();
+        }
+        catch (IOException e) {
+            try {
+                in.reset();
+            }
+            catch (IOException e2) {
+            }
+        }
+        return 0;
+    }
+
 
     /**
      * Utility method for building the SecurityManager if the document
