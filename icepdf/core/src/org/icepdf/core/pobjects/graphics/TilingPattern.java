@@ -340,6 +340,8 @@ public class TilingPattern extends Stream implements Pattern {
 
         // apply scale an shear but not translation
         AffineTransform af = g2d.getTransform();
+        // todo there is a still a bug here, the call to setToShear
+        // wipes out the scale, further investigation is needed.
         af.setToScale(matrix.getScaleX(), matrix.getScaleY());
         af.setToShear(matrix.getShearX(), matrix.getShearY());
         g2d.transform(af);
