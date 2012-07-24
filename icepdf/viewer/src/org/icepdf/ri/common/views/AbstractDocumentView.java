@@ -83,7 +83,7 @@ public abstract class AbstractDocumentView
 
     protected Document currentDocument;
 
-    protected DocumentViewModelImpl documentViewModel;
+    protected DocumentViewModel documentViewModel;
 
     // panning handler
     protected PanningHandler panningHandler;
@@ -101,7 +101,7 @@ public abstract class AbstractDocumentView
      */
     public AbstractDocumentView(DocumentViewController documentViewController,
                                 JScrollPane documentScrollpane,
-                                DocumentViewModelImpl documentViewModel) {
+                                DocumentViewModel documentViewModel) {
         this.documentViewController = documentViewController;
         this.documentScrollpane = documentScrollpane;
         this.documentViewModel = documentViewModel;
