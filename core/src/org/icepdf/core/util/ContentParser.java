@@ -2529,10 +2529,10 @@ public class ContentParser {
                 tilingPattern.init();
                 // 4.) Restore the saved graphics state
                 graphicState = graphicState.restore();
-                // 1x1 tiles don't seem to paint so we'll resort to using the
+                // tiles nee to be 1x1 or larger to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
-                if ((tilingPattern.getBBox().getWidth() > 1 ||
-                        tilingPattern.getBBox().getHeight() > 1) ){
+                if ((tilingPattern.getBBox().getWidth() >= 1 ||
+                        tilingPattern.getBBox().getHeight() >= 1) ){
                     shapes.add(tilingPattern);
                 }
                 else{
