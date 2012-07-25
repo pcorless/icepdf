@@ -2148,6 +2148,10 @@ public class Stream extends Dictionary {
         // get dimension of image stream
         int width = library.getInt(entries, "Width");
         int height = library.getInt(entries, "Height");
+        // check height for zero length
+        if (height == 0){
+            height = width;
+        }
 
         // check for available memory, get colour space and bit count
         // to better estimate size of image in memory
@@ -2627,8 +2631,9 @@ public class Stream extends Dictionary {
                 for (int i = 0; i < colorsLength; i++) {
                     cmap[i] = colors[i].getRGB();
                 }
-                for (int i = colorsLength; i < cmap.length; i++)
+                for (int i = colorsLength; i < cmap.length; i++){
                     cmap[i] = 0xFF000000;
+                }
 
                 boolean usingIndexedAlpha = maskMinIndex >= 0 && maskMaxIndex >= 0;
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
