@@ -297,6 +297,12 @@ public class TilingPattern extends Stream implements Pattern {
             final BufferedImage bi = new BufferedImage(width, height,
                     BufferedImage.TYPE_INT_ARGB);
             Graphics2D canvas = bi.createGraphics();
+
+            // create the pattern paint before  we paint encase there
+            // is some recursive calls during the paint PDF-436
+            patternPaint = new TexturePaint(bi, bBoxMod);
+            g.setPaint(patternPaint);
+
             // apply current hints
             canvas.setRenderingHints(g.getRenderingHints());
             // copy over the rendering hints
@@ -308,10 +314,6 @@ public class TilingPattern extends Stream implements Pattern {
 
             // paint the pattern
             paintPattern(canvas, tilingShapes);
-
-            // paint the graphic using the current gs.
-            patternPaint = new TexturePaint(bi, bBoxMod);
-            g.setPaint(patternPaint);
 
             // show it in a frame
 //            final JFrame f = new JFrame("Test");
