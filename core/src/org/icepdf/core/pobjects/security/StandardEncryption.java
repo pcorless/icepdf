@@ -398,7 +398,7 @@ class StandardEncryption {
      * case the n is the value of Length divided by 8.)
      * <br />
      * If using the AES algorithm, extend the encryption key an additional
-     * 4 bytes by adding the value “sAlT”, which corresponds to the hexadecimal
+     * 4 bytes by adding the value "sAlT", which corresponds to the hexadecimal
      * values 0x73, 0x41, 0x6C, 0x54. (This addition is done for backward
      * compatibility and is not intended to provide additional security.)
      * </ul>
@@ -621,7 +621,7 @@ class StandardEncryption {
                         encryptionDictionary.getPerms());
                 byte[] decryptedPerms = AES256CBC(encryptionKey, perms);
 
-                // Verify that bytes 9-11 of the result are the characters ‘a’, ‘d’, ‘b’.
+                // Verify that bytes 9-11 of the result are the characters 'a', 'd', 'b'.
                 if (decryptedPerms[9] != (byte) 'a' ||
                         decryptedPerms[10] != (byte) 'd' ||
                         decryptedPerms[11] != (byte) 'b') {

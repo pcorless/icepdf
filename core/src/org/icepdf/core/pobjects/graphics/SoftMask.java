@@ -39,10 +39,10 @@ import java.util.logging.Logger;
  * the transfer function to the input value 0.0.</li>
  * <li>If the subtype is Luminosity, the transparency group XObject G shall
  * be composited with a fully opaque backdrop whose colour is everywhere
- * defined by the soft-mask dictionary’s BC entry. The computed result colour
+ * defined by the soft-mask dictionary's BC entry. The computed result colour
  * shall then be converted to a single-component luminosity value, and the
  * transfer function TR shall be applied to this luminosity to produce the
- * mask values. Outside the transparency group’s bounding box, the mask value
+ * mask values. Outside the transparency group's bounding box, the mask value
  * shall be derived by transforming the BC colour to luminosity and applying
  * the transfer function to the result.</li>
  * </ul>
@@ -64,11 +64,11 @@ public class SoftMask extends Dictionary {
      * A subtype specifying the method to be used in deriving the mask values
      * from the transparency group specified by the G entry:
      * <ul>
-     * <li><b>Alpha</b> - The group’s computed alpha shall be used, disregarding
-     * its colour (see “Deriving a Soft Mask from Group Alpha”).</li>
-     * <li>LuminosityThe group’s computed colour shall be converted to a
-     * single-component luminosity value (see “Deriving a Soft Mask from
-     * Group Luminosity”).</li>
+     * <li><b>Alpha</b> - The group's computed alpha shall be used, disregarding
+     * its colour (see "Deriving a Soft Mask from Group Alpha").</li>
+     * <li>LuminosityThe group's computed colour shall be converted to a
+     * single-component luminosity value (see "Deriving a Soft Mask from
+     * Group Luminosity").</li>
      * </ul>
      *
      * @return subtype of the soft-mask dictionary.
@@ -78,7 +78,7 @@ public class SoftMask extends Dictionary {
     }
 
     /**
-     * A transparency group XObject (see “Transparency Group XObjects”) to be
+     * A transparency group XObject (see "Transparency Group XObjects") to be
      * used as the source of alpha or colour values for deriving the mask. If
      * the subtype S is Luminosity, the group attributes dictionary shall
      * contain a CS entry defining the colour space in which the compositing
@@ -102,8 +102,8 @@ public class SoftMask extends Dictionary {
      * This entry shall be consulted only if the subtype S is Luminosity. The
      * array shall consist of n numbers, where n is the number of components in
      * the colour space specified by the CS entry in the group attributes
-     * dictionary (see “Transparency Group XObjects”).
-     * Default value: the colour space’s initial value, representing black.
+     * dictionary (see "Transparency Group XObjects").
+     * Default value: the colour space's initial value, representing black.
      * @return
      */
     public Vector<Number> getBC(){
@@ -116,7 +116,7 @@ public class SoftMask extends Dictionary {
 
     // todo handle TR
     /**
-     * (Optional) A function object (see “Functions”) specifying the transfer
+     * (Optional) A function object (see "Functions") specifying the transfer
      * function to be used in deriving the mask values. The function shall
      * accept one input, the computed group alpha or luminosity (depending on
      * the value of the subtype S), and shall return one output, the resulting
