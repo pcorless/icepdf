@@ -931,6 +931,9 @@ public class ContentParser {
         graphicState.getTextState().tlmatrix = new AffineTransform();
         graphicState.scale(1, -1);
 
+        // apply text scaling, incase the BT block doesn't specify it explicitly.
+        applyTextScaling(graphicState);
+
         // get reference to PageText.
         PageText pageText = shapes.getPageText();
         // previous Td, TD or Tm y coordinate value for text extraction
