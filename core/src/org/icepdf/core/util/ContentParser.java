@@ -45,6 +45,15 @@ public class ContentParser {
     private static final Logger logger =
             Logger.getLogger(ContentParser.class.toString());
 
+    private static boolean disableTransparencyGroups;
+    static {
+        // decide if large images will be scaled
+        disableTransparencyGroups =
+                Defs.sysPropertyBoolean("org.icepdf.core.disableTransparencyGroup",
+                        false);
+
+    }
+
     public static final float OVERPAINT_ALPHA = 0.4f;
 
     private GraphicsState graphicState;
@@ -1951,11 +1960,26 @@ public class ContentParser {
                     shapes.add(formXObject.getBBox());
                 }
                 shapes.addClipCommand();
-                setAlpha(shapes,
-                        graphicState.getAlphaRule(),
-                        graphicState.getFillAlpha());
                 // 4.) Paint the graphics objects in font stream.
-                shapes.add(formXObject.getShapes());
+                setAlpha(shapes, graphicState.getAlphaRule(),
+                        graphicState.getFillAlpha());
+                // If we have a transparency group we paint it
+                // slightly different then a regular xObject as we
+                // need to capture the alpha which is only possible
+                // by paint the xObject to an image.
+                if (!disableTransparencyGroups &&
+                        formXObject.isTransparencyGroup() &&
+                       graphicState.getFillAlpha() < 1.0f ) {
+                    // add the hold form for further processing.
+                    shapes.add(formXObject);
+                }
+                // the down side of painting to an image is that we
+                // lose quality if there is a affine transform, so
+                // if it isn't a group transparency we paint old way
+                // by just adding the objects to the shapes stack.
+                else {
+                    shapes.add(formXObject.getShapes());
+                }
                 // makes sure we add xobject images so we can extract them.
                 if (formXObject.getShapes() != null) {
                     shapes.add(formXObject.getShapes().getImages());
