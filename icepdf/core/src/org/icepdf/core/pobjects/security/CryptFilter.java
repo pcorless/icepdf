@@ -40,7 +40,7 @@ import java.util.Set;
  * filter for streams. A conforming reader shall provide a standard Identity
  * filter which shall pass the data unchanged (see Table 26) to allow specific
  * streams, such as document metadata, to be unencrypted in an otherwise
- * encrypted document. The stream’s DecodeParms entry shall contain a
+ * encrypted document. The stream's DecodeParms entry shall contain a
  * Crypt filter decode parameters dictionary (see Table 14) whose Name entry
  * specifies the particular crypt filter to be used (if missing, Identity is
  * used). Different streams may specify different crypt filters.</li>

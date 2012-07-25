@@ -25,7 +25,7 @@ import java.util.Vector;
 
 /**
  * DeviceN colour spaces shall be defined in a similar way to Separation colour
- * spaces—in fact, a Separationcolour space can be defined as a DeviceN colour
+ * spaces-in fact, a Separationcolour space can be defined as a DeviceN colour
  * space with only one component.
  * <p/>
  * A DeviceN colour space shall be specified as follows:

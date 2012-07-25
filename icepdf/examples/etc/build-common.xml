@@ -72,7 +72,7 @@
         <sequential>
             <mkdir dir="${build.classes.dir}"/>
 
-            <javac destdir="${build.classes.dir}" sourcepath=""
+            <javac destdir="${build.classes.dir}" sourcepath="" encoding="UTF-8"
                    source="${compile.source}" target="${compile.target}"
                    debug="${compile.debug}" failonerror="@{failonerror}" >
                 <src location="${src.dir}"/>
