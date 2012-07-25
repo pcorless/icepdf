@@ -15,6 +15,10 @@
 
 <project name="icepdf-viewer" default="build.all">
 
+    <property file="build.properties"/>
+
+    <property name="manifest.classPath" value="icepdf-core.jar icepdf-viewer.jar batik-awt-util.jar batik-dom.jar batik-svg-dom.jar batik-svggen.jar batik-util.jar batik-xml.jar" />
+
     <patternset id="icepdf.lib.core"
                 includes="
                 icepdf-core.jar
@@ -49,7 +53,7 @@
                 <attribute name="Main-Class"
                            value="org.icepdf.ri.viewer.Main"/>
                 <attribute name="Class-Path"
-                           value="icepdf-core.jar icepdf-viewer.jar icepdf-pro.jar icepdf-pro-intl.jar batik-awt-util.jar batik-dom.jar batik-svg-dom.jar batik-svggen.jar batik-util.jar batik-xml.jar"/>
+                           value="${manifest.classPath}"/>
             </add.manifest.elements>
         </build.jar>
 
