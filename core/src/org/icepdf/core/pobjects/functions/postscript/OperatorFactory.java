@@ -47,7 +47,7 @@ public class OperatorFactory {
             /**
              * num1 abs =  num2
              *    4.5 abs -> 4.5
-             *     –3 abs -> 3
+             *     3 abs -> 3
              *     0 abs -> 0
              */
             case OperatorNames.OP_ABS:
@@ -117,7 +117,7 @@ public class OperatorFactory {
             /***
              *  int1 shift bitshift int2
              *      07 3 bitshift -> 56
-             *    142 –3 bitshift -> 17
+             *    142 3 bitshift -> 17
              */
             case OperatorNames.OP_BITSHIFT:
                 operator = new Operator(OperatorNames.OP_BITSHIFT) {
@@ -131,7 +131,7 @@ public class OperatorFactory {
             /**
              * num1 ceiling = num2
              *    3.2 ceiling -> 4.0
-             *   –4.8 ceiling -> –4.0
+             *   4.8 ceiling -> 4.0
              *     99 ceiling -> 99
              */
             case OperatorNames.OP_CEILING:
@@ -156,7 +156,7 @@ public class OperatorFactory {
                 };
                 break;
             /**
-             * any1 … anyn n copy any1 … anyn any1 … anyn
+             * any1 ... anyn n copy any1 ... anyn any1 ... anyn
              *
              *         array1 array2 copy subarray2
              *           dict1 dict2 copy dict2
@@ -183,7 +183,7 @@ public class OperatorFactory {
              * string cvi = int
              *
              *    (3.3E1) cvi -> 33
-             *      –47.8 cvi -> –47
+             *      47.8 cvi -> 47
              *      520.9 cvi -> 520
              */
             case OperatorNames.OP_CVI:
@@ -382,7 +382,7 @@ public class OperatorFactory {
                 };
                 break;
             /**
-             * bool proc1 proc2 ifelse –
+             * bool proc1 proc2 ifelse -
              * removes all three operands from the stack, then executes proc1
              * if bool is true or proc2 if bool is false.
              *
@@ -430,7 +430,7 @@ public class OperatorFactory {
                 };
                 break;
             /**
-             * anyn … any0 n index anyn … any0 anyn
+             * anyn ... any0 n index anyn ... any0 anyn
              *
              * removes the nonnegative integer n from the operand stack, counts
              * down to the nth element from the top of the stack, and pushes a
@@ -588,7 +588,7 @@ public class OperatorFactory {
                 };
                 break;
             /**
-             * anyn-1 … any0 n j roll any (j-1) mod n … any0 anyn-1 … anyj mod n
+             * anyn-1 ... any0 n j roll any (j-1) mod n ... any0 anyn-1 ... anyj mod n
              *
              * performs a circular shift of the objects anyn-1 through any0 on
              * the operand stack by the amount j. Positive j indicates upward
@@ -697,9 +697,9 @@ public class OperatorFactory {
             /**
              * bool1 bool2 xor bool3
              * int1 int2 xor int3
-             * returns the logical “exclusive or” of the operands if they are
+             * returns the logical "exclusive or" of the operands if they are
              * boolean. If the operands are integers, xor returns the bitwise
-             * “exclusive or” of their binary representations.
+             * "exclusive or" of their binary representations.
              */
             case OperatorNames.OP_XOR:
                 operator = new Operator(OperatorNames.OP_XOR) {
