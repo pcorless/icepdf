@@ -256,15 +256,12 @@ public class TilingPattern extends Stream implements Pattern {
         if (in != null) {
             try {
                 shapes = cp.parse(in);
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
                 logger.log(Level.FINE, "Error processing tiling pattern.", e);
-            }
-            finally {
+            } finally {
                 try {
                     in.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                 }
             }
         }
@@ -310,7 +307,7 @@ public class TilingPattern extends Stream implements Pattern {
             final Shapes tilingShapes = getShapes();
 
             // add clip for bBoxMod, needed for some shapes painting.
-            canvas.setClip(0,0, (int)bBoxMod.getWidth(), (int)bBoxMod.getHeight());
+            canvas.setClip(0, 0, (int) bBoxMod.getWidth(), (int) bBoxMod.getHeight());
 
             // paint the pattern
             paintPattern(canvas, tilingShapes);
@@ -335,7 +332,7 @@ public class TilingPattern extends Stream implements Pattern {
         }
     }
 
-    private void paintPattern(Graphics2D g2d, Shapes tilingShapes){
+    private void paintPattern(Graphics2D g2d, Shapes tilingShapes) {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
@@ -344,8 +341,10 @@ public class TilingPattern extends Stream implements Pattern {
         AffineTransform af = g2d.getTransform();
         // todo there is a still a bug here, the call to setToShear
         // wipes out the scale, further investigation is needed.
-        af.setToScale(matrix.getScaleX(), matrix.getScaleY());
-        af.setToShear(matrix.getShearX(), matrix.getShearY());
+        if (matrix.getScaleX() != 0.0 && matrix.getScaleY() != 0.0) {
+            af.scale(matrix.getScaleX(), Math.abs(matrix.getScaleY()));
+        }
+        af.shear(matrix.getShearX(), matrix.getShearY());
         g2d.transform(af);
         // pain the key pattern
         tilingShapes.paint(g2d);
