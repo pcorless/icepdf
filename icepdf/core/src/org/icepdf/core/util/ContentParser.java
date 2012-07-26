@@ -812,7 +812,7 @@ public class ContentParser {
                     }
                     // Horizontal scaling
                     else if (tok.equals(PdfOps.Tz_TOKEN)) {
-                        consume_Tz(graphicState, stack);
+                        consume_Tz(graphicState, stack, inTextBlock);
                     }
                     // Text rise
                     else if (tok.equals(PdfOps.Ts_TOKEN)) {
@@ -1338,7 +1338,7 @@ public class ContentParser {
                 // Horizontal scaling
                 else if (nextToken.equals(PdfOps.Tz_TOKEN)) {
 //                    collectTokenFrequency(PdfOps.Tz_TOKEN);
-                    consume_Tz(graphicState, stack);
+                    consume_Tz(graphicState, stack, inTextBlock);
                 }
 
                 // Text rise
@@ -2146,7 +2146,8 @@ public class ContentParser {
         graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
     }
 
-    private static void consume_Tz(GraphicsState graphicState, Stack stack) {
+    private static void consume_Tz(GraphicsState graphicState, Stack stack,
+                            boolean inTextBlock) {
 //        collectTokenFrequency(PdfOps.Tz_TOKEN);
         Object ob = stack.pop();
         if (ob instanceof Number) {
@@ -2154,7 +2155,9 @@ public class ContentParser {
             // values is represented in percent but we want it as a none percent
             graphicState.getTextState().hScalling = hScaling / 100f;
             // apply text size.
-            applyTextScaling(graphicState);
+            if (inTextBlock){
+                applyTextScaling(graphicState);
+            }
         }
     }
 
