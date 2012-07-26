@@ -17,7 +17,17 @@
 
     <property file="build.properties"/>
 
-    <property name="manifest.classPath" value="icepdf-core.jar icepdf-viewer.jar batik-awt-util.jar batik-dom.jar batik-svg-dom.jar batik-svggen.jar batik-util.jar batik-xml.jar" />
+    <propertyset id="product.info">
+        <propertyref name="company"/>
+        <propertyref name="product"/>
+        <propertyref name="version.primary"/>
+        <propertyref name="version.secondary"/>
+        <propertyref name="version.tertiary"/>
+        <propertyref name="release.type"/>
+        <propertyref name="build.number"/>
+        <propertyref name="revision"/>
+        <propertyref name="manifest.classPath"/>
+    </propertyset>
 
     <patternset id="icepdf.lib.core"
                 includes="

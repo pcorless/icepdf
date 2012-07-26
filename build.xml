@@ -47,6 +47,7 @@
         <propertyref name="release.type"/>
         <propertyref name="build.number"/>
         <propertyref name="revision"/>
+        <propertyref name="manifest.classPath"/>
     </propertyset>
 
     <presetdef name="ant" uri="urn:ICEsoft">
