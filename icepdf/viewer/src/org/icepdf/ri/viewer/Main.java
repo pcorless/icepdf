@@ -16,6 +16,7 @@ package org.icepdf.ri.viewer;
 
 import org.icepdf.ri.images.Images;
 
+import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 
@@ -33,7 +34,7 @@ public class Main {
 
     private static SplashWindow splashWindow = null;
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         // Read the image data and display the splash screen
         URL imageURL = Images.get("icepdf-splash-2012.jpg");
 
@@ -49,15 +50,19 @@ public class Main {
         // Call the main method of the application's Main class
         // using Reflection so that related classes resoving happens
         // after splash window is shown up
-        try {
-            Class.forName("org.icepdf.ri.viewer.Launcher")
-                    .getMethod("main", String[].class)
-                    .invoke(null, new Object[]{args});
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.err.flush();
-            System.exit(10);
-        }
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    Class.forName("org.icepdf.ri.viewer.Launcher")
+                            .getMethod("main", String[].class)
+                            .invoke(null, new Object[]{args});
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    System.err.flush();
+                    System.exit(10);
+                }
+            }
+        });
 
         // Dispose the splash screen
         if (splashWindow != null) {
