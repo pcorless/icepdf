@@ -2349,16 +2349,6 @@ public class Stream extends Dictionary {
                 decodedImage = jpxDecode(width, height, colourSpace, bitsPerComponent, fill,
                         smaskImage, maskImage, maskMinRGB, maskMaxRGB, decode);
             }
-            // CCITTFax load via JAI, if this fails we have other non JAI
-            // CCITTFax code to fall back on.
-            else if (shouldUseCCITTFaxDecode()){
-                 if (Tagger.tagging)
-                    Tagger.tagImage("CCITTFaxDecode JAI");
-                decodedImage =
-                    CCITTFax.attemptDeriveBufferedImageFromBytes(this, library,
-                            entries, fill);
-            }
-
             // finally if we have something then we return it.
             if (decodedImage != null) {
                 // write tmpImage to the cache
@@ -2366,14 +2356,28 @@ public class Stream extends Dictionary {
             }
         }
 
-        byte[] data;
-        int dataLength;
+        byte[] data = null;
+        int dataLength = 0;
         // CCITTfax data is raw byte decode.
         if (shouldUseCCITTFaxDecode()) {
+            // try default ccittfax decode.
             if (Tagger.tagging)
                 Tagger.tagImage("CCITTFaxDecode");
-            data = ccittFaxDecode(width, height);
-            dataLength = data.length;
+            try{
+                data = ccittFaxDecode(width, height);
+                dataLength = data.length;
+            }catch(Throwable e){
+                // on a failure then fall back to JAI for a try. likely
+                // will not happen.
+                if (Tagger.tagging) {
+                    Tagger.tagImage("CCITTFaxDecode JAI");
+                }
+                BufferedImage decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
+                        this, library, entries, fill);
+                if (decodedImage != null){
+                    return decodedImage;
+                }
+            }
         }
         // no further processing needed we can just get the stream bytes using
         // normal filter decompression.
