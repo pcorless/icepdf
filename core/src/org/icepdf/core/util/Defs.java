@@ -67,6 +67,25 @@ public class Defs {
     }
 
     /**
+     * Return value for system property <code>name</code> parsed as double or *
+     * <code>defaultValue</code> if the property does not exist * or a security
+     * manager denies access to it
+     */
+    public static double doubleProperty(String name, double defaultValue) {
+        String value = property(name);
+        if (value != null) {
+            try {
+                return Double.parseDouble(value);
+            }
+            catch (NumberFormatException ex) {
+                logger.log(Level.FINE, "Failed to parse property.", ex);
+            }
+        }
+        return defaultValue;
+    }
+
+
+    /**
      * Shortcut for <code>booleanProperty(name, false)</code>
      */
     public static boolean booleanProperty(String name) {
@@ -119,6 +138,13 @@ public class Defs {
      */
     public static int sysPropertyInt(String name, int defaultValue) {
         return intProperty(name, defaultValue);
+    }
+
+    /**
+     * Alias to doubleProperty(String name, double defaultValue)
+     */
+    public static double sysPropertyDouble(String name, double defaultValue) {
+        return doubleProperty(name, defaultValue);
     }
 
     /**
