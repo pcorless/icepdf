@@ -78,7 +78,10 @@ public class Stream extends Dictionary {
 
     // minimum dimension which will enable image scaling
     private static boolean scaleImages;
-    
+
+    // paper size for rare corner case when ccittfax is missing a dimension.
+    private static double pageRatio;
+
     // JDK 1.5 imaging order flag and b/r switch
     private static int redIndex = 0;
     private static int blueIndex = 2;
@@ -94,6 +97,10 @@ public class Stream extends Dictionary {
             redIndex  = 2;
             blueIndex = 0;
         }
+        // define alternate page size ration w/h, default Legal.
+        pageRatio =
+                Defs.sysPropertyDouble("org.icepdf.core.pageRatio",
+                        8.26/11.68);
     }
 
     private static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
@@ -2148,9 +2155,14 @@ public class Stream extends Dictionary {
         // get dimension of image stream
         int width = library.getInt(entries, "Width");
         int height = library.getInt(entries, "Height");
-        // check height for zero length
+        //  PDF-458 corner case/one off for trying to guess the width or height
+        // of an CCITTfax image that is basically the same use as the page, we
+        // use the page dimensions to try and determine the page size.
+        // This will fail miserably if the image isn't full page.
         if (height == 0){
-            height = width;
+            height = (int)((1/pageRatio)*width);
+        }else if (width == 0){
+            width = (int)(pageRatio*height);
         }
 
         // check for available memory, get colour space and bit count
