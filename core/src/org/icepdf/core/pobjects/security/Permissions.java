@@ -250,7 +250,7 @@ public class Permissions {
 
         }
         // Revision 3 rules
-        else if (revision == 3) {
+        else if (revision >= 3) {
             // print document rules
             if ((permissionFlags & PRINT_DOCUMENT_BIT_3)
                     == PRINT_DOCUMENT_BIT_3) {
@@ -293,6 +293,7 @@ public class Permissions {
             }
             isInit = true;
         }
+
     }
 
     /**
