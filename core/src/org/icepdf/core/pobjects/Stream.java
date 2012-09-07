@@ -652,9 +652,10 @@ public class Stream extends Dictionary {
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
-                    // Instead of assuming that Separation is special, I'll assume that DeviceGray is
+                    // Avoid converting images that are already likely gray.
                     if (!(colourSpace instanceof DeviceGray) &&
-                            !(colourSpace instanceof ICCBased)) {
+                            !(colourSpace instanceof ICCBased) &&
+                            !(colourSpace instanceof Indexed)) {
                         if (Tagger.tagging)
                             Tagger.tagImage("DCTDecode_JpegSubEncoding=Y");
                         alterRasterY2Gray(wr, bitspercomponent, decode); //TODO Use smaskImage, maskImage, maskMinRGB, maskMaxRGB or orig comp version here
