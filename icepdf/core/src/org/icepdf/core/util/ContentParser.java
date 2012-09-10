@@ -1840,27 +1840,27 @@ public class ContentParser {
         float c = ((Number) stack.pop()).floatValue();
         float b = ((Number) stack.pop()).floatValue();
         float a = ((Number) stack.pop()).floatValue();
-        if (!inTextBlock) {
-            // get the current CTM
-            AffineTransform af = new AffineTransform(graphicState.getCTM());
-            // do the matrix concatenation math
-            af.concatenate(new AffineTransform(a, b, c, d, e, f));
-            // add the transformation to the graphics state
-            graphicState.set(af);
-            // update the clip, translate by this CM
-            graphicState.updateClipCM(new AffineTransform(a, b, c, d, e, f));
-        }
+        // get the current CTM
+        AffineTransform af = new AffineTransform(graphicState.getCTM());
+        // do the matrix concatenation math
+        af.concatenate(new AffineTransform(a, b, c, d, e, f));
+        // add the transformation to the graphics state
+        graphicState.set(af);
+        // update the clip, translate by this CM
+        graphicState.updateClipCM(new AffineTransform(a, b, c, d, e, f));
         // apply the cm just as we would a tm
-        else {
+        if (inTextBlock) {
             // update the textBlockBase with the cm matrix
-            AffineTransform af = new AffineTransform(textBlockBase);
+            af = new AffineTransform(textBlockBase);
             // apply the transform
             graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
             af.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af);
-            graphicState.scale(1, -1);
             // apply text size.
             applyTextScaling(graphicState);
+            // update the textBlockBase as the tm was specified in the BT block
+            // and we still need to keep the offset.
+            textBlockBase.setTransform(new AffineTransform(graphicState.getCTM()));
         }
     }
 
