@@ -1969,7 +1969,9 @@ public class ContentParser {
                 // by paint the xObject to an image.
                 if (!disableTransparencyGroups &&
                         formXObject.isTransparencyGroup() &&
-                       graphicState.getFillAlpha() < 1.0f ) {
+                       graphicState.getFillAlpha() < 1.0f &&
+                        (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
+                         formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
                     // add the hold form for further processing.
                     shapes.add(formXObject);
                 }
