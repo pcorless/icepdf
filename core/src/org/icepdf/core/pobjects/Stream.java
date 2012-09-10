@@ -841,10 +841,12 @@ public class Stream extends Dictionary {
      *
      * @param width  width of image
      * @param height height of image
+     * @param fill colour fill to be applied to a mask
+     * @param imageMask true to indicate image should be treated as a mask
      * @return buffered image of decoded jbig2 image stream.   Null if an error
      *         occured during decode.
      */
-    private BufferedImage jbig2Decode(int width, int height, Color fill) {
+    private BufferedImage jbig2Decode(int width, int height, Color fill, boolean imageMask) {
         BufferedImage tmpImage = null;
 
         try {
@@ -904,6 +906,10 @@ public class Stream extends Dictionary {
         }
         catch (Exception e) {
             logger.log(Level.WARNING, "Problem loading JBIG2 image: ", e);
+        }
+        // apply the fill colour and alpha if masking is enabled.
+        if (imageMask){
+            tmpImage = applyExplicitMask(tmpImage, fill);
         }
         return tmpImage;
     }
@@ -1568,6 +1574,39 @@ public class Stream extends Dictionary {
 //        f.validate();
 //        f.setVisible(true);
 
+    }
+
+    /**
+     * Treats the base image as as mask data applying the specified fill colour
+     * to the flagged bytes and a transparency value otherwise. This method
+     * creates a new BufferedImage with a transparency model so it will cause
+     * a memory spike.
+     * @param baseImage masking image.
+     * @param fill fill value to apply to mask.
+     * @return masked image encoded with the fill colour and transparency.
+     */
+    private static BufferedImage applyExplicitMask(BufferedImage baseImage, Color fill) {
+        // create an
+        int baseWidth = baseImage.getWidth();
+        int baseHeight = baseImage.getHeight();
+
+        BufferedImage imageMask = new BufferedImage(baseWidth, baseHeight,
+                BufferedImage.TYPE_INT_ARGB);
+
+        // apply the mask by simply painting white to the base image where
+        // the mask specified no colour.
+        for (int y = 0; y < baseHeight; y++) {
+            for (int x = 0; x < baseWidth; x++) {
+                int maskPixel = baseImage.getRGB(x, y);
+                if (!(maskPixel == -1 || maskPixel == 0xffffff)) {
+                    imageMask.setRGB(x, y, fill.getRGB());
+                }
+            }
+        }
+        // clean up the old image.
+        baseImage.flush();
+        // return the mask.
+        return imageMask;
     }
 
     private static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -2352,7 +2391,7 @@ public class Stream extends Dictionary {
             else if (shouldUseJBIG2Decode()) {
                 if (Tagger.tagging)
                     Tagger.tagImage("JBIG2Decode");
-                decodedImage = jbig2Decode(width, height, fill);
+                decodedImage = jbig2Decode(width, height, fill, imageMask);
             }
             // JPEG2000 writes out image if successful
             else if (shouldUseJPXDecode()) {
