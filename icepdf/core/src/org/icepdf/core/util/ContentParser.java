@@ -1026,7 +1026,7 @@ public class ContentParser {
 
                     // ty will dictate the vertical shift, many pdf will use
                     // ty=0 do just do a horizontal shift for layout.
-                    if (y != 0 && newY != oldY) {
+                    if (y != 0 && Math.round(newY) !=  Math.round(oldY)) {
                         pageText.newLine();
                     }
                 }
@@ -1085,7 +1085,7 @@ public class ContentParser {
                     // f5 and f6 will dictate a horizontal or vertical shift
                     // this information could be used to detect new lines
 
-                    if (oldTransY != newTransY) {
+                    if (Math.round(oldTransY) != Math.round(newTransY)) {
                         pageText.newLine();
                     } else if (Math.abs(oldScaleY) != Math.abs(newScaleY)) {
                         pageText.newLine();
@@ -2633,6 +2633,7 @@ public class ContentParser {
         // the mystery continues,  it appears that only the negative or positive
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
+        float hScalling = graphicState.getTextState().hScalling;
         graphicState.getTextState().hScalling =
                 graphicState.getTextState().hScalling >= 0?1:-1;
         AffineTransform horizontalScalingTransform =
