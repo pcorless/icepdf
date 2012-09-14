@@ -427,9 +427,7 @@ public class ContentParser {
                             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
                             geometricPath.closePath();
                             graphicState.setClip(geometricPath);
-                            shapes.addClipCommand();
                         }
-
                     }
 
                     // Fill Color with ColorSpace
