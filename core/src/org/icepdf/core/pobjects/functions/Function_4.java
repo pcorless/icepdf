@@ -23,7 +23,7 @@ import org.icepdf.core.util.Utils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,7 +51,7 @@ public class Function_4 extends Function {
     private String functionContent;
 
     // cache for calculated colour values
-    private Hashtable<String, float[]> resultCache;
+    private HashMap<Integer, float[]> resultCache;
 
     public Function_4(Dictionary d) {
         super(d);
@@ -70,7 +70,7 @@ public class Function_4 extends Function {
             logger.warning("Type 4 function operands could not be found.");
         }
         // cache for type 4 function results.
-        resultCache = new Hashtable<String, float[]>();
+        resultCache = new HashMap<Integer, float[]>();
     }
 
     /**
@@ -82,9 +82,10 @@ public class Function_4 extends Function {
     public float[] calculate(float[] x) {
 
         // check the cache in case we've already made the calculation.
-        String colourKey = calculateColourKey(x);
-        if (resultCache.containsKey(colourKey)) {
-            return resultCache.get(colourKey);
+        Integer colourKey = calculateColourKey(x);
+        float[] result = resultCache.get(colourKey);
+        if (result != null) {
+            return result;
         }
 
         // setup the lexer stream
@@ -122,11 +123,17 @@ public class Function_4 extends Function {
      * @param colours one or more colour values,  usually maxes out at four.
      * @return concatenation of colour values.
      */
-    private String calculateColourKey(float[] colours){
-        StringBuilder builder = new StringBuilder();
-        for (float colour : colours){
-            builder.append(colour);
-        }
-        return builder.toString();
+    private Integer calculateColourKey(float[] colours){
+        int length = colours.length;
+        if (length == 4)
+            return ((int)colours[3] << 24) | ((int)colours[2] << 16) |
+                    ((int)colours[1] << 8) | (int)colours[0];
+        else if (length == 3)
+            return  ((int)colours[2] << 16) |
+                    ((int)colours[1] << 8) | (int)colours[0];
+        else if (length == 2)
+            return  ((int)colours[1] << 8) | (int)colours[0];
+        else
+            return (int)colours[0];
     }
 }
