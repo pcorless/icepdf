@@ -58,13 +58,19 @@ public abstract class ChunkingInputStream extends InputStream {
 
     protected int fillBufferFromInputStream(int offset, int length) throws IOException {
         int read = 0;
-        while (read < length) {
-            int currRead = in.read(buffer, offset + read, length - read);
-            if (currRead < 0 && read == 0)
-                return currRead;
-            if (currRead <= 0)
-                break;
-            read += currRead;
+        int mayRead = in.available();
+        int currRead;
+        try {
+            while (mayRead > 0 && read < length) {
+                currRead = in.read(buffer, offset + read, length - read);
+                if (currRead < 0 && read == 0)
+                    return currRead;
+                if (currRead <= 0)
+                    break;
+                read += currRead;
+            }
+        } catch (IOException e) {
+            // catch the rare and elusive zlib EOF error and keep going
         }
         return read;
     }
