@@ -88,7 +88,7 @@ public class HexStringObject implements StringObject {
         }
         catch (NumberFormatException e) {
             if (logger.isLoggable(Level.FINE)) {
-                logger.warning("Number Format Exception " + unsignedInt);
+                logger.finer("Number Format Exception " + unsignedInt);
             }
         }
         return unsignedInt;
