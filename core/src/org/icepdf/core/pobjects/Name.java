@@ -133,7 +133,7 @@ public class Name {
                 }
             }
         } catch (Throwable e) {
-            logger.warning("Error parsing hexadecimal characters.");
+            logger.finer("Error parsing hexadecimal characters.");
             //  we are going to bail on any exception and just return the original
             // string.
             return name.toString();
