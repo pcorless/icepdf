@@ -124,17 +124,21 @@ public class Function_4 extends Function {
      * @param colours one or more colour values,  usually maxes out at four.
      * @return concatenation of colour values.
      */
-    private Integer calculateColourKey(float[] colours) {
+    private Integer calculateColourKey(float[] colours){
         int length = colours.length;
-        if (length == 4)
-            return ((int) colours[3] << 24) | ((int) colours[2] << 16) |
-                    ((int) colours[1] << 8) | (int) colours[0];
-        else if (length == 3)
-            return ((int) colours[2] << 16) |
-                    ((int) colours[1] << 8) | (int) colours[0];
-        else if (length == 2)
-            return ((int) colours[1] << 8) | (int) colours[0];
-        else
-            return (int) colours[0];
+        if (length == 1){
+            return (int)colours[0];
+        }else if (length == 2){
+            return  ((int)colours[1] << 8) | (int)colours[0];
+        }else if (length == 3){
+            return  ((int)colours[2] << 16) |
+                    ((int)colours[1] << 8) | (int)colours[0];
+        }else {
+            StringBuilder builder = new StringBuilder();
+            for (float colour : colours){
+                builder.append(colour);
+            }
+            return builder.toString().hashCode();
+        }
     }
 }
