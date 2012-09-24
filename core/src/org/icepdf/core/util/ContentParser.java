@@ -2207,7 +2207,7 @@ public class ContentParser {
         float advanceY = ((Point2D.Float) advance).y;
 
         if (displayText.length() == 0) {
-            return new Point2D.Float(0, 0);
+            return new Point2D.Float(previousAdvance, 0);
         }
 
         // Postion of previous Glyph, all relative to text block
