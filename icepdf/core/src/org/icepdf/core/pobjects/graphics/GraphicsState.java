@@ -281,6 +281,7 @@ public class GraphicsState {
 
     // current clipping area.
     private Area clip;
+    private boolean clipChange = false;
 
     // over print mode
     private int overprintMode;
@@ -507,11 +508,15 @@ public class GraphicsState {
             // Add the parents CTM to the stack,
             parentGraphicState.set(parentGraphicState.CTM);
             // Add the parents clip to the stack
-            if (parentGraphicState.clip != null) {
-                parentGraphicState.shapes.add(parentGraphicState.clip.clone());
-                parentGraphicState.shapes.addClipCommand();
-            } else {
-                parentGraphicState.shapes.addNoClipCommand();
+            if (clipChange){
+                if (parentGraphicState.clip != null) {
+                    if (!clip.equals(parentGraphicState.clip)){
+                        parentGraphicState.shapes.add(new Area(parentGraphicState.clip));
+                        parentGraphicState.shapes.addClipCommand();
+                    }
+                } else {
+                    parentGraphicState.shapes.addNoClipCommand();
+                }
             }
             // Update the stack with the parentGraphicsState stack.
             parentGraphicState.shapes.add(
@@ -578,21 +583,16 @@ public class GraphicsState {
             if (clip != null) {
                 area.intersect(clip);
             }
-            // update the clip with the new value
-            clip = (Area) area.clone();
-
-            // add the new clip to the stack but check first for a potential
-            // clip intersection issue where small clips will not be painted
-            // at low zoom numbers.
-//            Rectangle2D bounds = area.getBounds2D();
-//            if (bounds.getWidth() < 0.005f ||
-//                    bounds.getHeight() < 0.0005f){
-//                shapes.add(bounds);
-//                shapes.addClipCommand();
-//            }else{
-                shapes.add(area.clone());
+            // update the clip with the new value if it is new.
+            if (clip == null || !clip.getBounds().equals(area.getBounds())){
+                clip = new Area(area);
+                shapes.add(new Area(area));
                 shapes.addClipCommand();
-//            }
+                // mark that the clip has changed.
+                clipChange = true;
+            }else{
+                clip = new Area(area);
+            }
         } else {
             // add a null clip for a null shape, should not normally happen
             clip = null;

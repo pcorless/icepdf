@@ -64,6 +64,11 @@ abstract class MultipleGradientPaintContext implements PaintContext {
                     24, 0xff0000, 0xFF00, 0xFF, 0x0,
                     false, DataBuffer.TYPE_INT);
 
+    private static ColorModel graybmodel_NA =
+            new ComponentColorModel(ColorSpace.getInstance(
+                    ColorSpace.CS_GRAY), new int[]{1},false, false,
+                    ColorModel.OPAQUE, DataBuffer.TYPE_INT);
+
     /**
      * Color model used if some gradient colors are transparent
      */
@@ -76,6 +81,11 @@ abstract class MultipleGradientPaintContext implements PaintContext {
             (ColorSpace.getInstance(ColorSpace.CS_sRGB),
                     32, 0xff0000, 0xFF00, 0xFF, 0xFF000000,
                     false, DataBuffer.TYPE_INT);
+
+    private static ColorModel graybmodel_A =
+            new ComponentColorModel(ColorSpace.getInstance(
+                    ColorSpace.CS_GRAY), new int[]{1,1},true, false,
+                    ColorModel.TRANSLUCENT, DataBuffer.TYPE_INT);
 
     /**
      * The cached colorModel
@@ -317,6 +327,8 @@ abstract class MultipleGradientPaintContext implements PaintContext {
             dataModel = lrgbmodel_A;
         else if (cm.getColorSpace() == srgbmodel_A.getColorSpace())
             dataModel = srgbmodel_A;
+        else if (cm.getColorSpace() == graybmodel_A.getColorSpace())
+            dataModel = srgbmodel_A;
         else
             throw new IllegalArgumentException
                     ("Unsupported ColorSpace for interpolation");
@@ -415,6 +427,8 @@ abstract class MultipleGradientPaintContext implements PaintContext {
                 dataModel = lrgbmodel_NA;
             else if (dataModel.getColorSpace() == srgbmodel_NA.getColorSpace())
                 dataModel = srgbmodel_NA;
+            else if (dataModel.getColorSpace() == graybmodel_NA.getColorSpace())
+                dataModel = graybmodel_NA;
             model = dataModel;
         }
     }

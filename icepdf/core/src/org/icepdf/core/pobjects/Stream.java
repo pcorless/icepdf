@@ -86,6 +86,9 @@ public class Stream extends Dictionary {
     private static int redIndex = 0;
     private static int blueIndex = 2;
 
+    // flag the forces jai to be use over our fax decode class.
+    private static boolean forceJaiccittfax;
+
     static {
         // decide if large images will be scaled
         scaleImages =
@@ -101,6 +104,11 @@ public class Stream extends Dictionary {
         pageRatio =
                 Defs.sysPropertyDouble("org.icepdf.core.pageRatio",
                         8.26/11.68);
+
+        // force jai as the default ccittfax decode.
+        forceJaiccittfax =
+                Defs.sysPropertyBoolean("org.icepdf.core.ccittfax.jai",
+                        false);
     }
 
     private static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
@@ -652,9 +660,10 @@ public class Stream extends Dictionary {
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
-                    // Instead of assuming that Separation is special, I'll assume that DeviceGray is
+                    // Avoid converting images that are already likely gray.
                     if (!(colourSpace instanceof DeviceGray) &&
-                            !(colourSpace instanceof ICCBased)) {
+                            !(colourSpace instanceof ICCBased) &&
+                            !(colourSpace instanceof Indexed)) {
                         if (Tagger.tagging)
                             Tagger.tagImage("DCTDecode_JpegSubEncoding=Y");
                         alterRasterY2Gray(wr, bitspercomponent, decode); //TODO Use smaskImage, maskImage, maskMinRGB, maskMaxRGB or orig comp version here
@@ -662,7 +671,10 @@ public class Stream extends Dictionary {
                     tmpImage = makeGrayBufferedImage(wr);
                     // apply mask value
                     if (maskImage != null){
-                        applyExplicitMask(tmpImage, maskImage);
+                        tmpImage = applyExplicitMask(tmpImage, maskImage);
+                    }
+                    if (smaskImage != null){
+                        tmpImage = applyExplicitSMask(tmpImage, smaskImage);
                     }
                 } else {
                     //System.out.println("Stream.dctDecode()    Other");
@@ -841,10 +853,12 @@ public class Stream extends Dictionary {
      *
      * @param width  width of image
      * @param height height of image
+     * @param fill colour fill to be applied to a mask
+     * @param imageMask true to indicate image should be treated as a mask
      * @return buffered image of decoded jbig2 image stream.   Null if an error
      *         occured during decode.
      */
-    private BufferedImage jbig2Decode(int width, int height, Color fill) {
+    private BufferedImage jbig2Decode(int width, int height, Color fill, boolean imageMask) {
         BufferedImage tmpImage = null;
 
         try {
@@ -904,6 +918,10 @@ public class Stream extends Dictionary {
         }
         catch (Exception e) {
             logger.log(Level.WARNING, "Problem loading JBIG2 image: ", e);
+        }
+        // apply the fill colour and alpha if masking is enabled.
+        if (imageMask){
+            tmpImage = applyExplicitMask(tmpImage, fill);
         }
         return tmpImage;
     }
@@ -989,10 +1007,12 @@ public class Stream extends Dictionary {
             }
 
             // check for a mask value
-            if (maskImage != null) {
-                applyExplicitMask(tmpImage, maskImage);
+            if (maskImage != null){
+                tmpImage = applyExplicitMask(tmpImage, maskImage);
             }
-
+            if (sMaskImage != null){
+                tmpImage = applyExplicitSMask(tmpImage, sMaskImage);
+            }
         }
         catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
@@ -1488,6 +1508,7 @@ public class Stream extends Dictionary {
     }
 
     /**
+     * (see 8.9.6.3, "Explicit Masking")
      * Explicit Masking algorithm, as of PDF 1.3.  The entry in an image dictionary
      * may be an image mask, as described under "Stencil Masking", which serves as
      * an explicit mask for the primary or base image.  The base image and the
@@ -1502,72 +1523,129 @@ public class Stream extends Dictionary {
      * @param baseImage base image in which the mask weill be applied to
      * @param maskImage image mask to be applied to base image.
      */
-    private static void applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
+    private static BufferedImage applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
         // check to see if we need to scale the mask to match the size of the
         // base image.
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
-        int maskWidth = maskImage.getWidth();
-        int maskHeight = maskImage.getHeight();
 
+        final int maskWidth = maskImage.getWidth();
+        final int maskHeight = maskImage.getHeight();
+
+        // we're going for quality over memory foot print here, for most
+        // masks its better to scale the base image up to the mask size.
         if (baseWidth != maskWidth || baseHeight != maskHeight) {
             // calculate scale factors.
-            double scaleX = baseWidth / (double) maskWidth;
-            double scaleY = baseHeight / (double) maskHeight;
+            double scaleX = maskWidth / (double) baseWidth ;
+            double scaleY = maskHeight / (double)  baseHeight;
             // scale the mask to match the base image.
             AffineTransform tx = new AffineTransform();
             tx.scale(scaleX, scaleY);
             AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            BufferedImage sbim = op.filter(maskImage, null);
-            maskImage.flush();
-            maskImage = sbim;
+            BufferedImage sbim = op.filter(baseImage, null);
+            baseImage.flush();
+            baseImage = sbim;
         }
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
-        for (int y = 0; y < baseHeight; y++) {
-            for (int x = 0; x < baseWidth; x++) {
+        // todo: need to apply alpha instead of white, but requires a new CM.
+        for (int y = 0; y < maskHeight; y++) {
+            for (int x = 0; x < maskWidth; x++) {
+                // apply masking/smaksing logic.
                 int maskPixel = maskImage.getRGB(x, y);
-                if (maskPixel == -1 || maskPixel == 0xffffff) {
+                if (maskPixel == -1 || maskPixel == 0xffffff || maskPixel == 0) {
                     baseImage.setRGB(x, y, Color.WHITE.getRGB());
                 }
             }
         }
+        return baseImage;
+    }
 
-//        int width = maskImage.getWidth();
-//        int height = maskImage.getHeight();
-//        final BufferedImage bi = new BufferedImage(width,height, BufferedImage.TYPE_INT_RGB);
-//        for (int y = 0; y < height; y++) {
-//            for (int x = 0; x < width; x++) {
-//                if (maskImage.getRGB(x,y) != -1){
-//                    bi.setRGB(x, y, Color.red.getRGB());
-//                }
-//                else{
-//                    bi.setRGB(x, y, Color.green.getRGB());
-//                }
-//            }
-//        }
-//        final JFrame f = new JFrame("Test");
-//        f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-//
-//        JComponent image = new JComponent() {
-//            @Override
-//            public void paint(Graphics g_) {
-//                super.paint(g_);
-//                g_.drawImage(bi, 0, 0, f);
-//            }
-//        };
-//        image.setPreferredSize(new Dimension(bi.getWidth(), bi.getHeight()));
-//        image.setSize(new Dimension(bi.getWidth(), bi.getHeight()));
-//
-//        JPanel test  =new JPanel();
-//        test.setPreferredSize(new Dimension(1200,1200));
-//        JScrollPane tmp = new JScrollPane(image);
-//        tmp.revalidate();
-//        f.setSize(new Dimension(800, 800));
-//        f.getContentPane().add(tmp);
-//        f.validate();
-//        f.setVisible(true);
+    /**
+     * (see 11.6.5.3, "Soft-Mask Images")
+     * A subsidiary image XObject defining a soft-mask image that shall be used
+     * as a source of mask shape or mask opacity values in the transparent imaging
+     * model. The alpha source parameter in the graphics state determines whether
+     * the mask values shall be interpreted as shape or opacity.
+     *
+     * If present, this entry shall override the current soft mask in the graphics
+     * state, as well as the image’s Mask entry, if any. However, the other
+     * transparency-related graphics state parameters—blend mode and alpha
+     * constant—shall remain in effect. If SMask is absent, the image shall
+     * have no associated soft mask (although the current soft mask in the
+     * graphics state may still apply).
+     *
+     * @param baseImage base image in which the mask weill be applied to
+     */
+    private static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
+        // check to see if we need to scale the mask to match the size of the
+        // base image.
+        int baseWidth = baseImage.getWidth();
+        int baseHeight = baseImage.getHeight();
 
+        final int maskWidth = sMaskImage.getWidth();
+        final int maskHeight = sMaskImage.getHeight();
+
+        // we're going for quality over memory foot print here, for most
+        // masks its better to scale the base image up to the mask size.
+        if (baseWidth != maskWidth || baseHeight != maskHeight) {
+            // calculate scale factors.
+            double scaleX = maskWidth / (double) baseWidth ;
+            double scaleY = maskHeight / (double)  baseHeight;
+            // scale the mask to match the base image.
+            AffineTransform tx = new AffineTransform();
+            tx.scale(scaleX, scaleY);
+            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            BufferedImage sbim = op.filter(baseImage, null);
+            baseImage.flush();
+            baseImage = sbim;
+        }
+        // apply the mask by simply painting white to the base image where
+        // the mask specified no colour.
+        // todo: need to apply alpha instead of white, but requires a new CM.
+        int maskPixel;
+        for (int y = 0; y < maskHeight; y++) {
+            for (int x = 0; x < maskWidth; x++) {
+                maskPixel = sMaskImage.getRGB(x, y);
+                if (maskPixel != -1 || maskPixel != 0xffffff || maskPixel != 0) {
+                    baseImage.setRGB(x, y, Color.WHITE.getRGB());
+                }
+            }
+        }
+        return baseImage;
+    }
+
+    /**
+     * Treats the base image as as mask data applying the specified fill colour
+     * to the flagged bytes and a transparency value otherwise. This method
+     * creates a new BufferedImage with a transparency model so it will cause
+     * a memory spike.
+     * @param baseImage masking image.
+     * @param fill fill value to apply to mask.
+     * @return masked image encoded with the fill colour and transparency.
+     */
+    private static BufferedImage applyExplicitMask(BufferedImage baseImage, Color fill) {
+        // create an
+        int baseWidth = baseImage.getWidth();
+        int baseHeight = baseImage.getHeight();
+
+        BufferedImage imageMask = new BufferedImage(baseWidth, baseHeight,
+                BufferedImage.TYPE_INT_ARGB);
+
+        // apply the mask by simply painting white to the base image where
+        // the mask specified no colour.
+        for (int y = 0; y < baseHeight; y++) {
+            for (int x = 0; x < baseWidth; x++) {
+                int maskPixel = baseImage.getRGB(x, y);
+                if (!(maskPixel == -1 || maskPixel == 0xffffff)) {
+                    imageMask.setRGB(x, y, fill.getRGB());
+                }
+            }
+        }
+        // clean up the old image.
+        baseImage.flush();
+        // return the mask.
+        return imageMask;
     }
 
     private static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -2352,7 +2430,7 @@ public class Stream extends Dictionary {
             else if (shouldUseJBIG2Decode()) {
                 if (Tagger.tagging)
                     Tagger.tagImage("JBIG2Decode");
-                decodedImage = jbig2Decode(width, height, fill);
+                decodedImage = jbig2Decode(width, height, fill, imageMask);
             }
             // JPEG2000 writes out image if successful
             else if (shouldUseJPXDecode()) {
@@ -2376,6 +2454,11 @@ public class Stream extends Dictionary {
             if (Tagger.tagging)
                 Tagger.tagImage("CCITTFaxDecode");
             try{
+                // corner case where a user may want to use JAI because of
+                // speed or compatibility requirements.
+                if (forceJaiccittfax){
+                    throw new Throwable("Forcing CCITTFAX decode via JAI");
+                }
                 data = ccittFaxDecode(width, height);
                 dataLength = data.length;
             }catch(Throwable e){
@@ -2549,8 +2632,9 @@ public class Stream extends Dictionary {
                 img = new BufferedImage(cm, wr, false, null);
             }
             // apply explicit mask
+
             if (maskImage != null){
-                applyExplicitMask(img, maskImage);
+                img = applyExplicitMask(img, maskImage);
             }
             // apply soft mask
             if (smaskImage != null){
