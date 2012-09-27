@@ -188,12 +188,12 @@ public class DeviceCMYK extends PColorSpace {
         float inCyan = f[3];
         float inMagenta = f[2];
         float inYellow = f[1];
-        float inBlack = f[0];
+        float inBlack = f[0] / 300;
 
         double c, m, y, aw, ac, am, ay, ar, ag, ab;
-        c = Math.min(1.0, inCyan + inBlack);
-        m = Math.min(1.0, inMagenta + inBlack);
-        y = Math.min(1.0, inYellow + inBlack);
+        c = clip(0.0, 1.0, inCyan + inBlack);
+        m = clip(0.0, 1.0, inMagenta + inBlack);
+        y = clip(0.0, 1.0, inYellow + inBlack);
         aw = (1 - c) * (1 - m) * (1 - y);
         ac = c * (1 - m) * (1 - y);
         am = (1 - c) * m * (1 - y);
@@ -202,11 +202,28 @@ public class DeviceCMYK extends PColorSpace {
         ag = c * (1 - m) * y;
         ab = c * m * (1 - y);
 
-        float outRed = (float) (aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
-        float outGreen = (float) (aw + 0.6196 * ac + ay + 0.5176 * ag);
-        float outBlue = (float) (aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
+        float outRed = (float) clip(0.0, 1.0, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
+        float outGreen = (float) clip(0.0, 1.0, aw + 0.6196 * ac + ay + 0.5176 * ag);
+        float outBlue = (float) clip(0.0, 1.0, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
 
         return new Color(outRed, outGreen, outBlue);
+    }
+
+    /**
+     * Clips the value according to the specified floor and ceiling.
+     * @param floor floor value of clip
+     * @param ceiling ceiling value of clip
+     * @param value value to clip.
+     * @return clipped value.
+     */
+    private static double clip(double floor, double ceiling, double value) {
+        if (value < floor){
+            value = floor;
+        }
+        if (value > ceiling){
+            value = ceiling;
+        }
+        return value;
     }
 
 }
