@@ -188,7 +188,12 @@ public class DeviceCMYK extends PColorSpace {
         float inCyan = f[3];
         float inMagenta = f[2];
         float inYellow = f[1];
-        float inBlack = f[0] / 300;
+        float inBlack = f[0];
+
+        // soften the amount of black, but exclude explicit black colorant.
+        if (inCyan != 0 && inMagenta != 0 && inYellow != 0){
+            inBlack = f[0] / 100;
+        }
 
         double c, m, y, aw, ac, am, ay, ar, ag, ab;
         c = clip(0.0, 1.0, inCyan + inBlack);
