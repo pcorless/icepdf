@@ -328,7 +328,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
         else if (cm.getColorSpace() == srgbmodel_A.getColorSpace())
             dataModel = srgbmodel_A;
         else if (cm.getColorSpace() == graybmodel_A.getColorSpace())
-            dataModel = srgbmodel_A;
+            dataModel = graybmodel_A;
         else
             throw new IllegalArgumentException
                     ("Unsupported ColorSpace for interpolation");
