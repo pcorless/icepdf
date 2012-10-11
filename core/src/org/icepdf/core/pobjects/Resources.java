@@ -14,6 +14,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.util.Library;
 
@@ -215,7 +216,12 @@ public class Resources extends Dictionary {
             }
             // the default value is most likely Reference
             else if (ob instanceof Reference) {
-                font = (org.icepdf.core.pobjects.fonts.Font) library.getObject((Reference) ob);
+                ob = library.getObject((Reference) ob);
+                if (ob instanceof org.icepdf.core.pobjects.fonts.Font){
+                    font = (org.icepdf.core.pobjects.fonts.Font) ob;
+                }else{
+                    font = FontFactory.getInstance().getFont(library, (Hashtable) ob);
+                }
             }
         }
         if (font != null) {

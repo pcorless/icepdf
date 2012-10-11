@@ -938,9 +938,6 @@ public class ContentParser {
         graphicState.getTextState().tlmatrix = new AffineTransform();
         graphicState.scale(1, -1);
 
-        // apply text scaling, incase the BT block doesn't specify it explicitly.
-        applyTextScaling(graphicState);
-
         // get reference to PageText.
         PageText pageText = shapes.getPageText();
         // previous Td, TD or Tm y coordinate value for text extraction
@@ -967,6 +964,8 @@ public class ContentParser {
                     if (tjValue instanceof StringObject) {
                         stringObject = (StringObject) tjValue;
                         textState = graphicState.getTextState();
+                        // apply scaling
+                        AffineTransform tmp = applyTextScaling(graphicState);
                         // apply transparency
                         setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                         // draw string will take care of text pageText construction
@@ -979,6 +978,7 @@ public class ContentParser {
                                 graphicState.getTextState(),
                                 shapes,
                                 glyphOutlineClip);
+                        graphicState.set(tmp);
                         graphicState.translate(d.x, 0);
                         shift += d.x;
                         previousAdvance = 0;
@@ -1009,9 +1009,9 @@ public class ContentParser {
                     shift = 0;
                     previousAdvance = 0;
                     advance.setLocation(0, 0);
-                    // x,y are expressed in unscaled text space so we need to
-                    // apply the transform
-                    graphicState.translate(x * graphicState.getTextState().hScalling,  -y );
+                    // x,y are expressed in unscaled but we don't scale until
+                    // a text showing operator is called.
+                    graphicState.translate(x,  -y );
                     float newY = (float) graphicState.getCTM().getTranslateY();
                     // capture x coord of BT y offset, tm, Td, TD.
                     if (isYstart) {
@@ -1065,11 +1065,7 @@ public class ContentParser {
                     graphicState.set(af);
                     graphicState.scale(1, -1);
 
-                    // apply text size.
-                    applyTextScaling(graphicState);
-
                     // text extraction logic
-
                     // capture x coord of BT y offset, tm, Td, TD.
                     if (isYstart) {
                         yBTStart = tm[5];//f6;
@@ -1099,7 +1095,8 @@ public class ContentParser {
                 // TJ marks a vector, where.......
                 else if (nextToken.equals(PdfOps.TJ_TOKEN)) {
 //                    collectTokenFrequency(PdfOps.TJ_TOKEN);
-
+                    // apply scaling
+                    AffineTransform tmp = applyTextScaling(graphicState);
                     // apply transparency
                     setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
                     Vector v = (Vector) stack.pop();
@@ -1128,6 +1125,7 @@ public class ContentParser {
                         }
                         previousAdvance = advance.x;
                     }
+                    graphicState.set(tmp);
                 }
 
                 // Move to the start of the next line, offset from the start of the
@@ -1371,17 +1369,18 @@ public class ContentParser {
                     StringObject stringObject = (StringObject) stack.pop();
 
                     TextState textState = graphicState.getTextState();
-
+                    // apply scaling
+                    AffineTransform tmp = applyTextScaling(graphicState);
+                    // draw the text.
                     Point2D.Float d = (Point2D.Float) drawString(
                             stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             new Point2D.Float(0, 0), 0, graphicState.getTextState(),
                             shapes, glyphOutlineClip);
+                    graphicState.set(tmp);
                     graphicState.translate(d.x, 0);
                     shift += d.x;
-//                    pageText.newLine();
-//                    pageText.newWord();
                 }
                 /**
                  * Move to the next line and show a text string, using aw as the
@@ -1404,18 +1403,17 @@ public class ContentParser {
                     advance.setLocation(0, 0);
                     TextState textState = graphicState.getTextState();
 
+                    AffineTransform tmp = applyTextScaling(graphicState);
                     Point2D.Float d = (Point2D.Float) drawString(
                             stringObject.getLiteralStringBuffer(
                                     textState.font.getSubTypeFormat(),
                                     textState.font.getFont()),
                             new Point2D.Float(0, 0), 0, graphicState.getTextState(),
                             shapes, glyphOutlineClip);
+                    graphicState.set(tmp);
                     graphicState.translate(d.x, 0);
                     shift += d.x;
-//                    pageText.newLine();
                 }
-
-
             }
             // push everything else on the stack for consumptions
             else {
@@ -1854,8 +1852,6 @@ public class ContentParser {
             graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
             af.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af);
-            // apply text size.
-            applyTextScaling(graphicState);
             // update the textBlockBase as the tm was specified in the BT block
             // and we still need to keep the offset.
             textBlockBase.setTransform(new AffineTransform(graphicState.getCTM()));
@@ -2152,12 +2148,8 @@ public class ContentParser {
         Object ob = stack.pop();
         if (ob instanceof Number) {
             float hScaling = ((Number) ob).floatValue();
-            // values is represented in percent but we want it as a none percent
-            graphicState.getTextState().hScalling = hScaling / 100f;
-            // apply text size.
-            if (inTextBlock){
-                applyTextScaling(graphicState);
-            }
+            // store the scaled value, but not apply the state operator at this time
+            graphicState.getTextState().hScalling = hScaling / 100.0f;
         }
     }
 
@@ -2230,8 +2222,8 @@ public class ContentParser {
 
         // font metrics data
         float textRise = textState.trise;
-        float charcterSpace = textState.cspace;
-        float whiteSpace = textState.wspace;
+        float charcterSpace = textState.cspace * textState.hScalling;
+        float whiteSpace = textState.wspace* textState.hScalling;
         int textLength = displayText.length();
 
         // create a new sprite to hold the text objects
@@ -2627,22 +2619,25 @@ public class ContentParser {
      *
      * @param graphicState current graphics state.
      */
-    private static void applyTextScaling(GraphicsState graphicState) {
+    private static AffineTransform applyTextScaling(GraphicsState graphicState) {
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
         // the mystery continues,  it appears that only the negative or positive
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
-        float hScalling = graphicState.getTextState().hScalling;
-        graphicState.getTextState().hScalling =
-                graphicState.getTextState().hScalling >= 0?1:-1;
+        AffineTransform oldHScaling = new AffineTransform(graphicState.getCTM());
+        float hScalling =  graphicState.getTextState().hScalling;
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
-                        graphicState.getTextState().hScalling,
-                        0, 0, 1, 0, 0);
-        af.concatenate(horizontalScalingTransform);
+                        af.getScaleX() * hScalling,
+                        af.getShearY(),
+                        af.getShearX(),
+                        af.getScaleY(),
+                        af.getTranslateX(), af.getTranslateY());
         // add the transformation to the graphics state
-        graphicState.set(af);
+        graphicState.set(horizontalScalingTransform);
+
+        return oldHScaling;
     }
 
     /**
