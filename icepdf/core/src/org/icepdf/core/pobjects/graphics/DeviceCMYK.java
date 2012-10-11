@@ -14,6 +14,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -26,10 +27,18 @@ import java.util.Hashtable;
  */
 public class DeviceCMYK extends PColorSpace {
 
+    public static double cmykBlackRatio;
+
+    static {
+        // decide if large images will be scaled
+        cmykBlackRatio =
+                Defs.sysPropertyDouble("org.icepdf.core.color.cmyk.black",
+                        3.0f);
+    }
+
     DeviceCMYK(Library l, Hashtable h) {
         super(l, h);
     }
-
 
     public int getNumComponents() {
         return 4;
@@ -192,7 +201,7 @@ public class DeviceCMYK extends PColorSpace {
 
         // soften the amount of black, but exclude explicit black colorant.
         if (inCyan != 0 && inMagenta != 0 && inYellow != 0){
-            inBlack = f[0] / 100;
+            inBlack /= cmykBlackRatio;
         }
 
         double c, m, y, aw, ac, am, ay, ar, ag, ab;
