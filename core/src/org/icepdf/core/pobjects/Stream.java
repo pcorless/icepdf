@@ -1081,7 +1081,11 @@ public class Stream extends Dictionary {
                 // lessen the amount of black, standard 255 fraction is too dark
                 // increasing the denominator has the same affect of lighting up
                 // the image.
-                inBlack = (values[3] / 768.0f);
+                inBlack = (values[3] / 255.0f);
+
+                if (inCyan != 0 && inMagenta != 0 && inYellow != 0 ){
+                    inBlack /= DeviceCMYK.cmykBlackRatio;
+                }
 
                 if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
                         inYellow == lastYellow && inBlack == lastBlack)){
