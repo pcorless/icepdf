@@ -125,19 +125,22 @@ public class Function_4 extends Function {
      */
     private Integer calculateColourKey(float[] colours){
         int length = colours.length;
-        if (length == 1){
-            return (int)colours[0];
-        }else if (length == 2){
-            return  ((int)colours[1] << 8) | (int)colours[0];
-        }else if (length == 3){
-            return  ((int)colours[2] << 16) |
-                    ((int)colours[1] << 8) | (int)colours[0];
-        }else {
-            StringBuilder builder = new StringBuilder();
-            for (float colour : colours){
-                builder.append(colour);
+        // only works for colour vlues 0-255
+        if (!(colours[0] <= 1.0)){
+            if (length == 1){
+                return (int)colours[0];
+            }else if (length == 2){
+                return  ((int)colours[1] << 8) | (int)colours[0];
+            }else if (length == 3){
+                return  ((int)colours[2] << 16) |
+                        ((int)colours[1] << 8) | (int)colours[0];
             }
-            return builder.toString().hashCode();
         }
+        // otherwise expensive hash generation.
+        StringBuilder builder = new StringBuilder();
+        for (float colour : colours){
+            builder.append(colour);
+        }
+        return builder.toString().hashCode();
     }
 }
