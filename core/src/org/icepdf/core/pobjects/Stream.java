@@ -996,14 +996,15 @@ public class Stream extends Dictionary {
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
                 tmpImage = alterRasterCMYK2BGRA(wr, sMaskImage, maskImage);
-            } else if ((colourSpace instanceof DeviceGray ||
-                    colourSpace instanceof Indexed)
+            } else if ((colourSpace instanceof DeviceGray )
                     && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
                 tmpImage = makeGrayBufferedImage(wr);
             } else if (colourSpace instanceof Separation){
                 WritableRaster wr = tmpImage.getRaster();
                 alterRasterY2Gray(wr, bitsPerComponent, decode);
+            }else if (colourSpace instanceof Indexed){
+                tmpImage = applyIndexColourModel(tmpImage, width, height, colourSpace, bitsPerComponent);
             }
 
             // check for a mask value
@@ -2987,6 +2988,34 @@ public class Stream extends Dictionary {
         }
 
         return bim;
+    }
+
+    /**
+     * Temporarly pulled out the index colur model application for images
+     * from the raw image decode.  This method is only called from JPEG2000
+     * code for now but will be consolidate as we move to to 5.0
+     */
+    private static BufferedImage applyIndexColourModel(BufferedImage image,
+               int width, int height, PColorSpace colourSpace,int bitspercomponent){
+        BufferedImage img;
+        colourSpace.init();
+        // build out the colour table.
+        Color[] colors = ((Indexed) colourSpace).accessColorTable();
+        int colorsLength = (colors == null) ? 0 : colors.length;
+        int[] cmap = new int[256];
+        for (int i = 0; i < colorsLength; i++) {
+            cmap[i] = colors[i].getRGB();
+        }
+        for (int i = colorsLength; i < cmap.length; i++){
+            cmap[i] = 0xFF000000;
+        }
+        // build a new buffer with indexed colour model.
+        DataBuffer db = image.getRaster().getDataBuffer();
+        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
+        ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+        img = new BufferedImage(cm, wr, false, null);
+        return img;
     }
 
     private BufferedImage putIntoImageCache(BufferedImage bim, int width, int height, boolean allowScaling) {
