@@ -277,7 +277,13 @@ public class TilingPattern extends Stream implements Pattern {
     public void paintPattern(Graphics2D g, Page parentPage) {
         if (patternPaint == null) {
 //            final AffineTransform matrixInv = getInvMatrix();
-            Rectangle2D bBoxMod = matrix.createTransformedShape(bBox).getBounds2D();
+            // adjust the bBox so that xStep and yStep can be applied
+            // for tile spacing.
+            Rectangle2D bBoxMod = new Rectangle2D.Double(
+                    bBox.getX(), bBox.getY(),
+                    bBox.getWidth() == xStep? bBox.getWidth():xStep,
+                    bBox.getHeight() == yStep?bBox.getHeight():yStep);
+            bBoxMod = matrix.createTransformedShape(bBoxMod).getBounds2D();
 
             int width = (int) bBoxMod.getWidth();
             int height = (int) bBoxMod.getHeight();

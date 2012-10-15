@@ -508,9 +508,9 @@ public class GraphicsState {
             // Add the parents CTM to the stack,
             parentGraphicState.set(parentGraphicState.CTM);
             // Add the parents clip to the stack
-            if (clipChange){
+            if (parentGraphicState.clipChange || clipChange){
                 if (parentGraphicState.clip != null) {
-                    if (!clip.equals(parentGraphicState.clip)){
+                    if (!parentGraphicState.clip.equals(clip)){
                         parentGraphicState.shapes.add(new Area(parentGraphicState.clip));
                         parentGraphicState.shapes.addClipCommand();
                     }
