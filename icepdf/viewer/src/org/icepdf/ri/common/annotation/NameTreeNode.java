@@ -19,7 +19,8 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
 
@@ -141,7 +142,7 @@ public class NameTreeNode extends DefaultMutableTreeNode {
             }
             // other wise we might have some leaf to add
             if (item.getNamesAndValues() != null){
-                Vector namesAndValues = item.getNamesAndValues();
+                List namesAndValues = item.getNamesAndValues();
                 StringObject name;
                 Reference ref;
                 for(int i = 0,max =namesAndValues.size(); i < max; i += 2 ){

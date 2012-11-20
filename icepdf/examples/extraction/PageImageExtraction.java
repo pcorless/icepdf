@@ -16,27 +16,33 @@
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.util.Defs;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
-import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Vector;
-import java.util.Enumeration;
+import java.util.List;
 
 /**
  * The <code>PageImageExtraction</code> class is an example of how to extract
  * images from a PDF document.  A file specified at the command line is opened
  * and any images that are embedded in the first page's content are
- * saved to disk as PNG graphic files. 
+ * saved to disk as PNG graphic files.
  *
  * @since 2.0
  */
 public class PageImageExtraction {
+
     public static void main(String[] args) {
+
+        // setup the memory manager to avoid keeping a lot of data around
+        Defs.setProperty("org.icepdf.core.maxSize", 1);
+        Defs.setProperty("org.icepdf.core.scaleImages", "false");
 
         // Get a file from the command line to open
         String filePath = args[0];
@@ -57,27 +63,33 @@ public class PageImageExtraction {
 
         // Get images from the first page of the document, asuming that there
         // is at least one image to extract.
-        int pagNumber = 0;
-        int count = 0;
-        Vector images = document.getPageImages(pagNumber);
-        Enumeration pageImages = images.elements();
-        while (pageImages.hasMoreElements()) {
-            count++;
-            Image image = (Image) pageImages.nextElement();
-            if (image != null) {
-                RenderedImage rendImage = (BufferedImage) image;
-                try {
-                    File file = new File("imageCapture1_" + count + ".png");
-                    ImageIO.write(rendImage, "png", file);
+        try {
+            int count = 0;
 
-                } catch (IOException e) {
-                    e.printStackTrace();
+            Page currentPage;
+            List<Image> images;
+            RenderedImage rendImage;
+            for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
+                currentPage = document.getPageTree().getPage(i);
+
+                images = currentPage.getImages();
+                for (Image image: images) {
+                    count++;
+                    if (image != null) {
+                        rendImage = (BufferedImage) image;
+                        File file = new File("imageCapture1_" + count + ".png");
+                        ImageIO.write(rendImage, "png", file);
+                        image.flush();
+                    }
                 }
-                image.flush();
+                // clears most resource.
+                images.clear();
             }
-        }
 
-        // clean up resources
-        document.dispose();
+            // clean up resources
+            document.dispose();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.ri.util.FontPropertiesManager;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
@@ -32,6 +34,8 @@ import java.awt.image.DataBuffer;
 import java.awt.*;
 import java.io.*;
 import java.util.Iterator;
+import java.util.Properties;
+import java.util.ResourceBundle;
 
 /**
  * The <code>MultiPageCapture</code> class is an example of how to save page
@@ -46,9 +50,19 @@ public class MultiPageCapture {
     public static final double PRINTER_RESOLUTION = 300.0;
     
     // This compression type may be wpecific to JAI ImageIO Tools
-    public static final String COMPRESSION_TYPE_GROUP4FAX = "CCITT T.6";
+    public static final String COMPRESSION_TYPE_GROUP4FAX = "JPEG";
     
     public static void main(String[] args) {
+
+        // read system fonts from cached list, speeds up initial application startup
+        // for systems with a large number of fonts.
+        ResourceBundle messageBundle = ResourceBundle.getBundle(
+                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+        Properties sysProps = System.getProperties();
+        PropertiesManager propertiesManager = new PropertiesManager(sysProps, messageBundle);
+        new FontPropertiesManager(propertiesManager, sysProps, messageBundle);
+
+
         // Verify that ImageIO can output TIFF
         Iterator<ImageWriter> iterator = ImageIO.getImageWritersByFormatName("tiff");
         if (!iterator.hasNext()) {
@@ -71,6 +85,8 @@ public class MultiPageCapture {
                 "compression type ("+COMPRESSION_TYPE_GROUP4FAX+")");
             return;
         }
+
+        long intime = System.currentTimeMillis();
         
         // Get a file from the command line to open
         String filePath = args[0];
@@ -118,11 +134,13 @@ public class MultiPageCapture {
                 int pageWidth = (int) size.getWidth();
                 int pageHeight = (int) size.getHeight();
                 int[] cmap = new int[] { 0xFF000000, 0xFFFFFFFF };
+
                 IndexColorModel cm = new IndexColorModel(
                     1, cmap.length,  cmap, 0, false, Transparency.BITMASK,
                     DataBuffer.TYPE_BYTE);
+
                 BufferedImage image = new BufferedImage(
-                    pageWidth, pageHeight, BufferedImage.TYPE_BYTE_BINARY, cm);
+                    pageWidth, pageHeight, BufferedImage.TYPE_BYTE_INDEXED);
                 Graphics g = image.createGraphics();
                 document.paintPage(
                     i, g, GraphicsRenderingHints.PRINT, Page.BOUNDARY_CROPBOX,
@@ -133,6 +151,7 @@ public class MultiPageCapture {
                 IIOImage img = new IIOImage(image, null, null);
                 ImageWriteParam param = writer.getDefaultWriteParam();
                 param.setCompressionMode(param.MODE_EXPLICIT);
+//                param.setCompressionQuality(0.8f);
                 param.setCompressionType(COMPRESSION_TYPE_GROUP4FAX);
                 if (i == 0) {
                     writer.write(null, img, param);
@@ -154,5 +173,8 @@ public class MultiPageCapture {
         
         // clean up resources
         document.dispose();
+
+        System.out.println("total execution time taken was : ");
+        System.out.println(System.currentTimeMillis() - intime);
     }
 }

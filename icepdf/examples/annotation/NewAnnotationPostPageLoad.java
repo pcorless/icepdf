@@ -31,7 +31,7 @@ import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.List;
 
 /**
  * The <code>NewAnnotationPostPageLoad</code> class is an example of how to use
@@ -205,9 +205,9 @@ public class NewAnnotationPostPageLoad {
                         ActionFactory.GOTO_ACTION);
         Reference pageReference = document.getPageTree()
                 .getPageReference(pageIndex);
-        Vector destVector = Destination.destinationSyntax(pageReference,
+        List destArray = Destination.destinationSyntax(pageReference,
                 Destination.TYPE_FIT);
-        action.setDestination(new Destination(library, destVector));
+        action.setDestination(new Destination(library, destArray));
         return action;
     }
 }

@@ -26,6 +26,11 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.*;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.font.TextLayout;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
@@ -57,6 +62,41 @@ public class PrintHelper implements Printable {
     private PrintService printService;
     private HashDocAttributeSet docAttributeSet;
     private HashPrintRequestAttributeSet printRequestAttributeSet;
+
+
+    private static String waterMark;
+    private static Rectangle2D waterMarkBounds;
+    private static BufferedImage waterMarkRaster;
+    static{
+
+        waterMark = "Hello World";
+        java.awt.Font awtFont =
+                new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14);
+
+        FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+        TextLayout textLayout = new TextLayout(waterMark, awtFont, frc);
+        waterMarkBounds = textLayout.getBounds();
+        System.out.println("advance" + textLayout.getAdvance());
+        System.out.println("baseline" + textLayout.getBaseline());
+        System.out.println("baselineoffset" + textLayout.getBaselineOffsets());
+        System.out.println("ascent" + textLayout.getAscent());
+        System.out.println("decent" + textLayout.getDescent());
+        // create a buffer using rgba so we have transparency
+        waterMarkRaster = new BufferedImage((int)waterMarkBounds.getWidth(),
+                (int)waterMarkBounds.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        // paint the buffer.
+        Graphics2D waterMarkGs = (Graphics2D)waterMarkRaster.getGraphics();
+        waterMarkGs.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14));
+        waterMarkGs.setColor(Color.BLACK);
+        waterMarkGs.setStroke(new BasicStroke(2.0f));
+        waterMarkGs.scale(1,-1);
+//        waterMarkGs.translate(textLayout.);
+//        waterMarkGs.fillRect(0, 0, (int)waterMarkBounds.getWidth(),
+//                                   (int)waterMarkBounds.getHeight());
+        waterMarkGs.drawString(waterMark,0,0);
+        waterMarkGs.dispose();
+    }
+
 
     /**
      * Creates a new <code>PrintHelper</code> instance defaulting the
@@ -346,7 +386,7 @@ public class PrintHelper implements Printable {
 
         // Initiate the Page to print, not adding to the pageTree cache purposely,
         // after we finish using it we'll dispose it.
-        Page currentPage = pageTree.getPage(pageIndex, this);
+        Page currentPage = pageTree.getPage(pageIndex);
         PDimension pageDim = currentPage.getSize(userRotation);
 
         // Grab default page width and height
@@ -413,8 +453,6 @@ public class PrintHelper implements Printable {
 //                rotation, zoomFactor);
 //        printGraphics.drawImage(image,0,0,null);
 //        image.flush();
-
-        pageTree.releasePage(currentPage, this);
 
         return Printable.PAGE_EXISTS;
     }
@@ -504,6 +542,39 @@ public class PrintHelper implements Printable {
 
     }
 
+    private void createWatermark(Graphics printGraphics, Page currentPage) {
+        Rectangle2D bounds = currentPage.getBoundingBox(userRotation);
+
+        Graphics2D g2 = (Graphics2D) printGraphics;
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+
+        AffineTransform at2 = currentPage.getPageTransform(
+                Page.BOUNDARY_CROPBOX, userRotation, 1.0f);
+        g2.transform(at2);
+
+        g2.setColor(Color.BLACK);
+        g2.setStroke(new BasicStroke(2.0f));
+
+//        g2.drawImage(waterMarkRaster, (int)bounds.getMinX() + 20, (int)bounds.getMinY() + 20, null);
+//        g2.drawRect(
+//                (int)bounds.getMinX() + 20, (int)bounds.getMinY() + 20,
+//                (int)waterMarkBounds.getWidth(),
+//                (int)waterMarkBounds.getHeight());
+//        g2.drawImage(waterMarkRaster, (int) bounds.getMinX() + 20, (int) bounds.getMaxY() - 20, null);
+//        g2.drawImage(waterMarkRaster, (int) bounds.getMaxX() - 140, (int) bounds.getMaxY() - 20, null);
+//        g2.drawImage(waterMarkRaster, (int) bounds.getMaxX() - 140, (int) bounds.getMinY() + 20, null);
+
+
+
+        // old way which
+        g2.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14));
+        g2.drawString(waterMark, (int)bounds.getMinX() + 20, (int)bounds.getMinY() + 20);
+        g2.drawString(waterMark, (int)bounds.getMinX() + 20, (int)bounds.getMaxY() - 20);
+        g2.drawString(waterMark, (int)bounds.getMaxX() - 140, (int)bounds.getMaxY() - 20);
+        g2.drawString(waterMark, (int)bounds.getMaxX() - 140, (int)bounds.getMinY() + 20);
+    }
+
+
     /**
      * Utility for creating a print setup dialog.
      *
@@ -517,6 +588,9 @@ public class PrintHelper implements Printable {
                 viewController.getViewContainer());
         GraphicsConfiguration graphicsConfiguration =
                 window == null ? null : window.getGraphicsConfiguration();
+        // try and trim the services list.
+//        services = new PrintService[]{services[0]};
+
         return ServiceUI.printDialog(graphicsConfiguration,
                 viewController.getViewContainer().getX() + offset,
                 viewController.getViewContainer().getY() + offset,

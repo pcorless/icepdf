@@ -486,10 +486,9 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private void updateCurrentAnnotation(Annotation annotation) {
         int pageIndex = currentAnnotaiton.getPageIndex();
         PageTree pageTree = currentAnnotaiton.getDocument().getPageTree();
-        Page page = pageTree.getPage(pageIndex, this);
+        Page page = pageTree.getPage(pageIndex);
         // update the altered annotation.
         page.updateAnnotation(annotation);
-        pageTree.releasePage(page, this);
     }
 
     /**

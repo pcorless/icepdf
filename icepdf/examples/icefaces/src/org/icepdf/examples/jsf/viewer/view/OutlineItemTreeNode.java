@@ -25,7 +25,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.icesoft.faces.component.tree.IceUserObject;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * PDF document outline which can be used by the ice:tree component.
@@ -115,8 +115,8 @@ public class OutlineItemTreeNode extends DefaultMutableTreeNode {
                         dest = ((GoToAction) action).getDestination();
                     }  else {
                         Library library = action.getLibrary();
-                        Hashtable entries = action.getEntries();
-                        dest = new Destination(library, library.getObject(entries, "D"));
+                        HashMap entries = action.getEntries();
+                        dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
                     }
                     goToPage = pageTree.getPageNumber(dest.getPageReference());
                 }

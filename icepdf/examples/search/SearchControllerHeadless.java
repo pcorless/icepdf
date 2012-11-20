@@ -45,7 +45,6 @@ public class SearchControllerHeadless {
         // save page captures to file.
         float scale = 1.0f;
         float rotation = 0f;
-        Object pageLock = new Object();
 
         // open the document
         Document document = new Document();
@@ -70,7 +69,7 @@ public class SearchControllerHeadless {
         // Paint each pages content to an image and write the image to file
         for (int i = 0; i < 5; i++) {
 
-            Page page = document.getPageTree().getPage(i, pageLock);
+            Page page = document.getPageTree().getPage(i);
             // initialize the page so we are using the same  WordText object
             // thar are used to paint the page.
             page.init();
@@ -92,7 +91,6 @@ public class SearchControllerHeadless {
             page.paint(g, GraphicsRenderingHints.SCREEN,
                     Page.BOUNDARY_CROPBOX, rotation, scale, null, true, true);
             g2d.dispose();
-            document.getPageTree().releasePage(page, pageLock);
 
             // capture the page image to file
             try {

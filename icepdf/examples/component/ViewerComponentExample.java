@@ -16,9 +16,10 @@
 
 import org.icepdf.ri.common.ComponentKeyBinding;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.swing.*;
+
 
 /**
  * The <code>ViewerComponentExample</code> class is an example of how to use
@@ -35,10 +36,14 @@ public class ViewerComponentExample {
 
         // build a component controller
         SwingController controller = new SwingController();
+        controller.setIsEmbeddedComponent(true);
 
-        SwingViewBuilder factory = new SwingViewBuilder(controller);
+        // set the viewController embeddable flag.
+        org.icepdf.core.views.DocumentViewController viewController =
+                controller.getDocumentViewController();
 
-        JPanel viewerComponentPanel = factory.buildViewerPanel();
+        JPanel viewerComponentPanel = new JPanel();
+        viewerComponentPanel.add(viewController.getViewContainer());
 
         // add copy keyboard command
         ComponentKeyBinding.install(controller, viewerComponentPanel);
@@ -48,12 +53,20 @@ public class ViewerComponentExample {
                 new org.icepdf.ri.common.MyAnnotationCallback(
                         controller.getDocumentViewController()));
 
+        // build a containing JFrame for display
         JFrame applicationFrame = new JFrame();
         applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         applicationFrame.getContentPane().add(viewerComponentPanel);
 
         // Now that the GUI is all in place, we can try openning a PDF
         controller.openDocument(filePath);
+
+        // hard set the page view to single page which effectively give a single
+        // page view. This should be done after openDocument as it has code that
+        // can change the view mode if specified by the file.
+        controller.setPageViewMode(
+                DocumentViewControllerImpl.ONE_PAGE_VIEW,
+                false);
 
         // show the component
         applicationFrame.pack();

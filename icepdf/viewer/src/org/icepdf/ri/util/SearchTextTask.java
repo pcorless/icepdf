@@ -271,7 +271,7 @@ public class SearchTextTask {
             // repaint the view container
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    viewContainer.repaint();
+                    viewContainer.validate();
                 }
             });
         }

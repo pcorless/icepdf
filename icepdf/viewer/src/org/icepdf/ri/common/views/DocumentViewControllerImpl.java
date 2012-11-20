@@ -1150,13 +1150,11 @@ public class DocumentViewControllerImpl
             // remove annotation
             Document document = getDocument();
             PageTree pageTree = document.getPageTree();
-            Page page = pageTree.getPage(pageComponent.getPageIndex(), this);
+            Page page = pageTree.getPage(pageComponent.getPageIndex());
             // remove from page
             page.deleteAnnotation(annotationComponent.getAnnotation());
             // remove from page view.
             pageComponent.removeAnnotation(annotationComponent);
-            // release the page
-            pageTree.releasePage(pageComponent.getPageIndex(), this);
 
             // store the post delete state.
             AnnotationState postDeleteState =

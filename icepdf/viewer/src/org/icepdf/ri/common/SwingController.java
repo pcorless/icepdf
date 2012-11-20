@@ -41,6 +41,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PrintQuality;
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
@@ -60,10 +61,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.Hashtable;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1501,6 +1500,7 @@ public class SwingController
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
+                e.printStackTrace();
             }
             catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1523,6 +1523,7 @@ public class SwingController
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
+                e.printStackTrace();
             }
             finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
@@ -1821,7 +1822,7 @@ public class SwingController
         // remember the users last view mode via the properties manager.  Possible
         // values are SinglePage, OnceColumn, TwoColumnLeft, TwoColumRight,
         // TwoPageLeft, TwoPageRight.
-        Object tmp = catalog.getObject("PageLayout");
+        Object tmp = catalog.getObject(Catalog.PAGELAYOUT_KEY);
         if (tmp != null && tmp instanceof Name) {
             String pageLayout = ((Name) tmp).getName();
             int viewType = DocumentViewControllerImpl.ONE_PAGE_VIEW;
@@ -1842,7 +1843,7 @@ public class SwingController
         if (utilityTabbedPane != null) {
             // Page mode by default is UseNone, where other options are, UseOutlines,
             // UseThumbs, FullScreen (ignore), UseOC(ignore), Use Attachements(ignore);
-            tmp = catalog.getObject("PageMode");
+            tmp = catalog.getObject(Catalog.PAGEMODE_KEY);
             if (tmp != null && tmp instanceof Name) {
                 String pageMode = ((Name) tmp).getName();
                 showUtilityPane = pageMode.equalsIgnoreCase("UseOutlines");
@@ -2223,7 +2224,7 @@ public class SwingController
                 // save file stream
                 try {
                     // If we don't know where the file came from, it's because we
-                    //  used Document.setInputStream() or Document.setByteArray(),
+                    //  used Document.contentStream() or Document.setByteArray(),
                     //  or we used setUrl() with disk caching disabled.
                     //  with no path or URL as the origin.
                     // Note that we used to detect scenarios where we could access
@@ -2792,8 +2793,8 @@ public class SwingController
                         ((URIAction) action).getURI());
             } else {
                 Library library = action.getLibrary();
-                Hashtable entries = action.getEntries();
-                dest = new Destination(library, library.getObject(entries, "D"));
+                HashMap entries = action.getEntries();
+                dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
             }
         }
 
@@ -2870,10 +2871,8 @@ public class SwingController
         PageTree pageTree = getPageTree();
         if (pageTree == null)
             return false;
-        Page page = pageTree.getPage(documentViewController.getCurrentPageIndex(), this);
-        boolean isCurrentPage = page != null;
-        pageTree.releasePage(page, this);
-        return isCurrentPage;
+        Page page = pageTree.getPage(documentViewController.getCurrentPageIndex());
+        return page != null;
     }
 
     /**
@@ -2896,7 +2895,6 @@ public class SwingController
      */
     public void showPage(int nPage) {
         if (nPage >= 0 && nPage < getPageTree().getNumberOfPages()) {
-            releaseOldPage();
             documentViewController.setCurrentPageIndex(nPage);
             updateDocumentView();
         }
@@ -2922,16 +2920,9 @@ public class SwingController
         if (nPage < 0)
             nPage = 0;
         if (nPage != currPage) {
-            releaseOldPage();
             documentViewController.setCurrentPageIndex(nPage);
             updateDocumentView();
         }
-    }
-
-    private void releaseOldPage() {
-        PageTree pages = getPageTree();
-        if (pages != null)
-            pages.releasePage(documentViewController.getCurrentPageIndex(), this);
     }
 
     public void updateDocumentView() {
