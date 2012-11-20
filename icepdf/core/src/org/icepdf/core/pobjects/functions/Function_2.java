@@ -15,9 +15,10 @@
 package org.icepdf.core.pobjects.functions;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 
 import java.util.Arrays;
-import java.util.Vector;
+import java.util.List;
 
 /**
  * <p>This class <code>Function_2</code> represents a generic Type 2, exponentail
@@ -43,6 +44,10 @@ import java.util.Vector;
  */
 public class Function_2 extends Function {
 
+    public static final Name N_KEY = new Name("N");
+    public static final Name C0_KEY = new Name("C0");
+    public static final Name C1_KEY = new Name("C1");
+
     // The interpolation exponent. Each input value x will return n values,
     // given by:
     // y<sub>j</sub> = CO<sub>j</sub> + x<sup>N</sup> x (C1<sub>j</sub> - C0<sub>j</sub>)
@@ -65,14 +70,14 @@ public class Function_2 extends Function {
     Function_2(Dictionary d) {
         super(d);
         // Setup and assign N, interpolation exponent
-        N = d.getFloat("N");
+        N = d.getFloat(N_KEY);
 
         // Convert C0 dictionary values.
-        Vector c0 = (Vector) d.getObject("C0");
+        List c0 = (List) d.getObject(C0_KEY);
         if (c0 != null) {
             C0 = new float[c0.size()];
             for (int i = 0; i < c0.size(); i++) {
-                C0[i] = ((Number) c0.elementAt(i)).floatValue();
+                C0[i] = ((Number) c0.get(i)).floatValue();
             }
         }
         // legacy PDFGo code, guessing that setting default value should just
@@ -84,11 +89,11 @@ public class Function_2 extends Function {
          }*/
 
         // Convert C1 dictionary values
-        Vector c1 = (Vector) d.getObject("C1");
+        List c1 = (List) d.getObject(C1_KEY);
         if (c1 != null) {
             C1 = new float[c1.size()];
             for (int i = 0; i < c1.size(); i++) {
-                C1[i] = ((Number) c1.elementAt(i)).floatValue();
+                C1[i] = ((Number) c1.get(i)).floatValue();
             }
         }
         // legacy PDFGo code, guessing that setting default value should just

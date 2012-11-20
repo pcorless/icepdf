@@ -137,11 +137,10 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             if (documentViewModel.getViewToolMode() ==
                     DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
 
-                Page currentPage = pageViewComponent.getPageLock(this);
+                Page currentPage = pageViewComponent.getPage();
                 // handle text selection mouse coordinates
                 Point mouseLocation = (Point) e.getPoint().clone();
                 lineSelectHandler(currentPage, mouseLocation);
-                pageViewComponent.releasePageLock(currentPage, this);
             }
         }
         // single click we select word that was clicked. 
@@ -149,25 +148,22 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             if (documentViewModel.getViewToolMode() ==
                     DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
 
-                Page currentPage = pageViewComponent.getPageLock(this);
+                Page currentPage = pageViewComponent.getPage();
                 // handle text selection mouse coordinates
                 Point mouseLocation = (Point) e.getPoint().clone();
                 wordSelectHandler(currentPage, mouseLocation);
                 currentPage.getViewText().getSelected();
-                pageViewComponent.releasePageLock(currentPage, this);
             }
         }
     }
 
     public void clearSelection() {
         // on mouse click clear the currently selected sprints
-        Page currentPage = pageViewComponent.getPageLock(this);
+        Page currentPage = pageViewComponent.getPage();
         // clear selected text.
         if (currentPage.getViewText() != null) {
             currentPage.getViewText().clearSelected();
         }
-        pageViewComponent.releasePageLock(currentPage, this);
-
         // reset painted rectangle
         currentRect = new Rectangle(0, 0, 0, 0);
         updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
@@ -205,10 +201,9 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
             // write out selected text.
             if (logger.isLoggable(Level.FINE)) {
-                Page currentPage = pageViewComponent.getPageLock(this);
+                Page currentPage = pageViewComponent.getPage();
                 // handle text selection mouse coordinates
                 logger.fine(currentPage.getViewText().getSelected().toString());
-                pageViewComponent.releasePageLock(currentPage, this);
             }
 
             // clear the rectangle
@@ -252,9 +247,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             updateSelectionSize(e, pageViewComponent);
 
             // lock and unlock content before iterating over the pageText tree.
-            Page currentPage = pageViewComponent.getPageLock(this);
+            Page currentPage = pageViewComponent.getPage();
             multilineSelectHandler(currentPage, e.getPoint());
-            pageViewComponent.releasePageLock(currentPage, this);
         }
     }
 
@@ -266,9 +260,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             setSelectionSize(selection, pageViewComponent);
 
             // lock and unlock content before iterating over the pageText tree.
-            Page currentPage = pageViewComponent.getPageLock(this);
+            Page currentPage = pageViewComponent.getPage();
             multilineSelectHandler(currentPage, cursorLocation);
-            pageViewComponent.releasePageLock(currentPage, this);
         }
     }
 
@@ -280,9 +273,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         // change state of mouse from pointer to text selection icon
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            Page currentPage = pageViewComponent.getPageLock(this);
+            Page currentPage = pageViewComponent.getPage();
             selectionMouseCursor(currentPage, e.getPoint());
-            pageViewComponent.releasePageLock(currentPage, this);
         }
     }
 
@@ -660,7 +652,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         gg.setColor(selectionColor);
         gg.setStroke(new BasicStroke(1.0f));
 
-        Page currentPage = pageViewComponent.getPageLock(this);
+        Page currentPage = pageViewComponent.getPage();
         if (currentPage != null && currentPage.isInitiated()) {
             PageText pageText = currentPage.getViewText();
             if (pageText != null) {
@@ -702,7 +694,6 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 }
             }
         }
-        pageViewComponent.releasePageLock(currentPage, this);
 
         // pain selection box
         paintSelectionBox(g);
@@ -724,7 +715,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      * @param g graphics context to paint to.
      */
     private void paintTextBounds(Graphics g) {
-        Page currentPage = pageViewComponent.getPageLock(this);
+        Page currentPage = pageViewComponent.getPage();
         // get page transformation
         AffineTransform pageTransform = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
@@ -762,7 +753,6 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             gg.draw(glyphSpritePath);
         }
         g.setColor(oldColor);
-        pageViewComponent.releasePageLock(currentPage, this);
     }
 
 

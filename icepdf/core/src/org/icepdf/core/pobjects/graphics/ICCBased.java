@@ -14,7 +14,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.io.SeekableInput;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -23,8 +23,6 @@ import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,6 +33,9 @@ public class ICCBased extends PColorSpace {
 
     private static final Logger logger =
             Logger.getLogger(ICCBased.class.toString());
+
+    public static final Name ICCBASED_KEY = new Name("ICCBased");
+    public static final Name N_KEY = new Name("N");
 
     int numcomp;
     PColorSpace alternate;
@@ -50,7 +51,7 @@ public class ICCBased extends PColorSpace {
      */
     public ICCBased(Library l, Stream h) {
         super(l, h.getEntries());
-        numcomp = h.getInt("N");
+        numcomp = h.getInt(N_KEY);
         switch (numcomp) {
             case 1:
                 alternate = new DeviceGray(l, null);
@@ -73,19 +74,12 @@ public class ICCBased extends PColorSpace {
             return;
         }
         inited = true;
-        InputStream in = null;
+        byte[] in = null;
         try {
             stream.init();
-            in = stream.getInputStreamForDecodedStreamBytes();
+            in = stream.getDecodedStreamBytes(0);
             if (logger.isLoggable(Level.FINEST)) {
-                String content;
-                if (in instanceof SeekableInput) {
-                    content = Utils.getContentFromSeekableInput((SeekableInput) in, false);
-                } else {
-                    InputStream[] inArray = new InputStream[]{in};
-                    content = Utils.getContentAndReplaceInputStream(inArray, false);
-                    in = inArray[0];
-                }
+                String content = Utils.convertByteArrayToByteString(in);
                 logger.finest("Content = " + content);
             }
             if (in != null) {
@@ -94,13 +88,6 @@ public class ICCBased extends PColorSpace {
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Error Processing ICCBased Colour Profile", e);
-        }
-        finally {
-            try {
-                if (in != null) in.close();
-            }
-            catch (IOException e) {
-            }
         }
     }
 

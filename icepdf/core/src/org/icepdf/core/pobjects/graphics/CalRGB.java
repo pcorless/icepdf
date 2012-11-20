@@ -14,16 +14,23 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * put your documentation comment here
  */
 public class CalRGB extends PColorSpace {
+
+    public static final Name WHITE_POINT_KEY = new Name("WhitePoint");
+    public static final Name GAMMA_KEY = new Name("Gamma");
+    public static final Name MATRIX_KEY = new Name("Matrix");
+    public static final Name CALRGB_KEY = new Name("CalRGB");
+
     float[] whitepoint = {
             1, 1, 1
     };
@@ -35,24 +42,24 @@ public class CalRGB extends PColorSpace {
     };
 
 
-    CalRGB(Library l, Hashtable h) {
+    CalRGB(Library l, HashMap h) {
         super(l, h);
-        Vector m = (Vector) h.get("WhitePoint");
+        List m = (List) h.get(WHITE_POINT_KEY);
         if (m != null) {
             for (int i = 0; i < 3; i++) {
-                whitepoint[i] = ((Number) m.elementAt(i)).floatValue();
+                whitepoint[i] = ((Number) m.get(i)).floatValue();
             }
         }
-        m = (Vector) h.get("Gamma");
+        m = (List) h.get(GAMMA_KEY);
         if (m != null) {
             for (int i = 0; i < 3; i++) {
-                gamma[i] = ((Number) m.elementAt(i)).floatValue();
+                gamma[i] = ((Number) m.get(i)).floatValue();
             }
         }
-        m = (Vector) h.get("Matrix");
+        m = (List) h.get(MATRIX_KEY);
         if (m != null) {
             for (int i = 0; i < 9; i++) {
-                matrix[i] = ((Number) m.elementAt(i)).floatValue();
+                matrix[i] = ((Number) m.get(i)).floatValue();
             }
         }
     }

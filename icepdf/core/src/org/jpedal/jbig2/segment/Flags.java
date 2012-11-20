@@ -19,14 +19,14 @@ import java.util.Map;
 
 public abstract class Flags {
 
-	protected int flagsAsInt;
+    protected int flagsAsInt;
 
-	protected Map flags = new LinkedHashMap();
+    protected Map flags = new LinkedHashMap();
 
-	public int getFlagValue(String key) {
-		Integer value = (Integer) flags.get(key);
-		return value.intValue();
-	}
+    public int getFlagValue(String key) {
+        Integer value = (Integer) flags.get(key);
+        return value.intValue();
+    }
 
-	public abstract void setFlags(int flagsAsInt);
+    public abstract void setFlags(int flagsAsInt);
 }

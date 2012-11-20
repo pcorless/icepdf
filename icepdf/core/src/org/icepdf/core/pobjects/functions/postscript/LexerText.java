@@ -182,7 +182,7 @@ public class LexerText {
 
         // length of output array
         int n = 4;
-        float[] range = new float[]{0,1,0,1,0,1,0,1};
+        float[] range = new float[]{0, 1, 0, 1, 0, 1, 0, 1};
         // ready output array
         float y[] = new float[n];
 

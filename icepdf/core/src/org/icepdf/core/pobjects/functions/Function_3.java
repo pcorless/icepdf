@@ -15,8 +15,9 @@
 package org.icepdf.core.pobjects.functions;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 
-import java.util.Vector;
+import java.util.List;
 
 /**
  * <p>Type 3 Function (PDF 1.3) defines a stitching of the sub-domains of
@@ -26,6 +27,10 @@ import java.util.Vector;
  * @since 3.0
  */
 public class Function_3 extends Function {
+
+    public static final Name BOUNDS_KEY = new Name("Bounds");
+    public static final Name ENCODE_KEY = new Name("Encode");
+    public static final Name FUNCTIONS_KEY = new Name("Functions");
 
     // An array of k-1 numbers that, in combination with Domain, define the
     // intervals to which each function from the Functions array applies. Bounds
@@ -52,24 +57,24 @@ public class Function_3 extends Function {
         super(d);
 
         // Convert bounds dictionary values.
-        Vector boundTemp = (Vector) d.getObject("Bounds");
+        List boundTemp = (List) d.getObject(BOUNDS_KEY);
         if (boundTemp != null) {
             bounds = new float[boundTemp.size()];
             for (int i = 0; i < boundTemp.size(); i++) {
-                bounds[i] = ((Number) boundTemp.elementAt(i)).floatValue();
+                bounds[i] = ((Number) boundTemp.get(i)).floatValue();
             }
         }
 
         // convert encode dictionary.
-        Vector encodeTemp = (Vector) d.getObject("Encode");
+        List encodeTemp = (List) d.getObject(ENCODE_KEY);
         if (encodeTemp != null) {
             encode = new float[encodeTemp.size()];
             for (int i = 0; i < encodeTemp.size(); i++) {
-                encode[i] = ((Number) encodeTemp.elementAt(i)).floatValue();
+                encode[i] = ((Number) encodeTemp.get(i)).floatValue();
             }
         }
 
-        Vector functionTemp = (Vector) d.getObject("Functions");
+        List functionTemp = (List) d.getObject(FUNCTIONS_KEY);
         if (encodeTemp != null) {
             functions = new Function[functionTemp.size()];
             for (int i = 0; i < functionTemp.size(); i++) {
@@ -170,9 +175,9 @@ public class Function_3 extends Function {
 
         // Have seen a few corner cases where the bounds are not defined or are null. There is nothing
         // in the spec about how to handle this, so the work around below is experimental.
-        if (x != null){
+        if (x != null) {
             return validateAgainstRange(x);
-        }else{
+        } else {
             return new float[]{1, 1, 1, 1};
         }
 

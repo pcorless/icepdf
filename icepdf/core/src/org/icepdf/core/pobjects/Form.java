@@ -22,10 +22,8 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +40,13 @@ public class Form extends Stream {
     private static final Logger logger =
             Logger.getLogger(Form.class.toString());
 
+    public static final Name GROUP_KEY = new Name("Group");
+    public static final Name I_KEY = new Name("I");
+    public static final Name K_KEY = new Name("K");
+    public static final Name MATRIX_KEY = new Name("Matrix");
+    public static final Name BBOX_KEY = new Name("BBox");
+    public static final Name RESOURCES_KEY = new Name("Resources");
+
     private AffineTransform matrix = new AffineTransform();
     private Rectangle2D bbox;
     private Shapes shapes;
@@ -57,79 +62,24 @@ public class Form extends Stream {
 
     /**
      * Creates a new instance of the xObject.
-     * @param l document library
-     * @param h xObject dictionary entries.
+     *
+     * @param l                  document library
+     * @param h                  xObject dictionary entries.
      * @param streamInputWrapper content stream of image or post script commands.
      */
-    public Form(Library l, Hashtable h, SeekableInputConstrainedWrapper streamInputWrapper) {
+    public Form(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
         super(l, h, streamInputWrapper);
 
         // check for grouping flags so we can do special handling during the
         // xform content stream parsing.
-        Hashtable group = library.getDictionary(entries, "Group");
+        HashMap group = library.getDictionary(entries, GROUP_KEY);
         if (group != null) {
             transparencyGroup = true;
-            isolated = library.getBoolean(group, "I");
-            knockOut = library.getBoolean(group, "K");
+            isolated = library.getBoolean(group, I_KEY);
+            knockOut = library.getBoolean(group, K_KEY);
         }
     }
 
-    /**
-     * When a Page refers to a Form, it calls this to cleanup and get rid of,
-     * or reduce the memory footprint of, the refered objects
-     */
-    public void dispose(boolean cache) {
-
-        if (shapes != null){
-            shapes.dispose();
-        }
-        if (cache){
-            library.removeObject(this.getPObjectReference());
-        }
-        // get rid of the resources.
-        disposeResources(cache);
-    }
-
-    /**
-     * Disposes the resources associated with this Form object but leaves the
-     * shapes associated with a content stream.  This method should only be
-     * called when the Xobject will be orphaned and dispose cannot be called
-     * via normal object chaining.  XObject can be orphaned when called from
-     * a content stream of an Xobject.
-     *
-     * @param cache true indicates the cache should be used.
-     */
-    public void disposeResources(boolean cache){
-        if (resources != null) {
-            resources.dispose(cache, this);
-        }
-        if (parentResource != null) {
-            // remove parent reference to parent
-            parentResource = null;
-        }
-        inited = false;
-        graphicsState = null;
-        // clean up the super stream
-        super.dispose(cache);
-    }
-
-    /**
-     * When a ContentParser refers to a Form, it calls this to signal that it
-     * is done with the Form itself, while the generated Shapes are still
-     * in use.
-     */
-    public void completed() {
-        // null the reference, the shapes are refered to in the
-        // parent page and will be disposed of later if needed.
-//        shapes = null;
-        if (resources != null) {
-            resources.removeReference(this);
-            resources = null;
-        }
-        parentResource = null;
-        graphicsState = null;
-        inited = false;
-    }
 
     /**
      * Sets the GraphicsState which should be used by the content parser when
@@ -152,10 +102,10 @@ public class Form extends Stream {
      * @param v vectory containing affine transform values.
      * @return affine tansform based on v
      */
-    private static AffineTransform getAffineTransform(Vector v) {
+    private static AffineTransform getAffineTransform(List v) {
         float f[] = new float[6];
         for (int i = 0; i < 6; i++) {
-            f[i] = ((Number) v.elementAt(i)).floatValue();
+            f[i] = ((Number) v.get(i)).floatValue();
         }
         return new AffineTransform(f);
     }
@@ -178,17 +128,16 @@ public class Form extends Stream {
         if (inited) {
             return;
         }
-        Vector v = (Vector) library.getObject(entries, "Matrix");
+        List v = (List) library.getObject(entries, MATRIX_KEY);
         if (v != null) {
             matrix = getAffineTransform(v);
         }
-        bbox = library.getRectangle(entries, "BBox");
+        bbox = library.getRectangle(entries, BBOX_KEY);
         // try and find the form's resources dictionary.
-        Resources leafResources = library.getResources(entries, "Resources");
+        Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         // apply parent resource, if the current resources is null
         if (leafResources != null) {
             resources = leafResources;
-            resources.addReference(this);
         } else {
             leafResources = parentResource;
         }
@@ -196,23 +145,14 @@ public class Form extends Stream {
         // content stream of the calling content stream. 
         ContentParser cp = new ContentParser(library, leafResources);
         cp.setGraphicsState(graphicsState);
-        InputStream in = getInputStreamForDecodedStreamBytes();
+        byte[] in = getDecodedStreamBytes();
         if (in != null) {
             try {
-                shapes = cp.parse(in);
-            }
-            catch (Throwable e) {
+                shapes = cp.parse(new byte[][]{in}).getShapes();
+            } catch (Throwable e) {
                 // reset shapes vector, we don't want to mess up the paint stack
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Error parsing Form content stream.", e);
-            }
-            finally {
-                try {
-                    in.close();
-                }
-                catch (IOException e) {
-                    // intentionally left blank.
-                }
             }
         }
         inited = true;
@@ -269,7 +209,7 @@ public class Form extends Stream {
     /**
      * Only present if a transparency group is present.  Knockout groups individual
      * elements composed with the groups initial back drop rather then the stack.
-     * 
+     *
      * @return true if the transparency group is a knockout.
      */
     public boolean isKnockOut() {

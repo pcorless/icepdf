@@ -69,12 +69,12 @@ public class ResizableBorder extends AbstractBorder {
             SwingConstants.NORTH, SwingConstants.SOUTH, SwingConstants.WEST,
             SwingConstants.EAST, SwingConstants.NORTH_WEST,
             SwingConstants.NORTH_EAST, SwingConstants.SOUTH_WEST,
-            SwingConstants.SOUTH_EAST };
+            SwingConstants.SOUTH_EAST};
 
     private static final int cursors[] = {
             Cursor.N_RESIZE_CURSOR, Cursor.S_RESIZE_CURSOR, Cursor.W_RESIZE_CURSOR,
             Cursor.E_RESIZE_CURSOR, Cursor.NW_RESIZE_CURSOR, Cursor.NE_RESIZE_CURSOR,
-            Cursor.SW_RESIZE_CURSOR, Cursor.SE_RESIZE_CURSOR };
+            Cursor.SW_RESIZE_CURSOR, Cursor.SE_RESIZE_CURSOR};
 
     protected int resizeWidgetDim;
 
@@ -83,7 +83,7 @@ public class ResizableBorder extends AbstractBorder {
     }
 
     public Insets getBorderInsets(Component component) {
-        return new Insets(10,10, 10, 10);
+        return new Insets(10, 10, 10, 10);
     }
 
     public boolean isBorderOpaque() {
@@ -99,7 +99,7 @@ public class ResizableBorder extends AbstractBorder {
         boolean isBorderStyle = false;
 
         // get render flags from component.
-        if (component instanceof AnnotationComponent){
+        if (component instanceof AnnotationComponent) {
             AnnotationComponent annot = (AnnotationComponent) component;
             isEditable = annot.isEditable();
             isRollover = annot.isRollover();
@@ -109,25 +109,24 @@ public class ResizableBorder extends AbstractBorder {
         }
 
         // if we aren't in the edit mode, then we have nothing to paint.
-        if (!isEditable){
+        if (!isEditable) {
             return;
         }
 
         // get paint colour
-        if (isSelected || component.hasFocus() || isRollover){
+        if (isSelected || component.hasFocus() || isRollover) {
             g.setColor(selectColor);
-        }
-        else{
+        } else {
             g.setColor(outlineColor);
         }
 
         // paint border
-        if (isSelected || isRollover || (isLinkAnnot && !isBorderStyle)){
-            g.drawRect(x, y, w-1, h-1);
+        if (isSelected || isRollover || (isLinkAnnot && !isBorderStyle)) {
+            g.drawRect(x, y, w - 1, h - 1);
         }
 
         // paint resize widgets.
-        if ((isSelected || isRollover) && isLinkAnnot){
+        if ((isSelected || isRollover) && isLinkAnnot) {
             for (int location : locations) {
                 Rectangle rect = getRectangle(x, y, w, h, location);
 //                g.setColor(Color.WHITE);
@@ -170,7 +169,7 @@ public class ResizableBorder extends AbstractBorder {
         boolean isLinkAnnot = false;
 
         // get render flags from component.
-        if (c instanceof AnnotationComponentImpl){
+        if (c instanceof AnnotationComponentImpl) {
             AnnotationComponentImpl annot = (AnnotationComponentImpl) c;
             isEditable = annot.isEditable();
             isLinkAnnot = annot.isLinkAnnot();
@@ -180,7 +179,7 @@ public class ResizableBorder extends AbstractBorder {
         int h = c.getHeight();
 
         // show resize cursors for link annotations
-        if ((isEditable && isLinkAnnot)){
+        if ((isEditable && isLinkAnnot)) {
             for (int i = 0; i < locations.length; i++) {
                 Rectangle rect = getRectangle(0, 0, w, h, locations[i]);
                 if (rect.contains(me.getPoint()))

@@ -17,9 +17,9 @@ package org.icepdf.core.views;
 import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.Controller;
 import org.icepdf.core.SecurityCallback;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 import java.awt.*;
 import java.awt.event.KeyListener;

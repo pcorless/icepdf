@@ -28,6 +28,6 @@ public class And extends Operator {
 
     public boolean matches(TaggedDocument td, TaggedImage ti, String tag) {
         return childExpressions[0].matches(td, ti, tag) &&
-               childExpressions[1].matches(td, ti, tag);
+                childExpressions[1].matches(td, ti, tag);
     }
 }

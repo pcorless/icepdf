@@ -20,7 +20,7 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * <p>Separation Color Space background:</p>
@@ -61,6 +61,8 @@ import java.util.Hashtable;
  */
 public class Separation extends PColorSpace {
 
+    public static final Name SEPARATION_KEY = new Name("Separation");
+
     // named colour reference if valid conversion took place
     protected Color namedColor;
     // alternative colour space, named colour can not be resolved.
@@ -91,7 +93,7 @@ public class Separation extends PColorSpace {
      * @param alternateSpace name of alternative colour space
      * @param tintTransform  function which defines the tint transform
      */
-    protected Separation(Library l, Hashtable h, Object name, Object alternateSpace, Object tintTransform) {
+    protected Separation(Library l, HashMap h, Object name, Object alternateSpace, Object tintTransform) {
         super(l, h);
         alternate = getColorSpace(l, alternateSpace);
 

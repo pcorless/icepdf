@@ -18,7 +18,7 @@ import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 
 /**
@@ -44,11 +44,11 @@ public class Action extends Dictionary {
 
     public static final Name ACTION_TYPE_GOTO = new Name("GoTo");
 
-    public static final Name ACTION_TYPE_GOTO_REMOTE =  new Name("GoToR");
+    public static final Name ACTION_TYPE_GOTO_REMOTE = new Name("GoToR");
 
-    public static final Name ACTION_TYPE_LAUNCH =  new Name("Launch");
+    public static final Name ACTION_TYPE_LAUNCH = new Name("Launch");
 
-    public static final Name ACTION_TYPE_URI =  new Name("URI");
+    public static final Name ACTION_TYPE_URI = new Name("URI");
 
     // type of annotation
     private String type;
@@ -62,25 +62,25 @@ public class Action extends Dictionary {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public Action(Library l, Hashtable h) {
+    public Action(Library l, HashMap h) {
         super(l, h);
         type = getObject(ACTION_TYPE_KEY).toString();
     }
 
-     public static Action buildAction(Library library, Hashtable hashTable) {
-        Name actionType = (Name) hashTable.get(Action.ACTION_TYPE_KEY);
+    public static Action buildAction(Library library, HashMap hashMap) {
+        Name actionType = (Name) hashMap.get(Action.ACTION_TYPE_KEY);
         if (actionType != null) {
             if (actionType.equals(Action.ACTION_TYPE_GOTO)) {
-                return new GoToAction(library, hashTable);
+                return new GoToAction(library, hashMap);
             } else if (actionType.equals(Action.ACTION_TYPE_GOTO_REMOTE)) {
-                return new GoToRAction(library, hashTable);
+                return new GoToRAction(library, hashMap);
             } else if (actionType.equals(Action.ACTION_TYPE_LAUNCH)) {
-                return new LaunchAction(library, hashTable);
+                return new LaunchAction(library, hashMap);
             } else if (actionType.equals(Action.ACTION_TYPE_URI)) {
-                return new URIAction(library, hashTable);
+                return new URIAction(library, hashMap);
             }
         }
-        return new Action(library, hashTable);
+        return new Action(library, hashMap);
     }
 
     /**
@@ -95,12 +95,12 @@ public class Action extends Dictionary {
         return type;
     }
 
-    public boolean similar(Action obj){
+    public boolean similar(Action obj) {
         // check if object references can be compared
         if (this.getPObjectReference() != null &&
-                obj.getPObjectReference() != null){
+                obj.getPObjectReference() != null) {
             return getPObjectReference().equals(obj.getPObjectReference());
-        }else{
+        } else {
             // compare type
             return getType().equals(obj.getType());
         }

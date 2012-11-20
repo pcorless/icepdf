@@ -15,7 +15,6 @@
 package org.icepdf.core.views;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 import java.awt.*;
 
@@ -34,7 +33,7 @@ public interface PageViewComponent {
      * Set the parent Document View class which is resbonsible for drawing and
      * the general management of PageViewComponents for a particular view.
      *
-     * @param parentDocumentView type of view, single page, continuous, etc. 
+     * @param parentDocumentView type of view, single page, continuous, etc.
      */
     public void setDocumentViewCallback(DocumentView parentDocumentView);
 
@@ -52,7 +51,7 @@ public interface PageViewComponent {
 
     /**
      * Invalidates the underling document page and resepctive resources.
-     * Subsiquent page calls will reinitialize the page data. 
+     * Subsiquent page calls will reinitialize the page data.
      */
     public void invalidatePage();
 
@@ -69,13 +68,13 @@ public interface PageViewComponent {
     /**
      * Indicates that the page is showing;
      *
-     * @return true if the page is showing, otherwise; false. 
+     * @return true if the page is showing, otherwise; false.
      */
     public boolean isShowing();
 
     /**
      * Clear any internal data stractures that represent selected text and
-     * repaint the component. 
+     * repaint the component.
      */
     public void clearSelectedText();
 
@@ -85,16 +84,16 @@ public interface PageViewComponent {
      * in page space.
      *
      * @param cursorLocation location of cursor or mouse.
-     * @param selection rectangle of text to include in selection.
+     * @param selection      rectangle of text to include in selection.
      */
     public void setTextSelectionRectangle(Point cursorLocation, Rectangle selection);
 
     /**
      * Add a new annotation object to this page view comnponent.
      *
-     * @param annotation annotation to add. 
+     * @param annotation annotation to add.
      */
-    public AnnotationComponent addAnnotation(Annotation annotation );
+    public AnnotationComponent addAnnotation(Annotation annotation);
 
     /**
      * Remove the specified annotation from this page view.

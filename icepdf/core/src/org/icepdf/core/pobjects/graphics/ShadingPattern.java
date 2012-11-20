@@ -15,16 +15,17 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>Shading Pattern is a Base class for a all shading Types.  It contains
@@ -41,6 +42,20 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     private static final Logger logger =
             Logger.getLogger(ShadingPattern.class.toString());
 
+    public static final Name PATTERN_TYPE_KEY = new Name("PatternType");
+    public static final Name EXTGSTATE_KEY = new Name("ExtGState");
+    public static final Name MATRIX_KEY = new Name("Matrix");
+    public static final Name SHADING_KEY = new Name("Shading");
+    public static final Name SHADING_TYPE_KEY = new Name("ShadingType");
+    public static final Name BBOX_KEY = new Name("BBox");
+    public static final Name COLORSPACE_KEY = new Name("ColorSpace");
+    public static final Name BACKGROUND_KEY = new Name("Background");
+    public static final Name ANTIALIAS_KEY = new Name("AntiAlias");
+    public static final Name DOMAIN_KEY = new Name("Domain");
+    public static final Name COORDS_KEY = new Name("Coords");
+    public static final Name EXTEND_KEY = new Name("Extend");
+    public static final Name FUNCTION_KEY = new Name("Function");
+
     // pattern types by number.
     public static final int SHADING_PATTERN_TYPE_1 = 1;
     public static final int SHADING_PATTERN_TYPE_2 = 2;
@@ -50,13 +65,13 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     public static final int SHADING_PATTERN_TYPE_6 = 6;
 
     // type of PObject, should always be "Pattern"
-    protected String type;
+    protected Name type;
 
     // A code identifying the type of pattern that this dictionary describes
     protected int patternType;
 
     // shading dictionary, entries vary depending on shading type.
-    protected Hashtable shading;
+    protected HashMap shading;
 
     // shading type 1-7,  most common, 2,3,6..
     protected int shadingType;
@@ -73,7 +88,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     protected PColorSpace colorSpace;
 
     // background colors (optional), not applicable on 'sh'
-    protected Vector background;
+    protected List background;
 
     // turn on/off antiAliasing.  (optional)
     protected boolean antiAlias;
@@ -90,23 +105,23 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     //  initiated flag
     protected boolean inited;
 
-    public ShadingPattern(Library library, Hashtable entries) {
+    public ShadingPattern(Library library, HashMap entries) {
         super(library, entries);
 
-        type = library.getName(entries, "Type");
+        type = library.getName(entries, TYPE_KEY);
 
-        patternType = library.getInt(entries, "PatternType");
+        patternType = library.getInt(entries, PATTERN_TYPE_KEY);
 
-        Object attribute = library.getObject(entries, "ExtGState");
-        if (attribute instanceof Hashtable) {
-            extGState = new ExtGState(library, (Hashtable) attribute);
+        Object attribute = library.getObject(entries, EXTGSTATE_KEY);
+        if (attribute instanceof HashMap) {
+            extGState = new ExtGState(library, (HashMap) attribute);
         } else if (attribute instanceof Reference) {
             extGState = new ExtGState(library,
-                    (Hashtable) library.getObject(
+                    (HashMap) library.getObject(
                             (Reference) attribute));
         }
 
-        Vector v = (Vector) library.getObject(entries, "Matrix");
+        List v = (List) library.getObject(entries, MATRIX_KEY);
         if (v != null) {
             matrix = getAffineTransform(v);
         } else {
@@ -125,10 +140,10 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
      * @return returns a ShadingPatern object based ont he shadingType criteria.
      *         if the proper constructor cannot be found then null is returned.
      */
-    public static ShadingPattern getShadingPattern(Library library, Hashtable attribute) {
+    public static ShadingPattern getShadingPattern(Library library, HashMap attribute) {
         // factory type approach, find shading entries and get type
-        Hashtable shading =
-                library.getDictionary(attribute, "Shading");
+        HashMap shading =
+                library.getDictionary(attribute, SHADING_KEY);
         if (shading != null) {
             return shadingFactory(library, attribute, shading);
         }
@@ -145,8 +160,8 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
      * @return shading pattern
      */
     public static ShadingPattern getShadingPattern(Library library,
-                                                   Hashtable entries,
-                                                   Hashtable shading) {
+                                                   HashMap entries,
+                                                   HashMap shading) {
         // resolve shading pattern
         if (entries != null) {
             ShadingPattern shadingPattern = shadingFactory(library, shading, shading);
@@ -161,9 +176,9 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     // create a new shading pattern.
     private static ShadingPattern shadingFactory(Library library,
-                                                 Hashtable attribute,
-                                                 Hashtable patternDictionary) {
-        int shadingType = library.getInt(patternDictionary, "ShadingType");
+                                                 HashMap attribute,
+                                                 HashMap patternDictionary) {
+        int shadingType = library.getInt(patternDictionary, SHADING_TYPE_KEY);
         if (shadingType == ShadingPattern.SHADING_PATTERN_TYPE_2) {
             return new ShadingType2Pattern(library, attribute);
         } else if (shadingType == ShadingPattern.SHADING_PATTERN_TYPE_3) {
@@ -184,10 +199,10 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
      * @param v vectory containing affine transform values.
      * @return affine tansform based on v
      */
-    private static AffineTransform getAffineTransform(Vector v) {
+    private static AffineTransform getAffineTransform(List v) {
         float f[] = new float[6];
         for (int i = 0; i < 6; i++) {
-            f[i] = ((Number) v.elementAt(i)).floatValue();
+            f[i] = ((Number) v.get(i)).floatValue();
         }
         return new AffineTransform(f);
     }
@@ -230,11 +245,11 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
         return shadingType;
     }
 
-    public void setShading(Hashtable shading) {
+    public void setShading(HashMap shading) {
         this.shading = shading;
     }
 
-    public String getType() {
+    public Name getType() {
         return type;
     }
 
@@ -242,7 +257,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
         return colorSpace;
     }
 
-    public Vector getBackground() {
+    public List getBackground() {
         return background;
     }
 

@@ -15,26 +15,26 @@
 package org.jpedal.jbig2.image;
 
 public class BitmapPointer {
-	private int x, y, width, height, bits, count;
-	private JBIG2Bitmap bitmap;
+    private int x, y, width, height, bits, count;
+    private JBIG2Bitmap bitmap;
 
-	public BitmapPointer(JBIG2Bitmap bitmap) {
-		this.bitmap = bitmap;
-		this.height = bitmap.getHeight();
-		this.width = bitmap.getWidth();
-	}
+    public BitmapPointer(JBIG2Bitmap bitmap) {
+        this.bitmap = bitmap;
+        this.height = bitmap.getHeight();
+        this.width = bitmap.getWidth();
+    }
 
-	public void setPointer(int x, int y) {
-		this.x = x;
-		this.y = y;
-		count = 0;
-	}
+    public void setPointer(int x, int y) {
+        this.x = x;
+        this.y = y;
+        count = 0;
+    }
 
-	public int nextPixel() {
+    public int nextPixel() {
 
-		// fairly certain the byte can be cached here - seems to work fine. only
-		// problem would be if cached pixel was modified, and the modified
-		// version needed.
+        // fairly certain the byte can be cached here - seems to work fine. only
+        // problem would be if cached pixel was modified, and the modified
+        // version needed.
 //		if (y < 0 || y >= height || x >= width) {
 //			return 0;
 //		} else if (x < 0) {
@@ -61,18 +61,18 @@ public class BitmapPointer {
 //		x++;
 //
 //		return pixel;
-		
-		if (y < 0 || y >= height || x >= width) {
-			return 0;
-		} else if (x < 0) {
-			x++;
-			return 0;
-		}
 
-		int pixel = bitmap.getPixel(x, y);
+        if (y < 0 || y >= height || x >= width) {
+            return 0;
+        } else if (x < 0) {
+            x++;
+            return 0;
+        }
 
-		x++;
+        int pixel = bitmap.getPixel(x, y);
 
-		return pixel;
-	}
+        x++;
+
+        return pixel;
+    }
 }

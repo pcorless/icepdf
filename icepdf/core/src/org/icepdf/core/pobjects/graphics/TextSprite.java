@@ -19,9 +19,9 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 
 /**
@@ -77,11 +77,11 @@ public class TextSprite {
      * <p>Adds a new text char to the TextSprite which will pe painted at x, y under
      * the current CTM</p>
      *
-     * @param cid cid to paint.
+     * @param cid     cid to paint.
      * @param unicode unicode represention of cid.
-     * @param x         x-coordinate to paint.
-     * @param y         y-coordinate to paint.
-     * @param width     width of cid from font.
+     * @param x       x-coordinate to paint.
+     * @param y       y-coordinate to paint.
+     * @param width   width of cid from font.
      */
     public GlyphText addText(String cid, String unicode, float x, float y, float width) {
 
@@ -122,7 +122,8 @@ public class TextSprite {
 
     /**
      * Gets the character bounds of each glyph found in the TextSprite.
-     * @return  bounds in PDF coordinates of character bounds
+     *
+     * @return bounds in PDF coordinates of character bounds
      */
     public ArrayList<GlyphText> getGlyphSprites() {
         return glyphTexts;
@@ -135,12 +136,13 @@ public class TextSprite {
     /**
      * Set the graphic state transorm on all child sprites, This is used for
      * xForm object parsing and text selection.  There is no need to do this
-     * outside of the context parser. 
+     * outside of the context parser.
+     *
      * @param graphicStateTransform
      */
     public void setGraphicStateTransform(AffineTransform graphicStateTransform) {
         this.graphicStateTransform = graphicStateTransform;
-        for (GlyphText sprite : glyphTexts){
+        for (GlyphText sprite : glyphTexts) {
             sprite.normalizeToUserSpace(this.graphicStateTransform);
         }
     }
@@ -169,7 +171,7 @@ public class TextSprite {
 
     public String toString() {
         StringBuilder text = new StringBuilder(glyphTexts.size());
-        for (GlyphText glyphText : glyphTexts){
+        for (GlyphText glyphText : glyphTexts) {
             text.append(glyphText.getUnicode());
         }
         return text.toString();
@@ -182,9 +184,10 @@ public class TextSprite {
     /**
      * Getst the bounds of the text that makes up this sprite.  The bounds
      * are defined PDF space and are relative to the current CTM.
+     *
      * @return
      */
-    public Rectangle2D.Float getBounds(){
+    public Rectangle2D.Float getBounds() {
         return bounds;
     }
 
@@ -200,7 +203,7 @@ public class TextSprite {
         // draw bounding box.
 //        drawBoundBox(g2d);
 
-        for (GlyphText glyphText : glyphTexts){
+        for (GlyphText glyphText : glyphTexts) {
 
             // paint glyph
             font.drawEstring(g2d,
@@ -220,14 +223,14 @@ public class TextSprite {
      *
      * @return area representing the glyph outline.
      */
-    public Area getGlyphOutline(){
+    public Area getGlyphOutline() {
         Area glyphOutline = null;
-        for (GlyphText glyphText : glyphTexts){
-            if (glyphOutline != null){
+        for (GlyphText glyphText : glyphTexts) {
+            if (glyphOutline != null) {
                 glyphOutline.add(new Area(font.getEstringOutline(
                         glyphText.getCid(),
                         glyphText.getX(), glyphText.getY())));
-            }else{
+            } else {
                 glyphOutline = new Area(font.getEstringOutline(
                         glyphText.getCid(),
                         glyphText.getX(), glyphText.getY()));
@@ -236,7 +239,7 @@ public class TextSprite {
         return glyphOutline;
     }
 
-  /*
+    /*
     private void drawBoundBox(Graphics2D gg) {
 
         // draw the characters
@@ -297,15 +300,5 @@ public class TextSprite {
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
         return !OPTIMIZED_DRAWING_ENABLED || shape.intersects(bounds);
-    }
-
-    /**
-     * Dispose this TextSprite Object.
-     */
-    public void dispose() {
-        glyphTexts.clear();
-        glyphTexts.trimToSize();
-        strokeColor = null;
-        font = null;
     }
 }

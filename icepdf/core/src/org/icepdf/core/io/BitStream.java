@@ -137,7 +137,7 @@ public class BitStream {
      * @throws java.io.IOException
      */
     public void putRunBits(int i, int len) throws IOException {
-        for (int j = len - 1; j >= 0;) {
+        for (int j = len - 1; j >= 0; ) {
             if (bits_left != 0 || j < 8) {
                 putBit(i);
                 j--;

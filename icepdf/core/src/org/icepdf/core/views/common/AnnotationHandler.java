@@ -17,9 +17,9 @@ package org.icepdf.core.views.common;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
@@ -28,6 +28,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -85,9 +86,9 @@ public class AnnotationHandler extends SelectionBoxHandler
      *
      * @param annotations annotations to wrap with annotations components.
      */
-    public void initializeAnnotationComponents(ArrayList<Annotation> annotations){
+    public void initializeAnnotationComponents(List<Annotation> annotations) {
 
-        if (this.annotations == null && annotations != null){
+        if (this.annotations == null && annotations != null) {
             this.annotations = new ArrayList<AnnotationComponent>(annotations.size());
             AnnotationComponentImpl comp;
             for (Annotation annotation : annotations) {
@@ -108,11 +109,12 @@ public class AnnotationHandler extends SelectionBoxHandler
     /**
      * Wraps the specified annotaiton with a new Annotation component and adds
      * it to the PageViewComponent as a child.
+     *
      * @param annotation new annotation to add to PageView.
      */
-    public AnnotationComponent addAnnotationComponent(Annotation annotation){
+    public AnnotationComponent addAnnotationComponent(Annotation annotation) {
         // initialize annotations
-        if (annotations == null){
+        if (annotations == null) {
             annotations = new ArrayList<AnnotationComponent>();
         }
         // make sure we don't add the following types.
@@ -136,15 +138,16 @@ public class AnnotationHandler extends SelectionBoxHandler
      * Removes the specified annotation from the page view.  The component
      * is actually set to invisible.  We need to keep the component around
      * so that it can be made visible on an undo, as each state var keeps a
-     * reference to the component it is 
-     * @param annotation annotation component to removed. 
+     * reference to the component it is
+     *
+     * @param annotation annotation component to removed.
      */
-    public void removeAnnotationComponent(AnnotationComponent annotation){
+    public void removeAnnotationComponent(AnnotationComponent annotation) {
         // initialize annotations
-        if (annotations == null){
+        if (annotations == null) {
             return;
         }
-        ((Component)annotation).setVisible(false);
+        ((Component) annotation).setVisible(false);
         // set the new annotation as the selected one.
         documentViewController.assignSelectedAnnotation(null);
     }
@@ -247,9 +250,9 @@ public class AnnotationHandler extends SelectionBoxHandler
 
         // annotation selection box.
         if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION||
-            documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
+                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             int x = e.getX();
             int y = e.getY();
             currentRect = new Rectangle(x, y, 0, 0);
@@ -264,8 +267,8 @@ public class AnnotationHandler extends SelectionBoxHandler
         isDragged = true;
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-            documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
 
             // rectangle select tool
             updateSelectionSize(e, pageViewComponent);
@@ -284,7 +287,7 @@ public class AnnotationHandler extends SelectionBoxHandler
         // link annotations tool.
         else if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION &&
-                isDragged){
+                isDragged) {
             createNewLinkAnnotation();
             // clear the rectangle
             clearRectangle(pageViewComponent);
@@ -319,7 +322,7 @@ public class AnnotationHandler extends SelectionBoxHandler
      *          to.
      */
     public void paintAnnotations(Graphics g) {
-        Page currentPage = pageViewComponent.getPageLock(this);
+        Page currentPage = pageViewComponent.getPage();
         if (currentPage != null && currentPage.isInitiated()) {
             if (annotations != null) {
                 Graphics2D gg2 = (Graphics2D) g;
@@ -341,7 +344,7 @@ public class AnnotationHandler extends SelectionBoxHandler
 
                 // paint all annotations on top of the content buffer
                 for (AnnotationComponent annotation : annotations) {
-                    if (((Component)annotation).isVisible()){
+                    if (((Component) annotation).isVisible()) {
                         annotation.getAnnotation().render(gg2,
                                 GraphicsRenderingHints.SCREEN,
                                 documentViewModel.getViewRotation(),
@@ -355,11 +358,10 @@ public class AnnotationHandler extends SelectionBoxHandler
                 gg2.setTransform(prePaintTransform);
             }
         }
-        pageViewComponent.releasePageLock(currentPage, this);
 
         // paint new link annotation bound box.
         if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION){
+                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             paintSelectionBox(g);
         }
     }

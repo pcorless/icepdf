@@ -96,20 +96,20 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected static boolean detectPunctuation(GlyphText sprite) {
         String glyphText = sprite.getUnicode();
-        if (glyphText != null){
+        if (glyphText != null) {
             int c = sprite.getUnicode().charAt(0);
             return isPunctuation(c);
-        }else{
+        } else {
             return false;
         }
     }
 
     protected static boolean detectWhiteSpace(GlyphText sprite) {
         String glyphText = sprite.getUnicode();
-        if (glyphText != null){
+        if (glyphText != null) {
             int c = sprite.getUnicode().charAt(0);
             return isWhiteSpace(c);
-        }else{
+        } else {
             return false;
         }
     }
@@ -157,7 +157,7 @@ public class WordText extends AbstractText implements TextSelect {
                             spaceBounds.y,
                             spaceBounds.width,
                             spaceBounds.height),
-                    String.valueOf((char)32), String.valueOf((char)32));
+                    String.valueOf((char) 32), String.valueOf((char) 32));
             spaceBounds.x += spaceBounds.width;
             whiteSpace.addText(spaceText);
             whiteSpace.setWhiteSpace(true);

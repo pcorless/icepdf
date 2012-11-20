@@ -15,26 +15,25 @@
 package org.jpedal.jbig2;
 
 public class JBIG2Exception extends Exception {
-	public JBIG2Exception(Exception ex) {
-		super(ex);
-	}
+    public JBIG2Exception(Exception ex) {
+        super(ex);
+    }
 
-	/**
-	 * Constructs a <CODE>JBIGException</CODE> whithout a message.
-	 */
+    /**
+     * Constructs a <CODE>JBIGException</CODE> whithout a message.
+     */
 
-	public JBIG2Exception() {
-		super();
-	}
+    public JBIG2Exception() {
+        super();
+    }
 
-	/**
-	 * Constructs a <code>JBIGException</code> with a message.
-	 * 
-	 * @param message
-	 *            a message describing the exception
-	 */
+    /**
+     * Constructs a <code>JBIGException</code> with a message.
+     *
+     * @param message a message describing the exception
+     */
 
-	public JBIG2Exception(String message) {
-		super(message);
-	}
+    public JBIG2Exception(String message) {
+        super(message);
+    }
 }

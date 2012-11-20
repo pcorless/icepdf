@@ -14,7 +14,6 @@
  */
 package org.icepdf.core.views.common;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
@@ -59,8 +58,8 @@ public class SelectionBoxHandler {
         gg.setStroke(oldStroke);
     }
 
-    public void resetRectangle(int x, int y){
-        currentRect = new Rectangle(x, y, 0, 0);   
+    public void resetRectangle(int x, int y) {
+        currentRect = new Rectangle(x, y, 0, 0);
     }
 
     public Rectangle getCurrentRect() {
@@ -79,7 +78,7 @@ public class SelectionBoxHandler {
         this.rectToDraw = rectToDraw;
     }
 
-    public void clearRectangle(Component component){
+    public void clearRectangle(Component component) {
         // clear the rectangle
         currentRect = new Rectangle(0, 0, 0, 0);
         updateDrawableRect(component.getWidth(),
@@ -95,7 +94,7 @@ public class SelectionBoxHandler {
         int x = e.getX();
         int y = e.getY();
         // dragging across pages will result in null pointer if don't init.
-        if (currentRect == null){
+        if (currentRect == null) {
             currentRect = new Rectangle(x, y, 0, 0);
         }
         currentRect.setSize(x - currentRect.x,
@@ -108,7 +107,7 @@ public class SelectionBoxHandler {
 
     public void setSelectionSize(Rectangle rect, Component component) {
 
-         currentRect = rect;
+        currentRect = rect;
 
         updateDrawableRect(component.getWidth(), component.getHeight());
         Rectangle totalRepaint = rectToDraw.union(previousRectDrawn);

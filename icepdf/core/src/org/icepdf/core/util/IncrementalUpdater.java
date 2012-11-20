@@ -15,32 +15,21 @@
 package org.icepdf.core.util;
 
 import org.icepdf.core.io.CountingOutputStream;
-import org.icepdf.core.pobjects.PTrailer;
-import org.icepdf.core.pobjects.PObject;
-import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.HexStringObject;
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.*;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Enumeration;
-import java.util.Vector;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @since 4.0
  */
 public class IncrementalUpdater {
     private static final Logger logger =
-        Logger.getLogger(IncrementalUpdater.class.getName());
+            Logger.getLogger(IncrementalUpdater.class.getName());
 
     private static final boolean PRETTY = false;
 
@@ -72,42 +61,42 @@ public class IncrementalUpdater {
     private CountingOutputStream output;
     private long startingPosition;
     private long xrefPosition;
-    private ArrayList<Entry> entries;
+    private List<Entry> entries;
 
     /**
      * For simplicity, expose this one single method for appending an
      * incremental update.
      *
-     * @param document The Document that's being saved
-     * @param out OutputStream to write the incremental update to
+     * @param document       The Document that's being saved
+     * @param out            OutputStream to write the incremental update to
      * @param documentLength The pre-existing PDF's file length
      * @return The number of bytes written in the incremental update
      * @throws IOException
      */
     public static long appendIncrementalUpdate(
-        Document document, OutputStream out, long documentLength)
+            Document document, OutputStream out, long documentLength)
             throws IOException {
         // Iterate over StateManager entries, writing changed objects
         // (like Annotation, Page, Annots array) to output stream via
         // IncrementalUpdater
-        
+
         if (logger.isLoggable(Level.FINE)) {
             if (document.getStateManager().isChanged())
                 logger.fine("Have changes, will append incremental update");
             else
                 logger.fine("No changes, will not append incremental update");
         }
-        
+
         // If no changes, don't append an incremental update
         if (!document.getStateManager().isChanged())
             return 0L;
 
         IncrementalUpdater updater = new IncrementalUpdater(
-            out, documentLength);
+                out, documentLength);
         updater.begin();
-        
+
         Iterator<PObject> changes =
-            document.getStateManager().iteratorSortedByObjectNumber();
+                document.getStateManager().iteratorSortedByObjectNumber();
         while (changes.hasNext()) {
             PObject pobject = changes.next();
             updater.writeObject(pobject.getReference(), pobject.getObject());
@@ -131,6 +120,7 @@ public class IncrementalUpdater {
 
     /**
      * Start the process of writing the incremental update
+     *
      * @throws IOException
      */
     private void begin() throws IOException {
@@ -143,13 +133,13 @@ public class IncrementalUpdater {
     /**
      * Write a top-level indirectly referenced PDF object, which may be a
      * dictionary type of object, or simply a primitive.
+     *
      * @throws IOException
      */
     private void writeObject(Reference ref, Object obj) throws IOException {
         if (obj instanceof Dictionary) {
             writeObjectDictionary((Dictionary) obj);
-        }
-        else {
+        } else {
             writeObjectValue(ref, obj);
         }
     }
@@ -157,6 +147,7 @@ public class IncrementalUpdater {
     /**
      * Write an xref table describing all of the objects that have already
      * been written out.
+     *
      * @throws IOException
      */
     private void writeXRefTable() throws IOException {
@@ -165,12 +156,12 @@ public class IncrementalUpdater {
 
         // End chain by pointing to head. If none del, chain back on itself.
         int nextDeletedObjectNumber = 0;
-        for(int i = entries.size()-1; i >= 0; i--) {
+        for (int i = entries.size() - 1; i >= 0; i--) {
             Entry entry = entries.get(i);
             if (entry.isDeleted()) {
                 entry.setNextDeletedObjectNumber(nextDeletedObjectNumber);
                 nextDeletedObjectNumber =
-                    entry.getReference().getObjectNumber();
+                        entry.getReference().getObjectNumber();
             }
         }
 
@@ -183,7 +174,7 @@ public class IncrementalUpdater {
         output.write(NEWLINE);
         xrefPosition = startingPosition + output.getCount();
         output.write(XREF);
-        for(int i = 0; i < entries.size();) {
+        for (int i = 0; i < entries.size(); ) {
             i += writeXrefSubSection(i);
         }
         output.write(NEWLINE);
@@ -191,6 +182,7 @@ public class IncrementalUpdater {
 
     /**
      * Write out the current xref sub-section, commencing at beginIndex in entries
+     *
      * @param beginIndex The index into entries, where the xref sub-section begins
      * @return The length of the current sub-section
      * @throws IOException
@@ -200,7 +192,7 @@ public class IncrementalUpdater {
 
         // Determine how many entries in this sub-section
         int nextContiguous = beginObjNum + 1;
-        for(int i = beginIndex+1; i < entries.size(); i++) {
+        for (int i = beginIndex + 1; i < entries.size(); i++) {
             if (entries.get(i).getReference().getObjectNumber() == nextContiguous)
                 nextContiguous++;
             else
@@ -214,19 +206,18 @@ public class IncrementalUpdater {
         writeInteger(subSectionLength);
         output.write(NEWLINE);
 
-        for(int i = beginIndex; i < (beginIndex+subSectionLength); i++) {
+        for (int i = beginIndex; i < (beginIndex + subSectionLength); i++) {
             Entry entry = entries.get(i);
             if (entry.isDeleted()) {
                 // 10-digit-integer:nextFreeObjectNumber SPACE 5-digit-integer:generationNumber SPACE 'f' CRLF
                 writeZeroPaddedLong(entry.getNextDeletedObjectNumber(), 10);
                 output.write(' ');
-                writeZeroPaddedLong(entry.getReference().getGenerationNumber()+1, 5);
+                writeZeroPaddedLong(entry.getReference().getGenerationNumber() + 1, 5);
                 output.write(' ');
                 output.write('f');
                 output.write('\r');
                 output.write('\n');
-            }
-            else {
+            } else {
                 // 10-digit-integer:byteOffset SPACE 5-digit-integer:generationNumber SPACE 'n' CRLF
                 writeZeroPaddedLong(entry.getPosition(), 10);
                 output.write(' ');
@@ -243,18 +234,19 @@ public class IncrementalUpdater {
 
     /**
      * Write the new trailer, and link it back to the pre-existing ending trailer
+     *
      * @param prevTrailer The pre-existing PDF's ending trailer
      * @throws IOException
      */
     private void writeTrailer(PTrailer prevTrailer) throws IOException {
-        Hashtable<Object,Object> newTrailer = (Hashtable<Object,Object>)
-            prevTrailer.getDictionary().clone();
+        HashMap<Object, Object> newTrailer = (HashMap<Object, Object>)
+                prevTrailer.getDictionary().clone();
         int oldSize = prevTrailer.getNumberOfObjects();
         int greatestWritten = getGreatestObjectNumberWritten();
-        int newSize = Math.max(oldSize, greatestWritten+1);
-        newTrailer.put(new Name("Size"), new Integer(newSize));
+        int newSize = Math.max(oldSize, greatestWritten + 1);
+        newTrailer.put(new Name("Size"), newSize);
         long prevTrailerPos = prevTrailer.getPosition();
-        newTrailer.put(new Name("Prev"), new Long(prevTrailerPos));
+        newTrailer.put(new Name("Prev"), prevTrailerPos);
         long xrefPos = xrefPosition;
 
         // If the previous trailer doesn't know it's position, then we're
@@ -278,6 +270,7 @@ public class IncrementalUpdater {
 
     /**
      * Flush the OutputStream that we wrap
+     *
      * @throws IOException
      */
     private void flush() throws IOException {
@@ -293,6 +286,7 @@ public class IncrementalUpdater {
 
     /**
      * Write a Dictionary as a top-level PDF object
+     *
      * @throws IOException
      */
     private void writeObjectDictionary(Dictionary obj) throws IOException {
@@ -310,11 +304,11 @@ public class IncrementalUpdater {
             //}
             // Make deleted entries for unused object numbers resulting from
             // deleting newly created objects
-            addEntry( new Entry(ref) );
+            addEntry(new Entry(ref));
             return;
         }
-        addEntry( new Entry(ref, startingPosition + output.getCount()) );
-        
+        addEntry(new Entry(ref, startingPosition + output.getCount()));
+
         writeInteger(ref.getObjectNumber());
         output.write(SPACE);
         writeInteger(ref.getGenerationNumber());
@@ -328,6 +322,7 @@ public class IncrementalUpdater {
      * Write a non-Dictionary type of value as a top-level PDF object.
      * For example, any array or primitive that was specified as an
      * indirect reference.
+     *
      * @throws IOException
      */
     private void writeObjectValue(Reference ref, Object obj) throws IOException {
@@ -336,7 +331,7 @@ public class IncrementalUpdater {
             throw new IllegalArgumentException("Reference must be non-null for object: " + obj);
         if (obj == null)
             throw new IllegalArgumentException("Object must be non-null");
-        addEntry( new Entry(ref, startingPosition + output.getCount()) );
+        addEntry(new Entry(ref, startingPosition + output.getCount()));
 
         writeInteger(ref.getObjectNumber());
         output.write(SPACE);
@@ -352,41 +347,40 @@ public class IncrementalUpdater {
      * For Dictionary values, we're going to assume that all indirect
      * objects are already in the file, and that all direct objects
      * should be inlined
+     *
      * @throws IOException
      */
     private void writeDictionary(Dictionary dict) throws IOException {
         logger.log(Level.FINER, "writeDictionary()  dict: {0}", dict);
         try {
             writeDictionary(dict.getEntries());
-        }
-        catch(IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             String dictString = (dict.getPObjectReference() != null)
-                ? dict.getPObjectReference().toString() : dict.toString();
+                    ? dict.getPObjectReference().toString() : dict.toString();
             throw new IllegalArgumentException(
-                e.getMessage() + " in dictionary: " + dictString, e);
+                    e.getMessage() + " in dictionary: " + dictString, e);
         }
     }
 
     /**
      * The internal implementation of writing out the dictionary's delimiters
-     * and Hashtable entries.
+     * and HashMap entries.
+     *
      * @throws IOException
      */
-    private void writeDictionary(Hashtable<Object,Object> dictEntries) throws IOException {
+    private void writeDictionary(HashMap<Object, Object> dictEntries) throws IOException {
         logger.log(Level.FINER, "writeDictionary()  dictEntries: {0}", dictEntries);
         output.write(BEGIN_DICTIONARY);
         if (PRETTY)
             output.write(NEWLINE);
-        Enumeration<Object> keys = dictEntries.keys();
-        while (keys.hasMoreElements()) {
-            Object key = keys.nextElement(); //Likely a Name
+        Set<Object> keys = dictEntries.keySet();
+        for (Object key : keys) {
             Object val = dictEntries.get(key);
             writeName(key.toString());
             output.write(SPACE);
             try {
                 writeValue(val);
-            }
-            catch(IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException(e.getMessage() + " for key: " + key, e);
             }
             if (PRETTY)
@@ -400,55 +394,43 @@ public class IncrementalUpdater {
     /**
      * Determines the type of the value, and delegates to the appropriate
      * method for handling that type
+     *
      * @throws IOException
      */
     private void writeValue(Object val) throws IOException {
         if (val == null) {
             writeByteString("null");
-        }
-        else if (val instanceof Name) {
-            writeName( (Name) val );
-        }
-        else if (val instanceof Reference) {
-            writeReference( (Reference) val );
-        }
-        else if (val instanceof Boolean) {
-            writeBoolean( ((Boolean) val).booleanValue() );
-        }
-        else if (val instanceof Integer) {
-            writeInteger( ((Integer) val).intValue() );
-        }
-        else if (val instanceof Long) {
-            writeLong( ((Long) val).longValue() );
-        }
-        else if (val instanceof Number) {
-            writeReal( (Number) val );
-        }
-        else if (val instanceof String) {
+        } else if (val instanceof Name) {
+            writeName((Name) val);
+        } else if (val instanceof Reference) {
+            writeReference((Reference) val);
+        } else if (val instanceof Boolean) {
+            writeBoolean((Boolean) val);
+        } else if (val instanceof Integer) {
+            writeInteger((Integer) val);
+        } else if (val instanceof Long) {
+            writeLong((Long) val);
+        } else if (val instanceof Number) {
+            writeReal((Number) val);
+        } else if (val instanceof String) {
             logger.severe("Found invalid java.lang.String being written out: "
-                + val.toString());
+                    + val.toString());
             throw new IllegalArgumentException(
-                "invalid type of java.lang.String. " +
-                "Should use LiteralStringObject or HexStringObject");
-        }
-        else if (val instanceof LiteralStringObject) {
+                    "invalid type of java.lang.String. " +
+                            "Should use LiteralStringObject or HexStringObject");
+        } else if (val instanceof LiteralStringObject) {
             writeLiteralString((LiteralStringObject) val);
-        }
-        else if (val instanceof HexStringObject) {
+        } else if (val instanceof HexStringObject) {
             writeHexString((HexStringObject) val);
-        }
-        else if (val instanceof Vector) {
-            writeArray( (Vector) val );
-        }
-        else if (val instanceof Dictionary) {
-            writeDictionary( (Dictionary) val );
-        }
-        else if (val instanceof Hashtable) {
-            writeDictionary( (Hashtable<Object,Object>) val );
-        }
-        else {
+        } else if (val instanceof List) {
+            writeArray((List) val);
+        } else if (val instanceof Dictionary) {
+            writeDictionary((Dictionary) val);
+        } else if (val instanceof HashMap) {
+            writeDictionary((HashMap<Object, Object>) val);
+        } else {
             throw new IllegalArgumentException("unknown value type of: " +
-                val.getClass().getName());
+                    val.getClass().getName());
         }
     }
 
@@ -468,18 +450,17 @@ public class IncrementalUpdater {
 
         final int pound = 0x23;
         byte[] bytes = name.getBytes("UTF-8");
-        for(int b : bytes) {
+        for (int b : bytes) {
             b &= 0xFF;
             if (b == pound || b < 0x21 || b > 0x7E) {
                 output.write(pound);
                 int hexVal = ((b >> 4) & 0x0F);
-                int hexDigit = hexVal + ( (hexVal >= 10) ? 'A' : '0' );
+                int hexDigit = hexVal + ((hexVal >= 10) ? 'A' : '0');
                 output.write(hexDigit);
                 hexVal = (b & 0x0F);
-                hexDigit = hexVal + ( (hexVal >= 10) ? 'A' : '0' );
+                hexDigit = hexVal + ((hexVal >= 10) ? 'A' : '0');
                 output.write(hexDigit);
-            }
-            else {
+            } else {
                 output.write(b);
             }
         }
@@ -493,12 +474,12 @@ public class IncrementalUpdater {
         output.write(REFERENCE);
     }
 
-    private void writeArray(Vector array) throws IOException {
+    private void writeArray(List array) throws IOException {
         output.write(BEGIN_ARRAY);
         final int size = array.size();
-        for(int i = 0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
             writeValue(array.get(i));
-            if (i < (size-1))
+            if (i < (size - 1))
                 output.write(SPACE);
         }
         output.write(END_ARRAY);
@@ -510,7 +491,7 @@ public class IncrementalUpdater {
         else
             output.write(FALSE);
     }
-    
+
     private void writeInteger(int i) throws IOException {
         String str = Integer.toString(i);
         writeByteString(str);
@@ -536,7 +517,8 @@ public class IncrementalUpdater {
     /**
      * Whether the LiteralStringOject is encrypted or not, has unicode
      * characters or not, it's already containing the values to write,
-     * as byte values held in a StringBuffer. 
+     * as byte values held in a StringBuffer.
+     *
      * @param lso LiteralStringObject to write
      * @throws IOException
      */
@@ -549,7 +531,8 @@ public class IncrementalUpdater {
     /**
      * Whether the HexStringObject is encrypted or not, has unicode
      * characters or not, it's already containing the values to write,
-     * as byte values held in a StringBuffer. 
+     * as byte values held in a StringBuffer.
+     *
      * @param hso HexStringObject to write
      * @throws IOException
      */
@@ -558,7 +541,7 @@ public class IncrementalUpdater {
         writeByteString(hso.getHexString());
         output.write(END_HEX_STRING);
     }
-    
+
     /**
      * If, in the future, we have a case for outputting raw strings, instead
      * of only LiteralStringObject and HexStringObject, then we should probably
@@ -639,12 +622,13 @@ public class IncrementalUpdater {
      * character set conversion to Latin1, WinAnsi, MacRoman, PDFDocEncoding
      * or the UTF-16BE. It simply writes out the byte value in each char. This
      * method is intended for ASCII strings and binary bytes stored in strings.
+     *
      * @param str ASCII String, or encrypted byte data from a StringObject.
      * @throws IOException
      */
     private void writeByteString(String str) throws IOException {
         int len = str.length();
-        for(int i = 0; i < len; i++) {
+        for (int i = 0; i < len; i++) {
             int val = ((int) str.charAt(i)) & 0xFF;
             output.write(val);
         }
@@ -655,7 +639,7 @@ public class IncrementalUpdater {
         if (str.length() > len)
             str = str.substring(str.length() - len);
         int padding = len - str.length();
-        for(int i = 0; i < padding; i++)
+        for (int i = 0; i < padding; i++)
             output.write('0');
         writeByteString(str);
     }
@@ -664,20 +648,20 @@ public class IncrementalUpdater {
      * Add Entry object in ascending object number sequence. Since we know that
      * we're iterating over StateManager's PObjects in ascending object number
      * sequence, appending to the end of our entries should be sufficient.
+     *
      * @param entry Entry to be added
      */
     private void addEntry(Entry entry) {
         int entryObjNum = entry.getReference().getObjectNumber();
         int index = entries.size();
         while (index > 0) {
-            Entry prev = entries.get(index-1);
+            Entry prev = entries.get(index - 1);
             int prevObjNum = prev.getReference().getObjectNumber();
             if (prevObjNum == entryObjNum) {
                 // StateManager is allowing double entries for same reference
                 throw new IllegalArgumentException(
-                    "Multiple entries with same object number: " + entryObjNum);
-            }
-            else if (prevObjNum < entryObjNum)
+                        "Multiple entries with same object number: " + entryObjNum);
+            } else if (prevObjNum < entryObjNum)
                 break;
             index--;
         }
@@ -688,7 +672,7 @@ public class IncrementalUpdater {
         // entries are insertion sorted by ascending object number, so the
         // greatest object number is in the Entry at the greatest index
         return (entries.isEmpty()) ? 0 :
-            entries.get(entries.size()-1).getReference().getObjectNumber();
+                entries.get(entries.size() - 1).getReference().getObjectNumber();
     }
 
 

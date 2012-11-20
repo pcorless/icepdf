@@ -24,9 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URL;
-import java.util.Hashtable;
-import java.util.logging.Logger;
+import java.util.HashMap;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Simple Factory for loading of font library if present.
@@ -81,7 +81,7 @@ public class FontFactory {
     private static final String NFONT_TRUE_TYPE_3 =
             "org.icepdf.core.pobjects.fonts.nfont.NFontType3";
 
-    static{
+    static {
         // check class bath for NFont library, and declare results.
         try {
             Class.forName(NFONT_CLASS);
@@ -107,9 +107,10 @@ public class FontFactory {
     }
 
 
-    private FontFactory() {}
+    private FontFactory() {
+    }
 
-    public Font getFont(Library library, Hashtable entries) {
+    public Font getFont(Library library, HashMap entries) {
 
         Font fontDictionary = null;
 
@@ -117,7 +118,7 @@ public class FontFactory {
             // load each know file type reflectively.
             try {
                 Class fontClass = Class.forName(FONT_CLASS);
-                Class[] fontArgs = {Library.class, Hashtable.class};
+                Class[] fontArgs = {Library.class, HashMap.class};
                 Constructor fontClassConstructor =
                         fontClass.getDeclaredConstructor(fontArgs);
                 Object[] fontUrl = {library, entries};
@@ -143,8 +144,9 @@ public class FontFactory {
                     Class[] bytArrayArg = {byte[].class};
                     Constructor fontClassConstructor =
                             fontClass.getDeclaredConstructor(bytArrayArg);
-                    Object[] fontStreamBytes = {fontStream.getBytes()};
-                    if (fontStream.getBytes().length > 0) {
+                    byte[] data = fontStream.getDecodedStreamBytes(0);
+                    Object[] fontStreamBytes = {data};
+                    if (data.length > 0) {
                         fontFile = (FontFile) fontClassConstructor
                                 .newInstance(fontStreamBytes);
                     }
@@ -156,7 +158,7 @@ public class FontFactory {
             // see if the font file can be loaded with Java Fonts
             InputStream in = null;
             try {
-                in = fontStream.getInputStreamForDecodedStreamBytes();
+                in = fontStream.getDecodedByteArrayInputStream();
                 // disabling create font as it brings the JVM down a little too often. 
                 java.awt.Font javaFont = java.awt.Font.createFont(fontType, in);
                 if (javaFont != null) {
@@ -193,7 +195,7 @@ public class FontFactory {
                     Class[] urlArg = {URL.class};
                     Constructor fontClassConstructor =
                             fontClass.getDeclaredConstructor(urlArg);
-                    Object[] fontUrl = {file.toURL()};
+                    Object[] fontUrl = {file.toURI().toURL()};
                     fontFile = (FontFile) fontClassConstructor.newInstance(fontUrl);
                 }
             } catch (Throwable e) {
@@ -209,7 +211,7 @@ public class FontFactory {
                     fontFile = new OFont(javaFont);
 
                     if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Successfully loaded OFont: " + file.toURL());
+                        logger.fine("Successfully loaded OFont: " + file.toURI().toURL());
                     }
                 }
             } catch (Throwable e) {
@@ -227,7 +229,7 @@ public class FontFactory {
         this.awtFontSubstitution = awtFontSubstitution;
     }
 
-    public void toggleAwtFontSubstitution(){
+    public void toggleAwtFontSubstitution() {
         awtFontSubstitution = !awtFontSubstitution;
     }
 
@@ -267,9 +269,10 @@ public class FontFactory {
     /**
      * Test if font engine is available on the class path and it has been
      * disabled with the proeprty awtFontSubstitution.
+     *
      * @return true if font engine was found, false otherwise.
      */
-    public  boolean foundFontEngine(){
+    public boolean foundFontEngine() {
         // check class bath for NFont library
         try {
             Class.forName(NFONT_CLASS);

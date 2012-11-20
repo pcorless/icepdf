@@ -14,19 +14,24 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * The class represents an indexed colour space.
  */
 public class Indexed extends PColorSpace {
+
+    public static final Name INDEXED_KEY = new Name("Indexed");
+    public static final Name I_KEY = new Name("I");
+
     PColorSpace colorSpace;
     int hival;
     byte[] colors = {
@@ -47,16 +52,16 @@ public class Indexed extends PColorSpace {
      * @param entries    dictionary entries.
      * @param dictionary indexed colour dictionary.
      */
-    Indexed(Library library, Hashtable entries, Vector dictionary) {
+    Indexed(Library library, HashMap entries, List dictionary) {
         super(library, entries);
         // get the base colour space
-        colorSpace = getColorSpace(library, dictionary.elementAt(1));
+        colorSpace = getColorSpace(library, dictionary.get(1));
         // get the hival
-        hival = (((Number) (dictionary.elementAt(2))).intValue());
+        hival = (((Number) (dictionary.get(2))).intValue());
         // check for an instance of a lookup table.
-        if (dictionary.elementAt(3) instanceof StringObject) {
+        if (dictionary.get(3) instanceof StringObject) {
             // peel and decrypt the literal string
-            StringObject tmpText = (StringObject) dictionary.elementAt(3);
+            StringObject tmpText = (StringObject) dictionary.get(3);
             String tmp = tmpText.getDecryptedLiteralString(library.securityManager);
             // build the colour lookup table.
             byte[] textBytes = new byte[colorSpace.getNumComponents() * (hival + 1)]; // m * (hival + 1)
@@ -64,9 +69,9 @@ public class Indexed extends PColorSpace {
                 textBytes[i] = (byte) tmp.charAt(i);
             }
             colors = textBytes;
-        } else if (dictionary.elementAt(3) instanceof Reference) {
-            Stream lookup = (Stream) (library.getObject((Reference) (dictionary.elementAt(3))));
-            colors = lookup.getBytes();
+        } else if (dictionary.get(3) instanceof Reference) {
+            Stream lookup = (Stream) (library.getObject((Reference) (dictionary.get(3))));
+            colors = lookup.getDecodedStreamBytes(0);
         }
     }
 
@@ -117,10 +122,10 @@ public class Indexed extends PColorSpace {
     public Color getColor(float[] f) {
         init();
         int index = (int) (f[0] * (cols.length - 1));
-        if (index < cols.length){
+        if (index < cols.length) {
             return cols[index];
-        }else{
-            return cols[(int)f[0]];
+        } else {
+            return cols[(int) f[0]];
         }
 
     }

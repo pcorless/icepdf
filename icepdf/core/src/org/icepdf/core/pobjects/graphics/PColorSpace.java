@@ -20,10 +20,10 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * put your documentation comment here
@@ -44,12 +44,12 @@ public abstract class PColorSpace extends Dictionary {
         int index = name.lastIndexOf('.');
         return name.substring(index + 1);
     }
-    
+
     /**
      * @param l
      * @param h
      */
-    PColorSpace(Library l, Hashtable h) {
+    PColorSpace(Library l, HashMap h) {
         super(l, h);
     }
 
@@ -64,59 +64,63 @@ public abstract class PColorSpace extends Dictionary {
                 o = library.getObject((Reference) o);
             }
             if (o instanceof Name) {
-                if (o.equals("DeviceGray") || o.equals("G")) {
+                if (o.equals(DeviceGray.DEVICEGRAY_KEY) ||
+                        o.equals(DeviceGray.G_KEY)) {
                     return new DeviceGray(library, null);
-                } else if (o.equals("DeviceRGB") || o.equals("RGB")) {
+                } else if (o.equals(DeviceRGB.DEVICERGB_KEY) ||
+                        o.equals(DeviceRGB.RGB_KEY)) {
                     return new DeviceRGB(library, null);
-                } else if (o.equals("DeviceCMYK") || o.equals("CMYK")) {
+                } else if (o.equals(DeviceCMYK.DEVICECMYK_KEY) ||
+                        o.equals(DeviceCMYK.CMYK_KEY)) {
                     return new DeviceCMYK(library, null);
-                } else if (o.equals("Pattern")) {
+                } else if (o.equals(PatternColor.PATTERN_KEY)) {
                     return new PatternColor(library, null);
                 }
-            } else if (o instanceof Vector) {
-                Vector v = (Vector) o;
-                if (v.elementAt(0).equals("Indexed")
-                        || v.elementAt(0).equals("I")) {
+            } else if (o instanceof List) {
+                List v = (List) o;
+                Name colorant = (Name) v.get(0);
+                if (colorant.equals(Indexed.INDEXED_KEY)
+                        || colorant.equals(Indexed.I_KEY)) {
                     return new Indexed(library, null, v);
-                } else if (v.elementAt(0).equals("CalRGB")) {
-                    return new CalRGB(library, (Hashtable) v.elementAt(1));
-                } else if (v.elementAt(0).equals("Lab")) {
-                    return new Lab(library, (Hashtable) v.elementAt(1));
-                } else if (v.elementAt(0).equals("Separation")) {
+                } else if (colorant.equals(CalRGB.CALRGB_KEY)) {
+                    return new CalRGB(library, (HashMap) v.get(1));
+                } else if (colorant.equals(Lab.LAB_KEY)) {
+                    return new Lab(library, (HashMap) v.get(1));
+                } else if (colorant.equals(Separation.SEPARATION_KEY)) {
                     return new Separation(
                             library,
                             null,
-                            v.elementAt(1),
-                            v.elementAt(2),
-                            v.elementAt(3));
-                } else if (v.elementAt(0).equals("DeviceN")) {
+                            v.get(1),
+                            v.get(2),
+                            v.get(3));
+                } else if (colorant.equals(DeviceN.DEVICEN_KEY)) {
                     return new DeviceN(
                             library,
                             null,
-                            v.elementAt(1),
-                            v.elementAt(2),
-                            v.elementAt(3),
-                            v.size() > 4 ? v.elementAt(4) : null);
-                } else if (v.elementAt(0).equals("ICCBased")) {
+                            v.get(1),
+                            v.get(2),
+                            v.get(3),
+                            v.size() > 4 ? v.get(4) : null);
+                } else if (colorant.equals(ICCBased.ICCBASED_KEY)) {
                     /*Stream st = (Stream)library.getObject((Reference)v.elementAt(1));
                      return  PColorSpace.getColorSpace(library, library.getObject(st.getEntries(),
                      "Alternate"));*/
-                    return library.getICCBased((Reference) v.elementAt(1));
-                } else if (v.elementAt(0).equals("DeviceRGB")) {
+                    return library.getICCBased((Reference) v.get(1));
+                } else if (colorant.equals(DeviceRGB.DEVICERGB_KEY)) {
                     return new DeviceRGB(library, null);
-                } else if (v.elementAt(0).equals("DeviceCMYK")) {
+                } else if (colorant.equals(DeviceCMYK.DEVICECMYK_KEY)) {
                     return new DeviceCMYK(library, null);
-                } else if (v.elementAt(0).equals("DeviceGray")) {
+                } else if (colorant.equals(DeviceGray.DEVICEGRAY_KEY)) {
                     return new DeviceRGB(library, null);
-                } else if (v.elementAt(0).equals("Pattern")) {
+                } else if (colorant.equals(PatternColor.PATTERN_KEY)) {
                     PatternColor patternColour = new PatternColor(library, null);
                     if (v.size() > 1) {
-                        patternColour.setPColorSpace(getColorSpace(library, v.elementAt(1)));
+                        patternColour.setPColorSpace(getColorSpace(library, v.get(1)));
                     }
                     return patternColour;
                 }
-            } else if (o instanceof Hashtable) {
-                return new PatternColor(library, (Hashtable) o);
+            } else if (o instanceof HashMap) {
+                return new PatternColor(library, (HashMap) o);
             }
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Unsupported Colorspace: " + o);

@@ -16,11 +16,10 @@ package org.icepdf.core.tag;
 
 import org.icepdf.core.pobjects.Reference;
 
-import java.util.HashMap;
-import java.util.List;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author mcollette
@@ -52,7 +51,7 @@ public class TaggedDocument implements Serializable {
 
     void beginImage(Reference ref, boolean inlineImage) {
         TaggedImage ti = findImage(ref);
-        if(ti == null) {
+        if (ti == null) {
             ti = new TaggedImage(ref, inlineImage);
             allImages.add(ti);
         }
@@ -63,7 +62,7 @@ public class TaggedDocument implements Serializable {
     private TaggedImage findImage(Reference ref) {
         if (ref == null)
             return null;
-        for (int i = allImages.size()-1; i >= 0; i--) {
+        for (int i = allImages.size() - 1; i >= 0; i--) {
             TaggedImage ti = (TaggedImage) allImages.get(i);
             if (ti.getReference() != null && ti.getReference().equals(ref))
                 return ti;
@@ -72,11 +71,11 @@ public class TaggedDocument implements Serializable {
     }
 
     void endImage(Reference ref) {
-        currentImages.remove(currentImages.size()-1);
+        currentImages.remove(currentImages.size() - 1);
     }
 
     void tagImage(String tag) {
-        TaggedImage ti = (TaggedImage) currentImages.get(currentImages.size()-1);
+        TaggedImage ti = (TaggedImage) currentImages.get(currentImages.size() - 1);
         ti.tag(tag);
     }
 
@@ -85,7 +84,7 @@ public class TaggedDocument implements Serializable {
         sb.append("ORIGIN: ");
         sb.append(origin);
         sb.append("\n");
-        for(Iterator imgs = allImages.iterator(); imgs.hasNext();) {
+        for (Iterator imgs = allImages.iterator(); imgs.hasNext(); ) {
             TaggedImage ti = (TaggedImage) imgs.next();
             sb.append(ti.describe());
             sb.append("---------------------------------\n");

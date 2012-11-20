@@ -14,17 +14,17 @@
  */
 package org.icepdf.core.views.swing;
 
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.PageViewComponent;
 
 import javax.swing.*;
@@ -125,9 +125,9 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     private AnnotationState previousAnnotationState;
 
     public AnnotationComponentImpl(Annotation annotation,
-                               DocumentViewController documentViewController,
-                               AbstractPageViewComponent pageViewComponent,
-                               DocumentViewModel documentViewModel) {
+                                   DocumentViewController documentViewController,
+                                   AbstractPageViewComponent pageViewComponent,
+                                   DocumentViewModel documentViewModel) {
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
         this.documentViewController = documentViewController;
@@ -146,12 +146,11 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         setBorder(resizableBorder);
 
         // set component location and original size.
-        Page currentPage = pageViewComponent.getPageLock(this);
+        Page currentPage = pageViewComponent.getPage();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        pageViewComponent.releasePageLock(currentPage, this);
         Rectangle location =
                 at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
         setBounds(location);
@@ -212,13 +211,12 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
      * Refreshses the components bounds for the current page transformation.
      * Bounds have are allready in user space.
      */
-    public void refreshDirtyBounds(){
-        Page currentPage = pageViewComponent.getPageLock(this);
+    public void refreshDirtyBounds() {
+        Page currentPage = pageViewComponent.getPage();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        pageViewComponent.releasePageLock(currentPage, this);
         setBounds(commonBoundsNormalization(new GeneralPath(
                 annotation.getUserSpaceRectangle()), at));
     }
@@ -229,13 +227,12 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
      * UI manipulation, otherwise the annotation will be incorrectly located
      * on the next repaint.
      */
-    public void refreshAnnotationRect(){
-        Page currentPage = pageViewComponent.getPageLock(this);
+    public void refreshAnnotationRect() {
+        Page currentPage = pageViewComponent.getPage();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        pageViewComponent.releasePageLock(currentPage, this);
         try {
             at = at.createInverse();
         } catch (NoninvertibleTransformException e1) {
@@ -253,18 +250,18 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
      * instead of trunkating the values.
      *
      * @param shapePath path to apply transform to
-     * @param at tranfor to apply to shapePath
+     * @param at        tranfor to apply to shapePath
      * @return bound value of the shape path.
      */
     private Rectangle commonBoundsNormalization(GeneralPath shapePath,
-                                                AffineTransform at){
+                                                AffineTransform at) {
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();
         return new Rectangle(
-                (int)Math.round(pageSpaceBound.getX()),
-                (int)Math.round(pageSpaceBound.getY()),
-                (int)Math.round(pageSpaceBound.getWidth()),
-                (int)Math.round(pageSpaceBound.getHeight()));
+                (int) Math.round(pageSpaceBound.getX()),
+                (int) Math.round(pageSpaceBound.getY()),
+                (int) Math.round(pageSpaceBound.getWidth()),
+                (int) Math.round(pageSpaceBound.getHeight()));
     }
 
     public void validate() {
@@ -288,7 +285,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     }
 
     public void paintComponent(Graphics g) {
-        Page currentPage = pageViewComponent.getPageLock(this);
+        Page currentPage = pageViewComponent.getPage();
         if (currentPage != null && currentPage.isInitiated()) {
             // update bounds for for component
             if (currentZoom != documentViewModel.getViewZoom() ||
@@ -296,10 +293,9 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                 validate();
             }
         }
-        pageViewComponent.releasePageLock(currentPage, this);
 
         // sniff out tool bar state to set correct annotation border
-        isEditable = ( (documentViewModel.getViewToolMode() ==
+        isEditable = ((documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 documentViewModel.getViewToolMode() ==
                         DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) &&
@@ -310,7 +306,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         if (isMousePressed && !(documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION)) {
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION)) {
             Graphics2D gg2 = (Graphics2D) g;
             if (annotation instanceof LinkAnnotation) {
                 LinkAnnotation linkAnnotation = (LinkAnnotation) annotation;
@@ -357,9 +353,9 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                 !(annotation.getFlagLocked() || annotation.getFlagReadOnly())) {
             ResizableBorder border = (ResizableBorder) getBorder();
             setCursor(Cursor.getPredefinedCursor(border.getCursor(me)));
-        }else if (toolMode == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
+        } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
             // keep it the same
-        } else{
+        } else {
             // set cursor back to the hand cursor. 
             setCursor(documentViewController.getViewCursor(
                     DocumentViewController.CURSOR_HAND_ANNOTATION));
@@ -380,14 +376,14 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         if (!(documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION)&&
+                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) &&
                 isInteractiveAnnotationsEnabled) {
 
             if (documentViewController.getAnnotationCallback() != null) {
                 documentViewController.getAnnotationCallback()
                         .proccessAnnotationAction(annotation);
             }
-        } 
+        }
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -509,7 +505,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
 
         // check to see if a move/resize occurred and if so we add the
         // state change to the memento in document view.
-        if (wasResized){
+        if (wasResized) {
             wasResized = false;
 
 
@@ -554,6 +550,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
 
     /**
      * Is the annotation editable
+     *
      * @return true if editable, false otherwise.
      */
     public boolean isEditable() {

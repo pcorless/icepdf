@@ -17,15 +17,15 @@ package org.icepdf.core.views.common;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 
+import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.event.InputEvent;
 
 /**
  * Handles mouse click zoom in and zoom out.
- *
- * todo add zoom selection box feature. 
+ * <p/>
+ * todo add zoom selection box feature.
  *
  * @since 4.0
  */
@@ -44,9 +44,9 @@ public class ZoomHandler implements MouseMotionListener, MouseListener {
 
     public void mouseDragged(MouseEvent e) {
 
-        if (documentViewController != null ){
+        if (documentViewController != null) {
             int userToolModeFlag = documentViewController
-                            .getDocumentViewModel().getViewToolMode();
+                    .getDocumentViewModel().getViewToolMode();
             if (userToolModeFlag == DocumentViewModel.DISPLAY_TOOL_ZOOM_IN ||
                     userToolModeFlag == DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
                 // record that we are doing a drag box zoom.
@@ -60,7 +60,7 @@ public class ZoomHandler implements MouseMotionListener, MouseListener {
     }
 
     public void mouseClicked(MouseEvent e) {
-         if ((e.getModifiers() & MouseEvent.MOUSE_PRESSED) != 0) {
+        if ((e.getModifiers() & MouseEvent.MOUSE_PRESSED) != 0) {
             if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) {
                 int userToolModeFlag = documentViewController
                         .getDocumentViewModel().getViewToolMode();
@@ -77,8 +77,8 @@ public class ZoomHandler implements MouseMotionListener, MouseListener {
     }
 
     public void mousePressed(MouseEvent e) {
-         // assigning correct mouse state.
-        if (documentViewController != null){
+        // assigning correct mouse state.
+        if (documentViewController != null) {
             DocumentViewModel documentViewModel =
                     documentViewController.getDocumentViewModel();
             if (documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_ZOOM_IN)) {
@@ -90,7 +90,7 @@ public class ZoomHandler implements MouseMotionListener, MouseListener {
     }
 
     public void mouseReleased(MouseEvent e) {
-        if (isDragZoom){
+        if (isDragZoom) {
             // get selection box from parent
 
             // calculate zoom factor  based on ration of select box to current

@@ -14,8 +14,6 @@
  */
 package org.icepdf.core.io;
 
-import org.icepdf.core.util.MemoryManager;
-
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -24,7 +22,6 @@ import java.io.OutputStream;
  * @since 2.0
  */
 public class ConservativeSizingByteArrayOutputStream extends OutputStream {
-    protected MemoryManager memoryManager;
     protected byte buf[];
     protected int count;
 
@@ -35,12 +32,11 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
      * @param capacity The initial capacity
      * @throws IllegalArgumentException if capacity is negative
      */
-    public ConservativeSizingByteArrayOutputStream(int capacity, MemoryManager mm) {
+    public ConservativeSizingByteArrayOutputStream(int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("Negative initial capacity: " + capacity);
         }
-        memoryManager = mm;
-        buf = allocateByteArray(capacity, false);
+        buf = allocateByteArray(capacity);
         count = 0;
     }
 
@@ -51,18 +47,13 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
      * @param buffer The initial buffer
      * @throws IllegalArgumentException if capacity is negative
      */
-    public ConservativeSizingByteArrayOutputStream(byte[] buffer, MemoryManager mm) {
+    public ConservativeSizingByteArrayOutputStream(byte[] buffer) {
         if (buffer == null)
             throw new IllegalArgumentException("Initial buffer is null");
         else if (buffer.length == 0)
             throw new IllegalArgumentException("Initial buffer has zero length");
-        memoryManager = mm;
         buf = buffer;
         count = 0;
-    }
-
-    public void setMemoryManager(MemoryManager mm) {
-        memoryManager = mm;
     }
 
     public synchronized void write(int b) throws IOException {
@@ -99,7 +90,7 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
      * @return The current contents of this output stream, as a byte array.
      */
     public synchronized byte[] toByteArray() {
-        byte newBuf[] = allocateByteArray(count, false);
+        byte newBuf[] = allocateByteArray(count);
         System.arraycopy(buf, 0, newBuf, 0, count);
         return newBuf;
     }
@@ -121,7 +112,6 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
      */
     public synchronized byte[] relinquishByteArray() {
         byte[] returnBuf = buf;
-        buf = null;
         buf = new byte[64];
         count = 0;
         return returnBuf;
@@ -136,7 +126,7 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
         if (count == buf.length)
             return true;
 
-        byte newBuf[] = allocateByteArray(count, true);
+        byte newBuf[] = allocateByteArray(count);
         if (newBuf == null)
             return false;
         System.arraycopy(buf, 0, newBuf, 0, count);
@@ -168,18 +158,12 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
         }
 
         int newBufSize = Math.max(steppedSize, newCount);
-        byte newBuf[] = allocateByteArray(newBufSize, false);
+        byte newBuf[] = allocateByteArray(newBufSize);
         System.arraycopy(buf, 0, newBuf, 0, count);
-        buf = null;
         buf = newBuf;
     }
 
-    protected byte[] allocateByteArray(int size, boolean returnNullIfNoMemory) {
-        boolean canAlloc = true;
-        if (memoryManager != null && size >= 512 * 1024)
-            canAlloc = memoryManager.checkMemory(size);
-        if (returnNullIfNoMemory && !canAlloc)
-            return null;
+    protected byte[] allocateByteArray(int size) {
         return new byte[size];
     }
 }

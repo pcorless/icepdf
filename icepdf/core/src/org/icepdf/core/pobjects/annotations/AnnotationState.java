@@ -37,7 +37,7 @@ public class AnnotationState implements Memento {
     protected Integer linkType;
     protected String highlightStyle;
     protected float lineThickness;
-    protected String lineStyle;
+    protected Name lineStyle;
     protected Color color;
 
     // annotation bounding rectangle in user space.
@@ -81,12 +81,12 @@ public class AnnotationState implements Memento {
     }
 
     public AnnotationState(Integer linkType, String highlightStyle,
-                           float lineThickness, String lineStyle, Color color) {
+                           float lineThickness, Name lineStyle, Color color) {
         this.linkType = linkType;
         this.highlightStyle = highlightStyle;
         this.lineThickness = lineThickness;
         this.lineStyle = lineStyle;
-        if (color != null){
+        if (color != null) {
             this.color = new Color(color.getRGB());
         }
     }
@@ -98,11 +98,11 @@ public class AnnotationState implements Memento {
         this.highlightStyle = applyState.highlightStyle;
         this.lineThickness = applyState.lineThickness;
         this.lineStyle = applyState.lineStyle;
-        if (applyState.color != null){
+        if (applyState.color != null) {
             this.color = new Color(applyState.color.getRGB());
         }
         // otherwise aassign a default color.
-        else{
+        else {
             this.color = Color.BLACK;
         }
 
@@ -123,7 +123,7 @@ public class AnnotationState implements Memento {
      * construction of this object.
      */
     public void restore() {
-        if (annotationComponent!= null &&
+        if (annotationComponent != null &&
                 annotationComponent.getAnnotation() != null) {
             // get reference to annotation
             Annotation annotation = annotationComponent.getAnnotation();
@@ -138,10 +138,10 @@ public class AnnotationState implements Memento {
     /**
      * Restores the annotation state in this instance to the Annotation
      * specified as a param. This method is ment to bue used in
-     * {@link #AnnotationState(Integer, String, float, String, java.awt.Color)} 
-     * @param annotation  annotation to retore state to.
+     *
+     * @param annotation annotation to retore state to.
      */
-    public void restore(Annotation annotation){
+    public void restore(Annotation annotation) {
         // create a new Border style entry as an inline dictionary
         if (annotation.getBorderStyle() == null) {
             annotation.setBorderStyle(new BorderStyle());
@@ -170,7 +170,7 @@ public class AnnotationState implements Memento {
         Document document = annotationComponent.getDocument();
         Annotation annotation = annotationComponent.getAnnotation();
         PageTree pageTree = document.getPageTree();
-        Page page = pageTree.getPage(pageIndex, this);
+        Page page = pageTree.getPage(pageIndex);
         // state behind draw state.
         if (!annotation.isDeleted()) {
             page.updateAnnotation(annotation);
@@ -185,11 +185,10 @@ public class AnnotationState implements Memento {
             // re-add it to the page
             page.addAnnotation(annotation);
             // finally update the pageComponent so we can see it again.
-            ((Component)annotationComponent).setVisible(true);
+            ((Component) annotationComponent).setVisible(true);
             // refresh bounds for any resizes
             annotationComponent.refreshDirtyBounds();
         }
-        pageTree.releasePage(page, this);
     }
 
     private void restoreLineThickness(Annotation annotation) {

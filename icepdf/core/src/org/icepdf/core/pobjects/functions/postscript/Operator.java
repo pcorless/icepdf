@@ -33,8 +33,8 @@ public abstract class Operator {
 
     public abstract void eval(Stack stack);
 
-    public boolean equals(Object op){
-            return (op instanceof Operator) && ((Operator) op).type == type;
+    public boolean equals(Object op) {
+        return (op instanceof Operator) && ((Operator) op).type == type;
     }
 
     public int getType() {

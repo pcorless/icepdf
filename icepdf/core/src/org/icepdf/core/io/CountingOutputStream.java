@@ -14,11 +14,12 @@
  */
 package org.icepdf.core.io;
 
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Keeps track of how many bytes have been written out
+ *
  * @since 4.0
  */
 

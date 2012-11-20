@@ -14,7 +14,7 @@
  */
 package org.icepdf.core.pobjects.fonts.ofont;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * put your documentation comment here
@@ -74,7 +74,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         return -1;
     }
 
-    static private Hashtable<String, Integer> h;
+    static private HashMap<String, Integer> h;
     static private char se[], mre[], wae[], pde[], sym[], zap[];
 
     // common symbol alaises,  displayable, followed by aliases
@@ -87,10 +87,10 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     public static int[] registeredAlaises = {182};
 
     static {
-        h = new Hashtable<String, Integer>(1046);
+        h = new HashMap<String, Integer>(1046);
         h.put("A", 65);
         h.put("AE", 198);
-        h.put("AEacute",508);
+        h.put("AEacute", 508);
         h.put("AEsmall", 63462);
         h.put("Aacute", 193);
         h.put("Aacutesmall", 63457);
@@ -1354,7 +1354,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
             mre[i] = '?';
             wae[i] = '?';
             if (i > 040) {
-                wae[i] =  (char)h.get("bullet").intValue();
+                wae[i] = (char) h.get("bullet").intValue();
             }
             pde[i] = '?';
             sym[i] = '?';
@@ -2173,9 +2173,9 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
 
         // addition of white space mappings.        
         // Line feed
-        se[10] = (char)h.get("space").intValue();
-        mre[10] = (char)h.get("space").intValue();
-        wae[10] = (char)h.get("space").intValue();
+        se[10] = (char) h.get("space").intValue();
+        mre[10] = (char) h.get("space").intValue();
+        wae[10] = (char) h.get("space").intValue();
         // carriage return
         se[13] = (char) h.get("space").intValue();
         mre[13] = (char) h.get("space").intValue();

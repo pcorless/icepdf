@@ -15,11 +15,12 @@
 package org.icepdf.core.pobjects.functions;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -62,6 +63,10 @@ public abstract class Function {
     private static final Logger logger =
             Logger.getLogger(Function.class.toString());
 
+    public static final Name FUNCTIONTYPE_NAME = new Name("FunctionType");
+    public static final Name DOMAIN_NAME = new Name("Domain");
+    public static final Name RANGE_NAME = new Name("Range");
+
     /**
      * An array of 2 x m numbers, where m is the number of input values.  Input
      * values outside the declared domain are clipped to the nearest boundary value.
@@ -89,7 +94,7 @@ public abstract class Function {
      * </ul>
      *
      * @param l document library.
-     * @param o dictionary or Hashtable containing Function type entries.
+     * @param o dictionary or Hashmap containing Function type entries.
      * @return Function object for the specified function type, null if the
      *         function type is not available or not defined.
      */
@@ -103,14 +108,14 @@ public abstract class Function {
         // create a dictionary out of the object if possible
         if (o instanceof Dictionary) {
             d = (Dictionary) o;
-        } else if (o instanceof Hashtable) {
-            d = new Dictionary(l, (Hashtable) o);
+        } else if (o instanceof HashMap) {
+            d = new Dictionary(l, (HashMap) o);
         }
 
         if (d != null) {
             // find out what time of function type and create the appropriate
             // function object.
-            int fType = d.getInt("FunctionType");
+            int fType = d.getInt(FUNCTIONTYPE_NAME);
             switch (fType) {
                 // sampled function
                 case 0:
@@ -135,16 +140,16 @@ public abstract class Function {
      * @param d dictionary containing a vaild function dictionary.
      */
     protected Function(Dictionary d) {
-        Vector dom = (Vector) d.getObject("Domain");
+        List dom = (List) d.getObject(DOMAIN_NAME);
         domain = new float[dom.size()];
         for (int i = 0; i < dom.size(); i++) {
-            domain[i] = ((Number) dom.elementAt(i)).floatValue();
+            domain[i] = ((Number) dom.get(i)).floatValue();
         }
-        Vector r = (Vector) d.getObject("Range");
+        List r = (List) d.getObject(RANGE_NAME);
         if (r != null) {
             range = new float[r.size()];
             for (int i = 0; i < r.size(); i++) {
-                range[i] = ((Number) r.elementAt(i)).floatValue();
+                range[i] = ((Number) r.get(i)).floatValue();
             }
         }
     }

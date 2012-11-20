@@ -19,8 +19,8 @@ import org.icepdf.core.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 
 /**
  * Container logic used for view panning via mouse dragging for page views.

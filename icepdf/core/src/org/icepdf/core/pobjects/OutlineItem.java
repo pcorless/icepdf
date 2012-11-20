@@ -18,8 +18,9 @@ import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.fonts.ofont.Encoding;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * <p>The <code>OutlineItem</code> represents the individual outline item within
@@ -38,6 +39,16 @@ import java.util.Vector;
  * @since 2.0
  */
 public class OutlineItem extends Dictionary {
+
+    public static final Name A_KEY = new Name("A");
+    public static final Name COUNT_KEY = new Name("Count");
+    public static final Name TITLE_KEY = new Name("Title");
+    public static final Name DEST_KEY = new Name("Dest");
+    public static final Name FIRST_KEY = new Name("First");
+    public static final Name LAST_KEY = new Name("Last");
+    public static final Name NEXT_KEY = new Name("Next");
+    public static final Name PREV_KEY = new Name("Prev");
+    public static final Name PARENT_KEY = new Name("Parent");
 
     // The text to be displayed on the screen for this item.
     private String title;
@@ -72,7 +83,7 @@ public class OutlineItem extends Dictionary {
 
     private boolean loadedSubItems;
 
-    private Vector<OutlineItem> subItems;
+    private List<OutlineItem> subItems;
 
 
     /**
@@ -81,10 +92,10 @@ public class OutlineItem extends Dictionary {
      * @param l document library.
      * @param h OutlineItem dictionary entries.
      */
-    public OutlineItem(Library l, Hashtable h) {
+    public OutlineItem(Library l, HashMap h) {
         super(l, h);
         loadedSubItems = false;
-        subItems = new Vector<OutlineItem>(Math.max(Math.abs(getCount()), 16));
+        subItems = new ArrayList<OutlineItem>(Math.max(Math.abs(getCount()), 16));
     }
 
     /**
@@ -130,9 +141,9 @@ public class OutlineItem extends Dictionary {
     public Action getAction() {
         // grab the action attribute
         if (action == null) {
-            Object obj = library.getObject(entries, "A");
-            if (obj instanceof Hashtable) {
-                action = new org.icepdf.core.pobjects.actions.Action(library, (Hashtable) obj);
+            Object obj = library.getObject(entries, A_KEY);
+            if (obj instanceof HashMap) {
+                action = new org.icepdf.core.pobjects.actions.Action(library, (HashMap) obj);
             }
         }
         return action;
@@ -146,7 +157,7 @@ public class OutlineItem extends Dictionary {
      */
     public Reference getFirst() {
         if (first == null) {
-            Object attribute = entries.get("First");
+            Object attribute = entries.get(FIRST_KEY);
             if (attribute instanceof Reference) {
                 first = (Reference) attribute;
             }
@@ -162,7 +173,7 @@ public class OutlineItem extends Dictionary {
      */
     public Reference getLast() {
         if (last == null) {
-            Object attribute = entries.get("Last");
+            Object attribute = entries.get(LAST_KEY);
             if (attribute instanceof Reference) {
                 last = (Reference) attribute;
             }
@@ -177,7 +188,7 @@ public class OutlineItem extends Dictionary {
      */
     public Reference getNext() {
         if (next == null) {
-            Object attribute = entries.get("Next");
+            Object attribute = entries.get(NEXT_KEY);
             if (attribute instanceof Reference) {
                 next = (Reference) attribute;
             }
@@ -192,7 +203,7 @@ public class OutlineItem extends Dictionary {
      */
     public Reference getPrev() {
         if (prev == null) {
-            Object attribute = entries.get("Prev");
+            Object attribute = entries.get(PREV_KEY);
             if (attribute instanceof Reference) {
                 prev = (Reference) attribute;
             }
@@ -208,7 +219,7 @@ public class OutlineItem extends Dictionary {
      */
     public Reference getParent() {
         if (parent == null) {
-            Object attribute = entries.get("Parent");
+            Object attribute = entries.get(PARENT_KEY);
             if (attribute instanceof Reference) {
                 parent = (Reference) attribute;
             }
@@ -224,7 +235,7 @@ public class OutlineItem extends Dictionary {
     private int getCount() {
         if (count < 0) {
             // grab the count attribute
-            count = library.getInt(entries, "Count");
+            count = library.getInt(entries, COUNT_KEY);
         }
         return count;
     }
@@ -254,7 +265,7 @@ public class OutlineItem extends Dictionary {
         */
         if (title == null) {
             // get title String for outline entry
-            Object obj = library.getObject(entries, "Title");
+            Object obj = library.getObject(entries, TITLE_KEY);
             if (obj instanceof StringObject) {
                 StringObject outlineText = (StringObject) obj;
                 String titleText = outlineText.getDecryptedLiteralString(library.securityManager);
@@ -300,7 +311,7 @@ public class OutlineItem extends Dictionary {
     public Destination getDest() {
         if (dest == null) {
             // grab the Destination attribute
-            Object obj = library.getObject(entries, "Dest");
+            Object obj = library.getObject(entries, DEST_KEY);
             if (obj != null) {
                 dest = new Destination(library, obj);
             }
@@ -323,12 +334,12 @@ public class OutlineItem extends Dictionary {
             Reference nextReference = getFirst();
             Reference oldNextReference;
             OutlineItem outLineItem;
-            Hashtable dictionary;
+            HashMap dictionary;
             // iterate through children and see if then have children. 
             while (nextReference != null) {
 
                 // result the outline dictionary
-                dictionary = (Hashtable) library.getObject(nextReference);
+                dictionary = (HashMap) library.getObject(nextReference);
                 if (dictionary == null) {
                     break;
                 }

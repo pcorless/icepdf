@@ -14,8 +14,6 @@
  */
 package org.jpedal.jbig2.segment.region.refinement;
 
-import java.io.IOException;
-
 import org.jpedal.jbig2.JBIG2Exception;
 import org.jpedal.jbig2.decoders.JBIG2StreamDecoder;
 import org.jpedal.jbig2.image.JBIG2Bitmap;
@@ -24,102 +22,104 @@ import org.jpedal.jbig2.segment.pageinformation.PageInformationSegment;
 import org.jpedal.jbig2.segment.region.RegionFlags;
 import org.jpedal.jbig2.segment.region.RegionSegment;
 
+import java.io.IOException;
+
 public class RefinementRegionSegment extends RegionSegment {
-	private RefinementRegionFlags refinementRegionFlags = new RefinementRegionFlags();
+    private RefinementRegionFlags refinementRegionFlags = new RefinementRegionFlags();
 
-	private boolean inlineImage;
+    private boolean inlineImage;
 
-	private int noOfReferedToSegments;
+    private int noOfReferedToSegments;
 
-	int[] referedToSegments;
+    int[] referedToSegments;
 
-	public RefinementRegionSegment(JBIG2StreamDecoder streamDecoder, boolean inlineImage, int[] referedToSegments, int noOfReferedToSegments) {
-		super(streamDecoder);
+    public RefinementRegionSegment(JBIG2StreamDecoder streamDecoder, boolean inlineImage, int[] referedToSegments, int noOfReferedToSegments) {
+        super(streamDecoder);
 
-		this.inlineImage = inlineImage;
-		this.referedToSegments = referedToSegments;
-		this.noOfReferedToSegments = noOfReferedToSegments;
-	}
+        this.inlineImage = inlineImage;
+        this.referedToSegments = referedToSegments;
+        this.noOfReferedToSegments = noOfReferedToSegments;
+    }
 
-	public void readSegment() throws IOException, JBIG2Exception {
-		if (JBIG2StreamDecoder.debug)
-			System.out.println("==== Reading Generic Refinement Region ====");
+    public void readSegment() throws IOException, JBIG2Exception {
+        if (JBIG2StreamDecoder.debug)
+            System.out.println("==== Reading Generic Refinement Region ====");
 
-		super.readSegment();
+        super.readSegment();
 
-		/** read text region segment flags */
-		readGenericRegionFlags();
+        /** read text region segment flags */
+        readGenericRegionFlags();
 
-		short[] genericRegionAdaptiveTemplateX = new short[2];
-		short[] genericRegionAdaptiveTemplateY = new short[2];
-		
-		int template = refinementRegionFlags.getFlagValue(RefinementRegionFlags.GR_TEMPLATE);
-		if (template == 0) {
-			genericRegionAdaptiveTemplateX[0] = readATValue();
-			genericRegionAdaptiveTemplateY[0] = readATValue();
-			genericRegionAdaptiveTemplateX[1] = readATValue();
-			genericRegionAdaptiveTemplateY[1] = readATValue();
-		}
+        short[] genericRegionAdaptiveTemplateX = new short[2];
+        short[] genericRegionAdaptiveTemplateY = new short[2];
 
-		if (noOfReferedToSegments == 0 || inlineImage) {
-			PageInformationSegment pageSegment = decoder.findPageSegement(segmentHeader.getPageAssociation());
-			JBIG2Bitmap pageBitmap = pageSegment.getPageBitmap();
+        int template = refinementRegionFlags.getFlagValue(RefinementRegionFlags.GR_TEMPLATE);
+        if (template == 0) {
+            genericRegionAdaptiveTemplateX[0] = readATValue();
+            genericRegionAdaptiveTemplateY[0] = readATValue();
+            genericRegionAdaptiveTemplateX[1] = readATValue();
+            genericRegionAdaptiveTemplateY[1] = readATValue();
+        }
 
-			if (pageSegment.getPageBitmapHeight() == -1 && regionBitmapYLocation + regionBitmapHeight > pageBitmap.getHeight()) {
-				pageBitmap.expand(regionBitmapYLocation + regionBitmapHeight, pageSegment.getPageInformationFlags().getFlagValue(PageInformationFlags.DEFAULT_PIXEL_VALUE));
-			}
-		}
+        if (noOfReferedToSegments == 0 || inlineImage) {
+            PageInformationSegment pageSegment = decoder.findPageSegement(segmentHeader.getPageAssociation());
+            JBIG2Bitmap pageBitmap = pageSegment.getPageBitmap();
 
-		if (noOfReferedToSegments > 1) {
-			if(JBIG2StreamDecoder.debug)
-				System.out.println("Bad reference in JBIG2 generic refinement Segment");
-			
-			return;
-		}
+            if (pageSegment.getPageBitmapHeight() == -1 && regionBitmapYLocation + regionBitmapHeight > pageBitmap.getHeight()) {
+                pageBitmap.expand(regionBitmapYLocation + regionBitmapHeight, pageSegment.getPageInformationFlags().getFlagValue(PageInformationFlags.DEFAULT_PIXEL_VALUE));
+            }
+        }
 
-		JBIG2Bitmap referedToBitmap;
-		if (noOfReferedToSegments == 1) {
-			referedToBitmap = decoder.findBitmap(referedToSegments[0]);
-		} else {
-			PageInformationSegment pageSegment = decoder.findPageSegement(segmentHeader.getPageAssociation());
-			JBIG2Bitmap pageBitmap = pageSegment.getPageBitmap();
+        if (noOfReferedToSegments > 1) {
+            if (JBIG2StreamDecoder.debug)
+                System.out.println("Bad reference in JBIG2 generic refinement Segment");
 
-			referedToBitmap = pageBitmap.getSlice(regionBitmapXLocation, regionBitmapYLocation, regionBitmapWidth, regionBitmapHeight);
-		}
+            return;
+        }
 
-		arithmeticDecoder.resetRefinementStats(template, null);
-		arithmeticDecoder.start();
+        JBIG2Bitmap referedToBitmap;
+        if (noOfReferedToSegments == 1) {
+            referedToBitmap = decoder.findBitmap(referedToSegments[0]);
+        } else {
+            PageInformationSegment pageSegment = decoder.findPageSegement(segmentHeader.getPageAssociation());
+            JBIG2Bitmap pageBitmap = pageSegment.getPageBitmap();
 
-		boolean typicalPredictionGenericRefinementOn = refinementRegionFlags.getFlagValue(RefinementRegionFlags.TPGDON) != 0;
+            referedToBitmap = pageBitmap.getSlice(regionBitmapXLocation, regionBitmapYLocation, regionBitmapWidth, regionBitmapHeight);
+        }
 
-		JBIG2Bitmap bitmap = new JBIG2Bitmap(regionBitmapWidth, regionBitmapHeight, arithmeticDecoder, huffmanDecoder, mmrDecoder);
+        arithmeticDecoder.resetRefinementStats(template, null);
+        arithmeticDecoder.start();
 
-		bitmap.readGenericRefinementRegion(template, typicalPredictionGenericRefinementOn, referedToBitmap, 0, 0, genericRegionAdaptiveTemplateX, genericRegionAdaptiveTemplateY);
+        boolean typicalPredictionGenericRefinementOn = refinementRegionFlags.getFlagValue(RefinementRegionFlags.TPGDON) != 0;
 
-		if (inlineImage) {
-			PageInformationSegment pageSegment = decoder.findPageSegement(segmentHeader.getPageAssociation());
-			JBIG2Bitmap pageBitmap = pageSegment.getPageBitmap();
+        JBIG2Bitmap bitmap = new JBIG2Bitmap(regionBitmapWidth, regionBitmapHeight, arithmeticDecoder, huffmanDecoder, mmrDecoder);
 
-			int extCombOp = regionFlags.getFlagValue(RegionFlags.EXTERNAL_COMBINATION_OPERATOR);
+        bitmap.readGenericRefinementRegion(template, typicalPredictionGenericRefinementOn, referedToBitmap, 0, 0, genericRegionAdaptiveTemplateX, genericRegionAdaptiveTemplateY);
 
-			pageBitmap.combine(bitmap, regionBitmapXLocation, regionBitmapYLocation, extCombOp);
-		} else {
-			bitmap.setBitmapNumber(getSegmentHeader().getSegmentNumber());
-			decoder.appendBitmap(bitmap);
-		}
-	}
+        if (inlineImage) {
+            PageInformationSegment pageSegment = decoder.findPageSegement(segmentHeader.getPageAssociation());
+            JBIG2Bitmap pageBitmap = pageSegment.getPageBitmap();
 
-	private void readGenericRegionFlags() throws IOException {
-		/** extract text region Segment flags */
-		short refinementRegionFlagsField = decoder.readByte();
+            int extCombOp = regionFlags.getFlagValue(RegionFlags.EXTERNAL_COMBINATION_OPERATOR);
 
-		refinementRegionFlags.setFlags(refinementRegionFlagsField);
+            pageBitmap.combine(bitmap, regionBitmapXLocation, regionBitmapYLocation, extCombOp);
+        } else {
+            bitmap.setBitmapNumber(getSegmentHeader().getSegmentNumber());
+            decoder.appendBitmap(bitmap);
+        }
+    }
 
-		if (JBIG2StreamDecoder.debug)
-			System.out.println("generic region Segment flags = " + refinementRegionFlagsField);
-	}
+    private void readGenericRegionFlags() throws IOException {
+        /** extract text region Segment flags */
+        short refinementRegionFlagsField = decoder.readByte();
 
-	public RefinementRegionFlags getGenericRegionFlags() {
-		return refinementRegionFlags;
-	}
+        refinementRegionFlags.setFlags(refinementRegionFlagsField);
+
+        if (JBIG2StreamDecoder.debug)
+            System.out.println("generic region Segment flags = " + refinementRegionFlagsField);
+    }
+
+    public RefinementRegionFlags getGenericRegionFlags() {
+        return refinementRegionFlags;
+    }
 }

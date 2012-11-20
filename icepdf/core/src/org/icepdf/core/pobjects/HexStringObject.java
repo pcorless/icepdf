@@ -19,8 +19,8 @@ import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Utils;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>This class represents a PDF Hexadecimal String Object.  Hexadecimal String
@@ -70,6 +70,11 @@ public class HexStringObject implements StringObject {
         stringData.append(normalizeHex(stringBuffer, 2).toString());
     }
 
+    public HexStringObject(String string) {
+        stringData = new StringBuilder(string.length());
+        stringData.append(normalizeHex(new StringBuilder(string), 2).toString());
+    }
+
     /**
      * Gets the integer value of the hexidecimal data specified by the start and
      * offset parameters.
@@ -85,8 +90,7 @@ public class HexStringObject implements StringObject {
         try {
             unsignedInt = Integer.parseInt(
                     stringData.substring(start, start + offset), 16);
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Number Format Exception " + unsignedInt);
             }
@@ -159,7 +163,7 @@ public class HexStringObject implements StringObject {
      *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding() ) {
+        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding()) {
             stringData = new StringBuilder(normalizeHex(stringData, 2).toString());
             int charOffset = 2;
             int length = getLength();
@@ -211,7 +215,7 @@ public class HexStringObject implements StringObject {
      * Utility method to removed all none hex character from the string and
      * ensure that the length is an even length.
      *
-     * @param hex hex data to normalize
+     * @param hex  hex data to normalize
      * @param step 2 or 4 character codes.
      * @return normalized pure hex StringBuffer
      */
@@ -226,13 +230,13 @@ public class HexStringObject implements StringObject {
             }
         }
         length = hex.length();
-        if (step == 2){
+        if (step == 2) {
             // add 0's to uneven length
             if (length % 2 != 0) {
                 hex.append('0');
             }
         }
-        if (step == 4){
+        if (step == 4) {
             if (length % 4 != 0) {
                 hex.append("00");
             }
@@ -263,7 +267,7 @@ public class HexStringObject implements StringObject {
 
         // make sure we have a valid hex value to convert to string.
         // can't decrypt an empty string.
-        if (hh != null && hh.length() == 0){
+        if (hh != null && hh.length() == 0) {
             return new StringBuilder();
         }
 
@@ -310,7 +314,7 @@ public class HexStringObject implements StringObject {
      *
      * @return returns the reference used for encryption.
      */
-    public Reference getReference(){
+    public Reference getReference() {
         return reference;
     }
 
@@ -328,7 +332,7 @@ public class HexStringObject implements StringObject {
 
             // convert string to bytes.
             byte[] textBytes =
-                Utils.convertByteCharSequenceToByteArray(stringData);
+                    Utils.convertByteCharSequenceToByteArray(stringData);
 
             // Decrypt String
             textBytes = securityManager.decrypt(reference,

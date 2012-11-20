@@ -15,17 +15,23 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Stack;
-import java.util.Hashtable;
 
 /**
  * @author Mark Collette
  * @since 2.0
  */
 public class LZWDecode extends ChunkingInputStream {
+
+    public static final Name DECODEPARMS_KEY = new Name("DecodeParms");
+    public static final Name EARLYCHANGE_KEY = new Name("EarlyChange");
+
+
     private BitStream inb;
     private int earlyChange;
     private int code;
@@ -37,13 +43,13 @@ public class LZWDecode extends ChunkingInputStream {
     private Code[] codes;
 
 
-    public LZWDecode(BitStream inb, Library library, Hashtable entries) {
+    public LZWDecode(BitStream inb, Library library, HashMap entries) {
         this.inb = inb;
-        
+
         this.earlyChange = 1; // Default value
-        Hashtable decodeParmsDictionary = library.getDictionary(entries, "DecodeParms");
+        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODEPARMS_KEY);
         if (decodeParmsDictionary != null) {
-            Number earlyChangeNumber = library.getNumber(decodeParmsDictionary, "EarlyChange");
+            Number earlyChangeNumber = library.getNumber(decodeParmsDictionary, EARLYCHANGE_KEY);
             if (earlyChangeNumber != null) {
                 this.earlyChange = earlyChangeNumber.intValue();
             }

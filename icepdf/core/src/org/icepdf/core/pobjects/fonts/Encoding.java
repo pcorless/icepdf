@@ -16,6 +16,7 @@ package org.icepdf.core.pobjects.fonts;
 
 /**
  * Encoding  interface
+ *
  * @since 3.0
  */
 public interface Encoding {

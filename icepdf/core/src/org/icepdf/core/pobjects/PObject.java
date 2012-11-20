@@ -25,6 +25,7 @@ package org.icepdf.core.pobjects;
 public class PObject {
     private Object object;
     private Reference objectReference = null;
+    private int linearTraversalOffset;
 
     /**
      * Create a new PObject.
@@ -97,6 +98,14 @@ public class PObject {
         }
 
         return true;
+    }
+
+    public int getLinearTraversalOffset() {
+        return linearTraversalOffset;
+    }
+
+    public void setLinearTraversalOffset(int linearTraversalOffset) {
+        this.linearTraversalOffset = linearTraversalOffset;
     }
 
     /**

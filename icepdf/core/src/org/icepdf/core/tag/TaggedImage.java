@@ -16,10 +16,10 @@ package org.icepdf.core.tag;
 
 import org.icepdf.core.pobjects.Reference;
 
-import java.util.List;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author mcollette
@@ -65,12 +65,11 @@ public class TaggedImage implements Serializable {
             boolean oddIndex = ((i % 2) == 1);
             boolean closingRangeForSinglePage = false;
             if (oddIndex) {
-                closingRangeForSinglePage = pages.get(i).equals(pages.get(i-1));
+                closingRangeForSinglePage = pages.get(i).equals(pages.get(i - 1));
                 if (!closingRangeForSinglePage) {
                     sb.append('-');
                 }
-            }
-            else if (i > 0) {
+            } else if (i > 0) {
                 sb.append(", ");
             }
             if (!closingRangeForSinglePage) {
@@ -89,30 +88,30 @@ public class TaggedImage implements Serializable {
      */
     void addPage(int pageIndex) {
         int size = pages.size();
-        if(size == 0) {
+        if (size == 0) {
             pages.add(new Integer(pageIndex));
         }
         // Even, so last entry is end of range
-        else if((size % 2) == 0) {
-            Integer end = (Integer) pages.get(size-1);
+        else if ((size % 2) == 0) {
+            Integer end = (Integer) pages.get(size - 1);
             // Continuing the existing sequential page range
-            if(end.intValue() == (pageIndex-1)) {
-                pages.set(size-1, new Integer(pageIndex));
+            if (end.intValue() == (pageIndex - 1)) {
+                pages.set(size - 1, new Integer(pageIndex));
             }
             // Starting a new page range
-            else if(end.intValue() < (pageIndex-1)) {
+            else if (end.intValue() < (pageIndex - 1)) {
                 pages.add(new Integer(pageIndex));
             }
         }
         // Odd, so last entry is start of range
         else {
-            Integer begin = (Integer) pages.get(size-1);
+            Integer begin = (Integer) pages.get(size - 1);
             // Continuing the existing sequential page range
-            if(begin.intValue() == (pageIndex-1)) {
+            if (begin.intValue() == (pageIndex - 1)) {
                 pages.add(new Integer(pageIndex));
             }
             // Starting a new page range, end the previous one first
-            else if(begin.intValue() < (pageIndex-1)) {
+            else if (begin.intValue() < (pageIndex - 1)) {
                 pages.add(begin);
                 pages.add(new Integer(pageIndex));
             }
@@ -120,14 +119,14 @@ public class TaggedImage implements Serializable {
     }
 
     void tag(String tag) {
-        if(!tags.contains(tag)) {
+        if (!tags.contains(tag)) {
             tags.add(tag);
         }
     }
 
     String describe() {
         StringBuilder sb = new StringBuilder(4096);
-        for(Iterator tgs = tags.iterator(); tgs.hasNext();) {
+        for (Iterator tgs = tags.iterator(); tgs.hasNext(); ) {
             String t = (String) tgs.next();
             sb.append(t);
             sb.append("\n");

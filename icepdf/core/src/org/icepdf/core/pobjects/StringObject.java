@@ -116,7 +116,7 @@ public interface StringObject {
      * security manager.
      *
      * @param securityManager security manager associated with parent document.
-     * @return decrypted stream. 
+     * @return decrypted stream.
      */
     public String getDecryptedLiteralString(SecurityManager securityManager);
 

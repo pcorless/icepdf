@@ -51,7 +51,7 @@ public class FontManager {
             Logger.getLogger(FontManager.class.toString());
 
     // stores all font data
-    private static ArrayList<Object[]> fontList;
+    private static List<Object[]> fontList;
 
     // flags for detecting font decorations
     private static int PLAIN = 0xF0000001;
@@ -329,7 +329,6 @@ public class FontManager {
     public void clearFontList() {
         if (fontList != null) {
             fontList.clear();
-            fontList.trimToSize();
         }
     }
 
@@ -621,12 +620,12 @@ public class FontManager {
                         ((style & PLAIN) == PLAIN)) {
                     found = true;
                 }
-                if (found){
+                if (found) {
                     font = buildFont((String) fontData[3]);
                     break;
                 }
             }
-            if (!found){
+            if (!found) {
                 fontData = fontList.get(0);
                 font = buildFont((String) fontData[3]);
             }
@@ -758,7 +757,7 @@ public class FontManager {
                 font = fontFactory.createFontFile(file, FontFactory.FONT_OPEN_TYPE);
             }
         } catch (Throwable e) {
-           logger.log(Level.FINE, "Error reading font program.", e);
+            logger.log(Level.FINE, "Error reading font program.", e);
         }
         return font;
     }

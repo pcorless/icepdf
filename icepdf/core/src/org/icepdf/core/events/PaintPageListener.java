@@ -24,6 +24,7 @@ public interface PaintPageListener extends java.util.EventListener {
 
     /**
      * Invoked when it is a good time to paint a page.
+     *
      * @param event paint event containg page information
      */
     public void paintPage(PaintPageEvent event);

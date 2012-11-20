@@ -18,7 +18,8 @@ import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+
 
 /**
  * <h2>Refer to: 8.4.5 Annotation Types</h2>
@@ -97,7 +98,7 @@ public class LinkAnnotation extends Annotation {
      * @param l document library.
      * @param h dictionary entries.
      */
-    public LinkAnnotation(Library l, Hashtable h) {
+    public LinkAnnotation(Library l, HashMap h) {
         super(l, h);
     }
 
