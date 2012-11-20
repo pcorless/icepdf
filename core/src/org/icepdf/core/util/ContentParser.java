@@ -14,24 +14,23 @@
  */
 package org.icepdf.core.util;
 
-import org.icepdf.core.io.SeekableByteArrayInputStream;
-import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.fonts.*;
+import org.icepdf.core.pobjects.fonts.FontFactory;
+import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.util.content.Lexer;
+import org.icepdf.core.util.content.OperandNames;
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Hashtable;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Stack;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,6 +45,7 @@ public class ContentParser {
             Logger.getLogger(ContentParser.class.toString());
 
     private static boolean disableTransparencyGroups;
+
     static {
         // decide if large images will be scaled
         disableTransparencyGroups =
@@ -60,7 +60,12 @@ public class ContentParser {
     private Library library;
     private Resources resources;
 
-//    private static HashTable tokenFrequency = new Hashtable(90);
+    private Shapes shapes;
+
+    // represents a geometric path constructed from straight lines, and
+    // quadratic and cubic (Beauctezier) curves.  It can contain
+    // multiple sub paths.
+    private GeneralPath geometricPath;
 
     // flag to handle none text based coordinate operand "cm" inside of a text block
     private boolean inTextBlock;
@@ -68,6 +73,9 @@ public class ContentParser {
     // TextBlock affine transform can be altered by the "cm" operand an thus
     // the text base affine transform must be accessible outside the parsTtext method
     private AffineTransform textBlockBase;
+
+    // stack to help with the parse
+    private Stack<Object> stack = new Stack<Object>();
 
     /**
      * @param l PDF library master object.
@@ -79,35 +87,26 @@ public class ContentParser {
 
     }
 
-    /*  private static void collectTokenFrequency(String token){
-        Float count = (Float)tokenFrequency.get(token);
-        float value;
-        if (count != null){
-            value = count.floatValue();
-            value ++;
-            tokenFrequency.remove(token);
-            tokenFrequency.put(token, new Float(value));
-        }
-        else{
-            tokenFrequency.put(token, new Float(1));
-        }
+    /**
+     * Returns the Shapes that have accumulated turing multiple calls to
+     * parse().
+     *
+     * @return resultant shapes object of all processed content streams.
+     */
+    public Shapes getShapes() {
+        shapes.contract();
+        return shapes;
     }
 
-    private void printTokenFrequency(){
-        Enumeration enum = tokenFrequency.keys();
-        while (enum.hasMoreElements()){
-
-            String key = (String)enum.nextElement();
-            Float tmp = (Float)tokenFrequency.get(key);
-            System.out.print(key + ", ");
-            if (tmp != null){
-                System.out.println(tmp.toString());
-            }
-            else{
-                System.out.println("");
-            }
-        }
-    }*/
+    /**
+     * Returns the stack of object used to parse content streams. If parse
+     * was successful the stack should be empty.
+     *
+     * @return stack of objects accumulated during a cotent stream parse.
+     */
+    public Stack<Object> getStack() {
+        return stack;
+    }
 
     /**
      * Returns the current graphics state object being used by this content
@@ -134,719 +133,689 @@ public class ContentParser {
     /**
      * Parse a pages content stream.
      *
-     * @param source byte stream containing page content
+     * @param streamBytes byte stream containing page content
      * @return a Shapes Ojbect containing all the pages text and images shapes.
      * @throws InterruptedException if current parse thread is interruped.
      */
-    public Shapes parse(InputStream source) throws InterruptedException {
-        Shapes shapes = new Shapes();
-        // Normal, clean content parse where graphics state is null
-        if (graphicState == null) {
-            graphicState = new GraphicsState(shapes);
-        }
-        // If not null we have an Form XObject that contains a content stream
-        // and we must copy the previous graphics states draw settings in order
-        // preserve colour and fill data for the XOjbects content stream.
-        else {
-            // the graphics state gets a new coordinate system.
-            graphicState.setCTM(new AffineTransform());
-            // reset the clipping area.
-            graphicState.setClip(null);
-            // copy previous stroke info
-            setStroke(shapes, graphicState);
-            // assign new shapes to the new graphics state
-            graphicState.setShapes(shapes);
+    public ContentParser parse(byte[][] streamBytes) throws InterruptedException, IOException {
+        if (shapes == null) {
+            shapes = new Shapes();
+            // Normal, clean content parse where graphics state is null
+            if (graphicState == null) {
+                graphicState = new GraphicsState(shapes);
+            }
+            // If not null we have an Form XObject that contains a content stream
+            // and we must copy the previous graphics states draw settings in order
+            // preserve colour and fill data for the XOjbects content stream.
+            else {
+                // the graphics state gets a new coordinate system.
+                graphicState.setCTM(new AffineTransform());
+                // reset the clipping area.
+                graphicState.setClip(null);
+                // copy previous stroke info
+                setStroke(shapes, graphicState);
+                // assign new shapes to the new graphics state
+                graphicState.setShapes(shapes);
+            }
         }
 
         if (logger.isLoggable(Level.FINER)) {
-            String content;
-            if (source instanceof SeekableInput) {
-                content = Utils.getContentFromSeekableInput((SeekableInput) source, false);
-            } else {
-                InputStream[] inArray = new InputStream[]{source};
-                content = Utils.getContentAndReplaceInputStream(inArray, false);
-                source = inArray[0];
+            // print all the stream byte chunks.
+            for (byte[] streamByte : streamBytes) {
+                if (streamByte != null) {
+                    String tmp = new String(streamByte, "ISO-8859-1");
+                    logger.finer("Content = " + tmp);
+                }
             }
-            logger.finer("Content = " + content);
         }
 
         // great a parser to get tokens for stream
-        Parser parser;
+        Lexer lexer;
 
         // test case for progress bar
-        parser = new Parser(source);
-
-        // stack to help with the parse
-        Stack<Object> stack = new Stack<Object>();
+        lexer = new Lexer();
+        lexer.contentStream(streamBytes);
 
         // text block y offset.
         float yBTstart = 0;
 
-//        long startTime = System.currentTimeMillis();
         try {
-            // represents a geometric path constructed from straight lines, and
-            // quadratic and cubic (Beauctezier) curves.  It can contain
-            // multiple sub paths.
-            GeneralPath geometricPath = null;
-
             // loop through each token returned form the parser
             Object tok;
             while (true) {
 
-                if (Thread.interrupted()) {
-                    throw new InterruptedException("ContentParser thread interrupted");
+                tok = lexer.nextToken();
+//                if (logger.isLoggable(Level.FINEST)){
+//                    if (tok instanceof Integer) {
+//                        logger.finest(OperandNames.OPP_LOOKUP.get(tok));
+//                    } else {
+//                        logger.finest(String.valueOf(tok));
+//                    }
+//                }
+                // no more tokens break out.
+                if (tok == null) {
+                    break;
                 }
-
-                tok = parser.getStreamObject();
 
                 // add any names and numbers and every thing else on the
                 // stack for future reference
-                if (!(tok instanceof String)) {
+                if (!(tok instanceof Integer)) {
                     stack.push(tok);
                 } else {
-
+                    int operand = (Integer) tok;
                     // Append a straight line segment from the current point to the
                     // point (x, y). The new current point is (x, y).
-                    if (tok.equals(PdfOps.l_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.l_TOKEN);
-                        float y = ((Number) stack.pop()).floatValue();
-                        float x = ((Number) stack.pop()).floatValue();
-                        geometricPath.lineTo(x, y);
-                    }
-
-                    // Begin a new subpath by moving the current point to
-                    // coordinates (x, y), omitting any connecting line segment. If
-                    // the previous path construction operator in the current path
-                    // was also m, the new m overrides it; no vestige of the
-                    // previous m operation remains in the path.
-                    else if (tok.equals(PdfOps.m_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.m_TOKEN);
-                        if (geometricPath == null) {
-                            geometricPath = new GeneralPath();
-                        }
-                        float y = ((Number) stack.pop()).floatValue();
-                        float x = ((Number) stack.pop()).floatValue();
-                        geometricPath.moveTo(x, y);
-                    }
-
-                    // Append a cubic Bezier curve to the current path. The curve
-                    // extends from the current point to the point (x3, y3), using
-                    // (x1, y1) and (x2, y2) as the Bezier control points.
-                    // The new current point is (x3, y3).
-                    else if (tok.equals(PdfOps.c_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.c_TOKEN);
-                        float y3 = ((Number) stack.pop()).floatValue();
-                        float x3 = ((Number) stack.pop()).floatValue();
-                        float y2 = ((Number) stack.pop()).floatValue();
-                        float x2 = ((Number) stack.pop()).floatValue();
-                        float y1 = ((Number) stack.pop()).floatValue();
-                        float x1 = ((Number) stack.pop()).floatValue();
-                        geometricPath.curveTo(x1, y1, x2, y2, x3, y3);
-                    }
-
-                    // Stroke the path
-                    else if (tok.equals(PdfOps.S_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.S_TOKEN);
-                        if (geometricPath != null) {
-                            commonStroke(graphicState, shapes, geometricPath);
-                            geometricPath = null;
-                        }
-                    }
-
-                    // Font selection
-                    else if (tok.equals(PdfOps.Tf_TOKEN)) {
-                        consume_Tf(graphicState, stack, resources);
-                    }
-
-                    // Begin a text object, initializing the text matrix, Tm, and
-                    // the text line matrix, Tlm, to the identity matrix. Text
-                    // objects cannot be nested; a second BT cannot appear before
-                    // an ET.
-                    else if (tok.equals(PdfOps.BT_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.BT_TOKEN);
-                        // start parseText, which parses until ET is reached
-                        yBTstart = parseText(parser, shapes, yBTstart);
-                    }
-
-                    // Fill the path, using the nonzero winding number rule to
-                    // determine the region to fill (see "Nonzero Winding
-                    // Number Rule" ). Any subpaths that are open are implicitly
-                    // closed before being filled. f or F
-                    else if (tok.equals(PdfOps.F_TOKEN) ||
-                            tok.equals(PdfOps.f_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.F_TOKEN);
-//                        collectTokenFrequency(PdfOps.f_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
-                            commonFill(shapes, geometricPath);
-                        }
-                        geometricPath = null;
-                    }
-
-                    // Saves Graphics State, should copy the entire  graphics state onto
-                    // the graphicsState object's stack
-                    else if (tok.equals(PdfOps.q_TOKEN)) {
-                        graphicState = consume_q(graphicState);
-                    }
-                    // Restore Graphics State, should restore the entire graphics state
-                    // to its former value by popping it from the stack
-                    else if (tok.equals(PdfOps.Q_TOKEN)) {
-                        graphicState = consume_Q(graphicState, shapes);
-                    }
-
-                    // Append a rectangle to the current path as a complete subpath,
-                    // with lower-left corner (x, y) and dimensions width and height
-                    // in user space. The operation x y width height re is equivalent to
-                    //        x y m
-                    //        (x + width) y l
-                    //       (x + width) (y + height) l
-                    //        x (y + height) l
-                    //        h
-                    else if (tok.equals(PdfOps.re_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.re_TOKEN);
-                        if (geometricPath == null) {
-                            geometricPath = new GeneralPath();
-                        }
-                        float h = ((Number) stack.pop()).floatValue();
-                        float w = ((Number) stack.pop()).floatValue();
-                        float y = ((Number) stack.pop()).floatValue();
-                        float x = ((Number) stack.pop()).floatValue();
-                        geometricPath.moveTo(x, y);
-                        geometricPath.lineTo(x + w, y);
-                        geometricPath.lineTo(x + w, y + h);
-                        geometricPath.lineTo(x, y + h);
-                        geometricPath.lineTo(x, y);
-                    }
-
-                    // Modify the current transformation matrix (CTM) by concatenating the
-                    // specified matrix
-                    else if (tok.equals(PdfOps.cm_TOKEN)) {
-                        consume_cm(graphicState, stack, inTextBlock, textBlockBase);
-                    }
-
-                    // Close the current sub path by appending a straight line segment
-                    // from the current point to the starting point of the sub path.
-                    // This operator terminates the current sub path; appending
-                    // another segment to the current path will begin a new subpath,
-                    // even if the new segment begins at the endpoint reached by the
-                    // h operation. If the current subpath is already closed,
-                    // h does nothing.
-                    else if (tok.equals(PdfOps.h_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.h_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.closePath();
-                        }
-                    }
-
-                    // Begin a marked-content sequence with an associated property
-                    // list, terminated by a balancing EMC operator. tag is a name
-                    // object indicating the role or significance of the sequence;
-                    // properties is either an inline dictionary containing the
-                    // property list or a name object associated with it in the
-                    // Properties sub dictionary of the current resource dictionary
-                    else if (tok.equals(PdfOps.BDC_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.BDC_TOKEN);
-                        stack.pop(); // properties
-                        stack.pop(); // name
-                    }
-
-                    // End a marked-content sequence begun by a BMC or BDC operator.
-                    else if (tok.equals(PdfOps.EMC_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.EMC_TOKEN);
-                    }
-
-                    /**
-                     * External Object (XObject) a graphics object whose contents
-                     * are defined by a self-contained content stream, separate
-                     * from the content stream in which it is used. There are three
-                     * types of external object:
-                     *
-                     *   - An image XObject (Section 4.8.4, "Image Dictionaries")
-                     *     represents a sampled visual image such as a photograph.
-                     *   - A form XObject (Section 4.9, "Form XObjects") is a
-                     *     self-contained description of an arbitrary sequence of
-                     *     graphics objects.
-                     *   - A PostScript XObject (Section 4.7.1, "PostScript XObjects")
-                     *     contains a fragment of code expressed in the PostScript
-                     *     page description language. PostScript XObjects are no
-                     *     longer recommended to be used. (NOT SUPPORTED)
-                     */
-                    // Paint the specified XObject. The operand name must appear as
-                    // a key in the XObject subdictionary of the current resource
-                    // dictionary (see Section 3.7.2, "Resource Dictionaries"); the
-                    // associated value must be a stream whose Type entry, if
-                    // present, is XObject. The effect of Do depends on the value of
-                    // the XObject's Subtype entry, which may be Image , Form, or PS
-                    else if (tok.equals(PdfOps.Do_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.Do_TOKEN);
-                        graphicState = consume_Do(graphicState, stack, shapes, resources, true);
-                    }
-
-                    // Fill the path, using the even-odd rule to determine the
-                    // region to fill
-                    else if (tok.equals(PdfOps.f_STAR_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.f_STAR_TOKEN);
-                        if (geometricPath != null) {
-                            // need to apply pattern..
-                            geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
-                            commonFill(shapes, geometricPath);
-                        }
-                        geometricPath = null;
-                    }
-
-                    // Sets the specified parameters in the graphics state.  The gs operand
-                    // points to a name resource which should be a an ExtGState object.
-                    // The graphics state parameters in the ExtGState must be concatenated
-                    // with the the current graphics state.
-                    else if (tok.equals(PdfOps.gs_TOKEN)) {
-                        consume_gs(graphicState, stack, resources);
-                    }
-
-                    // End the path object without filling or stroking it. This
-                    // operator is a "path-painting no-op," used primarily for the
-                    // side effect of changing the current clipping path
-                    else if (tok.equals(PdfOps.n_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.n_TOKEN);
-                        //graphicState.setClip(geometricPath);
-                        // clipping path outlines are visible when this is set to null;
-                        geometricPath = null;
-                    }
-
-                    // Set the line width in the graphics state
-                    else if (tok.equals(PdfOps.w_TOKEN) ||
-                            tok.equals(PdfOps.LW_TOKEN)) {
-                        consume_w(graphicState, stack, shapes);
-                    }
-
-                    // Modify the current clipping path by intersecting it with the
-                    // current path, using the nonzero winding number rule to
-                    // determine which regions lie inside the clipping path.
-                    else if (tok.equals(PdfOps.W_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.W_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
-                            geometricPath.closePath();
-                            graphicState.setClip(geometricPath);
-                            shapes.addClipCommand();
-                        }
-
-                    }
-
-                    // Fill Color with ColorSpace
-                    else if (tok.equals(PdfOps.sc_TOKEN) ||
-                            tok.equals(PdfOps.scn_TOKEN)) {
-                        consume_sc(graphicState, stack, library, resources);
-                    }
-
-                    // Close, fill, and then stroke the path, using the nonzero
-                    // winding number rule to determine the region to fill. This
-                    // operator has the same effect as the sequence h B. See also
-                    // "Special Path-Painting Considerations"
-                    else if (tok.equals(PdfOps.b_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.b_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
-                            geometricPath.closePath();
-                            commonFill(shapes, geometricPath);
-                            commonStroke(graphicState, shapes, geometricPath);
-                        }
-                        geometricPath = null;
-                    }
-
-                    // Same as K, but for non-stroking operations.
-                    else if (tok.equals(PdfOps.k_TOKEN)) { // Fill Color CMYK
-                        consume_k(graphicState, stack, library);
-                    }
-
-                    // Same as g but for none stroking operations
-                    else if (tok.equals(PdfOps.g_TOKEN)) {
-                        consume_g(graphicState, stack, library);
-                    }
-
-                    // Sets the flatness tolerance in the graphics state, NOT SUPPORTED
-                    // flatness is a number in the range 0 to 100, a value of 0 specifies
-                    // the default tolerance
-                    else if (tok.equals(PdfOps.i_TOKEN)) {
-                        consume_i(stack);
-                    }
-
-                    // Miter Limit
-                    else if (tok.equals(PdfOps.M_TOKEN)) {
-                        consume_M(graphicState, stack, shapes);
-                    }
-
-                    // Set the line cap style of the graphic state, related to Line Join
-                    // style
-                    else if (tok.equals(PdfOps.J_TOKEN)) {
-                        consume_J(graphicState, stack, shapes);
-                    }
-
-                    // Same as RG, but for non-stroking operations.
-                    else if (tok.equals(PdfOps.rg_TOKEN)) { // Fill Color RGB
-                        consume_rg(graphicState, stack, library);
-                    }
-
-                    // Sets the line dash pattern in the graphics state. A normal line
-                    // is [] 0.  See Graphics State -> Line dash patter for more information
-                    // in the PDF Reference.  Java 2d uses the same notation so there
-                    // is not much work to be done other then parsing the data.
-                    else if (tok.equals(PdfOps.d_TOKEN)) {
-                        consume_d(graphicState, stack, shapes);
-                    }
-
-                    // Append a cubic Bezier curve to the current path. The curve
-                    // extends from the current point to the point (x3, y3), using
-                    // the current point and (x2, y2) as the Bezier control points.
-                    // The new current point is (x3, y3).
-                    else if (tok.equals(PdfOps.v_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.v_TOKEN);
-                        float y3 = ((Number) stack.pop()).floatValue();
-                        float x3 = ((Number) stack.pop()).floatValue();
-                        float y2 = ((Number) stack.pop()).floatValue();
-                        float x2 = ((Number) stack.pop()).floatValue();
-                        geometricPath.curveTo(
-                                (float) geometricPath.getCurrentPoint().getX(),
-                                (float) geometricPath.getCurrentPoint().getY(),
-                                x2,
-                                y2,
-                                x3,
-                                y3);
-                    }
-
-                    // Set the line join style in the graphics state
-                    else if (tok.equals(PdfOps.j_TOKEN)) {
-                        consume_j(graphicState, stack, shapes);
-                    }
-
-                    // Append a cubic Bezier curve to the current path. The curve
-                    // extends from the current point to the point (x3, y3), using
-                    // (x1, y1) and (x3, y3) as the Bezier control points.
-                    // The new current point is (x3, y3).
-                    else if (tok.equals(PdfOps.y_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.y_TOKEN);
-                        float y3 = ((Number) stack.pop()).floatValue();
-                        float x3 = ((Number) stack.pop()).floatValue();
-                        float y1 = ((Number) stack.pop()).floatValue();
-                        float x1 = ((Number) stack.pop()).floatValue();
-                        geometricPath.curveTo(x1, y1, x3, y3, x3, y3);
-                    }
-
-                    // Same as CS, but for nonstroking operations.
-                    else if (tok.equals(PdfOps.cs_TOKEN)) {
-                        consume_cs(graphicState, stack, resources);
-                    }
-
-                    // Color rendering intent in the graphics state
-                    else if (tok.equals(PdfOps.ri_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.ri_TOKEN);
-                        stack.pop();
-                    }
-
-                    // Set the color to use for stroking operations in a device, CIE-based
-                    // (other than ICCBased), or Indexed color space. The number of operands
-                    // required and their interpretation depends on the current stroking color space:
-                    //   - For DeviceGray, CalGray, and Indexed color spaces, one operand
-                    //     is required (n = 1).
-                    //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
-                    //     required (n = 3).
-                    //   - For DeviceCMYK, four operands are required (n = 4).
-                    else if (tok.equals(PdfOps.SC_TOKEN) ||
-                            tok.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
-                        consume_SC(graphicState, stack, library, resources);
-                    }
-
-                    // Fill and then stroke the path, using the nonzero winding
-                    // number rule to determine the region to fill. This produces
-                    // the same result as constructing two identical path objects,
-                    // painting the first with f and the second with S. Note,
-                    // however, that the filling and stroking portions of the
-                    // operation consult different values of several graphics state
-                    // parameters, such as the current color.
-                    else if (tok.equals(PdfOps.B_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.B_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
-                            commonFill(shapes, geometricPath);
-                            commonStroke(graphicState, shapes, geometricPath);
-                        }
-                        geometricPath = null;
-                    }
-
-                    // Set the stroking color space to DeviceCMYK (or the DefaultCMYK color
-                    // space; see "Default Color Spaces" on page 227) and set the color to
-                    // use for stroking operations. Each operand must be a number between
-                    // 0.0 (zero concentration) and 1.0 (maximum concentration). The
-                    // behavior of this operator is affected by the overprint mode
-                    // (see Section 4.5.6, "Overprint Control").
-                    else if (tok.equals(PdfOps.K_TOKEN)) { // Stroke Color CMYK
-                        consume_K(graphicState, stack, library);
-                    }
-
-                    /**
-                     * Type3 operators, update the text state with data from these operands
-                     */
-                    else if (tok.equals(PdfOps.d0_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.d0_TOKEN);
-                        // save the stack
-                        graphicState = graphicState.save();
-                        // need two pops to get  Wx and Wy data
-                        float y = ((Number) stack.pop()).floatValue();
-                        float x = ((Number) stack.pop()).floatValue();
-                        TextState textState = graphicState.getTextState();
-                        textState.setType3HorizontalDisplacement(new Point.Float(x, y));
-                    }
-
-                    // Close and stroke the path. This operator has the same effect
-                    // as the sequence h S.
-                    else if (tok.equals(PdfOps.s_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.s_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.closePath();
-                            commonStroke(graphicState, shapes, geometricPath);
-                            geometricPath = null;
-                        }
-                    }
-
-                    // Set the stroking color space to DeviceGray (or the DefaultGray color
-                    // space; see "Default Color Spaces" ) and set the gray level to use for
-                    // stroking operations. gray is a number between 0.0 (black)
-                    // and 1.0 (white).
-                    else if (tok.equals(PdfOps.G_TOKEN)) {
-                        consume_G(graphicState, stack, library);
-                    }
-
-                    // Close, fill, and then stroke the path, using the even-odd
-                    // rule to determine the region to fill. This operator has the
-                    // same effect as the sequence h B*. See also "Special
-                    // Path-Painting Considerations"
-                    else if (tok.equals(PdfOps.b_STAR_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.b_STAR_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
-                            geometricPath.closePath();
-                            commonStroke(graphicState, shapes, geometricPath);
-                            commonFill(shapes, geometricPath);
-                        }
-                        geometricPath = null;
-                    }
-
-                    // Set the stroking color space to DeviceRGB (or the DefaultRGB color
-                    // space; see "Default Color Spaces" on page 227) and set the color to
-                    // use for stroking operations. Each operand must be a number between
-                    // 0.0 (minimum intensity) and 1.0 (maximum intensity).
-                    else if (tok.equals(PdfOps.RG_TOKEN)) { // Stroke Color RGB
-                        consume_RG(graphicState, stack, library);
-                    }
-
-                    // Set the current color space to use for stroking operations. The
-                    // operand name must be a name object. If the color space is one that
-                    // can be specified by a name and no additional parameters (DeviceGray,
-                    // DeviceRGB, DeviceCMYK, and certain cases of Pattern), the name may be
-                    // specified directly. Otherwise, it must be a name defined in the
-                    // ColorSpace sub dictionary of the current resource dictionary; the
-                    // associated value is an array describing the color space.
-                    // <b>Note:</b>
-                    // The names DeviceGray, DeviceRGB, DeviceCMYK, and Pattern always
-                    // identify the corresponding color spaces directly; they never refer to
-                    // resources in the ColorSpace sub dictionary. The CS operator also sets
-                    // the current stroking color to its initial value, which depends on the
-                    // color space:
-                    // <li>In a DeviceGray, DeviceRGB, CalGray, or CalRGB color space, the
-                    //     initial color has all components equal to 0.0.</li>
-                    // <li>In a DeviceCMYK color space, the initial color is
-                    //     [0.0 0.0 0.0 1.0].   </li>
-                    // <li>In a Lab or ICCBased color space, the initial color has all
-                    //     components equal to 0.0 unless that falls outside the intervals
-                    //     specified by the space's Range entry, in which case the nearest
-                    //     valid value is substituted.</li>
-                    // <li>In an Indexed color space, the initial color value is 0. </li>
-                    // <li>In a Separation or DeviceN color space, the initial tint value is
-                    //     1.0 for all colorants. </li>
-                    // <li>In a Pattern color space, the initial color is a pattern object
-                    //     that causes nothing to be painted. </li>
-                    else if (tok.equals(PdfOps.CS_TOKEN)) {
-                        consume_CS(graphicState, stack, resources);
-                    } else if (tok.equals(PdfOps.d1_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.d1_TOKEN);
-                        // save the stack
-                        graphicState = graphicState.save();
-                        // need two pops to get  Wx and Wy data
-                        float x2 = ((Number) stack.pop()).floatValue();
-                        float y2 = ((Number) stack.pop()).floatValue();
-                        float x1 = ((Number) stack.pop()).floatValue();
-                        float y1 = ((Number) stack.pop()).floatValue();
-                        float y = ((Number) stack.pop()).floatValue();
-                        float x = ((Number) stack.pop()).floatValue();
-                        TextState textState = graphicState.getTextState();
-                        textState.setType3HorizontalDisplacement(
-                                new Point2D.Float(x, y));
-                        textState.setType3BBox(new PRectangle(
-                                new Point2D.Float(x1, y1),
-                                new Point2D.Float(x2, y2)));
-                    }
-
-                    // Fill and then stroke the path, using the even-odd rule to
-                    // determine the region to fill. This operator produces the same
-                    // result as B, except that the path is filled as if with f*
-                    // instead of f. See also "Special Path-Painting Considerations"
-                    else if (tok.equals(PdfOps.B_STAR_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.B_STAR_TOKEN);
-                        if (geometricPath != null) {
-                            geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
-                            commonStroke(graphicState, shapes, geometricPath);
-                            commonFill(shapes, geometricPath);
-                        }
-                        geometricPath = null;
-                    }
-
-                    // Begin a marked-content sequence terminated by a balancing EMC
-                    // operator.tag is a name object indicating the role or
-                    // significance of the sequence.
-                    else if (tok.equals(PdfOps.BMC_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.BMC_TOKEN);
-                        stack.pop();
-                    }
-
-                    // Begin an inline image object
-                    else if (tok.equals(PdfOps.BI_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.BI_TOKEN);
-                        // start parsing image object, which leads to ID and EI
-                        // tokends.
-                        //    ID - Begin in the image data for an inline image object
-                        //    EI - End an inline image object
-                        parseInlineImage(parser, shapes);
-                    }
-
-                    // Begin a compatibility section. Unrecognized operators
-                    // (along with their operands) will be ignored without error
-                    // until the balancing EX operator is encountered.
-                    else if (tok.equals(PdfOps.BX_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.BX_TOKEN);
-                    }
-                    // End a compatibility section begun by a balancing BX operator.
-                    else if (tok.equals(PdfOps.EX_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.EX_TOKEN);
-                    }
-
-                    // Modify the current clipping path by intersecting it with the
-                    // current path, using the even-odd rule to determine which
-                    // regions lie inside the clipping path.
-                    else if (tok.equals(PdfOps.W_STAR_TOKEN)) {
-                        if (geometricPath != null) {
-                            geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
-                            geometricPath.closePath();
-                            graphicState.setClip(geometricPath);
-                        }
-                    }
-
-                    /**
-                     * Single marked-content point
-                     */
-                    // Designate a marked-content point with an associated property
-                    // list. tag is a name object indicating the role or significance
-                    // of the point; properties is either an in line dictionary
-                    // containing the property list or a name object associated with
-                    // it in the Properties sub dictionary of the current resource
-                    // dictionary.
-                    else if (tok.equals(PdfOps.DP_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.DP_TOKEN);
-                        stack.pop(); // properties
-                        stack.pop(); // name
-                    }
-                    // Designate a marked-content point. tag is a name object
-                    // indicating the role or significance of the point.
-                    else if (tok.equals(PdfOps.MP_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.MP_TOKEN);
-                        stack.pop();
-                    }
-
-                    // shading operator.
-                    else if (tok.equals(PdfOps.sh_TOKEN)) {
-//                        collectTokenFrequency(PdfOps.sh_TOKEN);
-                        Object o = stack.peek();
-                        // if a name then we are dealing with a pattern.
-                        if (o instanceof Name) {
-                            Name patternName = (Name) stack.pop();
-                            Pattern pattern = resources.getShading(patternName.toString());
-                            if (pattern != null) {
-                                pattern.init();
-                                // we paint the shape and color shading as defined
-                                // by the pattern dictionary and respect the current clip
-
-                                // apply a rudimentary softmask for an shading .
-                                if (graphicState.getSoftMask() != null){
-                                    setAlpha(shapes,
-                                            graphicState.getAlphaRule(),
-                                            0.50f);
-                                }else{
-                                    setAlpha(shapes,
-                                            graphicState.getAlphaRule(),
-                                            graphicState.getFillAlpha());
-                                }
-                                shapes.add(pattern.getPaint());
-                                shapes.add(graphicState.getClip());
-                                shapes.addFillCommand();
+                    switch (operand) {
+                        case OperandNames.OP_l:
+                            float y = ((Number) stack.pop()).floatValue();
+                            float x = ((Number) stack.pop()).floatValue();
+                            if (geometricPath == null) {
+                                geometricPath = new GeneralPath();
                             }
-                        }
-                    }
+                            geometricPath.lineTo(x, y);
+                            break;
 
-                    /**
-                     * We've seen a couple cases when the text state parameters are written
-                     * outside of text blocks, this should cover these cases.
-                     */
-                    // Character Spacing
-                    else if (tok.equals(PdfOps.Tc_TOKEN)) {
-                        consume_Tc(graphicState, stack);
-                    }
-                    // Word spacing
-                    else if (tok.equals(PdfOps.Tw_TOKEN)) {
-                        consume_Tw(graphicState, stack);
-                    }
-                    // Text leading
-                    else if (tok.equals(PdfOps.TL_TOKEN)) {
-                        consume_TL(graphicState, stack);
-                    }
-                    // Rendering mode
-                    else if (tok.equals(PdfOps.Tr_TOKEN)) {
-                        consume_Tr(graphicState, stack);
-                    }
-                    // Horizontal scaling
-                    else if (tok.equals(PdfOps.Tz_TOKEN)) {
-                        consume_Tz(graphicState, stack, inTextBlock);
-                    }
-                    // Text rise
-                    else if (tok.equals(PdfOps.Ts_TOKEN)) {
-                        consume_Ts(graphicState, stack);
+                        // Begin a new subpath by moving the current point to
+                        // coordinates (x, y), omitting any connecting line segment. If
+                        // the previous path construction operator in the current path
+                        // was also m, the new m overrides it; no vestige of the
+                        // previous m operation remains in the path.
+                        case OperandNames.OP_m:
+                            if (geometricPath == null) {
+                                geometricPath = new GeneralPath();
+                            }
+                            y = ((Number) stack.pop()).floatValue();
+                            x = ((Number) stack.pop()).floatValue();
+                            geometricPath.moveTo(x, y);
+                            break;
+
+                        // Append a cubic Bezier curve to the current path. The curve
+                        // extends from the current point to the point (x3, y3), using
+                        // (x1, y1) and (x2, y2) as the Bezier control points.
+                        // The new current point is (x3, y3).
+                        case OperandNames.OP_c:
+                            float y3 = ((Number) stack.pop()).floatValue();
+                            float x3 = ((Number) stack.pop()).floatValue();
+                            float y2 = ((Number) stack.pop()).floatValue();
+                            float x2 = ((Number) stack.pop()).floatValue();
+                            float y1 = ((Number) stack.pop()).floatValue();
+                            float x1 = ((Number) stack.pop()).floatValue();
+                            if (geometricPath == null) {
+                                geometricPath = new GeneralPath();
+                            }
+                            geometricPath.curveTo(x1, y1, x2, y2, x3, y3);
+                            break;
+
+                        // Stroke the path
+                        case OperandNames.OP_S:
+                            if (geometricPath != null) {
+                                commonStroke(graphicState, shapes, geometricPath);
+                                geometricPath = null;
+                            }
+                            break;
+
+                        // Font selection
+                        case OperandNames.OP_Tf:
+                            consume_Tf(graphicState, stack, resources);
+                            break;
+
+                        // Begin a text object, initializing the text matrix, Tm, and
+                        // the text line matrix, Tlm, to the identity matrix. Text
+                        // objects cannot be nested; a second BT cannot appear before
+                        // an ET.
+                        case OperandNames.OP_BT:
+                            // start parseText, which parses until ET is reached
+                            yBTstart = parseText(lexer, shapes, yBTstart);
+                            break;
+
+                        // Fill the path, using the nonzero winding number rule to
+                        // determine the region to fill (see "Nonzero Winding
+                        // Number Rule" ). Any subpaths that are open are implicitly
+                        // closed before being filled. f or F
+                        case OperandNames.OP_F:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
+                                commonFill(shapes, geometricPath);
+                            }
+                            geometricPath = null;
+                            break;
+                        case OperandNames.OP_f:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
+                                commonFill(shapes, geometricPath);
+                            }
+                            geometricPath = null;
+                            break;
+
+                        // Saves Graphics State, should copy the entire  graphics state onto
+                        // the graphicsState object's stack
+                        case OperandNames.OP_q:
+                            graphicState = consume_q(graphicState);
+                            break;
+                        // Restore Graphics State, should restore the entire graphics state
+                        // to its former value by popping it from the stack
+                        case OperandNames.OP_Q:
+                            graphicState = consume_Q(graphicState, shapes);
+                            break;
+
+                        // Append a rectangle to the current path as a complete subpath,
+                        // with lower-left corner (x, y) and dimensions width and height
+                        // in user space. The operation x y width height re is equivalent to
+                        //        x y m
+                        //        (x + width) y l
+                        //       (x + width) (y + height) l
+                        //        x (y + height) l
+                        //        h
+                        case OperandNames.OP_re:
+                            if (geometricPath == null) {
+                                geometricPath = new GeneralPath();
+                            }
+                            float h = ((Number) stack.pop()).floatValue();
+                            float w = ((Number) stack.pop()).floatValue();
+                            y = ((Number) stack.pop()).floatValue();
+                            x = ((Number) stack.pop()).floatValue();
+                            geometricPath.moveTo(x, y);
+                            geometricPath.lineTo(x + w, y);
+                            geometricPath.lineTo(x + w, y + h);
+                            geometricPath.lineTo(x, y + h);
+                            geometricPath.lineTo(x, y);
+                            break;
+
+                        // Modify the current transformation matrix (CTM) by concatenating the
+                        // specified matrix
+                        case OperandNames.OP_cm:
+                            consume_cm(graphicState, stack, inTextBlock, textBlockBase);
+                            break;
+
+                        // Close the current sub path by appending a straight line segment
+                        // from the current point to the starting point of the sub path.
+                        // This operator terminates the current sub path; appending
+                        // another segment to the current path will begin a new subpath,
+                        // even if the new segment begins at the endpoint reached by the
+                        // h operation. If the current subpath is already closed,
+                        // h does nothing.
+                        case OperandNames.OP_h:
+                            if (geometricPath != null) {
+                                geometricPath.closePath();
+                            }
+                            break;
+                        // Begin a marked-content sequence with an associated property
+                        // list, terminated by a balancing EMC operator. tag is a name
+                        // object indicating the role or significance of the sequence;
+                        // properties is either an inline dictionary containing the
+                        // property list or a name object associated with it in the
+                        // Properties sub dictionary of the current resource dictionary
+                        case OperandNames.OP_BDC:
+                            stack.pop(); // properties
+                            stack.pop(); // name
+                            break;
+
+                        // End a marked-content sequence begun by a BMC or BDC operator.
+                        case OperandNames.OP_EMC:
+                            break;
+
+                        /**
+                         * External Object (XObject) a graphics object whose contents
+                         * are defined by a self-contained content stream, separate
+                         * from the content stream in which it is used. There are three
+                         * types of external object:
+                         *
+                         *   - An image XObject (Section 4.8.4, "Image Dictionaries")
+                         *     represents a sampled visual image such as a photograph.
+                         *   - A form XObject (Section 4.9, "Form XObjects") is a
+                         *     self-contained description of an arbitrary sequence of
+                         *     graphics objects.
+                         *   - A PostScript XObject (Section 4.7.1, "PostScript XObjects")
+                         *     contains a fragment of code expressed in the PostScript
+                         *     page description language. PostScript XObjects are no
+                         *     longer recommended to be used. (NOT SUPPORTED)
+                         */
+                        // Paint the specified XObject. The operand name must appear as
+                        // a key in the XObject subdictionary of the current resource
+                        // dictionary (see Section 3.7.2, "Resource Dictionaries"); the
+                        // associated value must be a stream whose Type entry, if
+                        // present, is XObject. The effect of Do depends on the value of
+                        // the XObject's Subtype entry, which may be Image , Form, or PS
+                        case OperandNames.OP_Do:
+                            graphicState = consume_Do(graphicState, stack, shapes, resources, true);
+                            break;
+
+                        // Fill the path, using the even-odd rule to determine the
+                        // region to fill
+                        case OperandNames.OP_f_STAR:
+                            if (geometricPath != null) {
+                                // need to apply pattern..
+                                geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
+                                commonFill(shapes, geometricPath);
+                            }
+                            geometricPath = null;
+                            break;
+
+                        // Sets the specified parameters in the graphics state.  The gs operand
+                        // points to a name resource which should be a an ExtGState object.
+                        // The graphics state parameters in the ExtGState must be concatenated
+                        // with the the current graphics state.
+                        case OperandNames.OP_gs:
+                            consume_gs(graphicState, stack, resources);
+                            break;
+
+                        // End the path object without filling or stroking it. This
+                        // operator is a "path-painting no-op," used primarily for the
+                        // side effect of changing the current clipping path
+                        case OperandNames.OP_n:
+                            // clipping path outlines are visible when this is set to null;
+                            geometricPath = null;
+                            break;
+
+                        // Set the line width in the graphics state
+                        case OperandNames.OP_w:
+                            consume_w(graphicState, stack, shapes);
+                            break;
+                        case OperandNames.OP_LW:
+                            consume_w(graphicState, stack, shapes);
+                            break;
+
+                        // Modify the current clipping path by intersecting it with the
+                        // current path, using the nonzero winding number rule to
+                        // determine which regions lie inside the clipping path.
+                        case OperandNames.OP_W:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
+                                geometricPath.closePath();
+                                graphicState.setClip(geometricPath);
+                            }
+                            break;
+
+                        // Fill Color with ColorSpace
+                        case OperandNames.OP_sc:
+                            consume_sc(graphicState, stack, library, resources);
+                            break;
+                        case OperandNames.OP_scn:
+                            consume_sc(graphicState, stack, library, resources);
+                            break;
+
+                        // Close, fill, and then stroke the path, using the nonzero
+                        // winding number rule to determine the region to fill. This
+                        // operator has the same effect as the sequence h B. See also
+                        // "Special Path-Painting Considerations"
+                        case OperandNames.OP_b:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
+                                geometricPath.closePath();
+                                commonFill(shapes, geometricPath);
+                                commonStroke(graphicState, shapes, geometricPath);
+                            }
+                            geometricPath = null;
+                            break;
+
+                        // Same as K, but for non-stroking operations.
+                        case OperandNames.OP_k:
+                            consume_k(graphicState, stack, library);
+                            break;
+
+                        // Same as g but for none stroking operations
+                        case OperandNames.OP_g:
+                            consume_g(graphicState, stack, library);
+                            break;
+
+                        // Sets the flatness tolerance in the graphics state, NOT SUPPORTED
+                        // flatness is a number in the range 0 to 100, a value of 0 specifies
+                        // the default tolerance
+                        case OperandNames.OP_i:
+                            consume_i(stack);
+                            break;
+
+                        // Miter Limit
+                        case OperandNames.OP_M:
+                            consume_M(graphicState, stack, shapes);
+                            break;
+
+                        // Set the line cap style of the graphic state, related to Line Join
+                        // style
+                        case OperandNames.OP_J:
+                            consume_J(graphicState, stack, shapes);
+                            break;
+
+                        // Same as RG, but for non-stroking operations.
+                        case OperandNames.OP_rg:
+                            consume_rg(graphicState, stack, library);
+                            break;
+
+                        // Sets the line dash pattern in the graphics state. A normal line
+                        // is [] 0.  See Graphics State -> Line dash patter for more information
+                        // in the PDF Reference.  Java 2d uses the same notation so there
+                        // is not much work to be done other then parsing the data.
+                        case OperandNames.OP_d:
+                            consume_d(graphicState, stack, shapes);
+                            break;
+
+                        // Append a cubic Bezier curve to the current path. The curve
+                        // extends from the current point to the point (x3, y3), using
+                        // the current point and (x2, y2) as the Bezier control points.
+                        // The new current point is (x3, y3).
+                        case OperandNames.OP_v:
+                            y3 = ((Number) stack.pop()).floatValue();
+                            x3 = ((Number) stack.pop()).floatValue();
+                            y2 = ((Number) stack.pop()).floatValue();
+                            x2 = ((Number) stack.pop()).floatValue();
+                            geometricPath.curveTo(
+                                    (float) geometricPath.getCurrentPoint().getX(),
+                                    (float) geometricPath.getCurrentPoint().getY(),
+                                    x2,
+                                    y2,
+                                    x3,
+                                    y3);
+                            break;
+
+                        // Set the line join style in the graphics state
+                        case OperandNames.OP_j:
+                            consume_j(graphicState, stack, shapes);
+                            break;
+
+                        // Append a cubic Bezier curve to the current path. The curve
+                        // extends from the current point to the point (x3, y3), using
+                        // (x1, y1) and (x3, y3) as the Bezier control points.
+                        // The new current point is (x3, y3).
+                        case OperandNames.OP_y:
+                            y3 = ((Number) stack.pop()).floatValue();
+                            x3 = ((Number) stack.pop()).floatValue();
+                            y1 = ((Number) stack.pop()).floatValue();
+                            x1 = ((Number) stack.pop()).floatValue();
+                            geometricPath.curveTo(x1, y1, x3, y3, x3, y3);
+                            break;
+
+                        // Same as CS, but for nonstroking operations.
+                        case OperandNames.OP_cs:
+                            consume_cs(graphicState, stack, resources);
+                            break;
+
+                        // Color rendering intent in the graphics state
+                        case OperandNames.OP_ri:
+                            stack.pop();
+                            break;
+
+                        // Set the color to use for stroking operations in a device, CIE-based
+                        // (other than ICCBased), or Indexed color space. The number of operands
+                        // required and their interpretation depends on the current stroking color space:
+                        //   - For DeviceGray, CalGray, and Indexed color spaces, one operand
+                        //     is required (n = 1).
+                        //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
+                        //     required (n = 3).
+                        //   - For DeviceCMYK, four operands are required (n = 4).
+                        case OperandNames.OP_SC:
+                            consume_SC(graphicState, stack, library, resources);
+                            break;
+                        case OperandNames.OP_SCN:
+                            consume_SC(graphicState, stack, library, resources);
+                            break;
+
+                        // Fill and then stroke the path, using the nonzero winding
+                        // number rule to determine the region to fill. This produces
+                        // the same result as constructing two identical path objects,
+                        // painting the first with f and the second with S. Note,
+                        // however, that the filling and stroking portions of the
+                        // operation consult different values of several graphics state
+                        // parameters, such as the current color.
+                        case OperandNames.OP_B:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
+                                commonFill(shapes, geometricPath);
+                                commonStroke(graphicState, shapes, geometricPath);
+                            }
+                            geometricPath = null;
+                            break;
+
+                        // Set the stroking color space to DeviceCMYK (or the DefaultCMYK color
+                        // space; see "Default Color Spaces" on page 227) and set the color to
+                        // use for stroking operations. Each operand must be a number between
+                        // 0.0 (zero concentration) and 1.0 (maximum concentration). The
+                        // behavior of this operator is affected by the overprint mode
+                        // (see Section 4.5.6, "Overprint Control").
+                        case OperandNames.OP_K:
+                            consume_K(graphicState, stack, library);
+                            break;
+
+                        /**
+                         * Type3 operators, update the text state with data from these operands
+                         */
+                        case OperandNames.OP_d0:
+                            // save the stack
+                            graphicState = graphicState.save();
+                            // need two pops to get  Wx and Wy data
+                            y = ((Number) stack.pop()).floatValue();
+                            x = ((Number) stack.pop()).floatValue();
+                            TextState textState = graphicState.getTextState();
+                            textState.setType3HorizontalDisplacement(new Point.Float(x, y));
+                            break;
+
+                        // Close and stroke the path. This operator has the same effect
+                        // as the sequence h S.
+                        case OperandNames.OP_s:
+                            if (geometricPath != null) {
+                                geometricPath.closePath();
+                                commonStroke(graphicState, shapes, geometricPath);
+                                geometricPath = null;
+                            }
+                            break;
+
+                        // Set the stroking color space to DeviceGray (or the DefaultGray color
+                        // space; see "Default Color Spaces" ) and set the gray level to use for
+                        // stroking operations. gray is a number between 0.0 (black)
+                        // and 1.0 (white).
+                        case OperandNames.OP_G:
+                            consume_G(graphicState, stack, library);
+                            break;
+
+                        // Close, fill, and then stroke the path, using the even-odd
+                        // rule to determine the region to fill. This operator has the
+                        // same effect as the sequence h B*. See also "Special
+                        // Path-Painting Considerations"
+                        case OperandNames.OP_b_STAR:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
+                                geometricPath.closePath();
+                                commonStroke(graphicState, shapes, geometricPath);
+                                commonFill(shapes, geometricPath);
+                            }
+                            geometricPath = null;
+                            break;
+
+                        // Set the stroking color space to DeviceRGB (or the DefaultRGB color
+                        // space; see "Default Color Spaces" on page 227) and set the color to
+                        // use for stroking operations. Each operand must be a number between
+                        // 0.0 (minimum intensity) and 1.0 (maximum intensity).
+                        case OperandNames.OP_RG:
+                            consume_RG(graphicState, stack, library);
+                            break;
+
+                        // Set the current color space to use for stroking operations. The
+                        // operand name must be a name object. If the color space is one that
+                        // can be specified by a name and no additional parameters (DeviceGray,
+                        // DeviceRGB, DeviceCMYK, and certain cases of Pattern), the name may be
+                        // specified directly. Otherwise, it must be a name defined in the
+                        // ColorSpace sub dictionary of the current resource dictionary; the
+                        // associated value is an array describing the color space.
+                        // <b>Note:</b>
+                        // The names DeviceGray, DeviceRGB, DeviceCMYK, and Pattern always
+                        // identify the corresponding color spaces directly; they never refer to
+                        // resources in the ColorSpace sub dictionary. The CS operator also sets
+                        // the current stroking color to its initial value, which depends on the
+                        // color space:
+                        // <li>In a DeviceGray, DeviceRGB, CalGray, or CalRGB color space, the
+                        //     initial color has all components equal to 0.0.</li>
+                        // <li>In a DeviceCMYK color space, the initial color is
+                        //     [0.0 0.0 0.0 1.0].   </li>
+                        // <li>In a Lab or ICCBased color space, the initial color has all
+                        //     components equal to 0.0 unless that falls outside the intervals
+                        //     specified by the space's Range entry, in which case the nearest
+                        //     valid value is substituted.</li>
+                        // <li>In an Indexed color space, the initial color value is 0. </li>
+                        // <li>In a Separation or DeviceN color space, the initial tint value is
+                        //     1.0 for all colorants. </li>
+                        // <li>In a Pattern color space, the initial color is a pattern object
+                        //     that causes nothing to be painted. </li>
+                        case OperandNames.OP_CS:
+                            consume_CS(graphicState, stack, resources);
+                            break;
+                        case OperandNames.OP_d1:
+                            // save the stack
+                            graphicState = graphicState.save();
+                            // need two pops to get  Wx and Wy data
+                            x2 = ((Number) stack.pop()).floatValue();
+                            y2 = ((Number) stack.pop()).floatValue();
+                            x1 = ((Number) stack.pop()).floatValue();
+                            y1 = ((Number) stack.pop()).floatValue();
+                            y = ((Number) stack.pop()).floatValue();
+                            x = ((Number) stack.pop()).floatValue();
+                            textState = graphicState.getTextState();
+                            textState.setType3HorizontalDisplacement(
+                                    new Point2D.Float(x, y));
+                            textState.setType3BBox(new PRectangle(
+                                    new Point2D.Float(x1, y1),
+                                    new Point2D.Float(x2, y2)));
+                            break;
+
+                        // Fill and then stroke the path, using the even-odd rule to
+                        // determine the region to fill. This operator produces the same
+                        // result as B, except that the path is filled as if with f*
+                        // instead of f. See also "Special Path-Painting Considerations"
+                        case OperandNames.OP_B_STAR:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
+                                commonStroke(graphicState, shapes, geometricPath);
+                                commonFill(shapes, geometricPath);
+                            }
+                            geometricPath = null;
+                            break;
+
+                        // Begin a marked-content sequence terminated by a balancing EMC
+                        // operator.tag is a name object indicating the role or
+                        // significance of the sequence.
+                        case OperandNames.OP_BMC:
+                            stack.pop();
+                            break;
+
+                        // Begin an inline image object
+                        case OperandNames.OP_BI:
+                            // start parsing image object, which leads to ID and EI
+                            // tokends.
+                            //    ID - Begin in the image data for an inline image object
+                            //    EI - End an inline image object
+                            parseInlineImage(lexer, shapes);
+                            break;
+
+                        // Begin a compatibility section. Unrecognized operators
+                        // (along with their operands) will be ignored without error
+                        // until the balancing EX operator is encountered.
+                        case OperandNames.OP_BX:
+                            break;
+//                        }
+                        // End a compatibility section begun by a balancing BX operator.
+                        case OperandNames.OP_EX:
+                            break;
+
+                        // Modify the current clipping path by intersecting it with the
+                        // current path, using the even-odd rule to determine which
+                        // regions lie inside the clipping path.
+                        case OperandNames.OP_W_STAR:
+                            if (geometricPath != null) {
+                                geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
+                                geometricPath.closePath();
+                                graphicState.setClip(geometricPath);
+                            }
+                            break;
+
+                        /**
+                         * Single marked-content point
+                         */
+                        // Designate a marked-content point with an associated property
+                        // list. tag is a name object indicating the role or significance
+                        // of the point; properties is either an in line dictionary
+                        // containing the property list or a name object associated with
+                        // it in the Properties sub dictionary of the current resource
+                        // dictionary.
+                        case OperandNames.OP_DP:
+                            stack.pop(); // properties
+                            stack.pop(); // name
+                            break;
+                        // Designate a marked-content point. tag is a name object
+                        // indicating the role or significance of the point.
+                        case OperandNames.OP_MP:
+                            stack.pop();
+                            break;
+
+                        // shading operator.
+                        case OperandNames.OP_sh:
+                            Object o = stack.peek();
+                            // if a name then we are dealing with a pattern.
+                            if (o instanceof Name) {
+                                Name patternName = (Name) stack.pop();
+                                Pattern pattern = resources.getShading(patternName);
+                                if (pattern != null) {
+                                    pattern.init();
+                                    // we paint the shape and color shading as defined
+                                    // by the pattern dictionary and respect the current clip
+
+                                    // apply a rudimentary softmask for an shading .
+                                    if (graphicState.getSoftMask() != null) {
+                                        setAlpha(shapes,
+                                                graphicState.getAlphaRule(),
+                                                0.50f);
+                                    } else {
+                                        setAlpha(shapes,
+                                                graphicState.getAlphaRule(),
+                                                graphicState.getFillAlpha());
+                                    }
+                                    shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                                    shapes.add(new ShapeDrawCmd(graphicState.getClip()));
+                                    shapes.add(new FillDrawCmd());
+                                }
+                            }
+                            break;
+
+                        /**
+                         * We've seen a couple cases when the text state parameters are written
+                         * outside of text blocks, this should cover these cases.
+                         */
+                        // Character Spacing
+                        case OperandNames.OP_Tc:
+                            consume_Tc(graphicState, stack);
+                            break;
+                        // Word spacing
+                        case OperandNames.OP_Tw:
+                            consume_Tw(graphicState, stack);
+                            break;
+                        // Text leading
+                        case OperandNames.OP_TL:
+                            consume_TL(graphicState, stack);
+                            break;
+                        // Rendering mode
+                        case OperandNames.OP_Tr:
+                            consume_Tr(graphicState, stack);
+                            break;
+                        // Horizontal scaling
+                        case OperandNames.OP_Tz:
+                            consume_Tz(graphicState, stack);
+                            break;
+                        case OperandNames.OP_Ts:
+                            consume_Ts(graphicState, stack);
+                            break;
                     }
                 }
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // eat the result as it a normal occurrence
             logger.finer("End of Content Stream");
-        }
-        catch (NoninvertibleTransformException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (Throwable e) {
+            logger.log(Level.WARNING, "Error parsing content stream. ", e);
+            e.printStackTrace();
         } finally {
             // End of stream set alpha state back to 1.0f, so that other
             // streams aren't applied an incorrect alpha value.
             setAlpha(shapes, AlphaComposite.SRC_OVER, 1.0f);
         }
-//        long endTime = System.currentTimeMillis();
-//        System.out.println("Paring Duration " + (endTime - startTime));
-//        printTokenFrequency();
 
-        // Print off anything left on the stack, any "Stack" traces should
-        // indicate a parsing problem or a not supported operand
-        while (!stack.isEmpty()) {
-            String tmp = stack.pop().toString();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("STACK=" + tmp);
-            }
-        }
-
-        shapes.contract();
-        return shapes;
+        return this;
     }
 
     /**
@@ -855,21 +824,20 @@ public class ContentParser {
      * @param source content stream source.
      * @return vector where each entry is the text extracted from a text block.
      */
-    public Shapes parseTextBlocks(InputStream source) {
+    public Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException {
 
         // great a parser to get tokens for stream
-        Parser parser = new Parser(source);
+        Lexer parser = new Lexer();
+        parser.contentStream(source);
         Shapes shapes = new Shapes();
 
         if (graphicState == null) {
             graphicState = new GraphicsState(shapes);
         }
 
-//        long startTime = System.currentTimeMillis();
         try {
-
             // loop through each token returned form the parser
-            Object tok = parser.getStreamObject();
+            Object tok = parser.nextToken();
             Stack<Object> stack = new Stack<Object>();
             double yBTstart = 0;
             while (tok != null) {
@@ -892,14 +860,14 @@ public class ContentParser {
                         stack.clear();
                     }
                     // pick up on xObject content streams.
-                    else if (tok.equals(PdfOps.Do_TOKEN)){
+                    else if (tok.equals(PdfOps.Do_TOKEN)) {
                         consume_Do(graphicState, stack, shapes, resources, false);
                         stack.clear();
                     }
                 } else {
                     stack.push(tok);
                 }
-                tok = parser.getStreamObject();
+                tok = parser.nextToken();
             }
             // clear our temporary stack.
             stack.clear();
@@ -907,8 +875,6 @@ public class ContentParser {
             // eat the result as it a normal occurrence
             logger.finer("End of Content Stream");
         }
-//        long endTime = System.currentTimeMillis();
-//        System.out.println("Extraction Duration " + (endTime - startTime));
         shapes.contract();
         return shapes;
     }
@@ -916,16 +882,15 @@ public class ContentParser {
     /**
      * Parses Text found with in a BT block.
      *
-     * @param parser          parser containging BT tokens
+     * @param lexer           parser containing BT tokens
      * @param shapes          container of all shapes for the page content being parsed
      * @param previousBTStart y offset of previous BT definition.
      * @return y offset of the this BT definition.
      * @throws java.io.IOException end of content stream is found
      */
-    float parseText(Parser parser, Shapes shapes, double previousBTStart)
+    private float parseText(Lexer lexer, Shapes shapes, double previousBTStart)
             throws IOException {
         Object nextToken;
-        Stack<Object> stack = new Stack<Object>();
         inTextBlock = true;
         float shift = 0;
         // keeps track of previous text placement so that Compatibility and
@@ -940,9 +905,6 @@ public class ContentParser {
         graphicState.getTextState().tlmatrix = new AffineTransform();
         graphicState.scale(1, -1);
 
-        // apply text scaling, incase the BT block doesn't specify it explicitly.
-        applyTextScaling(graphicState);
-
         // get reference to PageText.
         PageText pageText = shapes.getPageText();
         // previous Td, TD or Tm y coordinate value for text extraction
@@ -953,575 +915,524 @@ public class ContentParser {
         GlyphOutlineClip glyphOutlineClip = new GlyphOutlineClip();
 
         // start parsing of the BT block
-        nextToken = parser.getStreamObject();
-        while (!nextToken.equals(PdfOps.ET_TOKEN)) { // ET - end text object
-            // add names to the stack, save for later parsing, colour state
-            // and graphics state (includes font).
+        nextToken = lexer.nextToken();
+        int operand;
+        while (!(nextToken instanceof Integer && (Integer) nextToken == OperandNames.OP_ET)) {
 
-            if (nextToken instanceof String) {
+            if (nextToken instanceof Integer) {
+                operand = (Integer) nextToken;
+                switch (operand) {
+                    // Normal text token, string, hex
+                    case OperandNames.OP_Tj:
+                        Object tjValue = stack.pop();
+                        StringObject stringObject;
+                        TextState textState;
+                        if (tjValue instanceof StringObject) {
+                            stringObject = (StringObject) tjValue;
+                            textState = graphicState.getTextState();
+                            // apply scaling
+                            AffineTransform tmp = applyTextScaling(graphicState);
+                            // apply transparency
+                            setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+                            // draw string will take care of text pageText construction
+                            Point2D.Float d = (Point2D.Float) drawString(
+                                    stringObject.getLiteralStringBuffer(
+                                            textState.font.getSubTypeFormat(),
+                                            textState.font.getFont()),
+                                    advance,
+                                    previousAdvance,
+                                    graphicState.getTextState(),
+                                    shapes,
+                                    glyphOutlineClip);
+                            graphicState.set(tmp);
+                            graphicState.translate(d.x, 0);
+                            shift += d.x;
+                            previousAdvance = 0;
+                            advance.setLocation(0, 0);
+                        }
+                        break;
 
-                // Normal text token, string, hex
-                if (nextToken.equals(PdfOps.Tj_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Tj_TOKEN);
-                    Object tjValue = stack.pop();
-                    StringObject stringObject;
-                    TextState textState;
-                    if (tjValue instanceof StringObject) {
-                        stringObject = (StringObject) tjValue;
-                        textState = graphicState.getTextState();
+                    // Character Spacing
+                    case OperandNames.OP_Tc:
+                        graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
+                        break;
+
+                    // Word spacing
+                    case OperandNames.OP_Tw:
+                        graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
+                        break;
+
+
+                    // move to the start of he next line, offset from the start of the
+                    // current line by (tx,ty)*tx
+                    case OperandNames.OP_Td:
+                        float y = ((Number) stack.pop()).floatValue();
+                        float x = ((Number) stack.pop()).floatValue();
+                        double oldY = graphicState.getCTM().getTranslateY();
+                        graphicState.translate(-shift, 0);
+                        shift = 0;
+                        previousAdvance = 0;
+                        advance.setLocation(0, 0);
+                        // x,y are expressed in unscaled but we don't scale until
+                        // a text showing operator is called.
+                        graphicState.translate(x, -y);
+                        float newY = (float) graphicState.getCTM().getTranslateY();
+                        // capture x coord of BT y offset, tm, Td, TD.
+                        if (isYstart) {
+                            yBTStart = newY;
+                            isYstart = false;
+                            if (previousBTStart != yBTStart) {
+                                pageText.newLine();
+                            }
+                        }
+
+                        // ty will dictate the vertical shift, many pdf will use
+                        // ty=0 do just do a horizontal shift for layout.
+                        if (y != 0 && Math.round(newY) != Math.round(oldY)) {
+                            pageText.newLine();
+                        }
+                        break;
+
+                    /**
+                     * Tranformation matrix
+                     * tm =   |f1 f2 0|
+                     *        |f3 f4 0|
+                     *        |f5 f6 0|
+                     */
+                    case OperandNames.OP_Tm:
+                        shift = 0;
+                        previousAdvance = 0;
+                        advance.setLocation(0, 0);
+                        // pop carefully, as there are few corner cases where
+                        // the af is split up with a BT or other token
+                        Object next;
+                        // initialize an identity matrix, add parse out the
+                        // numbers we have working from f6 down to f1.
+                        float[] tm = new float[]{1f, 0, 0, 1f, 0, 0};
+                        for (int i = 0, hits = 5, max = stack.size(); hits != -1 && i < max; i++) {
+                            next = stack.pop();
+                            if (next instanceof Number) {
+                                tm[hits] = ((Number) next).floatValue();
+                                hits--;
+                            }
+                        }
+                        AffineTransform af = new AffineTransform(textBlockBase);
+
+                        // grab old values.
+                        double oldTransY = graphicState.getCTM().getTranslateY();
+                        double oldScaleY = graphicState.getCTM().getScaleY();
+
+                        // apply the transform
+                        graphicState.getTextState().tmatrix = new AffineTransform(tm);
+                        af.concatenate(graphicState.getTextState().tmatrix);
+                        graphicState.set(af);
+                        graphicState.scale(1, -1);
+
+                        // text extraction logic
+                        // capture x coord of BT y offset, tm, Td, TD.
+                        if (isYstart) {
+                            yBTStart = tm[5];//f6;
+                            isYstart = false;
+                            if (previousBTStart != yBTStart) {
+                                pageText.newLine();
+                            }
+                        }
+                        double newTransY = graphicState.getCTM().getTranslateY();
+                        double newScaleY = graphicState.getCTM().getScaleY();
+                        // f5 and f6 will dictate a horizontal or vertical shift
+                        // this information could be used to detect new lines
+
+                        if (Math.round(oldTransY) != Math.round(newTransY)) {
+                            pageText.newLine();
+                        } else if (Math.abs(oldScaleY) != Math.abs(newScaleY)) {
+                            pageText.newLine();
+                        }
+
+                        break;
+
+                    // Font selection
+                    case OperandNames.OP_Tf:
+                        consume_Tf(graphicState, stack, resources);
+                        break;
+
+                    // TJ marks a vector, where.......
+                    case OperandNames.OP_TJ:
+                        // apply scaling
+                        AffineTransform tmp = applyTextScaling(graphicState);
                         // apply transparency
                         setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-                        // draw string will take care of text pageText construction
+                        List v = (List) stack.pop();
+                        Number f;
+                        for (Object currentObject : v) {
+                            if (currentObject instanceof StringObject) {
+                                stringObject = (StringObject) currentObject;
+                                textState = graphicState.getTextState();
+                                // draw string takes care of PageText extraction
+                                advance = (Point2D.Float) drawString(
+                                        stringObject.getLiteralStringBuffer(
+                                                textState.font.getSubTypeFormat(),
+                                                textState.font.getFont()),
+                                        advance, previousAdvance,
+                                        graphicState.getTextState(), shapes, glyphOutlineClip);
+                            } else if (currentObject instanceof Number) {
+                                f = (Number) currentObject;
+                                advance.x -=
+                                        f.floatValue() * graphicState.getTextState().currentfont.getSize()
+                                                / 1000.0;
+                            }
+                            previousAdvance = advance.x;
+                        }
+                        graphicState.set(tmp);
+                        break;
+
+                    // Move to the start of the next line, offset from the start of the
+                    // current line by (tx,ty)
+                    case OperandNames.OP_TD:
+                        y = ((Number) stack.pop()).floatValue();
+                        x = ((Number) stack.pop()).floatValue();
+                        graphicState.translate(-shift, 0);
+                        shift = 0;
+                        previousAdvance = 0;
+                        advance.setLocation(0, 0);
+                        graphicState.translate(x, -y);
+                        graphicState.getTextState().leading = -y;
+
+                        // capture x coord of BT y offset, tm, Td, TD.
+                        if (isYstart) {
+                            yBTStart = y;
+                            isYstart = false;
+                        }
+                        // ty will dictate the vertical shift, many pdf will use
+                        // ty=0 do just do a horizontal shift for layout.
+                        if (y != 0f) {
+                            pageText.newLine();
+                        }
+                        break;
+
+                    // Text leading
+                    case OperandNames.OP_TL:
+                        graphicState.getTextState().leading = ((Number) stack.pop()).floatValue();
+                        break;
+
+                    // Saves Graphics State, should copy the entire  graphics state onto
+                    // the graphicsState object's stack
+                    case OperandNames.OP_q:
+                        graphicState = consume_q(graphicState);
+                        break;
+                    // Restore Graphics State, should restore the entire graphics state
+                    // to its former value by popping it from the stack
+                    case OperandNames.OP_Q:
+                        graphicState = consume_Q(graphicState, shapes);
+                        break;
+
+                    // Modify the current transformation matrix (CTM) by concatenating the
+                    // specified matrix
+                    case OperandNames.OP_cm:
+                        consume_cm(graphicState, stack, inTextBlock, textBlockBase);
+                        break;
+
+                    // Move to the start of the next line
+                    case OperandNames.OP_T_STAR:
+                        graphicState.translate(-shift, 0);
+                        shift = 0;
+                        previousAdvance = 0;
+                        advance.setLocation(0, 0);
+                        graphicState.translate(0, graphicState.getTextState().leading);
+                        // always indicates a new line
+                        pageText.newLine();
+                        break;
+                    case OperandNames.OP_BDC:
+                        stack.pop();
+                        stack.pop();
+                        break;
+                    case OperandNames.OP_EMC:
+                        break;
+
+                    // Sets the specified parameters in the graphics state.  The gs operand
+                    // points to a name resource which should be a an ExtGState object.
+                    // The graphics state parameters in the ExtGState must be concatenated
+                    // with the the current graphics state.
+                    case OperandNames.OP_gs:
+                        consume_gs(graphicState, stack, resources);
+                        break;
+
+                    // Set the line width in the graphics state
+                    case OperandNames.OP_w:
+                        consume_w(graphicState, stack, shapes);
+                        break;
+                    case OperandNames.OP_LW:
+                        consume_w(graphicState, stack, shapes);
+                        break;
+
+
+                    // Fill Color with ColorSpace
+                    case OperandNames.OP_sc:
+                        consume_sc(graphicState, stack, library, resources);
+                        break;
+                    case OperandNames.OP_scn:
+                        consume_sc(graphicState, stack, library, resources);
+                        break;
+
+                    // Same as K, but for nonstroking operations.
+                    case OperandNames.OP_k:
+                        consume_k(graphicState, stack, library);
+                        break;
+
+                    // Same as g but for none stroking operations
+                    case OperandNames.OP_g:
+                        consume_g(graphicState, stack, library);
+                        break;
+
+                    // Sets the flatness tolerance in the graphics state, NOT SUPPORTED
+                    // flatness is a number in the range 0 to 100, a value of 0 specifies
+                    // the default tolerance
+                    case OperandNames.OP_i:
+                        consume_i(stack);
+                        break;
+
+                    // Miter Limit
+                    case OperandNames.OP_M:
+                        consume_M(graphicState, stack, shapes);
+                        break;
+
+                    // Set the line cap style of the graphic state, related to Line Join
+                    // style
+                    case OperandNames.OP_J:
+                        consume_J(graphicState, stack, shapes);
+                        break;
+
+                    // Same as RG, but for nonstroking operations.
+                    case OperandNames.OP_rg:
+                        consume_rg(graphicState, stack, library);
+                        break;
+
+                    // Sets the line dash pattern in the graphics state. A normal line
+                    // is [] 0.  See Graphics State -> Line dash patter for more information
+                    // in the PDF Reference.  Java 2d uses the same notation so there
+                    // is not much work to be done other then parsing the data.
+                    case OperandNames.OP_d:
+                        consume_d(graphicState, stack, shapes);
+                        break;
+
+                    // Set the line join style in the graphics state
+                    case OperandNames.OP_j:
+                        consume_j(graphicState, stack, shapes);
+                        break;
+
+                    // Same as CS, but for non-stroking operations.
+                    case OperandNames.OP_cs:
+                        consume_cs(graphicState, stack, resources);
+                        break;
+
+                    // Set the color rendering intent in the graphics state
+                    case OperandNames.OP_ri:
+                        stack.pop();
+                        break;
+
+                    // Set the color to use for stroking operations in a device, CIE-based
+                    // (other than ICCBased), or Indexed color space. The number of operands
+                    // required and their interpretation depends on the current stroking color space:
+                    //   - For DeviceGray, CalGray, and Indexed color spaces, one operand
+                    //     is required (n = 1).
+                    //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
+                    //     required (n = 3).
+                    //   - For DeviceCMYK, four operands are required (n = 4).
+                    case OperandNames.OP_SC:
+                        consume_SC(graphicState, stack, library, resources);
+                        break;
+                    case OperandNames.OP_SCN:
+                        consume_SC(graphicState, stack, library, resources);
+                        break;
+
+                    // Set the stroking color space to DeviceCMYK (or the DefaultCMYK color
+                    // space; see "Default Color Spaces" on page 227) and set the color to
+                    // use for stroking operations. Each operand must be a number between
+                    // 0.0 (zero concentration) and 1.0 (maximum concentration). The
+                    // behavior of this operator is affected by the overprint mode
+                    // (see Section 4.5.6, "Overprint Control").
+                    case OperandNames.OP_K:
+                        consume_K(graphicState, stack, library);
+                        break;
+
+                    // Set the stroking color space to DeviceGray (or the DefaultGray color
+                    // space; see "Default Color Spaces" ) and set the gray level to use for
+                    // stroking operations. gray is a number between 0.0 (black)
+                    // and 1.0 (white).
+                    case OperandNames.OP_G:
+                        consume_G(graphicState, stack, library);
+                        break;
+
+                    // Set the stroking color space to DeviceRGB (or the DefaultRGB color
+                    // space; see "Default Color Spaces" on page 227) and set the color to
+                    // use for stroking operations. Each operand must be a number between
+                    // 0.0 (minimum intensity) and 1.0 (maximum intensity).
+                    case OperandNames.OP_RG:
+                        consume_RG(graphicState, stack, library);
+                        break;
+                    case OperandNames.OP_CS:
+                        consume_CS(graphicState, stack, resources);
+                        break;
+
+                    // Rendering mode
+                    case OperandNames.OP_Tr:
+                        graphicState.getTextState().rmode = (int) ((Number) stack.pop()).floatValue();
+                        break;
+
+                    // Horizontal scaling
+                    case OperandNames.OP_Tz:
+                        consume_Tz(graphicState, stack);
+                        break;
+
+                    // Text rise
+                    case OperandNames.OP_Ts:
+                        graphicState.getTextState().trise = ((Number) stack.pop()).floatValue();
+                        break;
+
+                    /**
+                     * Begin a compatibility section. Unrecognized operators (along with
+                     * their operands) will be ignored without error until the balancing
+                     * EX operator is encountered.
+                     */
+                    case OperandNames.OP_BX:
+                        break;
+                    // End a compatibility section begun by a balancing BX operator.
+                    case OperandNames.OP_EX:
+                        break;
+
+                    // Move to the next line and show a text string.
+                    case OperandNames.OP_SINGLE_QUOTE:
+                        graphicState.translate(-shift, graphicState.getTextState().leading);
+
+                        // apply transparency
+                        setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+
+                        shift = 0;
+                        previousAdvance = 0;
+                        advance.setLocation(0, 0);
+                        stringObject = (StringObject) stack.pop();
+
+                        textState = graphicState.getTextState();
+                        // apply scaling
+                        tmp = applyTextScaling(graphicState);
+                        // draw the text.
                         Point2D.Float d = (Point2D.Float) drawString(
                                 stringObject.getLiteralStringBuffer(
                                         textState.font.getSubTypeFormat(),
                                         textState.font.getFont()),
-                                advance,
-                                previousAdvance,
-                                graphicState.getTextState(),
-                                shapes,
-                                glyphOutlineClip);
+                                new Point2D.Float(0, 0), 0, graphicState.getTextState(),
+                                shapes, glyphOutlineClip);
+                        graphicState.set(tmp);
                         graphicState.translate(d.x, 0);
                         shift += d.x;
+                        break;
+                    /**
+                     * Move to the next line and show a text string, using aw as the
+                     * word spacing and ac as the character spacing (setting the
+                     * corresponding parameters in the text state). aw and ac are
+                     * numbers expressed in unscaled text space units.
+                     */
+                    case OperandNames.OP_DOUBLE_QUOTE:
+                        stringObject = (StringObject) stack.pop();
+                        graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
+                        graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
+                        graphicState.translate(-shift, graphicState.getTextState().leading);
+
+                        // apply transparency
+                        setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+
+                        shift = 0;
                         previousAdvance = 0;
                         advance.setLocation(0, 0);
-                    }
+                        textState = graphicState.getTextState();
+
+                        tmp = applyTextScaling(graphicState);
+                        d = (Point2D.Float) drawString(
+                                stringObject.getLiteralStringBuffer(
+                                        textState.font.getSubTypeFormat(),
+                                        textState.font.getFont()),
+                                new Point2D.Float(0, 0), 0, graphicState.getTextState(),
+                                shapes, glyphOutlineClip);
+                        graphicState.set(tmp);
+                        graphicState.translate(d.x, 0);
+                        shift += d.x;
+                        break;
                 }
-
-                // Character Spacing
-                else if (nextToken.equals(PdfOps.Tc_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Tc_TOKEN);
-                    graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
-                }
-
-                // Word spacing
-                else if (nextToken.equals(PdfOps.Tw_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Tw_TOKEN);
-                    graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
-                }
-
-                // move to the start of he next line, offset from the start of the
-                // current line by (tx,ty)*tx
-                else if (nextToken.equals(PdfOps.Td_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Td_TOKEN);
-                    float y = ((Number) stack.pop()).floatValue();
-                    float x = ((Number) stack.pop()).floatValue();
-                    double oldY = graphicState.getCTM().getTranslateY();
-                    graphicState.translate(-shift, 0);
-                    shift = 0;
-                    previousAdvance = 0;
-                    advance.setLocation(0, 0);
-                    // x,y are expressed in unscaled text space so we need to
-                    // apply the transform
-                    graphicState.translate(x * graphicState.getTextState().hScalling,  -y );
-                    float newY = (float) graphicState.getCTM().getTranslateY();
-                    // capture x coord of BT y offset, tm, Td, TD.
-                    if (isYstart) {
-                        yBTStart = newY;
-                        isYstart = false;
-                        if (previousBTStart != yBTStart) {
-                            pageText.newLine();
-                        }
-                    }
-
-                    // ty will dictate the vertical shift, many pdf will use
-                    // ty=0 do just do a horizontal shift for layout.
-                    if (y != 0 && Math.round(newY) !=  Math.round(oldY)) {
-                        pageText.newLine();
-                    }
-                }
-
-                /**
-                 * Tranformation matrix
-                 * tm =   |f1 f2 0|
-                 *        |f3 f4 0|
-                 *        |f5 f6 0|
-                 */
-                else if (nextToken.equals(PdfOps.Tm_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Tm_TOKEN);
-                    shift = 0;
-                    previousAdvance = 0;
-                    advance.setLocation(0, 0);
-                    // pop carefully, as there are few corner cases where
-                    // the af is split up with a BT or other token
-                    Object next;
-                    // initialize an identity matrix, add parse out the
-                    // numbers we have working from f6 down to f1.
-                    float[] tm = new float[]{1f,0,0,1f,0,0};
-                    for (int i=0,hits = 5, max = stack.size(); hits != -1 && i < max; i++){
-                        next = stack.pop();
-                        if (next instanceof  Number){
-                            tm[hits] = ((Number)next).floatValue();
-                            hits--;
-                        }
-                    }
-                    AffineTransform af = new AffineTransform(textBlockBase);
-
-                    // grab old values.
-                    double oldTransY = graphicState.getCTM().getTranslateY();
-                    double oldScaleY = graphicState.getCTM().getScaleY();
-
-                    // apply the transform
-                    graphicState.getTextState().tmatrix = new AffineTransform(tm);
-                    af.concatenate(graphicState.getTextState().tmatrix);
-                    graphicState.set(af);
-                    graphicState.scale(1, -1);
-
-                    // apply text size.
-                    applyTextScaling(graphicState);
-
-                    // text extraction logic
-
-                    // capture x coord of BT y offset, tm, Td, TD.
-                    if (isYstart) {
-                        yBTStart = tm[5];//f6;
-                        isYstart = false;
-                        if (previousBTStart != yBTStart) {
-                            pageText.newLine();
-                        }
-                    }
-                    double newTransY = graphicState.getCTM().getTranslateY();
-                    double newScaleY = graphicState.getCTM().getScaleY();
-                    // f5 and f6 will dictate a horizontal or vertical shift
-                    // this information could be used to detect new lines
-
-                    if (Math.round(oldTransY) != Math.round(newTransY)) {
-                        pageText.newLine();
-                    } else if (Math.abs(oldScaleY) != Math.abs(newScaleY)) {
-                        pageText.newLine();
-                    }
-
-                }
-
-                // Font selection
-                else if (nextToken.equals(PdfOps.Tf_TOKEN)) {
-                    consume_Tf(graphicState, stack, resources);
-                }
-
-                // TJ marks a vector, where.......
-                else if (nextToken.equals(PdfOps.TJ_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.TJ_TOKEN);
-
-                    // apply transparency
-                    setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-                    Vector v = (Vector) stack.pop();
-                    StringObject stringObject;
-                    TextState textState;
-                    Number f;
-                    float lastTextAdvance = previousAdvance;
-                    for (Object currentObject : v) {
-                        if (currentObject instanceof StringObject) {
-                            stringObject = (StringObject) currentObject;
-                            textState = graphicState.getTextState();
-                            // draw string takes care of PageText extraction
-                            advance = (Point2D.Float) drawString(
-                                    stringObject.getLiteralStringBuffer(
-                                            textState.font.getSubTypeFormat(),
-                                            textState.font.getFont()),
-                                    advance, previousAdvance,
-                                    graphicState.getTextState(), shapes, glyphOutlineClip);
-                            // update the text advance
-                            lastTextAdvance = advance.x;
-                        } else if (currentObject instanceof Number) {
-                            f = (Number) currentObject;
-                            advance.x -=
-                                    f.floatValue() * graphicState.getTextState().currentfont.getSize()
-                                            / 1000.0;
-                        }
-                        previousAdvance = advance.x;
-                    }
-                }
-
-                // Move to the start of the next line, offset from the start of the
-                // current line by (tx,ty)
-                else if (nextToken.equals(PdfOps.TD_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.TD_TOKEN);
-                    float y = ((Number) stack.pop()).floatValue();
-                    float x = ((Number) stack.pop()).floatValue();
-                    graphicState.translate(-shift, 0);
-                    shift = 0;
-                    previousAdvance = 0;
-                    advance.setLocation(0, 0);
-                    graphicState.translate(x, -y);
-                    graphicState.getTextState().leading = -y;
-
-                    // capture x coord of BT y offset, tm, Td, TD.
-                    if (isYstart) {
-                        yBTStart = y;
-                        isYstart = false;
-                    }
-                    // ty will dictate the vertical shift, many pdf will use
-                    // ty=0 do just do a horizontal shift for layout.
-                    if (y != 0f) {
-                        pageText.newLine();
-//                        pageText.newWord();
-                    }
-//                    if (y != 0f  && previousBTStart != yBTStart){
-//                        pageText.newLine();
-//                        pageText.newWord();
-//                    }
-                }
-
-                // Text leading
-                else if (nextToken.equals(PdfOps.TL_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.TL_TOKEN);
-                    graphicState.getTextState().leading = ((Number) stack.pop()).floatValue();
-                }
-
-                // Saves Graphics State, should copy the entire  graphics state onto
-                // the graphicsState object's stack
-                else if (nextToken.equals(PdfOps.q_TOKEN)) {
-                    graphicState = consume_q(graphicState);
-                }
-                // Restore Graphics State, should restore the entire graphics state
-                // to its former value by popping it from the stack
-                else if (nextToken.equals(PdfOps.Q_TOKEN)) {
-                    graphicState = consume_Q(graphicState, shapes);
-                }
-
-                // Modify the current transformation matrix (CTM) by concatenating the
-                // specified matrix
-                else if (nextToken.equals(PdfOps.cm_TOKEN)) {
-                    consume_cm(graphicState, stack, inTextBlock, textBlockBase);
-                }
-
-                // Move to the start of the next line
-                else if (nextToken.equals(PdfOps.T_STAR_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.T_STAR_TOKEN);
-                    graphicState.translate(-shift, 0);
-                    shift = 0;
-                    previousAdvance = 0;
-                    advance.setLocation(0, 0);
-                    graphicState.translate(0, graphicState.getTextState().leading);
-                    // always indicates a new line
-                    pageText.newLine();
-                } else if (nextToken.equals(PdfOps.BDC_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.BDC_TOKEN);
-                    stack.pop();
-                    stack.pop();
-                } else if (nextToken.equals(PdfOps.EMC_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.EMC_TOKEN);
-                }
-
-                // Sets the specified parameters in the graphics state.  The gs operand
-                // points to a name resource which should be a an ExtGState object.
-                // The graphics state parameters in the ExtGState must be concatenated
-                // with the the current graphics state.
-                else if (nextToken.equals(PdfOps.gs_TOKEN)) {
-                    consume_gs(graphicState, stack, resources);
-                }
-
-                // Set the line width in the graphics state
-                else if (nextToken.equals(PdfOps.w_TOKEN) ||
-                        nextToken.equals(PdfOps.LW_TOKEN)) {
-                    consume_w(graphicState, stack, shapes);
-                }
-
-                // Fill Color with ColorSpace
-                else if (nextToken.equals(PdfOps.sc_TOKEN) ||
-                        nextToken.equals(PdfOps.scn_TOKEN)) {
-                    consume_sc(graphicState, stack, library, resources);
-                }
-
-                // Same as K, but for nonstroking operations.
-                else if (nextToken.equals(PdfOps.k_TOKEN)) { // Fill Color CMYK
-                    consume_k(graphicState, stack, library);
-                }
-
-                // Same as g but for none stroking operations
-                else if (nextToken.equals(PdfOps.g_TOKEN)) {
-                    consume_g(graphicState, stack, library);
-                }
-
-                // Sets the flatness tolerance in the graphics state, NOT SUPPORTED
-                // flatness is a number in the range 0 to 100, a value of 0 specifies
-                // the default tolerance
-                else if (nextToken.equals(PdfOps.i_TOKEN)) {
-                    consume_i(stack);
-                }
-
-                // Miter Limit
-                else if (nextToken.equals(PdfOps.M_TOKEN)) {
-                    consume_M(graphicState, stack, shapes);
-                }
-
-                // Set the line cap style of the graphic state, related to Line Join
-                // style
-                else if (nextToken.equals(PdfOps.J_TOKEN)) {
-                    consume_J(graphicState, stack, shapes);
-                }
-
-                // Same as RG, but for nonstroking operations.
-                else if (nextToken.equals(PdfOps.rg_TOKEN)) { // Fill Color RGB
-                    consume_rg(graphicState, stack, library);
-                }
-
-                // Sets the line dash pattern in the graphics state. A normal line
-                // is [] 0.  See Graphics State -> Line dash patter for more information
-                // in the PDF Reference.  Java 2d uses the same notation so there
-                // is not much work to be done other then parsing the data.
-                else if (nextToken.equals(PdfOps.d_TOKEN)) {
-                    consume_d(graphicState, stack, shapes);
-                }
-
-                // Sets the line dash pattern in the graphics state. A normal line
-                // is [] 0.  See Graphics State -> Line dash patter for more information
-                // in the PDF Reference.  Java 2d uses the same notation so there
-                // is not much work to be done other then parsing the data.
-                else if (nextToken.equals(PdfOps.d_TOKEN)) {
-                    consume_d(graphicState, stack, shapes);
-                }
-
-                // Set the line join style in the graphics state
-                else if (nextToken.equals(PdfOps.j_TOKEN)) {
-                    consume_j(graphicState, stack, shapes);
-                }
-
-                // Same as CS, but for non-stroking operations.
-                else if (nextToken.equals(PdfOps.cs_TOKEN)) {
-                    consume_cs(graphicState, stack, resources);
-                }
-
-                // Set the color rendering intent in the graphics state
-                else if (nextToken.equals("ri")) {
-//                    collectTokenFrequency(PdfOps.ri_TOKEN);
-                    stack.pop();
-                }
-
-                // Set the color to use for stroking operations in a device, CIE-based
-                // (other than ICCBased), or Indexed color space. The number of operands
-                // required and their interpretation depends on the current stroking color space:
-                //   - For DeviceGray, CalGray, and Indexed color spaces, one operand
-                //     is required (n = 1).
-                //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
-                //     required (n = 3).
-                //   - For DeviceCMYK, four operands are required (n = 4).
-                else if (nextToken.equals(PdfOps.SC_TOKEN) ||
-                        nextToken.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
-                    consume_SC(graphicState, stack, library, resources);
-                }
-
-                // Set the stroking color space to DeviceCMYK (or the DefaultCMYK color
-                // space; see "Default Color Spaces" on page 227) and set the color to
-                // use for stroking operations. Each operand must be a number between
-                // 0.0 (zero concentration) and 1.0 (maximum concentration). The
-                // behavior of this operator is affected by the overprint mode
-                // (see Section 4.5.6, "Overprint Control").
-                else if (nextToken.equals(PdfOps.K_TOKEN)) { // Stroke Color CMYK
-                    consume_K(graphicState, stack, library);
-                }
-
-                // Set the stroking color space to DeviceGray (or the DefaultGray color
-                // space; see "Default Color Spaces" ) and set the gray level to use for
-                // stroking operations. gray is a number between 0.0 (black)
-                // and 1.0 (white).
-                else if (nextToken.equals(PdfOps.G_TOKEN)) {
-                    consume_G(graphicState, stack, library);
-                }
-
-                // Set the stroking color space to DeviceRGB (or the DefaultRGB color
-                // space; see "Default Color Spaces" on page 227) and set the color to
-                // use for stroking operations. Each operand must be a number between
-                // 0.0 (minimum intensity) and 1.0 (maximum intensity).
-                else if (nextToken.equals(PdfOps.RG_TOKEN)) { // Stroke Color RGB
-                    consume_RG(graphicState, stack, library);
-                } else if (nextToken.equals(PdfOps.CS_TOKEN)) {
-                    consume_CS(graphicState, stack, resources);
-                }
-
-                // Rendering mode
-                else if (nextToken.equals(PdfOps.Tr_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Tr_TOKEN);
-                    graphicState.getTextState().rmode = (int) ((Number) stack.pop()).floatValue();
-                }
-
-                // Horizontal scaling
-                else if (nextToken.equals(PdfOps.Tz_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Tz_TOKEN);
-                    consume_Tz(graphicState, stack, inTextBlock);
-                }
-
-                // Text rise
-                else if (nextToken.equals(PdfOps.Ts_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.Ts_TOKEN);
-                    graphicState.getTextState().trise = ((Number) stack.pop()).floatValue();
-                }
-
-                /**
-                 * Begin a compatibility section. Unrecognized operators (along with
-                 * their operands) will be ignored without error until the balancing
-                 * EX operator is encountered.
-                 */
-                else if (nextToken.equals(PdfOps.BX_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.BX_TOKEN);
-                }
-//                 End a compatibility section begun by a balancing BX operator.
-                else if (nextToken.equals(PdfOps.EX_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.EX_TOKEN);
-                }
-                // Move to the next line and show a text string.
-                else if (nextToken.equals(PdfOps.SINGLE_QUOTE_TOKEN)) {
-//                    collectTokenFrequency(PdfOps.SINGLE_QUOTE_TOKEN);
-                    graphicState.translate(-shift, graphicState.getTextState().leading);
-
-                    // apply transparency
-                    setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-
-                    shift = 0;
-                    previousAdvance = 0;
-                    advance.setLocation(0, 0);
-                    StringObject stringObject = (StringObject) stack.pop();
-
-                    TextState textState = graphicState.getTextState();
-
-                    Point2D.Float d = (Point2D.Float) drawString(
-                            stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
-                            new Point2D.Float(0, 0), 0, graphicState.getTextState(),
-                            shapes, glyphOutlineClip);
-                    graphicState.translate(d.x, 0);
-                    shift += d.x;
-//                    pageText.newLine();
-//                    pageText.newWord();
-                }
-                /**
-                 * Move to the next line and show a text string, using aw as the
-                 * word spacing and ac as the character spacing (setting the
-                 * corresponding parameters in the text state). aw and ac are
-                 * numbers expressed in unscaled text space units.
-                 */
-                else if (nextToken.equals(PdfOps.DOUBLE_QUOTE__TOKEN)) {
-//                    collectTokenFrequency(PdfOps.DOUBLE_QUOTE__TOKEN);
-                    StringObject stringObject = (StringObject) stack.pop();
-                    graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
-                    graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
-                    graphicState.translate(-shift, graphicState.getTextState().leading);
-
-                    // apply transparency
-                    setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-
-                    shift = 0;
-                    previousAdvance = 0;
-                    advance.setLocation(0, 0);
-                    TextState textState = graphicState.getTextState();
-
-                    Point2D.Float d = (Point2D.Float) drawString(
-                            stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
-                            new Point2D.Float(0, 0), 0, graphicState.getTextState(),
-                            shapes, glyphOutlineClip);
-                    graphicState.translate(d.x, 0);
-                    shift += d.x;
-//                    pageText.newLine();
-                }
-
-
             }
             // push everything else on the stack for consumptions
             else {
                 stack.push(nextToken);
             }
 
-            nextToken = parser.getStreamObject();
+            nextToken = lexer.nextToken();
+            if (nextToken == null) {
+                break;
+            }
         }
         // during a BT -> ET text parse there is a change that we might be
         // in MODE_ADD or MODE_Fill_Add which require that the we push the
         // shapes that make up the clipping path to the shapes stack.  When
         // encountered the path will be used as the current clip.
-        if (!glyphOutlineClip.isEmpty()){
+        if (!glyphOutlineClip.isEmpty()) {
             // set the clips so further clips can use the clip outline
             graphicState.setClip(glyphOutlineClip.getGlyphOutlineClip());
             // add the glyphOutline so the clip can be calculated.
-            shapes.add(glyphOutlineClip);
-        }
-
-        // get rid of the rest
-        while (!stack.isEmpty()) {
-            String tmp = stack.pop().toString();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.warning("Text=" + tmp);
-            }
+            shapes.add(new GlyphOutlineDrawCmd(glyphOutlineClip));
         }
         graphicState.set(textBlockBase);
-        inTextBlock = false;
+        if (nextToken instanceof Integer && (Integer) nextToken == OperandNames.OP_ET) {
+            inTextBlock = false;
+        }
 
         return yBTStart;
     }
 
-    void parseInlineImage(Parser p, Shapes shapes) throws IOException {
+    private void parseInlineImage(Lexer p, Shapes shapes) throws IOException {
         try {
-            //int width = 0, height = 0, bitspercomponent = 0;
-            // boolean imageMask = false; // from old pdfgo never used
-            // PColorSpace cs = null; // from old pdfgo never used
-
             Object tok;
-            Hashtable<Object, Object> iih = new Hashtable<Object, Object>();
-            tok = p.getStreamObject();
-            while (!tok.equals("ID")) {
-                if (tok.equals("BPC")) {
-                    tok = new Name("BitsPerComponent");
-                } else if (tok.equals("CS")) {
-                    tok = new Name("ColorSpace");
-                } else if (tok.equals("D")) {
-                    tok = new Name("Decode");
-                } else if (tok.equals("DP")) {
-                    tok = new Name("DecodeParms");
-                } else if (tok.equals("F")) {
-                    tok = new Name("Filter");
-                } else if (tok.equals("H")) {
-                    tok = new Name("Height");
-                } else if (tok.equals("IM")) {
-                    tok = new Name("ImageMask");
-                } else if (tok.equals("I")) {
-                    tok = new Name("Indexed");
-                } else if (tok.equals("W")) {
-                    tok = new Name("Width");
+            HashMap<Object, Object> iih = new HashMap<Object, Object>();
+            tok = p.nextToken();
+            while (!tok.equals(OperandNames.OP_ID)) {
+                if (tok.equals(ImageStream.BPC_KEY)) {
+                    tok = ImageStream.BITSPERCOMPONENT_KEY;
+                } else if (tok.equals(ImageStream.CS_KEY)) {
+                    tok = ImageStream.COLORSPACE_KEY;
+                } else if (tok.equals(ImageStream.D_KEY)) {
+                    tok = ImageStream.DECODE_KEY;
+                } else if (tok.equals(ImageStream.DP_KEY)) {
+                    tok = ImageStream.DECODEPARMS_KEY;
+                } else if (tok.equals(ImageStream.F_KEY)) {
+                    tok = ImageStream.FILTER_KEY;
+                } else if (tok.equals(ImageStream.H_KEY)) {
+                    tok = ImageStream.HEIGHT_KEY;
+                } else if (tok.equals(ImageStream.IM_KEY)) {
+                    tok = ImageStream.IMAGEMASK_KEY;
+                } else if (tok.equals(ImageStream.I_KEY)) {
+                    tok = ImageStream.INDEXED_KEY;
+                } else if (tok.equals(ImageStream.W_KEY)) {
+                    tok = ImageStream.WIDTH_KEY;
                 }
-                Object tok1 = p.getStreamObject();
-                //System.err.println(tok+" - "+tok1);
+                Object tok1 = p.nextToken();
                 iih.put(tok, tok1);
-                tok = p.getStreamObject();
+                tok = p.nextToken();
             }
             // For inline images in content streams, we have to use
             //   a byte[], instead of going back to the original file,
-            //   to reget the image data, because the inline image is
+            //   to re-get the image data, because the inline image is
             //   only a small part of a content stream, which is also
             //   filtered, and potentially concatenated with other
             //   content streams.
             // Long story short: it's too hard to re-get from PDF file
             // Now, since non-inline-image streams can go back to the
             //   file, we have to fake it as coming from the file ...
-            ByteArrayOutputStream buf = new ByteArrayOutputStream(4096);
-            tok = p.peek2();
-            boolean ateEI = false;
-            while (tok != null && !tok.equals(" EI")) {
-                ateEI = p.readLineForInlineImage(buf);
-                if (ateEI)
-                    break;
-                tok = p.peek2();
-            }
-            if (!ateEI) {
-                // get rid of trash...
-                p.getToken();
-            }
-            buf.flush();
-            buf.close();
-            byte[] data = buf.toByteArray();
-            SeekableByteArrayInputStream sbais =
-                    new SeekableByteArrayInputStream(data);
-            SeekableInputConstrainedWrapper streamInputWrapper =
-                    new SeekableInputConstrainedWrapper(sbais, 0L, data.length, true);
-            Stream st = new Stream(library, iih, streamInputWrapper);
-            st.setInlineImage(true);
-            //System.out.println("----------> ContentParser creating image from stream");
-            BufferedImage im = st.getImage(graphicState.getFillColor(), resources, true);
-            st.dispose(false);
+            byte[] data = p.getImageBytes();
+            // create the image stream
+            ImageStream st = new ImageStream(library, iih, data);
+            ImageReference imageStreamReference =
+                    new InlineImageStreamReference(st, graphicState.getFillColor(), resources);
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             graphicState.scale(1, -1);
             graphicState.translate(0, -1);
-            shapes.add(im);
+            shapes.add(new ImageDrawCmd(imageStreamReference));
             graphicState.set(af);
         } catch (IOException e) {
             throw e;
@@ -1532,27 +1443,24 @@ public class ContentParser {
 
     private static void consume_G(GraphicsState graphicState, Stack stack,
                                   Library library) {
-//        collectTokenFrequency(PdfOps.G_TOKEN);
         float gray = ((Number) stack.pop()).floatValue();
         // Stroke Color Gray
         graphicState.setStrokeColorSpace(
-                PColorSpace.getColorSpace(library, new Name("DeviceGray")));
+                PColorSpace.getColorSpace(library, DeviceGray.DEVICEGRAY_KEY));
         graphicState.setStrokeColor(new Color(gray, gray, gray));
     }
 
     private static void consume_g(GraphicsState graphicState, Stack stack,
                                   Library library) {
-//        collectTokenFrequency(PdfOps.g_TOKEN);
         float gray = ((Number) stack.pop()).floatValue();
         // Fill Color Gray
         graphicState.setFillColorSpace(
-                PColorSpace.getColorSpace(library, new Name("DeviceGray")));
+                PColorSpace.getColorSpace(library, DeviceGray.DEVICEGRAY_KEY));
         graphicState.setFillColor(new Color(gray, gray, gray));
     }
 
     private static void consume_RG(GraphicsState graphicState, Stack stack,
                                    Library library) {
-//        collectTokenFrequency(PdfOps.RG_TOKEN);
         float b = ((Number) stack.pop()).floatValue();
         float gg = ((Number) stack.pop()).floatValue();
         float r = ((Number) stack.pop()).floatValue();
@@ -1561,13 +1469,12 @@ public class ContentParser {
         r = Math.max(0.0f, Math.min(1.0f, r));
         // set stoke colour
         graphicState.setStrokeColorSpace(
-                PColorSpace.getColorSpace(library, new Name("DeviceRGB")));
+                PColorSpace.getColorSpace(library, DeviceRGB.DEVICERGB_KEY));
         graphicState.setStrokeColor(new Color(r, gg, b));
     }
 
     private static void consume_rg(GraphicsState graphicState, Stack stack,
                                    Library library) {
-//        collectTokenFrequency(PdfOps.rg_TOKEN);
         float b = ((Number) stack.pop()).floatValue();
         float gg = ((Number) stack.pop()).floatValue();
         float r = ((Number) stack.pop()).floatValue();
@@ -1576,59 +1483,39 @@ public class ContentParser {
         r = Math.max(0.0f, Math.min(1.0f, r));
         // set fill colour
         graphicState.setFillColorSpace(
-                PColorSpace.getColorSpace(library, new Name("DeviceRGB")));
+                PColorSpace.getColorSpace(library, DeviceRGB.DEVICERGB_KEY));
         graphicState.setFillColor(new Color(r, gg, b));
     }
 
     private static void consume_K(GraphicsState graphicState, Stack stack,
                                   Library library) {
-//        collectTokenFrequency(PdfOps.K_TOKEN);
         float k = ((Number) stack.pop()).floatValue();
         float y = ((Number) stack.pop()).floatValue();
         float m = ((Number) stack.pop()).floatValue();
         float c = ((Number) stack.pop()).floatValue();
-//        float r = 0, gg = 0, b = 0;
-//        if ((c + k) <= 1.0)
-//            r = 1 - (c + k);
-//        if ((m + k) <= 1.0)
-//            gg = 1 - (m + k);
-//        if ((y + k) <= 1.0)
-//            b = 1 - (y + k);
 
         PColorSpace pColorSpace =
-                PColorSpace.getColorSpace(library, new Name("DeviceCMYK"));
+                PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
         // set stroke colour
         graphicState.setStrokeColorSpace(pColorSpace);
-//        graphicState.setStrokeColor(new Color(r, gg, b));
         graphicState.setStrokeColor(pColorSpace.getColor(PColorSpace.reverse(new float[]{c, m, y, k})));
     }
 
     private static void consume_k(GraphicsState graphicState, Stack stack,
                                   Library library) {
-//        collectTokenFrequency(PdfOps.k_TOKEN);
         float k = ((Number) stack.pop()).floatValue();
         float y = ((Number) stack.pop()).floatValue();
         float m = ((Number) stack.pop()).floatValue();
         float c = ((Number) stack.pop()).floatValue();
-//        float r = 0, gg = 0, b = 0;
-//        if ((c + k) <= 1.0)
-//            r = 1 - (c + k);
-//        if ((m + k) <= 1.0)
-//            gg = 1 - (m + k);
-//        if ((y + k) <= 1.0)
-//            b = 1 - (y + k);
-
         // build a colour space.
         PColorSpace pColorSpace =
-                PColorSpace.getColorSpace(library, new Name("DeviceCMYK"));
+                PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
         // set fill colour
         graphicState.setFillColorSpace(pColorSpace);
-//        graphicState.setFillColor( new Color(r, gg, b));
         graphicState.setFillColor(pColorSpace.getColor(PColorSpace.reverse(new float[]{c, m, y, k})));
     }
 
     private static void consume_CS(GraphicsState graphicState, Stack stack, Resources resources) {
-//        collectTokenFrequency(PdfOps.CS_TOKEN);
         Name n = (Name) stack.pop();
         // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
         // which returns an colour space including a pattern
@@ -1636,7 +1523,6 @@ public class ContentParser {
     }
 
     private static void consume_cs(GraphicsState graphicState, Stack stack, Resources resources) {
-//        collectTokenFrequency(PdfOps.cs_TOKEN);
         Name n = (Name) stack.pop();
         // Fill Color ColorSpace, resources call uses factory call to PColorSpace.getColorSpace
         // which returns an colour space including a pattern
@@ -1645,13 +1531,11 @@ public class ContentParser {
 
     private static void consume_SC(GraphicsState graphicState, Stack stack,
                                    Library library, Resources resources) {
-//        collectTokenFrequency(PdfOps.SC_TOKEN);
-//        collectTokenFrequency(PdfOps.SCN_TOKEN);
         Object o = stack.peek();
         // if a name then we are dealing with a pattern
         if (o instanceof Name) {
             Name patternName = (Name) stack.pop();
-            Pattern pattern = resources.getPattern(patternName.toString());
+            Pattern pattern = resources.getPattern(patternName);
             // Create or update the current PatternColorSpace with an instance
             // of the current pattern. These object will be used later during
             // fill, show text and Do with image masks.
@@ -1728,13 +1612,11 @@ public class ContentParser {
 
     private static void consume_sc(GraphicsState graphicState, Stack stack,
                                    Library library, Resources resources) {
-//        collectTokenFrequency(PdfOps.sc_TOKEN);
-//        collectTokenFrequency(PdfOps.scn_TOKEN);
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
             Name patternName = (Name) stack.pop();
-            Pattern pattern = resources.getPattern(patternName.toString());
+            Pattern pattern = resources.getPattern(patternName);
             // Create or update the current PatternColorSpace with an instance
             // of the current pattern. These object will be used later during
             // fill, show text and Do with image masks.
@@ -1809,13 +1691,10 @@ public class ContentParser {
     }
 
     private static GraphicsState consume_q(GraphicsState graphicState) {
-//        collectTokenFrequency(PdfOps.q_TOKEN);
         return graphicState.save();
-
     }
 
-    private static GraphicsState consume_Q(GraphicsState graphicState, Shapes shapes) {
-//        collectTokenFrequency(PdfOps.Q_TOKEN);
+    private GraphicsState consume_Q(GraphicsState graphicState, Shapes shapes) {
         GraphicsState gs1 = graphicState.restore();
         // point returned stack
         if (gs1 != null) {
@@ -1825,7 +1704,7 @@ public class ContentParser {
         else {
             graphicState = new GraphicsState(shapes);
             graphicState.set(new AffineTransform());
-            shapes.addNoClipCommand();
+            shapes.add(new NoClipDrawCmd());
         }
 
         return graphicState;
@@ -1833,7 +1712,6 @@ public class ContentParser {
 
     private static void consume_cm(GraphicsState graphicState, Stack stack,
                                    boolean inTextBlock, AffineTransform textBlockBase) {
-//        collectTokenFrequency(PdfOps.cm_TOKEN);
         float f = ((Number) stack.pop()).floatValue();
         float e = ((Number) stack.pop()).floatValue();
         float d = ((Number) stack.pop()).floatValue();
@@ -1856,8 +1734,6 @@ public class ContentParser {
             graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
             af.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af);
-            // apply text size.
-            applyTextScaling(graphicState);
             // update the textBlockBase as the tm was specified in the BT block
             // and we still need to keep the offset.
             textBlockBase.setTransform(new AffineTransform(graphicState.getCTM()));
@@ -1865,7 +1741,6 @@ public class ContentParser {
     }
 
     private static void consume_i(Stack stack) {
-//        collectTokenFrequency(PdfOps.i_TOKEN);
         stack.pop();
     }
 
@@ -1898,19 +1773,18 @@ public class ContentParser {
      * Process the xObject content.
      *
      * @param graphicState graphic state to appent
-     * @param stack stack of object being parsed.
-     * @param shapes shapes object.
-     * @param resources associated resources.
-     * @param viewParse true indicates parsing is for a normal view.  If false
-     * the consumption of Do will skip Image based xObjects for performance.
+     * @param stack        stack of object being parsed.
+     * @param shapes       shapes object.
+     * @param resources    associated resources.
+     * @param viewParse    true indicates parsing is for a normal view.  If false
+     *                     the consumption of Do will skip Image based xObjects for performance.
      */
     private static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
-                                Shapes shapes, Resources resources,
-                                boolean viewParse){
-        // collectTokenFrequency(PdfOps.Do_TOKEN);
-        String xobjectName = ((Name) (stack.pop())).getName();
+                                            Shapes shapes, Resources resources,
+                                            boolean viewParse) {
+        Name xobjectName = (Name) stack.pop();
         // Form XObject
-        if (resources.isForm(xobjectName)) {
+        if (resources != null && resources.isForm(xobjectName)) {
             // Do operator steps:
             //  1.)save the graphics context
             graphicState = graphicState.save();
@@ -1938,7 +1812,7 @@ public class ContentParser {
                 AffineTransform af =
                         new AffineTransform(graphicState.getCTM());
                 af.concatenate(formXObject.getMatrix());
-                shapes.add(af);
+                shapes.add(new TransformDrawCmd(af));
                 // 3.) Clip according to the form BBox entry
                 if (graphicState.getClip() != null) {
                     AffineTransform matrix = formXObject.getMatrix();
@@ -1955,11 +1829,11 @@ public class ContentParser {
                     // same space.
                     Shape shape = matrix.createTransformedShape(clip);
                     bbox.intersect(new Area(shape));
-                    shapes.add(bbox);
+                    shapes.add(new ShapeDrawCmd(bbox));
                 } else {
-                    shapes.add(formXObject.getBBox());
+                    shapes.add(new ShapeDrawCmd(formXObject.getBBox()));
                 }
-                shapes.addClipCommand();
+                shapes.add(new ClipDrawCmd());
                 // 4.) Paint the graphics objects in font stream.
                 setAlpha(shapes, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
@@ -1969,22 +1843,18 @@ public class ContentParser {
                 // by paint the xObject to an image.
                 if (!disableTransparencyGroups &&
                         formXObject.isTransparencyGroup() &&
-                       graphicState.getFillAlpha() < 1.0f &&
+                        graphicState.getFillAlpha() < 1.0f &&
                         (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
-                         formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
+                                formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
                     // add the hold form for further processing.
-                    shapes.add(formXObject);
+                    shapes.add(new FormDrawCmd(formXObject));
                 }
                 // the down side of painting to an image is that we
                 // lose quality if there is a affine transform, so
                 // if it isn't a group transparency we paint old way
                 // by just adding the objects to the shapes stack.
                 else {
-                    shapes.add(formXObject.getShapes());
-                }
-                // makes sure we add xobject images so we can extract them.
-                if (formXObject.getShapes() != null) {
-                    shapes.add(formXObject.getShapes().getImages());
+                    shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
                 }
                 // update text sprites with geometric path state
                 if (formXObject.getShapes() != null &&
@@ -1992,11 +1862,12 @@ public class ContentParser {
                     // normalize each sprite.
                     formXObject.getShapes().getPageText()
                             .applyXObjectTransform(graphicState.getCTM());
+                    // add the text to the current shapes for extraction and
+                    // selection purposes.
+                    formXObject.getShapes().getPageText().getPageLines().addAll(
+                            formXObject.getShapes().getPageText().getPageLines());
                 }
-                shapes.addNoClipCommand();
-                formXObject.completed();
-                // clean up resource used by this form object
-                formXObject.disposeResources(true);
+                shapes.add(new NoClipDrawCmd());
             }
             //  5.) Restore the saved graphics state
             graphicState = graphicState.restore();
@@ -2004,15 +1875,18 @@ public class ContentParser {
         // Image XObject
         else if (viewParse) {
             setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-            Image im = resources.getImage(xobjectName,
-                    graphicState.getFillColor());
-            if (im != null) {
+
+            // create an ImageReference for future decoding
+            ImageReference imageReference = ImageReferenceFactory.getImageReference(
+                    resources.getImageStream(xobjectName), resources, graphicState.getFillColor());
+
+            if (imageReference != null) {
                 AffineTransform af =
                         new AffineTransform(graphicState.getCTM());
                 graphicState.scale(1, -1);
                 graphicState.translate(0, -1);
                 // add the image
-                shapes.add(im);
+                shapes.add(new ImageDrawCmd(imageReference));
                 graphicState.set(af);
             }
         }
@@ -2020,14 +1894,13 @@ public class ContentParser {
     }
 
     private static void consume_d(GraphicsState graphicState, Stack stack, Shapes shapes) {
-//        collectTokenFrequency(PdfOps.d_TOKEN);
         float dashPhase;
         float[] dashArray;
         try {
             // pop dashPhase off the stack
             dashPhase = Math.abs(((Number) stack.pop()).floatValue());
             // pop the dashVector of the stack
-            Vector dashVector = (Vector) stack.pop();
+            List dashVector = (List) stack.pop();
             // if the dash vector size is zero we have a default none dashed
             // line and thus we skip out
             if (dashVector.size() > 0) {
@@ -2047,8 +1920,7 @@ public class ContentParser {
             // from a class cast exception point of view.
             graphicState.setDashArray(dashArray);
             graphicState.setDashPhase(dashPhase);
-        }
-        catch (ClassCastException e) {
+        } catch (ClassCastException e) {
             logger.log(Level.FINE, "Dash pattern syntax error: ", e);
         }
         // update stroke state with possibly new dash data.
@@ -2056,7 +1928,6 @@ public class ContentParser {
     }
 
     private static void consume_j(GraphicsState graphicState, Stack stack, Shapes shapes) {
-//        collectTokenFrequency(PdfOps.j_TOKEN);
         // grab the value
         graphicState.setLineJoin((int) (((Number) stack.pop()).floatValue()));
         // Miter Join - the outer edges of the strokes for the two
@@ -2081,25 +1952,21 @@ public class ContentParser {
     }
 
     private static void consume_w(GraphicsState graphicState, Stack stack, Shapes shapes) {
-//        collectTokenFrequency(PdfOps.w_TOKEN);
-//        collectTokenFrequency(PdfOps.LW_TOKEN);
         graphicState.setLineWidth(((Number) stack.pop()).floatValue());
         setStroke(shapes, graphicState);
     }
 
     private static void consume_M(GraphicsState graphicState, Stack stack, Shapes shapes) {
-//        collectTokenFrequency(PdfOps.M_TOKEN);
         graphicState.setMiterLimit(((Number) stack.pop()).floatValue());
         setStroke(shapes, graphicState);
     }
 
     private static void consume_gs(GraphicsState graphicState, Stack stack, Resources resources) {
-//        collectTokenFrequency(PdfOps.gs_TOKEN);
         Object gs = stack.pop();
         if (gs instanceof Name) {
             // Get ExtGState and merge it with
             ExtGState extGState =
-                    resources.getExtGState(((Name) gs).getName());
+                    resources.getExtGState((Name) gs);
             if (extGState != null) {
                 graphicState.concatenate(extGState);
             }
@@ -2107,31 +1974,30 @@ public class ContentParser {
     }
 
     private static void consume_Tf(GraphicsState graphicState, Stack stack, Resources resources) {
-//        collectTokenFrequency(PdfOps.Tf_TOKEN);
-        //graphicState.translate(-shift,0);
-        //shift=0;
         float size = ((Number) stack.pop()).floatValue();
         Name name2 = (Name) stack.pop();
         // build the new font and initialize it.
-        graphicState.getTextState().font = resources.getFont(name2.getName());
+
+        graphicState.getTextState().font = resources.getFont(name2);
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
         if (graphicState.getTextState().font == null ||
-                graphicState.getTextState().font.getFont() == null){
+                graphicState.getTextState().font.getFont() == null) {
             // turn on the old awt font engine, as we have a null font
             FontFactory fontFactory = FontFactory.getInstance();
             boolean awtState = fontFactory.isAwtFontSubstitution();
             fontFactory.setAwtFontSubstitution(true);
             // get the first pages resources, no need to lock the page, already locked.
-            Resources res = resources.getLibrary().getCatalog().getPageTree().getPage(0,null).getResources();
+            Resources res = resources.getLibrary().getCatalog().getPageTree()
+                    .getPage(0).getResources();
             // try and get a font off the first page.
-            Object pageFonts = res.getEntries().get("Font");
-            if (pageFonts instanceof Hashtable){
+            Object pageFonts = res.getEntries().get(Resources.FONT_KEY);
+            if (pageFonts instanceof HashMap) {
                 // get first font
-                Reference fontRef = (Reference)((Hashtable)pageFonts).get(name2);
+                Reference fontRef = (Reference) ((HashMap) pageFonts).get(name2);
                 graphicState.getTextState().font =
-                    (org.icepdf.core.pobjects.fonts.Font)resources.getLibrary()
-                            .getObject(fontRef);
+                        (org.icepdf.core.pobjects.fonts.Font) resources.getLibrary()
+                                .getObject(fontRef);
                 // might get a null pointer but we'll get on on deriveFont too
                 graphicState.getTextState().font.init();
             }
@@ -2144,42 +2010,31 @@ public class ContentParser {
     }
 
     private static void consume_Tc(GraphicsState graphicState, Stack stack) {
-//        collectTokenFrequency(PdfOps.Tc_TOKEN);
         graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
     }
 
-    private static void consume_Tz(GraphicsState graphicState, Stack stack,
-                            boolean inTextBlock) {
-//        collectTokenFrequency(PdfOps.Tz_TOKEN);
+    private static void consume_Tz(GraphicsState graphicState, Stack stack) {
         Object ob = stack.pop();
         if (ob instanceof Number) {
             float hScaling = ((Number) ob).floatValue();
-            // values is represented in percent but we want it as a none percent
-            graphicState.getTextState().hScalling = hScaling / 100f;
-            // apply text size.
-            if (inTextBlock){
-                applyTextScaling(graphicState);
-            }
+            // store the scaled value, but not apply the state operator at this time
+            graphicState.getTextState().hScalling = hScaling / 100.0f;
         }
     }
 
     private static void consume_Tw(GraphicsState graphicState, Stack stack) {
-//        collectTokenFrequency(PdfOps.Tw_TOKEN);
         graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
     }
 
     private static void consume_Tr(GraphicsState graphicState, Stack stack) {
-//        collectTokenFrequency(PdfOps.Tr_TOKEN);
         graphicState.getTextState().rmode = (int) ((Number) stack.pop()).floatValue();
     }
 
     private static void consume_TL(GraphicsState graphicState, Stack stack) {
-//        collectTokenFrequency(PdfOps.TL_TOKEN);
         graphicState.getTextState().leading = ((Number) stack.pop()).floatValue();
     }
 
     private static void consume_Ts(GraphicsState graphicState, Stack stack) {
-//        collectTokenFrequency(PdfOps.Ts_TOKEN);
         graphicState.getTextState().trise = ((Number) stack.pop()).floatValue();
     }
 
@@ -2209,7 +2064,7 @@ public class ContentParser {
         float advanceY = ((Point2D.Float) advance).y;
 
         if (displayText.length() == 0) {
-            return new Point2D.Float(0, 0);
+            return new Point2D.Float(previousAdvance, 0);
         }
 
         // Postion of previous Glyph, all relative to text block
@@ -2232,8 +2087,8 @@ public class ContentParser {
 
         // font metrics data
         float textRise = textState.trise;
-        float charcterSpace = textState.cspace;
-        float whiteSpace = textState.wspace;
+        float charcterSpace = textState.cspace * textState.hScalling;
+        float whiteSpace = textState.wspace * textState.hScalling;
         int textLength = displayText.length();
 
         // create a new sprite to hold the text objects
@@ -2245,7 +2100,6 @@ public class ContentParser {
         // glyph placement params
         float currentX, currentY;
         float newAdvanceX, newAdvanceY;
-//        System.out.println("-> " + displayText + " " + whiteSpace);
         // Iterate through displayText to calculate the the new advanceX value
         for (int i = 0; i < textLength; i++) {
             currentChar = displayText.charAt(i);
@@ -2254,8 +2108,6 @@ public class ContentParser {
             // advance is handled by the particular font implementation.
             newAdvanceX = (float) currentFont.echarAdvance(currentChar).getX();
 
-//            System.out.println(currentChar + " : " + (int)currentChar + " : " + newAdvanceX + " : " +
-//                               currentFont.echarAdvance(currentChar).getX() + " : " + currentFont.echarAdvance(' ').getX());
             newAdvanceY = newAdvanceX;
             if (!isVerticalWriting) {
                 // add fonts rise to the to glyph position (sup,sub scripts)
@@ -2266,7 +2118,6 @@ public class ContentParser {
                 lastx += charcterSpace;
                 // lastly add space widths,
                 if (displayText.charAt(i) == 32) { // currently to unreliable currentFont.getSpaceEchar()
-//                     System.out.println("spacechar " + " : " + (int)currentFont.getSpaceEchar() );
                     lastx += whiteSpace;
                 }
             } else {
@@ -2306,7 +2157,6 @@ public class ContentParser {
          */
 
         int rmode = textState.rmode;
-//        System.out.println("RMode " + rmode);
         switch (rmode) {
             // fill text: 0
             case TextState.MODE_FILL:
@@ -2357,8 +2207,8 @@ public class ContentParser {
      */
     private void drawModeFill(TextSprite textSprites, Shapes shapes, int rmode) {
         textSprites.setRMode(rmode);
-        shapes.add(graphicState.getFillColor());
-        shapes.add(textSprites);
+        shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
+        shapes.add(new TextSpriteDrawCmd(textSprites));
     }
 
     /**
@@ -2384,8 +2234,8 @@ public class ContentParser {
         graphicState.setLineWidth(lineWidth);
         // update the stroke and add the text to shapes
         setStroke(shapes, graphicState);
-        shapes.add(graphicState.getStrokeColor());
-        shapes.add(textSprites);
+        shapes.add(new ColorDrawCmd(graphicState.getStrokeColor()));
+        shapes.add(new TextSpriteDrawCmd(textSprites));
 
         // restore graphics state
         graphicState.setLineWidth(old);
@@ -2415,8 +2265,8 @@ public class ContentParser {
         graphicState.setLineWidth(lineWidth);
         // update the stroke and add the text to shapes
         setStroke(shapes, graphicState);
-        shapes.add(graphicState.getFillColor());
-        shapes.add(textSprites);
+        shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
+        shapes.add(new TextSpriteDrawCmd(textSprites));
 
         // restore graphics state
         graphicState.setLineWidth(old);
@@ -2466,32 +2316,31 @@ public class ContentParser {
                 // 1x1 tiles don't seem to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
                 if ((tilingPattern.getBBox().getWidth() > 1 &&
-                        tilingPattern.getBBox().getHeight() > 1) ){
-                    shapes.add(tilingPattern);
-                }
-                else{
+                        tilingPattern.getBBox().getHeight() > 1)) {
+                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
+                } else {
                     // draw partial fill colour
                     if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                        shapes.add(tilingPattern.getUnColored());
-                    }else{
-                        shapes.add(tilingPattern.getFirstColor());
+                            TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
+                        shapes.add(new ColorDrawCmd(tilingPattern.getUnColored()));
+                    } else {
+                        shapes.add(new ColorDrawCmd(tilingPattern.getFirstColor()));
                     }
                 }
-                shapes.add(geometricPath);
-                shapes.addDrawCommand();
+                shapes.add(new ShapeDrawCmd(geometricPath));
+                shapes.add(new DrawDrawCmd());
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init();
-                shapes.add(pattern.getPaint());
-                shapes.add(geometricPath);
-                shapes.addDrawCommand();
+                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new ShapeDrawCmd(geometricPath));
+                shapes.add(new DrawDrawCmd());
             }
         } else {
             setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getStrokeAlpha());
-            shapes.add(graphicState.getStrokeColor());
-            shapes.add(geometricPath);
-            shapes.addDrawCommand();
+            shapes.add(new ColorDrawCmd(graphicState.getStrokeColor()));
+            shapes.add(new ShapeDrawCmd(geometricPath));
+            shapes.add(new DrawDrawCmd());
         }
         // set alpha back to origional value.
         if (graphicState.isOverprintStroking()) {
@@ -2564,32 +2413,31 @@ public class ContentParser {
                 // tiles nee to be 1x1 or larger to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
                 if ((tilingPattern.getBBox().getWidth() >= 1 ||
-                        tilingPattern.getBBox().getHeight() >= 1) ){
-                    shapes.add(tilingPattern);
-                }
-                else{
+                        tilingPattern.getBBox().getHeight() >= 1)) {
+                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
+                } else {
                     // draw partial fill colour
                     if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                        shapes.add(tilingPattern.getUnColored());
-                    }else{
-                        shapes.add(tilingPattern.getFirstColor());
+                            TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
+                        shapes.add(new ColorDrawCmd(tilingPattern.getUnColored()));
+                    } else {
+                        shapes.add(new ColorDrawCmd(tilingPattern.getFirstColor()));
                     }
                 }
-                shapes.add(geometricPath);
-                shapes.addFillCommand();
+                shapes.add(new ShapeDrawCmd(geometricPath));
+                shapes.add(new FillDrawCmd());
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init();
-                shapes.add(pattern.getPaint());
-                shapes.add(geometricPath);
-                shapes.addFillCommand();
+                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new ShapeDrawCmd(geometricPath));
+                shapes.add(new FillDrawCmd());
             }
 
         } else {
-            shapes.add(graphicState.getFillColor());
-            shapes.add(geometricPath);
-            shapes.addFillCommand();
+            shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
+            shapes.add(new ShapeDrawCmd(geometricPath));
+            shapes.add(new FillDrawCmd());
         }
         // add old alpha back to stack
         if (graphicState.isOverprintOther()) {
@@ -2608,13 +2456,13 @@ public class ContentParser {
      * @param shapes       current Shapes object for the page being parsed
      * @param graphicState graphic state used to build this stroke instance.
      */
-    static void setStroke(Shapes shapes, GraphicsState graphicState) {
-        shapes.add(new BasicStroke(graphicState.getLineWidth(),
+    private static void setStroke(Shapes shapes, GraphicsState graphicState) {
+        shapes.add(new StrokeDrawCmd(new BasicStroke(graphicState.getLineWidth(),
                 graphicState.getLineCap(),
                 graphicState.getLineJoin(),
                 graphicState.getMiterLimit(),
                 graphicState.getDashArray(),
-                graphicState.getDashPhase()));
+                graphicState.getDashPhase())));
     }
 
     /**
@@ -2629,22 +2477,25 @@ public class ContentParser {
      *
      * @param graphicState current graphics state.
      */
-    private static void applyTextScaling(GraphicsState graphicState) {
+    private static AffineTransform applyTextScaling(GraphicsState graphicState) {
         // get the current CTM
         AffineTransform af = new AffineTransform(graphicState.getCTM());
         // the mystery continues,  it appears that only the negative or positive
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
+        AffineTransform oldHScaling = new AffineTransform(graphicState.getCTM());
         float hScalling = graphicState.getTextState().hScalling;
-        graphicState.getTextState().hScalling =
-                graphicState.getTextState().hScalling >= 0?1:-1;
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
-                        graphicState.getTextState().hScalling,
-                        0, 0, 1, 0, 0);
-        af.concatenate(horizontalScalingTransform);
+                        af.getScaleX() * hScalling,
+                        af.getShearY(),
+                        af.getShearX(),
+                        af.getScaleY(),
+                        af.getTranslateX(), af.getTranslateY());
         // add the transformation to the graphics state
-        graphicState.set(af);
+        graphicState.set(horizontalScalingTransform);
+
+        return oldHScaling;
     }
 
     /**
@@ -2654,11 +2505,11 @@ public class ContentParser {
      * @param rule   - rule to apply to the alphaComposite.
      * @param alpha  - alpha value, opaque = 1.0f.
      */
-    static void setAlpha(Shapes shapes, int rule, float alpha) {
+    private static void setAlpha(Shapes shapes, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes
         AlphaComposite alphaComposite =
                 AlphaComposite.getInstance(rule,
                         alpha);
-        shapes.add(alphaComposite);
+        shapes.add(new AlphaDrawCmd(alphaComposite));
     }
 }

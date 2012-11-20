@@ -14,8 +14,6 @@
  */
 package org.icepdf.core.tag.query;
 
-import org.icepdf.core.tag.TaggedDocument;
-
 /**
  * @author mcollette
  * @since 4.0
@@ -29,18 +27,18 @@ public abstract class Function implements Expression {
 
     public String describe(int indent) {
         StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < indent; i++)
+        for (int i = 0; i < indent; i++)
             sb.append("  ");
         String className = getClass().getName();
         className = className.substring(className.lastIndexOf(".") + 1);
         sb.append(className);
         sb.append(" ( ");
         int num = (arguments != null) ? arguments.length : 0;
-        for(int i = 0; i < num; i++) {
+        for (int i = 0; i < num; i++) {
             sb.append('\'');
             sb.append(arguments[i]);
             sb.append('\'');
-            if (i < (num-1))
+            if (i < (num - 1))
                 sb.append(", ");
         }
         sb.append(" )\n");

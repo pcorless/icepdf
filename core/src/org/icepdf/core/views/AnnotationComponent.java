@@ -14,8 +14,8 @@
  */
 package org.icepdf.core.views;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.annotations.Annotation;
 
 /**
  * AnnotationComponent interfaces.  Oulines two main methods needed for
@@ -53,13 +53,13 @@ public interface AnnotationComponent {
      */
     public boolean hasFocus();
 
-     public boolean isEditable() ;
+    public boolean isEditable();
 
     public boolean isRollover();
 
     public boolean isLinkAnnot();
 
-    public boolean isBorderStyle() ;
+    public boolean isBorderStyle();
 
     public boolean isSelected();
 

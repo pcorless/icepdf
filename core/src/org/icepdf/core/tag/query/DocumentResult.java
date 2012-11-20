@@ -17,8 +17,8 @@ package org.icepdf.core.tag.query;
 import org.icepdf.core.tag.TaggedDocument;
 import org.icepdf.core.tag.TaggedImage;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author mcollette

@@ -21,7 +21,10 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.util.*;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
@@ -98,7 +101,7 @@ public class PageViewComponentImpl extends
 
     // turn off page image buffer proxy loading.
     private static boolean enablePageLoadingProxy =
-            Defs.booleanProperty("org.icepdf.core.views.page.proxy",true);
+            Defs.booleanProperty("org.icepdf.core.views.page.proxy", true);
 
     private PageTree pageTree;
     private JScrollPane parentScrollPane;
@@ -132,6 +135,8 @@ public class PageViewComponentImpl extends
     private PagePainter pagePainter;
     private final Object paintCopyAreaLock = new Object();
     private boolean disposing = false;
+    // object reference to make sure page isn't collected between init and paint.
+    private Object pageBufferLock;
 
     // current clip
     private Rectangle clipBounds;
@@ -284,10 +289,8 @@ public class PageViewComponentImpl extends
 
     public void invalidatePage() {
         if (inited) {
-            Page page = pageTree.getPage(pageIndex, this);
+            Page page = pageTree.getPage(pageIndex);
             page.getLibrary().disposeFontResources();
-            page.reduceMemory();
-            pageTree.releasePage(page, this);
             currentZoom = -1;
         }
     }
@@ -326,12 +329,8 @@ public class PageViewComponentImpl extends
         inited = false;
     }
 
-    public Page getPageLock(Object lock) {
-        return pageTree.getPage(pageIndex, lock);
-    }
-
-    public void releasePageLock(Page currentPage, Object lock) {
-        pageTree.releasePage(currentPage, lock);
+    public Page getPage() {
+        return pageTree.getPage(pageIndex);
     }
 
     public void setDocumentViewCallback(DocumentView parentDocumentView) {
@@ -384,7 +383,7 @@ public class PageViewComponentImpl extends
         }
         // single threaded load of page content on awt thread (no flicker)
         else if (!enablePageLoadingProxy && isPageIntersectViewport() &&
-                (isPageStateDirty() || isBufferDirty())){
+                (isPageStateDirty() || isBufferDirty())) {
             pageInitilizer.run();
             pagePainter.run();
         }
@@ -433,7 +432,7 @@ public class PageViewComponentImpl extends
             annotationHandler.paintAnnotations(g);
 
             // Lazy paint of highlight and select all text states.
-            Page currentPage = this.getPageLock(this);
+            Page currentPage = this.getPage();
             if (currentPage != null && currentPage.isInitiated()) {
                 PageText pageText = currentPage.getViewText();
 
@@ -453,7 +452,6 @@ public class PageViewComponentImpl extends
                 // paint selected test sprites.
                 textSelectionHandler.paintSelectedText(g);
             }
-            this.releasePageLock(currentPage, this);
         }
     }
 
@@ -631,7 +629,7 @@ public class PageViewComponentImpl extends
 
     private void calculatePageSize(Rectangle pageSize) {
         if (pageTree != null) {
-            Page currentPage = pageTree.getPage(pageIndex, this);
+            Page currentPage = pageTree.getPage(pageIndex);
             if (currentPage != null) {
                 pageSize.setSize(currentPage.getSize(
                         documentViewModel.getPageBoundary(),
@@ -643,7 +641,6 @@ public class PageViewComponentImpl extends
                         0,
                         1).toDimension());
             }
-            pageTree.releasePage(currentPage, this);
         }
     }
 
@@ -771,7 +768,7 @@ public class PageViewComponentImpl extends
             }
 
             // create new image and get graphics context from image
-            if (gc == null){
+            if (gc == null) {
                 gc = getGraphicsConfiguration();
             }
             if (gc != null && this.isShowing()) {
@@ -871,8 +868,7 @@ public class PageViewComponentImpl extends
 
                     // restore graphics context.
                     imageGraphics.translate(-xTrans, -yTrans);
-                }
-                else {
+                } else {
                     // set the new clip, relative to whole page
                     imageGraphics.translate(xTrans, yTrans);
                     imageGraphics.setClip(bufferedPageImageBounds);
@@ -892,15 +888,16 @@ public class PageViewComponentImpl extends
 
             // Paint the page content
             if (pageTree != null) {
-                Page page = pageTree.getPage(pageIndex, this);
+                // reference/lock the image while its being painted, we
+                // don't the gc to remove it early.
+                pageBufferLock = pageBufferImage;
+                Page page = pageTree.getPage(pageIndex);
                 page.paint(imageGraphics,
                         GraphicsRenderingHints.SCREEN,
                         documentViewModel.getPageBoundary(),
                         documentViewModel.getViewRotation(),
                         documentViewModel.getViewZoom(),
                         pagePainter, false, false);
-                // clean up
-                pageTree.releasePage(page, this);
 
                 if (pagePainter.isStopPaintingRequested()) {
                     pagePainter.setIsLastPaintDirty(true);
@@ -924,20 +921,18 @@ public class PageViewComponentImpl extends
 
     private void addPageRepaintListener() {
 
-        Page currentPage = pageTree.getPage(pageIndex, this);
+        Page currentPage = pageTree.getPage(pageIndex);
         if (currentPage != null) {
             currentPage.addPaintPageListener(this);
         }
-        pageTree.releasePage(currentPage, this);
     }
 
     private void removePageRepaintListener() {
         if (inited) {
-            Page currentPage = pageTree.getPage(pageIndex, this);
+            Page currentPage = pageTree.getPage(pageIndex);
             if (currentPage != null) {
                 currentPage.removePaintPageListener(this);
             }
-            pageTree.releasePage(currentPage, this);
         }
 
     }
@@ -958,7 +953,7 @@ public class PageViewComponentImpl extends
 
     public void paintPage(PaintPageEvent event) {
         Object source = event.getSource();
-        Page page = pageTree.getPage(pageIndex, this);
+        Page page = pageTree.getPage(pageIndex);
         if (page.equals(source)) {
             Runnable doSwingWork = new Runnable() {
                 public void run() {
@@ -970,9 +965,6 @@ public class PageViewComponentImpl extends
             // initiate the repaint
             SwingUtilities.invokeLater(doSwingWork);
         }
-        pageTree.releasePage(page, this);
-
-
     }
 
     public class PagePainter implements Runnable {
@@ -1018,16 +1010,15 @@ public class PageViewComponentImpl extends
                 hasBeenQueued = false;
             }
 
-                try {
-                    createBufferedPageImage(this);
-                }
-                catch (Throwable e) {
-                    logger.log(Level.WARNING,
-                            "Error creating buffer, page: " + pageIndex, e);
-
-                    // mark as dirty, so that it tries again to create buffer
-                    currentZoom = -1;
-                }
+            try {
+                createBufferedPageImage(this);
+            } catch (Throwable e) {
+                logger.log(Level.WARNING,
+                        "Error creating buffer, page: " + pageIndex, e);
+                e.printStackTrace();
+                // mark as dirty, so that it tries again to create buffer
+                currentZoom = -1;
+            }
 
             synchronized (isRunningLock) {
                 isStopRequested = false;
@@ -1057,7 +1048,7 @@ public class PageViewComponentImpl extends
         private boolean isRunning;
         private final Object isRunningLock = new Object();
 
-//        private AbstractPageViewComponent pageComponent;
+        //        private AbstractPageViewComponent pageComponent;
         private boolean hasBeenQueued;
 
         public void run() {
@@ -1067,28 +1058,28 @@ public class PageViewComponentImpl extends
                 isRunning = true;
             }
 
-                try {
-                    Page page = pageTree.getPage(pageIndex, this);
-                    page.init();
-                    // add annotation components to container, this only done
-                    // once, but Annotation state can be refreshed with the api
-                    // when needed.
-                    annotationHandler.initializeAnnotationComponents(
-                            page.getAnnotations());
-                    // fire page annotation initialized callback
-                    if (documentViewController.getAnnotationCallback() != null) {
-                        documentViewController.getAnnotationCallback()
-                                .pageAnnotationsInitialized(page);
-                    }
-                    pageTree.releasePage(page, this);
+            try {
+                Page page = pageTree.getPage(pageIndex);
+                page.init();
+
+                // add annotation components to container, this only done
+                // once, but Annotation state can be refreshed with the api
+                // when needed.
+                annotationHandler.initializeAnnotationComponents(
+                        page.getAnnotations());
+                // fire page annotation initialized callback
+                if (documentViewController.getAnnotationCallback() != null) {
+                    documentViewController.getAnnotationCallback()
+                            .pageAnnotationsInitialized(page);
                 }
-                catch (Throwable e) {
-                    logger.log(Level.WARNING,
-                            "Error initiating page: " + pageIndex, e);
-                    // make sure we don't try to re-initialize
-                    pageInitilizer.setHasBeenQueued(true);
-                    return;
-                }
+            } catch (Throwable e) {
+                logger.log(Level.WARNING,
+                        "Error initiating page: " + pageIndex, e);
+                e.printStackTrace();
+                // make sure we don't try to re-initialize
+                pageInitilizer.setHasBeenQueued(true);
+                return;
+            }
 
             synchronized (isRunningLock) {
                 pageInitilizer.setHasBeenQueued(false);
@@ -1117,6 +1108,9 @@ public class PageViewComponentImpl extends
             if (disposing || !isPageIntersectViewport()) {
                 isDirtyTimer.stop();
 
+                // unlock page buffer, so thumbnail can be freed.
+                pageBufferLock = null;
+
                 // stop painting and mark buffer as dirty
                 if (pagePainter.isRunning()) {
                     pagePainter.stopPaintingPage();
@@ -1135,7 +1129,7 @@ public class PageViewComponentImpl extends
                 }
 
                 // lock page
-                Page page = pageTree.getPage(pageIndex, this);
+                Page page = pageTree.getPage(pageIndex);
                 // load the page content
                 if (page != null && !page.isInitiated() &&
                         !pageInitilizer.isRunning() &&
@@ -1143,8 +1137,7 @@ public class PageViewComponentImpl extends
                     try {
                         pageInitilizer.setHasBeenQueued(true);
                         documentViewModel.executePageInitialization(pageInitilizer);
-                    }
-                    catch (InterruptedException ex) {
+                    } catch (InterruptedException ex) {
                         pageInitilizer.setHasBeenQueued(false);
                         if (logger.isLoggable(Level.WARNING)) {
                             logger.fine("Page Initialization Interrupted: " + pageIndex);
@@ -1166,8 +1159,7 @@ public class PageViewComponentImpl extends
                         pagePainter.setHasBeenQueued(true);
                         pagePainter.setIsBufferDirty(isBufferDirty);
                         documentViewModel.executePagePainter(pagePainter);
-                    }
-                    catch (InterruptedException ex) {
+                    } catch (InterruptedException ex) {
                         pagePainter.setHasBeenQueued(false);
                         if (logger.isLoggable(Level.WARNING)) {
                             logger.fine("Page Painter Interrupted: " + pageIndex);
@@ -1187,9 +1179,6 @@ public class PageViewComponentImpl extends
                         pagePainter.stopPaintingPage();
                     }
                 }
-
-                // unlock page
-                pageTree.releasePage(page, this);
             }
         }
     }

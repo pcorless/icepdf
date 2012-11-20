@@ -18,7 +18,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 
 import java.io.InputStream;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * <p>ICEpdf's standard security handler allows access permissions and up to two passwords
@@ -96,6 +96,9 @@ import java.util.Hashtable;
  */
 public class StandardSecurityHandler extends SecurityHandler {
 
+    public static final Name NAME_KEY = new Name("Name");
+    public static final Name IDENTITY_KEY = new Name("Identity");
+
     // StandardEncryption holds algorithms specific to adobe standard encryption
     private StandardEncryption standardEncryption = null;
 
@@ -117,7 +120,7 @@ public class StandardSecurityHandler extends SecurityHandler {
     }
 
     public boolean isAuthorized(String password) {
-        if (encryptionDictionary.getRevisionNumber() < 5){
+        if (encryptionDictionary.getRevisionNumber() < 5) {
             boolean value = standardEncryption.authenticateUserPassword(password);
             // check password against user password
             if (!value) {
@@ -132,36 +135,36 @@ public class StandardSecurityHandler extends SecurityHandler {
                 this.password = password;
             }
             return value;
-        }else if (encryptionDictionary.getRevisionNumber() == 5){
+        } else if (encryptionDictionary.getRevisionNumber() == 5) {
             // try and calculate the document key.
             byte[] encryptionKey = standardEncryption.encryptionKeyAlgorithm(
-                                        password,
-                                        encryptionDictionary.getKeyLength());
+                    password,
+                    encryptionDictionary.getKeyLength());
             this.password = password;
             return encryptionKey != null;
-        }else{
+        } else {
             return false;
         }
     }
 
     public boolean isOwnerAuthorized(String password) {
         // owner password is not stored as it is not used for decryption
-        if (encryptionDictionary.getRevisionNumber() < 5){
+        if (encryptionDictionary.getRevisionNumber() < 5) {
             return standardEncryption.authenticateOwnerPassword(password);
-        }else{
+        } else {
             return encryptionDictionary.isAuthenticatedOwnerPassword();
         }
     }
 
     public boolean isUserAuthorized(String password) {
         // owner password is not stored as it is not used for decryption
-        if (encryptionDictionary.getRevisionNumber() < 5){
+        if (encryptionDictionary.getRevisionNumber() < 5) {
             boolean value = standardEncryption.authenticateUserPassword(password);
             if (value) {
                 this.password = password;
             }
             return value;
-        }else{
+        } else {
             return encryptionDictionary.isAuthenticatedUserPassword();
         }
     }
@@ -172,13 +175,13 @@ public class StandardSecurityHandler extends SecurityHandler {
 
         // check if crypt filters are being used and find out if V2 or AESV2
         String algorithmType;
-        if (encryptionDictionary.getCryptFilter() != null){
+        if (encryptionDictionary.getCryptFilter() != null) {
             CryptFilterEntry cryptFilterEntry =
                     encryptionDictionary.getCryptFilter().getCryptFilterByName(
                             encryptionDictionary.getStrF());
 
             algorithmType = cryptFilterEntry.getCryptFilterMethod().getName();
-        } else{
+        } else {
             algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
         }
 
@@ -197,18 +200,18 @@ public class StandardSecurityHandler extends SecurityHandler {
     public InputStream getEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
-            Hashtable decodeParams,
+            HashMap decodeParams,
             InputStream input) {
 
         // find the name of the crypt filter used in the CF dictionary
         CryptFilterEntry cryptFilter = null;
-        if (decodeParams != null){
-            Name filterName = (Name)decodeParams.get("Name");
+        if (decodeParams != null) {
+            Name filterName = (Name) decodeParams.get(NAME_KEY);
             // identity means don't use the cryprt filter or encryption at all
             // for the stream.
-            if (filterName.equals("Identity")){
+            if (filterName.equals(IDENTITY_KEY)) {
                 return input;
-            }else{
+            } else {
                 // find the filter name in the encryption dictionary
                 cryptFilter = encryptionDictionary.
                         getCryptFilter().getCryptFilterByName(filterName);
@@ -216,16 +219,16 @@ public class StandardSecurityHandler extends SecurityHandler {
             }
         }
         // We default to the method specified in by StrmF in the security dictionary
-        else if (encryptionDictionary.getCryptFilter() != null){
+        else if (encryptionDictionary.getCryptFilter() != null) {
             cryptFilter = encryptionDictionary.getCryptFilter().getCryptFilterByName(
                     encryptionDictionary.getStmF());
         }
 
         // get the method used for the general encryption algorithm
         String algorithmType;
-        if (cryptFilter != null){
+        if (cryptFilter != null) {
             algorithmType = cryptFilter.getCryptFilterMethod().getName();
-        }else{
+        } else {
             algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
         }
 

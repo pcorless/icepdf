@@ -18,7 +18,7 @@ import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * <h2>Refer to: 8.4.4 Appearance Streams</h2>
@@ -67,10 +67,10 @@ public class Appearance extends Stream {
      * Create a new instance of an Appearance stream.
      *
      * @param l                  library containing a hash of all document objects
-     * @param h                  hashtable of parameters specific to the Stream object.
+     * @param h                  HashMap of parameters specific to the Stream object.
      * @param streamInputWrapper Accessor to stream byte data
      */
-    public Appearance(Library l, Hashtable h, SeekableInputConstrainedWrapper streamInputWrapper) {
+    public Appearance(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
         super(l, h, streamInputWrapper);
     }
 }

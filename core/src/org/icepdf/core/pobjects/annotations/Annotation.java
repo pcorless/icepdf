@@ -24,10 +24,10 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -330,6 +330,11 @@ public class Annotation extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Annotation.class.toString());
 
+    public static final Name RESOURCES_VALUE = new Name("Resources");
+    public static final Name BBOX_VALUE = new Name("BBox");
+    public static final Name PARENT_KEY = new Name("Parent");
+
+
     /**
      * Dictionary constants for Annotations.
      */
@@ -432,7 +437,7 @@ public class Annotation extends Dictionary {
     // borders style of the annotation, can be null
     protected BorderStyle borderStyle;
     // border defined by vector
-    protected Vector<Number> border;
+    protected List<Number> border;
     // border color of annotation.
     protected Color color;
     // annotation bounding rectangle in user space.
@@ -444,19 +449,19 @@ public class Annotation extends Dictionary {
      * Should only be called from Parser,  Use AnnotationFactory if you
      * creating a new annotation.
      *
-     * @param library   document library
-     * @param hashTable annotation properties.
+     * @param library document library
+     * @param hashMap annotation properties.
      * @return annotation instance.
      */
-    public static Annotation buildAnnotation(Library library, Hashtable hashTable) {
+    public static Annotation buildAnnotation(Library library, HashMap hashMap) {
         Annotation annot = null;
-        Name subtype = (Name) hashTable.get(SUBTYPE_KEY);
+        Name subtype = (Name) hashMap.get(SUBTYPE_KEY);
         if (subtype != null) {
             if (subtype.equals(SUBTYPE_LINK))
-                annot = new LinkAnnotation(library, hashTable);
+                annot = new LinkAnnotation(library, hashMap);
         }
         if (annot == null) {
-            annot = new Annotation(library, hashTable);
+            annot = new Annotation(library, hashMap);
         }
         return annot;
     }
@@ -467,7 +472,7 @@ public class Annotation extends Dictionary {
      * @param l document library.
      * @param h dictionary entries.
      */
-    public Annotation(Library l, Hashtable h) {
+    public Annotation(Library l, HashMap h) {
         super(l, h);
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
@@ -481,19 +486,19 @@ public class Annotation extends Dictionary {
                 SUBTYPE_POLYLINE.equals(subtype));
 
         // parse out border style if available
-        Hashtable BS = (Hashtable) getObject(BORDER_STYLE_KEY);
+        HashMap BS = (HashMap) getObject(BORDER_STYLE_KEY);
         if (BS != null) {
             borderStyle = new BorderStyle(library, BS);
         }
         // get old school border
         Object borderObject = getObject(BORDER_KEY);
-        if (borderObject != null && borderObject instanceof Vector) {
-            border = (Vector<Number>) borderObject;
+        if (borderObject != null && borderObject instanceof List) {
+            border = (List<Number>) borderObject;
         }
 
         // parse out border colour, specific to link annotations.
         color = Color.black; // we default to black but probably should be null
-        Vector C = (Vector) getObject(COLOR_KEY);
+        List C = (List) getObject(COLOR_KEY);
         // parse thought rgb colour.
         if (C != null && C.size() >= 3) {
             float red = ((Number) C.get(0)).floatValue();
@@ -512,8 +517,8 @@ public class Annotation extends Dictionary {
      *
      * @return subtype of annotation
      */
-    public String getSubType() {
-        return library.getName(entries, SUBTYPE_KEY.getName());
+    public Name getSubType() {
+        return library.getName(entries, SUBTYPE_KEY);
     }
 
     /**
@@ -526,8 +531,8 @@ public class Annotation extends Dictionary {
     public Rectangle2D.Float getUserSpaceRectangle() {
         if (userSpaceRectangle == null) {
             Object tmp = getObject(RECTANGLE_KEY);
-            if (tmp instanceof Vector) {
-                userSpaceRectangle = library.getRectangle(entries, RECTANGLE_KEY.getName());
+            if (tmp instanceof List) {
+                userSpaceRectangle = library.getRectangle(entries, RECTANGLE_KEY);
             }
         }
         return userSpaceRectangle;
@@ -552,13 +557,13 @@ public class Annotation extends Dictionary {
      * @return action to be activated, if no action, null is returned.
      */
     public org.icepdf.core.pobjects.actions.Action getAction() {
-        Object tmp = library.getDictionary(entries, ACTION_KEY.getName());
+        Object tmp = library.getDictionary(entries, ACTION_KEY);
         // initial parse will likely have the action as a dictionary, so we
         // create the new action object on the fly.  However it is also possible
         // that we are parsing an action that has no type specification and 
         // thus we can't use the parser to create the new action.
-        if (tmp != null && tmp instanceof Hashtable) {
-            Action action = Action.buildAction(library, (Hashtable) tmp);
+        if (tmp != null && tmp instanceof HashMap) {
+            Action action = Action.buildAction(library, (HashMap) tmp);
             // assign reference if applicable
             if (action != null &&
                     library.isReference(entries, ACTION_KEY.getName())) {
@@ -750,20 +755,20 @@ public class Annotation extends Dictionary {
         return borderStyle;
     }
 
-    public Vector<Number> getBorder() {
+    public List<Number> getBorder() {
         return border;
     }
 
     public Annotation getParentAnnotation() {
         Annotation parent = null;
 
-        Object ob = getObject("Parent");
+        Object ob = getObject(PARENT_KEY);
         if (ob instanceof Reference)
             ob = library.getObject((Reference) ob);
         if (ob instanceof Annotation)
             parent = (Annotation) ob;
-        else if (ob instanceof Hashtable)
-            parent = Annotation.buildAnnotation(library, (Hashtable) ob);
+        else if (ob instanceof HashMap)
+            parent = Annotation.buildAnnotation(library, (HashMap) ob);
 
         return parent;
     }
@@ -811,7 +816,7 @@ public class Annotation extends Dictionary {
      *
      * @return BorderSTyle line constants.
      */
-    public String getLineStyle() {
+    public Name getLineStyle() {
         // check for border style
         if (borderStyle != null) {
             return borderStyle.getBorderStyle();
@@ -855,8 +860,8 @@ public class Annotation extends Dictionary {
     public boolean isBorder() {
         boolean borderWidth = false;
         Object border = getObject(BORDER_KEY);
-        if (border != null && border instanceof Vector) {
-            Vector borderProps = (Vector) border;
+        if (border != null && border instanceof List) {
+            List borderProps = (List) border;
             if (borderProps.size() == 3) {
                 borderWidth = ((Number) borderProps.get(2)).floatValue() > 0;
             }
@@ -963,13 +968,13 @@ public class Annotation extends Dictionary {
     // TODO add support for rollover and down states..
     protected void renderAppearanceStream(Graphics2D g) {
         Object AP = getObject(APPEARANCE_STREAM_KEY);
-        if (AP instanceof Hashtable) {
+        if (AP instanceof HashMap) {
             Object N = library.getObject(
-                    (Hashtable) AP, APPEARANCE_STREAM_NORMAL_KEY.getName());
-            if (N instanceof Hashtable) {
+                    (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
+            if (N instanceof HashMap) {
                 Object AS = getObject(APPEARANCE_STATE_KEY);
-                if (AS != null)
-                    N = library.getObject((Hashtable) N, AS.toString());
+                if (AS != null && AS instanceof Name)
+                    N = library.getObject((HashMap) N, (Name) AS);
             }
 
             Shapes shapes = null;
@@ -985,22 +990,16 @@ public class Annotation extends Dictionary {
             } else if (N instanceof Stream) {
 
                 Stream stream = (Stream) N;
-                Resources res = library.getResources(stream.getEntries(), "Resources");
-                bbox = library.getRectangle(stream.getEntries(), "BBox");
+                Resources res = library.getResources(stream.getEntries(), RESOURCES_VALUE);
+                bbox = library.getRectangle(stream.getEntries(), BBOX_VALUE);
                 matrix = new AffineTransform();
-                InputStream sis = stream.getInputStreamForDecodedStreamBytes();
                 try {
                     ContentParser cp = new ContentParser(library, res);
-                    shapes = cp.parse(sis);
+                    shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}).getShapes();
                 } catch (Exception e) {
                     shapes = new Shapes();
                     logger.log(Level.FINE, "Error initializing Page.", e);
-                } finally {
-                    try {
-                        sis.close();
-                    } catch (IOException e) {
-                        logger.log(Level.FINE, "Error closing page stream.", e);
-                    }
+                    e.printStackTrace();
                 }
             }
             if (shapes != null) {
@@ -1032,7 +1031,7 @@ public class Annotation extends Dictionary {
                 g.transform(tAs);
 
 //System.out.println("Form: " + form.getEntries());
-//String str = new String( form.getBytes() );
+//String str = new String( form.getDecodedStreamByteArray() );
 //System.out.println( str );
 //System.out.println("Shapes: " + shapes + "  count: " + shapes.getShapesCount());
                 // check to see if we are painting highlight annotations.
@@ -1175,7 +1174,7 @@ public class Annotation extends Dictionary {
                 }
             }
         } else {
-            Vector borderVector = (Vector) getObject(BORDER_KEY);
+            List borderVector = (List) getObject(BORDER_KEY);
             if (borderVector != null) {
                 if (borderColor != null) {
                     float horizRadius = 0.0f;
@@ -1202,8 +1201,8 @@ public class Annotation extends Dictionary {
                         if (dashObj instanceof Number) {
                             // Disable border drawing
                             width = 0.0f;
-                        } else if (dashObj instanceof Vector) {
-                            Vector dashVector = (Vector) borderVector.get(3);
+                        } else if (dashObj instanceof List) {
+                            List dashVector = (List) borderVector.get(3);
                             int sz = dashVector.size();
                             dashArray = new float[sz];
                             for (int i = 0; i < sz; i++) {
@@ -1273,10 +1272,7 @@ public class Annotation extends Dictionary {
         // put colour back in to the dictionary
         float[] compArray = new float[3];
         this.color.getColorComponents(compArray);
-        Vector<Number> colorValues = new Vector<Number>(3);
-        colorValues.add(compArray[0]);
-        colorValues.add(compArray[1]);
-        colorValues.add(compArray[2]);
+        List colorValues = Arrays.asList(compArray);
         entries.put(Annotation.COLOR_KEY, colorValues);
     }
 
@@ -1329,31 +1325,31 @@ public class Annotation extends Dictionary {
     }
 
     public boolean getFlagInvisible() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0001) != 0);
+        return ((getInt(FLAG_KEY) & 0x0001) != 0);
     }
 
     public boolean getFlagHidden() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0002) != 0);
+        return ((getInt(FLAG_KEY) & 0x0002) != 0);
     }
 
     public boolean getFlagPrint() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0004) != 0);
+        return ((getInt(FLAG_KEY) & 0x0004) != 0);
     }
 
     public boolean getFlagNoZoom() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0008) != 0);
+        return ((getInt(FLAG_KEY) & 0x0008) != 0);
     }
 
     public boolean getFlagNoRotate() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0010) != 0);
+        return ((getInt(FLAG_KEY) & 0x0010) != 0);
     }
 
     public boolean getFlagNoView() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0020) != 0);
+        return ((getInt(FLAG_KEY) & 0x0020) != 0);
     }
 
     public boolean getFlagReadOnly() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0040) != 0);
+        return ((getInt(FLAG_KEY) & 0x0040) != 0);
     }
 
     /**
@@ -1364,19 +1360,18 @@ public class Annotation extends Dictionary {
      * @return true if locked, false otherwise.
      */
     public boolean getFlagLocked() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0080) != 0);
+        return ((getInt(FLAG_KEY) & 0x0080) != 0);
     }
 
     public boolean getFlagToggleNoView() {
-        return ((getInt(FLAG_KEY.getName()) & 0x0100) != 0);
+        return ((getInt(FLAG_KEY) & 0x0100) != 0);
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ANNOTATION= {");
-        java.util.Enumeration keys = entries.keys();
-        while (keys.hasMoreElements()) {
-            Object key = keys.nextElement();
+        Set keys = entries.keySet();
+        for (Object key : keys) {
             Object value = entries.get(key);
             sb.append(key.toString());
             sb.append('=');

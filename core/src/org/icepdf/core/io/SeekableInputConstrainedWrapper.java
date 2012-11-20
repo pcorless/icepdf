@@ -26,58 +26,19 @@ public class SeekableInputConstrainedWrapper extends InputStream {
     private long filePositionOfStreamData;
     private long lengthOfStreamData;
     private long filePositionBeforeUse;
-    private boolean takeOwnershipOfStreamDataInput;
-    private boolean usedYet;
 
     public SeekableInputConstrainedWrapper(
-            SeekableInput in, long offset, long length, boolean takeOwnership) {
+            SeekableInput in, long offset, long length) {
         streamDataInput = in;
         filePositionOfStreamData = offset;
         lengthOfStreamData = length;
         filePositionBeforeUse = 0L;
-        takeOwnershipOfStreamDataInput = takeOwnership;
-        usedYet = false;
     }
 
-    public void prepareForCurrentUse() {
-        usedYet = false;
-    }
-
-    public void dispose() throws IOException {
-        beginThreadAccess();
-//System.out.println("SICW.endFinalUse()  About to ... " + this);
-        if (takeOwnershipOfStreamDataInput) {
-            if (streamDataInput != null) {
-                streamDataInput.close();
-                endThreadAccess();
-                streamDataInput = null;
-            }
-        } else {
-            endCurrentUse(); // In case using code forgot
-        }
-//System.out.println("SICW.endFinalUse()  ... Done     " + this);
-    }
 
     private void ensureReadyOnFirstUse() throws IOException {
-        beginThreadAccess();
-        if (usedYet)
-            return;
-        usedYet = true;
-
-//System.out.println("SICW.ensureReadyOnFirstUse()  About to ... " + this);
         filePositionBeforeUse = streamDataInput.getAbsolutePosition();
         streamDataInput.seekAbsolute(filePositionOfStreamData);
-//System.out.println("SICW.ensureReadyOnFirstUse()  ... Done     " + this);
-    }
-
-    private void endCurrentUse() throws IOException {
-//System.out.println("SICW.endCurrentUse()  About to ... " + this);
-        if (usedYet) {
-            streamDataInput.seekAbsolute(filePositionBeforeUse);
-            usedYet = false;
-        }
-        endThreadAccess();
-//System.out.println("SICW.endCurrentUse()  ... Done     " + this);
     }
 
     private long getBytesRemaining() throws IOException {
@@ -97,7 +58,6 @@ public class SeekableInputConstrainedWrapper extends InputStream {
     public int read() throws IOException {
         ensureReadyOnFirstUse();
         long remain = getBytesRemaining();
-//System.out.println("SICW.read()  remain: " + remain);
         if (remain <= 0)
             return -1;
         return streamDataInput.read();
@@ -110,20 +70,11 @@ public class SeekableInputConstrainedWrapper extends InputStream {
     public int read(byte[] buffer, int offset, int length) throws IOException {
         ensureReadyOnFirstUse();
         long remain = getBytesRemaining();
-//System.out.println("SICW.read( "+length+" )  remain: " + remain);
+
         if (remain <= 0)
             return -1;
         length = (int) Math.min(Math.min(remain, (long) length), (long) Integer.MAX_VALUE);
         return streamDataInput.read(buffer, offset, length);
-    }
-
-    public void close() throws IOException {
-        // It's necessary for any InputStreams which are chained together
-        //   to close themselves, and so release their resources, but
-        //   this class, and the SeekableInput that we wrap, are
-        //   intended to be reused, so close() should only end the current use
-        beginThreadAccess();
-        endCurrentUse();
     }
 
     public int available() {
@@ -216,8 +167,6 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         sb.append("pos=").append(filePositionOfStreamData).append(", ");
         sb.append("len=").append(lengthOfStreamData).append(", ");
         sb.append("posToRestore=").append(filePositionBeforeUse).append(", ");
-        sb.append("own=").append(takeOwnershipOfStreamDataInput).append(", ");
-        sb.append("usedYet=").append(usedYet);
         sb.append(" ) ");
         sb.append(": ");
         if (streamDataInput == null)

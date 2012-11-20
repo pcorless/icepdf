@@ -14,12 +14,13 @@
  */
 package org.icepdf.core.pobjects.filters;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.zip.InflaterInputStream;
 
 /**
@@ -68,6 +69,13 @@ public class FlateDecode extends ChunkingInputStream {
      */
     private static final int LZW_FLATE_PREDICTOR_PNG_OPTIMUM = 15;
 
+    public static final Name DECODE_PARMS_VALUE = new Name("DecodeParms");
+    public static final Name PREDICTOR_VALUE = new Name("Predictor");
+    public static final Name WIDTH_VALUE = new Name("Width");
+    public static final Name COLUMNS_VALUE = new Name("Columns");
+    public static final Name COLORS_VALUE = new Name("Colors");
+    public static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
+
 
     private InputStream originalInputKeptSolelyForDebugging;
     private int width;
@@ -78,7 +86,7 @@ public class FlateDecode extends ChunkingInputStream {
     private byte[] aboveBuffer;
 
 
-    public FlateDecode(Library library, Hashtable props, InputStream input) {
+    public FlateDecode(Library library, HashMap props, InputStream input) {
         super();
         originalInputKeptSolelyForDebugging = input;
         width = 0;
@@ -89,8 +97,8 @@ public class FlateDecode extends ChunkingInputStream {
         int intermediateBufferSize = 4096;
 
         // get decode parameters from stream properties
-        Hashtable decodeParmsDictionary = library.getDictionary(props, "DecodeParms");
-        predictor = library.getInt(decodeParmsDictionary, "Predictor");
+        HashMap decodeParmsDictionary = library.getDictionary(props, DECODE_PARMS_VALUE);
+        predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
         if (predictor != LZW_FLATE_PREDICTOR_NONE && predictor != LZW_FLATE_PREDICTOR_TIFF_2 &&
                 predictor != LZW_FLATE_PREDICTOR_PNG_NONE && predictor != LZW_FLATE_PREDICTOR_PNG_SUB &&
                 predictor != LZW_FLATE_PREDICTOR_PNG_UP && predictor != LZW_FLATE_PREDICTOR_PNG_AVG &&
@@ -99,11 +107,11 @@ public class FlateDecode extends ChunkingInputStream {
         }
 //System.out.println("predictor: " + predictor);
         if (predictor != LZW_FLATE_PREDICTOR_NONE) {
-            Number widthNumber = library.getNumber(props, "Width");
+            Number widthNumber = library.getNumber(props, WIDTH_VALUE);
             if (widthNumber != null)
                 width = widthNumber.intValue();
             else
-                width = library.getInt(decodeParmsDictionary, "Columns");
+                width = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
 //System.out.println("Width: " + width);
             //int height = (int) library.getFloat(entries, "Height");
 
@@ -115,12 +123,12 @@ public class FlateDecode extends ChunkingInputStream {
             numComponents = 1;    // DecodeParms.Colors: 1,2,3,4  Default=1
             bitsPerComponent = 8; // DecodeParms.BitsPerComponent: 1,2,4,8,16  Default=8
 
-            Object numComponentsDecodeParmsObj = library.getObject(decodeParmsDictionary, "Colors");
+            Object numComponentsDecodeParmsObj = library.getObject(decodeParmsDictionary, COLORS_VALUE);
             if (numComponentsDecodeParmsObj instanceof Number) {
                 numComponents = ((Number) numComponentsDecodeParmsObj).intValue();
 //System.out.println("numComponents: " + numComponents);
             }
-            Object bitsPerComponentDecodeParmsObj = library.getObject(decodeParmsDictionary, "BitsPerComponent");
+            Object bitsPerComponentDecodeParmsObj = library.getObject(decodeParmsDictionary, BITS_PER_COMPONENT_VALUE);
             if (bitsPerComponentDecodeParmsObj instanceof Number) {
                 bitsPerComponent = ((Number) bitsPerComponentDecodeParmsObj).intValue();
 //System.out.println("bitsPerComponent: " + bitsPerComponent);
@@ -159,10 +167,10 @@ public class FlateDecode extends ChunkingInputStream {
             int numRead = fillBufferFromInputStream();
             if (numRead <= 0)
                 return -1;
-            if( bitsPerComponent == 8) {
-                for(int i = 0; i < numRead; i++) {
+            if (bitsPerComponent == 8) {
+                for (int i = 0; i < numRead; i++) {
                     int prevIndex = i - numComponents;
-                    if( prevIndex >= 0 ) {
+                    if (prevIndex >= 0) {
                         buffer[i] += buffer[prevIndex];
                     }
                 }
@@ -171,8 +179,7 @@ public class FlateDecode extends ChunkingInputStream {
 
             // Each component is derived from corresponding component in entry to left
             //TODO Find an example PDF to develop this functionality against
-        }
-        else if (predictor >= LZW_FLATE_PREDICTOR_PNG_NONE && predictor <= LZW_FLATE_PREDICTOR_PNG_OPTIMUM) {
+        } else if (predictor >= LZW_FLATE_PREDICTOR_PNG_NONE && predictor <= LZW_FLATE_PREDICTOR_PNG_OPTIMUM) {
             int currPredictor = predictor;
             int cp = in.read();
             //System.out.println("  PNG predictor.  Row predictor byte: " + cp);

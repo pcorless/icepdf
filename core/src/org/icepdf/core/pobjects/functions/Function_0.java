@@ -15,11 +15,12 @@
 package org.icepdf.core.pobjects.functions;
 
 import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 
-import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>This class <code>Function_0</code> represents a generic Type 0, sampled function
@@ -40,6 +41,11 @@ public class Function_0 extends Function {
 
     private static final Logger logger =
             Logger.getLogger(Function_0.class.toString());
+
+    public static final Name SIZE_KEY = new Name("Size");
+    public static final Name BITSPERSAMPLE_KEY = new Name("BitsPerSample");
+    public static final Name ENCODE_KEY = new Name("Encode");
+    public static final Name DECODE_KEY = new Name("Decode");
 
     // An array of m positive integers specifying the number of samples in each
     // input dimension of the sample table.
@@ -76,24 +82,24 @@ public class Function_0 extends Function {
         // initiate, domain and range
         super(d);
 
-        Vector s = (Vector) d.getObject("Size");
+        List s = (List) d.getObject(SIZE_KEY);
         // setup size array, each entry represents the number of samples for
         // each input dimension.
         size = new int[s.size()];
         for (int i = 0; i < s.size(); i++) {
-            size[i] = (int) (((Number) s.elementAt(i)).floatValue());
+            size[i] = (int) (((Number) s.get(i)).floatValue());
         }
         // setup bitspersample array, each entry represents the number of bits used
         // for each sample
-        bitspersample = d.getInt("BitsPerSample");
+        bitspersample = d.getInt(BITSPERSAMPLE_KEY);
 
         // setup of encode table, specifies the linear mapping of input values
         // into the domain of the function's sample table.
-        Vector enc = (Vector) d.getObject("Encode");
+        List enc = (List) d.getObject(ENCODE_KEY);
         encode = new float[size.length * 2];
         if (enc != null) {
             for (int i = 0; i < size.length * 2; i++) {
-                encode[i] = ((Number) enc.elementAt(i)).floatValue();
+                encode[i] = ((Number) enc.get(i)).floatValue();
             }
         } else {
             // encoding is optional, so fill up encode area with uniform
@@ -107,11 +113,11 @@ public class Function_0 extends Function {
 
         // setup decode, an array of  2 x n numbers specifying the linear mapping
         // of sample values into the range appropriate for the function's output values.
-        Vector dec = (Vector) d.getObject("Decode");
+        List dec = (List) d.getObject(DECODE_KEY);
         decode = new float[range.length];
         if (dec != null) {
             for (int i = 0; i < range.length; i++) {
-                decode[i] = ((Number) dec.elementAt(i)).floatValue();
+                decode[i] = ((Number) dec.get(i)).floatValue();
             }
         } else {
             // deocode is optional, so we should copy range as a default values
@@ -123,7 +129,7 @@ public class Function_0 extends Function {
 
         // lastly get the stream byte data if any.
         Stream stream = (Stream) d;
-        bytes = stream.getBytes();
+        bytes = stream.getDecodedStreamBytes(0);
     }
 
 
@@ -178,8 +184,7 @@ public class Function_0 extends Function {
 
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error calculating function 0 values", e);
         }
         return y;

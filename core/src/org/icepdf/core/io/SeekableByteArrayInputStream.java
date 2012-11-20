@@ -16,8 +16,8 @@ package org.icepdf.core.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Mark Collette
@@ -93,8 +93,7 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
             } else { // Some other Thread is currently using us
                 try {
                     this.wait(100L);
-                }
-                catch (InterruptedException ie) {
+                } catch (InterruptedException ie) {
                 }
             }
         }
@@ -111,9 +110,9 @@ public class SeekableByteArrayInputStream extends ByteArrayInputStream implement
             if (log.isLoggable(Level.SEVERE)) {
                 log.severe(
                         "ERROR:  Thread finished using SeekableInput, but it wasn't locked by that Thread\n" +
-                        "        Thread: " + Thread.currentThread() + "\n" +
-                        "        Locking Thread: " + m_oCurrentUser + "\n" +
-                        "        SeekableInput: " + this);
+                                "        Thread: " + Thread.currentThread() + "\n" +
+                                "        Locking Thread: " + m_oCurrentUser + "\n" +
+                                "        SeekableInput: " + this);
             }
         }
     }

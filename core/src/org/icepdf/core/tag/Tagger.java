@@ -14,9 +14,9 @@
  */
 package org.icepdf.core.tag;
 
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.util.Defs;
 
 /**
  * @author mcollette
@@ -24,13 +24,14 @@ import org.icepdf.core.pobjects.Reference;
  */
 public class Tagger {
     public static final boolean
-        tagging = property("ice.tag.tagging");
+            tagging = property("ice.tag.tagging");
 
     private static boolean property(String name) {
         String value = null;
         try {
             value = Defs.sysProperty(name);
-        } catch (RuntimeException ex) {}
+        } catch (RuntimeException ex) {
+        }
         if (value != null) {
             return value.equals("yes") || value.equals("true");
         }

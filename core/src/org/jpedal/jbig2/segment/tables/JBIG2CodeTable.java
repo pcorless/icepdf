@@ -16,7 +16,7 @@ package org.jpedal.jbig2.segment.tables;
 
 public class JBIG2CodeTable {
 
-	public static int[][] getHuffTable() {
-		return null;
-	}
+    public static int[][] getHuffTable() {
+        return null;
+    }
 }

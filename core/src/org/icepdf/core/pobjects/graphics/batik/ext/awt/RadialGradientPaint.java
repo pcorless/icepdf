@@ -396,9 +396,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
                             (float) center.getX(), (float) center.getY(), radius,
                             (float) focus.getX(), (float) focus.getY(),
                             fractions, colors, cycleMethod, colorSpace);
-        }
-
-        catch (NoninvertibleTransformException e) {
+        } catch (NoninvertibleTransformException e) {
             throw new IllegalArgumentException("transform should be " +
                     "invertible");
         }

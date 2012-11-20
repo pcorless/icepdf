@@ -17,13 +17,11 @@ package org.icepdf.core.tag;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Reference;
 
-import java.util.List;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Enumeration;
-import java.util.Properties;
 import java.util.Iterator;
-import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author mcollette
@@ -40,7 +38,7 @@ public class TagState implements Serializable {
         documents = new ArrayList(128);
         origin2document = new HashMap(128);
         currentDocument = null;
-        
+
         /*
         Properties props = System.getProperties();
         Enumeration keys = props.keys();
@@ -57,8 +55,7 @@ public class TagState implements Serializable {
         TaggedDocument td = (TaggedDocument) origin2document.get(origin);
         if (td != null) {
             currentDocument = td;
-        }
-        else {
+        } else {
             currentDocument = new TaggedDocument(origin);
             documents.add(currentDocument);
         }
@@ -86,7 +83,7 @@ public class TagState implements Serializable {
 
     String describe() {
         StringBuilder sb = new StringBuilder(4096);
-        for(Iterator docs = documents.iterator(); docs.hasNext();) {
+        for (Iterator docs = documents.iterator(); docs.hasNext(); ) {
             TaggedDocument td = (TaggedDocument) docs.next();
             sb.append(td.describe());
             sb.append("=================================\n");

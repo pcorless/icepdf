@@ -19,7 +19,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * A PDF document may contain thumbnail images representing the contents of its
@@ -32,7 +32,11 @@ import java.util.Hashtable;
  */
 public class Thumbnail extends Dictionary {
 
-    private Stream thumbStream;
+    public static final Name THUMB_KEY = new Name("Thumb");
+    public static final Name WIDTH_KEY = new Name("Width");
+    public static final Name HEIGHT_KEY = new Name("Height");
+
+    private ImageStream thumbStream;
     private boolean initialized;
 
     // thumb image
@@ -41,30 +45,35 @@ public class Thumbnail extends Dictionary {
     // dimensions
     private Dimension dimension;
 
-    public Thumbnail(Library library, Hashtable entries) {
+    public Thumbnail(Library library, HashMap entries) {
         super(library, entries);
-        Object thumb = library.getObject(entries, "Thumb");
-        if (thumb != null && thumb instanceof Stream) {
-            // get the thumb image.
-            thumbStream = (Stream) thumb;
-
+        Object thumb = library.getObject(entries, THUMB_KEY);
+        if (thumb != null) {
+            if (thumb instanceof ImageStream) {
+                // get the thumb image.
+                thumbStream = (ImageStream) thumb;
+            } else {
+                thumbStream = new ImageStream(library, ((Stream) thumb).getEntries(),
+                        ((Stream) thumb).getRawBytes());
+            }
             // grab its bounds.
-            int width = library.getInt(thumbStream.entries, "Width");
-            int height = library.getInt(thumbStream.entries, "Height");
-            dimension = new Dimension(width,height);
+            int width = library.getInt(thumbStream.entries, WIDTH_KEY);
+            int height = library.getInt(thumbStream.entries, HEIGHT_KEY);
+            dimension = new Dimension(width, height);
             // the image is lazy loaded on the getImage() call.
+
         }
     }
 
 
-    public void init(){
+    public void init() {
         Resources resource = new Resources(library, thumbStream.entries);
-        image =  thumbStream.getImage(null, resource, false);
+        image = thumbStream.getImage(null, resource, false);
         initialized = true;
     }
 
     public BufferedImage getImage() {
-        if (!initialized){
+        if (!initialized) {
             init();
         }
         return image;

@@ -381,11 +381,11 @@ public class OFont implements FontFile {
         return String.valueOf(c);
     }
 
-    public boolean isOneByteEncoding(){
+    public boolean isOneByteEncoding() {
         return false;
     }
 
-    public Shape getEstringOutline(String displayText, float x, float y){
+    public Shape getEstringOutline(String displayText, float x, float y) {
 
         displayText = toUnicode(displayText);
         FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
@@ -397,7 +397,7 @@ public class OFont implements FontFile {
         // cid -> String will get displayed correctly.
         int displayLength = displayText.length();
         float lastx;
-        if (displayLength > 1){
+        if (displayLength > 1) {
             Point2D p;
             float advance = 0;
             for (int i = 0; i < displayText.length(); i++) {

@@ -51,7 +51,7 @@ public class PageText implements TextSelect {
     public void newLine() {
         // make sure we don't insert a new line if the previous has no words. 
         if (currentLine != null &&
-                currentLine.getWords().size() == 0){
+                currentLine.getWords().size() == 0) {
             return;
         }
         currentLine = new LineText();
@@ -71,7 +71,7 @@ public class PageText implements TextSelect {
 
     /**
      * Utility method to normalize text created in a Xform content stream
-     * and is only called from the contentParser when parsing 'Do' token.  
+     * and is only called from the contentParser when parsing 'Do' token.
      *
      * @param transform do matrix tranform
      */
@@ -87,13 +87,13 @@ public class PageText implements TextSelect {
         }
     }
 
-    public void clearSelected(){
+    public void clearSelected() {
         for (LineText lineText : pageLines) {
             lineText.clearSelected();
         }
     }
 
-    public void clearHighlighted(){
+    public void clearHighlighted() {
         for (LineText lineText : pageLines) {
             lineText.clearHighlighted();
         }
@@ -113,16 +113,9 @@ public class PageText implements TextSelect {
         }
     }
 
-     public void deselectAll() {
+    public void deselectAll() {
         for (LineText lineText : pageLines) {
             lineText.clearSelected();
-        }
-    }
-
-    public void dispose() {
-        if (pageLines != null) {
-            pageLines.clear();
-            pageLines.trimToSize();
         }
     }
 

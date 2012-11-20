@@ -22,10 +22,10 @@ import org.icepdf.core.util.Library;
 import java.io.InputStream;
 import java.security.Provider;
 import java.security.Security;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The Security Manager class manages the encryption of encrypted
@@ -82,20 +82,18 @@ public class SecurityManager {
             Object provider = Class.forName(defaultSecurityProvider).newInstance();
             Security.insertProviderAt((Provider) provider, 2);
         } catch (ClassNotFoundException e) {
-            logger.log(Level.FINE,"Optional BouncyCastle security provider not found");
+            logger.log(Level.FINE, "Optional BouncyCastle security provider not found");
+        } catch (InstantiationException e) {
+            logger.log(Level.FINE, "Optional BouncyCastle security provider could not be instantiated");
+        } catch (IllegalAccessException e) {
+            logger.log(Level.FINE, "Optional BouncyCastle security provider could not be created");
         }
-        catch (InstantiationException e) {
-            logger.log(Level.FINE,"Optional BouncyCastle security provider could not be instantiated");
-        }
-        catch (IllegalAccessException e) {
-            logger.log(Level.FINE,"Optional BouncyCastle security provider could not be created");
-        }
-        
+
         try {
             Class.forName("javax.crypto.Cipher");
             foundJCE = true;
         } catch (ClassNotFoundException e) {
-            logger.log(Level.SEVERE,"Sun JCE Support Not Found");
+            logger.log(Level.SEVERE, "Sun JCE Support Not Found");
         }
     }
 
@@ -114,14 +112,14 @@ public class SecurityManager {
      * @param fileID               fileID of PDF document
      * @throws PDFSecurityException if the security provider could not be found
      */
-    public SecurityManager(Library library, Hashtable encryptionDictionary,
-                           Vector fileID)
+    public SecurityManager(Library library, HashMap encryptionDictionary,
+                           List fileID)
             throws PDFSecurityException {
 
         // Check to make sure that if run under JDK 1.3 that the JCE libraries
         // are installed as extra packages
         if (!foundJCE) {
-            logger.log(Level.SEVERE,"Sun JCE support was not found on classpath");
+            logger.log(Level.SEVERE, "Sun JCE support was not found on classpath");
             throw new PDFSecurityException("Sun JCE Support Not Found");
         }
 
@@ -130,7 +128,7 @@ public class SecurityManager {
                 new EncryptionDictionary(library, encryptionDictionary, fileID);
 
         // create security Handler based on dictionary entries.
-        if (encryptDictionary.getPreferredSecurityHandlerName().
+        if (encryptDictionary.getPreferredSecurityHandlerName().getName().
                 equalsIgnoreCase("Standard")) {
             securityHandler = new StandardSecurityHandler(encryptDictionary);
             // initiate the handler
@@ -226,14 +224,14 @@ public class SecurityManager {
      * @param objectReference         PDF objects number and revision number
      * @param encryptionKey           encryption key used to decrypt the data
      * @param input                   InputStream giving access to encrypted data
-     * @param decodeParams                   crypt filter optional parameters, can be null.
+     * @param decodeParams            crypt filter optional parameters, can be null.
      * @param returnInputIfNullResult If results end up being null, then return input instead of null
      * @return InputStream giving access to decrypted data
      */
     public InputStream getEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
-            Hashtable decodeParams,
+            HashMap decodeParams,
             InputStream input,
             boolean returnInputIfNullResult) {
         InputStream result = securityHandler.getEncryptionInputStream(

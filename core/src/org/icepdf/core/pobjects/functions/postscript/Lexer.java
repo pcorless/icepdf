@@ -224,8 +224,8 @@ public class Lexer {
                 operand.eval(stack);
                 // check if we need to evaluate the top of the stack for a
                 // previously stored expression {operands... n}.
-                if (stack.peek() instanceof Operator){
-                    operand = (Operator)stack.pop();
+                if (stack.peek() instanceof Operator) {
+                    operand = (Operator) stack.pop();
                     operand.eval(stack);
                 }
             }
@@ -269,10 +269,11 @@ public class Lexer {
 
     /**
      * Utility for finding token delimiter in a type 4 function stream.
+     *
      * @param c character to compare against known delimiters.
      * @return true if c is a delimiter otherwise, false.
      */
-    private static boolean isDelimiter(char c){
+    private static boolean isDelimiter(char c) {
         return c == ' ' || c == '\t' ||
                 c == '\n' || c == '\r' ||
                 c == '{' || c == '}';

@@ -21,8 +21,9 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -51,21 +52,21 @@ public class ShadingType2Pattern extends ShadingPattern {
     // these two values as the colour gradient varies between the starting and
     // ending points of the axis.  The variable t becomes the argument to the
     // colour function(s).  Default [0,1].
-    protected Vector<Float> domain;
+    protected List<Float> domain;
 
     // An array of four numbers [x0, y0, x1, y1] specifying the starting and
     // ending coordinates of the axis, expressed in the shading's target
     // coordinate space.
-    protected Vector coords;
+    protected java.util.List coords;
 
     // An array of two Boolean values specifying whether to extend the shading
     // beyond the starting and ending points of the axis, Default [false, false].
-    protected Vector<Boolean> extend;
+    protected List<Boolean> extend;
 
     // linear gradient paint describing the gradient.
     private LinearGradientPaint linearGradientPaint;
 
-    public ShadingType2Pattern(Library library, Hashtable entries) {
+    public ShadingType2Pattern(Library library, HashMap entries) {
         super(library, entries);
     }
 
@@ -77,47 +78,49 @@ public class ShadingType2Pattern extends ShadingPattern {
 
         // shading dictionary
         if (shading == null) {
-            shading = library.getDictionary(entries, "Shading");
+            shading = library.getDictionary(entries, SHADING_KEY);
         }
 
-        shadingType = library.getInt(shading, "ShadingType");
-        bBox = library.getRectangle(shading, "BBox");
+        shadingType = library.getInt(shading, SHADING_TYPE_KEY);
+        bBox = library.getRectangle(shading, BBOX_KEY);
         colorSpace = PColorSpace.getColorSpace(library,
-                library.getObject(shading, "ColorSpace"));
-        if (library.getObject(shading, "Background") != null &&
-                library.getObject(shading, "Background") instanceof Vector) {
-            background = (Vector) library.getObject(shading, "Background");
+                library.getObject(shading, COLORSPACE_KEY));
+        Object tmp = library.getObject(shading, BACKGROUND_KEY);
+        if (tmp != null && tmp instanceof List) {
+            background = (java.util.List) tmp;
         }
-        antiAlias = library.getBoolean(shading, "AntiAlias");
+        antiAlias = library.getBoolean(shading, ANTIALIAS_KEY);
 
         // get type 2 specific data.
-        if (library.getObject(shading, "Domain") instanceof Vector) {
-            domain = (Vector<Float>) library.getObject(shading, "Domain");
+        tmp = library.getObject(shading, DOMAIN_KEY);
+        if (tmp instanceof List) {
+            domain = (List<Float>) tmp;
         } else {
-            domain = new Vector<Float>(2);
+            domain = new ArrayList<Float>(2);
             domain.add(new Float(0.0));
             domain.add(new Float(1.0));
         }
 
-        if (library.getObject(shading, "Coords") instanceof Vector) {
-            coords = (Vector) library.getObject(shading, "Coords");
+        tmp = library.getObject(shading, COORDS_KEY);
+        if (tmp instanceof List) {
+            coords = (java.util.List) tmp;
         }
-        if (library.getObject(shading, "Extend") instanceof Vector) {
-            extend = (Vector<Boolean>) library.getObject(shading, "Extend");
+        tmp = library.getObject(shading, EXTEND_KEY);
+        if (tmp instanceof List) {
+            extend = (List<Boolean>) tmp;
         } else {
-            extend = new Vector<Boolean>(2);
+            extend = new ArrayList<Boolean>(2);
             extend.add(false);
             extend.add(false);
         }
-        Object tmp = library.getObject(shading, "Function");
+        tmp = library.getObject(shading, FUNCTION_KEY);
         if (tmp != null) {
-            function = Function.getFunction(library,
-                    tmp);
+            function = Function.getFunction(library, tmp);
         }
 
         // calculate the t's
-        float t0 = ((Number) domain.get(0)).floatValue();
-        float t1 = ((Number) domain.get(1)).floatValue();
+        float t0 = domain.get(0);
+        float t1 = domain.get(1);
 
         // first off, create the two needed start and end points of the line
         Point2D.Float startPoint = new Point2D.Float(
@@ -222,11 +225,11 @@ public class ShadingType2Pattern extends ShadingPattern {
      * Calculate the colours value of the point xy on the line point1 and point2.
      *
      * @param colorSpace colour space to apply to the function output
-     * @param xy point to calcualte the colour of.
-     * @param point1 start of gradient line
-     * @param point2 end of gradient line.
-     * @param t0 domain min
-     * @param t1 domain max
+     * @param xy         point to calcualte the colour of.
+     * @param point1     start of gradient line
+     * @param point2     end of gradient line.
+     * @param t0         domain min
+     * @param t1         domain max
      * @return colour derived from the input parameters.
      */
     private Color calculateColour(PColorSpace colorSpace, Point2D.Float xy,
@@ -293,7 +296,7 @@ public class ShadingType2Pattern extends ShadingPattern {
      * @return parametric value.
      */
     private float parametrixValue(float linearMapping, float t0, float t1,
-                                  Vector extended) {
+                                  List extended) {
 
         if (linearMapping < 0 && ((Boolean) extended.get(0))) {
             return t0;

@@ -14,13 +14,13 @@
  */
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StateManager;
-import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * Factory for build actions
@@ -50,7 +50,7 @@ public class ActionFactory {
         StateManager stateManager = library.getStateManager();
 
         // create a new entries to hold the annotation properties
-        Hashtable<Name, Object> entries = new Hashtable<Name, Object>();
+        HashMap<Name, Object> entries = new HashMap<Name, Object>();
         if (GOTO_ACTION == type) {
             // set default link annotation values.
             entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);

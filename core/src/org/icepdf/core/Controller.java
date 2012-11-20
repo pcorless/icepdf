@@ -15,8 +15,8 @@
 package org.icepdf.core;
 
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.views.DocumentViewController;
 
 /**
  * A Controller is the glue between the model and view components.
@@ -64,6 +64,7 @@ public interface Controller {
 
     /**
      * Gets controller responsible for Page view UI interaction.
+     *
      * @return document view controller.
      */
     public DocumentViewController getDocumentViewController();

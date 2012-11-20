@@ -14,21 +14,21 @@
  */
 package org.jpedal.jbig2.segment.extensions;
 
-import java.io.IOException;
-
 import org.jpedal.jbig2.JBIG2Exception;
 import org.jpedal.jbig2.decoders.JBIG2StreamDecoder;
 import org.jpedal.jbig2.segment.Segment;
 
+import java.io.IOException;
+
 public class ExtensionSegment extends Segment {
 
-	public ExtensionSegment(JBIG2StreamDecoder streamDecoder) {
-		super(streamDecoder);
-	}
+    public ExtensionSegment(JBIG2StreamDecoder streamDecoder) {
+        super(streamDecoder);
+    }
 
-	public void readSegment() throws IOException, JBIG2Exception {
-		for (int i = 0; i < getSegmentHeader().getSegmentDataLength(); i++) {
-			decoder.readByte();
-		}
-	}
+    public void readSegment() throws IOException, JBIG2Exception {
+        for (int i = 0; i < getSegmentHeader().getSegmentDataLength(); i++) {
+            decoder.readByte();
+        }
+    }
 }

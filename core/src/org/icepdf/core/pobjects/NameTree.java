@@ -16,7 +16,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * <p>The <code>NameTree</code> class is similar to the <code>Dictionary</code> class in that
@@ -41,7 +41,7 @@ public class NameTree extends Dictionary {
      * @param l document library.
      * @param h NameTree dictionary entries.
      */
-    public NameTree(Library l, Hashtable h) {
+    public NameTree(Library l, HashMap h) {
         super(l, h);
     }
 
@@ -54,13 +54,6 @@ public class NameTree extends Dictionary {
         }
         root = new NameNode(library, entries);
         inited = true;
-    }
-
-    /**
-     * Dispose the NameTree.
-     */
-    public void dispose() {
-        root.dispose();
     }
 
     /**

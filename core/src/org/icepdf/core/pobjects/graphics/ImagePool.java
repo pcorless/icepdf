@@ -1,0 +1,166 @@
+/*
+ * Copyright 2006-2012 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+package org.icepdf.core.pobjects.graphics;
+
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.util.Defs;
+
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
+/**
+ * The Image pool is a Map of the most recently used images.  The pools size
+ * by default is setup to be 1/4 the heap size.  So as the pool grows it
+ * will self trim to keep the memory foot print at the specified max.  The
+ * max pool size can be specified by using the org.icepdf.core.views.imagePoolSize
+ * system property.  The value is specified in MB.
+ * <p/>
+ * The pool also contains an executor pool for processing Images.  The executor
+ * allows the pageInitialization thread to continue while the executor processes
+ * the image data on another thread.
+ *
+ * @since 4.5
+ */
+public class ImagePool {
+    private static final Logger log =
+            Logger.getLogger(ImagePool.class.toString());
+
+    // Image pool
+    private final LinkedHashMap<Reference, BufferedImage> fCache;
+
+    // thread pool for processing image loads.
+    private final ThreadPoolExecutor imageInitializationThreadPool;
+    private static final long KEEP_ALIVE_TIME = 10;
+
+
+    private static int defaultSize;
+    private static int imageExecutorSize;
+
+    static {
+        // Default size is 1/4 of heap size.
+        defaultSize = (int) ((Runtime.getRuntime().maxMemory() / 1024L / 1024L) / 4L);
+        defaultSize = Defs.intProperty("org.icepdf.core.views.imagePoolSize", defaultSize);
+        imageExecutorSize = Defs.intProperty("org.icepdf.core.views.imagePoolThreads", 4);
+    }
+
+    public ImagePool() {
+        this(defaultSize * 1024 * 1024);
+    }
+
+    public ImagePool(long maxCacheSize) {
+        fCache = new MemoryImageCache(maxCacheSize);
+
+        log.fine("Starting PageInitializationThreadPool. ");
+        imageInitializationThreadPool = new ThreadPoolExecutor(
+                imageExecutorSize, imageExecutorSize, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        // set a lower thread priority
+        imageInitializationThreadPool.setThreadFactory(new ThreadFactory() {
+            public Thread newThread(java.lang.Runnable command) {
+                Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-imagePool");
+                newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
+                return newThread;
+            }
+        });
+    }
+
+    public void shutDownPool() {
+        imageInitializationThreadPool.shutdownNow();
+    }
+
+    public void put(Reference ref, BufferedImage image) {
+        // create a new reference so we don't have a hard link to the page
+        // which will likely keep a page from being GC'd.
+        fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()), image);
+    }
+
+    public BufferedImage get(Reference ref) {
+        return fCache.get(ref);
+    }
+
+    public void execute(ImageReference imageReference) {
+        imageInitializationThreadPool.execute(imageReference);
+    }
+
+    private static class MemoryImageCache extends LinkedHashMap<Reference, BufferedImage> {
+        private final long maxCacheSize;
+        private long currentCacheSize;
+
+        public MemoryImageCache(long maxCacheSize) {
+            super(16, 0.75f, true);
+            this.maxCacheSize = maxCacheSize;
+        }
+
+        @Override
+        public BufferedImage put(Reference key, BufferedImage value) {
+            if (containsKey(key)) {
+                BufferedImage removed = remove(key);
+                currentCacheSize = currentCacheSize - sizeOf(removed) + sizeOf(value);
+                super.put(key, value);
+                return removed;
+            } else {
+                currentCacheSize += sizeOf(value);
+                return super.put(key, value);
+            }
+        }
+
+        private long sizeOf(BufferedImage image) {
+            if (image == null) {
+                return 0L;
+            }
+
+            DataBuffer dataBuffer = image.getRaster().getDataBuffer();
+            int dataTypeSize;
+            switch (dataBuffer.getDataType()) {
+                case DataBuffer.TYPE_BYTE:
+                    dataTypeSize = 1;
+                    break;
+                case DataBuffer.TYPE_SHORT:
+                case DataBuffer.TYPE_USHORT:
+                    dataTypeSize = 2;
+                    break;
+                case DataBuffer.TYPE_INT:
+                case DataBuffer.TYPE_FLOAT:
+                    dataTypeSize = 4;
+                    break;
+                case DataBuffer.TYPE_DOUBLE:
+                case DataBuffer.TYPE_UNDEFINED:
+                default:
+                    dataTypeSize = 8;
+                    break;
+            }
+            return dataBuffer.getSize() * dataTypeSize;
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Reference, BufferedImage> eldest) {
+            boolean remove = currentCacheSize > maxCacheSize;
+            if (remove) {
+                long size = sizeOf(eldest.getValue());
+                currentCacheSize -= size;
+            }
+            return remove;
+        }
+    }
+}

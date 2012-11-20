@@ -17,20 +17,21 @@ package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.io.ZeroPaddedInputStream;
+import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.tag.Tagger;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
-import org.icepdf.core.tag.Tagger;
 
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
 import java.lang.reflect.Method;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Many facsimile and document imaging file formats support a form of lossless
@@ -258,11 +259,11 @@ public class CCITTFax {
     private static final short TIFF_COMPRESSION_GROUP3_2D = 3;
     private static final short TIFF_COMPRESSION_GROUP4 = 4;
 
-    private static final String[] TIFF_COMPRESSION_NAMES = new String[] {
-        "TIFF_COMPRESSION_NONE_default",
-        "TIFF_COMPRESSION_GROUP3_1D",
-        "TIFF_COMPRESSION_GROUP3_2D",
-        "TIFF_COMPRESSION_GROUP4"
+    private static final String[] TIFF_COMPRESSION_NAMES = new String[]{
+            "TIFF_COMPRESSION_NONE_default",
+            "TIFF_COMPRESSION_GROUP3_1D",
+            "TIFF_COMPRESSION_GROUP3_2D",
+            "TIFF_COMPRESSION_GROUP4"
     };
 
     private static final short TIFF_PHOTOMETRIC_INTERPRETATION_WHITE_IS_ZERO_default = 0;
@@ -282,8 +283,7 @@ public class CCITTFax {
             Class roClass = Class.forName("javax.media.jai.RenderedOp");
             roGetAsBufferedImage = roClass.getMethod("getAsBufferedImage", new Class[]{});
             USE_JAI_IMAGE_LIBRARY = true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
         }
     }
 
@@ -589,20 +589,19 @@ public class CCITTFax {
     }
 
     public static BufferedImage attemptDeriveBufferedImageFromBytes(
-            Stream stream, Library library, Hashtable streamDictionary, Color fill) {
+            ImageStream stream, Library library, HashMap streamDictionary, Color fill) {
         if (!USE_JAI_IMAGE_LIBRARY)
             return null;
 
         boolean imageMask = stream.isImageMask();
-        Vector decodeArray = (Vector) library.getObject(streamDictionary, "Decode");
+        List decodeArray = (List) library.getObject(streamDictionary, ImageStream.DECODE_KEY);
         // get decode parameters from stream properties
-        Hashtable decodeParmsDictionary = library.getDictionary(streamDictionary, "DecodeParms");
+        HashMap decodeParmsDictionary = library.getDictionary(streamDictionary, ImageStream.DECODEPARMS_KEY);
         Boolean blackIs1Obj = stream.getBlackIs1OrNull(library, decodeParmsDictionary);
-        float k = library.getFloat(decodeParmsDictionary, "K");
-//if( k < 0 ) return null; //TODO 4243: Temporarily disable Group4 JAI
-        boolean hasHeader = false;
+        float k = library.getFloat(decodeParmsDictionary, ImageStream.K_KEY);
+        boolean hasHeader;
 
-        InputStream input = stream.getInputStreamForDecodedStreamBytes();
+        InputStream input = stream.getDecodedByteArrayInputStream();
         if (input == null)
             return null;
         input = new ZeroPaddedInputStream(input);
@@ -617,8 +616,7 @@ public class CCITTFax {
                 return null;
             }
             hasHeader = ((hb1 == 0x4d && hb2 == 0x4d) || (hb1 == 0x49 && hb2 == 0x49));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             try {
                 input.close();
             } catch (IOException ioe) {
@@ -672,10 +670,10 @@ public class CCITTFax {
                 blackIs1 = blackIs1Obj.booleanValue();
                 pdfStatesBlackAndWhite = true;
             }
-            int width = library.getInt(streamDictionary, "Width");
-            int height = library.getInt(streamDictionary, "Height");
+            int width = library.getInt(streamDictionary, ImageStream.WIDTH_KEY);
+            int height = library.getInt(streamDictionary, ImageStream.HEIGHT_KEY);
 
-            Object columnsObj = library.getObject(decodeParmsDictionary, "Columns");
+            Object columnsObj = library.getObject(decodeParmsDictionary, ImageStream.COLUMNS_KEY);
             if (columnsObj != null && columnsObj instanceof Number) {
                 int columns = ((Number) columnsObj).intValue();
                 if (columns > width)
@@ -685,7 +683,7 @@ public class CCITTFax {
             Utils.setIntIntoByteArrayBE(width, fakeHeaderBytes, 0x1E);       // ImageWidth
             Utils.setIntIntoByteArrayBE(height, fakeHeaderBytes, 0x2A);      // ImageLength
             Object bitsPerComponent =                                          // BitsPerSample
-                    library.getObject(streamDictionary, "BitsPerComponent");
+                    library.getObject(streamDictionary, ImageStream.BITSPERCOMPONENT_KEY);
             if (bitsPerComponent != null && bitsPerComponent instanceof Number) {
                 Utils.setShortIntoByteArrayBE(((Number) bitsPerComponent).shortValue(), fakeHeaderBytes, 0x36);
             }
@@ -706,7 +704,7 @@ public class CCITTFax {
                     photometricInterpretation, fakeHeaderBytes, 0x4E);
             Utils.setIntIntoByteArrayBE(height, fakeHeaderBytes, 0x66);      // RowsPerStrip
             int lengthOfCompressedData = Integer.MAX_VALUE - 1;                // StripByteCounts
-            Object lengthValue = library.getObject(streamDictionary, "Length");
+            Object lengthValue = library.getObject(streamDictionary, Stream.LENGTH_KEY);
             if (lengthValue != null && lengthValue instanceof Number)
                 lengthOfCompressedData = ((Number) lengthValue).intValue();
             else {
@@ -731,7 +729,7 @@ public class CCITTFax {
                         compression = TIFF_COMPRESSION_GROUP3_1D;
 
                     Utils.setShortIntoByteArrayBE(compression, fakeHeaderBytes, 0x42);
-                    input = stream.getInputStreamForDecodedStreamBytes();
+                    input = stream.getDecodedByteArrayInputStream();
                     if (input == null)
                         return null;
                     input = new ZeroPaddedInputStream(input);
@@ -746,8 +744,8 @@ public class CCITTFax {
                 }
             }
         } else {
-            int width = library.getInt(streamDictionary, "Width");
-            int height = library.getInt(streamDictionary, "Height");
+            int width = library.getInt(streamDictionary, ImageStream.WIDTH_KEY);
+            int height = library.getInt(streamDictionary, ImageStream.HEIGHT_KEY);
             int approxLen = width * height;
             img = deriveBufferedImageFromTIFFBytes(input, library, approxLen, width, height);
         }
@@ -776,8 +774,6 @@ public class CCITTFax {
             InputStream in, Library library, int compressedBytes, int width, int height) {
         BufferedImage img = null;
         try {
-            library.memoryManager.checkMemory(compressedBytes);
-
             /*
             com.sun.media.jai.codec.SeekableStream s = com.sun.media.jai.codec.SeekableStream.wrapInputStream( in, true );
             ParameterBlock pb = new ParameterBlock();
@@ -806,9 +802,6 @@ public class CCITTFax {
              */
 
             if (javax_media_jai_RenderedOp_op != null) {
-                library.memoryManager.checkMemory(
-                        Math.max(compressedBytes * 60, (int) (width * height * 0.15)));
-
                 // This forces the image to decode, so we can see if that fails,
                 //   and then potentially try a different compression setting
                 /* op.getTile( 0, 0 ); */
@@ -821,24 +814,18 @@ public class CCITTFax {
                 // So, we try to build it piecemeal instead
                 //System.out.println("Memory free: " + Runtime.getRuntime().freeMemory() + ", total:" + Runtime.getRuntime().totalMemory() + ", used: " + (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()));
                 if (r instanceof WritableRaster) {
-                    library.memoryManager.checkMemory(1024);
-
                     ColorModel cm = ri.getColorModel();
                     img = new BufferedImage(cm, (WritableRaster) r, false, null);
                 } else {
-                    library.memoryManager.checkMemory((int) (width * height * 2.5));
-
                     /* img = op.getAsBufferedImage(); */
                     img = (BufferedImage) roGetAsBufferedImage.invoke(javax_media_jai_RenderedOp_op, new Object[]{});
                 }
             }
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             img = null;
             logger.log(Level.FINE,
                     "Could not derive image from data bytes via JAI.");
-        }
-        finally {
+        } finally {
             try {
                 in.close();
             } catch (IOException e) {
@@ -847,7 +834,8 @@ public class CCITTFax {
         return img;
     }
 
-    private static BufferedImage applyImageMaskAndDecodeArray(BufferedImage img, boolean imageMask, Boolean blackIs1, Vector decode, Color fill) {
+    private static BufferedImage applyImageMaskAndDecodeArray(
+            BufferedImage img, boolean imageMask, Boolean blackIs1, List decode, Color fill) {
         // If the image we actually have is monochrome, and so is useful as an image mask
         ColorModel cm = img.getColorModel();
         if (cm instanceof IndexColorModel && cm.getPixelSize() == 1) {
@@ -862,7 +850,7 @@ public class CCITTFax {
 
             boolean defaultDecode =
                     (decode == null) ||
-                            (0.0f == ((Number) decode.elementAt(0)).floatValue());
+                            (0.0f == ((Number) decode.get(0)).floatValue());
             // From empirically testing 6 of the 9 possible combinations of
             //  BlackIs1 {true, false, not given} and Decode {[0 1], [1 0], not given}
             //  this is the rule. Unknown combinations:

@@ -95,12 +95,33 @@ public class Name {
      *         false, otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj == null)
-            return false;
-        if (obj instanceof Name)
-            return name.equals(((Name) obj).getName());
+        if (obj instanceof Name) {
+            return equals((Name) obj);
+        } else {
+            return obj != null && name.equals(obj);
+        }
+    }
 
-        return obj instanceof String && name.equals(obj);
+    /**
+     * Indicates whether some other Name object is "equal to" this one
+     *
+     * @param obj name object that this Name object is compared against
+     * @return true, if this object is the same as the obj argument;
+     *         false, otherwise.
+     */
+    public boolean equals(Name obj) {
+        return obj != null && name.equals(obj.getName());
+    }
+
+    /**
+     * Indicates whether some other String object is "equal to" this one
+     *
+     * @param obj string object that this Name object is compared against
+     * @return true, if this object is the same as the obj argument;
+     *         false, otherwise.
+     */
+    public boolean equals(String obj) {
+        return obj != null && name.equals(obj);
     }
 
     /**
@@ -143,13 +164,14 @@ public class Name {
 
     /**
      * Converts a hext string to formated unicode string.
+     *
      * @param hex 2-digit hex number.
      * @return
      */
     private String convert(String hex) {
         StringBuilder output = new StringBuilder();
         output.append("\\u"); // standard unicode format.
-        for (int j = 0, max = 4 - hex.length(); j < max; j++){
+        for (int j = 0, max = 4 - hex.length(); j < max; j++) {
             output.append("0");
         }
         output.append(hex.toLowerCase());

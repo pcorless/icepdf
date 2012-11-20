@@ -14,16 +14,22 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * put your documentation comment here
  */
 public class Lab extends PColorSpace {
+
+    public static final Name LAB_KEY = new Name("Lab");
+    public static final Name WHITE_POINT_KEY = new Name("WhitePoint");
+    public static final Name RANGE_KEY = new Name("Range");
+
     private float[] whitePoint = {
             0.95047f, 1.0f, 1.08883f
     };
@@ -51,20 +57,20 @@ public class Lab extends PColorSpace {
      * @param l
      * @param h
      */
-    Lab(Library l, Hashtable h) {
+    Lab(Library l, HashMap h) {
         super(l, h);
-        Vector v = (Vector) l.getObject(h, "WhitePoint");
+        List v = (java.util.List) l.getObject(h, WHITE_POINT_KEY);
         if (v != null) {
-            whitePoint[0] = ((Number) v.elementAt(0)).floatValue();
-            whitePoint[1] = ((Number) v.elementAt(1)).floatValue();
-            whitePoint[2] = ((Number) v.elementAt(2)).floatValue();
+            whitePoint[0] = ((Number) v.get(0)).floatValue();
+            whitePoint[1] = ((Number) v.get(1)).floatValue();
+            whitePoint[2] = ((Number) v.get(2)).floatValue();
         }
-        v = (Vector) l.getObject(h, "Range");
+        v = (List) l.getObject(h, RANGE_KEY);
         if (v != null) {
-            range[0] = ((Number) v.elementAt(0)).floatValue();
-            range[1] = ((Number) v.elementAt(1)).floatValue();
-            range[2] = ((Number) v.elementAt(2)).floatValue();
-            range[3] = ((Number) v.elementAt(3)).floatValue();
+            range[0] = ((Number) v.get(0)).floatValue();
+            range[1] = ((Number) v.get(1)).floatValue();
+            range[2] = ((Number) v.get(2)).floatValue();
+            range[3] = ((Number) v.get(3)).floatValue();
         }
 
         lBase = 0.0f;

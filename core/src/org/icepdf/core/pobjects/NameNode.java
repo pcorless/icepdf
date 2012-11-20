@@ -16,9 +16,9 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Vector;
-
 
 /**
  * NameNode used in building a name tree.
@@ -26,13 +26,18 @@ import java.util.Vector;
  * @since 4.0
  */
 public class NameNode extends Dictionary {
+
+    public static final Name KIDS_KEY = new Name("Kids");
+    public static final Name NAMES_KEY = new Name("Names");
+    public static final Name LIMITS_KEY = new Name("Limits");
+
     private static Object NOT_FOUND = new Object();
     private static Object NOT_FOUND_IS_LESSER = new Object();
     private static Object NOT_FOUND_IS_GREATER = new Object();
 
     private boolean namesAreDecrypted;
-    private Vector namesAndValues;
-    private Vector kidsReferences;
+    private List namesAndValues;
+    private List kidsReferences;
     private Vector kidsNodes;
     private String lowerLimit;
     private String upperLimit;
@@ -41,12 +46,11 @@ public class NameNode extends Dictionary {
      * @param l
      * @param h
      */
-    public NameNode(Library l, Hashtable h) {
+    public NameNode(Library l, HashMap h) {
         super(l, h);
-        Object o = library.getObject(entries, "Kids");
-        if (o != null && o instanceof Vector) {
-            Vector v = (Vector) o;
-            kidsReferences = v;
+        Object o = library.getObject(entries, KIDS_KEY);
+        if (o != null && o instanceof List) {
+            kidsReferences = (List) o;
             int sz = kidsReferences.size();
             if (sz > 0) {
                 kidsNodes = new Vector(sz);
@@ -54,13 +58,13 @@ public class NameNode extends Dictionary {
             }
         }
         namesAreDecrypted = false;
-        o = library.getObject(entries, "Names");
-        if (o != null && o instanceof Vector) {
-            namesAndValues = (Vector) o;
+        o = library.getObject(entries, NAMES_KEY);
+        if (o != null && o instanceof List) {
+            namesAndValues = (List) o;
         }
-        o = library.getObject(entries, "Limits");
-        if (o != null && o instanceof Vector) {
-            Vector limits = (Vector) o;
+        o = library.getObject(entries, LIMITS_KEY);
+        if (o != null && o instanceof List) {
+            List limits = (List) o;
             if (limits.size() >= 2) {
                 lowerLimit = decryptIfText(limits.get(0));
                 upperLimit = decryptIfText(limits.get(1));
@@ -68,25 +72,23 @@ public class NameNode extends Dictionary {
         }
     }
 
-     
-
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         return kidsNodes.size() == 0;
     }
 
-    public boolean hasLimits(){
-        return library.getObject(entries, "Limits") != null;
+    public boolean hasLimits() {
+        return library.getObject(entries, LIMITS_KEY) != null;
     }
 
-    public Vector getNamesAndValues() {
+    public List getNamesAndValues() {
         return namesAndValues;
     }
 
-    public Vector getKidsReferences() {
+    public List getKidsReferences() {
         return kidsReferences;
     }
 
-    public Vector getKidsNodes() {
+    public List getKidsNodes() {
         return kidsNodes;
     }
 
@@ -114,6 +116,7 @@ public class NameNode extends Dictionary {
      * Decyptes the node String object and returns a String value of the node
      * which is used to find names in the name tree. We only do this once
      * for the notes names vector.
+     *
      * @param tmp
      * @return
      */
@@ -121,9 +124,8 @@ public class NameNode extends Dictionary {
         if (tmp instanceof StringObject) {
             StringObject nameText = (StringObject) tmp;
             return nameText.getDecryptedLiteralString(library.securityManager);
-        }
-        else if (tmp instanceof String){
-            return (String)tmp;
+        } else if (tmp instanceof String) {
+            return (String) tmp;
         }
         return null;
     }
@@ -264,25 +266,10 @@ public class NameNode extends Dictionary {
         NameNode n = (NameNode) kidsNodes.get(index);
         if (n == null) {
             Reference r = (Reference) kidsReferences.get(index);
-            Hashtable nh = (Hashtable) library.getObject(r);
+            HashMap nh = (HashMap) library.getObject(r);
             n = new NameNode(library, nh);
             kidsNodes.set(index, n);
         }
         return n;
-    }
-
-    public void dispose() {
-        if (namesAndValues != null) {
-            namesAndValues.clear();
-            namesAndValues.trimToSize();
-        }
-        if (kidsReferences != null) {
-            kidsReferences.clear();
-            kidsReferences.trimToSize();
-        }
-        if (kidsNodes != null) {
-            kidsNodes.clear();
-            kidsNodes.trimToSize();
-        }
     }
 }

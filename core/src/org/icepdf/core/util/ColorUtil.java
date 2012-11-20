@@ -201,22 +201,22 @@ public class ColorUtil {
 
     /**
      * Converts the colour to an integer value.
-     * @param name colour value in either hex or string format.
      *
+     * @param name colour value in either hex or string format.
      * @return valid int colour value or -1 if no colour could be resolved
      */
-    public static int convertColor(String name){
-        try{
+    public static int convertColor(String name) {
+        try {
             // see if string starts with #
-            if (name.startsWith("#")){
+            if (name.startsWith("#")) {
                 name = name.substring(1);
             }
-            return Integer.parseInt(name, 16 );
-        }catch(NumberFormatException e){
+            return Integer.parseInt(name, 16);
+        } catch (NumberFormatException e) {
             // intentionally left empty
         }
         // otherwise try and pare the colour name.
-        return convertNamedColor (name);
+        return convertNamedColor(name);
     }
 
 

@@ -14,8 +14,6 @@
  */
 package org.icepdf.core.tag.query;
 
-import org.icepdf.core.tag.TaggedDocument;
-
 /**
  * @author mcollette
  * @since 4.0
@@ -23,7 +21,7 @@ import org.icepdf.core.tag.TaggedDocument;
 public abstract class Operator implements Expression {
     public static int SCOPE_TAG = 1;
     public static int SCOPE_IMAGE = 2;
-    private static final String[] SCOPE_NAMES = new String[] { "", "TAG", "IMAGE" };
+    private static final String[] SCOPE_NAMES = new String[]{"", "TAG", "IMAGE"};
 
     protected int scope;
     protected Expression[] childExpressions;
@@ -42,7 +40,7 @@ public abstract class Operator implements Expression {
 
     public String describe(int indent) {
         StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < indent; i++)
+        for (int i = 0; i < indent; i++)
             sb.append("  ");
         String className = getClass().getName();
         className = className.substring(className.lastIndexOf(".") + 1);
@@ -51,8 +49,8 @@ public abstract class Operator implements Expression {
         sb.append(SCOPE_NAMES[scope]);
         sb.append('\n');
         int num = (childExpressions != null) ? childExpressions.length : 0;
-        for(int i = 0; i < num; i++)
-            sb.append(childExpressions[i].describe(indent+1));
+        for (int i = 0; i < num; i++)
+            sb.append(childExpressions[i].describe(indent + 1));
         return sb.toString();
     }
 }

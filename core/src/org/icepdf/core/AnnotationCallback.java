@@ -55,9 +55,10 @@ public interface AnnotationCallback {
 
     /**
      * New annotation created with view tool.
+     *
      * @param page page that annotation was added to.
      * @param rect new annotation bounds.
      */
     public void newAnnotation(PageViewComponent page, Rectangle rect);
-    
+
 }

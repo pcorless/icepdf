@@ -14,14 +14,16 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Form;
+import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The PDF viewer application maintains an internal data structure called the
@@ -281,6 +283,7 @@ public class GraphicsState {
 
     // current clipping area.
     private Area clip;
+    private boolean clipChange = false;
 
     // over print mode
     private int overprintMode;
@@ -370,7 +373,7 @@ public class GraphicsState {
      */
     public void translate(double x, double y) {
         CTM.translate(x, y);
-        shapes.add(new AffineTransform(CTM));
+        shapes.add(new TransformDrawCmd(new AffineTransform(CTM)));
     }
 
     /**
@@ -385,7 +388,7 @@ public class GraphicsState {
      */
     public void scale(double x, double y) {
         CTM.scale(x, y);
-        shapes.add(new AffineTransform(CTM));
+        shapes.add(new TransformDrawCmd(new AffineTransform(CTM)));
     }
 
     /**
@@ -396,7 +399,7 @@ public class GraphicsState {
      */
     public void set(AffineTransform af) {
         CTM = new AffineTransform(af);
-        shapes.add(new AffineTransform(CTM));
+        shapes.add(new TransformDrawCmd(new AffineTransform(CTM)));
     }
 
     /**
@@ -440,12 +443,11 @@ public class GraphicsState {
         }
         // line dash pattern
         if (extGState.getLineDashPattern() != null) {
-            Vector dasshPattern = extGState.getLineDashPattern();
+            List dasshPattern = extGState.getLineDashPattern();
             try {
-                setDashArray((float[]) dasshPattern.elementAt(0));
-                setDashPhase(((Number) dasshPattern.elementAt(1)).floatValue());
-            }
-            catch (ClassCastException e) {
+                setDashArray((float[]) dasshPattern.get(0));
+                setDashPhase(((Number) dasshPattern.get(1)).floatValue());
+            } catch (ClassCastException e) {
                 logger.log(Level.FINE, "Dash cast error: ", e);
             }
         }
@@ -463,8 +465,32 @@ public class GraphicsState {
         }
 
         // save soft mask information
-        if (extGState.getSMask() != null){
+        if (extGState.getSMask() != null) {
             setSoftMask(extGState.getSMask());
+        }
+        if (extGState.getSMask() != null) {
+            SoftMask sMask = extGState.getSMask();
+            setSoftMask(sMask);
+            Form form = sMask.getG();
+            Shapes shapes = form.getShapes();
+            List<Image> images = shapes.getImages();
+//            for (final Image image : images){
+//                final JFrame f = new JFrame("Test");
+//                f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+//                f.getContentPane().add(new JComponent() {
+//                    @Override
+//                    public void paint(Graphics g_) {
+//                        super.paint(g_);
+//                        g_.drawImage(image,0,0,null);
+//                    }
+//                });
+//                f.setSize(new Dimension(800, 800));
+//                f.setVisible(true);
+//            }
+//            System.out.println("BC " + sMask.getBC());
+//            System.out.println("Form " + form);
+//            System.out.println("Name " + sMask.getS());
+//            System.out.println();
         }
 
         // apply over print logic
@@ -492,6 +518,7 @@ public class GraphicsState {
         // else default inits of false for each is fine.
     }
 
+
     /**
      * Restores the previously saved graphic state.
      *
@@ -507,26 +534,30 @@ public class GraphicsState {
             // Add the parents CTM to the stack,
             parentGraphicState.set(parentGraphicState.CTM);
             // Add the parents clip to the stack
-            if (parentGraphicState.clip != null) {
-                parentGraphicState.shapes.add(parentGraphicState.clip.clone());
-                parentGraphicState.shapes.addClipCommand();
-            } else {
-                parentGraphicState.shapes.addNoClipCommand();
+            if (parentGraphicState.clipChange || clipChange) {
+                if (parentGraphicState.clip != null) {
+                    if (!parentGraphicState.clip.equals(clip)) {
+                        parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
+                        parentGraphicState.shapes.add(new ClipDrawCmd());
+                    }
+                } else {
+                    parentGraphicState.shapes.add(new NoClipDrawCmd());
+                }
             }
             // Update the stack with the parentGraphicsState stack.
-            parentGraphicState.shapes.add(
+            parentGraphicState.shapes.add(new StrokeDrawCmd(
                     new BasicStroke(parentGraphicState.lineWidth,
                             parentGraphicState.lineCap,
                             parentGraphicState.lineJoin,
                             parentGraphicState.miterLimit,
                             parentGraphicState.dashArray,
-                            parentGraphicState.dashPhase));
+                            parentGraphicState.dashPhase)));
 
             // Note the following aren't officially part of the graphic state parameters
             // but they need to be restored in order to show some PDF content correctly
 
             // restore the fill color of the last paint
-            parentGraphicState.shapes.add(parentGraphicState.getFillColor());
+            parentGraphicState.shapes.add(new ColorDrawCmd(parentGraphicState.getFillColor()));
 
             // stroke Color
 //            parentGraphicState.shapes.add(parentGraphicState.getStrokeColor());
@@ -553,9 +584,8 @@ public class GraphicsState {
             AffineTransform afInverse = new AffineTransform();
             try {
                 afInverse = af.createInverse();
-            }
-            catch (Exception e) {
-                logger.log(Level.FINE, "Eror generating clip inverse.",e);
+            } catch (Exception e) {
+                logger.log(Level.FINE, "Eror generating clip inverse.", e);
             }
 
             // transform the clip.
@@ -578,25 +608,20 @@ public class GraphicsState {
             if (clip != null) {
                 area.intersect(clip);
             }
-            // update the clip with the new value
-            clip = (Area) area.clone();
-
-            // add the new clip to the stack but check first for a potential
-            // clip intersection issue where small clips will not be painted
-            // at low zoom numbers.
-//            Rectangle2D bounds = area.getBounds2D();
-//            if (bounds.getWidth() < 0.005f ||
-//                    bounds.getHeight() < 0.0005f){
-//                shapes.add(bounds);
-//                shapes.addClipCommand();
-//            }else{
-                shapes.add(area.clone());
-                shapes.addClipCommand();
-//            }
+            // update the clip with the new value if it is new.
+            if (clip == null || !clip.getBounds().equals(area.getBounds())) {
+                clip = new Area(area);
+                shapes.add(new ShapeDrawCmd(new Area(area)));
+                shapes.add(new ClipDrawCmd());
+                // mark that the clip has changed.
+                clipChange = true;
+            } else {
+                clip = new Area(area);
+            }
         } else {
             // add a null clip for a null shape, should not normally happen
             clip = null;
-            shapes.addNoClipCommand();
+            shapes.add(new NoClipDrawCmd());
         }
     }
 

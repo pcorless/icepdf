@@ -75,7 +75,7 @@ public class Reference implements Serializable {
      * Indicates whether some other reference object is "equal to" this one.
      *
      * @param obj reference object to compare to this reference.
-     * @return tru,e if the two objects are equal; false, otherwise.
+     * @return tru, e if the two objects are equal; false, otherwise.
      */
     public boolean equals(Object obj) {
         if (obj == this)

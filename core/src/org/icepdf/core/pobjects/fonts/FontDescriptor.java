@@ -17,10 +17,10 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class represents a PDF <code>FontDescriptor</code>.  A FontDescriptor object
@@ -36,48 +36,48 @@ public class FontDescriptor extends Dictionary {
 
     private FontFile font;
 
-    public static final String FONT_NAME = "FontName";
+    public static final Name FONT_NAME = new Name("FontName");
 
-    public static final String FONT_FAMILY = "FontFamily";
+    public static final Name FONT_FAMILY = new Name("FontFamily");
 
-    public static final String MISSING_Stretch = "FontStretch";
+    public static final Name MISSING_Stretch = new Name("FontStretch");
 
-    public static final String FONT_WEIGHT = "FontWeight";
+    public static final Name FONT_WEIGHT = new Name("FontWeight");
 
-    public static final String FLAGS = "Flags";
+    public static final Name FLAGS = new Name("Flags");
 
-    public static final String FONT_BBOX = "FontBBox";
+    public static final Name FONT_BBOX = new Name("FontBBox");
 
-    public static final String ITALIC_ANGLE = "ItalicAngle";
+    public static final Name ITALIC_ANGLE = new Name("ItalicAngle");
 
-    public static final String ASCENT = "Ascent";
+    public static final Name ASCENT = new Name("Ascent");
 
-    public static final String DESCENT = "Descent";
+    public static final Name DESCENT = new Name("Descent");
 
-    public static final String LEADING = "Leading";
+    public static final Name LEADING = new Name("Leading");
 
-    public static final String CAP_HEIGHT = "CapHeight";
+    public static final Name CAP_HEIGHT = new Name("CapHeight");
 
-    public static final String X_HEIGHT = "XHeight";
+    public static final Name X_HEIGHT = new Name("XHeight");
 
-    public static final String STEM_V = "StemV";
+    public static final Name STEM_V = new Name("StemV");
 
-    public static final String STEM_H = "StemH";
+    public static final Name STEM_H = new Name("StemH");
 
-    public static final String AVG_WIDTH = "AvgWidth";
+    public static final Name AVG_WIDTH = new Name("AvgWidth");
 
-    public static final String MAX_WIDTH = "MaxWidth";
+    public static final Name MAX_WIDTH = new Name("MaxWidth");
 
-    public static final String MISSING_WIDTH = "MissingWidth";
+    public static final Name MISSING_WIDTH = new Name("MissingWidth");
 
-    private static final String FONT_FILE = "FontFile";
-    private static final String FONT_FILE_2 = "FontFile2";
-    private static final String FONT_FILE_3 = "FontFile3";
-    private static final String FONT_FILE_3_TYPE_1C = "Type1C";
-    private static final String FONT_FILE_3_CID_FONT_TYPE_0 = "CIDFontType0";
-    private static final String FONT_FILE_3_CID_FONT_TYPE_2 = "CIDFontType2";
-    private static final String FONT_FILE_3_CID_FONT_TYPE_0C = "CIDFontType0C";
-    private static final String FONT_FILE_3_OPEN_TYPE = "OpenType";
+    private static final Name FONT_FILE = new Name("FontFile");
+    private static final Name FONT_FILE_2 = new Name("FontFile2");
+    private static final Name FONT_FILE_3 = new Name("FontFile3");
+    private static final Name FONT_FILE_3_TYPE_1C = new Name("Type1C");
+    private static final Name FONT_FILE_3_CID_FONT_TYPE_0 = new Name("CIDFontType0");
+    private static final Name FONT_FILE_3_CID_FONT_TYPE_2 = new Name("CIDFontType2");
+    private static final Name FONT_FILE_3_CID_FONT_TYPE_0C = new Name("CIDFontType0C");
+    private static final Name FONT_FILE_3_OPEN_TYPE = new Name("OpenType");
 
     /**
      * Creates a new instance of a FontDescriptor.
@@ -85,7 +85,7 @@ public class FontDescriptor extends Dictionary {
      * @param l Libaray of all objects in PDF
      * @param h hash of parsed FontDescriptor attributes
      */
-    public FontDescriptor(Library l, Hashtable h) {
+    public FontDescriptor(Library l, HashMap h) {
         super(l, h);
     }
 
@@ -94,11 +94,11 @@ public class FontDescriptor extends Dictionary {
      * of the <code>AFM</code>
      *
      * @param library document library
-     * @param afm adobe font metrics data
+     * @param afm     adobe font metrics data
      * @return new instance of a <code>FontDescriptor</code>
      */
     public static FontDescriptor createDescriptor(Library library, AFM afm) {
-        Hashtable<String, Object> properties = new Hashtable<String, Object>(5);
+        HashMap<Name, Object> properties = new HashMap<Name, Object>(7);
         properties.put(FONT_NAME, afm.getFontName());
         properties.put(FONT_FAMILY, afm.getFamilyName());
         properties.put(FONT_BBOX, afm.getFontBBox());
@@ -118,8 +118,7 @@ public class FontDescriptor extends Dictionary {
         Object value = library.getObject(entries, FONT_NAME);
         if (value instanceof Name) {
             return ((Name) value).getName();
-        }
-        else if (value instanceof String) {
+        } else if (value instanceof String) {
             return (String) value;
         }
         return null;
@@ -137,7 +136,7 @@ public class FontDescriptor extends Dictionary {
             StringObject familyName = (StringObject) value;
             return familyName.getDecryptedLiteralString(library.getSecurityManager());
         }
-        return FONT_NAME;
+        return FONT_NAME.getName();
     }
 
     /**
@@ -236,8 +235,8 @@ public class FontDescriptor extends Dictionary {
      */
     public PRectangle getFontBBox() {
         Object value = library.getObject(entries, FONT_BBOX);
-        if (value instanceof Vector) {
-            Vector rectangle = (Vector) value;
+        if (value instanceof List) {
+            List rectangle = (List) value;
             return new PRectangle(rectangle);
         }
         return null;
@@ -295,7 +294,7 @@ public class FontDescriptor extends Dictionary {
             if (entries.containsKey(FONT_FILE_3)) {
 
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_3);
-                String subType = fontStream.getObject("Subtype").toString();
+                Name subType = (Name) fontStream.getObject(SUBTYPE_KEY);
                 if (subType != null &&
                         (subType.equals(FONT_FILE_3_TYPE_1C) ||
                                 subType.equals(FONT_FILE_3_CID_FONT_TYPE_0) ||

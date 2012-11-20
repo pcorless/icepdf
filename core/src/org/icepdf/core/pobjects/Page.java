@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.io.SeekableInput;
-import org.icepdf.core.io.SequenceInputStream;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
@@ -26,7 +25,10 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
-import org.icepdf.core.util.*;
+import org.icepdf.core.util.ContentParser;
+import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 import org.icepdf.core.views.common.TextSelectionPageHandler;
 import org.icepdf.core.views.swing.PageViewComponentImpl;
 
@@ -35,8 +37,9 @@ import java.awt.geom.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,13 +68,22 @@ import java.util.logging.Logger;
  * @see org.icepdf.core.pobjects.PageTree
  * @since 1.0
  */
-public class Page extends Dictionary implements MemoryManageable {
+public class Page extends Dictionary {
 
     private static final Logger logger =
             Logger.getLogger(Page.class.toString());
 
     public static final Name ANNOTS_KEY = new Name("Annots");
     public static final Name CONTENTS_KEY = new Name("Contents");
+    public static final Name RESOURCES_KEY = new Name("Resources");
+    public static final Name THUMB_KEY = new Name("Thumb");
+    public static final Name PARENT_KEY = new Name("Parent");
+    public static final Name ROTATE_KEY = new Name("Rotate");
+    public static final Name MEDIABOX_KEY = new Name("MediaBox");
+    public static final Name CROPBOX_KEY = new Name("CropBox");
+    public static final Name ARTBOX_KEY = new Name("ArtBox");
+    public static final Name BLEEDBOX_KEY = new Name("BleedBox");
+    public static final Name TRIMBOX_KEY = new Name("TrimBox");
 
     /**
      * Defines the boundaries of the physical medium on which the page is
@@ -111,15 +123,15 @@ public class Page extends Dictionary implements MemoryManageable {
     private Resources resources;
 
     // Vector of annotations
-    private ArrayList<Annotation> annotations;
+    private List<Annotation> annotations;
 
     // Contents
-    private Vector<Stream> contents;
+    private List<Stream> contents;
     // Container for all shapes stored on page
     private Shapes shapes = null;
 
     // the collection of objects listening for page paint events
-    private Vector<PaintPageListener> paintPageListeners = new Vector<PaintPageListener>(8);
+    private final List<PaintPageListener> paintPageListeners = new ArrayList<PaintPageListener>(8);
 
     // Defines the boundaries of the physical medium on which the page is
     // intended to be displayed on.
@@ -144,73 +156,10 @@ public class Page extends Dictionary implements MemoryManageable {
      * a page entity and all of it child elements that are associated with it.
      *
      * @param l pointer to default library containing all document objects
-     * @param h hashtable containing all of the dictionary entries
+     * @param h HashMap containing all of the dictionary entries
      */
-    public Page(Library l, Hashtable h) {
+    public Page(Library l, HashMap h) {
         super(l, h);
-    }
-
-    /**
-     * Dispose the Page.
-     *
-     * @param cache if true, cached files are removed; otherwise, objects are freed
-     *              but object caches are left intact.
-     */
-    protected synchronized void dispose(boolean cache) {
-        // Do not null out Library library reference here, without taking
-        //   into account that MemoryManager.releaseAllByLibrary(Library)
-        //   requires Page to still have Library library in getLibrary()
-        // dispose only if the pages has been initiated
-        if (isInited) {
-            // un-init a page to free up memory
-            isInited = false;
-            // null data collections for page content
-            if (annotations != null) {
-                annotations.clear();
-                annotations.trimToSize();
-            }
-            // work through contents and null any stream that have images in them
-            if (contents != null) {
-                //System.out.println("   Content size " + contents.size());
-                for (Stream stream : contents) {
-                    stream.dispose(cache);
-                }
-                contents.clear();
-                contents.trimToSize();
-            }
-
-            // work through contents and null any stream that have images in them
-            if (shapes != null) {
-                shapes.dispose();
-                shapes = null;
-            }
-
-            // work through resources and null any images in the image hash
-            if (resources != null) {
-                resources.dispose(cache, this);
-                resources = null;
-            }
-            // clean up references in library to avoid slow bleed
-            if (cache) {
-                // remove the page
-                library.removeObject(this.getPObjectReference());
-                // annotations
-                Object tmp = entries.get(ANNOTS_KEY.getName());
-                if (tmp != null && tmp instanceof Vector) {
-                    Vector annots = (Vector) tmp;
-                    for (Object ref : annots) {
-                        if (ref instanceof Reference) {
-                            library.removeObject((Reference) ref);
-                        }
-                    }
-                }
-            }
-        }
-        // clear vector of listeners
-        if (paintPageListeners != null) {
-            paintPageListeners.clear();
-            paintPageListeners.trimToSize();
-        }
     }
 
     public boolean isInitiated() {
@@ -218,62 +167,60 @@ public class Page extends Dictionary implements MemoryManageable {
     }
 
     private void initPageContents() throws InterruptedException {
-        Object pageContent = library.getObject(entries, CONTENTS_KEY.getName());
+        Object pageContent = library.getObject(entries, CONTENTS_KEY);
 
         // if a stream process it as needed
         if (pageContent instanceof Stream) {
-            contents = new Vector<Stream>(1);
+            contents = new ArrayList<Stream>(1);
             Stream tmpStream = (Stream) pageContent;
             tmpStream.setPObjectReference(
-                    library.getObjectReference(entries, CONTENTS_KEY.getName()));
-            contents.addElement(tmpStream);
+                    library.getObjectReference(entries, CONTENTS_KEY));
+            contents.add(tmpStream);
         }
         // if a vector, process it as needed
-        else if (pageContent instanceof Vector) {
-            Vector conts = (Vector) pageContent;
+        else if (pageContent instanceof List) {
+            List conts = (List) pageContent;
             int sz = conts.size();
-            contents = new Vector<Stream>(Math.max(sz, 1));
+            contents = new ArrayList<Stream>(Math.max(sz, 1));
             // pull all of the page content references from the library
             for (int i = 0; i < sz; i++) {
                 if (Thread.interrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
-                Stream tmpStream = (Stream) library.getObject((Reference) conts.elementAt(i));
+                Stream tmpStream = (Stream) library.getObject((Reference) conts.get(i));
                 if (tmpStream != null) {
-                    tmpStream.setPObjectReference((Reference) conts.elementAt(i));
-                    contents.addElement(tmpStream);
+                    tmpStream.setPObjectReference((Reference) conts.get(i));
+                    contents.add(tmpStream);
                 }
             }
         }
     }
 
     private void initPageResources() throws InterruptedException {
-        Resources res = library.getResources(entries, "Resources");
+        Resources res = library.getResources(entries, RESOURCES_KEY);
+        PageTree pageTree;
         if (res == null) {
-            PageTree pt = getParent();
-            while (pt != null) {
+            pageTree = getParent();
+            while (pageTree != null) {
                 if (Thread.interrupted()) {
                     throw new InterruptedException("Page Resource initialization thread interrupted");
                 }
-                Resources parentResources = pt.getResources();
+                Resources parentResources = pageTree.getResources();
                 if (parentResources != null) {
                     res = parentResources;
                     break;
                 }
-                pt = pt.getParent();
+                pageTree = pageTree.getParent();
             }
         }
         resources = res;
-        if (resources != null) {
-            resources.addReference(this);
-        }
     }
 
     private void initPageAnnotations() throws InterruptedException {
         // find annotations in main library for our pages dictionary
-        Object annots = library.getObject(entries, ANNOTS_KEY.getName());
-        if (annots != null && annots instanceof Vector) {
-            Vector v = (Vector) annots;
+        Object annots = library.getObject(entries, ANNOTS_KEY);
+        if (annots != null && annots instanceof List) {
+            List v = (List) annots;
             annotations = new ArrayList<Annotation>(v.size() + 1);
             // add annotations
             Object annotObj;
@@ -285,11 +232,11 @@ public class Page extends Dictionary implements MemoryManageable {
                             "Page Annotation initialization thread interrupted");
                 }
 
-                annotObj = v.elementAt(i);
+                annotObj = v.get(i);
                 Reference ref = null;
                 // we might have a reference
                 if (annotObj instanceof Reference) {
-                    ref = (Reference) v.elementAt(i);
+                    ref = (Reference) v.get(i);
                     annotObj = library.getObject(ref);
                 }
 
@@ -298,12 +245,12 @@ public class Page extends Dictionary implements MemoryManageable {
                     a = (Annotation) annotObj;
                 }
                 // or build annotations from dictionary.
-                else if (annotObj instanceof Hashtable) { // Hashtable lacks "Type"->"Annot" entry
-                    a = Annotation.buildAnnotation(library, (Hashtable) annotObj);
+                else if (annotObj instanceof HashMap) { // HashMap lacks "Type"->"Annot" entry
+                    a = Annotation.buildAnnotation(library, (HashMap) annotObj);
                 }
                 // set the object reference, so we can save the state correct
                 // and update any references accordingly. 
-                if (ref != null) {
+                if (ref != null & a != null) {
                     a.setPObjectReference(ref);
                 }
 
@@ -311,6 +258,11 @@ public class Page extends Dictionary implements MemoryManageable {
                 annotations.add(a);
             }
         }
+    }
+
+    @Override
+    public void setPObjectReference(Reference reference) {
+        super.setPObjectReference(reference);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     /**
@@ -322,13 +274,6 @@ public class Page extends Dictionary implements MemoryManageable {
             // make sure we are not revisiting this method
             if (isInited) {
                 return;
-            }
-//try { throw new RuntimeException("Page.init() ****"); } catch(Exception e) { e.printStackTrace(); }
-
-            // do a little clean up to keep the mem footprint small
-            boolean lowMemory = MemoryManager.getInstance().isLowMemory();
-            if (lowMemory && logger.isLoggable(Level.FINER)) {
-                logger.finer("Low memory conditions encountered, clearing page cache");
             }
 
             // get pages resources
@@ -345,40 +290,23 @@ public class Page extends Dictionary implements MemoryManageable {
              * the resourse streams together so that the content parser can
              * go to town and build all of the page's shapes.
              */
-
             if (contents != null) {
-                Vector<InputStream> inputStreamsVec = new Vector<InputStream>(contents.size());
-                for (Stream stream : contents) {
-                    //byte[] streamBytes = stream.getBytes();
-                    //ByteArrayInputStream input = new ByteArrayInputStream(streamBytes);
-                    InputStream input = stream.getInputStreamForDecodedStreamBytes();
-                    inputStreamsVec.add(input);
-/*
-                    InputStream input = stream.getInputStreamForDecodedStreamBytes();
-                    InputStream[] inArray = new InputStream[] { input };////
-                    String content = Utils.getContentAndReplaceInputStream( inArray, false );
-                    input = inArray[0];
-                    System.out.println("Page.init()  Stream: " + stream);
-                    System.out.println("Page.init()  Content: " + content);
-*/
-                }
-                SequenceInputStream sis = new SequenceInputStream(inputStreamsVec.iterator());
-
-                // push the library and resources to the content parse
-                // and return the the shapes vector for the screen elements
-                // for the page/resources in question.
                 try {
                     ContentParser cp = new ContentParser(library, resources);
-                    shapes = cp.parse(sis);
+                    byte[][] streams = new byte[contents.size()][];
+                    byte[] stream;
+                    for (int i = 0, max = contents.size(); i < max; i++) {
+                        stream = contents.get(i).getDecodedStreamBytes();
+                        if (stream != null) {
+                            streams[i] = stream;
+                        }
+                    }
+                    shapes = cp.parse(streams).getShapes();
+
                 } catch (Exception e) {
                     shapes = new Shapes();
                     logger.log(Level.FINE, "Error initializing Page.", e);
-                } finally {
-                    try {
-                        sis.close();
-                    } catch (IOException e) {
-                        logger.log(Level.FINE, "Error closing page stream.", e);
-                    }
+                    e.printStackTrace();
                 }
             }
             // empty page, nothing to do.
@@ -405,7 +333,7 @@ public class Page extends Dictionary implements MemoryManageable {
      *         encoded.
      */
     public Thumbnail getThumbnail() {
-        Object thumb = library.getObject(entries, "Thumb");
+        Object thumb = library.getObject(entries, THUMB_KEY);
         if (thumb != null && thumb instanceof Stream) {
             return new Thumbnail(library, entries);
         } else {
@@ -451,7 +379,7 @@ public class Page extends Dictionary implements MemoryManageable {
      * @param userZoom             Zoom factor to be applied to the rendered page
      * @param pagePainter          class which will receive paint events.
      * @param paintAnnotations     true enables the painting of page annotations.  False
-     *                             paints no annotaitons for a given page.
+     *                             paints no annotations for a given page.
      * @param paintSearchHighlight true enables the painting of search highlight
      *                             state of text object.  The search controller can
      *                             be used to easily search and add highlighted state
@@ -506,6 +434,43 @@ public class Page extends Dictionary implements MemoryManageable {
             g2.setClip(area);
         }
 
+        paintPageContent(g2, renderHintType, userRotation, userZoom, pagePainter, paintAnnotations, paintSearchHighlight);
+
+        // one last repaint, just to be sure
+        notifyPaintPageListeners();
+    }
+
+    /**
+     * Paints the contents of this page to the graphics context using
+     * the specified rotation, zoom, rendering hints.
+     * <p/>
+     * The drawing commands that are issued on the given graphics context will use coordinates
+     * in PDF user coordinate space. It is the responsibility of the caller of this method
+     * to setup the graphics context to correctly interpret these coordinates.
+     *
+     * @param g                    graphics context to which the page content will be painted.
+     * @param renderHintType       Constant specified by the GraphicsRenderingHints class.
+     *                             There are two possible entries, SCREEN and PRINT, each with configurable
+     *                             rendering hints settings.
+     * @param userRotation         Rotation factor, in degrees, to be applied to the rendered page
+     * @param userZoom             Zoom factor to be applied to the rendered page
+     * @param pagePainter          class which will receive paint events.
+     * @param paintAnnotations     true enables the painting of page annotations.  False
+     *                             paints no annotations for a given page.
+     * @param paintSearchHighlight true enables the painting of search highlight
+     *                             state of text object.  The search controller can
+     *                             be used to easily search and add highlighted state
+     *                             for search terms.
+     */
+    public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom, PageViewComponentImpl.PagePainter pagePainter, boolean paintAnnotations, boolean paintSearchHighlight) {
+        if (!isInited) {
+            init();
+        }
+
+        paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, pagePainter, paintAnnotations, paintSearchHighlight);
+    }
+
+    private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom, PageViewComponentImpl.PagePainter pagePainter, boolean paintAnnotations, boolean paintSearchHighlight) {
         // draw page content
         if (shapes != null) {
 
@@ -687,7 +652,7 @@ public class Page extends Dictionary implements MemoryManageable {
      * is commonly used with the undo/redo state manager in the RI.  Use
      * the method @link{#createAnnotation} for creating new annotations.
      *
-     * @param newAnnotation
+     * @param newAnnotation annotation object to add
      * @return reference to annotaiton that was added.
      */
     public Annotation addAnnotation(Annotation newAnnotation) {
@@ -703,7 +668,7 @@ public class Page extends Dictionary implements MemoryManageable {
 
         StateManager stateManager = library.getStateManager();
 
-        Object annots = library.getObject(entries, ANNOTS_KEY.getName());
+        Object annots = library.getObject(entries, ANNOTS_KEY);
         boolean isAnnotAReference = library.isReference(entries, ANNOTS_KEY.getName());
 
         // does the page not already have an annotations or if the annots
@@ -711,9 +676,9 @@ public class Page extends Dictionary implements MemoryManageable {
         // manager
         if (!isAnnotAReference && annots != null) {
             // get annots array from page
-            if (annots instanceof Vector) {
+            if (annots instanceof List) {
                 // update annots dictionary with new annotations reference,
-                Vector v = (Vector) annots;
+                List v = (List) annots;
                 v.add(newAnnotation.getPObjectReference());
                 // add the page as state change
                 stateManager.addChange(
@@ -721,19 +686,19 @@ public class Page extends Dictionary implements MemoryManageable {
             }
         } else if (isAnnotAReference && annots != null) {
             // get annots array from page
-            if (annots instanceof Vector) {
+            if (annots instanceof List) {
                 // update annots dictionary with new annotations reference,
-                Vector v = (Vector) annots;
+                List v = (List) annots;
                 v.add(newAnnotation.getPObjectReference());
                 // add the annotations reference dictionary as state has changed
                 stateManager.addChange(
                         new PObject(annots, library.getObjectReference(
-                                entries, ANNOTS_KEY.getName())));
+                                entries, ANNOTS_KEY)));
             }
         }
         // we need to add the a new annots reference
         else {
-            Vector annotsVector = new Vector(4);
+            List annotsVector = new ArrayList(4);
             annotsVector.add(newAnnotation.getPObjectReference());
 
             // create a new Dictionary of annotaions using an external reference
@@ -808,12 +773,12 @@ public class Page extends Dictionary implements MemoryManageable {
         else if (!annot.isNew() && isAnnotAReference) {
             stateManager.addChange(
                     new PObject(annots, library.getObjectReference(
-                            entries, ANNOTS_KEY.getName())));
+                            entries, ANNOTS_KEY)));
         }
         // removed the annotations from the annots vector
-        if (annots instanceof Vector) {
+        if (annots instanceof List) {
             // update annots dictionary with new annotations reference,
-            Vector v = (Vector) annots;
+            List v = (List) annots;
             v.remove(annot.getPObjectReference());
         }
 
@@ -851,8 +816,8 @@ public class Page extends Dictionary implements MemoryManageable {
 
         StateManager stateManager = library.getStateManager();
         // if we are doing an update we have at least on annot
-        Vector<Reference> annots = (Vector)
-                library.getObject(entries, ANNOTS_KEY.getName());
+        List<Reference> annots = (List)
+                library.getObject(entries, ANNOTS_KEY);
 
         // make sure annotations is in part of page.
         boolean found = false;
@@ -901,7 +866,7 @@ public class Page extends Dictionary implements MemoryManageable {
      * @see org.icepdf.core.util.Library
      */
     protected Reference getParentReference() {
-        return (Reference) entries.get("Parent");
+        return (Reference) entries.get(PARENT_KEY);
     }
 
     /**
@@ -911,7 +876,12 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public PageTree getParent() {
         // retrieve a pointer to the pageTreeParent
-        return (PageTree) library.getObject(entries, "Parent");
+        Object tmp = library.getObject(entries, PARENT_KEY);
+        if (tmp instanceof PageTree) {
+            return (PageTree) tmp;//library.getObject(entries, "Parent");
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -1154,7 +1124,7 @@ public class Page extends Dictionary implements MemoryManageable {
     private float getPageRotation() {
         // Get the pages default orientation if available, if not defined
         // then it is zero.
-        Object tmpRotation = library.getObject(entries, "Rotate");
+        Object tmpRotation = library.getObject(entries, ROTATE_KEY);
         if (tmpRotation != null) {
             pageRotation = ((Number) tmpRotation).floatValue();
 //            System.out.println("Page Rotation  " + pageRotation);
@@ -1185,7 +1155,7 @@ public class Page extends Dictionary implements MemoryManageable {
      *
      * @return annotation associated with page; null, if there are no annotations.
      */
-    public ArrayList<Annotation> getAnnotations() {
+    public List<Annotation> getAnnotations() {
         if (!isInited) {
             init();
         }
@@ -1211,7 +1181,7 @@ public class Page extends Dictionary implements MemoryManageable {
             String[] decodedContentStream = new String[contents.size()];
             int i = 0;
             for (Stream stream : contents) {
-                InputStream input = stream.getInputStreamForDecodedStreamBytes();
+                InputStream input = stream.getDecodedByteArrayInputStream();
                 String content;
                 if (input instanceof SeekableInput) {
                     content = Utils.getContentFromSeekableInput((SeekableInput) input, false);
@@ -1226,6 +1196,7 @@ public class Page extends Dictionary implements MemoryManageable {
             return decodedContentStream;
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Error initializing page Contents.", e);
+            e.printStackTrace();
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error closing content stream");
         }
@@ -1241,7 +1212,7 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public Rectangle2D.Float getMediaBox() {
         // add all of the pages media box dimensions to a vector and process
-        Vector boxDimensions = (Vector) (library.getObject(entries, "MediaBox"));
+        List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
         if (boxDimensions != null) {
             mediaBox = new PRectangle(boxDimensions);
 //            System.out.println("Page - MediaBox " + mediaBox);
@@ -1265,7 +1236,7 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public Rectangle2D.Float getCropBox() {
         // add all of the pages crop box dimensions to a vector and process
-        Vector boxDimensions = (Vector) (library.getObject(entries, "CropBox"));
+        List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
             cropBox = new PRectangle(boxDimensions);
 //            System.out.println("Page - CropBox " + cropBox);
@@ -1302,7 +1273,7 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public Rectangle2D.Float getArtBox() {
         // get the art box vector value
-        Vector boxDimensions = (Vector) (library.getObject(entries, "ArtBox"));
+        List boxDimensions = (List) (library.getObject(entries, ARTBOX_KEY));
         if (boxDimensions != null) {
             artBox = new PRectangle(boxDimensions);
 //            System.out.println("Page - ArtBox " + artBox);
@@ -1322,7 +1293,7 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public Rectangle2D.Float getBleedBox() {
         // get the art box vector value
-        Vector boxDimensions = (Vector) (library.getObject(entries, "BleedBox"));
+        List boxDimensions = (List) (library.getObject(entries, BLEEDBOX_KEY));
         if (boxDimensions != null) {
             bleedBox = new PRectangle(boxDimensions);
 //            System.out.println("Page - BleedBox " + bleedBox);
@@ -1342,7 +1313,7 @@ public class Page extends Dictionary implements MemoryManageable {
      */
     public Rectangle2D.Float getTrimBox() {
         // get the art box vector value
-        Vector boxDimensions = (Vector) (library.getObject(entries, "TrimBox"));
+        List boxDimensions = (List) (library.getObject(entries, TRIMBOX_KEY));
         if (boxDimensions != null) {
             trimBox = new PRectangle(boxDimensions);
 //            System.out.println("Page - TrimBox " + trimBox);
@@ -1385,7 +1356,7 @@ public class Page extends Dictionary implements MemoryManageable {
             }
         }
 
-        Shapes textBlockShapes = null;
+        Shapes textBlockShapes = new Shapes();
         try {
             /**
              * Finally iterate through the contents vector and concat all of the
@@ -1401,32 +1372,27 @@ public class Page extends Dictionary implements MemoryManageable {
                 // get pages resources
                 initPageResources();
             }
-
             if (contents != null) {
-                Vector<InputStream> inputStreamsVec =
-                        new Vector<InputStream>(contents.size());
-                for (int st = 0, max = contents.size(); st < max; st++) {
-                    Stream stream = contents.elementAt(st);
-                    InputStream input = stream.getInputStreamForDecodedStreamBytes();
-                    inputStreamsVec.add(input);
-                }
-                SequenceInputStream sis = new SequenceInputStream(inputStreamsVec.iterator());
-
-                // push the library and resources to the content parse
-                // and return the the shapes vector for the screen elements
-                // for the page/resources in question.
                 try {
+
                     ContentParser cp = new ContentParser(library, resources);
-                    // custom parsing for text extraction, should be faster
-                    textBlockShapes = cp.parseTextBlocks(sis);
+                    byte[][] streams = new byte[contents.size()][];
+                    for (int i = 0, max = contents.size(); i < max; i++) {
+                        streams[i] = contents.get(i).getDecodedStreamBytes();
+                    }
+                    textBlockShapes = cp.parseTextBlocks(streams);
+                    // print off any fuzz left on the stack
+                    if (logger.isLoggable(Level.FINER)) {
+                        Stack<Object> stack = cp.getStack();
+                        while (!stack.isEmpty()) {
+                            String tmp = stack.pop().toString();
+                            if (logger.isLoggable(Level.FINE)) {
+                                logger.fine("STACK=" + tmp);
+                            }
+                        }
+                    }
                 } catch (Exception e) {
                     logger.log(Level.FINE, "Error getting page text.", e);
-                } finally {
-                    try {
-                        sis.close();
-                    } catch (IOException e) {
-                        logger.log(Level.FINE, "Error closing page stream.", e);
-                    }
                 }
             }
         } catch (InterruptedException e) {
@@ -1435,7 +1401,7 @@ public class Page extends Dictionary implements MemoryManageable {
             isInited = false;
             logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
         }
-        if (textBlockShapes != null && textBlockShapes.getPageText() != null) {
+        if (textBlockShapes.getPageText() != null) {
             return textBlockShapes.getPageText();
         } else {
             return null;
@@ -1448,7 +1414,7 @@ public class Page extends Dictionary implements MemoryManageable {
      *
      * @return vector of Images inside the current page
      */
-    public synchronized Vector getImages() {
+    public synchronized List<Image> getImages() {
         if (!isInited) {
             init();
         }
@@ -1459,18 +1425,11 @@ public class Page extends Dictionary implements MemoryManageable {
         return resources;
     }
 
-    /**
-     * Reduces the amount of memory used by this object.
-     */
-    public void reduceMemory() {
-        dispose(true);
-    }
-
     public void addPaintPageListener(PaintPageListener listener) {
         // add a listener if it is not already registered
         synchronized (paintPageListeners) {
             if (!paintPageListeners.contains(listener)) {
-                paintPageListeners.addElement(listener);
+                paintPageListeners.add(listener);
             }
         }
     }
@@ -1479,7 +1438,7 @@ public class Page extends Dictionary implements MemoryManageable {
         // remove a listener if it is already registered
         synchronized (paintPageListeners) {
             if (paintPageListeners.contains(listener)) {
-                paintPageListeners.removeElement(listener);
+                paintPageListeners.add(listener);
             }
 
         }
@@ -1508,7 +1467,7 @@ public class Page extends Dictionary implements MemoryManageable {
         // fire the event to all listeners
         PaintPageListener client;
         for (int i = paintPageListeners.size() - 1; i >= 0; i--) {
-            client = paintPageListeners.elementAt(i);
+            client = paintPageListeners.get(i);
             client.paintPage(evt);
         }
     }

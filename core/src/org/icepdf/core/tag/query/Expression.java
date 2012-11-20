@@ -23,6 +23,8 @@ import org.icepdf.core.tag.TaggedImage;
  */
 public interface Expression {
     public int getArgumentCount();
+
     public boolean matches(TaggedDocument td, TaggedImage ti, String tag);
+
     public String describe(int indent);
 }

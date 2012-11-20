@@ -20,13 +20,13 @@ package org.icepdf.core;
  * be used by any object that plans to use the Caretaker implementation in the
  * RI.
  *
- *  @since 4.0
+ * @since 4.0
  */
 public interface Memento {
 
     /**
      * Restore the state that was caputred when an instance of this object
-     * was created. 
+     * was created.
      */
     public void restore();
 }

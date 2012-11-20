@@ -66,7 +66,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
     private static ColorModel graybmodel_NA =
             new ComponentColorModel(ColorSpace.getInstance(
-                    ColorSpace.CS_GRAY), new int[]{1},false, false,
+                    ColorSpace.CS_GRAY), new int[]{1}, false, false,
                     ColorModel.OPAQUE, DataBuffer.TYPE_INT);
 
     /**
@@ -84,7 +84,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
     private static ColorModel graybmodel_A =
             new ComponentColorModel(ColorSpace.getInstance(
-                    ColorSpace.CS_GRAY), new int[]{1,1},true, false,
+                    ColorSpace.CS_GRAY), new int[]{1, 1}, true, false,
                     ColorModel.TRANSLUCENT, DataBuffer.TYPE_INT);
 
     /**
@@ -346,7 +346,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      * fractions.
      */
     protected final void calculateGradientFractions
-            (Color[] loColors, Color[] hiColors) {
+    (Color[] loColors, Color[] hiColors) {
 
         //if interpolation should occur in Linear RGB space, convert the
         //colors using the lookup table
@@ -478,7 +478,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      * @param Imin the size of the smallest interval
      */
     private void calculateSingleArrayGradient
-            (Color[] loColors, Color[] hiColors, float Imin) {
+    (Color[] loColors, Color[] hiColors, float Imin) {
 
         //set the flag so we know later it is a non-simple lookup
         isSimpleLookup = true;
@@ -581,7 +581,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      * time-space tradeoff.
      */
     private void calculateMultipleArrayGradient
-            (Color[] loColors, Color[] hiColors) {
+    (Color[] loColors, Color[] hiColors) {
 
         //set the flag so we know later it is a non-simple lookup
         isSimpleLookup = false;
@@ -1450,7 +1450,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      */
     protected static final
     synchronized WritableRaster getCachedRaster
-            (ColorModel cm, int w, int h) {
+    (ColorModel cm, int w, int h) {
         if (cm == cachedModel) {
             if (cached != null) {
                 WritableRaster ras = (WritableRaster) cached.get();

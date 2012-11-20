@@ -14,16 +14,13 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.Point2D;
 
 /**
  * Sprite interface which is base for all text sprite types.  Mainly line,
  * text, word and glyph.  They are used for managing text extraction.
  *
- * @since 4.0 
+ * @since 4.0
  */
 public interface Text {
 

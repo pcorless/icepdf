@@ -39,10 +39,10 @@ public class FontUtil {
      * Utility method which maps know style strings to an AWT font style constants.
      * The style attribute read as follows from the java.awt.font constructor:
      * <ul>
-     *   the style constant for the Font The style argument is an integer bitmask
-     *   that may be PLAIN, or a bitwise union of BOLD and/or ITALIC
-     *   (for example, ITALIC or BOLD|ITALIC). If the style argument does not
-     *   conform to one of the expected integer bitmasks then the style is set to PLAIN.
+     * the style constant for the Font The style argument is an integer bitmask
+     * that may be PLAIN, or a bitwise union of BOLD and/or ITALIC
+     * (for example, ITALIC or BOLD|ITALIC). If the style argument does not
+     * conform to one of the expected integer bitmasks then the style is set to PLAIN.
      * </ul>
      *
      * @param name base name of font.
@@ -73,12 +73,11 @@ public class FontUtil {
      * name.  For example:
      * <p/>
      * <ul>
-     *    <li>Arial,BoldItalic</li>
-     *    <li>Times-Bold"</li>
-     *    <li>Arial BoldItalic</li>
-     *    <li>TimesNewRomansBold</li>
+     * <li>Arial,BoldItalic</li>
+     * <li>Times-Bold"</li>
+     * <li>Arial BoldItalic</li>
+     * <li>TimesNewRomansBold</li>
      * </ul>
-     *
      *
      * @param name base name of font.
      * @return guess of the base fonts name.
@@ -94,16 +93,16 @@ public class FontUtil {
             fam = fam.substring(0, inx);
         // Family name with no dash or commas, example "TimesNewRomansBold" or
         // "CalibriBoldItalic"
-        if ((inx = fam.toLowerCase().lastIndexOf(STYLE_BOLD_ITALIC)) > 0){
-        	fam = fam.substring(0, inx);
-        }else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_DEMI_ITALIC)) > 0){
-        	fam = fam.substring(0, inx);
-        }else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_BOLD)) > 0){
-        	fam = fam.substring(0, inx);
-        }else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_ITALIC)) > 0){
-        	fam = fam.substring(0, inx);
-        }else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_BLACK)) > 0){
-        	fam = fam.substring(0, inx);
+        if ((inx = fam.toLowerCase().lastIndexOf(STYLE_BOLD_ITALIC)) > 0) {
+            fam = fam.substring(0, inx);
+        } else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_DEMI_ITALIC)) > 0) {
+            fam = fam.substring(0, inx);
+        } else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_BOLD)) > 0) {
+            fam = fam.substring(0, inx);
+        } else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_ITALIC)) > 0) {
+            fam = fam.substring(0, inx);
+        } else if ((inx = fam.toLowerCase().lastIndexOf(STYLE_BLACK)) > 0) {
+            fam = fam.substring(0, inx);
         }
         return fam;
     }

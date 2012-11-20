@@ -392,12 +392,13 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_IFELSE) {
                     public void eval(Stack stack) {
                         // pop off the proc2 so we can get at the operands
-                        Stack proc2Stack = new Stack();
+//                        Stack proc2Stack = new Stack();
                         // if we don't have an Expression we can't continue.
                         if ((Expression) stack.pop() instanceof Expression) {
                             // copy the expression ops off the stack
                             while (!(stack.peek() instanceof Expression)) {
-                                proc2Stack.push(stack.pop());
+//                                proc2Stack.push(stack.pop());
+                                stack.pop();
                             }
                             // pop of starting expression
                             stack.pop();
@@ -442,7 +443,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_INDEX) {
                     public void eval(Stack stack) {
                         float n = (Float) stack.pop();
-                        stack.push(stack.get((int) ((stack.size()-1) - n)));
+                        stack.push(stack.get((int) ((stack.size() - 1) - n)));
                     }
                 };
                 break;
@@ -616,9 +617,9 @@ public class OperatorFactory {
                         // each sift consists of removing an element from the top of the
                         // stack and inserting it between element n-1 and element n of the stack
                         if (j > 0) {
-                            for (int i = 0; i < j; i++){
+                            for (int i = 0; i < j; i++) {
                                 stack.insertElementAt(stack.lastElement(),
-                                        (int) (stack.size() - (n )));
+                                        (int) (stack.size() - (n)));
                                 // finish the move by poping the top;
                                 stack.pop();
                             }
@@ -626,8 +627,8 @@ public class OperatorFactory {
                         // each shift consists of removing an element n-1 off the stack
                         // and pushing it on top of the stack
                         else if (j < 0) {
-                            for (int i = 0,max=(int)-j; i < max; i++){
-                                stack.push(stack.remove((int) (stack.size() - (n ))));
+                            for (int i = 0, max = (int) -j; i < max; i++) {
+                                stack.push(stack.remove((int) (stack.size() - (n))));
                             }
                         }
                     }
@@ -708,10 +709,10 @@ public class OperatorFactory {
                         if (obj2 instanceof Number) {
                             float num2 = (Float) obj2;
                             float num1 = (Float) stack.pop();
-                            stack.push((int)num1 ^ (int)num2);
+                            stack.push((int) num1 ^ (int) num2);
                         } else if (obj2 instanceof Boolean) {
-                            boolean bool2 = (Boolean)obj2;
-                            boolean bool1 = (Boolean)stack.pop();
+                            boolean bool2 = (Boolean) obj2;
+                            boolean bool1 = (Boolean) stack.pop();
                             stack.push(bool1 ^ bool2);
                         }
                     }

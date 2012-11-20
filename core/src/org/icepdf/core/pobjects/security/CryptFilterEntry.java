@@ -19,18 +19,21 @@ import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * Individual Crypt filter definition.  A filter is associated with a name
  * key in the CryptFilter definition.  A stream or string that uses a crypt
  * filter will references it by its name.
  */
-public class CryptFilterEntry extends Dictionary{
+public class CryptFilterEntry extends Dictionary {
 
     public static final Name TYPE = new Name("CryptFilter");
+    public static final Name AUTHEVENT_KEY = new Name("AuthEvent");
+    public static final Name CFM_KEY = new Name("CFM");
+    public static final Name LENGTH_KEY = new Name("Length");
 
-    public CryptFilterEntry(Library library, Hashtable entries) {
+    public CryptFilterEntry(Library library, HashMap entries) {
         super(library, entries);
     }
 
@@ -73,7 +76,7 @@ public class CryptFilterEntry extends Dictionary{
      * @return name of crypt filter method.
      */
     public Name getCryptFilterMethod() {
-        Object tmp = library.getObject(entries, "CFM");
+        Object tmp = library.getObject(entries, CFM_KEY);
         if (tmp instanceof Name) {
             return (Name) tmp;
         }
@@ -97,7 +100,7 @@ public class CryptFilterEntry extends Dictionary{
      * @return authorization event.
      */
     public Name getAuthEvent() {
-        Object tmp = library.getObject(entries, "AuthEvent");
+        Object tmp = library.getObject(entries, AUTHEVENT_KEY);
         if (tmp instanceof Name) {
             return (Name) tmp;
         }
@@ -115,7 +118,7 @@ public class CryptFilterEntry extends Dictionary{
      * @return lenth of encryption key
      */
     public int getLength() {
-        int length = library.getInt(entries, "Length");
+        int length = library.getInt(entries, LENGTH_KEY);
         return Math.min(length * 8, 128);
     }
 }

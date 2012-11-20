@@ -14,12 +14,12 @@
  */
 package org.icepdf.core.pobjects.actions;
 
-import org.icepdf.core.pobjects.StringObject;
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * <p>The uniform resource identifier (URI) action represents destination
@@ -48,13 +48,13 @@ public class URIAction extends Action {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public URIAction(Library l, Hashtable h) {
+    public URIAction(Library l, HashMap h) {
         super(l, h);
     }
 
     /**
      * Sets the URI string associated witht this action.
-     * 
+     *
      * @param URI an string value except null.
      */
     public void setURI(String URI) {

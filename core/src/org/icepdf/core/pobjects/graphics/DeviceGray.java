@@ -14,18 +14,22 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * @since 1.0
  */
 public class DeviceGray extends PColorSpace {
 
-    public DeviceGray(Library l, Hashtable h) {
+    public static final Name DEVICEGRAY_KEY = new Name("DeviceGray");
+    public static final Name G_KEY = new Name("G");
+
+    public DeviceGray(Library l, HashMap h) {
         super(l, h);
     }
 
@@ -35,7 +39,7 @@ public class DeviceGray extends PColorSpace {
     }
 
     public Color getColor(float[] f) {
-        float color = f[0] > 1.0?f[0]/255.f:f[0];
+        float color = f[0] > 1.0 ? f[0] / 255.f : f[0];
         return new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                 new Color(color, color, color).getRGBComponents(null),
                 1);

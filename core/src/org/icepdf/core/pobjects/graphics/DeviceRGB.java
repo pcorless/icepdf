@@ -14,20 +14,25 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * put your documentation comment here
  */
 public class DeviceRGB extends PColorSpace {
+
+    public static final Name DEVICERGB_KEY = new Name("DeviceRGB");
+    public static final Name RGB_KEY = new Name("RGB");
+
     /**
      * @param l
      * @param h
      */
-    DeviceRGB(Library l, Hashtable h) {
+    DeviceRGB(Library l, HashMap h) {
         super(l, h);
     }
 

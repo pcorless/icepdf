@@ -16,7 +16,6 @@ package org.icepdf.core.pobjects.filters;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
 
 /**
  * Most of the filters have to read in a chunk of data from their input stream,

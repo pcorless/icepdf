@@ -18,7 +18,7 @@ import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * The class <code>GoToAction</code> represents the Action type "GoTo".  It's
@@ -41,7 +41,7 @@ public class GoToAction extends Action {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public GoToAction(Library l, Hashtable h) {
+    public GoToAction(Library l, HashMap h) {
         super(l, h);
         // get the Destination for this action
         destination = new Destination(library, getObject(DESTINATION_KEY));

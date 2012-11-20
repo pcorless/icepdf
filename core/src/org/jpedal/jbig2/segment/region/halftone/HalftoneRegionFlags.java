@@ -29,22 +29,22 @@ public class HalftoneRegionFlags extends Flags {
         this.flagsAsInt = flagsAsInt;
 
         /** extract H_MMR */
-		flags.put(H_MMR, new Integer(flagsAsInt & 1));
-		
-		/** extract H_TEMPLATE */
-		flags.put(H_TEMPLATE, new Integer((flagsAsInt >> 1) & 3));
-		
-		/** extract H_ENABLE_SKIP */
-		flags.put(H_ENABLE_SKIP, new Integer((flagsAsInt >> 3) & 1));
-		
-		/** extract H_COMB_OP */
-		flags.put(H_COMB_OP, new Integer((flagsAsInt >> 4) & 7));
-		
-		/** extract H_DEF_PIXEL */
-		flags.put(H_DEF_PIXEL, new Integer((flagsAsInt >> 7) & 1));
+        flags.put(H_MMR, new Integer(flagsAsInt & 1));
 
-		
-		if(JBIG2StreamDecoder.debug)
-			System.out.println(flags);
+        /** extract H_TEMPLATE */
+        flags.put(H_TEMPLATE, new Integer((flagsAsInt >> 1) & 3));
+
+        /** extract H_ENABLE_SKIP */
+        flags.put(H_ENABLE_SKIP, new Integer((flagsAsInt >> 3) & 1));
+
+        /** extract H_COMB_OP */
+        flags.put(H_COMB_OP, new Integer((flagsAsInt >> 4) & 7));
+
+        /** extract H_DEF_PIXEL */
+        flags.put(H_DEF_PIXEL, new Integer((flagsAsInt >> 7) & 1));
+
+
+        if (JBIG2StreamDecoder.debug)
+            System.out.println(flags);
     }
 }

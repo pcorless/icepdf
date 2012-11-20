@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
@@ -26,10 +27,8 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,6 +45,15 @@ public class TilingPattern extends Stream implements Pattern {
 
     private static final Logger logger =
             Logger.getLogger(TilingPattern.class.toString());
+
+    public static final Name PATTERNTYPE_KEY = new Name("PatternType");
+    public static final Name PAINTTYPE_KEY = new Name("PaintType");
+    public static final Name TILINGTYPE_KEY = new Name("TilingType");
+    public static final Name BBOX_KEY = new Name("BBox");
+    public static final Name XSTEP_KEY = new Name("XStep");
+    public static final Name YSTEP_KEY = new Name("YStep");
+    public static final Name MATRIX_KEY = new Name("Matrix");
+    public static final Name RESOURCES_KEY = new Name("Resources");
 
     // A code identifying the type of pattern that this dictionary describes
     private int patternType;
@@ -80,7 +88,7 @@ public class TilingPattern extends Stream implements Pattern {
     private int tilingType;
 
     // type of PObject, should always be "Pattern"
-    private String type;
+    private Name type;
 
     /**
      * Spacing of tiles relative to the device grid: Pattern cells are spaced
@@ -149,7 +157,8 @@ public class TilingPattern extends Stream implements Pattern {
     private TexturePaint patternPaint;
 
     public TilingPattern(Stream stream) {
-        this(stream.getLibrary(), stream.getEntries(), stream.getStreamInput());
+        super(stream.getLibrary(), stream.getEntries(), stream.getRawBytes());
+        initiParams();
     }
 
     /**
@@ -157,49 +166,50 @@ public class TilingPattern extends Stream implements Pattern {
      * @param h
      * @param streamInputWrapper
      */
-    public TilingPattern(Library l, Hashtable h, SeekableInputConstrainedWrapper streamInputWrapper) {
+    public TilingPattern(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
         super(l, h, streamInputWrapper);
+        initiParams();
+    }
 
-        type = library.getName(entries, "Type");
+    private void initiParams() {
+        type = library.getName(entries, TYPE_KEY);
 
-        patternType = library.getInt(entries, "PatternType");
+        patternType = library.getInt(entries, PATTERNTYPE_KEY);
 
-        paintType = library.getInt(entries, "PaintType");
+        paintType = library.getInt(entries, PAINTTYPE_KEY);
 
-        tilingType = library.getInt(entries, "TilingType");
+        tilingType = library.getInt(entries, TILINGTYPE_KEY);
 
-        bBox = library.getRectangle(entries, "BBox");
+        bBox = library.getRectangle(entries, BBOX_KEY);
 
-        xStep = library.getFloat(entries, "XStep");
+        xStep = library.getFloat(entries, XSTEP_KEY);
 
-        yStep = library.getFloat(entries, "YStep");
+        yStep = library.getFloat(entries, YSTEP_KEY);
 
-        Vector v = (Vector) library.getObject(entries, "Matrix");
+        List v = (List) library.getObject(entries, MATRIX_KEY);
         if (v != null) {
             matrix = getAffineTransform(v);
         } else {
             // default is identity matrix
             matrix = new AffineTransform();
         }
-
     }
 
-
-    public String getType() {
+    public Name getType() {
         return type;
     }
 
     /**
-     * Utility method for parsing a vector of affinetranform values to an
+     * Utility method for parsing a vector of affine transform values to an
      * affine transform.
      *
-     * @param v vectory containing affine transform values.
+     * @param v vector containing affine transform values.
      * @return affine tansform based on v
      */
-    private static AffineTransform getAffineTransform(Vector v) {
+    private static AffineTransform getAffineTransform(List v) {
         float f[] = new float[6];
         for (int i = 0; i < 6; i++) {
-            f[i] = ((Number) v.elementAt(i)).floatValue();
+            f[i] = ((Number) v.get(i)).floatValue();
         }
         return new AffineTransform(f);
     }
@@ -232,7 +242,7 @@ public class TilingPattern extends Stream implements Pattern {
     /**
      *
      */
-    public void init() {
+    public synchronized void init() {
 
         if (inited) {
             return;
@@ -240,30 +250,20 @@ public class TilingPattern extends Stream implements Pattern {
         inited = true;
 
         // try and find the form's resources dictionary.
-        Resources leafResources = library.getResources(entries, "Resources");
+        Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         // apply resource for tiling if any, otherwise we use the default dictionary.
         if (leafResources != null) {
             resources = leafResources;
-//            resources.addReference(this);
-            //  todo, need a way do dispose of reference when we implement this fully
         }
 
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream.
         ContentParser cp = new ContentParser(library, leafResources);
         cp.setGraphicsState(parentGraphicState);
-        InputStream in = getInputStreamForDecodedStreamBytes();
-        if (in != null) {
-            try {
-                shapes = cp.parse(in);
-            } catch (Throwable e) {
-                logger.log(Level.FINE, "Error processing tiling pattern.", e);
-            } finally {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                }
-            }
+        try {
+            shapes = cp.parse(new byte[][]{getDecodedStreamBytes()}).getShapes();
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Error processing tiling pattern.", e);
         }
     }
 
@@ -277,7 +277,13 @@ public class TilingPattern extends Stream implements Pattern {
     public void paintPattern(Graphics2D g, Page parentPage) {
         if (patternPaint == null) {
 //            final AffineTransform matrixInv = getInvMatrix();
-            Rectangle2D bBoxMod = matrix.createTransformedShape(bBox).getBounds2D();
+            // adjust the bBox so that xStep and yStep can be applied
+            // for tile spacing.
+            Rectangle2D bBoxMod = new Rectangle2D.Double(
+                    bBox.getX(), bBox.getY(),
+                    bBox.getWidth() == xStep ? bBox.getWidth() : xStep,
+                    bBox.getHeight() == yStep ? bBox.getHeight() : yStep);
+            bBoxMod = matrix.createTransformedShape(bBoxMod).getBounds2D();
 
             int width = (int) bBoxMod.getWidth();
             int height = (int) bBoxMod.getHeight();

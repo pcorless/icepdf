@@ -17,7 +17,7 @@ package org.icepdf.core.pobjects.security;
 import org.icepdf.core.pobjects.Reference;
 
 import java.io.InputStream;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * The interface for objects which defines a Security Handler for a PDF
@@ -88,7 +88,7 @@ public interface SecurityHandlerInterface {
     public InputStream getEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
-            Hashtable decodeParams,
+            HashMap decodeParams,
             InputStream input);
 
     /**

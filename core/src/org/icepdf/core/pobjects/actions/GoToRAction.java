@@ -15,10 +15,11 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * <p>A remote go-to action is similar to an ordinary go-to action but jumps to
@@ -28,6 +29,9 @@ import java.util.Hashtable;
  * @since 2.6
  */
 public class GoToRAction extends Action {
+
+    public static final Name F_KEY = new Name("F");
+    public static final Name NEW_WINDOW_KEY = new Name("NewWindow");
 
     // path to external file, see section 3.10.1 for more details on
     // resolving paths
@@ -46,24 +50,23 @@ public class GoToRAction extends Action {
      * @param l document library.
      * @param h Action dictionary entries.
      */
-    public GoToRAction(Library l, Hashtable h) {
+    public GoToRAction(Library l, HashMap h) {
         super(l, h);
 
         externalDestination =
-                new Destination(library, library.getObject(entries, "D"));
-
-        if (library.getObject(entries, "F") instanceof Hashtable) {
+                new Destination(library, library.getObject(entries, Destination.D_KEY));
+        Object tmp = library.getObject(entries, F_KEY);
+        if (tmp instanceof HashMap) {
             fileSpecification =
-                    new FileSpecification(library,
-                            library.getDictionary(entries, "F"));
-        } else if (library.getObject(entries, "F") instanceof StringObject) {
+                    new FileSpecification(library, (HashMap) tmp);
+        } else if (tmp instanceof StringObject) {
             externalFile =
-                    ((StringObject) library.getObject(entries, "F"))
+                    ((StringObject) tmp)
                             .getDecryptedLiteralString(
                                     library.getSecurityManager());
         }
 
-        isNewWindow = library.getBoolean(entries, "NewWindow");
+        isNewWindow = library.getBoolean(entries, NEW_WINDOW_KEY);
 
     }
 

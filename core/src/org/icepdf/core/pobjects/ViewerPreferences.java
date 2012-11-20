@@ -16,7 +16,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * The ViewerPreferences class is used to represent and provide access to the
@@ -33,7 +33,7 @@ public class ViewerPreferences extends Dictionary {
      * @param l document library.
      * @param h NameTree dictionary entries.
      */
-    public ViewerPreferences(Library l, Hashtable h) {
+    public ViewerPreferences(Library l, HashMap h) {
         super(l, h);
     }
 
@@ -48,38 +48,31 @@ public class ViewerPreferences extends Dictionary {
         inited = true;
     }
 
-    /**
-     * Dispose the NameTree.
-     */
-    public void dispose() {
-        root.dispose();
-    }
-
     public NameNode getRoot() {
         return root;
     }
 
     public boolean hasHideToolbar() {
-        return library.isValidEntry(entries, "HideToolbar");
+        return library.isValidEntry(entries, new Name("HideToolbar"));
     }
 
     public boolean hasHideMenubar() {
-        return library.isValidEntry(entries, "HideMenubar");
+        return library.isValidEntry(entries, new Name("HideMenubar"));
     }
 
     public boolean hasFitWindow() {
-        return library.isValidEntry(entries, "FitWindow");
+        return library.isValidEntry(entries, new Name("FitWindow"));
     }
 
     public boolean getHideToolbar() {
-        return library.getBoolean(entries, "HideToolbar");
+        return library.getBoolean(entries, new Name("HideToolbar"));
     }
 
     public boolean getHideMenubar() {
-        return library.getBoolean(entries, "HideMenubar");
+        return library.getBoolean(entries, new Name("HideMenubar"));
     }
 
     public boolean getFitWindow() {
-        return library.getBoolean(entries, "FitWindow");
+        return library.getBoolean(entries, new Name("FitWindow"));
     }
 }

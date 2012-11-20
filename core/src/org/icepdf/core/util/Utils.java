@@ -19,8 +19,8 @@ import org.icepdf.core.io.SeekableInput;
 
 import java.io.*;
 import java.lang.reflect.Method;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Mark Collette
@@ -155,8 +155,7 @@ public class Utils {
                 if (ret instanceof Boolean)
                     return ((Boolean) ret).booleanValue();
             }
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             logger.log(Level.FINE,
                     "ImageCache: Java 1.4 Headless support not found.");
         }
@@ -189,17 +188,14 @@ public class Utils {
             out.flush();
             out.close();
             byte[] data = out.toByteArray();
-            out = null;
             inArray[0] = new ByteArrayInputStream(data);
             if (convertToHex)
                 content = Utils.convertByteArrayToHexString(data, true);
             else
                 content = new String(data);
-        }
-        catch (IOException ioe) {
-            logger.log(Level.FINE, "Problem getting debug string");
-        }
-        catch (Throwable e) {
+        } catch (IOException ioe) {
+            logger.log(Level.FINE, "Problem getting debug string", ioe);
+        } catch (Throwable e) {
             logger.log(Level.FINE, "Problem getting content stream, skipping");
         }
         return content;
@@ -240,11 +236,9 @@ public class Utils {
                 content = Utils.convertByteArrayToHexString(data, true);
             else
                 content = new String(data);
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             logger.log(Level.FINE, "Problem getting debug string");
-        }
-        finally {
+        } finally {
             in.endThreadAccess();
         }
         return content;
@@ -280,8 +274,7 @@ public class Utils {
             out.close();
             byte[] data = out.toByteArray();
             sin = new SeekableByteArrayInputStream(data);
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             logger.log(Level.FINE, "Problem getting debug string");
         }
         return sin;
@@ -310,7 +303,7 @@ public class Utils {
      * none is specified, then String(byte[]) will use the platform's
      * default encoding. This method is for when encoding is not relevant,
      * when the String simply holds byte values in each char.
-     * 
+     *
      * @see org.icepdf.core.pobjects.LiteralStringObject
      * @see org.icepdf.core.pobjects.HexStringObject
      * @see org.icepdf.core.pobjects.security.StandardEncryption
@@ -323,14 +316,14 @@ public class Utils {
         }
         return bytes;
     }
-    
+
     /**
      * When converting between String chars and bytes, there's an implied
      * encoding to be used, dependent on the context and platform. If
      * none is specified, then String(byte[]) will use the platform's
      * default encoding. This method is for when encoding is not relevant,
      * when the String simply holds byte values in each char.
-     * 
+     *
      * @see org.icepdf.core.pobjects.LiteralStringObject
      * @see org.icepdf.core.pobjects.HexStringObject
      * @see org.icepdf.core.pobjects.security.StandardEncryption
@@ -340,7 +333,7 @@ public class Utils {
         StringBuilder sb = new StringBuilder(max);
         for (int i = 0; i < max; i++) {
             int b = ((int) bytes[i]) & 0xFF;
-            sb.append((char)b);
+            sb.append((char) b);
         }
         return sb.toString();
     }
