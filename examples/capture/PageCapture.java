@@ -15,12 +15,14 @@
 
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.*;
@@ -54,21 +56,33 @@ public class PageCapture {
         }
 
         // save page caputres to file.
-        float scale = 1.0f;
+        float scale = .5f;
         float rotation = 0f;
 
         // Paint each pages content to an image and write the image to file
         for (int i = 0; i < document.getNumberOfPages(); i++) {
-            BufferedImage image = (BufferedImage)
-                    document.getPageImage(i,
-                                          GraphicsRenderingHints.SCREEN,
-                                          Page.BOUNDARY_CROPBOX, rotation, scale);
-            RenderedImage rendImage = image;
+            Page page = document.getPageTree().getPage(i);
+            PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+
+            int pageWidth = (int) sz.getWidth();
+            int pageHeight = (int) sz.getHeight();
+
+            BufferedImage image = new BufferedImage(pageWidth,
+                    pageHeight,
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics g = image.createGraphics();
+
+            page.paint(g, GraphicsRenderingHints.PRINT,
+                    Page.BOUNDARY_CROPBOX, rotation, scale);
+
+
+
+            g.dispose();
             // capture the page image to file
             try {
                 System.out.println("\t capturing page " + i);
                 File file = new File("imageCapture1_" + i + ".png");
-                ImageIO.write(rendImage, "png", file);
+                ImageIO.write(image, "png", file);
 
             } catch (IOException e) {
                 e.printStackTrace();

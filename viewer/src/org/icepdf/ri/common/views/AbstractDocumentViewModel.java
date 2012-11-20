@@ -87,7 +87,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     static {
         try {
             maxPainterThreads =
-                    Defs.intProperty("org.icepdf.core.views.painterthreads", 2);
+                    Defs.intProperty("org.icepdf.core.views.painterthreads", 1);
             if (maxPainterThreads < 1) {
                 maxPainterThreads = 1;
             }
@@ -97,7 +97,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
         try {
             maxPageInitThreads =
-                    Defs.intProperty("org.icepdf.core.views.pageinitthreads", 2);
+                    Defs.intProperty("org.icepdf.core.views.pageinitthreads", 3);
             if (maxPageInitThreads < 1) {
                 maxPageInitThreads = 1;
             }
@@ -393,7 +393,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     private void initPageInitializationThreadPool(){
         log.fine("Starting PageInitializationThreadPool. ");
         pageInitilizationThreadPool = new ThreadPoolExecutor(
-                1, maxPageInitThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                maxPageInitThreads, maxPageInitThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
         // set a lower thread priority
         pageInitilizationThreadPool.setThreadFactory(new ThreadFactory() {
@@ -410,7 +410,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     private void initPagePainterThreadPool(){
         log.fine("Starting PagePainterThreadPool. ");
         pagePainterThreadPool = new ThreadPoolExecutor(
-                1, maxPainterThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                maxPainterThreads, maxPainterThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>());
         // set a lower thread priority
         pagePainterThreadPool.setThreadFactory(new ThreadFactory() {

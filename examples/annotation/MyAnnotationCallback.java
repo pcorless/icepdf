@@ -24,7 +24,7 @@ import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -165,7 +165,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
      */
     public void pageAnnotationsInitialized(Page page) {
 
-        ArrayList<Annotation> annotations = page.getAnnotations();
+        List<Annotation> annotations = page.getAnnotations();
         // no annotation, no problem just return.
         if (annotations == null || annotations.size() == 0) {
             return;

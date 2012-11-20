@@ -24,14 +24,13 @@ import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.List;
 
 /**
  * The <code>NewAnnotationPostPageLoad</code> class is an example of how to use
@@ -129,7 +128,7 @@ public class NewAnnotationPrePageLoad {
             foundWords = searchController.searchPage(pageIndex);
             if (foundWords != null) {
                 // get the current page lock and start adding the annotations
-                Page page = document.getPageTree().getPage(pageIndex, foundWords);
+                Page page = document.getPageTree().getPage(pageIndex);
                 for (WordText wordText : foundWords) {
                     // create a  new link annotation
                     LinkAnnotation linkAnnotation = (LinkAnnotation)
@@ -153,8 +152,6 @@ public class NewAnnotationPrePageLoad {
                     // add it to the page.
                     page.addAnnotation(linkAnnotation);
                 }
-                // release the page lock
-                document.getPageTree().releasePage(page, foundWords);
             }
             // removed the search highlighting
             searchController.clearSearchHighlight(pageIndex);
@@ -200,9 +197,9 @@ public class NewAnnotationPrePageLoad {
                         ActionFactory.GOTO_ACTION);
         Reference pageReference = document.getPageTree()
                 .getPageReference(pageIndex);
-        Vector destVector = Destination.destinationSyntax(pageReference,
+        List destArray = Destination.destinationSyntax(pageReference,
                 Destination.TYPE_FIT);
-        action.setDestination(new Destination(library, destVector));
+        action.setDestination(new Destination(library, destArray));
         return action;
     }
 }

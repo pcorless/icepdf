@@ -29,8 +29,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Vector;
 
 /**
  * GoTo Action panel used for setting an GoTo Action type properties.  GoTo
@@ -168,10 +168,10 @@ public class GoToActionDialog extends AnnotationDialogAdapter
             int pageNumber = Integer.parseInt(pageNumberTextField.getText());
             Reference pageReference = controller.getDocument().getPageTree()
                     .getPageReference(pageNumber - 1);
-            Vector destVector = null;
+            List destArray = null;
             if (fitType.equals(Destination.TYPE_FIT) ||
                     fitType.equals(Destination.TYPE_FITB)) {
-                destVector = Destination.destinationSyntax(pageReference, fitType);
+                destArray = Destination.destinationSyntax(pageReference, fitType);
             }
             // just top enabled
             else if (fitType.equals(Destination.TYPE_FITH) ||
@@ -179,7 +179,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                     fitType.equals(Destination.TYPE_FITV) ||
                     fitType.equals(Destination.TYPE_FITBV)) {
                 Object top = parseDestCoordinate(topTextField.getText());
-                destVector = Destination.destinationSyntax(
+                destArray = Destination.destinationSyntax(
                         pageReference, fitType, top);
             }
             // special xyz case
@@ -187,7 +187,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 Object left = parseDestCoordinate(leftTextField.getText());
                 Object top = parseDestCoordinate(topTextField.getText());
                 Object zoom = parseDestCoordinate(zoomTextField.getText());
-                destVector = Destination.destinationSyntax(
+                destArray = Destination.destinationSyntax(
                         pageReference, fitType, left, top, zoom);
             }
             // special FitR
@@ -196,10 +196,10 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 Object bottom = parseDestCoordinate(leftTextField.getText());
                 Object right = parseDestCoordinate(leftTextField.getText());
                 Object top = parseDestCoordinate(leftTextField.getText());
-                destVector = Destination.destinationSyntax(
+                destArray = Destination.destinationSyntax(
                         pageReference, fitType, left, bottom, right, top);
             }
-            destination = new Destination(annotation.getLibrary(), destVector);
+            destination = new Destination(annotation.getLibrary(), destArray);
         }
         // otherwise a simple named destination
         else {

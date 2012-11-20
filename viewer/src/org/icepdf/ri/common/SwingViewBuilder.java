@@ -980,7 +980,7 @@ public class SwingViewBuilder {
         if (viewerController != null &&
                 viewerController.getWindowManagementCallback() != null) {
             WindowManagementCallback winMgr = viewerController.getWindowManagementCallback();
-            List windowDocOriginList = winMgr.getWindowDocumentOriginList(viewerController);
+            List<Object> windowDocOriginList = (List<Object>)winMgr.getWindowDocumentOriginList(viewerController);
 
             // Get the current window index, if it's given, and remove it from the list
             int currWindowIndex = -1;
@@ -1025,7 +1025,7 @@ public class SwingViewBuilder {
         }
     }
 
-    protected void shortenDocumentOrigins(List windowDocOriginList) {
+    protected void shortenDocumentOrigins(List<Object> windowDocOriginList) {
         // At some point we should detect the same filename
         //   in different subdirectories, and keep some of the
         //   directory information, to help differentiate them

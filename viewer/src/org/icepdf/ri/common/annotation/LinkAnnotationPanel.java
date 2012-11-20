@@ -14,6 +14,7 @@
  */
 package org.icepdf.ri.common.annotation;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
@@ -96,7 +97,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private int linkType;
     private String highlightStyle;
     private float lineThickness;
-    private String lineStyle;
+    private Name lineStyle;
     private Color color;
 
     public LinkAnnotationPanel(SwingController controller) {
@@ -170,7 +171,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             } else if (e.getSource() == lineThicknessBox) {
                 lineThickness = (Float) item.getValue();
             } else if (e.getSource() == lineStyleBox) {
-                lineStyle = (String) item.getValue();
+                lineStyle = (Name) item.getValue();
             }
             // save the action state back to the document structure.
             updateAnnotationState();

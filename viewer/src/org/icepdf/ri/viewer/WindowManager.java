@@ -15,17 +15,19 @@
 package org.icepdf.ri.viewer;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.util.Defs;
+import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.util.PropertiesManager;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.views.DocumentViewController;
 
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.ResourceBundle;
 
 /**
  * An implementation of WindowManagementCallback to manage the viewer applications
@@ -36,7 +38,7 @@ import java.util.List;
 public class WindowManager implements WindowManagementCallback {
     private PropertiesManager properties;
 
-    private Vector controllers;
+    private ArrayList<SwingController> controllers;
 
     private long newWindowInvokationCounter = 0;
 
@@ -49,7 +51,7 @@ public class WindowManager implements WindowManagementCallback {
     //window management functions
     public WindowManager(PropertiesManager properties, ResourceBundle messageBundle) {
         this.properties = properties;
-        controllers = new Vector();
+        controllers = new ArrayList<SwingController>();
 
         if (messageBundle != null) {
             this.messageBundle = messageBundle;
@@ -105,8 +107,7 @@ public class WindowManager implements WindowManagementCallback {
             pageFit = getProperties().getInt(
                     PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                     DocumentViewController.PAGE_FIT_WINDOW_WIDTH);
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             // eating error, as we can continue with out alarm
         }
 
@@ -141,7 +142,7 @@ public class WindowManager implements WindowManagementCallback {
         //gets the window to close from the list
         int index = controllers.indexOf(controller);
         if (index >= 0) {
-            controllers.removeElementAt(index);
+            controllers.remove(index);
             newWindowInvokationCounter--;
             if (viewer != null) {
                 viewer.setVisible(false);
@@ -161,7 +162,7 @@ public class WindowManager implements WindowManagementCallback {
             getProperties().setInt("application.width", sz.width);
             if (properties != null) {
                 getProperties().set(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
-                                    properties.getProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT));
+                        properties.getProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT));
                 getProperties().set("document.viewtype", properties.getProperty("document.viewtype"));
             }
             getProperties().setDefaultFilePath(ViewModel.getDefaultFilePath());
@@ -173,7 +174,7 @@ public class WindowManager implements WindowManagementCallback {
 
         // make sure all the controllers have been disposed.
         for (int i = 0; i < controllers.size(); i++) {
-            SwingController c = (SwingController) controllers.get(i);
+            SwingController c = controllers.get(i);
             if (c == null)
                 continue;
             c.dispose();
@@ -184,7 +185,7 @@ public class WindowManager implements WindowManagementCallback {
 
     public void minimiseAllWindows() {
         for (int i = 0; i < controllers.size(); i++) {
-            SwingController controller = (SwingController) controllers.get(i);
+            SwingController controller = controllers.get(i);
             JFrame frame = controller.getViewerFrame();
             if (frame != null)
                 frame.setState(Frame.ICONIFIED);
@@ -194,7 +195,7 @@ public class WindowManager implements WindowManagementCallback {
     public void bringAllWindowsToFront(SwingController frontMost) {
         JFrame frontMostFrame = null;
         for (int i = 0; i < controllers.size(); i++) {
-            SwingController controller = (SwingController) controllers.get(i);
+            SwingController controller = controllers.get(i);
             JFrame frame = controller.getViewerFrame();
             if (frame != null) {
                 if (frontMost == controller) {
@@ -213,7 +214,7 @@ public class WindowManager implements WindowManagementCallback {
 
     public void bringWindowToFront(int index) {
         if (index >= 0 && index < controllers.size()) {
-            SwingController controller = (SwingController) controllers.get(index);
+            SwingController controller = controllers.get(index);
             JFrame frame = controller.getViewerFrame();
             if (frame != null) {
                 frame.setState(Frame.NORMAL);
@@ -236,7 +237,7 @@ public class WindowManager implements WindowManagementCallback {
         List list = new ArrayList(count + 1);
         for (int i = 0; i < count; i++) {
             Object toAdd = null;
-            SwingController controller = (SwingController) controllers.get(i);
+            SwingController controller = controllers.get(i);
             if (giveIndex == controller)
                 foundIndex = new Integer(i);
             Document document = controller.getDocument();
@@ -251,7 +252,7 @@ public class WindowManager implements WindowManagementCallback {
 
     void updateUI() {
         for (int i = 0; i < controllers.size(); i++) {
-            SwingController controller = (SwingController) controllers.get(i);
+            SwingController controller = controllers.get(i);
             JFrame frame = controller.getViewerFrame();
             if (frame != null)
                 SwingUtilities.updateComponentTreeUI(frame);

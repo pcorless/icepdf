@@ -144,10 +144,8 @@ public class MyAnnotationCallback implements AnnotationCallback {
         // do a bunch a work to get at the page object.
         Document document = documentViewController.getDocument();
         PageTree pageTree = document.getPageTree();
-        Page page = pageTree.getPage(pageComponent.getPageIndex(), this);
+        Page page = pageTree.getPage(pageComponent.getPageIndex());
         Annotation annotation = page.createAnnotation(rect, null);
-        // release the page
-        pageTree.releasePage(pageComponent.getPageIndex(), this);
         // no we have let the pageComponent now about it.
         AnnotationComponentImpl annotComponent = (AnnotationComponentImpl)
                 pageComponent.addAnnotation(annotation);
