@@ -45,7 +45,7 @@ public class ShadingType3Pattern extends ShadingPattern {
     // t in the domain defined by the domain entry.  Each function's domain must
     // be a superset of that of the shading dictionary.  If the return value
     // is out of range it is adjusted to the nearest value.
-    protected Function function;
+    protected Function[] function;
 
     // An array of two numbers [t0, t1] specifying the limiting values of a
     // parametric variable t. The variable is considered to vary linearly between
@@ -116,8 +116,16 @@ public class ShadingType3Pattern extends ShadingPattern {
         }
         tmp = library.getObject(shading, FUNCTION_KEY);
         if (tmp != null) {
-            function = Function.getFunction(library,
-                    tmp);
+            if (!(tmp instanceof List)){
+                function = new Function[]{Function.getFunction(library,
+                        tmp)};
+            }else{
+                List functionTemp = (List)tmp;
+                function = new Function[functionTemp.size()];
+                for (int i = 0; i < functionTemp.size(); i++) {
+                    function[i] = Function.getFunction(library, functionTemp.get(i));
+                }
+            }
         }
 
         float t0 = domain.get(0).floatValue();
@@ -177,7 +185,20 @@ public class ShadingType3Pattern extends ShadingPattern {
         input[0] = t;
 
         if (function != null) {
-            float[] output = function.calculate(input);
+
+            float[] output;
+            int length = function.length;
+            // simple 1 in N out function
+            if (length == 1){
+                output = function[0].calculate(input);
+            }else{
+                // vector of function for each colour component, 1 in 1 out.
+                output = new float[length];
+                for (int i= 0; i < length; i++ ){
+                    output[i] = function[i].calculate(input)[0];
+                }
+            }
+
             if (output != null) {
                 if (!(colorSpace instanceof DeviceN)) {
                     output = PColorSpace.reverse(output);
