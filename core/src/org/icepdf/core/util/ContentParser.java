@@ -380,14 +380,14 @@ public class ContentParser {
                                 }
                                 optionalContents = new OptionalContentGroup(tmp.getName(), true);
                             }
-                            oCGs.push(optionalContents);
+                            oCGs.add(optionalContents);
                             break;
 
                         // End a marked-content sequence begun by a BMC or BDC operator.
                         case OperandNames.OP_EMC:
                             // add the new draw command to the stack.
                             // restore the main stack.
-                            optionalContents = oCGs.pop();
+                            optionalContents = oCGs.removeLast();
                             // mark the end of an OCG.
                             if (optionalContents.isOCG()) {
                                 // push the OC end command on the shapes
@@ -414,7 +414,7 @@ public class ContentParser {
                                     optionalContents =
                                             new OptionalContentGroup(tmp.getName(), true);
                                 }
-                                oCGs.push(optionalContents);
+                                oCGs.add(optionalContents);
                             }
                             break;
 
