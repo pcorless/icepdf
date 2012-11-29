@@ -15,11 +15,11 @@
 package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
-import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.annotation.AnnotationPanel;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
-import org.icepdf.core.util.Defs;
 
 import javax.swing.*;
 import java.awt.*;
@@ -335,7 +335,7 @@ public class SwingViewBuilder {
     static {
         isMacOs = (Defs.sysProperty("mrj.version") != null);
         // check for demo system property
-         isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
+        isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
     }
 
     /**
@@ -352,9 +352,9 @@ public class SwingViewBuilder {
 
     /**
      * Constructor that accepts a different PropertiesManager and otherwise
-     *  defaults the remaining settings
+     * defaults the remaining settings
      *
-     * @param c SwingController that will interact with the GUI
+     * @param c          SwingController that will interact with the GUI
      * @param properties PropertiesManager that can customize the UI
      */
     public SwingViewBuilder(SwingController c, PropertiesManager properties) {
@@ -366,8 +366,8 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with all of the default settings
      *
-     * @param c SwingController that will interact with the GUI
-     * @param documentViewType view type to build , single page, single column etc.
+     * @param c                   SwingController that will interact with the GUI
+     * @param documentViewType    view type to build , single page, single column etc.
      * @param documentPageFitMode fit mode to initially load document with.
      */
     public SwingViewBuilder(SwingController c, int documentViewType,
@@ -503,8 +503,8 @@ public class SwingViewBuilder {
             try {
                 // Generate and register the OSXAdapter, passing it a hash of all the methods we wish to
                 // use as delegates for various com.apple.eawt.ApplicationListener methods
-                OSXAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[])null));
-                OSXAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
+                OSXAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[]) null));
+                OSXAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[]) null));
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error occurred while loading the OSXAdapter:", e);
             }
@@ -520,9 +520,9 @@ public class SwingViewBuilder {
     /**
      * Create and return a KeyStroke with the specified code and modifier
      * Note this will automatically return null if the PROPERTY_SHOW_KEYBOARD_SHORTCUTS
-     *  property is 'false'
+     * property is 'false'
      *
-     * @param keyCode to build
+     * @param keyCode   to build
      * @param modifiers to build
      * @param onRelease to build
      * @return built KeyStroke
@@ -531,8 +531,8 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
-                                                       PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
-                                                       true)) {
+                PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
+                true)) {
             return KeyStroke.getKeyStroke(keyCode, modifiers, onRelease);
         }
 
@@ -541,8 +541,8 @@ public class SwingViewBuilder {
 
     /**
      * Return a valid mnemonic for the passed character, unless the
-     *  PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS property is 'false',
-     *  in which case we'll return -1
+     * PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS property is 'false',
+     * in which case we'll return -1
      *
      * @param mnemonic to build
      * @return built mnemonic
@@ -551,8 +551,8 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
-                                                       PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
-                                                       true)) {
+                PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
+                true)) {
             return mnemonic;
         }
 
@@ -598,7 +598,7 @@ public class SwingViewBuilder {
     public JMenuItem buildOpenFileMenuItem() {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.open.file.label"),
-                    buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_FILE, KeyEventConstants.MODIFIER_OPEN_FILE));
+                buildKeyStroke(KeyEventConstants.KEY_CODE_OPEN_FILE, KeyEventConstants.MODIFIER_OPEN_FILE));
         if (viewerController != null && mi != null)
             viewerController.setOpenFileMenuItem(mi);
         return mi;
@@ -716,7 +716,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.undo.label"),
                 null, buildKeyStroke(KeyEventConstants.KEY_CODE_UNDO,
-                        KeyEventConstants.MODIFIER_UNDO));
+                KeyEventConstants.MODIFIER_UNDO));
         if (viewerController != null && mi != null)
             viewerController.setUndoMenuItem(mi);
         return mi;
@@ -726,7 +726,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.redo.label"),
                 null, buildKeyStroke(KeyEventConstants.KEY_CODE_REDO,
-                        KeyEventConstants.MODIFIER_REDO));
+                KeyEventConstants.MODIFIER_REDO));
         if (viewerController != null && mi != null)
             viewerController.setReduMenuItem(mi);
         return mi;
@@ -736,7 +736,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.copy.label"),
                 null, buildKeyStroke(KeyEventConstants.KEY_CODE_COPY,
-                        KeyEventConstants.MODIFIER_COPY));
+                KeyEventConstants.MODIFIER_COPY));
         if (viewerController != null && mi != null)
             viewerController.setCopyMenuItem(mi);
         return mi;
@@ -746,7 +746,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.delete.label"),
                 null, buildKeyStroke(KeyEventConstants.KEY_CODE_DELETE,
-                        KeyEventConstants.MODIFIER_DELETE));
+                KeyEventConstants.MODIFIER_DELETE));
         if (viewerController != null && mi != null)
             viewerController.setDeleteMenuItem(mi);
         return mi;
@@ -756,7 +756,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.selectAll.label"),
                 null, buildKeyStroke(KeyEventConstants.KEY_CODE_SELECT_ALL,
-                        KeyEventConstants.MODIFIER_SELECT_ALL));
+                KeyEventConstants.MODIFIER_SELECT_ALL));
         if (viewerController != null && mi != null)
             viewerController.setSelectAllMenuItem(mi);
         return mi;
@@ -766,7 +766,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.deselectAll.label"),
                 null, buildKeyStroke(KeyEventConstants.KEY_CODE_DESELECT_ALL,
-                        KeyEventConstants.MODIFIER_DESELECT_ALL));
+                KeyEventConstants.MODIFIER_DESELECT_ALL));
         if (viewerController != null && mi != null)
             viewerController.setDselectAllMenuItem(mi);
         return mi;
@@ -980,7 +980,7 @@ public class SwingViewBuilder {
         if (viewerController != null &&
                 viewerController.getWindowManagementCallback() != null) {
             WindowManagementCallback winMgr = viewerController.getWindowManagementCallback();
-            List<Object> windowDocOriginList = (List<Object>)winMgr.getWindowDocumentOriginList(viewerController);
+            List<Object> windowDocOriginList = (List<Object>) winMgr.getWindowDocumentOriginList(viewerController);
 
             // Get the current window index, if it's given, and remove it from the list
             int currWindowIndex = -1;
@@ -1002,7 +1002,7 @@ public class SwingViewBuilder {
                     mnemonic = messageBundle.getString("viewer.menu.window." + number + ".mnemonic");
                 } catch (Exception e) {
                     logger.log(Level.FINER,
-                            "Error setting viewer window window title",e);
+                            "Error setting viewer window window title", e);
                 }
                 // Allows the user to have an arbitrary number of predefined entries
                 String identifier = (String) windowDocOriginList.get(i);
@@ -1066,7 +1066,7 @@ public class SwingViewBuilder {
 
     public JToolBar buildCompleteToolBar(boolean embeddableComponent) {
         JToolBar toolbar = new JToolBar();
-        toolbar.setLayout(new ToolbarLayout( ToolbarLayout.LEFT, 0, 0));
+        toolbar.setLayout(new ToolbarLayout(ToolbarLayout.LEFT, 0, 0));
         commonToolBarSetup(toolbar, true);
 
         // Attempt to get the properties manager so we can configure which toolbars are visible
@@ -1089,7 +1089,7 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildAnnotationlToolBar());
 
         // we only add the configurable font engin in the demo version
-        if (isDemo){
+        if (isDemo) {
             addToToolBar(toolbar, buildDemoToolBar());
         }
 
@@ -1115,7 +1115,7 @@ public class SwingViewBuilder {
         // if embeddable component, we don't want to create the open dialog, as we
         // have no window manager for this case.
         if ((!embeddableComponent) &&
-            (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
+                (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
             addToToolBar(toolbar, buildOpenFileButton());
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
             addToToolBar(toolbar, buildSaveAsFileButton());
@@ -1287,8 +1287,8 @@ public class SwingViewBuilder {
 
         // Assign any different zoom ranges from the properties file if possible
         zoomLevels = PropertiesManager.checkAndStoreFloatArrayProperty(propertiesManager,
-                                                                       PropertiesManager.PROPERTY_ZOOM_RANGES,
-                                                                       zoomLevels);
+                PropertiesManager.PROPERTY_ZOOM_RANGES,
+                zoomLevels);
 
         JComboBox tmp = new JComboBox();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
@@ -1344,7 +1344,7 @@ public class SwingViewBuilder {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.pageFit.fontEngine.label"),
                 messageBundle.getString("viewer.toolbar.pageFit.fontEngine.tooltip"),
-                "font-engine",112,25, buttonFont);
+                "font-engine", 112, 25, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setFontEngineButton(btn);
         return btn;
@@ -1406,7 +1406,7 @@ public class SwingViewBuilder {
         return toolbar;
     }
 
-    public JToolBar buildDemoToolBar(){
+    public JToolBar buildDemoToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
         addToToolBar(toolbar, buildFontEngineButton());
@@ -1535,6 +1535,12 @@ public class SwingViewBuilder {
                     buildThumbsPanel());
         }
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_LAYERS)) {
+            utilityTabbedPane.add(
+                    messageBundle.getString("viewer.utilityPane.layers.tab.title"),
+                    buildLayersComponents());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.link.tab.title"),
@@ -1561,13 +1567,21 @@ public class SwingViewBuilder {
         return scroll;
     }
 
-    public ThumbnailsPanel buildThumbsPanel(){
+    public ThumbnailsPanel buildThumbsPanel() {
         ThumbnailsPanel thumbsPanel = new ThumbnailsPanel(viewerController,
                 propertiesManager);
-        if (viewerController != null){
+        if (viewerController != null) {
             viewerController.setThumbnailsPanel(thumbsPanel);
         }
         return thumbsPanel;
+    }
+
+    public LayersPanel buildLayersComponents() {
+        LayersPanel layersPanel = new LayersPanel(viewerController);
+        if (viewerController != null) {
+            viewerController.setLayersPanel(layersPanel);
+        }
+        return layersPanel;
     }
 
     public SearchPanel buildSearchPanel() {
@@ -1592,8 +1606,9 @@ public class SwingViewBuilder {
      * 'application.statusbar.show.statuslabel=true|false' and
      * 'application.statusbar.show.viewmode=true|false'.  The default value
      * for all properties is 'true'.
+     *
      * @return status panel JPanel if visible, null if the proeprty
-     *        'application.statusbar=false' is set. 
+     *         'application.statusbar=false' is set.
      */
     public JPanel buildStatusPanel() {
         // check to see if the status bars should be built.
@@ -1606,7 +1621,7 @@ public class SwingViewBuilder {
                 JPanel pgPanel = new JPanel();
                 JLabel lbl = new JLabel(" ");
                 lbl.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0)); // So text isn't at the very edge
-                pgPanel.add( lbl);
+                pgPanel.add(lbl);
                 statusPanel.add(pgPanel, BorderLayout.WEST);
                 // set status label callback
                 if (viewerController != null) {
@@ -1618,18 +1633,18 @@ public class SwingViewBuilder {
             // Only add actual buttons to the view panel if requested by the properties file
             // Regardless we'll add the parent JPanel, to preserve the same layout behaviour
             if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
-                                                               PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
+                    PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
                 viewPanel.add(buildPageViewSinglePageNonConToggleButton());
                 viewPanel.add(buildPageViewSinglePageConToggleButton());
                 viewPanel.add(buildPageViewFacingPageNonConToggleButton());
                 viewPanel.add(buildPageViewFacingPageConToggleButton());
             }
             statusPanel.add(viewPanel, BorderLayout.CENTER);
-            viewPanel.setLayout( new ToolbarLayout( ToolbarLayout.RIGHT, 0, 1));
+            viewPanel.setLayout(new ToolbarLayout(ToolbarLayout.RIGHT, 0, 1));
 
             JLabel lbl2 = new JLabel(" ");
             lbl2.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5)); // So text isn't at the very edge
-            statusPanel.add( lbl2, BorderLayout.EAST);
+            statusPanel.add(lbl2, BorderLayout.EAST);
 
             return statusPanel;
         }
@@ -1813,12 +1828,12 @@ public class SwingViewBuilder {
 
     /**
      * Method to try to get the properties manager from the window management callback,
-     *  if we don't already have a propertiesManager object
+     * if we don't already have a propertiesManager object
      */
     protected void doubleCheckPropertiesManager() {
         if ((propertiesManager == null) &&
-            (viewerController != null) &&
-            (viewerController.getWindowManagementCallback() != null)) {
+                (viewerController != null) &&
+                (viewerController.getWindowManagementCallback() != null)) {
             propertiesManager = viewerController.getWindowManagementCallback().getProperties();
         }
     }
@@ -1826,7 +1841,7 @@ public class SwingViewBuilder {
     /**
      * Method to attempt to override the system property highlight color
      * If the current color is blank, we'll try to pull the same property from
-     *  our local propertiesManager and, if found, apply it to the system properties
+     * our local propertiesManager and, if found, apply it to the system properties
      * This affects the search highlight coloring
      */
     protected void overrideHighlightColor() {
@@ -1862,6 +1877,6 @@ public class SwingViewBuilder {
 
     protected void addToMenuBar(JMenuBar menuBar, JMenu menu) {
         if (menu != null)
-            menuBar.add( menu );
+            menuBar.add(menu);
     }
 }

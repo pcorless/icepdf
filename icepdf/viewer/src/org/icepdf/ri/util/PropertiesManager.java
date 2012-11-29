@@ -90,6 +90,7 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_UTILITYPANE_BOOKMARKS = "application.utilitypane.show.bookmarks";
     public static final String PROPERTY_SHOW_UTILITYPANE_SEARCH = "application.utilitypane.show.search";
     public static final String PROPERTY_SHOW_UTILITYPANE_THUMBNAILS = "application.utilitypane.show.thumbs";
+    public static final String PROPERTY_SHOW_UTILITYPANE_LAYERS = "application.utilitypane.show.layers";
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION = "application.utilitypane.show.annotation";
 
     // default utility pane thumbnail zoom size for non-embedded files
@@ -186,6 +187,7 @@ public class PropertiesManager {
     /**
      * New instance of properties manager with properties overrides defined
      * in an external file defined by propPath.
+     *
      * @param sysProps      system properties
      * @param propPath      Properties file containing properties that will be applied
      *                      over the default properties have been setup.
