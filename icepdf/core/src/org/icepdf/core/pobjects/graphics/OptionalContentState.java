@@ -33,16 +33,16 @@ public class OptionalContentState {
     private boolean isEmpty = true;
 
     public void add(OptionalContents optionContent) {
-        optionContents.push(optionContent);
+        optionContents.add(optionContent);
         isEmpty = false;
     }
 
     public void remove() {
-        optionContents.pop();
+        optionContents.removeLast();
         isEmpty = optionContents.isEmpty();
     }
 
     public boolean isVisible() {
-        return isEmpty || optionContents.peek().isVisible();
+        return isEmpty || optionContents.getLast().isVisible();
     }
 }
