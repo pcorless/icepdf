@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
 import java.awt.*;
@@ -26,13 +27,14 @@ import java.awt.geom.AffineTransform;
  * original clip which is the page size but the base Affine transform must
  * be first applied and then backed out after the clip has been removed.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class NoClipDrawCmd extends AbstractDrawCmd {
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer paintTimer) {
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState, PaintTimer paintTimer) {
 
         AffineTransform af = new AffineTransform(g.getTransform());
 

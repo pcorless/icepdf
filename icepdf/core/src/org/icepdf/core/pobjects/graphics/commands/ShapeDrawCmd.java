@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
 import java.awt.*;
@@ -24,7 +25,7 @@ import java.awt.geom.AffineTransform;
  * ShapeDrawCmd actually doesn't paint anything, just returns the shapes
  * object for further processing.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class ShapeDrawCmd implements DrawCmd {
 
@@ -35,7 +36,9 @@ public class ShapeDrawCmd implements DrawCmd {
     }
 
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer paintTimer) {
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState,
+                              PaintTimer paintTimer) {
         return shape;
     }
 }

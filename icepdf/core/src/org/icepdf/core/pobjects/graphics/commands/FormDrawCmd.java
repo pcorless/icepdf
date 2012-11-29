@@ -16,6 +16,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 import org.icepdf.core.pobjects.graphics.Shapes;
 
@@ -29,7 +30,7 @@ import java.awt.image.BufferedImage;
  * then paint the raster.  This procedure is only executed if the xForm
  * is part of transparency group that has a alpha value < 1.0f.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class FormDrawCmd extends AbstractDrawCmd {
 
@@ -41,38 +42,40 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer paintTimer) {
-
-        Rectangle2D bBox = xForm.getBBox();
-        int width = (int) bBox.getWidth();
-        int height = (int) bBox.getHeight();
-        // corner cases where some bBoxes don't have a dimension.
-        if (width == 0) {
-            width = 1;
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState,
+                              PaintTimer paintTimer) {
+        if (optionalContentState.isVisible()) {
+            Rectangle2D bBox = xForm.getBBox();
+            int width = (int) bBox.getWidth();
+            int height = (int) bBox.getHeight();
+            // corner cases where some bBoxes don't have a dimension.
+            if (width == 0) {
+                width = 1;
+            }
+            if (height == 0) {
+                height = 1;
+            }
+            // create the new image to write too.
+            BufferedImage bi = new BufferedImage(width, height,
+                    BufferedImage.TYPE_INT_ARGB);
+            Graphics2D canvas = bi.createGraphics();
+            // copy over the rendering hints
+            canvas.setRenderingHints(g.getRenderingHints());
+            // get shapes and paint them.
+            Shapes xFormShapes = xForm.getShapes();
+            if (xFormShapes != null) {
+                xFormShapes.setPageParent(parentPage);
+                // translate the coordinate system as we'll paint the g
+                // graphic at the correctly location later.
+                canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
+                canvas.setClip(bBox);
+                xFormShapes.paint(canvas, null);
+                xFormShapes.setPageParent(null);
+            }
+            // finally paint the graphic using the current gs.
+            g.drawImage(bi, null, (int) bBox.getX(), (int) bBox.getY());
         }
-        if (height == 0) {
-            height = 1;
-        }
-        // create the new image to write too.
-        BufferedImage bi = new BufferedImage(width, height,
-                BufferedImage.TYPE_INT_ARGB);
-        Graphics2D canvas = bi.createGraphics();
-        // copy over the rendering hints
-        canvas.setRenderingHints(g.getRenderingHints());
-        // get shapes and paint them.
-        Shapes xFormShapes = xForm.getShapes();
-        if (xFormShapes != null) {
-            xFormShapes.setPageParent(parentPage);
-            // translate the coordinate system as we'll paint the g
-            // graphic at the correctly location later.
-            canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
-            canvas.setClip(bBox);
-            xFormShapes.paint(canvas, null);
-            xFormShapes.setPageParent(null);
-        }
-        // finally paint the graphic using the current gs.
-        g.drawImage(bi, null, (int) bBox.getX(), (int) bBox.getY());
-
         return currentShape;
     }
 }

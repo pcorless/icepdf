@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * the stack.
  *
  * @author ICEsoft Technologies Inc.
- * @since 4.5
+ * @since 5.0
  */
 public class Lexer {
 

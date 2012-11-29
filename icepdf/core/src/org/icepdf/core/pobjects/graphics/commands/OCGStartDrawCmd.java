@@ -14,8 +14,8 @@
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
+import org.icepdf.core.pobjects.OptionalContents;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.ImageReference;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
@@ -23,21 +23,18 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 
 /**
- * The ImageDrawCmd class when executed will draw the image associated
- * with this DrawCmd.
+ * Marks the start of an optional content group on the shapes stack.  When
+ * encountered the OptionalContentState is updated with the state of this
+ * optional content.
  *
- * @since 5.0
+ * @author 5.0
  */
-public class ImageDrawCmd extends AbstractDrawCmd {
+public class OCGStartDrawCmd extends AbstractDrawCmd {
 
-    private ImageReference image;
+    private OptionalContents optionalContents;
 
-    public ImageDrawCmd(ImageReference image) {
-        this.image = image;
-    }
-
-    public Image getImage() {
-        return image.getImage();
+    public OCGStartDrawCmd(OptionalContents optionalContents) {
+        this.optionalContents = optionalContents;
     }
 
     @Override
@@ -45,9 +42,7 @@ public class ImageDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               PaintTimer paintTimer) {
-        if (optionalContentState.isVisible()) {
-            image.drawImage(g, 0, 0, 1, 1);
-        }
+        optionalContentState.add(optionalContents);
         return currentShape;
     }
 }

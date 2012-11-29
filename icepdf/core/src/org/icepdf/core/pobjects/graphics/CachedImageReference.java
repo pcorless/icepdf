@@ -26,7 +26,7 @@ import java.awt.image.BufferedImage;
  * a page is garbage collected the image can re fetched from the pool if
  * necessary.
  *
- * @since 4.5
+ * @since 5.0
  */
 public abstract class CachedImageReference extends ImageReference {
 

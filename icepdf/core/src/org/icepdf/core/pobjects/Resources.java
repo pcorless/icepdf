@@ -38,6 +38,7 @@ public class Resources extends Dictionary {
     public static final Name PATTERN_KEY = new Name("Pattern");
     public static final Name SHADING_KEY = new Name("Shading");
     public static final Name EXTGSTATE_KEY = new Name("ExtGState");
+    public static final Name PROPERTIES_KEY = new Name("Properties");
 
     // shared resource counter. 
     private static int uniqueCounter = 0;
@@ -55,6 +56,7 @@ public class Resources extends Dictionary {
     HashMap patterns;
     HashMap shading;
     HashMap extGStates;
+    HashMap properties;
 
     /**
      * @param l
@@ -68,6 +70,7 @@ public class Resources extends Dictionary {
         patterns = library.getDictionary(entries, PATTERN_KEY);
         shading = library.getDictionary(entries, SHADING_KEY);
         extGStates = library.getDictionary(entries, EXTGSTATE_KEY);
+        properties = library.getDictionary(entries, PROPERTIES_KEY);
     }
 
 
@@ -274,5 +277,19 @@ public class Resources extends Dictionary {
         }
         return gsState;
 
+    }
+
+    /**
+     * Looks for the specified key in the Properties dictionary.  If the dictionary
+     * and corresponding value is found the object is returned otherwise null.
+     *
+     * @param key key to find a value of in the Properties dictionary.
+     * @return key value if found, null otherwise.
+     */
+    public OptionalContents getPropertyEntry(Name key) {
+        if (properties != null) {
+            return (OptionalContents) library.getObject(properties.get(key));
+        }
+        return null;
     }
 }

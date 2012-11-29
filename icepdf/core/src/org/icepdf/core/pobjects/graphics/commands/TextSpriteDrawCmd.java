@@ -9,12 +9,14 @@
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or
+ * implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 
@@ -26,7 +28,7 @@ import java.awt.geom.AffineTransform;
  * the TextSprite paint method is called the the respective glyphs are painted
  * the graphics context.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class TextSpriteDrawCmd extends AbstractDrawCmd {
 
@@ -38,9 +40,12 @@ public class TextSpriteDrawCmd extends AbstractDrawCmd {
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer lastPaintTime) {
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState,
+                              PaintTimer lastPaintTime) {
 
-        if (textSprite.intersects(g.getClip())) {
+        if (optionalContentState.isVisible() &&
+                textSprite.intersects(g.getClip())) {
             textSprite.paint(g);
         }
 

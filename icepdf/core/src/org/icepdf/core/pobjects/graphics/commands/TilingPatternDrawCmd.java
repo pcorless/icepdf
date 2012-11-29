@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 import org.icepdf.core.pobjects.graphics.TilingPattern;
 
@@ -25,7 +26,7 @@ import java.awt.geom.AffineTransform;
  * TilingPatternDrawCmd stores a tilingPattern and applies the TilingPattern
  * Paint when when the command is executed.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class TilingPatternDrawCmd extends AbstractDrawCmd {
 
@@ -37,7 +38,9 @@ public class TilingPatternDrawCmd extends AbstractDrawCmd {
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer paintTimer) {
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState,
+                              PaintTimer paintTimer) {
         tilingPattern.paintPattern(g, parentPage);
         return currentShape;
     }

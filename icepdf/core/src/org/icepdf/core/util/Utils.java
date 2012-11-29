@@ -16,6 +16,8 @@ package org.icepdf.core.util;
 
 import org.icepdf.core.io.SeekableByteArrayInputStream;
 import org.icepdf.core.io.SeekableInput;
+import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.fonts.ofont.Encoding;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -336,5 +338,50 @@ public class Utils {
             sb.append((char) b);
         }
         return sb.toString();
+    }
+
+    /**
+     * Utility method for decrypting a String object found in a dictionary
+     * as a plaing text.  The string can be encrypted as well as octal encoded,
+     * which is handle by this method.
+     *
+     * @param library      docoument library used for encryption handling.
+     * @param stringObject string object to convert to string
+     * @return converted string.
+     */
+    public static String convertStringObject(Library library, StringObject stringObject) {
+        StringObject outlineText = stringObject;
+        String convertedStringObject = null;
+        String titleText = outlineText.getDecryptedLiteralString(library.securityManager);
+        // If the title begins with 254 and 255 we are working with
+        // Octal encoded strings. Check first to make sure that the
+        // title string is not null, or is at least of length 2.
+        if (titleText != null && titleText.length() >= 2 &&
+                ((int) titleText.charAt(0)) == 254 &&
+                ((int) titleText.charAt(1)) == 255) {
+
+            StringBuilder sb1 = new StringBuilder();
+
+            // convert teh unicode to characters.
+            for (int i = 2; i < titleText.length(); i += 2) {
+                try {
+                    int b1 = ((int) titleText.charAt(i)) & 0xFF;
+                    int b2 = ((int) titleText.charAt(i + 1)) & 0xFF;
+                    //System.err.println(b1 + " " + b2);
+                    sb1.append((char) (b1 * 256 + b2));
+                } catch (Exception ex) {
+                    // intentionally left blank.
+                }
+            }
+            convertedStringObject = sb1.toString();
+        } else if (titleText != null) {
+            StringBuilder sb = new StringBuilder();
+            Encoding enc = Encoding.getPDFDoc();
+            for (int i = 0; i < titleText.length(); i++) {
+                sb.append(enc.get(titleText.charAt(i)));
+            }
+            convertedStringObject = sb.toString();
+        }
+        return convertedStringObject;
     }
 }

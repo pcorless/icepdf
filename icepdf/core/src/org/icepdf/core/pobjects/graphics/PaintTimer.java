@@ -23,21 +23,21 @@ import java.util.logging.Logger;
  * PaintTimer encapsulates the time calculation used to fire repaint events
  * to the view.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class PaintTimer {
 
     protected static final Logger logger =
             Logger.getLogger(PaintTimer.class.toString());
 
-    protected static int paintDelay = 200;
+    protected static int paintDelay;
 
     static {
         try {
             // Delay between painting calls.
             paintDelay =
                     Defs.intProperty("org.icepdf.core.views.refreshfrequency",
-                            200);
+                            250);
         } catch (NumberFormatException e) {
             logger.log(Level.FINE, "Error reading buffered scale factor");
         }

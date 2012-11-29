@@ -46,7 +46,7 @@ import java.util.logging.Logger;
 /**
  * <p>This class represents a single page view of a PDF document as a JComponent.
  * This component can be used in any swing application to display a PDF page.  The
- * default RI implemenation comes with four predefined page views which use this
+ * default RI implementation comes with four predefined page views which use this
  * component.  If custom page views are need then the following class should
  * be referenced: </p>
  * <p/>
@@ -130,13 +130,10 @@ public class PageViewComponentImpl extends
     private Rectangle bufferedPageImageBounds = new Rectangle();
 
     private Timer isDirtyTimer;
-    //    private DirtyTimerAction dirtyTimerAction;
-    private PageInitilizer pageInitilizer;
+    private PageInitializer pageInitializer;
     private PagePainter pagePainter;
     private final Object paintCopyAreaLock = new Object();
     private boolean disposing = false;
-    // object reference to make sure page isn't collected between init and paint.
-    private Object pageBufferLock;
 
     // current clip
     private Rectangle clipBounds;
@@ -282,8 +279,8 @@ public class PageViewComponentImpl extends
         isDirtyTimer = new Timer(dirtyTimerInterval, dirtyTimerAction);
         isDirtyTimer.setInitialDelay(0);
 
-        // PageInilizer and painter commands
-        pageInitilizer = new PageInitilizer();
+        // PageInitializer and painter commands
+        pageInitializer = new PageInitializer();
         pagePainter = new PagePainter();
     }
 
@@ -353,6 +350,7 @@ public class PageViewComponentImpl extends
 
     public void invalidate() {
         calculateRoughPageSize(pageSize);
+        currentZoom = -1;
         if (pagePainter != null) {
             pagePainter.setIsBufferDirty(true);
         }
@@ -367,7 +365,7 @@ public class PageViewComponentImpl extends
         // make sure the initiate the pages size
         if (!isPageSizeCalculated) {
             calculatePageSize(pageSize);
-            invalidate();
+            pagePainter.setIsBufferDirty(true);
         } else if (isPageStateDirty()) {
             calculatePageSize(pageSize);
         }
@@ -384,7 +382,7 @@ public class PageViewComponentImpl extends
         // single threaded load of page content on awt thread (no flicker)
         else if (!enablePageLoadingProxy && isPageIntersectViewport() &&
                 (isPageStateDirty() || isBufferDirty())) {
-            pageInitilizer.run();
+            pageInitializer.run();
             pagePainter.run();
         }
 
@@ -888,9 +886,6 @@ public class PageViewComponentImpl extends
 
             // Paint the page content
             if (pageTree != null) {
-                // reference/lock the image while its being painted, we
-                // don't the gc to remove it early.
-                pageBufferLock = pageBufferImage;
                 Page page = pageTree.getPage(pageIndex);
                 page.paint(imageGraphics,
                         GraphicsRenderingHints.SCREEN,
@@ -941,8 +936,7 @@ public class PageViewComponentImpl extends
         return currentZoom != documentViewModel.getViewZoom() ||
                 currentRotation != documentViewModel.getViewRotation()
                 || oldClipBounds.width != clipBounds.width
-                || oldClipBounds.height != clipBounds.height
-                ;
+                || oldClipBounds.height != clipBounds.height;
     }
 
     private boolean isPageIntersectViewport() {
@@ -1043,7 +1037,7 @@ public class PageViewComponentImpl extends
         }
     }
 
-    private class PageInitilizer implements Runnable {
+    private class PageInitializer implements Runnable {
 
         private boolean isRunning;
         private final Object isRunningLock = new Object();
@@ -1077,12 +1071,12 @@ public class PageViewComponentImpl extends
                         "Error initiating page: " + pageIndex, e);
                 e.printStackTrace();
                 // make sure we don't try to re-initialize
-                pageInitilizer.setHasBeenQueued(true);
+                pageInitializer.setHasBeenQueued(true);
                 return;
             }
 
             synchronized (isRunningLock) {
-                pageInitilizer.setHasBeenQueued(false);
+                pageInitializer.setHasBeenQueued(false);
                 isRunning = false;
             }
         }
@@ -1108,9 +1102,6 @@ public class PageViewComponentImpl extends
             if (disposing || !isPageIntersectViewport()) {
                 isDirtyTimer.stop();
 
-                // unlock page buffer, so thumbnail can be freed.
-                pageBufferLock = null;
-
                 // stop painting and mark buffer as dirty
                 if (pagePainter.isRunning()) {
                     pagePainter.stopPaintingPage();
@@ -1132,13 +1123,13 @@ public class PageViewComponentImpl extends
                 Page page = pageTree.getPage(pageIndex);
                 // load the page content
                 if (page != null && !page.isInitiated() &&
-                        !pageInitilizer.isRunning() &&
-                        !pageInitilizer.hasBeenQueued()) {
+                        !pageInitializer.isRunning() &&
+                        !pageInitializer.hasBeenQueued()) {
                     try {
-                        pageInitilizer.setHasBeenQueued(true);
-                        documentViewModel.executePageInitialization(pageInitilizer);
+                        pageInitializer.setHasBeenQueued(true);
+                        documentViewModel.executePageInitialization(pageInitializer);
                     } catch (InterruptedException ex) {
-                        pageInitilizer.setHasBeenQueued(false);
+                        pageInitializer.setHasBeenQueued(false);
                         if (logger.isLoggable(Level.WARNING)) {
                             logger.fine("Page Initialization Interrupted: " + pageIndex);
                         }
@@ -1146,12 +1137,13 @@ public class PageViewComponentImpl extends
                 }
 
                 // paint page content
-                boolean isBufferDirty = isBufferDirty();
-                if (page != null &&
-                        !pageInitilizer.isRunning() &&
+                boolean isBufferDirty = isBufferDirty() || pagePainter.isBufferDirty();
+                boolean tmp = !pageInitializer.isRunning() &&
                         page.isInitiated() &&
                         !pagePainter.isRunning() &&
-                        !pagePainter.hasBeenQueued() &&
+                        !pagePainter.hasBeenQueued();
+                if (page != null &&
+                        tmp &&
                         (isPageStateDirty() || isBufferDirty)
                         ) {
 
@@ -1169,7 +1161,7 @@ public class PageViewComponentImpl extends
 
                 // paint page content
                 if (page != null &&
-                        !pageInitilizer.isRunning() &&
+                        !pageInitializer.isRunning() &&
                         page.isInitiated() &&
                         !pagePainter.hasBeenQueued() &&
                         pagePainter.isRunning()

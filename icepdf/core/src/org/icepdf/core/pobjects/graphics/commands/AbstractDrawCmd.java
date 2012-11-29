@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 import org.icepdf.core.util.Defs;
 
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
  * <li>org.icepdf.core.paint.disableAlpha - disable alpha draw commands. </li>
  * </ul>
  *
- * @since 4.5
+ * @since 5.0
  */
 public abstract class AbstractDrawCmd implements DrawCmd {
 
@@ -58,5 +59,7 @@ public abstract class AbstractDrawCmd implements DrawCmd {
 
     public abstract Shape paintOperand(Graphics2D g, Page parentPage,
                                        Shape currentShape, Shape clip,
-                                       AffineTransform base, PaintTimer paintTimer);
+                                       AffineTransform base,
+                                       OptionalContentState optionalContentState,
+                                       PaintTimer paintTimer);
 }

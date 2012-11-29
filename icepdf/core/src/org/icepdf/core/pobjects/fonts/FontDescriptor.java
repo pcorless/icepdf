@@ -36,6 +36,8 @@ public class FontDescriptor extends Dictionary {
 
     private FontFile font;
 
+    public static final Name TYPE = new Name("FontDescriptor");
+
     public static final Name FONT_NAME = new Name("FontName");
 
     public static final Name FONT_FAMILY = new Name("FontFamily");

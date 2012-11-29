@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
 import java.awt.*;
@@ -24,7 +25,7 @@ import java.awt.geom.AffineTransform;
  * Stores an Color value that will be applied to the Graphics2D object when the
  * command is executed.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class ColorDrawCmd extends AbstractDrawCmd {
 
@@ -36,7 +37,9 @@ public class ColorDrawCmd extends AbstractDrawCmd {
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer paintTimer) {
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState,
+                              PaintTimer paintTimer) {
         g.setColor(color);
         return currentShape;
     }

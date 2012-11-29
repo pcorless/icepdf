@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * a true image proxy but we do get significantly faster load times with the
  * current implementation.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class ImageStreamReference extends CachedImageReference implements Runnable {
 

@@ -19,6 +19,8 @@ import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.fonts.CMap;
+import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.graphics.TilingPattern;
@@ -387,21 +389,25 @@ public class Parser {
                             // Process the know first level dictionaries.
                             if (obj != null && obj instanceof Name) {
                                 Name n = (Name) obj;
-                                if (n.equals("Catalog")) {
+                                if (n.equals(Catalog.TYPE)) {
                                     stack.push(new Catalog(library, hashMap));
-                                } else if (n.equals("Pages")) {
+                                } else if (n.equals(PageTree.TYPE)) {
                                     stack.push(new PageTree(library, hashMap));
-                                } else if (n.equals("Page")) {
+                                } else if (n.equals(Page.TYPE)) {
                                     stack.push(new Page(library, hashMap));
-                                } else if (n.equals("Font")) {
+                                } else if (n.equals(Font.TYPE)) {
                                     stack.push(FontFactory.getInstance()
                                             .getFont(library, hashMap));
-                                } else if (n.equals("FontDescriptor")) {
+                                } else if (n.equals(FontDescriptor.TYPE)) {
                                     stack.push(new FontDescriptor(library, hashMap));
-                                } else if (n.equals("CMap")) {
+                                } else if (n.equals(CMap.TYPE)) {
                                     stack.push(hashMap);
-                                } else if (n.equals("Annot")) {
+                                } else if (n.equals(Annotation.TYPE)) {
                                     stack.push(Annotation.buildAnnotation(library, hashMap));
+                                } else if (n.equals(OptionalContentGroup.TYPE)) {
+                                    stack.push(new OptionalContentGroup(library, hashMap));
+                                } else if (n.equals(OptionalContentMembership.TYPE)) {
+                                    stack.push(new OptionalContentMembership(library, hashMap));
                                 } else
                                     stack.push(hashMap);
                             }

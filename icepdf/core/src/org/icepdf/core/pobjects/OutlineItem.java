@@ -15,8 +15,8 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.actions.Action;
-import org.icepdf.core.pobjects.fonts.ofont.Encoding;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -246,58 +246,11 @@ public class OutlineItem extends Dictionary {
      * @return text to be displayed
      */
     public String getTitle() {
-
-        /*
-         * Some bizarre code that we have no idea what is for
-         * Written by those crazy Italians
-
-        if (title != null && title.indexOf(13) != -1) {
-            StringBuffer sb = new StringBuffer();
-            sb.append("<html>");
-            StringTokenizer stk = new StringTokenizer(title, "\n\r");
-            while (stk.hasMoreTokens()) {
-                String s = stk.nextToken();
-                sb.append("<p>" + s + "</p>");
-            }
-            sb.append("</html>");
-            title = sb.toString();
-        }
-        */
         if (title == null) {
             // get title String for outline entry
             Object obj = library.getObject(entries, TITLE_KEY);
             if (obj instanceof StringObject) {
-                StringObject outlineText = (StringObject) obj;
-                String titleText = outlineText.getDecryptedLiteralString(library.securityManager);
-                // If the title begins with 254 and 255 we are working with
-                // Octal encoded strings. Check first to make sure that the
-                // title string is not null, or is at least of length 2.
-                if (titleText != null && titleText.length() >= 2 &&
-                        ((int) titleText.charAt(0)) == 254 &&
-                        ((int) titleText.charAt(1)) == 255) {
-
-                    StringBuilder sb1 = new StringBuilder();
-
-                    // convert teh unicode to characters.
-                    for (int i = 2; i < titleText.length(); i += 2) {
-                        try {
-                            int b1 = ((int) titleText.charAt(i)) & 0xFF;
-                            int b2 = ((int) titleText.charAt(i + 1)) & 0xFF;
-                            //System.err.println(b1 + " " + b2);
-                            sb1.append((char) (b1 * 256 + b2));
-                        } catch (Exception ex) {
-                            // intentionally left blank.
-                        }
-                    }
-                    title = sb1.toString();
-                } else if (titleText != null) {
-                    StringBuilder sb = new StringBuilder();
-                    Encoding enc = Encoding.getPDFDoc();
-                    for (int i = 0; i < titleText.length(); i++) {
-                        sb.append(enc.get(titleText.charAt(i)));
-                    }
-                    title = sb.toString();
-                }
+                title = Utils.convertStringObject(library, (StringObject) obj);
             }
         }
         return title;

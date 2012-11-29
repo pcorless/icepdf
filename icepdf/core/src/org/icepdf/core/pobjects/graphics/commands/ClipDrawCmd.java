@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
 import java.awt.*;
@@ -25,7 +26,7 @@ import java.awt.geom.AffineTransform;
  * match the currentShape or at least the intersection of the currentShape
  * with the previous clip.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class ClipDrawCmd extends AbstractDrawCmd {
 
@@ -34,7 +35,9 @@ public class ClipDrawCmd extends AbstractDrawCmd {
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer paintTimer) {
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState,
+                              PaintTimer paintTimer) {
 
         // Capture the current af for the
         //  page

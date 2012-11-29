@@ -36,7 +36,7 @@ import java.awt.*;
  * @see MipMappedImageReference
  * @see ImageStreamReference
  * @see ScaledImageReference
- * @since 4.5
+ * @since 5.0
  */
 public class ImageReferenceFactory {
 

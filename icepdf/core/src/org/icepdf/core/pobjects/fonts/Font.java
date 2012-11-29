@@ -62,6 +62,8 @@ import java.util.HashMap;
  */
 public abstract class Font extends Dictionary {
 
+    public static final Name TYPE = new Name("Font");
+
     public static final Name NAME_KEY = new Name("Name");
     public static final Name BASEFONT_KEY = new Name("BaseFont");
 

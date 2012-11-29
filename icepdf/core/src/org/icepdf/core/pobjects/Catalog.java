@@ -44,10 +44,12 @@ public class Catalog extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Catalog.class.toString());
 
+    public static final Name TYPE = new Name("Catalog");
     public static final Name DESTS_KEY = new Name("Dests");
     public static final Name VIEWERPREFERENCES_KEY = new Name("ViewerPreferences");
     public static final Name NAMES_KEY = new Name("Names");
     public static final Name OUTLINES_KEY = new Name("Outlines");
+    public static final Name OCPROPERTIES_KEY = new Name("OCProperties");
     public static final Name PAGES_KEY = new Name("Pages");
     public static final Name PAGELAYOUT_KEY = new Name("PageLayout");
     public static final Name PAGEMODE_KEY = new Name("PageMode");
@@ -55,6 +57,7 @@ public class Catalog extends Dictionary {
     private PageTree pageTree;
     private Outlines outlines;
     private NameTree nameTree;
+    private OptionalContent optionalContent;
     private Dictionary dests;
     private ViewerPreferences viewerPref;
 
@@ -62,6 +65,7 @@ public class Catalog extends Dictionary {
     private boolean namesTreeInited = false;
     private boolean destsInited = false;
     private boolean viewerPrefInited = false;
+    private boolean optionalContentInited = false;
 
     // Announce ICEpdf Core
     static {
@@ -198,6 +202,26 @@ public class Catalog extends Dictionary {
             }
         }
         return viewerPref;
+    }
+
+    /**
+     * Gets the the optional content properties dictionary if present.
+     *
+     * @return OptionalContent dictionary, null if none exists.
+     */
+    public OptionalContent getOptionalContent() {
+        if (!optionalContentInited) {
+            optionalContentInited = true;
+            Object o = library.getObject(entries, OCPROPERTIES_KEY);
+            if (o != null && o instanceof HashMap) {
+                optionalContent = new OptionalContent(library, ((HashMap) o));
+                optionalContent.init();
+            } else {
+                optionalContent = new OptionalContent(library, new HashMap());
+                optionalContent.init();
+            }
+        }
+        return optionalContent;
     }
 
     /**

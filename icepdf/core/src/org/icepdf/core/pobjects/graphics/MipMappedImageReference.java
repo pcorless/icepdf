@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * images are painted at smaller zoom levels which in theory speeds up the image
  * paint time.
  *
- * @since 4.5
+ * @since 5.0
  */
 class MipMappedImageReference extends ImageReference {
 
