@@ -29,6 +29,7 @@ import java.awt.geom.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 import java.util.logging.Level;
@@ -61,6 +62,8 @@ public class ContentParser {
     private Resources resources;
 
     private Shapes shapes;
+    // keep track of embedded marked content
+    private LinkedList<OptionalContents> oCGs;
 
     // represents a geometric path constructed from straight lines, and
     // quadratic and cubic (Beauctezier) curves.  It can contain
@@ -134,8 +137,9 @@ public class ContentParser {
      * Parse a pages content stream.
      *
      * @param streamBytes byte stream containing page content
-     * @return a Shapes Ojbect containing all the pages text and images shapes.
-     * @throws InterruptedException if current parse thread is interruped.
+     * @return a Shapes Object containing all the pages text and images shapes.
+     * @throws InterruptedException if current parse thread is interrupted.
+     * @throws IOException          unexpected end of content stream.
      */
     public ContentParser parse(byte[][] streamBytes) throws InterruptedException, IOException {
         if (shapes == null) {
@@ -159,7 +163,12 @@ public class ContentParser {
             }
         }
 
+        if (oCGs == null && library.getCatalog().getOptionalContent() != null) {
+            oCGs = new LinkedList<OptionalContents>();
+        }
+
         if (logger.isLoggable(Level.FINER)) {
+            logger.fine("Parsing page content streams: " + streamBytes.length);
             // print all the stream byte chunks.
             for (byte[] streamByte : streamBytes) {
                 if (streamByte != null) {
@@ -346,12 +355,67 @@ public class ContentParser {
                         // property list or a name object associated with it in the
                         // Properties sub dictionary of the current resource dictionary
                         case OperandNames.OP_BDC:
-                            stack.pop(); // properties
-                            stack.pop(); // name
+                            Object properties = stack.pop();// properties
+                            Name tag = (Name) stack.pop();// tag
+                            OptionalContents optionalContents = null;
+                            // try and process the Optional content.
+                            if (tag.equals(OptionalContent.OC_KEY)) {
+                                if (properties instanceof Name) {
+                                    optionalContents =
+                                            resources.getPropertyEntry((Name) properties);
+                                    // make sure the reference is valid, no point
+                                    // jumping through all the hopes if we don't have too.
+                                    if (optionalContents != null) {
+                                        optionalContents.init();
+                                        // valid OC, add a marker command to the stack.
+                                        shapes.add(new OCGStartDrawCmd(optionalContents));
+                                    }
+                                }
+                            }
+                            if (optionalContents == null) {
+                                // create a temporary optional object.
+                                Name tmp = OptionalContent.NONE_OC_FLAG;
+                                if (properties instanceof Name) {
+                                    tmp = (Name) properties;
+                                }
+                                optionalContents = new OptionalContentGroup(tmp.getName(), true);
+                            }
+                            oCGs.push(optionalContents);
                             break;
 
                         // End a marked-content sequence begun by a BMC or BDC operator.
                         case OperandNames.OP_EMC:
+                            // add the new draw command to the stack.
+                            // restore the main stack.
+                            optionalContents = oCGs.pop();
+                            // mark the end of an OCG.
+                            if (optionalContents.isOCG()) {
+                                // push the OC end command on the shapes
+                                shapes.add(new OCGEndDrawCmd());
+                            }
+                            break;
+
+                        // Begin a marked-content sequence terminated by a balancing EMC
+                        // operator.tag is a name object indicating the role or
+                        // significance of the sequence.
+                        case OperandNames.OP_BMC:
+                            properties = stack.pop();// properties
+                            // try and process the Optional content.
+                            if (properties instanceof Name) {
+                                optionalContents =
+                                        resources.getPropertyEntry((Name) properties);
+                                // make sure the reference is valid, no point
+                                // jumping through all the hopes if we don't have too.
+                                if (optionalContents != null) {
+                                    optionalContents.init();
+                                    shapes.add(new OCGStartDrawCmd(optionalContents));
+                                } else {
+                                    Name tmp = (Name) properties;
+                                    optionalContents =
+                                            new OptionalContentGroup(tmp.getName(), true);
+                                }
+                                oCGs.push(optionalContents);
+                            }
                             break;
 
                         /**
@@ -688,13 +752,6 @@ public class ContentParser {
                             geometricPath = null;
                             break;
 
-                        // Begin a marked-content sequence terminated by a balancing EMC
-                        // operator.tag is a name object indicating the role or
-                        // significance of the sequence.
-                        case OperandNames.OP_BMC:
-                            stack.pop();
-                            break;
-
                         // Begin an inline image object
                         case OperandNames.OP_BI:
                             // start parsing image object, which leads to ID and EI
@@ -982,14 +1039,14 @@ public class ContentParser {
                             yBTStart = newY;
                             isYstart = false;
                             if (previousBTStart != yBTStart) {
-                                pageText.newLine();
+                                pageText.newLine(oCGs);
                             }
                         }
 
                         // ty will dictate the vertical shift, many pdf will use
                         // ty=0 do just do a horizontal shift for layout.
                         if (y != 0 && Math.round(newY) != Math.round(oldY)) {
-                            pageText.newLine();
+                            pageText.newLine(oCGs);
                         }
                         break;
 
@@ -1034,7 +1091,7 @@ public class ContentParser {
                             yBTStart = tm[5];//f6;
                             isYstart = false;
                             if (previousBTStart != yBTStart) {
-                                pageText.newLine();
+                                pageText.newLine(oCGs);
                             }
                         }
                         double newTransY = graphicState.getCTM().getTranslateY();
@@ -1043,9 +1100,9 @@ public class ContentParser {
                         // this information could be used to detect new lines
 
                         if (Math.round(oldTransY) != Math.round(newTransY)) {
-                            pageText.newLine();
+                            pageText.newLine(oCGs);
                         } else if (Math.abs(oldScaleY) != Math.abs(newScaleY)) {
-                            pageText.newLine();
+                            pageText.newLine(oCGs);
                         }
 
                         break;
@@ -1105,7 +1162,7 @@ public class ContentParser {
                         // ty will dictate the vertical shift, many pdf will use
                         // ty=0 do just do a horizontal shift for layout.
                         if (y != 0f) {
-                            pageText.newLine();
+                            pageText.newLine(oCGs);
                         }
                         break;
 
@@ -1139,7 +1196,7 @@ public class ContentParser {
                         advance.setLocation(0, 0);
                         graphicState.translate(0, graphicState.getTextState().leading);
                         // always indicates a new line
-                        pageText.newLine();
+                        pageText.newLine(oCGs);
                         break;
                     case OperandNames.OP_BDC:
                         stack.pop();
@@ -2132,7 +2189,7 @@ public class ContentParser {
                     String.valueOf(currentChar), // cid
                     textState.currentfont.toUnicode(currentChar), // unicode value
                     currentX, currentY, newAdvanceX);
-            shapes.getPageText().addGlyph(glyphText);
+            shapes.getPageText().addGlyph(glyphText, oCGs);
 
         }
         // append the finally offset of the with of the character

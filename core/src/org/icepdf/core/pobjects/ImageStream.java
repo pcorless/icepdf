@@ -50,7 +50,7 @@ import java.util.logging.Logger;
  * ImageStream contains image data that is contains in an XObject of subtype
  * Image.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class ImageStream extends Stream {
 

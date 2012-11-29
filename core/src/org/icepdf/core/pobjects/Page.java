@@ -73,6 +73,8 @@ public class Page extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Page.class.toString());
 
+    public static final Name TYPE = new Name("Page");
+
     public static final Name ANNOTS_KEY = new Name("Annots");
     public static final Name CONTENTS_KEY = new Name("Contents");
     public static final Name RESOURCES_KEY = new Name("Resources");
@@ -287,7 +289,7 @@ public class Page extends Dictionary {
 
             /**
              * Finally iterate through the contents vector and concat all of the
-             * the resourse streams together so that the content parser can
+             * the resource streams together so that the content parser can
              * go to town and build all of the page's shapes.
              */
             if (contents != null) {
@@ -301,6 +303,15 @@ public class Page extends Dictionary {
                             streams[i] = stream;
                         }
                     }
+                    // get any optional groups from the catalog, which control
+                    // visibility
+                    OptionalContent optionalContent =
+                            library.getCatalog().getOptionalContent();
+                    if (optionalContent != null) {
+                        optionalContent.init();
+                    }
+
+                    // pass in option group references into parse.
                     shapes = cp.parse(streams).getShapes();
 
                 } catch (Exception e) {

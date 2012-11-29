@@ -330,6 +330,7 @@ public class Annotation extends Dictionary {
     private static final Logger logger =
             Logger.getLogger(Annotation.class.toString());
 
+    public static final Name TYPE = new Name("Annot");
     public static final Name RESOURCES_VALUE = new Name("Resources");
     public static final Name BBOX_VALUE = new Name("BBox");
     public static final Name PARENT_KEY = new Name("Parent");

@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * MipMappedImageReference and ScaledImageReference.  The creation of these
  * objects is handled by the ImageReferenceFactory.
  *
- * @since 4.5
+ * @since 5.0
  */
 public abstract class ImageReference implements Runnable {
 

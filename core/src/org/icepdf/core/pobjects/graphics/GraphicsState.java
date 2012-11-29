@@ -609,7 +609,7 @@ public class GraphicsState {
                 area.intersect(clip);
             }
             // update the clip with the new value if it is new.
-            if (clip == null || !clip.getBounds().equals(area.getBounds())) {
+            if (clip == null || !clip.equals(area)) {
                 clip = new Area(area);
                 shapes.add(new ShapeDrawCmd(new Area(area)));
                 shapes.add(new ClipDrawCmd());

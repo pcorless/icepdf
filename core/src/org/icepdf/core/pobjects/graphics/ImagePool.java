@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * allows the pageInitialization thread to continue while the executor processes
  * the image data on another thread.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class ImagePool {
     private static final Logger log =

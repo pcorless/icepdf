@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * smaller images instances which are painted at lower zoom values to improve
  * paint speeds.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class ScaledImageReference extends CachedImageReference {
 

@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * Represents one inline images as define in a content stream.  Inline images
  * don't have object numbers and thus can't be cached.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class InlineImageStreamReference extends ImageReference {
 

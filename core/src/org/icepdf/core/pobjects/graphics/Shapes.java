@@ -54,6 +54,9 @@ public class Shapes {
     // Graphics stack for a page's content.
     protected ArrayList<DrawCmd> shapes = new ArrayList<DrawCmd>(shapesInitialCapacity);
 
+    // stores the state of the currently visible optional content.
+    protected OptionalContentState optionalContentState = new OptionalContentState();
+
     // the collection of objects listening for page paint events
     private Page parentPage;
 
@@ -125,7 +128,7 @@ public class Shapes {
                 }
                 nextShape = shapes.get(i);
                 previousShape = nextShape.paintOperand(g, parentPage,
-                        previousShape, clip, base, paintTimer);
+                        previousShape, clip, base, optionalContentState, paintTimer);
 
             }
         } catch (Exception e) {

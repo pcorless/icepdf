@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
 import java.awt.*;
@@ -25,14 +26,17 @@ import java.awt.geom.AffineTransform;
  * for the currentShape.  The execute method will not draw the currentShape
  * if the shape does not interest the current graphics clip.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class DrawDrawCmd extends AbstractDrawCmd {
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
-                              Shape clip, AffineTransform base, PaintTimer paintTimer) {
-        if (currentShape.intersects(g.getClip().getBounds2D()) ||
+                              Shape clip, AffineTransform base,
+                              OptionalContentState optionalContentState,
+                              PaintTimer paintTimer) {
+        if (optionalContentState.isVisible() &&
+                currentShape.intersects(g.getClip().getBounds2D()) ||
                 (currentShape.getBounds2D().getWidth() < 1.0 ||
                         currentShape.getBounds2D().getHeight() < 1.0)) {
             g.draw(currentShape);

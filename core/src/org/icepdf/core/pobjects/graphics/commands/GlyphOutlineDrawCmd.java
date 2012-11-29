@@ -16,6 +16,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.GlyphOutlineClip;
+import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
 import java.awt.*;
@@ -25,7 +26,7 @@ import java.awt.geom.AffineTransform;
  * The GlyphOutlineDrawCmd applies the clip defined by a locally stored
  * glyphOutlineClip object.
  *
- * @since 4.5
+ * @since 5.0
  */
 public class GlyphOutlineDrawCmd extends AbstractDrawCmd {
 
@@ -36,17 +37,19 @@ public class GlyphOutlineDrawCmd extends AbstractDrawCmd {
     }
 
     @Override
-    public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape, Shape clip, AffineTransform base, PaintTimer paintTimer) {
-
-        // save and revert the af for the page so that we can
-        // paint the converted clip glyph outline.
-        AffineTransform preTrans = new AffineTransform(g.getTransform());
-        g.setTransform(base);
-        // set clip directly but it should be the intersection with the current.
-        Shape glyphClip = glyphOutlineClip.getGlyphOutlineClip();
-        g.setClip(glyphClip);
-        g.setTransform(preTrans);
-
+    public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape, Shape clip,
+                              AffineTransform base, OptionalContentState optionalContentState,
+                              PaintTimer paintTimer) {
+        if (optionalContentState.isVisible()) {
+            // save and revert the af for the page so that we can
+            // paint the converted clip glyph outline.
+            AffineTransform preTrans = new AffineTransform(g.getTransform());
+            g.setTransform(base);
+            // set clip directly but it should be the intersection with the current.
+            Shape glyphClip = glyphOutlineClip.getGlyphOutlineClip();
+            g.setClip(glyphClip);
+            g.setTransform(preTrans);
+        }
         return currentShape;
     }
 }

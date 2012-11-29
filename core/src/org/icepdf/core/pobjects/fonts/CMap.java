@@ -14,12 +14,16 @@
  */
 package org.icepdf.core.pobjects.fonts;
 
+import org.icepdf.core.pobjects.Name;
+
 /**
  * CMap inteface.
  *
  * @since 3.0
  */
 public interface CMap {
+
+    public static final Name TYPE = new Name("CMap");
 
     /**
      * Maps the character id to an underlying unicode value if available.

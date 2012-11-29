@@ -38,6 +38,7 @@ import java.util.List;
  */
 public class PageTree extends Dictionary {
 
+    public static final Name TYPE = new Name("Pages");
     public static final Name PARENT_KEY = new Name("Parent");
     public static final Name COUNT_KEY = new Name("Count");
     public static final Name MEDIABOX_KEY = new Name("MediaBox");
