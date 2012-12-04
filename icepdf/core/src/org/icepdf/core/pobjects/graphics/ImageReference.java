@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Resources;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 
 /**
  * Abstract ImageReference defines the core methods used in ImageStreamReference
@@ -30,6 +31,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @since 5.0
  */
 public abstract class ImageReference implements Runnable {
+
+    private static final Logger logger =
+            Logger.getLogger(ImageReference.class.toString());
 
     protected final ReentrantLock lock = new ReentrantLock();
 
@@ -54,7 +58,13 @@ public abstract class ImageReference implements Runnable {
     public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) {
         BufferedImage image = getImage();
         if (image != null) {
-            aG.drawImage(image, aX, aY, aW, aH, null);
+            try {
+                aG.drawImage(image, aX, aY, aW, aH, null);
+            } catch (Throwable e) {
+                logger.warning("There was a problem painting image " +
+                        imageStream.getPObjectReference() +
+                        "(" + imageStream.getWidth() + "x" + imageStream.getHeight() + ")");
+            }
         }
     }
 

@@ -302,7 +302,7 @@ public class Parser {
                             trailer = new PTrailer(library, trailerHash, null, xrefStream);
                         } else if (type.equals("ObjStm")) {
                             stream = new ObjectStream(library, streamHash, streamInputWrapper);
-                        } else if (type.equals("XObject") && subtype.equals("Image")) {
+                        } else if (type.equals("XObject") && "Image".equals(subtype)) {
                             stream = new ImageStream(library, streamHash, streamInputWrapper);
                         }
                     }
