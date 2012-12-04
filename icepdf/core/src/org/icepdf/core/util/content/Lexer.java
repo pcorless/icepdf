@@ -377,7 +377,12 @@ public class Lexer {
         if (pos == numRead) {
             if (streamCount < streamsBytes.length - 1) {
                 streamCount++;
-                // assign next byte array
+                // assign next byte array, but skip over the corner
+                // case of an zero length content stream.
+                if (streamsBytes[streamCount].length == 0 &&
+                        streamCount + 1 < streamsBytes.length) {
+                    streamCount++;
+                }
                 streamBytes = streamsBytes[streamCount];
                 // reset the  pointers.
                 pos = 0;
@@ -463,6 +468,11 @@ public class Lexer {
             if (pos == numRead) {
                 if (streamCount < streamsBytes.length - 1) {
                     streamCount++;
+                    // skip zero length stream
+                    if (streamsBytes[streamCount].length == 0 &&
+                            streamCount + 1 < streamsBytes.length) {
+                        streamCount++;
+                    }
                     // assign next byte array
                     streamBytes = streamsBytes[streamCount];
                     // reset the  pointers.
