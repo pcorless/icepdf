@@ -396,6 +396,13 @@ public class Document {
             boolean loaded = false;
             try {
                 loadDocumentViaXRefs(in);
+
+                // initiate the catalog, build the outline for the document
+                // this is the best test to see if everything is in order.
+                if (catalog != null) {
+                    catalog.init();
+                }
+
                 loaded = true;
             } catch (PDFException e) {
                 throw e;
@@ -404,7 +411,6 @@ public class Document {
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
                     logger.warning("Cross reference deferred loading failed, will fall back to linear reading.");
-                    e.printStackTrace();
                 }
             }
 
@@ -421,11 +427,11 @@ public class Document {
 
                 in.seekAbsolute(0L);
                 loadDocumentViaLinearTraversal(in);
-            }
 
-            // initiate the catalog, build the outline for the document
-            if (catalog != null) {
-                catalog.init();
+                // initiate the catalog, build the outline for the document
+                if (catalog != null) {
+                    catalog.init();
+                }
             }
 
             // create new instance of state manager and add it to the library

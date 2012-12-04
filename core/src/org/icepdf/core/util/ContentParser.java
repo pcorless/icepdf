@@ -865,7 +865,6 @@ public class ContentParser {
             logger.finer("End of Content Stream");
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error parsing content stream. ", e);
-            e.printStackTrace();
         } finally {
             // End of stream set alpha state back to 1.0f, so that other
             // streams aren't applied an incorrect alpha value.

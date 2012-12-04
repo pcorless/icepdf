@@ -109,11 +109,9 @@ public class Catalog extends Dictionary {
             pageTree = new PageTree(library, tmpPages);
         }
 
-        try {
-            pageTree.init();
-        } catch (NullPointerException e) {
-            logger.log(Level.FINE, "Error parsing page tree.", e);
-        }
+        // let any exception bubble up.
+        pageTree.init();
+
     }
 
     /**
