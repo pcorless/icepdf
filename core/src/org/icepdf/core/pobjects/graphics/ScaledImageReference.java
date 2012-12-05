@@ -93,7 +93,7 @@ public class ScaledImageReference extends CachedImageReference {
     public void run() {
         lock.lock();
         try {
-            image = imageStream.getImage(fillColor, resources, false);
+            image = imageStream.getImage(fillColor, resources);
             if (image != null) {
                 int width = image.getWidth();
                 int height = image.getHeight();

@@ -117,7 +117,7 @@ public class Stream extends Dictionary {
         try {
             streamInputWrapper.read(rawBytes, 0, length);
         } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("IO Error getting stream bytes");
         }
         return rawBytes;
     }
@@ -168,10 +168,7 @@ public class Stream extends Dictionary {
             out.close();
             input.close();
             out.trim();
-
-            byte[] data = out.relinquishByteArray();
-
-            return data;
+            return out.relinquishByteArray();
         } catch (IOException e) {
             logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
         }
@@ -221,9 +218,9 @@ public class Stream extends Dictionary {
         // Decode the stream data based on the filter names.
         // Loop through the filterNames and apply the filters in the order
         // in which they where found.
-        for (int i = 0; i < filterNames.size(); i++) {
+        for (Object filterName1 : filterNames) {
             // grab the name of the filter
-            String filterName = filterNames.get(i).toString();
+            String filterName = filterName1.toString();
             //System.out.println("  Decoding: " + filterName);
 
             if (filterName.equals("FlateDecode")
