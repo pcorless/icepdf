@@ -597,7 +597,7 @@ public class CCITTFax {
         List decodeArray = (List) library.getObject(streamDictionary, ImageStream.DECODE_KEY);
         // get decode parameters from stream properties
         HashMap decodeParmsDictionary = library.getDictionary(streamDictionary, ImageStream.DECODEPARMS_KEY);
-        Boolean blackIs1Obj = stream.getBlackIs1OrNull(library, decodeParmsDictionary);
+        boolean blackIs1 = stream.getBlackIs1(library, decodeParmsDictionary);
         float k = library.getFloat(decodeParmsDictionary, ImageStream.K_KEY);
         boolean hasHeader;
 
@@ -665,9 +665,7 @@ public class CCITTFax {
             //   PhotometricIntrerpretation, RowsPerStrip, StripByteCounts
 
             boolean pdfStatesBlackAndWhite = false;
-            boolean blackIs1 = false;  // Default value is false
-            if (blackIs1Obj != null) {
-                blackIs1 = blackIs1Obj.booleanValue();
+            if (blackIs1) {
                 pdfStatesBlackAndWhite = true;
             }
             int width = library.getInt(streamDictionary, ImageStream.WIDTH_KEY);
@@ -753,11 +751,11 @@ public class CCITTFax {
         if (img != null) {
             if (Tagger.tagging) {
                 Tagger.tagImage("HandledBy=CCITTFaxDecode_JAI");
-                Tagger.tagImage("CCITTFaxDecode_DecodeParms_BlackIs1=" + blackIs1Obj);
+                Tagger.tagImage("CCITTFaxDecode_DecodeParms_BlackIs1=" + blackIs1);
                 Tagger.tagImage("CCITTFaxDecode_DecodeParms_K=" + k);
                 Tagger.tagImage("CCITTFaxDecode_hasHeader=" + hasHeader);
             }
-            img = applyImageMaskAndDecodeArray(img, imageMask, blackIs1Obj, decodeArray, fill);
+            img = applyImageMaskAndDecodeArray(img, imageMask, blackIs1, decodeArray, fill);
         }
 
         return img;

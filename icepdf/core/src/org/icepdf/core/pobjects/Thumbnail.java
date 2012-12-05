@@ -68,7 +68,7 @@ public class Thumbnail extends Dictionary {
 
     public void init() {
         Resources resource = new Resources(library, thumbStream.entries);
-        image = thumbStream.getImage(null, resource, false);
+        image = thumbStream.getImage(null, resource);
         initialized = true;
     }
 

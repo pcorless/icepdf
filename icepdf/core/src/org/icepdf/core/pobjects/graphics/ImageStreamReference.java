@@ -59,7 +59,7 @@ public class ImageStreamReference extends CachedImageReference implements Runnab
     public void run() {
         lock.lock();
         try {
-            image = imageStream.getImage(fillColor, resources, false);
+            image = imageStream.getImage(fillColor, resources);
         } catch (Throwable e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString());

@@ -164,7 +164,7 @@ public class Resources extends Dictionary {
         // lastly return the images.
         Image image = null;
         try {
-            image = st.getImage(fill, this, true);
+            image = st.getImage(fill, this);
         } catch (Exception e) {
             logger.log(Level.FINE, "Error getting image by name: " + s, e);
         }
