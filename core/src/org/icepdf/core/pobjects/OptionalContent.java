@@ -223,6 +223,44 @@ public class OptionalContent extends Dictionary {
         return order;
     }
 
+    public boolean isVisible(Reference ocgRef) {
+        Object object = library.getObject(ocgRef);
+        if (object instanceof OptionalContentGroup) {
+            return isVisible((OptionalContentGroup) object);
+        } else if (object instanceof OptionalContentMembership) {
+            return isVisible((OptionalContentMembership) object);
+        }
+        return false;
+    }
+
+    public boolean isVisible(OptionalContentGroup ocg) {
+        return groups.containsKey(ocg.getPObjectReference());
+    }
+
+    public boolean isVisible(OptionalContentMembership ocmd) {
+        ocmd.init();
+        return ocmd.isVisible();
+    }
+
+    /**
+     * Test if an xForm object image or content is visible.
+     *
+     * @param object content to check visibility.
+     * @return optional content groups currently visibility state, returns
+     *         true if no state can be found, better to show then to
+     *         hide by default.
+     */
+    public boolean isVisible(Object object) {
+        if (object instanceof Reference) {
+            return isVisible((Reference) object);
+        } else if (object instanceof OptionalContentGroup) {
+            return isVisible((OptionalContentGroup) object);
+        } else if (object instanceof OptionalContentMembership) {
+            return isVisible((OptionalContentMembership) object);
+        }
+        return true;
+    }
+
     public List<Object> getOrder() {
         return order;
     }

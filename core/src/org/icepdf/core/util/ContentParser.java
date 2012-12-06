@@ -1848,6 +1848,15 @@ public class ContentParser {
             // of the current graphics state for the new content stream
             Form formXObject = resources.getForm(xobjectName);
             if (formXObject != null) {
+                // check if the form is an optional content group.
+                Object oc = formXObject.getObject(OptionalContent.OC_KEY);
+                if (oc != null) {
+                    OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
+                    optionalContent.init();
+                    if (!optionalContent.isVisible(oc)) {
+                        return graphicState;
+                    }
+                }
                 // init formXobject
                 GraphicsState xformGraphicsState =
                         new GraphicsState(graphicState);
@@ -1932,9 +1941,22 @@ public class ContentParser {
         else if (viewParse) {
             setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
 
+            ImageStream imageStream = resources.getImageStream(xobjectName);
+            Object oc = imageStream.getObject(OptionalContent.OC_KEY);
+            if (oc != null) {
+                OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
+                optionalContent.init();
+                // avoid loading the image if oc is not visible
+                // may have to add this logic to the stack for dynamic content
+                // if we get an example.
+                if (!optionalContent.isVisible(oc)) {
+                    return graphicState;
+                }
+            }
+
             // create an ImageReference for future decoding
             ImageReference imageReference = ImageReferenceFactory.getImageReference(
-                    resources.getImageStream(xobjectName), resources, graphicState.getFillColor());
+                    imageStream, resources, graphicState.getFillColor());
 
             if (imageReference != null) {
                 AffineTransform af =
