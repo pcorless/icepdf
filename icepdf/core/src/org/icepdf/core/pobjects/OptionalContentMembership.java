@@ -39,6 +39,7 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
     public static final Name P_KEY = new Name("P");
     public static final Name VE_KEY = new Name("VE");
     public static final Name ALL_ON_KEY = new Name("AllOn");
+    public static final Name ALL_OFF_KEY = new Name("AllOff");
     public static final Name ANY_ON_KEY = new Name("AnyOn");
     public static final Name ANY_OFF_KEY = new Name("AnyOff");
 
@@ -164,6 +165,8 @@ public class OptionalContentMembership extends Dictionary implements OptionalCon
         public static VisibilityPolicy getPolicy(Name p) {
             if (ALL_ON_KEY.equals(p)) {
                 return ALL_ON;
+            } else if (ALL_OFF_KEY.equals(p)) {
+                return ALL_OFF;
             } else if (ANY_ON_KEY.equals(p)) {
                 return ANY_ON;
             } else if (ANY_OFF_KEY.equals(p)) {

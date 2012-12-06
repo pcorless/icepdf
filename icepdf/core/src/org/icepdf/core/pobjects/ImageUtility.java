@@ -209,47 +209,9 @@ public class ImageUtility {
         return tmpImage;
     }
 
-    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr,
-                                                        BufferedImage smaskImage,
-                                                        BufferedImage maskImage) {
-
+    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr) {
         int width = wr.getWidth();
         int height = wr.getHeight();
-
-        Raster smaskRaster = null;
-        int smaskWidth = 0;
-        int smaskHeight = 0;
-        if (smaskImage != null) {
-            smaskRaster = smaskImage.getRaster();
-            smaskWidth = smaskRaster.getWidth();
-            smaskHeight = smaskRaster.getHeight();
-            // If smask is larger then the image, and needs to be scaled to match the image.
-            if (width < smaskWidth || height < smaskHeight) {
-                // calculate scale factors.
-                double scaleX = width / (double) smaskWidth;
-                double scaleY = height / (double) smaskHeight;
-                // scale the mask to match the base image.
-                AffineTransform tx = new AffineTransform();
-                tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-                BufferedImage sbim = op.filter(smaskImage, null);
-                smaskImage.flush();
-                smaskImage = sbim;
-            }
-            // update the new deminsions.
-            smaskRaster = smaskImage.getRaster();
-            smaskWidth = smaskRaster.getWidth();
-            smaskHeight = smaskRaster.getHeight();
-        }
-
-        Raster maskRaster = null;
-        int maskWidth = 0;
-        int maskHeight = 0;
-        if (maskImage != null) {
-            maskRaster = maskImage.getRaster();
-            maskWidth = maskRaster.getWidth();
-            maskHeight = maskRaster.getHeight();
-        }
 
         // this convoluted cymk->rgba method is from DeviceCMYK class.
         float inCyan, inMagenta, inYellow, inBlack;
@@ -298,16 +260,6 @@ public class ImageUtility {
                 lastYellow = inYellow;
                 lastBlack = inBlack;
 
-                // this fits into the larger why are we doing this on a case by case basis.
-                if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
-                    alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
-                } else if (y < maskHeight && x < maskWidth && maskRaster != null) {
-                    // When making an ImageMask, the alpha channel is setup so that
-                    //  it both works correctly for the ImageMask being painted,
-                    //  and also for when it's used here, to determine the alpha
-                    //  of an image that it's masking
-                    alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
-                }
                 values[redIndex] = rValue;
                 values[1] = gValue;
                 values[blueIndex] = bValue;
@@ -317,26 +269,7 @@ public class ImageUtility {
         }
         // apply the soft mask, but first we need an rgba image,
         // this is pretty expensive, would like to find quicker method.
-        BufferedImage tmpImage = makeRGBABufferedImage(wr);
-        if (smaskImage != null) {
-            BufferedImage argbImage = new BufferedImage(width,
-                    height, BufferedImage.TYPE_INT_ARGB);
-            int[] srcBand = new int[width];
-            int[] sMaskBand = new int[width];
-            // iterate over each band to apply the mask
-            for (int i = 0; i < height; i++) {
-                tmpImage.getRGB(0, i, width, 1, srcBand, 0, width);
-                smaskImage.getRGB(0, i, width, 1, sMaskBand, 0, width);
-                // apply the soft mask blending
-                for (int j = 0; j < width; j++) {
-                    sMaskBand[j] = ((sMaskBand[j] & 0xff) << 24)
-                            | (srcBand[j] & ~0xff000000);
-                }
-                argbImage.setRGB(0, i, width, 1, sMaskBand, 0, width);
-            }
-            tmpImage.flush();
-            tmpImage = argbImage;
-        }
+        BufferedImage tmpImage = makeRGBABufferedImage(wr, Transparency.TRANSLUCENT);
         return tmpImage;
     }
 
@@ -358,8 +291,11 @@ public class ImageUtility {
         return value;
     }
 
-    protected static void displayImage(BufferedImage bufferedImage) {
+    protected static void displayImage(BufferedImage bufferedImage, String title) {
 
+        if (bufferedImage == null) {
+            return;
+        }
 //        int width2 = bufferedImage.getWidth();
 //        int height2 = bufferedImage.getHeight();
         final BufferedImage bi = bufferedImage;
@@ -374,7 +310,7 @@ public class ImageUtility {
 //                }
 //            }
 //        }
-        final JFrame f = new JFrame("Test");
+        final JFrame f = new JFrame("Image - " + title);
         f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 
         JComponent image = new JComponent() {
@@ -422,14 +358,40 @@ public class ImageUtility {
                                                          final int transparency) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[4];
-        for (int i = 0; i < bits.length; i++)
+        for (int i = 0; i < bits.length; i++) {
             bits[i] = 8;
+        }
         ColorModel cm = new ComponentColorModel(
                 cs, bits, true, false,
                 transparency,
                 wr.getTransferType());
         return new BufferedImage(cm, wr, false, null);
     }
+
+    protected static BufferedImage makeRGBtoRGBABuffer(WritableRaster wr, int width, int height) {
+        BufferedImage tmpImage = ImageUtility.makeRGBBufferedImage(wr);
+        BufferedImage argbImage = new BufferedImage(width,
+                height, BufferedImage.TYPE_INT_ARGB);
+        int[] srcBand = new int[width];
+        int[] argbBand = new int[width];
+        // iterate over each band to apply the mask
+        int r, g, b;
+        for (int i = 0; i < height; i++) {
+            tmpImage.getRGB(0, i, width, 1, srcBand, 0, width);
+            // apply the soft mask blending
+            for (int j = 0; j < width; j++) {
+                r = (srcBand[j] >> 16) & 0xFF;
+                g = (srcBand[j] >> 8) & 0xFF;
+                b = (srcBand[j]) & 0xFF;
+                argbBand[j] = 0xff000000 |
+                        (r << 16) | (g << 8) | b;
+            }
+            argbImage.setRGB(0, i, width, 1, argbBand, 0, width);
+        }
+        tmpImage.flush();
+        return argbImage;
+    }
+
 
     protected static BufferedImage makeRGBBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
@@ -457,7 +419,6 @@ public class ImageUtility {
 
     // This method returns a buffered image with the contents of an image from
     // java almanac
-
     protected static BufferedImage makeRGBABufferedImageFromImage(Image image) {
 
         if (image instanceof BufferedImage) {
@@ -544,13 +505,11 @@ public class ImageUtility {
      * NOTE: no masking here, as it is done later in the call to
      * {@see alterRasterCMYK2BGRA}
      *
-     * @param wr               writable raster to alter.
-     * @param decode           decode vector.
-     * @param bitsPerComponent bits per component .
+     * @param wr     writable raster to alter.
+     * @param decode decode vector.
      */
     protected static void alterRasterYCCK2CMYK(WritableRaster wr,
-                                               float[] decode,
-                                               int bitsPerComponent) {
+                                               float[] decode) {
 
         float[] origValues = new float[wr.getNumBands()];
         double[] pixels = new double[4];
@@ -621,6 +580,12 @@ public class ImageUtility {
         }
     }
 
+    /**
+     * Convert a rgb encoded raster to the specified colour space.
+     *
+     * @param wr         writable rasters in rgb.
+     * @param colorSpace colour space to convert colours too.
+     */
     protected static void alterRasterRGB2PColorSpace(WritableRaster wr, PColorSpace colorSpace) {
         if (colorSpace instanceof DeviceRGB)
             return;
@@ -715,7 +680,7 @@ public class ImageUtility {
         return wr;
     }
 
-    protected static void alterRasterY2Gray(WritableRaster wr, int bitsPerComponent,
+    protected static void alterRasterY2Gray(WritableRaster wr,
                                             float[] decode) {
         int[] values = new int[1];
         int width = wr.getWidth();
@@ -735,9 +700,8 @@ public class ImageUtility {
         }
     }
 
-    protected static BufferedImage alterRasterYCbCr2RGB(WritableRaster wr,
-                                                        BufferedImage smaskImage, BufferedImage maskImage,
-                                                        float[] decode, int bitsPerComponent) {
+    protected static BufferedImage alterRasterYCbCr2RGBA(WritableRaster wr,
+                                                         float[] decode) {
         byte[] dataValues = new byte[wr.getNumBands()];
         byte[] compColors;
         float[] values = new float[wr.getNumBands()];
@@ -778,29 +742,7 @@ public class ImageUtility {
             }
 
         }
-        BufferedImage tmpImage = ImageUtility.makeRGBBufferedImage(wr);
-        // special case to handle an smask on an RGB image.  In
-        // such a case we need to copy the rgb and soft mask effect
-        // to th new ARGB image.
-        if (smaskImage != null) {
-            BufferedImage argbImage = new BufferedImage(width,
-                    height, BufferedImage.TYPE_INT_ARGB);
-            int[] srcBand = new int[width];
-            int[] sMaskBand = new int[width];
-            // iterate over each band to apply the mask
-            for (int i = 0; i < height; i++) {
-                tmpImage.getRGB(0, i, width, 1, srcBand, 0, width);
-                smaskImage.getRGB(0, i, width, 1, sMaskBand, 0, width);
-                // apply the soft mask blending
-                for (int j = 0; j < width; j++) {
-                    sMaskBand[j] = ((sMaskBand[j] & 0xff) << 24)
-                            | (srcBand[j] & ~0xff000000);
-                }
-                argbImage.setRGB(0, i, width, 1, sMaskBand, 0, width);
-            }
-            tmpImage.flush();
-            tmpImage = argbImage;
-        }
+        BufferedImage tmpImage = ImageUtility.makeRGBtoRGBABuffer(wr, width, height);
         return tmpImage;
     }
 
@@ -921,26 +863,8 @@ public class ImageUtility {
         }
     }
 
-    protected static void alterRasterYCbCrA2RGBA_new(WritableRaster wr,
-                                                     BufferedImage smaskImage, BufferedImage maskImage,
-                                                     float[] decode, int bitsPerComponent) {
-        Raster smaskRaster = null;
-        int smaskWidth = 0;
-        int smaskHeight = 0;
-        if (smaskImage != null) {
-            smaskRaster = smaskImage.getRaster();
-            smaskWidth = smaskRaster.getWidth();
-            smaskHeight = smaskRaster.getHeight();
-        }
+    protected static void alterRasterYCbCrA2RGBA(WritableRaster wr) {
 
-        Raster maskRaster = null;
-        int maskWidth = 0;
-        int maskHeight = 0;
-        if (maskImage != null) {
-            maskRaster = maskImage.getRaster();
-            maskWidth = maskRaster.getWidth();
-            maskHeight = maskRaster.getHeight();
-        }
 
         float[] origValues = new float[4];
         int[] rgbaValues = new int[4];
@@ -980,15 +904,6 @@ public class ImageUtility {
                 byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
                 byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
                 float alpha = K;
-                if (y < smaskHeight && x < smaskWidth && smaskRaster != null)
-                    alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
-                else if (y < maskHeight && x < maskWidth && maskRaster != null) {
-                    // When making an ImageMask, the alpha channnel is setup so that
-                    //  it both works correctly for the ImageMask being painted,
-                    //  and also for when it's used here, to determine the alpha
-                    //  of an image that it's masking
-                    alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
-                }
 
                 rgbaValues[0] = rByte;
                 rgbaValues[1] = gByte;
@@ -1055,9 +970,9 @@ public class ImageUtility {
             maskImage.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-                if (maskBnd[j] == 0) {
-                    maskBnd[j] = ((maskBnd[j] & 0xff) << 24)
-                            | (srcBand[j] & ~0xff000000);
+                if (maskBnd[j] == 0 || maskBnd[j] == 0xffffff) {
+                    //  set the pixel as transparent
+                    maskBnd[j] = 0xff;
                 } else {
                     maskBnd[j] = srcBand[j];
                 }
@@ -1124,7 +1039,6 @@ public class ImageUtility {
             sMaskImage.getRGB(0, i, baseWidth, 1, sMaskBand, 0, baseWidth);
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
-//                if (sMaskBand[j] == 0) {
                 if (sMaskBand[j] != -1 || sMaskBand[j] != 0xffffff || sMaskBand[j] != 0) {
                     sMaskBand[j] = ((sMaskBand[j] & 0xff) << 24)
                             | (srcBand[j] & ~0xff000000);
@@ -1396,7 +1310,7 @@ public class ImageUtility {
             }
             // apply soft mask
             if (smaskImage != null) {
-                img = ImageUtility.alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
+                img = ImageUtility.applyExplicitSMask(img, smaskImage);
             }
         } else if (colourSpace instanceof DeviceRGB) {
             if (bitspercomponent == 8) {
