@@ -277,6 +277,13 @@ public class TilingPattern extends Stream implements Pattern {
     public void paintPattern(Graphics2D g, Page parentPage) {
         if (patternPaint == null) {
 //            final AffineTransform matrixInv = getInvMatrix();
+            // some encoders set the step to 2^15
+            if (xStep == Short.MAX_VALUE) {
+                xStep = (float) bBox.getWidth();
+            }
+            if (yStep == Short.MAX_VALUE) {
+                yStep = (float) bBox.getHeight();
+            }
             // adjust the bBox so that xStep and yStep can be applied
             // for tile spacing.
             Rectangle2D bBoxMod = new Rectangle2D.Double(

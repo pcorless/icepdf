@@ -105,7 +105,6 @@ public class Parser {
                 } catch (IOException e) {
                     // eat it as it is what is expected
                     logger.warning("IO reading error.");
-                    e.printStackTrace();
                     return null;
                 }
 
@@ -152,8 +151,9 @@ public class Parser {
                         return addPObject(library, objectReference);
                         // else, we ignore as the endStream token also returns a
                         // PObject.
-                    } else
-                        return null;
+                    } else {
+//                        return null;
+                    }
                 }
                 // found endstream object, we will return the PObject containing
                 // the stream as there can be no further tokens.  This addresses

@@ -89,7 +89,8 @@ public class LexerTest {
     }
 
     static final String test4 =
-            "<</Attached [/Bottom]/Type/Pagination>> BDC BT\n";
+            "%\n" +
+                    "0.11 w []\n";
     static final String test20 =
             "/F1 11.04 Tf\n" +
                     "1 0 0 1 534.58 75.024 Tm\n" +

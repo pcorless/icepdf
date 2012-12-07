@@ -65,24 +65,6 @@ public class Lexer {
             TOKEN_ARRAY = 8,
             TOKEN_BOOLEAN = 9;
 
-    // stack to hold operands.
-//    private Stack<Object> stack;
-
-    public Lexer() {
-//        stack = new Stack<Object>();
-    }
-
-    /**
-     * Gets the stack associated with this lexer.  Once parse has successfully
-     * executed the stack will contain numbers, strings, images
-     *
-     * @return stack containing the output of the type 4 function.  If #parse()
-     *         was not called the stack will be empty
-     */
-//    public Stack getStack() {
-//        return stack;
-//    }
-
     /**
      * @param in content input stream.
      */
@@ -196,16 +178,30 @@ public class Lexer {
         byte lookAhead;
         // skip past the starting (
         pos++;
+        int parenthesisCount = 1;
         int current;
         while (pos < numRead) {
-            //
             current = streamBytes[pos];
-            if (current != '\\' && current != ')') {
+            if (current != '\\' && current != ')' && current != '(') {
                 captured.append((char) (streamBytes[pos] & 0xff));
                 pos++;
-            } else if (current == ')') {
+            } else if (current != '\\' && current == ')' && parenthesisCount > 1) {
+                captured.append((char) (streamBytes[pos] & 0xff));
                 pos++;
-                break;
+                parenthesisCount--;
+            } else if (current != '\\' && current == '(') {
+                captured.append((char) (streamBytes[pos] & 0xff));
+                pos++;
+                parenthesisCount++;
+            } else if (current == ')') {
+                parenthesisCount--;
+                if (parenthesisCount > 0) {
+                    captured.append((char) (streamBytes[pos] & 0xff));
+                    pos++;
+                } else {
+                    pos++;
+                    break;
+                }
             } else {
                 /**
                  * The escape sequences can be as follows:
@@ -237,8 +233,11 @@ public class Lexer {
                     captured.append(')');
                     pos += 2;
                 } else if (lookAhead == '(') {
-                    pos++;
+                    captured.append('(');
+                    pos += 2;
                 } else if (lookAhead == 13) {
+                    pos += 2;
+                } else if (lookAhead == 10) {
                     pos += 2;
                 }
                 // process the octal number.
@@ -402,7 +401,12 @@ public class Lexer {
         while (streamBytes[pos] != ']') {
             // add the tokens as we get them.
             token = nextToken();
-            array.add(token);
+            if (token instanceof Integer) {
+                // we gone to var, likely empty array
+                pos = startTokenPos;
+            } else {
+                array.add(token);
+            }
             // push past any white space
             while (pos < numRead) {
                 // look for a natural break
@@ -541,8 +545,9 @@ public class Lexer {
                     do {
                         pos++;
                     }
-                    while (streamBytes[pos] != 13 && streamBytes[pos] != 10);
+                    while (pos < numRead && streamBytes[pos] != 13 && streamBytes[pos] != 10);
                     parseNextState();
+                    break;
                 default:
                     if (c <= '9' && c >= '-') {
                         tokenType = TOKEN_NUMBER;
