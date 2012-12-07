@@ -291,7 +291,7 @@ public class ImageUtility {
         return value;
     }
 
-    protected static void displayImage(BufferedImage bufferedImage, String title) {
+    public static void displayImage(BufferedImage bufferedImage, String title) {
 
         if (bufferedImage == null) {
             return;

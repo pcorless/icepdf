@@ -194,11 +194,11 @@ public class ContentParser {
             while (true) {
 
                 tok = lexer.nextToken();
-//                if (logger.isLoggable(Level.FINEST)){
+//                if (logger.isLoggable(Level.FINER)){
 //                    if (tok instanceof Integer) {
-//                        logger.finest(OperandNames.OPP_LOOKUP.get(tok));
+//                        logger.finer(OperandNames.OPP_LOOKUP.get(tok));
 //                    } else {
-//                        logger.finest(String.valueOf(tok));
+//                        logger.finer(String.valueOf(tok));
 //                    }
 //                }
                 // no more tokens break out.
@@ -1942,30 +1942,32 @@ public class ContentParser {
             setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
 
             ImageStream imageStream = resources.getImageStream(xobjectName);
-            Object oc = imageStream.getObject(OptionalContent.OC_KEY);
-            if (oc != null) {
-                OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
-                optionalContent.init();
-                // avoid loading the image if oc is not visible
-                // may have to add this logic to the stack for dynamic content
-                // if we get an example.
-                if (!optionalContent.isVisible(oc)) {
-                    return graphicState;
+            if (imageStream != null) {
+                Object oc = imageStream.getObject(OptionalContent.OC_KEY);
+                if (oc != null) {
+                    OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
+                    optionalContent.init();
+                    // avoid loading the image if oc is not visible
+                    // may have to add this logic to the stack for dynamic content
+                    // if we get an example.
+                    if (!optionalContent.isVisible(oc)) {
+                        return graphicState;
+                    }
                 }
-            }
 
-            // create an ImageReference for future decoding
-            ImageReference imageReference = ImageReferenceFactory.getImageReference(
-                    imageStream, resources, graphicState.getFillColor());
+                // create an ImageReference for future decoding
+                ImageReference imageReference = ImageReferenceFactory.getImageReference(
+                        imageStream, resources, graphicState.getFillColor());
 
-            if (imageReference != null) {
-                AffineTransform af =
-                        new AffineTransform(graphicState.getCTM());
-                graphicState.scale(1, -1);
-                graphicState.translate(0, -1);
-                // add the image
-                shapes.add(new ImageDrawCmd(imageReference));
-                graphicState.set(af);
+                if (imageReference != null) {
+                    AffineTransform af =
+                            new AffineTransform(graphicState.getCTM());
+                    graphicState.scale(1, -1);
+                    graphicState.translate(0, -1);
+                    // add the image
+                    shapes.add(new ImageDrawCmd(imageReference));
+                    graphicState.set(af);
+                }
             }
         }
         return graphicState;
