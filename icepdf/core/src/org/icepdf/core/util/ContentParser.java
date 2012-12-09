@@ -1448,23 +1448,23 @@ public class ContentParser {
             HashMap<Object, Object> iih = new HashMap<Object, Object>();
             tok = p.nextToken();
             while (!tok.equals(OperandNames.OP_ID)) {
-                if (tok.equals(ImageStream.BPC_KEY)) {
+                if (ImageStream.BPC_KEY.equals(tok)) {
                     tok = ImageStream.BITSPERCOMPONENT_KEY;
-                } else if (tok.equals(ImageStream.CS_KEY)) {
+                } else if (ImageStream.CS_KEY.equals(tok)) {
                     tok = ImageStream.COLORSPACE_KEY;
-                } else if (tok.equals(ImageStream.D_KEY)) {
+                } else if (ImageStream.D_KEY.equals(tok)) {
                     tok = ImageStream.DECODE_KEY;
-                } else if (tok.equals(ImageStream.DP_KEY)) {
+                } else if (ImageStream.DP_KEY.equals(tok)) {
                     tok = ImageStream.DECODEPARMS_KEY;
-                } else if (tok.equals(ImageStream.F_KEY)) {
+                } else if (ImageStream.F_KEY.equals(tok)) {
                     tok = ImageStream.FILTER_KEY;
-                } else if (tok.equals(ImageStream.H_KEY)) {
+                } else if (ImageStream.H_KEY.equals(tok)) {
                     tok = ImageStream.HEIGHT_KEY;
-                } else if (tok.equals(ImageStream.IM_KEY)) {
+                } else if (ImageStream.IM_KEY.equals(tok)) {
                     tok = ImageStream.IMAGEMASK_KEY;
-                } else if (tok.equals(ImageStream.I_KEY)) {
+                } else if (ImageStream.I_KEY.equals(tok)) {
                     tok = ImageStream.INDEXED_KEY;
-                } else if (tok.equals(ImageStream.W_KEY)) {
+                } else if (ImageStream.W_KEY.equals(tok)) {
                     tok = ImageStream.WIDTH_KEY;
                 }
                 Object tok1 = p.nextToken();
@@ -1485,6 +1485,7 @@ public class ContentParser {
             ImageStream st = new ImageStream(library, iih, data);
             ImageReference imageStreamReference =
                     new InlineImageStreamReference(st, graphicState.getFillColor(), resources);
+//            ImageUtility.displayImage(imageStreamReference.getImage(), "BI");
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             graphicState.scale(1, -1);
             graphicState.translate(0, -1);

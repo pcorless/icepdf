@@ -89,8 +89,15 @@ public class LexerTest {
     }
 
     static final String test4 =
-            "%\n" +
-                    "0.11 w []\n";
+            "BI\n" +
+                    "/IM true\n" +
+                    "/W 1\n" +
+                    "/H 1\n" +
+                    "/BPC 1\n" +
+                    "/D[1\n" +
+                    "0]\n" +
+                    "ID \u0000\n" +
+                    "EI Q";
     static final String test20 =
             "/F1 11.04 Tf\n" +
                     "1 0 0 1 534.58 75.024 Tm\n" +
