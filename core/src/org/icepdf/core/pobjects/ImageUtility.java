@@ -291,46 +291,38 @@ public class ImageUtility {
         return value;
     }
 
-    public static void displayImage(BufferedImage bufferedImage, String title) {
+    public static void displayImage(final BufferedImage bufferedImage, final String title) {
 
         if (bufferedImage == null) {
             return;
         }
-//        int width2 = bufferedImage.getWidth();
-//        int height2 = bufferedImage.getHeight();
-        final BufferedImage bi = bufferedImage;
-//        final BufferedImage bi = new BufferedImage(width2,height2, BufferedImage.TYPE_INT_RGB);
-//        for (int y = 0; y < height2; y++) {
-//            for (int x = 0; x < width2; x++) {
-//                if (bufferedImage.getRGB(x,y) != -1){
-//                    bi.setRGB(x, y, Color.red.getRGB());
-//                }
-//                else{
-//                    bi.setRGB(x, y, Color.green.getRGB());
-//                }
-//            }
-//        }
-        final JFrame f = new JFrame("Image - " + title);
-        f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                final BufferedImage bi = bufferedImage;
+                final JFrame f = new JFrame("Image - " + title);
+                f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 
-        JComponent image = new JComponent() {
-            @Override
-            public void paint(Graphics g_) {
-                super.paint(g_);
-                g_.drawImage(bi, 0, 0, f);
+                JComponent image = new JComponent() {
+                    @Override
+                    public void paint(Graphics g_) {
+                        super.paint(g_);
+                        g_.drawImage(bi, 0, 0, f);
+                    }
+                };
+                image.setPreferredSize(new Dimension(bi.getWidth(), bi.getHeight()));
+                image.setSize(new Dimension(bi.getWidth(), bi.getHeight()));
+
+                JPanel test = new JPanel();
+                test.setPreferredSize(new Dimension(1200, 1200));
+                JScrollPane tmp = new JScrollPane(image);
+                tmp.revalidate();
+                f.setSize(new Dimension(800, 800));
+                f.getContentPane().add(tmp);
+                f.validate();
+                f.setVisible(true);
             }
-        };
-        image.setPreferredSize(new Dimension(bi.getWidth(), bi.getHeight()));
-        image.setSize(new Dimension(bi.getWidth(), bi.getHeight()));
+        });
 
-        JPanel test = new JPanel();
-        test.setPreferredSize(new Dimension(1200, 1200));
-        JScrollPane tmp = new JScrollPane(image);
-        tmp.revalidate();
-        f.setSize(new Dimension(800, 800));
-        f.getContentPane().add(tmp);
-        f.validate();
-        f.setVisible(true);
 
     }
 

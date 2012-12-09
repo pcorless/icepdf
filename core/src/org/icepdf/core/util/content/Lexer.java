@@ -299,7 +299,7 @@ public class Lexer {
         // skip first / of name
         startTokenPos = pos++;
         while (pos < numRead) {
-            // look for a natural break
+            // look for a natural break                          ``
             if (isDelimiter(streamBytes[pos]) || isTextDelimiter(streamBytes[pos])) {
                 break;
             }
@@ -318,7 +318,7 @@ public class Lexer {
         startTokenPos = pos;
         while (pos < numRead) {
             // look for a natural break
-            if (isDelimiter(streamBytes[pos])) {
+            if (isDelimiter(streamBytes[pos]) || isTextDelimiter(streamBytes[pos])) {
                 break;
             }
             pos++;
@@ -398,6 +398,8 @@ public class Lexer {
         // skip past the starting [
         pos += 1;
         Object token;
+        // check for in very odd  corner cases. end
+        checkLength();
         while (streamBytes[pos] != ']') {
             // add the tokens as we get them.
             token = nextToken();
@@ -616,7 +618,9 @@ public class Lexer {
                 isDecimal = true;
             } else {
                 // anything else we can assume malformed and should break.
-                pos -= i - startTokenPos;
+                int offset = i - startTokenPos;
+                offset = offset == 1 ? offset : offset - 1;
+                pos -= offset;
                 break;
             }
         }
