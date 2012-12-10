@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Resources;
 
@@ -61,9 +62,25 @@ public abstract class ImageReference implements Runnable {
             try {
                 aG.drawImage(image, aX, aY, aW, aH, null);
             } catch (Throwable e) {
-                logger.warning("There was a problem painting image " +
+                logger.warning("There was a problem painting image, falling back to scaled instance " +
                         imageStream.getPObjectReference() +
                         "(" + imageStream.getWidth() + "x" + imageStream.getHeight() + ")");
+                int width = image.getWidth(null);
+                Image scaledImage;
+                // do image scaling on larger images.  This improves the softness
+                // of some images that contains black and white text.
+                if (width > 1000 && width < 2000) {
+                    width = 1000;
+                } else if (width > 2000) {
+                    width = 2000;
+                }
+                scaledImage = image.getScaledInstance(
+                        width, -1, Image.SCALE_SMOOTH);
+                image.flush();
+                // try drawing the scaled image one more time.
+                aG.drawImage(scaledImage, aX, aY, aW, aH, null);
+                // store the scaled image for future repaints.
+                this.image = ImageUtility.createBufferedImage(scaledImage);
             }
         }
     }

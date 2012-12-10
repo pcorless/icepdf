@@ -1461,4 +1461,19 @@ public class ImageUtility {
             logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
         }
     }
+
+    // default version of createBufferedImage
+    public static BufferedImage createBufferedImage(Image imageIn) {
+        return createBufferedImage(imageIn, BufferedImage.TYPE_INT_ARGB);
+    }
+
+    public static BufferedImage createBufferedImage(Image imageIn,
+                                                    int imageType) {
+        BufferedImage bufferedImageOut = new BufferedImage(imageIn
+                .getWidth(null), imageIn.getHeight(null), imageType);
+        Graphics g = bufferedImageOut.getGraphics();
+        g.drawImage(imageIn, 0, 0, null);
+
+        return bufferedImageOut;
+    }
 }
