@@ -126,14 +126,18 @@ public class Lexer {
         pos += 2;
         startTokenPos = pos;
         int end = 0;
+        // type3 fonts generally have the EI at the end of the stream with no
+        // white space  and inline images all followed by a space.
         while (pos < numRead) {
             if (streamBytes[pos] == 'E' &&
-                    streamBytes[pos + 1] == 'I') {
+                    streamBytes[pos + 1] == 'I' &&
+                    streamBytes[pos + 2] == ' ') {
                 // skip the I
                 end = pos - 1;
                 pos += 2;
                 break;
             }
+            end = pos;
             pos++;
         }
         int length = end - startTokenPos;

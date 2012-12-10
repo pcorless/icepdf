@@ -43,6 +43,10 @@ public abstract class CachedImageReference extends ImageReference {
         if (isNull) {
             return null;
         }
+        if (image != null) {
+            imagePool.put(reference, image);
+            return image;
+        }
         BufferedImage cached = imagePool.get(reference);
         if (cached != null) {
             return cached;
