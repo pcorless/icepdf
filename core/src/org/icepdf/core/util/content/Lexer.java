@@ -128,11 +128,25 @@ public class Lexer {
         int end = 0;
         // type3 fonts generally have the EI at the end of the stream with no
         // white space  and inline images all followed by a space.
+        boolean found = false;
         while (pos < numRead) {
-            if (streamBytes[pos] == 'E' &&
+            // check if we have an EI at the end of the stream
+            if (pos + 1 == streamBytes.length - 1 &&
+                    streamBytes[pos] == 'E' &&
+                    streamBytes[pos + 1] == 'I') {
+                found = true;
+            }
+            // check for traditional EI and more content to come.
+            else if (streamBytes[pos] == 'E' &&
                     streamBytes[pos + 1] == 'I' &&
-                    streamBytes[pos + 2] == ' ') {
-                // skip the I
+                    (streamBytes[pos + 2] == 32 ||
+                            streamBytes[pos + 2] == 10 ||
+                            streamBytes[pos + 2] == 12 ||
+                            streamBytes[pos + 2] == 13)) {
+                found = true;
+            }
+            if (found) {
+                // remove the space before EI
                 end = pos - 1;
                 pos += 2;
                 break;
