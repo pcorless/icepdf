@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
 import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
 
@@ -119,6 +120,7 @@ public class TilingPattern extends Stream implements Pattern {
     // the pattern cell's bounding box. These boundaries are used to clip the
     // pattern cell.
     private Rectangle2D bBox;
+    private Rectangle2D bBoxMod;
 
     // The desired horizontal spacing between pattern cells, measured in the
     // pattern coordinate system.
@@ -224,8 +226,9 @@ public class TilingPattern extends Stream implements Pattern {
         // find and cache first colour found in stack
         if (shapes != null && unColored == null) {
             for (int i = 0, max = shapes.shapes.size(); i < max; i++) {
-                if (shapes.shapes.get(i) instanceof Color) {
-                    unColored = (Color) shapes.shapes.get(i);
+                if (shapes.shapes.get(i) instanceof ColorDrawCmd) {
+                    ColorDrawCmd tmp = (ColorDrawCmd) shapes.shapes.get(i);
+                    unColored = tmp.getColor();
                     return unColored;
                 }
             }
@@ -265,6 +268,21 @@ public class TilingPattern extends Stream implements Pattern {
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error processing tiling pattern.", e);
         }
+
+        // some encoders set the step to 2^15
+        if (xStep == Short.MAX_VALUE) {
+            xStep = (float) bBox.getWidth();
+        }
+        if (yStep == Short.MAX_VALUE) {
+            yStep = (float) bBox.getHeight();
+        }
+        // adjust the bBox so that xStep and yStep can be applied
+        // for tile spacing.
+        bBoxMod = new Rectangle2D.Double(
+                bBox.getX(), bBox.getY(),
+                bBox.getWidth() == xStep ? bBox.getWidth() : xStep,
+                bBox.getHeight() == yStep ? bBox.getHeight() : yStep);
+        bBoxMod = matrix.createTransformedShape(bBoxMod).getBounds2D();
     }
 
     /**
@@ -277,20 +295,6 @@ public class TilingPattern extends Stream implements Pattern {
     public void paintPattern(Graphics2D g, Page parentPage) {
         if (patternPaint == null) {
 //            final AffineTransform matrixInv = getInvMatrix();
-            // some encoders set the step to 2^15
-            if (xStep == Short.MAX_VALUE) {
-                xStep = (float) bBox.getWidth();
-            }
-            if (yStep == Short.MAX_VALUE) {
-                yStep = (float) bBox.getHeight();
-            }
-            // adjust the bBox so that xStep and yStep can be applied
-            // for tile spacing.
-            Rectangle2D bBoxMod = new Rectangle2D.Double(
-                    bBox.getX(), bBox.getY(),
-                    bBox.getWidth() == xStep ? bBox.getWidth() : xStep,
-                    bBox.getHeight() == yStep ? bBox.getHeight() : yStep);
-            bBoxMod = matrix.createTransformedShape(bBoxMod).getBounds2D();
 
             int width = (int) bBoxMod.getWidth();
             int height = (int) bBoxMod.getHeight();
@@ -323,7 +327,7 @@ public class TilingPattern extends Stream implements Pattern {
             canvas.setClip(0, 0, (int) bBoxMod.getWidth(), (int) bBoxMod.getHeight());
 
             // paint the pattern
-            paintPattern(canvas, tilingShapes);
+            paintPattern(canvas, tilingShapes, bBox);
 
             // show it in a frame
 //            final JFrame f = new JFrame("Test");
@@ -345,7 +349,7 @@ public class TilingPattern extends Stream implements Pattern {
         }
     }
 
-    private void paintPattern(Graphics2D g2d, Shapes tilingShapes) {
+    private void paintPattern(Graphics2D g2d, Shapes tilingShapes, Rectangle2D bBoxMod) {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
@@ -366,26 +370,26 @@ public class TilingPattern extends Stream implements Pattern {
         // so we can fill a pattern paint buffer.
         if (matrix.getShearX() > 0 ||
                 matrix.getShearY() > 0) {
-            g2d.translate(bBox.getWidth(), 0);
+            g2d.translate(bBoxMod.getWidth(), 0);
             tilingShapes.paint(g2d);
-            g2d.translate(0, -bBox.getHeight());
+            g2d.translate(0, -bBoxMod.getHeight());
             tilingShapes.paint(g2d);
-            g2d.translate(-bBox.getWidth(), 0);
+            g2d.translate(-bBoxMod.getWidth(), 0);
             tilingShapes.paint(g2d);
-            g2d.translate(-bBox.getWidth(), 0);
+            g2d.translate(-bBoxMod.getWidth(), 0);
             tilingShapes.paint(g2d);
-            g2d.translate(0, bBox.getHeight());
+            g2d.translate(0, bBoxMod.getHeight());
             tilingShapes.paint(g2d);
-            g2d.translate(0, bBox.getHeight());
+            g2d.translate(0, bBoxMod.getHeight());
             tilingShapes.paint(g2d);
-            g2d.translate(bBox.getWidth(), 0);
+            g2d.translate(bBoxMod.getWidth(), 0);
             tilingShapes.paint(g2d);
-            g2d.translate(bBox.getWidth(), 0);
+            g2d.translate(bBoxMod.getWidth(), 0);
             tilingShapes.paint(g2d);
             // highlight key square.
-//            g2d.translate(-bBox.getWidth(), -bBox.getHeight());
+//            g2d.translate(-bBoxMod.getWidth(), -bBoxMod.getHeight());
 //            g2d.setColor(Color.red);
-//            g2d.draw(bBox);
+//            g2d.draw(bBoxMod);
         }
         g2d.setTransform(preAf);
     }
@@ -421,6 +425,15 @@ public class TilingPattern extends Stream implements Pattern {
 
     public Rectangle2D getBBox() {
         return bBox;
+    }
+
+    /**
+     * Bbox converted to user space.
+     *
+     * @return bBox converted to user space.
+     */
+    public Rectangle2D getbBoxMod() {
+        return bBoxMod;
     }
 
     public float getXStep() {

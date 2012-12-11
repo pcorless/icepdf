@@ -35,6 +35,10 @@ public class ColorDrawCmd extends AbstractDrawCmd {
         this.color = color;
     }
 
+    public Color getColor() {
+        return color;
+    }
+
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
