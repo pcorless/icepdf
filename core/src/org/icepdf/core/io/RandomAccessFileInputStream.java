@@ -15,7 +15,7 @@
 package org.icepdf.core.io;
 
 import java.io.*;
-import java.util.logging.Level;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 /**
@@ -29,7 +29,8 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
 
     private long m_lMarkPosition;
     private RandomAccessFile m_RandomAccessFile;
-    private Object m_oCurrentUser;
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     public static RandomAccessFileInputStream build(File file) throws FileNotFoundException {
         RandomAccessFile raf = new RandomAccessFile(file, "r");
@@ -128,40 +129,13 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
         return this;
     }
 
-    public synchronized void beginThreadAccess() {
+    public void beginThreadAccess() {
+        lock.lock();
 
-        Object requestingUser = Thread.currentThread();
-        while (true) {
-            if (m_oCurrentUser == null) {
-                m_oCurrentUser = requestingUser;
-                break;
-            } else if (m_oCurrentUser == requestingUser) {
-                break;
-            } else { // Some other Thread is currently using us
-                try {
-                    this.wait(100L);
-                } catch (InterruptedException ie) {
-                }
-            }
-        }
     }
 
-    public synchronized void endThreadAccess() {
-        Object requestingUser = Thread.currentThread();
-        if (m_oCurrentUser == null) {
-            this.notifyAll();
-        } else if (m_oCurrentUser == requestingUser) {
-            m_oCurrentUser = null;
-            this.notifyAll();
-        } else { // Some other Thread is currently using us
-            if (logger.isLoggable(Level.SEVERE)) {
-                logger.severe(
-                        "ERROR:  Thread finished using SeekableInput, but it wasn't locked by that Thread\n" +
-                                "        Thread: " + Thread.currentThread() + "\n" +
-                                "        Locking Thread: " + m_oCurrentUser + "\n" +
-                                "        SeekableInput: " + this);
-            }
-        }
+    public void endThreadAccess() {
+        lock.unlock();
     }
 }
 
