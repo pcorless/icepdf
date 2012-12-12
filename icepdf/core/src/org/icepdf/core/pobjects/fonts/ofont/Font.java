@@ -457,12 +457,6 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                 }
             }
         }
-        // if the font is still null decode the name, which will try and find
-        // the basefont, if it fails it will assign a default dialog font
-        if (font == null && basefont != null && basefont.indexOf("-") != -1) {
-            font = new OFont(java.awt.Font.decode(basefont));
-            basefont = font.getName();
-        }
         // if still null, shouldn't be, assigned the basefont name
         if (font == null) {
             try {
@@ -648,7 +642,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
         } else if (cidWidths != null) {
             // cidWidth are already scaled correct to .001
             font = font.deriveFont(cidWidths, firstchar, missingWidth, ascent, descent, null);
-        } else if (afm != null) {
+        } else if (afm != null && isAFMFont) {
             font = font.deriveFont(afm.getWidths(), firstchar, missingWidth, ascent, descent, cMap);
         }
 
