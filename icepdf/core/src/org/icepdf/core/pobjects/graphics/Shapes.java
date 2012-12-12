@@ -45,6 +45,9 @@ public class Shapes {
             Logger.getLogger(Shapes.class.toString());
 
     private static int shapesInitialCapacity = 5000;
+    // disables alpha painting.
+    protected boolean paintAlpha =
+            !Defs.sysPropertyBoolean("org.icepdf.core.paint.disableAlpha", false);
 
     static {
         shapesInitialCapacity = Defs.sysPropertyInt(
@@ -96,6 +99,14 @@ public class Shapes {
         shapes.add(drawCmd);
     }
 
+    public boolean isPaintAlpha() {
+        return paintAlpha;
+    }
+
+    public void setPaintAlpha(boolean paintAlpha) {
+        this.paintAlpha = paintAlpha;
+    }
+
     /**
      * Paint the graphics stack to the graphics context
      *
@@ -128,7 +139,7 @@ public class Shapes {
                 }
                 nextShape = shapes.get(i);
                 previousShape = nextShape.paintOperand(g, parentPage,
-                        previousShape, clip, base, optionalContentState, paintTimer);
+                        previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
 
             }
         } catch (Exception e) {

@@ -37,9 +37,11 @@ public class AlphaDrawCmd extends AbstractDrawCmd {
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base, OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
 
-        g.setComposite(alphaComposite);
+        if (paintAlpha) {
+            g.setComposite(alphaComposite);
+        }
 
         return currentShape;
     }

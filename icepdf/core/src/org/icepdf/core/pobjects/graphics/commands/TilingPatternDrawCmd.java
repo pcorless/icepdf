@@ -40,7 +40,7 @@ public class TilingPatternDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
         tilingPattern.paintPattern(g, parentPage);
         return currentShape;
     }

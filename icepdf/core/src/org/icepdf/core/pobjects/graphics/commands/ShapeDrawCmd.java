@@ -38,6 +38,7 @@ public class ShapeDrawCmd implements DrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
+                              boolean paintAlpha,
                               PaintTimer paintTimer) {
         return shape;
     }

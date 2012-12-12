@@ -39,7 +39,7 @@ public class TransformDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
         AffineTransform af = new AffineTransform(base);
         af.concatenate(affineTransform);
         g.setTransform(af);

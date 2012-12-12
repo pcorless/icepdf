@@ -34,7 +34,7 @@ public class NoClipDrawCmd extends AbstractDrawCmd {
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
-                              OptionalContentState optionalContentState, PaintTimer paintTimer) {
+                              OptionalContentState optionalContentState, boolean paintAlpha, PaintTimer paintTimer) {
 
         AffineTransform af = new AffineTransform(g.getTransform());
 

@@ -34,7 +34,7 @@ public class DrawDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible() &&
                 currentShape.intersects(g.getClip().getBounds2D()) ||
                 (currentShape.getBounds2D().getWidth() < 1.0 ||
