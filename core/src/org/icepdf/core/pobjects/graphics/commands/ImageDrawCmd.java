@@ -44,7 +44,7 @@ public class ImageDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible()) {
             image.drawImage(g, 0, 0, 1, 1);
         }

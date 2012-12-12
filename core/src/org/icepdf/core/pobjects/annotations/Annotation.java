@@ -18,7 +18,6 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.ContentParser;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 
@@ -480,6 +479,7 @@ public class Annotation extends Dictionary {
 
         // no borders for the followING types,  not really in the
         // spec for some reason, Acrobat doesn't render them.
+        // todo add other annotations types.
         canDrawBorder = !(SUBTYPE_LINE.equals(subtype) ||
                 SUBTYPE_CIRCLE.equals(subtype) ||
                 SUBTYPE_SQUARE.equals(subtype) ||
@@ -718,25 +718,17 @@ public class Annotation extends Dictionary {
     }
 
     public boolean allowScreenNormalMode() {
-        if (!allowScreenOrPrintRenderingOrInteraction())
-            return false;
-        return !getFlagNoView();
+        return allowScreenOrPrintRenderingOrInteraction() && !getFlagNoView();
     }
 
     public boolean allowScreenRolloverMode() {
-        if (!allowScreenOrPrintRenderingOrInteraction())
-            return false;
-        if (getFlagNoView() && !getFlagToggleNoView())
-            return false;
-        return !getFlagReadOnly();
+        return allowScreenOrPrintRenderingOrInteraction() && !(getFlagNoView()
+                && !getFlagToggleNoView()) && !getFlagReadOnly();
     }
 
     public boolean allowScreenDownMode() {
-        if (!allowScreenOrPrintRenderingOrInteraction())
-            return false;
-        if (getFlagNoView() && !getFlagToggleNoView())
-            return false;
-        return !getFlagReadOnly();
+        return allowScreenOrPrintRenderingOrInteraction() && !(getFlagNoView() &&
+                !getFlagToggleNoView()) && !getFlagReadOnly();
     }
 
     public boolean allowPrintNormalMode() {
@@ -1037,20 +1029,13 @@ public class Annotation extends Dictionary {
 //System.out.println("Shapes: " + shapes + "  count: " + shapes.getShapesCount());
                 // check to see if we are painting highlight annotations.
                 // if so we add some transparency to the context.
-                boolean isTransparency = Defs.sysPropertyBoolean("org.icepdf.core.paint.disableAlpha");
                 if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
                     g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
-                    // remove other alpha defs from parsing
-                    Defs.setSystemProperty("org.icepdf.core.paint.disableAlpha", "true");
+                    // remove other alpha defs from painting
+                    shapes.setPaintAlpha(false);
                 }
                 // regular paint
                 shapes.paint(g);
-                // switch transparency back to the default value
-                if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
-                    // remove other alpha defs from parsing
-                    Defs.setSystemProperty("org.icepdf.core.paint.disableAlpha",
-                            String.valueOf(isTransparency));
-                }
             }
         }
     }

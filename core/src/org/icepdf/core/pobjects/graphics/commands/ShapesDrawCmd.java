@@ -45,10 +45,11 @@ public class ShapesDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible() &&
                 shapes != null) {
             shapes.setPageParent(parentPage);
+            shapes.setPaintAlpha(paintAlpha);
             shapes.paint(g, null);
             shapes.setPageParent(null);
         }

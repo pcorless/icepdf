@@ -42,6 +42,7 @@ public interface DrawCmd {
      * @param clip                 clip of parent which is the generally the page size.
      * @param base                 base transform of the page.
      * @param optionalContentState state of optional content visibility.
+     * @param paintAlpha           enable/disable the alpha painting.
      * @param paintTimer           painTimer keeps track when a repaint should occur.
      * @return resulting shape if currentShape has been altered, otherwise
      *         returns the currentShape.  Current Shape is generally altered
@@ -53,5 +54,6 @@ public interface DrawCmd {
                               Shape clip,
                               AffineTransform base,
                               OptionalContentState optionalContentState,
+                              boolean paintAlpha,
                               PaintTimer paintTimer);
 }

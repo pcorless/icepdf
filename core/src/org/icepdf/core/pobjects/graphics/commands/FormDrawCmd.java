@@ -44,7 +44,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible()) {
             Rectangle2D bBox = xForm.getBBox();
             int width = (int) bBox.getWidth();

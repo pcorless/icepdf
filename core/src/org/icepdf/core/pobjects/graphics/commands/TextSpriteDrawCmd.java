@@ -42,7 +42,7 @@ public class TextSpriteDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              PaintTimer lastPaintTime) {
+                              boolean paintAlpha, PaintTimer lastPaintTime) {
 
         if (optionalContentState.isVisible() &&
                 textSprite.intersects(g.getClip())) {

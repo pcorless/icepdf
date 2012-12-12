@@ -39,7 +39,7 @@ public class GlyphOutlineDrawCmd extends AbstractDrawCmd {
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape, Shape clip,
                               AffineTransform base, OptionalContentState optionalContentState,
-                              PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible()) {
             // save and revert the af for the page so that we can
             // paint the converted clip glyph outline.

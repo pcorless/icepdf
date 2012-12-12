@@ -40,7 +40,6 @@ public abstract class AbstractDrawCmd implements DrawCmd {
             Logger.getLogger(AbstractDrawCmd.class.toString());
 
     protected static boolean disableClipping;
-    protected static boolean disableAlpha;
 
     static {
 
@@ -51,15 +50,11 @@ public abstract class AbstractDrawCmd implements DrawCmd {
         disableClipping =
                 Defs.sysPropertyBoolean("org.icepdf.core.paint.disableClipping",
                         false);
-        // disables alpha painting.
-        disableAlpha =
-                Defs.sysPropertyBoolean("org.icepdf.core.paint.disableAlpha",
-                        false);
     }
 
     public abstract Shape paintOperand(Graphics2D g, Page parentPage,
                                        Shape currentShape, Shape clip,
                                        AffineTransform base,
                                        OptionalContentState optionalContentState,
-                                       PaintTimer paintTimer);
+                                       boolean paintAlpha, PaintTimer paintTimer);
 }
