@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
@@ -152,9 +153,15 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 // handle text selection mouse coordinates
                 Point mouseLocation = (Point) e.getPoint().clone();
                 wordSelectHandler(currentPage, mouseLocation);
-                currentPage.getViewText().getSelected();
             }
         }
+        // write out selected text.
+        if (logger.isLoggable(Level.FINE)) {
+            Page currentPage = pageViewComponent.getPage();
+            // handle text selection mouse coordinates
+            logger.fine(currentPage.getViewText().getSelected().toString());
+        }
+
     }
 
     public void clearSelection() {
@@ -588,6 +595,12 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 //                            if (word.contains(pageTransform, mouseLocation)) {
                             if (word.getBounds().contains(pageMouseLocation)) {
                                 word.selectAll();
+
+                                // let the ri know we have selected text.
+                                documentViewModel.addSelectedPageText(pageViewComponent);
+                                documentViewController.firePropertyChange(
+                                        PropertyConstants.TEXT_SELECTED,
+                                        null, null);
                                 pageViewComponent.repaint();
                                 break;
                             }
@@ -628,6 +641,13 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                     // check for containment, if so break into words.
                     if (pageLine.getBounds().contains(pageMouseLocation)) {
                         pageLine.selectAll();
+
+                        // let the ri know we have selected text.
+                        documentViewModel.addSelectedPageText(pageViewComponent);
+                        documentViewController.firePropertyChange(
+                                PropertyConstants.TEXT_SELECTED,
+                                null, null);
+
                         pageViewComponent.repaint();
                         break;
                     }
