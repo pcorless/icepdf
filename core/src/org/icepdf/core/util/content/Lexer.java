@@ -300,9 +300,24 @@ public class Lexer {
                     captured.append('\f');
                     pos += 2;
                 }
+                // capture single quote(')
+                else if (lookAhead == '\'') {
+                    captured.append('\'');
+                    pos += 2;
+                }
+                // capture double quote(")
+                else if (lookAhead == '\"') {
+                    captured.append('\"');
+                    pos += 2;
+                }
                 // capture the form feed (FF)
                 else if (lookAhead == '\\') {
                     captured.append('\\');
+                    pos += 2;
+                }
+                // avoid an infinite loop if any corner cases that don't need
+                // to be escaped show up.
+                else {
                     pos += 2;
                 }
             }
