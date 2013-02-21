@@ -149,8 +149,9 @@ public class Name {
             for (int i = 0; i < name.length(); i++) {
                 if (name.charAt(i) == HEX_CHAR) {
                     // convert digits to hex.
+                    String hex = name.substring(i + 1, i + 3);
                     name.delete(i, i + 3);
-                    name.insert(i, convert(name.substring(i + 1, i + 3)));
+                    name.insert(i, convert(hex));
                 }
             }
         } catch (Throwable e) {
@@ -163,10 +164,10 @@ public class Name {
     }
 
     /**
-     * Converts a hext string to formated unicode string.
+     * Converts a hex string to formatted unicode string.
      *
      * @param hex 2-digit hex number.
-     * @return
+     * @return hex represented as unicode.
      */
     private String convert(String hex) {
         StringBuilder output = new StringBuilder();
