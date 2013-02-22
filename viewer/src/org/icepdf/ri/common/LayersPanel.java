@@ -162,9 +162,7 @@ public class LayersPanel extends JPanel {
                 // the current page and repaint
                 List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
                 AbstractPageViewComponent page = pages.get(documentViewModel.getViewCurrentPageIndex());
-                page.invalidate();
-                page.revalidate();
-//                page.invalidatePage();
+                page.invalidatePageBuffer();
                 page.repaint();
                 // repaint the tree so the checkbox states are show correctly.
                 tree.repaint();

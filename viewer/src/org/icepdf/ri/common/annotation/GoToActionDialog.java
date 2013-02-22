@@ -22,7 +22,7 @@ import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.ri.common.*;
 
 import javax.swing.*;
@@ -46,7 +46,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     private SwingController controller;
     private ResourceBundle messageBundle;
-    private AnnotationComponentImpl currentAnnotaiton;
+    private AnnotationComponent currentAnnotation;
     private ActionsPanel actionsPanel;
 
     // state full ui elements.
@@ -89,15 +89,15 @@ public class GoToActionDialog extends AnnotationDialogAdapter
      * in the UI.  This method does not modify the annotaiton object in any way.
      * State saving should handled with save state call.
      *
-     * @param annotaiton annotation to be updated by dialog.
+     * @param annotation annotation to be updated by dialog.
      */
-    public void setAnnotationComponent(AnnotationComponentImpl annotaiton) {
+    public void setAnnotationComponent(AnnotationComponent annotation) {
 
         // get a reference so we can setup a save on dialog close
-        currentAnnotaiton = annotaiton;
+        currentAnnotation = annotation;
 
         org.icepdf.core.pobjects.actions.Action action =
-                currentAnnotaiton.getAnnotation().getAction();
+                currentAnnotation.getAnnotation().getAction();
 
         // get the destination object, doesn't matter where it comes from.
         Destination dest = null;
@@ -106,9 +106,9 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         }
         // alternatively we can have a dest field on Link annotations
         else if (action == null &&
-                currentAnnotaiton.getAnnotation() instanceof LinkAnnotation) {
+                currentAnnotation.getAnnotation() instanceof LinkAnnotation) {
             LinkAnnotation linkAnnotation =
-                    (LinkAnnotation) currentAnnotaiton.getAnnotation();
+                    (LinkAnnotation) currentAnnotation.getAnnotation();
             dest = linkAnnotation.getDestination();
         }
         // check to see of we have a name tree in the document, if not we
@@ -146,7 +146,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 // assign name to name label
                 destinationName.setText(dest.getNamedDestination().toString());
             }
-        } else{
+        } else {
             // apply default fit type for new annotations.
             applySelectedValue(implicitDestTypeComboBox, Destination.TYPE_FIT);
             enableFitTypeFields(Destination.TYPE_FIT);
@@ -158,7 +158,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
      */
     private void saveActionState() {
 
-        Annotation annotation = currentAnnotaiton.getAnnotation();
+        Annotation annotation = currentAnnotation.getAnnotation();
         Destination destination;
 
         // create a new implicit destination
@@ -294,7 +294,6 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     /**
      * Method to create and customize the actions section of the panel
-     *
      */
     protected void setGui() {
 
@@ -454,14 +453,15 @@ public class GoToActionDialog extends AnnotationDialogAdapter
     }
 
     /**
-     * Utility to return the 
+     * Utility to return the
+     *
      * @param coord float value to convert to UI usuable string
      * @return string value of coord or an empty string if coord is null
      */
-    private String getDestCoordinate(Float coord){
-        if (coord != null){
+    private String getDestCoordinate(Float coord) {
+        if (coord != null) {
             return String.valueOf(coord);
-        }else{
+        } else {
             return "";
         }
     }
@@ -543,7 +543,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
                 if (src == textField) {
                     String fieldValue = textField.getText();
                     // empty string, no problem we can allow that.
-                    if ("".equals(fieldValue)){
+                    if ("".equals(fieldValue)) {
                         return;
                     }
                     float currentValue = Float.parseFloat(fieldValue);
@@ -592,7 +592,8 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     /**
      * Gridbag constructor helper
-     * @param layout panel to invoke layout on 
+     *
+     * @param layout    panel to invoke layout on
      * @param component component to add to grid
      * @param x         row
      * @param y         col
@@ -725,37 +726,4 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         comboBox.addItemListener(this);
     }
 
-    /**
-     * Class to associate with a JComboBox
-     * Used to allow us to display different text to the user than we set in the backend
-     */
-    class ValueLabelItem {
-        private Object value;
-        private String label;
-
-        public ValueLabelItem(Object value, String label) {
-            this.value = value;
-            this.label = label;
-        }
-
-        public Object getValue() {
-            return value;
-        }
-
-        public void setValue(Object value) {
-            this.value = value;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public void setLabel(String label) {
-            this.label = label;
-        }
-
-        public String toString() {
-            return label;
-        }
-    }
 }

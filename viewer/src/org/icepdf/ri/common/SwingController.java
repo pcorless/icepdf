@@ -27,8 +27,8 @@ import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
 import org.icepdf.ri.common.annotation.AnnotationPanel;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -187,6 +187,16 @@ public class SwingController
 
     private JToggleButton selectToolButton;
     private JToggleButton linkAnnotationToolButton;
+    private JToggleButton highlightAnnotationToolButton;
+    private JToggleButton strikeOutAnnotationToolButton;
+    private JToggleButton underlineAnnotationToolButton;
+    private JToggleButton lineAnnotationToolButton;
+    private JToggleButton lineArrowAnnotationToolButton;
+    private JToggleButton squareAnnotationToolButton;
+    private JToggleButton circleAnnotationToolButton;
+    private JToggleButton inkAnnotationToolButton;
+    private JToggleButton freeTextAnnotationToolButton;
+    private JToggleButton textAnnotationToolButton;
 
     private JToolBar completeToolBar;
 
@@ -816,6 +826,87 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
+    public void setHighlightAnnotationToolButton(JToggleButton btn) {
+        highlightAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
+        strikeOutAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setUnderlineAnnotationToolButton(JToggleButton btn) {
+        underlineAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setLineAnnotationToolButton(JToggleButton btn) {
+        lineAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setLineArrowAnnotationToolButton(JToggleButton btn) {
+        lineArrowAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setSquareAnnotationToolButton(JToggleButton btn) {
+        squareAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setCircleAnnotationToolButton(JToggleButton btn) {
+        circleAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setInkAnnotationToolButton(JToggleButton btn) {
+        inkAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setFreeTextAnnotationToolButton(JToggleButton btn) {
+        freeTextAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setTextAnnotationToolButton(JToggleButton btn) {
+        textAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
     public void setZoomOutToolButton(JToggleButton btn) {
         zoomOutToolButton = btn;
         btn.addItemListener(this);
@@ -1028,6 +1119,16 @@ public class SwingController
         setEnabled(textSelectToolButton, opened && canExtract);
         setEnabled(selectToolButton, opened && canModify);
         setEnabled(linkAnnotationToolButton, opened && canModify);
+        setEnabled(highlightAnnotationToolButton, opened && canModify);
+        setEnabled(strikeOutAnnotationToolButton, opened && canModify);
+        setEnabled(underlineAnnotationToolButton, opened && canModify);
+        setEnabled(lineAnnotationToolButton, opened && canModify);
+        setEnabled(lineArrowAnnotationToolButton, opened && canModify);
+        setEnabled(squareAnnotationToolButton, opened && canModify);
+        setEnabled(circleAnnotationToolButton, opened && canModify);
+        setEnabled(inkAnnotationToolButton, opened && canModify);
+        setEnabled(freeTextAnnotationToolButton, opened && canModify);
+        setEnabled(textAnnotationToolButton, opened && canModify);
         setEnabled(fontEngineButton, opened);
         setEnabled(facingPageViewContinuousButton, opened);
         setEnabled(singlePageViewContinuousButton, opened);
@@ -1268,6 +1369,66 @@ public class SwingController
                 documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
                 setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION) {
+                actualToolMayHaveChanged =
+                        documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);
+                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(
@@ -1333,6 +1494,46 @@ public class SwingController
         reflectSelectionInButton(linkAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION
+                ));
+        reflectSelectionInButton(highlightAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
+                ));
+        reflectSelectionInButton(strikeOutAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION
+                ));
+        reflectSelectionInButton(underlineAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION
+                ));
+        reflectSelectionInButton(lineAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION
+                ));
+        reflectSelectionInButton(lineArrowAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION
+                ));
+        reflectSelectionInButton(squareAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION
+                ));
+        reflectSelectionInButton(circleAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION
+                ));
+        reflectSelectionInButton(inkAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION
+                ));
+        reflectSelectionInButton(freeTextAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION
+                ));
+        reflectSelectionInButton(textAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION
                 ));
         reflectSelectionInButton(zoomInToolButton,
                 documentViewController.isToolModeSelected(
@@ -2095,6 +2296,16 @@ public class SwingController
         textSelectToolButton = null;
         selectToolButton = null;
         linkAnnotationToolButton = null;
+        highlightAnnotationToolButton = null;
+        underlineAnnotationToolButton = null;
+        strikeOutAnnotationToolButton = null;
+        lineAnnotationToolButton = null;
+        lineArrowAnnotationToolButton = null;
+        squareAnnotationToolButton = null;
+        circleAnnotationToolButton = null;
+        inkAnnotationToolButton = null;
+        freeTextAnnotationToolButton = null;
+        textAnnotationToolButton = null;
 
         fontEngineButton = null;
 
@@ -3058,11 +3269,14 @@ public class SwingController
     }
 
     public void setDocumentToolMode(final int toolType) {
+        // nothing to do tool should already be setup.
         if (documentViewController.isToolModeSelected(toolType))
             return;
 
+        // set the tool mode
         documentViewController.setToolMode(toolType);
 
+        // update the button state
         reflectToolInToolButtons();
     }
 
@@ -3162,7 +3376,7 @@ public class SwingController
      * @param selectedAnnotation the annotation to show in the panel
      * @see #setUtilityPaneVisible(boolean)
      */
-    public void showAnnotationPanel(AnnotationComponentImpl selectedAnnotation) {
+    public void showAnnotationPanel(AnnotationComponent selectedAnnotation) {
         if (utilityTabbedPane != null && annotationPanel != null) {
             // Pass the selected annotation to the link panel
             if (selectedAnnotation != null) {
@@ -3612,7 +3826,7 @@ public class SwingController
             if (source == zoomComboBox) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setZoomFromZoomComboBox();
-                    // Since combobox is an entry component, we don't force focus to the document
+                    // Since combo box is an entry component, we don't force focus to the document
                 }
             } else if (source == fitActualSizeButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -3638,28 +3852,16 @@ public class SwingController
                     documentViewController.getDocumentView().getViewModel().invalidate();
                     doSetFocus = true;
                 }
+            }
+            // tool selection - a call to setDocumentToolMode will generate
+            // the property change even which the view and child components
+            // will adjust to.
 
-            } else if (source == panToolButton) {
+            else if (source == panToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_PAN;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
                     doSetFocus = true;
-                }
-            } else if (source == textSelectToolButton) {
-                if (e.getStateChange() == ItemEvent.SELECTED) {
-                    tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
-                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
-                    doSetFocus = true;
-                }
-            } else if (source == selectToolButton) {
-                if (e.getStateChange() == ItemEvent.SELECTED) {
-                    tool = DocumentViewModelImpl.DISPLAY_TOOL_SELECTION;
-                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
-                }
-            } else if (source == linkAnnotationToolButton) {
-                if (e.getStateChange() == ItemEvent.SELECTED) {
-                    tool = DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION;
-                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 }
             } else if (source == zoomInToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -3673,7 +3875,77 @@ public class SwingController
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT);
                     doSetFocus = true;
                 }
-            } else if (source == facingPageViewNonContinuousButton) {
+            } else if (source == textSelectToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
+                    doSetFocus = true;
+                }
+            }
+            // annotations selection and creation tools.
+            else if (source == selectToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_SELECTION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
+                }
+            } else if (source == linkAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
+                }
+            } else if (source == highlightAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
+                }
+            } else if (source == strikeOutAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION);
+                }
+            } else if (source == underlineAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION);
+                }
+            } else if (source == lineAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION);
+                }
+            } else if (source == lineArrowAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
+                }
+            } else if (source == squareAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
+                }
+            } else if (source == circleAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
+                }
+            } else if (source == inkAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
+                }
+            } else if (source == freeTextAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
+                }
+            } else if (source == textAnnotationToolButton) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);
+                }
+            }
+            // page view events,  changes the page layout component.
+            else if (source == facingPageViewNonContinuousButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     setPageViewMode(
                             DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW,
@@ -4065,8 +4337,8 @@ public class SwingController
             // link annotation tool.
             if (documentViewController.getToolMode() ==
                     DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-                AnnotationComponentImpl annotationComponent =
-                        (AnnotationComponentImpl) newValue;
+                AnnotationComponent annotationComponent =
+                        (AnnotationComponent) newValue;
                 if (annotationComponent != null &&
                         annotationComponent.getAnnotation() != null) {
                     // set the annotationPane with the new annotation component

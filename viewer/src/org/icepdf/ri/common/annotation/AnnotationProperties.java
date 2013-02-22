@@ -14,14 +14,13 @@
  */
 package org.icepdf.ri.common.annotation;
 
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
+import org.icepdf.core.views.AnnotationComponent;
 
 /**
- *
  * @since 4.0
  */
 public interface AnnotationProperties {
 
-    public abstract void setAnnotationComponent(AnnotationComponentImpl annotaiton);
-    
+    public abstract void setAnnotationComponent(AnnotationComponent annotation);
+
 }
