@@ -14,16 +14,18 @@
  */
 package org.icepdf.core.views.common;
 
+import org.icepdf.core.views.swing.AbstractPageViewComponent;
+
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
 /**
  * Handles the drawing of a selection box commonly used for selection
- * amoung other things.
+ * type tools.
  *
  * @since 4.0
  */
-public class SelectionBoxHandler {
+public abstract class SelectionBoxHandler {
 
     // dashed selection rectangle stroke
     protected static float dash1[] = {1.0f};
@@ -39,6 +41,7 @@ public class SelectionBoxHandler {
 
     protected Color selectionBoxColour = Color.lightGray;
 
+    public abstract void setSelectionRectangle(Point cursorLocation, Rectangle selection);
 
     public void paintSelectionBox(Graphics g) {
         Graphics2D gg = (Graphics2D) g;
@@ -47,11 +50,11 @@ public class SelectionBoxHandler {
         if (rectToDraw != null) {
             //Draw a rectangle on top of the image.
             oldColor = g.getColor();
-            g.setColor(selectionBoxColour);
+            gg.setColor(selectionBoxColour);
             gg.setStroke(stroke);
-            g.drawRect(rectToDraw.x, rectToDraw.y,
+            gg.drawRect(rectToDraw.x, rectToDraw.y,
                     rectToDraw.width - 1, rectToDraw.height - 1);
-            g.setColor(oldColor);
+            gg.setColor(oldColor);
         }
 
         gg.setColor(oldColor);
@@ -102,7 +105,7 @@ public class SelectionBoxHandler {
         updateDrawableRect(component.getWidth(), component.getHeight());
         Rectangle totalRepaint = rectToDraw.union(previousRectDrawn);
         component.repaint(totalRepaint.x, totalRepaint.y,
-                totalRepaint.width, totalRepaint.height);
+                totalRepaint.width + 10, totalRepaint.height + 10);
     }
 
     public void setSelectionSize(Rectangle rect, Component component) {
@@ -116,7 +119,7 @@ public class SelectionBoxHandler {
     }
 
     /**
-     * Udpate the drawable rectangle so that it does not extend bast the edge
+     * Update the drawable rectangle so that it does not extend bast the edge
      * of the page.
      *
      * @param compWidth  width of component being selected
@@ -162,6 +165,23 @@ public class SelectionBoxHandler {
             rectToDraw.setBounds(x, y, width, height);
         } else {
             rectToDraw = new Rectangle(x, y, width, height);
+        }
+    }
+
+    /**
+     * Utility method for determining if the mouse event occurred over a
+     * page in the page view.
+     *
+     * @param e mouse event in this coordinates space
+     * @return component that mouse event is over or null if not over a page.
+     */
+    protected AbstractPageViewComponent isOverPageComponent(Container container, MouseEvent e) {
+        // mouse -> page  broadcast .
+        Component comp = container.findComponentAt(e.getPoint());
+        if (comp instanceof AbstractPageViewComponent) {
+            return (AbstractPageViewComponent) comp;
+        } else {
+            return null;
         }
     }
 }

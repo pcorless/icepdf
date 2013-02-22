@@ -16,7 +16,8 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.security.SecurityManager;
 
-import java.util.StringTokenizer;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * <p>This class defines a standard PDF date.  The class will try its best
@@ -57,6 +58,13 @@ import java.util.StringTokenizer;
  * @since 1.1
  */
 public class PDate {
+
+    protected static final SimpleDateFormat DATE_FORMAT;
+
+    static {
+        DATE_FORMAT = new SimpleDateFormat("'D:'yyyyMMddHHmmss");
+        DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
 
     // offset value for year, YYYY
     private static final int OFFSET_YYYY = 4;
@@ -404,6 +412,67 @@ public class PDate {
         }
 
         return monthNames[monthIndex];
+    }
+
+    /**
+     * Formats a date/time according to the PDF specification
+     * (D:YYYYMMDDHHmmSSOHH'mm').
+     *
+     * @param time date/time value to format
+     * @param tz   the time zone
+     * @return the requested String representation
+     */
+    public static String formatDateTime(Date time, TimeZone tz) {
+        Calendar cal = Calendar.getInstance(tz, Locale.ENGLISH);
+        cal.setTime(time);
+
+        int offset = cal.get(Calendar.ZONE_OFFSET);
+        offset += cal.get(Calendar.DST_OFFSET);
+
+        //DateFormat is operating on GMT so adjust for time zone offset
+        Date dt1 = new Date(time.getTime() + offset);
+        StringBuffer sb = new StringBuffer();
+        sb.append(DATE_FORMAT.format(dt1));
+
+        offset /= (1000 * 60); //Convert to minutes
+
+        if (offset == 0) {
+            sb.append('Z');
+        } else {
+            if (offset > 0) {
+                sb.append('+');
+            } else {
+                sb.append('-');
+            }
+            int offsetHour = Math.abs(offset / 60);
+            int offsetMinutes = Math.abs(offset % 60);
+            if (offsetHour < 10) {
+                sb.append('0');
+            }
+            sb.append(Integer.toString(offsetHour));
+            sb.append('\'');
+            if (offsetMinutes < 10) {
+                sb.append('0');
+            }
+            sb.append(Integer.toString(offsetMinutes));
+            sb.append('\'');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Formats a date/time according to the PDF specification.
+     * (D:YYYYMMDDHHmmSSOHH'mm').
+     *
+     * @param time date/time value to format
+     * @return the requested String representation
+     */
+    public static String formatDateTime(Date time) {
+        return formatDateTime(time, TimeZone.getDefault());
+    }
+
+    public static PDate createDate(Date date) {
+        return new PDate(null, formatDateTime(date));
     }
 
 }

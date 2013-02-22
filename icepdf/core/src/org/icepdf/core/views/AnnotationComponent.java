@@ -53,12 +53,36 @@ public interface AnnotationComponent {
      */
     public boolean hasFocus();
 
+    /**
+     * Component is editable, contents can be updated in ui
+     */
     public boolean isEditable();
 
+    /**
+     * Component is editable, contents can be updated in ui
+     */
+    public boolean isShowInvisibleBorder();
+
+    /**
+     * Component highlight/select border is draw on mouse over.
+     */
     public boolean isRollover();
 
-    public boolean isLinkAnnot();
+    /**
+     * Component is movable.
+     */
+    public boolean isMovable();
 
+    /**
+     * Component is resizable.
+     */
+    public boolean isResizable();
+
+    /**
+     * border has defined style.
+     *
+     * @return
+     */
     public boolean isBorderStyle();
 
     public boolean isSelected();
@@ -68,5 +92,13 @@ public interface AnnotationComponent {
     public int getPageIndex();
 
     public PageViewComponent getParentPageView();
+
+    public void setSelected(boolean selected);
+
+    public void repaint();
+
+    public void resetAppearanceShapes();
+
+    public PageViewComponent getPageViewComponent();
 
 }

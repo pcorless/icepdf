@@ -306,6 +306,7 @@ public class OFont implements FontFile {
     public void drawEstring(Graphics2D g, String displayText, float x, float y,
                             long layout, int mode, Color strokecolor) {
 
+        AffineTransform af = g.getTransform();
         Shape outline = getEstringOutline(displayText, x, y);
 
         if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
@@ -316,6 +317,7 @@ public class OFont implements FontFile {
                 TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
             g.draw(outline);
         }
+        g.setTransform(af);
 
     }
 

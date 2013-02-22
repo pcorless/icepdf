@@ -2288,6 +2288,7 @@ public class ContentParser {
      */
     private void drawModeFill(TextSprite textSprites, Shapes shapes, int rmode) {
         textSprites.setRMode(rmode);
+        textSprites.setStrokeColor(graphicState.getFillColor());
         shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
         shapes.add(new TextSpriteDrawCmd(textSprites));
     }
@@ -2336,7 +2337,7 @@ public class ContentParser {
                                     Shapes shapes, int rmode) {
         // setup textSprite with a strokeColor and the correct rmode
         textSprites.setRMode(rmode);
-        textSprites.setStrokeColor(graphicState.getStrokeColor());
+        textSprites.setStrokeColor(graphicState.getFillColor());
         // save the old line width
         float old = graphicState.getLineWidth();
 

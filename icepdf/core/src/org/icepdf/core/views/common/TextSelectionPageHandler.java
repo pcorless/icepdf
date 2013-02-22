@@ -26,7 +26,6 @@ import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 
-import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.*;
@@ -49,13 +48,13 @@ import java.util.logging.Logger;
  * @since 4.0
  */
 public class TextSelectionPageHandler extends SelectionBoxHandler
-        implements MouseInputListener {
+        implements ToolHandler {
 
     private static final Logger logger =
             Logger.getLogger(TextSelectionPageHandler.class.toString());
 
     /**
-     * Tranparencey value used to simulate text highlighting.
+     * Transparency value used to simulate text highlighting.
      */
     public static final float selectionAlpha = 0.3f;
 
@@ -98,10 +97,9 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     }
 
     // parent page component
-    private AbstractPageViewComponent pageViewComponent;
-    private DocumentViewController documentViewController;
-    private DocumentViewModel documentViewModel;
-
+    protected AbstractPageViewComponent pageViewComponent;
+    protected DocumentViewController documentViewController;
+    protected DocumentViewModel documentViewModel;
 
     /**
      * New Text selection handler.  Make sure to correctly and and remove
@@ -110,21 +108,12 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      * @param pageViewComponent page component that this handler is bound to.
      * @param documentViewModel view model.
      */
-    public TextSelectionPageHandler(AbstractPageViewComponent pageViewComponent,
+    public TextSelectionPageHandler(DocumentViewController documentViewController,
+                                    AbstractPageViewComponent pageViewComponent,
                                     DocumentViewModel documentViewModel) {
+        this.documentViewController = documentViewController;
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
-    }
-
-    /**
-     * Document view controller callback setup.  Has to be done after the
-     * contructor.
-     *
-     * @param documentViewController document controller callback.
-     */
-    public void setDocumentViewController(
-            DocumentViewController documentViewController) {
-        this.documentViewController = documentViewController;
     }
 
     /**
@@ -135,25 +124,17 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     public void mouseClicked(MouseEvent e) {
         // double click we select the whole line.
         if (e.getClickCount() == 3) {
-            if (documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-
-                Page currentPage = pageViewComponent.getPage();
-                // handle text selection mouse coordinates
-                Point mouseLocation = (Point) e.getPoint().clone();
-                lineSelectHandler(currentPage, mouseLocation);
-            }
+            Page currentPage = pageViewComponent.getPage();
+            // handle text selection mouse coordinates
+            Point mouseLocation = (Point) e.getPoint().clone();
+            lineSelectHandler(currentPage, mouseLocation);
         }
         // single click we select word that was clicked. 
         else if (e.getClickCount() == 2) {
-            if (documentViewModel.getViewToolMode() ==
-                    DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-
-                Page currentPage = pageViewComponent.getPage();
-                // handle text selection mouse coordinates
-                Point mouseLocation = (Point) e.getPoint().clone();
-                wordSelectHandler(currentPage, mouseLocation);
-            }
+            Page currentPage = pageViewComponent.getPage();
+            // handle text selection mouse coordinates
+            Point mouseLocation = (Point) e.getPoint().clone();
+            wordSelectHandler(currentPage, mouseLocation);
         }
         // write out selected text.
         if (logger.isLoggable(Level.FINE)) {
@@ -187,37 +168,32 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         clearSelection();
 
         // text selection box.
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            int x = e.getX();
-            int y = e.getY();
-            currentRect = new Rectangle(x, y, 0, 0);
-            updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
-            pageViewComponent.repaint();
-        }
+        int x = e.getX();
+        int y = e.getY();
+        currentRect = new Rectangle(x, y, 0, 0);
+        updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
+        pageViewComponent.repaint();
     }
 
     /**
      * Invoked when a mouse button has been released on a component.
      */
     public void mouseReleased(MouseEvent e) {
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            // update selection rectangle
-            updateSelectionSize(e, pageViewComponent);
 
-            // write out selected text.
-            if (logger.isLoggable(Level.FINE)) {
-                Page currentPage = pageViewComponent.getPage();
-                // handle text selection mouse coordinates
-                logger.fine(currentPage.getViewText().getSelected().toString());
-            }
+        // update selection rectangle
+        updateSelectionSize(e, pageViewComponent);
 
-            // clear the rectangle
-            clearRectangle(pageViewComponent);
-
-            pageViewComponent.repaint();
+        // write out selected text.
+        if (logger.isLoggable(Level.FINE)) {
+            Page currentPage = pageViewComponent.getPage();
+            // handle text selection mouse coordinates
+            logger.fine(currentPage.getViewText().getSelected().toString());
         }
+
+        // clear the rectangle
+        clearRectangle(pageViewComponent);
+
+        pageViewComponent.repaint();
     }
 
     /**
@@ -247,29 +223,22 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      */
     public void mouseDragged(MouseEvent e) {
 
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+        // rectangle select tool
+        updateSelectionSize(e, pageViewComponent);
 
-            // rectangle select tool
-            updateSelectionSize(e, pageViewComponent);
-
-            // lock and unlock content before iterating over the pageText tree.
-            Page currentPage = pageViewComponent.getPage();
-            multilineSelectHandler(currentPage, e.getPoint());
-        }
+        // lock and unlock content before iterating over the pageText tree.
+        Page currentPage = pageViewComponent.getPage();
+        multiLineSelectHandler(currentPage, e.getPoint());
     }
 
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
 
-            // rectangle select tool
-            setSelectionSize(selection, pageViewComponent);
+        // rectangle select tool
+        setSelectionSize(selection, pageViewComponent);
 
-            // lock and unlock content before iterating over the pageText tree.
-            Page currentPage = pageViewComponent.getPage();
-            multilineSelectHandler(currentPage, cursorLocation);
-        }
+        // lock and unlock content before iterating over the pageText tree.
+        Page currentPage = pageViewComponent.getPage();
+        multiLineSelectHandler(currentPage, cursorLocation);
     }
 
     /**
@@ -278,11 +247,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      */
     public void mouseMoved(MouseEvent e) {
         // change state of mouse from pointer to text selection icon
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            Page currentPage = pageViewComponent.getPage();
-            selectionMouseCursor(currentPage, e.getPoint());
-        }
+        Page currentPage = pageViewComponent.getPage();
+        selectionMouseCursor(currentPage, e.getPoint());
     }
 
     /**
@@ -380,7 +346,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      * @param currentPage   page to looking for text inersection on.
      * @param mouseLocation location of mouse.
      */
-    private void multilineSelectHandler(Page currentPage, Point mouseLocation) {
+    private void multiLineSelectHandler(Page currentPage, Point mouseLocation) {
 
         if (currentPage != null &&
                 currentPage.isInitiated()) {
@@ -393,7 +359,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
                 // get page transform, same for all calculations
                 AffineTransform pageTransform = currentPage.getPageTransform(
-                        Page.BOUNDARY_CROPBOX,
+                        documentViewModel.getPageBoundary(),
                         documentViewModel.getViewRotation(),
                         documentViewModel.getViewZoom());
                 LineText firstPageLine = null;
@@ -715,6 +681,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             }
         }
 
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                1.0f));
         // pain selection box
         paintSelectionBox(g);
 
@@ -775,5 +743,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         g.setColor(oldColor);
     }
 
-
+    public void paintTool(Graphics g) {
+        paintSelectedText(g);
+        paintSelectionBox(g);
+    }
 }

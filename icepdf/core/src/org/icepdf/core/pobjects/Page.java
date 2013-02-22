@@ -18,8 +18,6 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.AnnotationFactory;
-import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -635,29 +633,6 @@ public class Page extends Dictionary {
     }
 
     /**
-     * Creates a new annotation instance for his page.  The Annotation is
-     * added to the appropriate dictionaries and is regisitered width the
-     * state manager class.
-     *
-     * @param rect            location of new rectangle
-     * @param annotationState annotation state to use for default values.  Null
-     *                        is allowed if default state is prefered.
-     * @return new annotation reference for this page.
-     */
-    public Annotation createAnnotation(Rectangle rect,
-                                       AnnotationState annotationState) {
-        // create a new instance of the object adding it to the library
-        Annotation newAnnotation =
-                AnnotationFactory.buildAnnotation(library,
-                        AnnotationFactory.LINK_ANNOTATION,
-                        rect,
-                        annotationState);
-
-        // return to caller for further manipulations.
-        return addAnnotation(newAnnotation);
-    }
-
-    /**
      * Adds an annotation that was previously added to the document.  It is
      * assumed that the annotation has a valid object reference.  This
      * is commonly used with the undo/redo state manager in the RI.  Use
@@ -673,13 +648,13 @@ public class Page extends Dictionary {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
-                logger.warning("Annotation Initialization interupted");
+                logger.warning("Annotation Initialization interrupted");
             }
         }
 
         StateManager stateManager = library.getStateManager();
 
-        Object annots = library.getObject(entries, ANNOTS_KEY);
+        Object annots = library.getArray(entries, ANNOTS_KEY);
         boolean isAnnotAReference = library.isReference(entries, ANNOTS_KEY.getName());
 
         // does the page not already have an annotations or if the annots
@@ -689,7 +664,7 @@ public class Page extends Dictionary {
             // get annots array from page
             if (annots instanceof List) {
                 // update annots dictionary with new annotations reference,
-                List v = (List) annots;
+                ArrayList v = new ArrayList((List) annots);
                 v.add(newAnnotation.getPObjectReference());
                 // add the page as state change
                 stateManager.addChange(
@@ -774,7 +749,7 @@ public class Page extends Dictionary {
         annot.setDeleted(true);
 
         // check to see if this is an existing annotations, if the annotations
-        // is existing then we have to mark either the page or annot ref as chagned.
+        // is existing then we have to mark either the page or annot ref as changed.
         if (!annot.isNew() && !isAnnotAReference) {
             // add the page as state change
             stateManager.addChange(
@@ -789,7 +764,7 @@ public class Page extends Dictionary {
         // removed the annotations from the annots vector
         if (annots instanceof List) {
             // update annots dictionary with new annotations reference,
-            List v = (List) annots;
+            ArrayList v = new ArrayList((List) annots);
             v.remove(annot.getPObjectReference());
         }
 
@@ -1246,6 +1221,9 @@ public class Page extends Dictionary {
      * @return crop box boundary in user space units.
      */
     public Rectangle2D.Float getCropBox() {
+        if (cropBox != null) {
+            return cropBox;
+        }
         // add all of the pages crop box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {

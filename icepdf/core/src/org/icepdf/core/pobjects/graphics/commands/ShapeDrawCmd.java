@@ -42,4 +42,8 @@ public class ShapeDrawCmd implements DrawCmd {
                               PaintTimer paintTimer) {
         return shape;
     }
+
+    public Shape getShape() {
+        return shape;
+    }
 }

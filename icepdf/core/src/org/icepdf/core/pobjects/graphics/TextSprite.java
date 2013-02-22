@@ -239,6 +239,14 @@ public class TextSprite {
         return glyphOutline;
     }
 
+    public FontFile getFont() {
+        return font;
+    }
+
+    public Color getStrokeColor() {
+        return strokeColor;
+    }
+
     /*
     private void drawBoundBox(Graphics2D gg) {
 

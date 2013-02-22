@@ -14,14 +14,10 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -48,55 +44,44 @@ public class AnnotationFactory {
      * as the document StateManager.
      *
      * @param library         library to register annotation with
-     * @param type            type of annotation to create
+     * @param subType         type of annotation to create
      * @param rect            bounds of new annotation specified in user space.
      * @param annotationState annotation state to copy state rom.
      * @return new annotation object with the same properties as the one
      *         specified in annotaiton state.
      */
     public static Annotation buildAnnotation(Library library,
-                                             int type,
+                                             final Name subType,
                                              Rectangle rect,
                                              AnnotationState annotationState) {
-        // state manager 
-        StateManager stateManager = library.getStateManager();
-
-        // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
-        // set default link annotation values. 
-        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
-        entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_LINK);
-        // coordinates
-        if (rect != null) {
-            entries.put(Annotation.RECTANGLE_KEY,
-                    PRectangle.getPRectangleVector(rect));
-        } else {
-            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
-        }
         // build up a link annotation
-        if (type == LINK_ANNOTATION) {
-            // we only support one type of annotation creation for now
-            LinkAnnotation linkAnnotation = new LinkAnnotation(library, entries);
-            linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-            linkAnnotation.setNew(true);
-
-            // apply state
-            if (annotationState != null) {
-                annotationState.restore(linkAnnotation);
-            }
-            // some defaults just for display purposes.
-            else {
-                annotationState = new AnnotationState(
-                        Annotation.VISIBLE_RECTANGLE,
-                        LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                        BorderStyle.BORDER_STYLE_SOLID, Color.RED);
-                annotationState.restore(linkAnnotation);
-            }
-            return linkAnnotation;
+        if (subType.equals(Annotation.SUBTYPE_LINK)) {
+            return LinkAnnotation.getInstance(library, rect, annotationState);
+        }
+        // highlight version of a TextMarkup annotation.
+        else if (subType.equals(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) ||
+                subType.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) ||
+                subType.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+            return TextMarkupAnnotation.getInstance(library, rect,
+                    subType,
+                    annotationState);
+        } else if (subType.equals(Annotation.SUBTYPE_LINE)) {
+            return LineAnnotation.getInstance(library, rect, annotationState);
+        } else if (subType.equals(Annotation.SUBTYPE_SQUARE)) {
+            return SquareAnnotation.getInstance(library, rect, annotationState);
+        } else if (subType.equals(Annotation.SUBTYPE_CIRCLE)) {
+            return CircleAnnotation.getInstance(library, rect, annotationState);
+        } else if (subType.equals(Annotation.SUBTYPE_INK)) {
+            return InkAnnotation.getInstance(library, rect, annotationState);
+        } else if (subType.equals(Annotation.SUBTYPE_FREE_TEXT)) {
+            return FreeTextAnnotation.getInstance(library, rect, annotationState);
+        } else if (subType.equals(Annotation.SUBTYPE_TEXT)) {
+            return TextAnnotation.getInstance(library, rect, annotationState);
+        } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
+            return PopupAnnotation.getInstance(library, rect, annotationState);
         } else {
             logger.warning("Unsupported Annotation type. ");
             return null;
         }
-
     }
 }

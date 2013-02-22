@@ -63,7 +63,7 @@ public class AnnotationState implements Memento {
 
             Annotation annotation = this.annotationComponent.getAnnotation();
             // link type, visible, invisible
-            linkType = annotation.getLinkType();
+            linkType = annotation.getBorderType();
             if (annotation instanceof LinkAnnotation) {
                 highlightStyle = ((LinkAnnotation) annotation).getHighlightMode();
             }
@@ -193,7 +193,7 @@ public class AnnotationState implements Memento {
 
     private void restoreLineThickness(Annotation annotation) {
         // check if we need to set line thickness to default value
-        if (linkType == Annotation.VISIBLE_RECTANGLE &&
+        if (linkType != null && linkType == Annotation.VISIBLE_RECTANGLE &&
                 lineThickness == 0) {
             lineThickness = 1f;
         }
@@ -251,7 +251,7 @@ public class AnnotationState implements Memento {
 
     private void applyInvisibleLinkType(Annotation annotation) {
         // clear border thickness
-        if (linkType == Annotation.INVISIBLE_RECTANGLE) {
+        if (linkType != null && linkType == Annotation.INVISIBLE_RECTANGLE) {
             Object border = annotation.getObject(Annotation.BORDER_KEY);
             if (border != null && border instanceof Vector) {
                 Vector borderProps = (Vector) border;

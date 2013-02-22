@@ -17,7 +17,6 @@ package org.icepdf.core.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
@@ -45,25 +44,81 @@ public interface DocumentViewModel {
      */
     public int DISPLAY_TOOL_ZOOM_OUT = 3;
     /**
-     * Display tool constant for adding a text selection tool.
+     * Display tool constant for adding a zoom out tool.
      */
-    public int DISPLAY_TOOL_TEXT_SELECTION = 4;
+    public int DISPLAY_TOOL_ZOOM_SELECTED_AREA = 4;
     /**
      * Display tool constant for adding a text selection tool.
      */
-    public int DISPLAY_TOOL_SELECTION = 5;
+    public int DISPLAY_TOOL_TEXT_SELECTION = 5;
     /**
      * Display tool constant for adding a text selection tool.
      */
-    public int DISPLAY_TOOL_LINK_ANNOTATION = 6;
+    public int DISPLAY_TOOL_SELECTION = 6;
+    /**
+     * Display tool constant for creating new link annotation.
+     */
+    public int DISPLAY_TOOL_LINK_ANNOTATION = 7;
+    /**
+     * Display tool constant for creating new highlight annotation.
+     */
+    public int DISPLAY_TOOL_HIGHLIGHT_ANNOTATION = 8;
+    /**
+     * Display tool constant for creating new underline annotation.
+     */
+    public int DISPLAY_TOOL_UNDERLINE_ANNOTATION = 9;
+    /**
+     * Display tool constant for creating new squiggly annotation.
+     */
+    public int DISPLAY_TOOL_SQUIGGLY_ANNOTATION = 10;
+    /**
+     * Display tool constant for creating new strikeout annotation.
+     */
+    public int DISPLAY_TOOL_STRIKEOUT_ANNOTATION = 11;
+
+    /**
+     * Display tool constant for creating new line  annotation.
+     */
+    public int DISPLAY_TOOL_LINE_ANNOTATION = 12;
+
+    /**
+     * Display tool constant for creating new line  annotation.
+     */
+    public int DISPLAY_TOOL_LINE_ARROW_ANNOTATION = 13;
+
+    /**
+     * Display tool constant for creating new line  annotation.
+     */
+    public int DISPLAY_TOOL_SQUARE_ANNOTATION = 14;
+
+    /**
+     * Display tool constant for creating new line  annotation.
+     */
+    public int DISPLAY_TOOL_CIRCLE_ANNOTATION = 15;
+
+    /**
+     * Display tool constant for creating new line  annotation.
+     */
+    public int DISPLAY_TOOL_INK_ANNOTATION = 16;
+
+    /**
+     * Display tool constant for creating new line  annotation.
+     */
+    public int DISPLAY_TOOL_FREE_TEXT_ANNOTATION = 17;
+
+    /**
+     * Display tool constant for creating new line  annotation.
+     */
+    public int DISPLAY_TOOL_TEXT_ANNOTATION = 18;
+
     /**
      * Display tool constant for setting no tools
      */
-    public int DISPLAY_TOOL_NONE = 8;
+    public int DISPLAY_TOOL_NONE = 50;
     /**
      * Display tool constant for showing user that gui is busy
      */
-    public int DISPLAY_TOOL_WAIT = 9;
+    public int DISPLAY_TOOL_WAIT = 51;
 
     /**
      * Gets the PDF document object associated with this views.
@@ -224,14 +279,14 @@ public interface DocumentViewModel {
      *
      * @return currently selected annotaitons.
      */
-    public AnnotationComponentImpl getCurrentAnnotation();
+    public AnnotationComponent getCurrentAnnotation();
 
     /**
      * Sets teh current annotation
      *
      * @param currentAnnotation annotation to set as current
      */
-    public void setCurrentAnnotation(AnnotationComponentImpl currentAnnotation);
+    public void setCurrentAnnotation(AnnotationComponent currentAnnotation);
 
     /**
      * Adds memento state  to the care taker.

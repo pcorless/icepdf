@@ -18,6 +18,8 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.views.DocumentViewController;
 
+import java.util.ResourceBundle;
+
 /**
  * A Controller is the glue between the model and view components.
  * These methods allow the different parts of the view to remain
@@ -83,4 +85,12 @@ public interface Controller {
      * @param toolType tool mode constants defined in DocumentViewModel
      */
     public void setDocumentToolMode(final int toolType);
+
+    /**
+     * Gets the message bundle used by this class.  Message bundle resources
+     * are loaded via the JVM default locale.
+     *
+     * @return message bundle used by this class.
+     */
+    public ResourceBundle getMessageBundle();
 }

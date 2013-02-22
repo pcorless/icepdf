@@ -27,10 +27,11 @@ import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.common.AnnotationHandler;
+import org.icepdf.core.views.common.SelectionBoxHandler;
 import org.icepdf.core.views.common.TextSelectionPageHandler;
+import org.icepdf.core.views.swing.annotations.AbstractAnnotationComponent;
+import org.icepdf.core.views.swing.annotations.AnnotationComponentFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,6 +41,8 @@ import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -115,15 +118,6 @@ public class PageViewComponentImpl extends
     private float currentZoom;
     private float currentRotation;
 
-    protected DocumentView parentDocumentView;
-    protected DocumentViewModel documentViewModel;
-    protected DocumentViewController documentViewController;
-
-    // annotation mouse, key and paint handler.
-    protected AnnotationHandler annotationHandler;
-    // text selection mouse/key and paint handler
-    protected TextSelectionPageHandler textSelectionHandler;
-
     // the buffered image which will be painted to
     private SoftReference<Image> bufferedPageImageReference;
     // the bounds of the buffered image.
@@ -188,19 +182,13 @@ public class PageViewComponentImpl extends
                                  int width, int height) {
         // removed focasable until we can build our own focus manager
         // for moving though a large number of pages.
-//        setFocusable(true);
+        setFocusable(true);
         // add focus listener
-//        addFocusListener(this);
+        addFocusListener(this);
 
         // needed to propagate mouse events.
         this.documentViewModel = documentViewModel;
         this.parentScrollPane = parentScrollPane;
-
-        // annotation action, selection and creation
-        annotationHandler = new AnnotationHandler(this, documentViewModel);
-        // text selection
-        textSelectionHandler = new TextSelectionPageHandler(this,
-                documentViewModel);
 
         currentRotation = documentViewModel.getViewRotation();
         currentZoom = documentViewModel.getViewRotation();
@@ -224,35 +212,19 @@ public class PageViewComponentImpl extends
     }
 
     /**
-     * If no DocumentView is used then the various mouse and keyboard
-     * listeners must be added tothis component.  If there is a document
-     * view then we let it delegate events to make life easier.
-     */
-    public void addPageViewComponentListeners() {
-        // add listeners
-        addMouseListener(this);
-        addMouseMotionListener(this);
-        addComponentListener(this);
-        // annotation pickups
-        // handles, multiple selections and new annotation creation. 
-        addMouseListener(annotationHandler);
-        addMouseMotionListener(annotationHandler);
-
-        // text selection mouse handler
-        addMouseMotionListener(textSelectionHandler);
-        addMouseListener(textSelectionHandler);
-    }
-
-    /**
      * Adds the specified annotation to this page instance.  The annotation
      * is wrapped with a AnnotationComponent and added to this components layout
      * manager.
      *
      * @param annotation annotation to add to this page instance. .
      */
-    public AnnotationComponent addAnnotation(Annotation annotation) {
+    public void addAnnotation(AbstractAnnotationComponent annotation) {
         // delegate to handler.
-        return annotationHandler.addAnnotationComponent(annotation);
+        if (annotationComponents == null) {
+            annotationComponents = new ArrayList<AnnotationComponent>();
+        }
+        annotationComponents.add(annotation);
+        this.add(annotation);
     }
 
     /**
@@ -261,8 +233,8 @@ public class PageViewComponentImpl extends
      * @param annotationComp annotation to be removed.
      */
     public void removeAnnotation(AnnotationComponent annotationComp) {
-        // delegate to handler. 
-        annotationHandler.removeAnnotationComponent(annotationComp);
+        annotationComponents.remove(annotationComp);
+        this.remove((AbstractAnnotationComponent) annotationComp);
     }
 
     public void init() {
@@ -280,7 +252,7 @@ public class PageViewComponentImpl extends
         isDirtyTimer.setInitialDelay(0);
 
         // PageInitializer and painter commands
-        pageInitializer = new PageInitializer();
+        pageInitializer = new PageInitializer(this);
         pagePainter = new PagePainter();
     }
 
@@ -292,23 +264,21 @@ public class PageViewComponentImpl extends
         }
     }
 
+    public void invalidatePageBuffer() {
+        currentZoom = -1;
+    }
+
     public void dispose() {
 
         disposing = true;
         if (isDirtyTimer != null)
             isDirtyTimer.stop();
 
-        removeMouseListener(this);
-        removeMouseMotionListener(this);
         removeComponentListener(this);
 
         // remove annotation listeners.
-        removeMouseMotionListener(annotationHandler);
-        removeMouseListener(annotationHandler);
-
-        // text selection
-        removeMouseMotionListener(textSelectionHandler);
-        removeMouseListener(textSelectionHandler);
+        removeMouseMotionListener(currentToolHandler);
+        removeMouseListener(currentToolHandler);
 
         // remove focus listener
         removeFocusListener(this);
@@ -333,11 +303,6 @@ public class PageViewComponentImpl extends
     public void setDocumentViewCallback(DocumentView parentDocumentView) {
         this.parentDocumentView = parentDocumentView;
         documentViewController = this.parentDocumentView.getParentViewController();
-
-        // set annotation callback
-        annotationHandler.setDocumentViewController(documentViewController);
-        // set text selection callback
-        textSelectionHandler.setDocumentViewController(documentViewController);
     }
 
     public int getPageIndex() {
@@ -350,7 +315,6 @@ public class PageViewComponentImpl extends
 
     public void invalidate() {
         calculateRoughPageSize(pageSize);
-        currentZoom = -1;
         if (pagePainter != null) {
             pagePainter.setIsBufferDirty(true);
         }
@@ -426,8 +390,9 @@ public class PageViewComponentImpl extends
                 // mark as dirty
                 currentZoom = -1;
             }
-            // paint annotations
-            annotationHandler.paintAnnotations(g);
+
+            // paint the annotations components
+            paintAnnotations(g);
 
             // Lazy paint of highlight and select all text states.
             Page currentPage = this.getPage();
@@ -447,112 +412,69 @@ public class PageViewComponentImpl extends
                     pageText.selectAll();
                 }
 
-                // paint selected test sprites.
-                textSelectionHandler.paintSelectedText(g);
+            }
+            // paint annotation handler effect if any.
+            if (currentToolHandler != null) {
+                currentToolHandler.paintTool(g);
             }
         }
     }
 
-    /**
-     * Mouse clicked event priority is given to annotation clicks.  Otherwise
-     * the selected tool state is respected.
-     *
-     * @param e awt mouse event.
-     */
-    public void mouseClicked(MouseEvent e) {
+    private void paintAnnotations(Graphics g) {
+        Page currentPage = getPage();
+        if (currentPage != null && currentPage.isInitiated()) {
+            if (annotationComponents != null) {
+                Graphics2D gg2 = (Graphics2D) g;
+                // save draw state.
+                AffineTransform prePaintTransform = gg2.getTransform();
+                Color oldColor = gg2.getColor();
+                Stroke oldStroke = gg2.getStroke();
+                // apply page transform.
+                AffineTransform at = currentPage.getPageTransform(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom());
+                gg2.transform(at);
+                // get current tool state, we don't want to draw the highlight
+                // state if the selection tool is selected.
+                boolean notSelectTool =
+                        documentViewModel.getViewToolMode() !=
+                                DocumentViewModel.DISPLAY_TOOL_SELECTION;
 
-        // depending on tool state propagate mouse state
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            textSelectionHandler.mouseClicked(e);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_ZOOM_IN) {
-            // correct click for coordinate of this component
-            Point p = e.getPoint();
-            Point offset = documentViewModel.getPageBounds(pageIndex).getLocation();
-            p.setLocation(p.x + offset.x, p.y + offset.y);
-            // request a zoom center on the new point
-            documentViewController.setZoomIn(p);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT) {
-            // correct click for coordinate of this component
-            Point p = e.getPoint();
-            // request a zoom center on the new point
-            documentViewController.setZoomOut(p);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
-            annotationHandler.mouseClicked(e);
+                // paint all annotations on top of the content buffer
+                for (AnnotationComponent annotation : annotationComponents) {
+                    if (((Component) annotation).isVisible()) {
+                        annotation.getAnnotation().render(gg2,
+                                GraphicsRenderingHints.SCREEN,
+                                documentViewModel.getViewRotation(),
+                                documentViewModel.getViewZoom(),
+                                annotation.hasFocus() && notSelectTool);
+                    }
+                }
+                // post paint clean up.
+                gg2.setColor(oldColor);
+                gg2.setStroke(oldStroke);
+                gg2.setTransform(prePaintTransform);
+            }
         }
-    }
-
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-
-        // request page focus
-//        requestFocusInWindow();
-
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            textSelectionHandler.mousePressed(e);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
-            annotationHandler.mousePressed(e);
-        }
-
     }
 
     public void clearSelectedText() {
-        if (textSelectionHandler != null) {
-            textSelectionHandler.clearSelection();
+        if (currentToolHandler instanceof TextSelectionPageHandler) {
+            ((TextSelectionPageHandler) currentToolHandler).clearSelection();
         }
     }
 
-    public void mouseReleased(MouseEvent e) {
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            textSelectionHandler.mouseReleased(e);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
-            annotationHandler.mouseReleased(e);
+    public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
+        if (currentToolHandler instanceof SelectionBoxHandler) {
+            ((SelectionBoxHandler) currentToolHandler).setSelectionRectangle(
+                    cursorLocation, selection);
         }
     }
 
-    public void mouseDragged(MouseEvent e) {
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            textSelectionHandler.mouseDragged(e);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
-            annotationHandler.mouseDragged(e);
-        }
-    }
-
-    public void setTextSelectionRectangle(Point cursorLocation, Rectangle selection) {
-        textSelectionHandler.setSelectionRectangle(cursorLocation, selection);
-    }
-
-    public void mouseMoved(MouseEvent e) {
-
-        // process text selection.
-        if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
-            textSelectionHandler.mouseMoved(e);
-        } else if (documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION) {
-            annotationHandler.mouseMoved(e);
+    public void clearSelectionRectangle() {
+        if (currentToolHandler instanceof SelectionBoxHandler) {
+            ((SelectionBoxHandler) currentToolHandler).clearRectangle(this);
         }
     }
 
@@ -1042,8 +964,12 @@ public class PageViewComponentImpl extends
         private boolean isRunning;
         private final Object isRunningLock = new Object();
 
-        //        private AbstractPageViewComponent pageComponent;
+        private AbstractPageViewComponent pageComponent;
         private boolean hasBeenQueued;
+
+        private PageInitializer(AbstractPageViewComponent pageComponent) {
+            this.pageComponent = pageComponent;
+        }
 
         public void run() {
 
@@ -1059,8 +985,23 @@ public class PageViewComponentImpl extends
                 // add annotation components to container, this only done
                 // once, but Annotation state can be refreshed with the api
                 // when needed.
-                annotationHandler.initializeAnnotationComponents(
-                        page.getAnnotations());
+                List<Annotation> annotations = page.getAnnotations();
+                if (annotations != null && annotations.size() > 0) {
+                    annotationComponents =
+                            new ArrayList<AnnotationComponent>(annotations.size());
+                    for (Annotation annotation : annotations) {
+                        AbstractAnnotationComponent comp =
+                                AnnotationComponentFactory.buildAnnotationComponent(
+                                        annotation, documentViewController,
+                                        pageComponent, documentViewModel);
+                        // add for painting
+                        annotationComponents.add(comp);
+                        // add to layout
+                        add(comp);
+                    }
+                }
+                pageComponent.validate();
+
                 // fire page annotation initialized callback
                 if (documentViewController.getAnnotationCallback() != null) {
                     documentViewController.getAnnotationCallback()
