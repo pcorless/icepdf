@@ -19,7 +19,6 @@ import org.icepdf.core.Controller;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
 
 import java.awt.*;
 import java.awt.event.KeyListener;
@@ -162,6 +161,8 @@ public interface DocumentViewController {
 
     public void deleteCurrentAnnotation();
 
+    public void deleteAnnotation(AnnotationComponent annotationComponent);
+
     public void undo();
 
     public void redo();
@@ -178,7 +179,7 @@ public interface DocumentViewController {
 
     public void clearSelectedAnnotations();
 
-    public void assignSelectedAnnotation(AnnotationComponentImpl annotationComponent);
+    public void assignSelectedAnnotation(AnnotationComponent annotationComponent);
 
     public void selectAllText();
 

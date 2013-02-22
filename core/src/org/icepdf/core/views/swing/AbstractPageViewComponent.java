@@ -15,18 +15,154 @@
 package org.icepdf.core.views.swing;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.views.*;
+import org.icepdf.core.views.common.*;
 
 import javax.swing.*;
-import javax.swing.event.MouseInputListener;
+import java.util.ArrayList;
 
 /**
  * Abstract PageViewComponent.
  */
 public abstract class AbstractPageViewComponent
         extends JComponent
-        implements PageViewComponent, MouseInputListener {
+        implements PageViewComponent {
+
+    protected DocumentView parentDocumentView;
+    protected DocumentViewModel documentViewModel;
+    protected DocumentViewController documentViewController;
+
+    // currently selected tool
+    protected ToolHandler currentToolHandler;
+
+    // annotations component for this pageViewComp.
+    protected ArrayList<AnnotationComponent> annotationComponents;
 
     public abstract Page getPage();
+
+    /**
+     * Sets the tool mode for the current page component implementation.  When
+     * a tool mode is assigned the respective tool handler is registered and
+     * various event listeners are registered.
+     *
+     * @param viewToolMode view tool modes as defined in
+     *                     DocumentViewMode.DISPLAY_TOOL_*
+     */
+    public void setToolMode(final int viewToolMode) {
+        if (currentToolHandler != null) {
+            removeMouseListener(currentToolHandler);
+            removeMouseMotionListener(currentToolHandler);
+        }
+        // assign the correct tool handler
+        switch (viewToolMode) {
+            case DocumentViewModel.DISPLAY_TOOL_ZOOM_IN:
+                currentToolHandler = new ZoomInPageHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION:
+                currentToolHandler = new TextSelectionPageHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_SELECTION:
+                // no handler is needed for selection as it is handle by
+                // each annotation.
+                currentToolHandler = new AnnotationSelectionHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION:
+                // handler is responsible for the initial creation of the annotation
+                currentToolHandler = new LinkAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION:
+                // handler is responsible for the initial creation of the annotation
+                currentToolHandler = new HighLightAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
+                currentToolHandler = new StrikeOutAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
+                currentToolHandler = new UnderLineAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:
+                currentToolHandler = new LineAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_LINE_ARROW_ANNOTATION:
+                currentToolHandler = new LineArrowAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_SQUARE_ANNOTATION:
+                currentToolHandler = new SquareAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_CIRCLE_ANNOTATION:
+                currentToolHandler = new CircleAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_INK_ANNOTATION:
+                currentToolHandler = new InkAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_FREE_TEXT_ANNOTATION:
+                currentToolHandler = new FreeTextAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_TEXT_ANNOTATION:
+                currentToolHandler = new TextAnnotationHandler(
+                        documentViewController,
+                        this,
+                        documentViewModel);
+                break;
+            default:
+                currentToolHandler = null;
+        }
+        if (currentToolHandler != null) {
+            addMouseListener(currentToolHandler);
+            addMouseMotionListener(currentToolHandler);
+        }
+    }
+
+    public ArrayList<AnnotationComponent> getAnnotationComponents() {
+        return annotationComponents;
+    }
+
+    public static boolean isAnnotationTool(final int displayTool) {
+        return displayTool == DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_SQUIGGLY_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION;
+    }
 
 }

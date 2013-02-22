@@ -16,9 +16,8 @@ package org.icepdf.core;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.PageViewComponent;
-
-import java.awt.*;
 
 /**
  * <p>Annotation callback allows developers to control how Annotation and
@@ -41,7 +40,7 @@ public interface AnnotationCallback {
      * @param annotation annotation that was activated by a user via the
      *                   PageViewComponent.
      */
-    public void proccessAnnotationAction(Annotation annotation);
+    public void processAnnotationAction(Annotation annotation);
 
     /**
      * <p>Implemented Annotation Callback method.  This method is called when a
@@ -53,12 +52,14 @@ public interface AnnotationCallback {
      */
     public void pageAnnotationsInitialized(Page page);
 
+
     /**
      * New annotation created with view tool.
      *
-     * @param page page that annotation was added to.
-     * @param rect new annotation bounds.
+     * @param page                page that annotation was added to.
+     * @param annotationComponent annotation component to be added to page.
      */
-    public void newAnnotation(PageViewComponent page, Rectangle rect);
+    public void newAnnotation(PageViewComponent page,
+                              AnnotationComponent annotationComponent);
 
 }

@@ -19,17 +19,15 @@ import org.icepdf.core.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 
 /**
  * Container logic used for view panning via mouse dragging for page views.
- * Panning can be handle in the view and donen't need to be handleed by the
+ * Panning can be handle in the view and doesn't need to be handled by the
  * page components.
  *
  * @since 4.0
  */
-public class PanningHandler implements MouseMotionListener, MouseListener {
+public class PanningHandler implements ToolHandler {
 
     private DocumentViewController documentViewController;
 
@@ -46,9 +44,7 @@ public class PanningHandler implements MouseMotionListener, MouseListener {
      * @param e awt mouse event
      */
     public void mouseDragged(MouseEvent e) {
-        if (documentViewController != null &&
-                documentViewController.getDocumentViewModel().getViewToolMode()
-                        == DocumentViewModel.DISPLAY_TOOL_PAN) {
+        if (documentViewController != null) {
 
             // Get data about the current view port position
             Adjustable verticalScrollbar =
@@ -75,9 +71,7 @@ public class PanningHandler implements MouseMotionListener, MouseListener {
     }
 
     public void mouseMoved(MouseEvent e) {
-        if (documentViewController != null &&
-                documentViewController.getDocumentViewModel().getViewToolMode()
-                        == DocumentViewModel.DISPLAY_TOOL_PAN) {
+        if (documentViewController != null) {
 
             Adjustable verticalScrollbar =
                     documentViewController.getVerticalScrollBar();
@@ -133,5 +127,9 @@ public class PanningHandler implements MouseMotionListener, MouseListener {
      */
     public void mouseExited(MouseEvent e) {
 
+    }
+
+    public void paintTool(Graphics g) {
+        // nothing to paint for paning.
     }
 }

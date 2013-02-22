@@ -51,4 +51,8 @@ public class TextSpriteDrawCmd extends AbstractDrawCmd {
 
         return currentShape;
     }
+
+    public TextSprite getTextSprite() {
+        return textSprite;
+    }
 }

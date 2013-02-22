@@ -14,10 +14,10 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
+import java.awt.*;
 import java.util.HashMap;
 
 
@@ -103,6 +103,55 @@ public class LinkAnnotation extends Annotation {
     }
 
     /**
+     * Gets an instance of a LinkAnnotation that has valid Object Reference.
+     *
+     * @param library         document library
+     * @param rect            bounding rectangle in user space
+     * @param annotationState annotation state object of undo
+     * @return new LinkAnnotation Instance.
+     */
+    public static LinkAnnotation getInstance(Library library,
+                                             Rectangle rect,
+                                             AnnotationState annotationState) {
+        // state manager
+        StateManager stateManager = library.getStateManager();
+
+        // create a new entries to hold the annotation properties
+        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        // set default link annotation values.
+        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
+        entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_LINK);
+        // coordinates
+        if (rect != null) {
+            entries.put(Annotation.RECTANGLE_KEY,
+                    PRectangle.getPRectangleVector(rect));
+        } else {
+            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
+        }
+        // build up a link annotation
+
+        // create the new instance
+        LinkAnnotation linkAnnotation = new LinkAnnotation(library, entries);
+        linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+        linkAnnotation.setNew(true);
+
+        // apply state
+        if (annotationState != null) {
+            annotationState.restore(linkAnnotation);
+        }
+        // some defaults just for display purposes.
+        else {
+            annotationState = new AnnotationState(
+                    Annotation.VISIBLE_RECTANGLE,
+                    LinkAnnotation.HIGHLIGHT_INVERT, 1f,
+                    BorderStyle.BORDER_STYLE_SOLID, Color.RED);
+            annotationState.restore(linkAnnotation);
+        }
+        return linkAnnotation;
+    }
+
+
+    /**
      * <p>Gets the link annotations highlight mode (visual effect)taht should
      * be displayed when the mouse button is pressed or held down inside it's
      * active area.</p>
@@ -114,11 +163,11 @@ public class LinkAnnotation extends Annotation {
         Object possibleName = getObject(HIGHLIGHT_MODE_KEY);
         if (possibleName instanceof Name) {
             Name name = (Name) possibleName;
-            if (name.getName().equalsIgnoreCase(HIGHLIGHT_NONE)) {
+            if (HIGHLIGHT_NONE.equalsIgnoreCase(name.getName())) {
                 return HIGHLIGHT_NONE;
-            } else if (name.getName().equalsIgnoreCase(HIGHLIGHT_OUTLINE)) {
+            } else if (HIGHLIGHT_OUTLINE.equalsIgnoreCase(name.getName())) {
                 return HIGHLIGHT_OUTLINE;
-            } else if (name.getName().equalsIgnoreCase(HIGHLIGHT_PUSH)) {
+            } else if (HIGHLIGHT_PUSH.equalsIgnoreCase(name.getName())) {
                 return HIGHLIGHT_PUSH;
             }
         }

@@ -12,13 +12,12 @@
  * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.views.swing;
+package org.icepdf.core.views.swing.annotations;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
@@ -26,6 +25,8 @@ import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.core.views.swing.ResizableBorder;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;
@@ -41,22 +42,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Represents an editable annotations component. This class wraps an Annotation
- * object which already knows how to paint itself and adds a hooks for
- * editing the annotation via mouse manipulation.
+ * AbstractAnnotationComponent contains base functionality for annotation
+ * components which are used to display annotation for a given page view. This
+ * class controls icon state, focus and basic component states: editable,
+ * movable, resizable, selected and show invisible border.
  *
- * @since 4.0
+ * @since 5.0
  */
-public class AnnotationComponentImpl extends JComponent implements FocusListener,
+public abstract class AbstractAnnotationComponent extends JComponent implements FocusListener,
         MouseInputListener, AnnotationComponent {
 
     private static final Logger logger =
-            Logger.getLogger(AnnotationComponentImpl.class.toString());
+            Logger.getLogger(AbstractAnnotationComponent.class.toString());
 
-    // disable/enable file caching, overrides fileCachingSize.
-    private static boolean isInteractiveAnnotationsEnabled;
-    private static Color annotationHighlightColor;
-    private static float annotationHighlightAlpha;
+    protected static boolean isInteractiveAnnotationsEnabled;
+    protected static Color annotationHighlightColor;
+    protected static float annotationHighlightAlpha;
 
     static {
         // enables interactive annotation support.
@@ -97,37 +98,38 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     public static final int resizeBoxSize = 4;
 
     // reusable border
-    private static ResizableBorder resizableBorder =
+    protected static ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);
 
-    private AbstractPageViewComponent pageViewComponent;
-    private DocumentViewController documentViewController;
-    private DocumentViewModel documentViewModel;
+    protected AbstractPageViewComponent pageViewComponent;
+    protected DocumentViewController documentViewController;
+    protected DocumentViewModel documentViewModel;
 
-    private float currentZoom;
-    private float currentRotation;
+    protected float currentZoom;
+    protected float currentRotation;
 
     protected Annotation annotation;
-    private boolean isMousePressed;
-    private boolean resized;
-    private boolean wasResized;
+    protected boolean isMousePressed;
+    protected boolean resized;
+    protected boolean wasResized;
 
     // border state flags.
-    private boolean isEditable;
-    private boolean isRollover;
-    private boolean isLinkAnnot;
-    private boolean isBorderStyle;
-    private boolean isSelected;
+    protected boolean isEditable;
+    protected boolean isRollover;
+    protected boolean isMovable;
+    protected boolean isResizable;
+    protected boolean isShowInvisibleBorder;
+    protected boolean isSelected;
 
     // selection, move and resize handling.
-    private int cursor;
-    private Point startPos;
-    private AnnotationState previousAnnotationState;
+    protected int cursor;
+    protected Point startPos;
+    protected AnnotationState previousAnnotationState;
 
-    public AnnotationComponentImpl(Annotation annotation,
-                                   DocumentViewController documentViewController,
-                                   AbstractPageViewComponent pageViewComponent,
-                                   DocumentViewModel documentViewModel) {
+    public AbstractAnnotationComponent(Annotation annotation,
+                                       DocumentViewController documentViewController,
+                                       AbstractPageViewComponent pageViewComponent,
+                                       DocumentViewModel documentViewModel) {
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
         this.documentViewController = documentViewController;
@@ -136,10 +138,9 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         addMouseListener(this);
         addMouseMotionListener(this);
 
-        // disabled focus until we are ready to implement our own handler. 
-//        setFocusable(true);
-//        addFocusListener(this);
-
+        // disabled focus until we are ready to implement our own handler.
+        setFocusable(true);
+        addFocusListener(this);
 
         // setup a resizable border.
         setLayout(new BorderLayout());
@@ -158,10 +159,6 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         // update zoom and rotation state
         currentRotation = documentViewModel.getViewRotation();
         currentZoom = documentViewModel.getViewZoom();
-
-        // get border info
-        isLinkAnnot = annotation instanceof LinkAnnotation;
-        isBorderStyle = annotation.isBorder();
 
     }
 
@@ -191,25 +188,26 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     }
 
     public void focusGained(FocusEvent e) {
-//        repaint();
+        repaint();
+        isSelected = true;
     }
 
     public void focusLost(FocusEvent e) {
-//        repaint();
+        repaint();
         // if we've lost focus then drop the selected state
-//        isSelected = false;
+        isSelected = false;
     }
 
-    private void resize() {
+    protected void resize() {
         if (getParent() != null) {
-            ((JComponent) getParent()).revalidate();
+            getParent().validate();
         }
         resized = true;
     }
 
     /**
-     * Refreshses the components bounds for the current page transformation.
-     * Bounds have are allready in user space.
+     * Refreshes the components bounds for the current page transformation.
+     * Bounds have are already in user space.
      */
     public void refreshDirtyBounds() {
         Page currentPage = pageViewComponent.getPage();
@@ -247,14 +245,14 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     /**
      * Normalizes and the given path with the specified transform.  The method
      * also rounds the Rectangle2D bounds values when creating a new rectangle
-     * instead of trunkating the values.
+     * instead of truncating the values.
      *
      * @param shapePath path to apply transform to
-     * @param at        tranfor to apply to shapePath
+     * @param at        transform to apply to shapePath
      * @return bound value of the shape path.
      */
-    private Rectangle commonBoundsNormalization(GeneralPath shapePath,
-                                                AffineTransform at) {
+    protected Rectangle commonBoundsNormalization(GeneralPath shapePath,
+                                                  AffineTransform at) {
         shapePath.transform(at);
         Rectangle2D pageSpaceBound = shapePath.getBounds2D();
         return new Rectangle(
@@ -275,7 +273,7 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         if (resized) {
             refreshAnnotationRect();
             if (getParent() != null) {
-                ((JComponent) getParent()).revalidate();
+                getParent().validate();
                 getParent().repaint();
             }
             resized = false;
@@ -284,62 +282,9 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
 
     }
 
-    public void paintComponent(Graphics g) {
-        Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null && currentPage.isInitiated()) {
-            // update bounds for for component
-            if (currentZoom != documentViewModel.getViewZoom() ||
-                    currentRotation != documentViewModel.getViewRotation()) {
-                validate();
-            }
-        }
+    abstract public void paintComponent(Graphics g);
 
-        // sniff out tool bar state to set correct annotation border
-        isEditable = ((documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) &&
-                !(annotation.getFlagReadOnly() || annotation.getFlagLocked() ||
-                        annotation.getFlagInvisible() || annotation.getFlagHidden()));
-
-        // paint rollover effects.
-        if (isMousePressed && !(documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION)) {
-            Graphics2D gg2 = (Graphics2D) g;
-            if (annotation instanceof LinkAnnotation) {
-                LinkAnnotation linkAnnotation = (LinkAnnotation) annotation;
-                String highlightMode = linkAnnotation.getHighlightMode();
-                Rectangle2D rect = new Rectangle(0, 0, getWidth(), getHeight());
-                if (LinkAnnotation.HIGHLIGHT_INVERT.equals(highlightMode)) {
-                    gg2.setColor(annotationHighlightColor);
-                    gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                            annotationHighlightAlpha));
-                    gg2.fillRect((int) rect.getX(),
-                            (int) rect.getY(),
-                            (int) rect.getWidth(),
-                            (int) rect.getHeight());
-                } else if (LinkAnnotation.HIGHLIGHT_OUTLINE.equals(highlightMode)) {
-                    gg2.setColor(annotationHighlightColor);
-                    gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                            annotationHighlightAlpha));
-                    gg2.drawRect((int) rect.getX(),
-                            (int) rect.getY(),
-                            (int) rect.getWidth(),
-                            (int) rect.getHeight());
-                } else if (LinkAnnotation.HIGHLIGHT_PUSH.equals(highlightMode)) {
-                    gg2.setColor(annotationHighlightColor);
-                    gg2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                            annotationHighlightAlpha));
-                    gg2.drawRect((int) rect.getX(),
-                            (int) rect.getY(),
-                            (int) rect.getWidth(),
-                            (int) rect.getHeight());
-                }
-            }
-        }
-    }
+    abstract public void resetAppearanceShapes();
 
     public void setBounds(int x, int y, int width, int height) {
         super.setBounds(x, y, width, height);
@@ -353,14 +298,11 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                 !(annotation.getFlagLocked() || annotation.getFlagReadOnly())) {
             ResizableBorder border = (ResizableBorder) getBorder();
             setCursor(Cursor.getPredefinedCursor(border.getCursor(me)));
-        } else if (toolMode == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) {
-            // keep it the same
         } else {
-            // set cursor back to the hand cursor. 
+            // set cursor back to the hand cursor.
             setCursor(documentViewController.getViewCursor(
                     DocumentViewController.CURSOR_HAND_ANNOTATION));
         }
-
     }
 
     public void mouseExited(MouseEvent mouseEvent) {
@@ -372,29 +314,27 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
     public void mouseClicked(MouseEvent e) {
         // clear the selection.
 //        requestFocus();
-
-        if (!(documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-                documentViewModel.getViewToolMode() ==
-                        DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) &&
+        // on click pass event to annotation callback if we are in normal viewing
+        // mode.
+        if (!(AbstractPageViewComponent.isAnnotationTool(
+                documentViewModel.getViewToolMode())) &&
                 isInteractiveAnnotationsEnabled) {
 
             if (documentViewController.getAnnotationCallback() != null) {
                 documentViewController.getAnnotationCallback()
-                        .proccessAnnotationAction(annotation);
+                        .processAnnotationAction(annotation);
             }
         }
     }
 
     public void mouseEntered(MouseEvent e) {
-        // set border back to default
+        // set border highlight when mouse over.
         isRollover = documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION;
         repaint();
     }
 
-    public void mousePressed(MouseEvent me) {
-
+    public void mousePressed(MouseEvent e) {
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.
         isMousePressed = true;
@@ -403,19 +343,23 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
                 isInteractiveAnnotationsEnabled &&
                 !annotation.getFlagReadOnly()) {
-            ResizableBorder border = (ResizableBorder) getBorder();
-            cursor = border.getCursor(me);
-            startPos = me.getPoint();
-            previousAnnotationState = new AnnotationState(this);
-            // mark annotation as selected. 
-            documentViewController.assignSelectedAnnotation(this);
+            initiateMouseMoved(e);
         }
         repaint();
     }
 
+    protected void initiateMouseMoved(MouseEvent e) {
+        ResizableBorder border = (ResizableBorder) getBorder();
+        cursor = border.getCursor(e);
+        startPos = e.getPoint();
+        previousAnnotationState = new AnnotationState(this);
+        // mark annotation as selected.
+        documentViewController.assignSelectedAnnotation(this);
+    }
+
     public void mouseDragged(MouseEvent me) {
 
-        if (startPos != null &&
+        if (startPos != null && isMovable &&
                 !(annotation.getFlagLocked() || annotation.getFlagReadOnly())) {
 
             int x = getX();
@@ -428,73 +372,84 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
 
             switch (cursor) {
                 case Cursor.N_RESIZE_CURSOR:
-                    if (!(h - dy < 12)) {
+                    if (isResizable && !(h - dy < 12)) {
                         setBounds(x, y + dy, w, h - dy);
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.S_RESIZE_CURSOR:
-                    if (!(h + dy < 12)) {
+                    if (isResizable && !(h + dy < 12)) {
                         setBounds(x, y, w, h + dy);
                         startPos = me.getPoint();
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.W_RESIZE_CURSOR:
-                    if (!(w - dx < 18)) {
+                    if (isResizable && !(w - dx < 18)) {
                         setBounds(x + dx, y, w - dx, h);
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.E_RESIZE_CURSOR:
-                    if (!(w + dx < 18)) {
+                    if (isResizable && !(w + dx < 18)) {
                         setBounds(x, y, w + dx, h);
                         startPos = me.getPoint();
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.NW_RESIZE_CURSOR:
-                    if (!(w - dx < 18) && !(h - dy < 18)) {
+                    if (isResizable && !(w - dx < 18) && !(h - dy < 18)) {
                         setBounds(x + dx, y + dy, w - dx, h - dy);
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.NE_RESIZE_CURSOR:
-                    if (!(w + dx < 18) && !(h - dy < 18)) {
+                    if (isResizable && !(w + dx < 18) && !(h - dy < 18)) {
                         setBounds(x, y + dy, w + dx, h - dy);
                         startPos = new Point(me.getX(), startPos.y);
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.SW_RESIZE_CURSOR:
-                    if (!(w - dx < 18) && !(h + dy < 18)) {
+                    if (isResizable && !(w - dx < 18) && !(h + dy < 18)) {
                         setBounds(x + dx, y, w - dx, h + dy);
                         startPos = new Point(startPos.x, me.getY());
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.SE_RESIZE_CURSOR:
-                    if (!(w + dx < 18) && !(h + dy < 18)) {
+                    if (isResizable && !(w + dx < 18) && !(h + dy < 18)) {
                         setBounds(x, y, w + dx, h + dy);
                         startPos = me.getPoint();
                         resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
 
                 case Cursor.MOVE_CURSOR:
-                    Rectangle bounds = getBounds();
-                    bounds.translate(dx, dy);
-                    setBounds(bounds);
-                    resize();
+                    if (isMovable) {
+                        Rectangle bounds = getBounds();
+                        bounds.translate(dx, dy);
+                        setBounds(bounds);
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
             }
-            setCursor(Cursor.getPredefinedCursor(cursor));
             validate();
         }
     }
@@ -508,6 +463,8 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         if (wasResized) {
             wasResized = false;
 
+            // update the bounds
+//            refreshAnnotationRect();
 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
@@ -517,36 +474,6 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         }
         repaint();
     }
-
-    /**
-     * private ResizableBorder generateAnnotationBorder() {
-     * <p/>
-     * // none visible or locked, we don't want anything
-     * if ((annotation.getFlagReadOnly() ||
-     * annotation.getFlagLocked() ||
-     * annotation.getFlagInvisible() ||
-     * annotation.getFlagHidden())) {
-     * return invisibleLockedBorder;
-     * }
-     * <p/>
-     * // link annotation
-     * if (annotation instanceof LinkAnnotation) {
-     * // link annotation that has no border
-     * if (annotation.getBorderStyle() == null) {
-     * return outlineResizeBorder;
-     * }
-     * // link annotation that has a border
-     * else {
-     * return resizeBorder;
-     * }
-     * }
-     * <p/>
-     * // everything else, no border but movable is selected.
-     * else {
-     * return moveBorder;
-     * }
-     * }
-     */
 
     /**
      * Is the annotation editable
@@ -561,12 +488,8 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
         return isRollover;
     }
 
-    public boolean isLinkAnnot() {
-        return isLinkAnnot;
-    }
-
     public boolean isBorderStyle() {
-        return isBorderStyle;
+        return annotation.isBorder();
     }
 
     public boolean isSelected() {
@@ -575,5 +498,17 @@ public class AnnotationComponentImpl extends JComponent implements FocusListener
 
     public void setSelected(boolean selected) {
         isSelected = selected;
+    }
+
+    public boolean isMovable() {
+        return isMovable;
+    }
+
+    public boolean isResizable() {
+        return isResizable;
+    }
+
+    public boolean isShowInvisibleBorder() {
+        return isShowInvisibleBorder;
     }
 }

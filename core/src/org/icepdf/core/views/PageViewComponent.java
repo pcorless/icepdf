@@ -14,7 +14,7 @@
  */
 package org.icepdf.core.views;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.views.swing.annotations.AbstractAnnotationComponent;
 
 import java.awt.*;
 
@@ -56,6 +56,12 @@ public interface PageViewComponent {
     public void invalidatePage();
 
     /**
+     * Invalidates the page buffer used for bufferer paints forcing a clean
+     * repaint of the pge. .
+     */
+    public void invalidatePageBuffer();
+
+    /**
      * Called to free resources used by this component.
      */
     public void dispose();
@@ -73,10 +79,11 @@ public interface PageViewComponent {
     public boolean isShowing();
 
     /**
-     * Clear any internal data stractures that represent selected text and
+     * Clear any internal data structures that represent selected text and
      * repaint the component.
      */
     public void clearSelectedText();
+
 
     /**
      * Sets the text that is contained in the specified recttangle and the
@@ -86,14 +93,16 @@ public interface PageViewComponent {
      * @param cursorLocation location of cursor or mouse.
      * @param selection      rectangle of text to include in selection.
      */
-    public void setTextSelectionRectangle(Point cursorLocation, Rectangle selection);
+    public void setSelectionRectangle(Point cursorLocation, Rectangle selection);
+
+    public void clearSelectionRectangle();
 
     /**
      * Add a new annotation object to this page view comnponent.
      *
      * @param annotation annotation to add.
      */
-    public AnnotationComponent addAnnotation(Annotation annotation);
+    public void addAnnotation(AbstractAnnotationComponent annotation);
 
     /**
      * Remove the specified annotation from this page view.
@@ -101,4 +110,6 @@ public interface PageViewComponent {
      * @param annotationComp annotation to be removed.
      */
     public void removeAnnotation(AnnotationComponent annotationComp);
+
+    public void setToolMode(final int viewToolMode);
 }

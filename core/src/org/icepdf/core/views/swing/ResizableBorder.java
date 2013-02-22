@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 /**
  * The resizable border is mainly designed to bed used with mutable annotation
- * in the UI but supect it could be used for ather content manipulation. Like
+ * in the UI but suspect it could be used for after content manipulation. Like
  * other Swing Borders the same instance can be used on multiple components.
  *
  * @since 4.0
@@ -39,24 +39,32 @@ public class ResizableBorder extends AbstractBorder {
 
     private static Color selectColor;
     private static Color outlineColor;
+    private static Color outlineResizeColor;
 
     static {
 
         // sets annotation selected highlight colour
         try {
             String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.select.color", "#0000FF");
+                    "org.icepdf.core.views.page.annotation.select.color", "#999999");
             int colorValue = ColorUtil.convertColor(color);
             selectColor =
                     new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("0000FF", 16));
+                            Integer.parseInt("999999", 16));
 
             color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.outline.color", "#000000");
+                    "org.icepdf.core.views.page.annotation.outline.color", "#cccccc");
             colorValue = ColorUtil.convertColor(color);
             outlineColor =
                     new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("000000", 16));
+                            Integer.parseInt("cccccc", 16));
+
+            color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.outline.color", "#666666");
+            colorValue = ColorUtil.convertColor(color);
+            outlineResizeColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("666666", 16));
 
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
@@ -76,6 +84,11 @@ public class ResizableBorder extends AbstractBorder {
             Cursor.E_RESIZE_CURSOR, Cursor.NW_RESIZE_CURSOR, Cursor.NE_RESIZE_CURSOR,
             Cursor.SW_RESIZE_CURSOR, Cursor.SE_RESIZE_CURSOR};
 
+    private static final Stroke dashedBorder =
+            new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{2, 1}, 0);
+    private static final Stroke solidBorder =
+            new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);
+
     protected int resizeWidgetDim;
 
     public ResizableBorder(int resizeBoxSize) {
@@ -93,19 +106,25 @@ public class ResizableBorder extends AbstractBorder {
     public void paintBorder(Component component, Graphics g, int x, int y,
                             int w, int h) {
         boolean isSelected = false;
+        boolean isBorderStyle = false;
+
         boolean isEditable = false;
         boolean isRollover = false;
-        boolean isLinkAnnot = false;
-        boolean isBorderStyle = false;
+        boolean isMovable = false;
+        boolean isResizable = false;
+        boolean isShowInvisibleBorder = false;
 
         // get render flags from component.
         if (component instanceof AnnotationComponent) {
             AnnotationComponent annot = (AnnotationComponent) component;
+            isSelected = annot.isSelected();
+            isBorderStyle = annot.isBorderStyle();
+
             isEditable = annot.isEditable();
             isRollover = annot.isRollover();
-            isLinkAnnot = annot.isLinkAnnot();
-            isBorderStyle = annot.isBorderStyle();
-            isSelected = annot.isSelected();
+            isMovable = annot.isMovable();
+            isResizable = annot.isResizable();
+            isShowInvisibleBorder = annot.isShowInvisibleBorder();
         }
 
         // if we aren't in the edit mode, then we have nothing to paint.
@@ -113,26 +132,31 @@ public class ResizableBorder extends AbstractBorder {
             return;
         }
 
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setStroke(dashedBorder);
+
         // get paint colour
         if (isSelected || component.hasFocus() || isRollover) {
-            g.setColor(selectColor);
+            g2.setColor(selectColor);
         } else {
-            g.setColor(outlineColor);
+            g2.setColor(outlineColor);
         }
 
         // paint border
-        if (isSelected || isRollover || (isLinkAnnot && !isBorderStyle)) {
-            g.drawRect(x, y, w - 1, h - 1);
+        if (isSelected || isRollover || (isShowInvisibleBorder && !isBorderStyle)) {
+            g2.drawRect(x, y, w - 1, h - 1);
         }
 
         // paint resize widgets.
-        if ((isSelected || isRollover) && isLinkAnnot) {
+        g2.setColor(outlineResizeColor);
+        g2.setStroke(solidBorder);
+        if ((isSelected || isRollover) && isResizable) {
             for (int location : locations) {
                 Rectangle rect = getRectangle(x, y, w, h, location);
 //                g.setColor(Color.WHITE);
-                g.fillRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
+                g2.fillRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
 //                g.setColor(Color.BLACK);
-                g.drawRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
+                g2.drawRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
             }
         }
     }
@@ -166,27 +190,32 @@ public class ResizableBorder extends AbstractBorder {
     public int getCursor(MouseEvent me) {
         Component c = me.getComponent();
         boolean isEditable = false;
-        boolean isLinkAnnot = false;
+        boolean isMovable = false;
+        boolean isResizable = false;
 
         // get render flags from component.
-        if (c instanceof AnnotationComponentImpl) {
-            AnnotationComponentImpl annot = (AnnotationComponentImpl) c;
+        if (c instanceof AnnotationComponent) {
+            AnnotationComponent annot = (AnnotationComponent) c;
             isEditable = annot.isEditable();
-            isLinkAnnot = annot.isLinkAnnot();
+            isResizable = annot.isResizable();
+            isMovable = annot.isMovable();
         }
 
         int w = c.getWidth();
         int h = c.getHeight();
 
         // show resize cursors for link annotations
-        if ((isEditable && isLinkAnnot)) {
+        if (isResizable) {
             for (int i = 0; i < locations.length; i++) {
                 Rectangle rect = getRectangle(0, 0, w, h, locations[i]);
                 if (rect.contains(me.getPoint()))
                     return cursors[i];
             }
         }
+        if (isMovable) {
+            return Cursor.MOVE_CURSOR;
+        }
         // other wise just show the move. 
-        return Cursor.MOVE_CURSOR;
+        return Cursor.DEFAULT_CURSOR;
     }
 }

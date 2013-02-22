@@ -14,7 +14,6 @@
  */
 package org.icepdf.core.views;
 
-import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.FocusListener;
@@ -25,8 +24,7 @@ import java.awt.event.FocusListener;
  * @see org.icepdf.ri.common.views.AbstractDocumentView
  * @since 2.5
  */
-public interface DocumentView extends
-        MouseInputListener, AdjustmentListener, FocusListener {
+public interface DocumentView extends AdjustmentListener, FocusListener {
     /**
      * Indicates that a two column view will have odd-numbered pages on the left.
      */
@@ -86,4 +84,14 @@ public interface DocumentView extends
      * Update the child components which make up this view.
      */
     public void updateDocumentView();
+
+    /**
+     * Sets the tool type/mode that is to be enabled for the particular
+     * view.  Mouse and keyboard listeners are associated with this call.  No
+     * actual state is stored in the view this is only for setup purposes.  The
+     * tool state is stored in the DocumentViewModel.
+     *
+     * @param viewToolMode tool mode type.
+     */
+    public void setToolMode(final int viewToolMode);
 }
