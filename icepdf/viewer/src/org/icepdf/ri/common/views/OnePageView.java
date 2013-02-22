@@ -14,16 +14,15 @@
  */
 package org.icepdf.ri.common.views;
 
-import org.icepdf.ri.common.KeyListenerPageChanger;
-import org.icepdf.ri.common.MouseWheelListenerPageChanger;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.ri.common.KeyListenerPageChanger;
+import org.icepdf.ri.common.MouseWheelListenerPageChanger;
+import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 
 /**
  * <p>Constructs a one  page view as defined in the PDF specification. A one
@@ -110,7 +109,7 @@ public class OnePageView extends AbstractDocumentView {
 
             PageViewComponent pageViewComponent =
                     pageComponents.get(documentViewModel.getViewCurrentPageIndex());
-            if (pageViewComponent != null){
+            if (pageViewComponent != null) {
 
                 // remove old component
                 pagesPanel.removeAll();
@@ -118,14 +117,14 @@ public class OnePageView extends AbstractDocumentView {
                 pageViewComponent.setDocumentViewCallback(this);
                 // add component to layout
                 pagesPanel.add(new PageViewDecorator(
-                        (AbstractPageViewComponent)pageViewComponent));
+                        (AbstractPageViewComponent) pageViewComponent));
                 pageViewComponent.invalidate();
             }
             documentScrollpane.revalidate();
 
             // make sure we have setup all pages with callback call.
-            for( PageViewComponent pageViewCom : pageComponents ){
-                if (pageViewCom != null){
+            for (PageViewComponent pageViewCom : pageComponents) {
+                if (pageViewCom != null) {
                     pageViewCom.setDocumentViewCallback(this);
                 }
             }
@@ -144,10 +143,6 @@ public class OnePageView extends AbstractDocumentView {
      */
     public int getPreviousPageIncrement() {
         return 1;
-    }
-
-    public void mouseReleased(MouseEvent e) {
-        super.mouseReleased(e);
     }
 
     public void dispose() {
@@ -176,7 +171,7 @@ public class OnePageView extends AbstractDocumentView {
             int count = pagesPanel.getComponentCount();
             Component comp;
             // should only have one page view decorator for single page view.
-            for (int i= 0; i < count; i++){
+            for (int i = 0; i < count; i++) {
                 comp = pagesPanel.getComponent(i);
                 if (comp instanceof PageViewDecorator) {
                     PageViewDecorator pvd = (PageViewDecorator) comp;
@@ -193,9 +188,9 @@ public class OnePageView extends AbstractDocumentView {
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace *2;
-        pageViewHeight += AbstractDocumentView.verticalSpace *2;
-        return new Dimension((int)pageViewWidth, (int)pageViewHeight);
+        pageViewWidth += AbstractDocumentView.horizontalSpace * 2;
+        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
+        return new Dimension((int) pageViewWidth, (int) pageViewHeight);
     }
 
     public void paintComponent(Graphics g) {

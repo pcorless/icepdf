@@ -14,12 +14,12 @@
  */
 package org.icepdf.ri.common.views;
 
-import org.icepdf.ri.common.CurrentPageChanger;
-import org.icepdf.ri.common.KeyListenerPageColumnChanger;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.ri.common.CurrentPageChanger;
+import org.icepdf.ri.common.KeyListenerPageColumnChanger;
+import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -102,7 +102,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
 
         // finally add all the components
         // add components for every page in the document
-        java.util.List<AbstractPageViewComponent> pageComponents = 
+        java.util.List<AbstractPageViewComponent> pageComponents =
                 documentViewModel.getPageComponents();
 
         if (pageComponents != null) {
@@ -115,10 +115,10 @@ public class TwoColumnPageView extends AbstractDocumentView {
                     pagesPanel.add(new JLabel());
                 }
                 pageViewComponent = pageComponents.get(i);
-                if (pageViewComponent != null ) {
+                if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
                     pagesPanel.add(new PageViewDecorator(
-                            (AbstractPageViewComponent)pageViewComponent));
+                            (AbstractPageViewComponent) pageViewComponent));
                 }
             }
         }
@@ -144,8 +144,6 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     public void mouseReleased(MouseEvent e) {
-        super.mouseReleased(e);
-
         // let the current PageListener now about the mouse release
         currentPageChanger.mouseReleased(e);
     }
@@ -230,10 +228,10 @@ public class TwoColumnPageView extends AbstractDocumentView {
         pageViewWidth *= 2;
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace *4;
-        pageViewHeight += AbstractDocumentView.verticalSpace *2;
+        pageViewWidth += AbstractDocumentView.horizontalSpace * 4;
+        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
 
-        return new Dimension((int)pageViewWidth, (int)pageViewHeight);
+        return new Dimension((int) pageViewWidth, (int) pageViewHeight);
 
     }
 

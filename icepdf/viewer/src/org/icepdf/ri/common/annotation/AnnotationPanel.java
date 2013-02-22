@@ -14,9 +14,8 @@
  */
 package org.icepdf.ri.common.annotation;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
+import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
@@ -42,6 +41,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
     private JPanel annotationPanel;
     private AnnotationPanelAdapter annotationPropertyPanel;
     private ActionsPanel actionsPanel;
+    private BorderPanel borderPanel;
 
     public AnnotationPanel(SwingController controller) {
         super(new BorderLayout(), true);
@@ -58,17 +58,29 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         this.setEnabled(false);
     }
 
-    public AnnotationPanelAdapter buildAnnotationPropertyPanel(AnnotationComponentImpl annotationComp) {
+    public AnnotationPanelAdapter buildAnnotationPropertyPanel(AnnotationComponent annotationComp) {
         if (annotationComp != null) {
             // check action type
             Annotation annotation = annotationComp.getAnnotation();
             if (annotation != null && annotation instanceof LinkAnnotation) {
                 return new LinkAnnotationPanel(controller);
+            } else if (annotation != null && annotation instanceof TextMarkupAnnotation) {
+                return new TextMarkupAnnotationPanel(controller);
+            } else if (annotation != null && annotation instanceof LineAnnotation) {
+                return new LineAnnotationPanel(controller);
+            } else if (annotation != null && annotation instanceof SquareAnnotation) {
+                return new SquareAnnotationPanel(controller);
+            } else if (annotation != null && annotation instanceof CircleAnnotation) {
+                return new CircleAnnotationPanel(controller);
+            } else if (annotation != null && annotation instanceof InkAnnotation) {
+                return new InkAnnotationPanel(controller);
+            } else if (annotation != null && annotation instanceof TextAnnotation) {
+                return new TextAnnotationPanel(controller);
+            } else if (annotation != null && annotation instanceof FreeTextAnnotation) {
+                return new FreeTextAnnotationPanel(controller);
             }
-            // todo add other panels for other action types.
         }
-        // default panel
-        return new LinkAnnotationPanel(controller);
+        return null;
     }
 
     /**
@@ -76,25 +88,39 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
      * annotation panel and action panel.  If the annotation is null default
      * panels are created.
      *
-     * @param annotation annotation properites to show in UI, can be null;
+     * @param annotation annotation properties to show in UI, can be null;
      */
-    public void setAnnotationComponent(AnnotationComponentImpl annotation) {
+    public void setAnnotationComponent(AnnotationComponent annotation) {
 
         // remove and add the action panel for action type.
-        if (annotationPropertyPanel != null){
+        if (annotationPropertyPanel != null) {
             annotationPanel.remove(annotationPropertyPanel);
-            annotationPropertyPanel = buildAnnotationPropertyPanel(annotation);
+        }
+        annotationPropertyPanel = buildAnnotationPropertyPanel(annotation);
+        if (annotationPropertyPanel != null) {
             annotationPropertyPanel.setAnnotationComponent(annotation);
             addGB(annotationPanel, annotationPropertyPanel, 0, 0, 1, 1);
         }
 
         // add the new action
         actionsPanel.setAnnotationComponent(annotation);
+        borderPanel.setAnnotationComponent(annotation);
+
+        // hide border panel for line components
+        if (annotationPropertyPanel instanceof LineAnnotationPanel ||
+                annotationPropertyPanel instanceof SquareAnnotationPanel ||
+                annotationPropertyPanel instanceof CircleAnnotationPanel ||
+                annotationPropertyPanel instanceof InkAnnotationPanel ||
+                annotationPropertyPanel instanceof FreeTextAnnotationPanel) {
+            borderPanel.setVisible(false);
+        } else {
+            borderPanel.setVisible(true);
+        }
 
         revalidate();
     }
 
-    private void setGUI(){
+    private void setGUI() {
         annotationPanel = new JPanel(new GridBagLayout());
         add(annotationPanel, BorderLayout.NORTH);
 
@@ -108,10 +134,14 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         // add everything back again.
         annotationPropertyPanel = buildAnnotationPropertyPanel(null);
         actionsPanel = new ActionsPanel(controller);
+        borderPanel = new BorderPanel(controller);
 
         // panels to add.
-        addGB(annotationPanel, annotationPropertyPanel, 0, 0, 1, 1);
-        addGB(annotationPanel, actionsPanel, 0, 1, 1, 1);
+        if (annotationPropertyPanel != null) {
+            addGB(annotationPanel, annotationPropertyPanel, 0, 0, 1, 1);
+        }
+        addGB(annotationPanel, borderPanel, 0, 1, 1, 1);
+        addGB(annotationPanel, actionsPanel, 0, 2, 1, 1);
 
     }
 
@@ -119,9 +149,10 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         // apply to child components.
-        if (annotationPropertyPanel != null && actionsPanel != null){
+        if (annotationPropertyPanel != null && actionsPanel != null) {
             annotationPropertyPanel.setEnabled(enabled);
             actionsPanel.setEnabled(enabled);
+            borderPanel.setEnabled(enabled);
         }
     }
 

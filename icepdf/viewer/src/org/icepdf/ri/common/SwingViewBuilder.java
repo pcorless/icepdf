@@ -1403,6 +1403,16 @@ public class SwingViewBuilder {
         commonToolBarSetup(toolbar, false);
         addToToolBar(toolbar, buildSelectToolButton());
         addToToolBar(toolbar, buildLinkAnnotationToolButton());
+        addToToolBar(toolbar, buildHighlightAnnotationToolButton());
+        addToToolBar(toolbar, buildStrikeOutAnnotationToolButton());
+        addToToolBar(toolbar, buildUnderlineAnnotationToolButton());
+        addToToolBar(toolbar, buildLineAnnotationToolButton());
+        addToToolBar(toolbar, buildLineArrowAnnotationToolButton());
+        addToToolBar(toolbar, buildSquareAnnotationToolButton());
+        addToToolBar(toolbar, buildCircleAnnotationToolButton());
+        addToToolBar(toolbar, buildInkAnnotationToolButton());
+        addToToolBar(toolbar, buildFreeTextAnnotationToolButton());
+        addToToolBar(toolbar, buildTextAnnotationToolButton());
         return toolbar;
     }
 
@@ -1450,6 +1460,106 @@ public class SwingViewBuilder {
                 "link", buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setLinkAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildHighlightAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.highlight.label"),
+                messageBundle.getString("viewer.toolbar.tool.highlight.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setHighlightAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildStrikeOutAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.strikeOut.label"),
+                messageBundle.getString("viewer.toolbar.tool.strikeOut.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setStrikeOutAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildUnderlineAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.underline.label"),
+                messageBundle.getString("viewer.toolbar.tool.underline.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setUnderlineAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildLineAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.line.label"),
+                messageBundle.getString("viewer.toolbar.tool.line.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setLineAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildLineArrowAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.lineArrow.label"),
+                messageBundle.getString("viewer.toolbar.tool.lineArrow.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setLineArrowAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildSquareAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.rectangle.label"),
+                messageBundle.getString("viewer.toolbar.tool.rectangle.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setSquareAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildCircleAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.circle.label"),
+                messageBundle.getString("viewer.toolbar.tool.circle.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setCircleAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildInkAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.ink.label"),
+                messageBundle.getString("viewer.toolbar.tool.ink.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setInkAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildFreeTextAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.freeText.label"),
+                messageBundle.getString("viewer.toolbar.tool.freeText.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setFreeTextAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildTextAnnotationToolButton() {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.textAnno.label"),
+                messageBundle.getString("viewer.toolbar.tool.textAnno.tooltip"),
+                buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setTextAnnotationToolButton(btn);
         return btn;
     }
 
@@ -1543,7 +1653,7 @@ public class SwingViewBuilder {
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
-                    messageBundle.getString("viewer.utilityPane.link.tab.title"),
+                    messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
                     buildAnnotationPanel());
         }
 
@@ -1750,6 +1860,18 @@ public class SwingViewBuilder {
 
         return tmp;
     }
+
+    protected JToggleButton makeToolbarToggleButton(
+            String title, String toolTip, java.awt.Font font) {
+        JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
+        tmp.setFont(font);
+        tmp.setToolTipText(toolTip);
+        tmp.setPreferredSize(new Dimension(30, 30));
+        tmp.setText(title);
+        tmp.setFocusPainted(true);
+        return tmp;
+    }
+
 
     protected JToggleButton makeToolbarToggleButton(
             String title, String toolTip, String imageName,

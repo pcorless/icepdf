@@ -14,17 +14,16 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageChanger;
 import org.icepdf.ri.common.MouseWheelListenerPageChanger;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.PageViewComponent;
-import org.icepdf.core.views.swing.AbstractPageViewComponent;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 
 /**
  * <p>Constructs a two page view as defined in the PDF specification.
@@ -150,8 +149,8 @@ public class TwoPageView extends AbstractDocumentView {
             documentScrollpane.validate();
 
             // make sure we have setup all pages with callback call.
-            for( PageViewComponent pageViewCom : pageComponents ){
-                if (pageViewCom != null){
+            for (PageViewComponent pageViewCom : pageComponents) {
+                if (pageViewCom != null) {
                     pageViewCom.setDocumentViewCallback(this);
                 }
             }
@@ -170,14 +169,6 @@ public class TwoPageView extends AbstractDocumentView {
      */
     public int getPreviousPageIncrement() {
         return 2;
-    }
-
-    public void mouseReleased(MouseEvent e) {
-        super.mouseReleased(e);
-
-        // let the current PageListener now about the mouse release
-        if (currentPageChanger != null)
-            currentPageChanger.mouseReleased(e);
     }
 
     public void dispose() {
@@ -206,7 +197,7 @@ public class TwoPageView extends AbstractDocumentView {
             int count = pagesPanel.getComponentCount();
             Component comp;
             // should only have one page view decorator for single page view.
-            for (int i= 0; i < count; i++){
+            for (int i = 0; i < count; i++) {
                 comp = pagesPanel.getComponent(i);
                 if (comp instanceof PageViewDecorator) {
                     PageViewDecorator pvd = (PageViewDecorator) comp;
@@ -227,10 +218,10 @@ public class TwoPageView extends AbstractDocumentView {
         pageViewWidth *= 2;
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace *4;
-        pageViewHeight += AbstractDocumentView.verticalSpace *2;
+        pageViewWidth += AbstractDocumentView.horizontalSpace * 4;
+        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
 
-        return new Dimension((int)pageViewWidth, (int)pageViewHeight);
+        return new Dimension((int) pageViewWidth, (int) pageViewHeight);
     }
 
     public void paintComponent(Graphics g) {

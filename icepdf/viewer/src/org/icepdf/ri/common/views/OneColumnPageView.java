@@ -14,16 +14,15 @@
  */
 package org.icepdf.ri.common.views;
 
-import org.icepdf.ri.common.CurrentPageChanger;
-import org.icepdf.ri.common.KeyListenerPageColumnChanger;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.ri.common.CurrentPageChanger;
+import org.icepdf.ri.common.KeyListenerPageColumnChanger;
+import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseEvent;
 import java.util.List;
 
 
@@ -100,12 +99,12 @@ public class OneColumnPageView extends AbstractDocumentView {
                 documentViewModel.getPageComponents();
 
         if (pageComponents != null) {
-            for( PageViewComponent pageViewComponent : pageComponents ){
-                if (pageViewComponent != null){
+            for (PageViewComponent pageViewComponent : pageComponents) {
+                if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
                     pagesPanel.add(new PageViewDecorator(
-                            (AbstractPageViewComponent)pageViewComponent));
+                            (AbstractPageViewComponent) pageViewComponent));
                 }
             }
         }
@@ -130,13 +129,6 @@ public class OneColumnPageView extends AbstractDocumentView {
         return 1;
     }
 
-    public void mouseReleased(MouseEvent e) {
-        super.mouseReleased(e);
-
-        // let the current PageListener now about the mouse release
-        currentPageChanger.mouseReleased(e);
-    }
-
     public void dispose() {
         disposing = true;
         // remove utilities
@@ -156,7 +148,7 @@ public class OneColumnPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-       float pageViewWidth = 0;
+        float pageViewWidth = 0;
         float pageViewHeight = 0;
         if (pagesPanel != null) {
             int currCompIndex = documentViewController.getCurrentPageIndex();
@@ -177,9 +169,9 @@ public class OneColumnPageView extends AbstractDocumentView {
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 
         // add any horizontal padding from layout manager
-        pageViewWidth += AbstractDocumentView.horizontalSpace *2;
-        pageViewHeight += AbstractDocumentView.verticalSpace *2;
-        return new Dimension((int)pageViewWidth, (int)pageViewHeight);
+        pageViewWidth += AbstractDocumentView.horizontalSpace * 2;
+        pageViewHeight += AbstractDocumentView.verticalSpace * 2;
+        return new Dimension((int) pageViewWidth, (int) pageViewHeight);
     }
 
     public void paintComponent(Graphics g) {

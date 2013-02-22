@@ -19,32 +19,31 @@ import org.icepdf.core.Controller;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.views.*;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
+import org.icepdf.core.views.swing.annotations.AbstractAnnotationComponent;
+import org.icepdf.core.views.swing.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
-import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -155,7 +154,7 @@ public class DocumentViewControllerImpl
         // add a delete key functionality for annotation edits.
         Action deleteAnnotation = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                if (documentViewModel != null){
+                if (documentViewModel != null) {
                     deleteCurrentAnnotation();
                     viewerController.reflectUndoCommands();
                 }
@@ -164,9 +163,9 @@ public class DocumentViewControllerImpl
         InputMap inputMap = documentViewScrollPane.getInputMap(
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
         inputMap.put(KeyStroke.getKeyStroke("DELETE"),
-                                    "removeSelecteAnnotation");
+                "removeSelecteAnnotation");
         documentViewScrollPane.getActionMap().put("removeSelecteAnnotation",
-                                     deleteAnnotation);
+                deleteAnnotation);
     }
 
     public Document getDocument() {
@@ -246,22 +245,22 @@ public class DocumentViewControllerImpl
         this.annotationCallback = annotationCallback;
     }
 
-    public void setSecurityCallback(SecurityCallback securityCallback){
+    public void setSecurityCallback(SecurityCallback securityCallback) {
         this.securityCallback = securityCallback;
     }
 
-    public void clearSelectedAnnotations(){
-        if (documentViewModel.getCurrentAnnotation() != null){
+    public void clearSelectedAnnotations() {
+        if (documentViewModel.getCurrentAnnotation() != null) {
             documentViewModel.getCurrentAnnotation().setSelected(false);
             // fire change event
             firePropertyChange(PropertyConstants.ANNOTATION_DESELECTED,
-                        documentViewModel.getCurrentAnnotation(),
-                        null);
+                    documentViewModel.getCurrentAnnotation(),
+                    null);
             documentViewModel.setCurrentAnnotation(null);
         }
     }
 
-    public void assignSelectedAnnotation(AnnotationComponentImpl annotationComponent){
+    public void assignSelectedAnnotation(AnnotationComponent annotationComponent) {
         firePropertyChange(PropertyConstants.ANNOTATION_SELECTED,
                 documentViewModel.getCurrentAnnotation(),
                 annotationComponent);
@@ -288,8 +287,8 @@ public class DocumentViewControllerImpl
         }
         // fire property change
         firePropertyChange(PropertyConstants.TEXT_DESELECTED,
-                    null,
-                    null);
+                null,
+                null);
 
     }
 
@@ -313,7 +312,7 @@ public class DocumentViewControllerImpl
     public void selectAllText() {
         documentViewModel.setSelectAll(true);
         documentView.repaint();
-        firePropertyChange(PropertyConstants.TEXT_SELECT_ALL, null,null);
+        firePropertyChange(PropertyConstants.TEXT_SELECT_ALL, null, null);
     }
 
     public String getSelectedText() {
@@ -359,7 +358,7 @@ public class DocumentViewControllerImpl
      *
      * @return security callback associated with this document.
      */
-    public SecurityCallback getSecurityCallback(){
+    public SecurityCallback getSecurityCallback() {
         return securityCallback;
     }
 
@@ -544,6 +543,12 @@ public class DocumentViewControllerImpl
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
         }
 
+        // todo set tool mode, so that mouse listeners can be setup for this view
+        // as it may have been inactive
+        // notify the view of the tool change
+        documentView.setToolMode(documentViewModel.getViewToolMode());
+
+
         // add the new view the scroll pane
         documentViewScrollPane.setViewportView(documentView);
         documentViewScrollPane.validate();
@@ -578,7 +583,7 @@ public class DocumentViewControllerImpl
                     float pageViewHeight = documentView.getDocumentSize().height;
 
                     // pageViewHeight insert padding on each side.
-                    pageViewHeight += AbstractDocumentView.layoutInserts *2;
+                    pageViewHeight += AbstractDocumentView.layoutInserts * 2;
 
                     if (viewportHeight > 0) {
                         newZoom = (viewportHeight / pageViewHeight);
@@ -592,7 +597,7 @@ public class DocumentViewControllerImpl
                     float pageViewWidth = documentView.getDocumentSize().width;
 
                     // add insert padding on each side.
-                    pageViewWidth += AbstractDocumentView.layoutInserts *2;
+                    pageViewWidth += AbstractDocumentView.layoutInserts * 2;
 
                     if (viewportWidth > 0) {
                         newZoom = (viewportWidth / pageViewWidth);
@@ -606,8 +611,7 @@ public class DocumentViewControllerImpl
             //  otherwise the view will zoom into the general center of the page
             if (getVerticalScrollBar().getValue() == 0) {
                 setZoom(newZoom, new Point(0, 0), true);
-            }
-            else {
+            } else {
                 setZoom(newZoom, null, true);
             }
         }
@@ -805,8 +809,26 @@ public class DocumentViewControllerImpl
 //    }
 
     public boolean setToolMode(final int viewToolMode) {
-        return documentViewModel != null &&
-                documentViewModel.setViewToolMode(viewToolMode);
+
+        if (documentViewModel != null) {
+            boolean changed = documentViewModel.setViewToolMode(viewToolMode);
+            // update the view and page components so the correct tool handler
+            // can ge assigned.
+            if (changed) {
+                // notify the view of the tool change
+                documentView.setToolMode(viewToolMode);
+
+                // notify the page components of the tool change.
+                List<AbstractPageViewComponent> pageComponents =
+                        documentViewModel.getPageComponents();
+                for (AbstractPageViewComponent page : pageComponents) {
+                    page.setToolMode(viewToolMode);
+                }
+            }
+            return changed;
+        } else {
+            return false;
+        }
     }
 
     public boolean isToolModeSelected(final int viewToolMode) {
@@ -1120,13 +1142,13 @@ public class DocumentViewControllerImpl
      * <li>new annotation crreated, currently only for new link annotations</li>
      * <li></li>
      *
-     * @param event property being changes
+     * @param event    property being changes
      * @param oldValue old value, null if no old value
      * @param newValue new annotation value.
      */
     public void firePropertyChange(String event, Object oldValue,
                                    Object newValue) {
-        changes.firePropertyChange(event,  oldValue, newValue);
+        changes.firePropertyChange(event, oldValue, newValue);
     }
 
     public void addPropertyChangeListener(PropertyChangeListener l) {
@@ -1134,13 +1156,18 @@ public class DocumentViewControllerImpl
     }
 
     public void deleteCurrentAnnotation() {
-        // make sure there is a current annotation in model
-        AnnotationComponentImpl annotationComponent =
+        AbstractAnnotationComponent annotationComponent = (AbstractAnnotationComponent)
                 documentViewModel.getCurrentAnnotation();
-        if (documentViewModel != null && annotationComponent !=null ){
+        if (!(annotationComponent instanceof PopupAnnotationComponent)) {
+            deleteAnnotation(annotationComponent);
+        }
+    }
+
+    public void deleteAnnotation(AnnotationComponent annotationComponent) {
+        if (documentViewModel != null && annotationComponent != null) {
 
             // parent component
-            AbstractPageViewComponent pageComponent =
+            PageViewComponent pageComponent =
                     annotationComponent.getPageViewComponent();
 
             // store the annotation state in the caretaker

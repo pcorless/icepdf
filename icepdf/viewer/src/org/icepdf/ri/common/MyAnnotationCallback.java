@@ -22,13 +22,13 @@ import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.PageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
+import org.icepdf.core.views.swing.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
-import java.awt.*;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,7 +61,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
      * @param annotation annotation that was activated by a user via the
      *                   PageViewComponent.
      */
-    public void proccessAnnotationAction(Annotation annotation) {
+    public void processAnnotationAction(Annotation annotation) {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine("Annotation " + annotation.toString());
             if (annotation.getAction() != null) {
@@ -137,25 +137,23 @@ public class MyAnnotationCallback implements AnnotationCallback {
     /**
      * New annotation created with view tool.
      *
-     * @param pageComponent page that annotation was added to.
-     * @param rect          annotation bounds
+     * @param pageComponent       page that annotation was added to.
+     * @param annotationComponent component that will be created.
      */
-    public void newAnnotation(PageViewComponent pageComponent, Rectangle rect) {
+    public void newAnnotation(PageViewComponent pageComponent,
+                              AnnotationComponent annotationComponent) {
         // do a bunch a work to get at the page object.
         Document document = documentViewController.getDocument();
         PageTree pageTree = document.getPageTree();
         Page page = pageTree.getPage(pageComponent.getPageIndex());
-        Annotation annotation = page.createAnnotation(rect, null);
+        page.addAnnotation(annotationComponent.getAnnotation());
+
         // no we have let the pageComponent now about it.
-        AnnotationComponentImpl annotComponent = (AnnotationComponentImpl)
-                pageComponent.addAnnotation(annotation);
-        // normalize the rectangle
-        annotComponent.setBounds(rect);
-        annotComponent.refreshAnnotationRect();
+        pageComponent.addAnnotation((AbstractAnnotationComponent) annotationComponent);
 
         // create new state for memento and apply/restore to save state to
         // document data structures. 
-        AnnotationState newAnnotationState = new AnnotationState(annotComponent);
+        AnnotationState newAnnotationState = new AnnotationState(annotationComponent);
         // saves the state changes back to the document structure.
         newAnnotationState.apply(newAnnotationState);
         newAnnotationState.restore();

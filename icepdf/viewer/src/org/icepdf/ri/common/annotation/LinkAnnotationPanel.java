@@ -14,12 +14,10 @@
  */
 package org.icepdf.ri.common.annotation;
 
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationState;
-import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 
@@ -27,33 +25,21 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ResourceBundle;
 
 /**
  * Link Annotation panel intended use is for the manipulation of LinkAnnotation
- * appearance prooperties.  This could be used with other annotation types but
+ * appearance properties.  This could be used with other annotation types but
  * it's not suggested.
  *
  * @since 4.0
  */
-public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
-        ActionListener {
+public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemListener {
 
     // default list values.
-    private static final int DEFAULT_LINK_TYPE = 1;
     private static final int DEFAULT_HIGHLIGHT_STYLE = 1;
-    private static final int DEFAULT_LINE_THICKNESS = 0;
-    private static final int DEFAULT_LINE_STYLE = 0;
-    private static final Color DEFAULT_BORDER_COLOR = Color.BLACK;
-
-    // link types.
-    private final ValueLabelItem[] LINK_TYPE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(Annotation.VISIBLE_RECTANGLE, "Visible Rectangle"),
-            new ValueLabelItem(Annotation.INVISIBLE_RECTANGLE, "Invisible Rectangle")};
 
     // highlight states styles.
     private final ValueLabelItem[] HIGHLIGHT_STYLE_LIST = new ValueLabelItem[]{
@@ -62,46 +48,20 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             new ValueLabelItem(LinkAnnotation.HIGHLIGHT_OUTLINE, "Outline"),
             new ValueLabelItem(LinkAnnotation.HIGHLIGHT_PUSH, "Push")};
 
-    // line thicknesses.
-    private final ValueLabelItem[] LINE_THICKNESS_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(1f, "1"),
-            new ValueLabelItem(2f, "2"),
-            new ValueLabelItem(3f, "3"),
-            new ValueLabelItem(4f, "4"),
-            new ValueLabelItem(5f, "5"),
-            new ValueLabelItem(6f, "10"),
-            new ValueLabelItem(7f, "15")};
-
-    // line styles.
-    private final ValueLabelItem[] LINE_STYLE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID, "Solid"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED, "Dashed"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_BEVELED, "Beveled"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_INSET, "Inset"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_UNDERLINE, "Underline")};
-
     private SwingController controller;
     private ResourceBundle messageBundle;
 
     // action instance that is being edited
-    private AnnotationComponentImpl currentAnnotationComponent;
+    private AnnotationComponent currentAnnotationComponent;
 
     // link action appearance properties.
-    private JComboBox linkTypeBox;
     private JComboBox highlightStyleBox;
-    private JComboBox lineThicknessBox;
-    private JComboBox lineStyleBox;
-    private JButton colorButton;
 
     // appearance properties to take care of.
-    private int linkType;
     private String highlightStyle;
-    private float lineThickness;
-    private Name lineStyle;
-    private Color color;
 
     public LinkAnnotationPanel(SwingController controller) {
-        super(new GridLayout(5, 2, 5, 2), true);
+        super(new GridLayout(1, 2, 5, 2), true);
 
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
@@ -128,7 +88,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
      *
      * @param newAnnotation to set and apply to this UI
      */
-    public void setAnnotationComponent(AnnotationComponentImpl newAnnotation) {
+    public void setAnnotationComponent(AnnotationComponent newAnnotation) {
 
         if (newAnnotation == null || newAnnotation.getAnnotation() == null ||
                 !(newAnnotation.getAnnotation() instanceof LinkAnnotation)) {
@@ -143,58 +103,22 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 (LinkAnnotation) currentAnnotationComponent.getAnnotation();
 
         // apply values to appears
-        linkType = linkAnnotation.getLinkType();
         highlightStyle = linkAnnotation.getHighlightMode();
-        lineThickness = linkAnnotation.getLineThickness();
-        lineStyle = linkAnnotation.getLineStyle();
-        color = linkAnnotation.getColor();
-
-        applySelectedValue(linkTypeBox, linkType);
         applySelectedValue(highlightStyleBox, highlightStyle);
-        applySelectedValue(lineThicknessBox, lineThickness);
-        applySelectedValue(lineStyleBox, lineStyle);
-        colorButton.setBackground(color);
 
         // disable appearance input if we have a invisible rectangle
-        enableAppearanceInputComponents(linkAnnotation.getLinkType());
+        enableAppearanceInputComponents(linkAnnotation.getBorderType());
     }
 
     public void itemStateChanged(ItemEvent e) {
         ValueLabelItem item = (ValueLabelItem) e.getItem();
         if (e.getStateChange() == ItemEvent.SELECTED) {
-            if (e.getSource() == linkTypeBox) {
-                linkType = (Integer) item.getValue();
-                // enable/disable fields based on types
-                enableAppearanceInputComponents(linkType);
-            } else if (e.getSource() == highlightStyleBox) {
+            if (e.getSource() == highlightStyleBox) {
                 highlightStyle = (String) item.getValue();
-            } else if (e.getSource() == lineThicknessBox) {
-                lineThickness = (Float) item.getValue();
-            } else if (e.getSource() == lineStyleBox) {
-                lineStyle = (Name) item.getValue();
             }
             // save the action state back to the document structure.
             updateAnnotationState();
-
             currentAnnotationComponent.repaint();
-        }
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == colorButton) {
-            Color chosenColor =
-                    JColorChooser.showDialog(colorButton,
-                            messageBundle.getString("viewer.utilityPane.link.colorChooserTitle"),
-                            colorButton.getBackground());
-            if (chosenColor != null) {
-                // change the colour of the button background
-                colorButton.setBackground(chosenColor);
-                color = chosenColor;
-
-                // save the action state back to the document structure.
-                updateAnnotationState();
-                currentAnnotationComponent.repaint();
-            }
         }
     }
 
@@ -205,56 +129,22 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
 
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
-                messageBundle.getString("viewer.utilityPane.link.appearanceTitle"),
+                messageBundle.getString("viewer.utilityPane.annotation.link.appearance.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
-        // link type box
-        linkTypeBox = new JComboBox(LINK_TYPE_LIST);
-        linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
-        linkTypeBox.addItemListener(this);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.linkType")));
-        add(linkTypeBox);
         // highlight style box.
         highlightStyleBox = new JComboBox(HIGHLIGHT_STYLE_LIST);
         highlightStyleBox.setSelectedIndex(DEFAULT_HIGHLIGHT_STYLE);
         highlightStyleBox.addItemListener(this);
         add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.highlightType")));
+                messageBundle.getString("viewer.utilityPane.annotation.link.highlightType")));
         add(highlightStyleBox);
-        // line thickness
-        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
-        lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
-        lineThicknessBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString(
-                "viewer.utilityPane.link.lineThickness")));
-        add(lineThicknessBox);
-        // line style
-        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
-        lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
-        lineStyleBox.addItemListener(this);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.lineStyle")));
-        add(lineStyleBox);
-        // line colour
-        colorButton = new JButton();
-        colorButton.addActionListener(this);
-        colorButton.setOpaque(true);
-        colorButton.setBackground(DEFAULT_BORDER_COLOR);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.link.colorLabel")));
-        add(colorButton);
     }
 
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
-
-        safeEnable(linkTypeBox, enabled);
         safeEnable(highlightStyleBox, enabled);
-        safeEnable(lineThicknessBox, enabled);
-        safeEnable(lineStyleBox, enabled);
-        safeEnable(colorButton, enabled);
     }
 
     private void updateAnnotationState() {
@@ -263,14 +153,14 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         // store new state from panel
         AnnotationState newState = new AnnotationState(currentAnnotationComponent);
         AnnotationState changes = new AnnotationState(
-                linkType, highlightStyle, lineThickness, lineStyle, color);
+                null, highlightStyle, 0, null, null);
         // apply new properties to the action and the component
         newState.apply(changes);
 
-        // update thickness control as it might have changed
-        lineThickness = currentAnnotationComponent.getAnnotation()
-                .getLineThickness();
-        applySelectedValue(lineThicknessBox, lineThickness);
+        LinkAnnotation linkAnnotation = (LinkAnnotation)
+                currentAnnotationComponent.getAnnotation();
+//        linkAnnotation.set();
+
 
         // Add our states to the undo caretaker
         ((AbstractDocumentViewModel) controller.getDocumentViewController().
@@ -289,18 +179,10 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private void enableAppearanceInputComponents(int linkType) {
         if (linkType == Annotation.INVISIBLE_RECTANGLE) {
             // everything but highlight style and link type
-            safeEnable(linkTypeBox, true);
             safeEnable(highlightStyleBox, true);
-            safeEnable(lineThicknessBox, false);
-            safeEnable(lineStyleBox, false);
-            safeEnable(colorButton, false);
         } else {
             // enable all fields.
-            safeEnable(linkTypeBox, true);
             safeEnable(highlightStyleBox, true);
-            safeEnable(lineThicknessBox, true);
-            safeEnable(lineStyleBox, true);
-            safeEnable(colorButton, true);
         }
     }
 
@@ -330,39 +212,5 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             }
         }
         comboBox.addItemListener(this);
-    }
-
-    /**
-     * Class to associate with a JComboBox
-     * Used to allow us to display different text to the user than we set in the backend
-     */
-    private class ValueLabelItem {
-        private Object value;
-        private String label;
-
-        public ValueLabelItem(Object value, String label) {
-            this.value = value;
-            this.label = label;
-        }
-
-        public Object getValue() {
-            return value;
-        }
-
-        public void setValue(Object value) {
-            this.value = value;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public void setLabel(String label) {
-            this.label = label;
-        }
-
-        public String toString() {
-            return label;
-        }
     }
 }

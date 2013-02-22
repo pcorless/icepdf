@@ -18,11 +18,11 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
-import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.actions.LaunchAction;
+import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
@@ -53,7 +53,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private ResourceBundle messageBundle;
 
     // current annotation pointer
-    private AnnotationComponentImpl currentAnnotaiton;
+    private AnnotationComponent currentAnnotaiton;
 
     // actionList of action actions
     private DefaultListModel actionListModel;
@@ -99,30 +99,30 @@ public class ActionsPanel extends AnnotationPanelAdapter
      * is used to build the associated action list and of which all action
      * edits act on.
      *
-     * @param annotaiton current action, should not be null.
+     * @param annotation current action, should not be null.
      */
-    public void setAnnotationComponent(AnnotationComponentImpl annotaiton) {
+    public void setAnnotationComponent(AnnotationComponent annotation) {
 
-        currentAnnotaiton = annotaiton;
+        currentAnnotaiton = annotation;
 
         // remove previous old annotations
         actionListModel.clear();
 
         // get annotations from action
-        if (annotaiton.getAnnotation() != null &&
-                annotaiton.getAnnotation().getAction() != null) {
-            addActionToList(annotaiton.getAnnotation().getAction());
+        if (annotation.getAnnotation() != null &&
+                annotation.getAnnotation().getAction() != null) {
+            addActionToList(annotation.getAnnotation().getAction());
             // select first item in list. 
-            if (actionListModel.size() > 0){
+            if (actionListModel.size() > 0) {
                 actionList.setSelectedIndex(0);
             }
         }
         // check to see if the link annotation "dest" key is present. as
         // we'll edit this field with the goToAction dialog
-        else if (annotaiton.getAnnotation() != null &&
-                annotaiton.getAnnotation() instanceof LinkAnnotation) {
+        else if (annotation.getAnnotation() != null &&
+                annotation.getAnnotation() instanceof LinkAnnotation) {
             LinkAnnotation linkAnnotaiton = (LinkAnnotation)
-                    annotaiton.getAnnotation();
+                    annotation.getAnnotation();
             if (linkAnnotaiton.getDestination() != null) {
                 actionListModel.addElement(new ActionEntry(destinationLabel, null));
             }
@@ -288,7 +288,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
             }
         }
         // show goto dialog for goToAction or link annotation dest
-        else if (action instanceof GoToAction || action == null){
+        else if (action instanceof GoToAction || action == null) {
             // goToAction dialog handles the save action processing
             showGoToActionDialog();
         }
@@ -373,13 +373,12 @@ public class ActionsPanel extends AnnotationPanelAdapter
     }
 
 
-
-    private void showGoToActionDialog(){
+    private void showGoToActionDialog() {
         // create new instance of dialog if it hasn't been created.
-        if (goToActionDialog != null){
+        if (goToActionDialog != null) {
             goToActionDialog.dispose();
         }
-        goToActionDialog = new GoToActionDialog(controller,this);
+        goToActionDialog = new GoToActionDialog(controller, this);
         // set the new annotation
         goToActionDialog.setAnnotationComponent(currentAnnotaiton);
         // make it visible.
@@ -457,12 +456,13 @@ public class ActionsPanel extends AnnotationPanelAdapter
     /**
      * Clear the action list of all action items.
      */
-    public void clearActionList(){
+    public void clearActionList() {
         actionListModel.clear();
     }
 
     /**
      * Add an action to the list.
+     *
      * @param action action object to add.
      */
     public void addActionToList(org.icepdf.core.pobjects.actions.Action action) {
@@ -474,10 +474,11 @@ public class ActionsPanel extends AnnotationPanelAdapter
             actionListModel.addElement(new ActionEntry(launchActionLabel, action));
         }
         // todo check for an next entry
+        // todo add a "none" entry
     }
 
     /**
-     * Utility to udpate the action annotation when changes have been made to
+     * Utility to update the action annotation when changes have been made to
      * 'Dest' which has the same notation as 'GoTo'.  It's the pre action way
      * of doign things and is still very common of link Annotations. .
      *

@@ -14,14 +14,14 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.AnnotationComponentImpl;
-import org.icepdf.core.Memento;
 import org.icepdf.ri.common.UndoCaretaker;
 
 import java.awt.*;
@@ -61,7 +61,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected UndoCaretaker undoCaretaker;
 
     // currently selected annotation
-    protected AnnotationComponentImpl currentAnnotation;
+    protected AnnotationComponent currentAnnotation;
 
     // page view settings
     protected float userZoom = 1.0f, oldUserZoom = 1.0f;
@@ -123,18 +123,18 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     public void executePageInitialization(Runnable runnable) throws InterruptedException {
-        try{
+        try {
             pageInitilizationThreadPool.execute(runnable);
-        }catch(RejectedExecutionException e){
+        } catch (RejectedExecutionException e) {
             log.severe("Page Initialization Thread Pool was shutdown.");
             initPageInitializationThreadPool();
         }
     }
 
     public void executePagePainter(Runnable runnable) throws InterruptedException {
-        try{
+        try {
             pagePainterThreadPool.execute(runnable);
-        }catch(RejectedExecutionException e){
+        } catch (RejectedExecutionException e) {
             log.severe("Page Painter Thread Pool was shutdown.");
             initPagePainterThreadPool();
         }
@@ -344,7 +344,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         pageInitilizationThreadPool.purge();
         pagePainterThreadPool.purge();
 
-        if (log.isLoggable(Level.FINER)){
+        if (log.isLoggable(Level.FINER)) {
             log.finer("ShutdownNow for thread pool executors. ");
         }
         pageInitilizationThreadPool.shutdownNow();
@@ -353,26 +353,28 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Gets the currently selected annotation in the document model.
+     *
      * @return currently selected annotation, null if there is none.
      */
-    public AnnotationComponentImpl getCurrentAnnotation() {
+    public AnnotationComponent getCurrentAnnotation() {
         return currentAnnotation;
     }
 
     /**
      * Sets the current annotation.  This is manily called by the UI tools
      * when editing and selecting page annotations.
+     *
      * @param currentAnnotation annotation to make current.
      */
-    public void setCurrentAnnotation(AnnotationComponentImpl currentAnnotation) {
+    public void setCurrentAnnotation(AnnotationComponent currentAnnotation) {
         // clear the previously selected state.
-        if (this.currentAnnotation != null){
+        if (this.currentAnnotation != null) {
             this.currentAnnotation.setSelected(false);
             this.currentAnnotation.repaint();
         }
         this.currentAnnotation = currentAnnotation;
         // select the new selection if valid
-        if (this.currentAnnotation != null){
+        if (this.currentAnnotation != null) {
             this.currentAnnotation.setSelected(true);
         }
     }
@@ -380,6 +382,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     /**
      * Gets annotation caretaker responsible for saving states as defined
      * by the momento pattern.
+     *
      * @return document leve annotation care taker.
      */
     public UndoCaretaker getAnnotationCareTaker() {
@@ -390,7 +393,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         undoCaretaker.addState(oldMementoState, newMementoState);
     }
 
-    private void initPageInitializationThreadPool(){
+    private void initPageInitializationThreadPool() {
         log.fine("Starting PageInitializationThreadPool. ");
         pageInitilizationThreadPool = new ThreadPoolExecutor(
                 maxPageInitThreads, maxPageInitThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
@@ -407,7 +410,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         });
     }
 
-    private void initPagePainterThreadPool(){
+    private void initPagePainterThreadPool() {
         log.fine("Starting PagePainterThreadPool. ");
         pagePainterThreadPool = new ThreadPoolExecutor(
                 maxPainterThreads, maxPainterThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
