@@ -280,9 +280,9 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 // calculate the line that will stroke the bounds
                 GeneralPath stroke = new GeneralPath();
                 Rectangle2D bound = shape.getBounds2D();
-                double y = bound.getMinY() + (bound.getHeight() / 2);
-                stroke.moveTo(bound.getMinX(), y);
-                stroke.lineTo(bound.getMaxX(), y);
+                float y = (float) (bound.getMinY() + (bound.getHeight() / 2));
+                stroke.moveTo((float) bound.getMinX(), y);
+                stroke.lineTo((float) bound.getMaxX(), y);
                 stroke.closePath();
                 shapes.add(new ShapeDrawCmd(stroke));
                 shapes.add(new StrokeDrawCmd(new BasicStroke(1f)));
@@ -295,8 +295,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 // calculate the line that will stroke the bounds
                 GeneralPath stroke = new GeneralPath();
                 Rectangle2D bound = shape.getBounds2D();
-                stroke.moveTo(bound.getMinX(), bound.getMinY());
-                stroke.lineTo(bound.getMaxX(), bound.getMinY());
+                stroke.moveTo((float) bound.getMinX(), (float) bound.getMinY());
+                stroke.lineTo((float) bound.getMaxX(), (float) bound.getMinY());
                 stroke.closePath();
                 shapes.add(new ShapeDrawCmd(stroke));
                 shapes.add(new ColorDrawCmd(textMarkupColor));

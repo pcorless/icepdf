@@ -16,7 +16,7 @@ package org.icepdf.core.pobjects;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -176,9 +176,12 @@ public class PRectangle extends Rectangle2D.Float {
         rect = new Rectangle2D.Double(rect.getX(),
                 rect.getY(),
                 rect.getWidth(), rect.getHeight());
-
-        return Arrays.asList(new double[]{
-                rect.getMinX(), rect.getMinY(), rect.getMaxX(), rect.getMaxY()});
+        ArrayList coords = new ArrayList(4);
+        coords.add(rect.getMinX());
+        coords.add(rect.getMinY());
+        coords.add(rect.getMaxX());
+        coords.add(rect.getMaxY());
+        return coords;
     }
 
     /**
