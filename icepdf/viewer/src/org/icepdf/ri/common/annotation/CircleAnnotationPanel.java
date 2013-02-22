@@ -76,9 +76,9 @@ public class CircleAnnotationPanel extends AnnotationPanelAdapter implements Ite
     private AnnotationComponent currentAnnotationComponent;
 
     // link action appearance properties.
-    private JComboBox<ValueLabelItem> lineThicknessBox;
-    private JComboBox<ValueLabelItem> lineStyleBox;
-    private JComboBox<ValueLabelItem> fillTypeBox;
+    private JComboBox lineThicknessBox;
+    private JComboBox lineStyleBox;
+    private JComboBox fillTypeBox;
     private JButton colorFillButton;
     private JButton colorBorderButton;
 
@@ -224,13 +224,13 @@ public class CircleAnnotationPanel extends AnnotationPanelAdapter implements Ite
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // Line thickness
-        lineThicknessBox = new JComboBox<ValueLabelItem>(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.circle.lineThickness")));
         add(lineThicknessBox);
         // Line style
-        lineStyleBox = new JComboBox<ValueLabelItem>(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.circle.lineStyle")));
@@ -244,7 +244,7 @@ public class CircleAnnotationPanel extends AnnotationPanelAdapter implements Ite
                 messageBundle.getString("viewer.utilityPane.annotation.circle.colorBorderLabel")));
         add(colorBorderButton);
         // fill type options
-        fillTypeBox = new JComboBox<ValueLabelItem>(PAINT_TYPE_LIST);
+        fillTypeBox = new JComboBox(PAINT_TYPE_LIST);
         fillTypeBox.setSelectedIndex(DEFAULT_FILL_TYPE);
         fillTypeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.circle.fillTypeLabel")));

@@ -79,10 +79,10 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private AnnotationComponent currentAnnotationComponent;
 
     // link action appearance properties.
-    private JComboBox<ValueLabelItem> startEndTypeBox;
-    private JComboBox<ValueLabelItem> endEndTypeBox;
-    private JComboBox<ValueLabelItem> lineThicknessBox;
-    private JComboBox<ValueLabelItem> lineStyleBox;
+    private JComboBox startEndTypeBox;
+    private JComboBox endEndTypeBox;
+    private JComboBox lineThicknessBox;
+    private JComboBox lineStyleBox;
     private JButton colorButton;
 
     private LineAnnotation annotation;
@@ -192,25 +192,25 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // Line start type
-        startEndTypeBox = new JComboBox<ValueLabelItem>(END_TYPE_LIST);
+        startEndTypeBox = new JComboBox(END_TYPE_LIST);
         startEndTypeBox.setSelectedIndex(DEFAULT_START_END_TYPE);
         startEndTypeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.startStyle")));
         add(startEndTypeBox);
         // Line end type
-        endEndTypeBox = new JComboBox<ValueLabelItem>(END_TYPE_LIST);
+        endEndTypeBox = new JComboBox(END_TYPE_LIST);
         endEndTypeBox.setSelectedIndex(DEFAULT_END_END_TYPE);
         endEndTypeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.endStyle")));
         add(endEndTypeBox);
         // Line thickness
-        lineThicknessBox = new JComboBox<ValueLabelItem>(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineThickness")));
         add(lineThicknessBox);
         // Line style
-        lineStyleBox = new JComboBox<ValueLabelItem>(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineStyle")));

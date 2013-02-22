@@ -69,7 +69,7 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private AnnotationComponent currentAnnotationComponent;
 
     // link action appearance properties.
-    private JComboBox<ValueLabelItem> iconNameBox;
+    private JComboBox iconNameBox;
 
     private TextAnnotation annotation;
 
@@ -148,7 +148,7 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // Line thickness
-        iconNameBox = new JComboBox<ValueLabelItem>(TEXT_ICON_LIST);
+        iconNameBox = new JComboBox(TEXT_ICON_LIST);
         iconNameBox.setSelectedIndex(DEFAULT_ICON_NAME);
         iconNameBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.text.iconName")));

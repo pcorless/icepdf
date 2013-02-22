@@ -69,8 +69,8 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     private AnnotationComponent currentAnnotationComponent;
 
     // link action appearance properties.
-    private JComboBox<ValueLabelItem> lineThicknessBox;
-    private JComboBox<ValueLabelItem> lineStyleBox;
+    private JComboBox lineThicknessBox;
+    private JComboBox lineStyleBox;
     private JButton colorBorderButton;
 
     private InkAnnotation annotation;
@@ -172,13 +172,13 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // Line thickness
-        lineThicknessBox = new JComboBox<ValueLabelItem>(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.lineThickness")));
         add(lineThicknessBox);
         // Line style
-        lineStyleBox = new JComboBox<ValueLabelItem>(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.lineStyle")));
