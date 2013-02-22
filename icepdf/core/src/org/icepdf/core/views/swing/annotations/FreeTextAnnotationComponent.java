@@ -16,6 +16,7 @@ package org.icepdf.core.views.swing.annotations;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.TextSprite;
@@ -26,6 +27,7 @@ import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.swing.AbstractPageViewComponent;
 
 import javax.swing.*;
+import javax.swing.border.AbstractBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
@@ -35,6 +37,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -177,10 +180,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                         freeTextAnnotation.getColor(),
                         (int) freeTextAnnotation.getBorderStyle().getStrokeWidth()));
             } else if (freeTextAnnotation.getBorderStyle().isStyleDashed()) {
-                freeTextPane.setBorder(BorderFactory.createDashedBorder(
-                        freeTextAnnotation.getColor(),
-                        (int) freeTextAnnotation.getBorderStyle().getStrokeWidth(),
-                        3, 3, false));
+                freeTextPane.setBorder(
+                        new DashedBorder(freeTextAnnotation.getBorderStyle(),
+                                freeTextAnnotation.getColor()));
             }
         } else {
             freeTextPane.setBorder(BorderFactory.createEmptyBorder());
@@ -310,6 +312,42 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         tBbox = at.createTransformedShape(tBbox).getBounds();
 
         return tBbox;
+
+    }
+
+    private class DashedBorder extends AbstractBorder {
+        private BasicStroke stroke;
+        private Color color;
+
+        public DashedBorder(BorderStyle borderStyle, Color color) {
+            int thickness = (int) borderStyle.getStrokeWidth();
+            this.stroke = new BasicStroke(thickness,
+                    BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER,
+                    thickness * 2.0f,
+                    freeTextAnnotation.getBorderStyle().getDashArray(),
+                    0.0f);
+            this.color = color;
+        }
+
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            float size = this.stroke.getLineWidth();
+            if (size > 0.0f) {
+                g = g.create();
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2d = (Graphics2D) g;
+                    g2d.setStroke(this.stroke);
+                    g2d.setPaint(color != null ? color : c == null ? null : c.getForeground());
+                    g2d.draw(new Rectangle2D.Float(x + size / 2, y + size / 2, width - size, height - size));
+                }
+                g.dispose();
+            }
+        }
+
+        public Insets getBorderInsets(Component c, Insets insets) {
+            insets.left = insets.top = insets.right = insets.bottom =
+                    (int) this.stroke.getLineWidth();
+            return insets;
+        }
 
     }
 }

@@ -52,4 +52,12 @@ public class AnnotationSelectionHandler extends MouseAdapter
     public void paintTool(Graphics g) {
         // nothing to paint
     }
+
+    public void mouseDragged(MouseEvent e) {
+
+    }
+
+    public void mouseMoved(MouseEvent e) {
+
+    }
 }

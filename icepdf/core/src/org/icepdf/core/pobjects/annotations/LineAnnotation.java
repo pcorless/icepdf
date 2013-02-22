@@ -316,8 +316,8 @@ public class LineAnnotation extends MarkupAnnotation {
 
         // draw the basic line.
         GeneralPath line = new GeneralPath();
-        line.moveTo(startOfLine.getX(), startOfLine.getY());
-        line.lineTo(endOfLine.getX(), endOfLine.getY());
+        line.moveTo((float) startOfLine.getX(), (float) startOfLine.getY());
+        line.lineTo((float) endOfLine.getX(), (float) endOfLine.getY());
         line.closePath();
         shapes.add(new TransformDrawCmd(af));
         shapes.add(new ShapeDrawCmd(line));

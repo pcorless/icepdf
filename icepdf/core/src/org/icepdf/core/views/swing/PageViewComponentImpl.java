@@ -987,17 +987,21 @@ public class PageViewComponentImpl extends
                 // when needed.
                 List<Annotation> annotations = page.getAnnotations();
                 if (annotations != null && annotations.size() > 0) {
-                    annotationComponents =
-                            new ArrayList<AnnotationComponent>(annotations.size());
-                    for (Annotation annotation : annotations) {
-                        AbstractAnnotationComponent comp =
-                                AnnotationComponentFactory.buildAnnotationComponent(
-                                        annotation, documentViewController,
-                                        pageComponent, documentViewModel);
-                        // add for painting
-                        annotationComponents.add(comp);
-                        // add to layout
-                        add(comp);
+                    // we don't want to re-initialize the component as we'll
+                    // get duplicates if the page has be gc'd
+                    if (annotationComponents == null) {
+                        annotationComponents =
+                                new ArrayList<AnnotationComponent>(annotations.size());
+                        for (Annotation annotation : annotations) {
+                            AbstractAnnotationComponent comp =
+                                    AnnotationComponentFactory.buildAnnotationComponent(
+                                            annotation, documentViewController,
+                                            pageComponent, documentViewModel);
+                            // add for painting
+                            annotationComponents.add(comp);
+                            // add to layout
+                            add(comp);
+                        }
                     }
                 }
                 pageComponent.validate();
