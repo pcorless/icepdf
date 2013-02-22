@@ -76,9 +76,9 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
     private AnnotationComponent currentAnnotationComponent;
 
     // link action appearance properties.
-    private JComboBox<ValueLabelItem> linkTypeBox;
-    private JComboBox<ValueLabelItem> lineThicknessBox;
-    private JComboBox<ValueLabelItem> lineStyleBox;
+    private JComboBox linkTypeBox;
+    private JComboBox lineThicknessBox;
+    private JComboBox lineStyleBox;
     private JButton colorButton;
 
     // appearance properties to take care of.
@@ -190,21 +190,21 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // border type box
-        linkTypeBox = new JComboBox<ValueLabelItem>(BORDER_TYPE_LIST);
+        linkTypeBox = new JComboBox(BORDER_TYPE_LIST);
         linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
         linkTypeBox.addItemListener(this);
         add(new JLabel(
                 messageBundle.getString("viewer.utilityPane.annotation.border.linkType")));
         add(linkTypeBox);
         // border thickness
-        lineThicknessBox = new JComboBox<ValueLabelItem>(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         add(new JLabel(messageBundle.getString(
                 "viewer.utilityPane.annotation.border.lineThickness")));
         add(lineThicknessBox);
         // border style
-        lineStyleBox = new JComboBox<ValueLabelItem>(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         add(new JLabel(

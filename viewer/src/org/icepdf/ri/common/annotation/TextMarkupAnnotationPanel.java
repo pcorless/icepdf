@@ -57,7 +57,7 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
     private AnnotationComponent currentAnnotationComponent;
 
     // text markup appearance properties.
-    private JComboBox<ValueLabelItem> textMarkupTypes;
+    private JComboBox textMarkupTypes;
     private JButton colorButton;
 
     private TextMarkupAnnotation annotation;
@@ -155,7 +155,7 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // Text markup type
-        textMarkupTypes = new JComboBox<ValueLabelItem>(TEXT_MARKUP_TYPE_LIST);
+        textMarkupTypes = new JComboBox(TEXT_MARKUP_TYPE_LIST);
         textMarkupTypes.setSelectedIndex(DEFAULT_TEXT_MARKUP_TYPE);
         textMarkupTypes.addItemListener(this);
         add(new JLabel(

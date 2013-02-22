@@ -62,11 +62,11 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
     // font styles.
     private final ValueLabelItem[] FONT_NAMES_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(Font.DIALOG, "Dialog"),
-            new ValueLabelItem(Font.DIALOG_INPUT, "DialogInput"),
-            new ValueLabelItem(Font.MONOSPACED, "Monospaced"),
-            new ValueLabelItem(Font.SERIF, "Serif"),
-            new ValueLabelItem(Font.SANS_SERIF, "SansSerif")};
+            new ValueLabelItem("Dialog", "Dialog"),
+            new ValueLabelItem("DialogInput", "DialogInput"),
+            new ValueLabelItem("Monospaced", "Monospaced"),
+            new ValueLabelItem("Serif", "Serif"),
+            new ValueLabelItem("SansSerif", "SansSerif")};
 
     // Font size.
     private final ValueLabelItem[] FONT_SIZES_LIST = new ValueLabelItem[]{
@@ -108,19 +108,19 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     private AnnotationComponent currentAnnotationComponent;
 
     // font configuration
-    private JComboBox<ValueLabelItem> fontNameBox;
-    private JComboBox<ValueLabelItem> fontStyleBox;
-    private JComboBox<ValueLabelItem> fontSizeBox;
+    private JComboBox fontNameBox;
+    private JComboBox fontStyleBox;
+    private JComboBox fontSizeBox;
     private JButton fontColorButton;
 
     // fill configuration
-    private JComboBox<ValueLabelItem> fillTypeBox;
+    private JComboBox fillTypeBox;
     private JButton fillColorButton;
 
     // border configuration
-    private JComboBox<ValueLabelItem> strokeTypeBox;
-    private JComboBox<ValueLabelItem> strokeThicknessBox;
-    private JComboBox<ValueLabelItem> strokeStyleBox;
+    private JComboBox strokeTypeBox;
+    private JComboBox strokeThicknessBox;
+    private JComboBox strokeStyleBox;
     private JButton strokeColorButton;
 
     // appearance properties to take care of.
@@ -306,19 +306,19 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 TitledBorder.DEFAULT_POSITION));
 
         // Font name
-        fontNameBox = new JComboBox<ValueLabelItem>(FONT_NAMES_LIST);
+        fontNameBox = new JComboBox(FONT_NAMES_LIST);
         fontNameBox.setSelectedIndex(DEFAULT_FONT_FAMILY);
         fontNameBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name")));
         add(fontNameBox);
         // font style
-        fontStyleBox = new JComboBox<ValueLabelItem>(FONT_STYLES_LIST);
+        fontStyleBox = new JComboBox(FONT_STYLES_LIST);
         fontStyleBox.setSelectedIndex(DEFAULT_FONT_STYLE);
         fontStyleBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style")));
         add(fontStyleBox);
         // border style
-        fontSizeBox = new JComboBox<ValueLabelItem>(FONT_SIZES_LIST);
+        fontSizeBox = new JComboBox(FONT_SIZES_LIST);
         fontSizeBox.setSelectedIndex(DEFAULT_FONT_SIZE);
         fontSizeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.size")));
@@ -333,19 +333,19 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         add(fontColorButton);
 
         // stroke type
-        strokeTypeBox = new JComboBox<ValueLabelItem>(PAINT_TYPE_LIST);
+        strokeTypeBox = new JComboBox(PAINT_TYPE_LIST);
         strokeTypeBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeTypeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.type")));
         add(strokeTypeBox);
         // border thickness
-        strokeThicknessBox = new JComboBox<ValueLabelItem>(STROKE_THICKNESS_LIST);
+        strokeThicknessBox = new JComboBox(STROKE_THICKNESS_LIST);
         strokeThicknessBox.setSelectedIndex(DEFAULT_STROKE_THICKNESS_STYLE);
         strokeThicknessBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.thickness")));
         add(strokeThicknessBox);
         // border style
-        strokeStyleBox = new JComboBox<ValueLabelItem>(STROKE_STYLE_LIST);
+        strokeStyleBox = new JComboBox(STROKE_STYLE_LIST);
         strokeStyleBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeStyleBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.style")));
@@ -360,7 +360,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         add(strokeColorButton);
 
         // fill type
-        fillTypeBox = new JComboBox<ValueLabelItem>(PAINT_TYPE_LIST);
+        fillTypeBox = new JComboBox(PAINT_TYPE_LIST);
         fillTypeBox.setSelectedIndex(DEFAULT_FILL_STYLE);
         fillTypeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.type")));
