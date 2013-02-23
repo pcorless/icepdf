@@ -20,7 +20,10 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
+import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
@@ -51,7 +54,7 @@ import java.util.List;
  * <p/>
  * The annotation are created before the Document view is created so we
  * have to create new annotation slightly differently then if we where adding
- * them after the view was created. 
+ * them after the view was created.
  *
  * @since 4.0
  */
@@ -131,16 +134,16 @@ public class NewAnnotationPrePageLoad {
                 Page page = document.getPageTree().getPage(pageIndex);
                 for (WordText wordText : foundWords) {
                     // create a  new link annotation
-                    LinkAnnotation linkAnnotation = (LinkAnnotation)
-                            AnnotationFactory.buildAnnotation(
-                                    document.getPageTree().getLibrary(),
-                                    AnnotationFactory.LINK_ANNOTATION,
-                                    wordText.getBounds().getBounds(),
-                                    annotationState);
+//                    LinkAnnotation linkAnnotation = (LinkAnnotation)
+//                            AnnotationFactory.buildAnnotation(
+//                                    document.getPageTree().getLibrary(),
+//                                    AnnotationFactory.LINK_ANNOTATION,
+//                                    wordText.getBounds().getBounds(),
+//                                    annotationState);
                     // create a new URI action
                     org.icepdf.core.pobjects.actions.Action action =
                             createURIAction(document.getPageTree().getLibrary(),
-                                "http://www.icepdf.org");
+                                    "http://www.icepdf.org");
                     // or create a new goTo Annotation that links to the page
                     // number represented by pageCount.  
 //                    org.icepdf.core.pobjects.actions.Action action =
@@ -148,9 +151,9 @@ public class NewAnnotationPrePageLoad {
 //                                    document.getPageTree().getLibrary(),
 //                                    document, document.getNumberOfPages() - 1);
                     // add the action to the annotation
-                    linkAnnotation.addAction(action);
-                    // add it to the page.
-                    page.addAnnotation(linkAnnotation);
+//                    linkAnnotation.addAction(action);
+//                    // add it to the page.
+//                    page.addAnnotation(linkAnnotation);
                 }
             }
             // removed the search highlighting

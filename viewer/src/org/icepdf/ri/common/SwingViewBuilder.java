@@ -16,7 +16,11 @@ package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.annotation.AnnotationPanel;
+import org.icepdf.ri.common.utility.ThumbnailsPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
+import org.icepdf.ri.common.utility.layers.LayersPanel;
+import org.icepdf.ri.common.utility.outline.OutlinesTree;
+import org.icepdf.ri.common.utility.thumbs.SearchPanel;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;

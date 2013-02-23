@@ -1,0 +1,514 @@
+/*
+ * Copyright 2006-2012 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+package org.icepdf.ri.common.views.annotations;
+
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.views.AnnotationComponent;
+import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.core.views.DocumentViewModel;
+import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.ResizableBorder;
+
+import javax.swing.*;
+import javax.swing.event.MouseInputListener;
+import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Rectangle2D;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * AbstractAnnotationComponent contains base functionality for annotation
+ * components which are used to display annotation for a given page view. This
+ * class controls icon state, focus and basic component states: editable,
+ * movable, resizable, selected and show invisible border.
+ *
+ * @since 5.0
+ */
+public abstract class AbstractAnnotationComponent extends JComponent implements FocusListener,
+        MouseInputListener, AnnotationComponent {
+
+    private static final Logger logger =
+            Logger.getLogger(AbstractAnnotationComponent.class.toString());
+
+    protected static boolean isInteractiveAnnotationsEnabled;
+    protected static Color annotationHighlightColor;
+    protected static float annotationHighlightAlpha;
+
+    static {
+        // enables interactive annotation support.
+        isInteractiveAnnotationsEnabled =
+                Defs.sysPropertyBoolean(
+                        "org.icepdf.core.annotations.interactive.enabled", true);
+
+        // sets annotation selected highlight colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.highlight.color", "#000000");
+            int colorValue = ColorUtil.convertColor(color);
+            annotationHighlightColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("000000", 16));
+
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading page annotation highlight colour");
+            }
+        }
+
+        // set the annotation alpha value.
+        // sets annotation selected highlight colour
+        try {
+            String alpha = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.highlight.alpha", "0.4");
+            annotationHighlightAlpha = Float.parseFloat(alpha);
+
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading page annotation highlight alpha");
+            }
+            annotationHighlightAlpha = 0.4f;
+        }
+    }
+
+    public static final int resizeBoxSize = 4;
+
+    // reusable border
+    protected static ResizableBorder resizableBorder =
+            new ResizableBorder(resizeBoxSize);
+
+    protected AbstractPageViewComponent pageViewComponent;
+    protected DocumentViewController documentViewController;
+    protected DocumentViewModel documentViewModel;
+
+    protected float currentZoom;
+    protected float currentRotation;
+
+    protected Annotation annotation;
+    protected boolean isMousePressed;
+    protected boolean resized;
+    protected boolean wasResized;
+
+    // border state flags.
+    protected boolean isEditable;
+    protected boolean isRollover;
+    protected boolean isMovable;
+    protected boolean isResizable;
+    protected boolean isShowInvisibleBorder;
+    protected boolean isSelected;
+
+    // selection, move and resize handling.
+    protected int cursor;
+    protected Point startPos;
+    protected AnnotationState previousAnnotationState;
+
+    public AbstractAnnotationComponent(Annotation annotation,
+                                       DocumentViewController documentViewController,
+                                       AbstractPageViewComponent pageViewComponent,
+                                       DocumentViewModel documentViewModel) {
+        this.pageViewComponent = pageViewComponent;
+        this.documentViewModel = documentViewModel;
+        this.documentViewController = documentViewController;
+        this.annotation = annotation;
+
+        addMouseListener(this);
+        addMouseMotionListener(this);
+
+        // disabled focus until we are ready to implement our own handler.
+        setFocusable(true);
+        addFocusListener(this);
+
+        // setup a resizable border.
+        setLayout(new BorderLayout());
+        setBorder(resizableBorder);
+
+        // set component location and original size.
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        Rectangle location =
+                at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
+        setBounds(location);
+
+        // update zoom and rotation state
+        currentRotation = documentViewModel.getViewRotation();
+        currentZoom = documentViewModel.getViewZoom();
+
+    }
+
+    public Document getDocument() {
+        return documentViewModel.getDocument();
+    }
+
+    public int getPageIndex() {
+        return pageViewComponent.getPageIndex();
+    }
+
+    public PageViewComponent getParentPageView() {
+        return pageViewComponent;
+    }
+
+    public AbstractPageViewComponent getPageViewComponent() {
+        return pageViewComponent;
+    }
+
+    public void removeMouseListeners() {
+        removeMouseListener(this);
+        removeMouseMotionListener(this);
+    }
+
+    public Annotation getAnnotation() {
+        return annotation;
+    }
+
+    public void focusGained(FocusEvent e) {
+        repaint();
+        isSelected = true;
+    }
+
+    public void focusLost(FocusEvent e) {
+        repaint();
+        // if we've lost focus then drop the selected state
+        isSelected = false;
+    }
+
+    protected void resize() {
+        if (getParent() != null) {
+            getParent().validate();
+        }
+        resized = true;
+    }
+
+    /**
+     * Refreshes the components bounds for the current page transformation.
+     * Bounds have are already in user space.
+     */
+    public void refreshDirtyBounds() {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        setBounds(commonBoundsNormalization(new GeneralPath(
+                annotation.getUserSpaceRectangle()), at));
+    }
+
+    /**
+     * Refreshes/transforms the page space bounds back to user space.  This
+     * must be done in order refresh the annotation user space rectangle after
+     * UI manipulation, otherwise the annotation will be incorrectly located
+     * on the next repaint.
+     */
+    public void refreshAnnotationRect() {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e1) {
+            e1.printStackTrace();
+        }
+        // store the new annotation rectangle in its original user space
+        Rectangle2D rect = annotation.getUserSpaceRectangle();
+        Rectangle bounds = getBounds();
+        rect.setRect(commonBoundsNormalization(new GeneralPath(bounds), at));
+    }
+
+    /**
+     * Normalizes and the given path with the specified transform.  The method
+     * also rounds the Rectangle2D bounds values when creating a new rectangle
+     * instead of truncating the values.
+     *
+     * @param shapePath path to apply transform to
+     * @param at        transform to apply to shapePath
+     * @return bound value of the shape path.
+     */
+    protected Rectangle commonBoundsNormalization(GeneralPath shapePath,
+                                                  AffineTransform at) {
+        shapePath.transform(at);
+        Rectangle2D pageSpaceBound = shapePath.getBounds2D();
+        return new Rectangle(
+                (int) Math.round(pageSpaceBound.getX()),
+                (int) Math.round(pageSpaceBound.getY()),
+                (int) Math.round(pageSpaceBound.getWidth()),
+                (int) Math.round(pageSpaceBound.getHeight()));
+    }
+
+    public void validate() {
+        if (currentZoom != documentViewModel.getViewZoom() ||
+                currentRotation != documentViewModel.getViewRotation()) {
+            refreshDirtyBounds();
+            currentRotation = documentViewModel.getViewRotation();
+            currentZoom = documentViewModel.getViewZoom();
+        }
+
+        if (resized) {
+            refreshAnnotationRect();
+            if (getParent() != null) {
+                getParent().validate();
+                getParent().repaint();
+            }
+            resized = false;
+            wasResized = true;
+        }
+
+    }
+
+    abstract public void paintComponent(Graphics g);
+
+    abstract public void resetAppearanceShapes();
+
+    public void setBounds(int x, int y, int width, int height) {
+        super.setBounds(x, y, width, height);
+    }
+
+    public void mouseMoved(MouseEvent me) {
+
+        int toolMode = documentViewModel.getViewToolMode();
+
+        if (toolMode == DocumentViewModel.DISPLAY_TOOL_SELECTION &&
+                !(annotation.getFlagLocked() || annotation.getFlagReadOnly())) {
+            ResizableBorder border = (ResizableBorder) getBorder();
+            setCursor(Cursor.getPredefinedCursor(border.getCursor(me)));
+        } else {
+            // set cursor back to the hand cursor.
+            setCursor(documentViewController.getViewCursor(
+                    DocumentViewController.CURSOR_HAND_ANNOTATION));
+        }
+    }
+
+    public void mouseExited(MouseEvent mouseEvent) {
+        setCursor(Cursor.getDefaultCursor());
+        isRollover = false;
+        repaint();
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        // clear the selection.
+//        requestFocus();
+        // on click pass event to annotation callback if we are in normal viewing
+        // mode.
+        if (!(AbstractPageViewComponent.isAnnotationTool(
+                documentViewModel.getViewToolMode())) &&
+                isInteractiveAnnotationsEnabled) {
+
+            if (documentViewController.getAnnotationCallback() != null) {
+                documentViewController.getAnnotationCallback()
+                        .processAnnotationAction(annotation);
+            }
+        }
+    }
+
+    public void mouseEntered(MouseEvent e) {
+        // set border highlight when mouse over.
+        isRollover = documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION;
+        repaint();
+    }
+
+    public void mousePressed(MouseEvent e) {
+        // setup visual effect when the mouse button is pressed or held down
+        // inside the active area of the annotation.
+        isMousePressed = true;
+
+        if (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION &&
+                isInteractiveAnnotationsEnabled &&
+                !annotation.getFlagReadOnly()) {
+            initiateMouseMoved(e);
+        }
+        repaint();
+    }
+
+    protected void initiateMouseMoved(MouseEvent e) {
+        ResizableBorder border = (ResizableBorder) getBorder();
+        cursor = border.getCursor(e);
+        startPos = e.getPoint();
+        previousAnnotationState = new AnnotationState(this);
+        // mark annotation as selected.
+        documentViewController.assignSelectedAnnotation(this);
+    }
+
+    public void mouseDragged(MouseEvent me) {
+
+        if (startPos != null && isMovable &&
+                !(annotation.getFlagLocked() || annotation.getFlagReadOnly())) {
+
+            int x = getX();
+            int y = getY();
+            int w = getWidth();
+            int h = getHeight();
+
+            int dx = me.getX() - startPos.x;
+            int dy = me.getY() - startPos.y;
+
+            switch (cursor) {
+                case Cursor.N_RESIZE_CURSOR:
+                    if (isResizable && !(h - dy < 12)) {
+                        setBounds(x, y + dy, w, h - dy);
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.S_RESIZE_CURSOR:
+                    if (isResizable && !(h + dy < 12)) {
+                        setBounds(x, y, w, h + dy);
+                        startPos = me.getPoint();
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.W_RESIZE_CURSOR:
+                    if (isResizable && !(w - dx < 18)) {
+                        setBounds(x + dx, y, w - dx, h);
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.E_RESIZE_CURSOR:
+                    if (isResizable && !(w + dx < 18)) {
+                        setBounds(x, y, w + dx, h);
+                        startPos = me.getPoint();
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.NW_RESIZE_CURSOR:
+                    if (isResizable && !(w - dx < 18) && !(h - dy < 18)) {
+                        setBounds(x + dx, y + dy, w - dx, h - dy);
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.NE_RESIZE_CURSOR:
+                    if (isResizable && !(w + dx < 18) && !(h - dy < 18)) {
+                        setBounds(x, y + dy, w + dx, h - dy);
+                        startPos = new Point(me.getX(), startPos.y);
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.SW_RESIZE_CURSOR:
+                    if (isResizable && !(w - dx < 18) && !(h + dy < 18)) {
+                        setBounds(x + dx, y, w - dx, h + dy);
+                        startPos = new Point(startPos.x, me.getY());
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.SE_RESIZE_CURSOR:
+                    if (isResizable && !(w + dx < 18) && !(h + dy < 18)) {
+                        setBounds(x, y, w + dx, h + dy);
+                        startPos = me.getPoint();
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+
+                case Cursor.MOVE_CURSOR:
+                    if (isMovable) {
+                        Rectangle bounds = getBounds();
+                        bounds.translate(dx, dy);
+                        setBounds(bounds);
+                        resize();
+                        setCursor(Cursor.getPredefinedCursor(cursor));
+                    }
+                    break;
+            }
+            validate();
+        }
+    }
+
+    public void mouseReleased(MouseEvent mouseEvent) {
+        startPos = null;
+        isMousePressed = false;
+
+        // check to see if a move/resize occurred and if so we add the
+        // state change to the memento in document view.
+        if (wasResized) {
+            wasResized = false;
+
+            // update the bounds
+//            refreshAnnotationRect();
+
+            // fire new bounds change event, let the listener handle
+            // how to deal with the bound change.
+            documentViewController.firePropertyChange(
+                    PropertyConstants.ANNOTATION_BOUNDS,
+                    previousAnnotationState, new AnnotationState(this));
+        }
+        repaint();
+    }
+
+    /**
+     * Is the annotation editable
+     *
+     * @return true if editable, false otherwise.
+     */
+    public boolean isEditable() {
+        return isEditable;
+    }
+
+    public boolean isRollover() {
+        return isRollover;
+    }
+
+    public boolean isBorderStyle() {
+        return annotation.isBorder();
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
+    }
+
+    public boolean isMovable() {
+        return isMovable;
+    }
+
+    public boolean isResizable() {
+        return isResizable;
+    }
+
+    public boolean isShowInvisibleBorder() {
+        return isShowInvisibleBorder;
+    }
+}

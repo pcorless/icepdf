@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
@@ -60,6 +61,10 @@ public class MyAnnotationCallback implements AnnotationCallback {
         annotationHistory = new WeakHashMap<String, AnnotationState>();
     }
 
+    public void newAnnotation(PageViewComponent page, Rectangle rect) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     /**
      * <p>Implemented Annotation Callback method.  When an annotation is
      * activated in a PageViewComponent it passes the annotation to this method
@@ -70,7 +75,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
      * @param annotation annotation that was activated by a user via the
      *                   PageViewComponent.
      */
-    public void proccessAnnotationAction(Annotation annotation) {
+    public void processAnnotationAction(Annotation annotation) {
         if (logger.isLoggable(Level.INFO)) {
             logger.info("Annotation " + annotation.toString());
             if (annotation.getAction() != null) {
@@ -149,10 +154,9 @@ public class MyAnnotationCallback implements AnnotationCallback {
      * New annotation created with view tool.
      *
      * @param page page that annotation was added to.
-     * @param rect new annotation bounds.
      */
-    public void newAnnotation(PageViewComponent page, Rectangle rect) {
-
+    public void newAnnotation(PageViewComponent page, AnnotationComponent annotation) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /**
@@ -179,10 +183,10 @@ public class MyAnnotationCallback implements AnnotationCallback {
 
     /**
      * Utility method for changing the default state of a annotation border.
-     * There is no guarentee that an anotation will actualy have a border.  For
+     * There is no guarantee that an annotation will actually have a border.  For
      * this example we add a default border and colour to annotations that
      * have a null border style.  If the annotation has a border we just store
-     * the current state in the annoation history map.
+     * the current state in the annotation history map.
      *
      * @param annotation annotation to decorate.
      */

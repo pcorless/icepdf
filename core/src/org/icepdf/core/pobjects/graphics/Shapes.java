@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.graphics.commands.ImageDrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.views.swing.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -53,6 +52,8 @@ public class Shapes {
         shapesInitialCapacity = Defs.sysPropertyInt(
                 "org.icepdf.core.shapes.initialCapacity", shapesInitialCapacity);
     }
+
+    private boolean interrupted;
 
     // Graphics stack for a page's content.
     protected ArrayList<DrawCmd> shapes = new ArrayList<DrawCmd>(shapesInitialCapacity);
@@ -107,22 +108,13 @@ public class Shapes {
         this.paintAlpha = paintAlpha;
     }
 
+
     /**
      * Paint the graphics stack to the graphics context
      *
      * @param g graphics context to paint to.
      */
     public void paint(Graphics2D g) {
-        paint(g, null);
-    }
-
-    /**
-     * Paint the graphics stack to the graphics context
-     *
-     * @param g           graphics context to paint to.
-     * @param pagePainter parent page painter
-     */
-    public void paint(Graphics2D g, PageViewComponentImpl.PagePainter pagePainter) {
         try {
             AffineTransform base = new AffineTransform(g.getTransform());
             Shape clip = g.getClip();
@@ -134,18 +126,23 @@ public class Shapes {
             // for loops actually faster in this case.
             for (int i = 0, max = shapes.size(); i < max; i++) {
 
-                if (pagePainter != null && pagePainter.isStopPaintingRequested()) {
+                if (interrupted) {
+                    interrupted = false;
                     break;
                 }
+
                 nextShape = shapes.get(i);
                 previousShape = nextShape.paintOperand(g, parentPage,
                         previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
-
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Error painting shapes.", e);
             e.printStackTrace();
         }
+    }
+
+    public void interruptPaint() {
+        interrupted = true;
     }
 
     /**

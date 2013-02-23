@@ -70,7 +70,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 // graphic at the correctly location later.
                 canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
                 canvas.setClip(bBox);
-                xFormShapes.paint(canvas, null);
+                xFormShapes.paint(canvas);
                 xFormShapes.setPageParent(null);
             }
             // finally paint the graphic using the current gs.

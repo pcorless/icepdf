@@ -23,12 +23,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
-import org.icepdf.core.util.ContentParser;
-import org.icepdf.core.util.GraphicsRenderingHints;
-import org.icepdf.core.util.Library;
-import org.icepdf.core.util.Utils;
-import org.icepdf.core.views.common.TextSelectionPageHandler;
-import org.icepdf.core.views.swing.PageViewComponentImpl;
+import org.icepdf.core.util.*;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -70,6 +65,49 @@ public class Page extends Dictionary {
 
     private static final Logger logger =
             Logger.getLogger(Page.class.toString());
+
+    /**
+     * Transparency value used to simulate text highlighting.
+     */
+    public static final float selectionAlpha = 0.3f;
+
+    // text selection colour
+    public static Color selectionColor;
+
+    static {
+        // sets the shadow colour of the decorator.
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.text.selectionColor", "#0077FF");
+            int colorValue = ColorUtil.convertColor(color);
+            selectionColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("0077FF", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text selection colour");
+            }
+        }
+    }
+
+    // text highlight colour
+    public static Color highlightColor;
+
+    static {
+        // sets the shadow colour of the decorator.
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");
+            int colorValue = ColorUtil.convertColor(color);
+            highlightColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("FFF600", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text highlight colour");
+            }
+        }
+    }
 
     public static final Name TYPE = new Name("Page");
 
@@ -350,9 +388,10 @@ public class Page extends Dictionary {
         }
     }
 
-    public void paint(Graphics g, int renderHintType, final int boundary,
-                      float userRotation, float userZoom) {
-        paint(g, renderHintType, boundary, userRotation, userZoom, null);
+    public void requestInterrupt() {
+        if (shapes != null) {
+            shapes.interruptPaint();
+        }
     }
 
     /**
@@ -367,11 +406,10 @@ public class Page extends Dictionary {
      *                       painting the page content.
      * @param userRotation   Rotation factor, in degrees, to be applied to the rendered page
      * @param userZoom       Zoom factor to be applied to the rendered page
-     * @param pagePainter    class which will receive paint events.
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
-                      float userRotation, float userZoom, PageViewComponentImpl.PagePainter pagePainter) {
-        paint(g, renderHintType, boundary, userRotation, userZoom, pagePainter, true, true);
+                      float userRotation, float userZoom) {
+        paint(g, renderHintType, boundary, userRotation, userZoom, true, true);
     }
 
     /**
@@ -386,7 +424,6 @@ public class Page extends Dictionary {
      *                             painting the page content.
      * @param userRotation         Rotation factor, in degrees, to be applied to the rendered page
      * @param userZoom             Zoom factor to be applied to the rendered page
-     * @param pagePainter          class which will receive paint events.
      * @param paintAnnotations     true enables the painting of page annotations.  False
      *                             paints no annotations for a given page.
      * @param paintSearchHighlight true enables the painting of search highlight
@@ -396,11 +433,8 @@ public class Page extends Dictionary {
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom,
-                      PageViewComponentImpl.PagePainter pagePainter,
                       boolean paintAnnotations, boolean paintSearchHighlight) {
-        if (!isInited && pagePainter == null) {
-            init();
-        } else if (!isInited) {
+        if (!isInited) {
             // make sure we don't do a page init on the awt thread in the viewer
             // ri, let the
             return;
@@ -443,7 +477,7 @@ public class Page extends Dictionary {
             g2.setClip(area);
         }
 
-        paintPageContent(g2, renderHintType, userRotation, userZoom, pagePainter, paintAnnotations, paintSearchHighlight);
+        paintPageContent(g2, renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);
 
         // one last repaint, just to be sure
         notifyPaintPageListeners();
@@ -463,7 +497,6 @@ public class Page extends Dictionary {
      *                             rendering hints settings.
      * @param userRotation         Rotation factor, in degrees, to be applied to the rendered page
      * @param userZoom             Zoom factor to be applied to the rendered page
-     * @param pagePainter          class which will receive paint events.
      * @param paintAnnotations     true enables the painting of page annotations.  False
      *                             paints no annotations for a given page.
      * @param paintSearchHighlight true enables the painting of search highlight
@@ -471,15 +504,15 @@ public class Page extends Dictionary {
      *                             be used to easily search and add highlighted state
      *                             for search terms.
      */
-    public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom, PageViewComponentImpl.PagePainter pagePainter, boolean paintAnnotations, boolean paintSearchHighlight) {
+    public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) {
         if (!isInited) {
             init();
         }
 
-        paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, pagePainter, paintAnnotations, paintSearchHighlight);
+        paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);
     }
 
-    private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom, PageViewComponentImpl.PagePainter pagePainter, boolean paintAnnotations, boolean paintSearchHighlight) {
+    private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) {
         // draw page content
         if (shapes != null) {
 
@@ -487,7 +520,7 @@ public class Page extends Dictionary {
             Shape pageClip = g2.getClip();
 
             shapes.setPageParent(this);
-            shapes.paint(g2, pagePainter);
+            shapes.paint(g2);
             shapes.setPageParent(null);
 
             g2.setTransform(pageTransform);
@@ -508,7 +541,7 @@ public class Page extends Dictionary {
             if (pageText != null) {
                 g2.setComposite(AlphaComposite.getInstance(
                         AlphaComposite.SRC_OVER,
-                        TextSelectionPageHandler.selectionAlpha));
+                        selectionAlpha));
                 // paint the sprites
                 GeneralPath textPath;
                 // iterate over the data structure.
@@ -517,13 +550,13 @@ public class Page extends Dictionary {
                         // paint whole word
                         if (wordText.isHighlighted()) {
                             textPath = new GeneralPath(wordText.getBounds());
-                            g2.setColor(TextSelectionPageHandler.highlightColor);
+                            g2.setColor(highlightColor);
                             g2.fill(textPath);
                         } else {
                             for (GlyphText glyph : wordText.getGlyphs()) {
                                 if (glyph.isHighlighted()) {
                                     textPath = new GeneralPath(glyph.getBounds());
-                                    g2.setColor(TextSelectionPageHandler.highlightColor);
+                                    g2.setColor(highlightColor);
                                     g2.fill(textPath);
                                 }
                             }

@@ -14,7 +14,7 @@
  */
 package org.icepdf.core.views;
 
-import org.icepdf.core.views.swing.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 
 import java.awt.*;
 
@@ -24,7 +24,7 @@ import java.awt.*;
  * interface are the most commonly used methods and are used by the
  * <code>AbstractDocumentView</code> and <code>AbstractDocumentViewModel</code>.</p>
  *
- * @see org.icepdf.core.views.swing.PageViewComponentImpl
+ * @see org.icepdf.ri.common.views.PageViewComponentImpl
  * @since 2.0
  */
 public interface PageViewComponent {

@@ -14,24 +14,28 @@
  */
 
 
+import org.icepdf.core.exceptions.PDFException;
+import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.exceptions.PDFException;
-import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.ri.util.FontPropertiesManager;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ResourceBundle;
 
 /**
  * The <code>PageCapture</code> class is an example of how to save page
  * captures to disk.  A file specified at the command line is opened and every
  * page in the document is captured as an image and saved to disk as a
- * PNG graphic file.  
+ * PNG graphic file.
  *
  * @since 2.0
  */
@@ -40,6 +44,13 @@ public class PageCapture {
 
         // Get a file from the command line to open
         String filePath = args[0];
+
+        // read/store the font cache.
+        ResourceBundle messageBundle = ResourceBundle.getBundle(
+                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+        PropertiesManager properties = new PropertiesManager(System.getProperties(),
+                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
 
         // open the url
         Document document = new Document();
@@ -55,8 +66,9 @@ public class PageCapture {
             System.out.println("Error handling PDF document " + ex);
         }
 
+
         // save page caputres to file.
-        float scale = .5f;
+        float scale = 1f;
         float rotation = 0f;
 
         // Paint each pages content to an image and write the image to file
@@ -74,7 +86,6 @@ public class PageCapture {
 
             page.paint(g, GraphicsRenderingHints.PRINT,
                     Page.BOUNDARY_CROPBOX, rotation, scale);
-
 
 
             g.dispose();
