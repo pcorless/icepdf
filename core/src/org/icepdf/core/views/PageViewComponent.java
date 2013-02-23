@@ -14,8 +14,6 @@
  */
 package org.icepdf.core.views;
 
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-
 import java.awt.*;
 
 /**
@@ -102,7 +100,7 @@ public interface PageViewComponent {
      *
      * @param annotation annotation to add.
      */
-    public void addAnnotation(AbstractAnnotationComponent annotation);
+    public void addAnnotation(AnnotationComponent annotation);
 
     /**
      * Remove the specified annotation from this page view.
