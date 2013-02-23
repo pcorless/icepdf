@@ -27,10 +27,9 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.views.*;
-import org.icepdf.core.views.swing.AbstractPageViewComponent;
-import org.icepdf.core.views.swing.annotations.AbstractAnnotationComponent;
-import org.icepdf.core.views.swing.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;

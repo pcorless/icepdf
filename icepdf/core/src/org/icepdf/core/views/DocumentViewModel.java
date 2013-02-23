@@ -16,7 +16,7 @@ package org.icepdf.core.views;
 
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;

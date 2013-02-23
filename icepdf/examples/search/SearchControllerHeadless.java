@@ -89,7 +89,7 @@ public class SearchControllerHeadless {
 
             // capture current transform for graphics context.
             page.paint(g, GraphicsRenderingHints.SCREEN,
-                    Page.BOUNDARY_CROPBOX, rotation, scale, null, true, true);
+                    Page.BOUNDARY_CROPBOX, rotation, scale, true, true);
             g2d.dispose();
 
             // capture the page image to file

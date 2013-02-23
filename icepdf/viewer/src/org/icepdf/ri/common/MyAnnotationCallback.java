@@ -26,7 +26,7 @@ import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.core.views.PageViewComponent;
-import org.icepdf.core.views.swing.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.io.File;

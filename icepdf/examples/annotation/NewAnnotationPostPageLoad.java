@@ -19,13 +19,16 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.AnnotationState;
+import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.views.swing.AbstractPageViewComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.swing.*;
@@ -142,12 +145,12 @@ public class NewAnnotationPostPageLoad {
                         pageComponents.get(pageIndex);
                 for (WordText wordText : foundWords) {
                     // create a  new link annotation
-                    LinkAnnotation linkAnnotation = (LinkAnnotation)
-                            AnnotationFactory.buildAnnotation(
-                                    document.getPageTree().getLibrary(),
-                                    AnnotationFactory.LINK_ANNOTATION,
-                                    wordText.getBounds().getBounds(),
-                                    annotationState);
+//                    LinkAnnotation linkAnnotation = (LinkAnnotation)
+//                            AnnotationFactory.buildAnnotation(
+//                                    document.getPageTree().getLibrary(),
+//                                    AnnotationFactory.LINK_ANNOTATION,
+//                                    wordText.getBounds().getBounds(),
+//                                    annotationState);
                     // create a new URI action
                     org.icepdf.core.pobjects.actions.Action action =
                             createURIAction(document.getPageTree().getLibrary(),
@@ -159,10 +162,10 @@ public class NewAnnotationPostPageLoad {
 //                                    document.getPageTree().getLibrary(),
 //                                    document, document.getNumberOfPages() - 1);
                     // add the action to the annotation
-                    linkAnnotation.addAction(action);
+//                    linkAnnotation.addAction(action);
                     // add it to the pageComponent, not the page, as we won't
                     // see it until the page is re-initialized.
-                    pageViewComponent.addAnnotation(linkAnnotation);
+//                    pageViewComponent.addAnnotation(linkAnnotation);
                 }
             }
             // removed the search highlighting

@@ -21,12 +21,9 @@ import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.views.common.LineArrowAnnotationHandler;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
+import java.awt.geom.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -327,36 +324,36 @@ public class LineAnnotation extends MarkupAnnotation {
 
         // check for a ending end cap.
         if (startArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
-            LineArrowAnnotationHandler.openArrowStartDrawOps(
+            openArrowStartDrawOps(
                     shapes, af, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
-            LineArrowAnnotationHandler.closedArrowStartDrawOps(
+            closedArrowStartDrawOps(
                     shapes, af, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
-            LineArrowAnnotationHandler.circleDrawOps(
+            circleDrawOps(
                     shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
-            LineArrowAnnotationHandler.diamondDrawOps(
+            diamondDrawOps(
                     shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
-            LineArrowAnnotationHandler.squareDrawOps(
+            squareDrawOps(
                     shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
         }
         // check for a starting end cap.
         if (endArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
-            LineArrowAnnotationHandler.openArrowEndDrawOps(
+            openArrowEndDrawOps(
                     shapes, af, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
-            LineArrowAnnotationHandler.closedArrowEndDrawOps(
+            closedArrowEndDrawOps(
                     shapes, af, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
-            LineArrowAnnotationHandler.circleDrawOps(
+            circleDrawOps(
                     shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
-            LineArrowAnnotationHandler.diamondDrawOps(
+            diamondDrawOps(
                     shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
-            LineArrowAnnotationHandler.squareDrawOps(
+            squareDrawOps(
                     shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
         }
     }
@@ -403,5 +400,302 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setEndOfLine(Point2D endOfLine) {
         this.endOfLine = endOfLine;
+    }
+
+    public static void drawLineStart(Graphics2D g, Name lineEnding,
+                                     Point2D startOfLine, Point2D endOfLine,
+                                     Color lineColor, Color interiorColor) {
+
+        if (lineEnding.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
+            drawOpenArrowStart(g, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
+            drawClosedArrowStart(g, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_CIRCLE)) {
+            drawCircle(g, startOfLine, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_DIAMOND)) {
+            drawDiamond(g, startOfLine, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_SQUARE)) {
+            drawSquare(g, startOfLine, startOfLine, endOfLine, lineColor, interiorColor);
+        }
+    }
+
+    public static void drawLineEnd(Graphics2D g, Name lineEnding,
+                                   Point2D startOfLine, Point2D endOfLine,
+                                   Color lineColor, Color interiorColor) {
+        if (lineEnding.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
+            drawOpenArrowEnd(g, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
+            drawClosedArrowEnd(g, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_CIRCLE)) {
+            drawCircle(g, endOfLine, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_DIAMOND)) {
+            drawDiamond(g, endOfLine, startOfLine, endOfLine, lineColor, interiorColor);
+        } else if (lineEnding.equals(LineAnnotation.LINE_END_SQUARE)) {
+            drawSquare(g, endOfLine, startOfLine, endOfLine, lineColor, interiorColor);
+        }
+    }
+
+    public static void circleDrawOps(Shapes shapes, AffineTransform at,
+                                     Point2D point, Point2D start,
+                                     Point2D end, Color lineColor,
+                                     Color internalColor) {
+        AffineTransform af = createRotation(point, start, end);
+        at = new AffineTransform(at);
+        at.concatenate(af);
+        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new ColorDrawCmd(lineColor));
+        shapes.add(new ShapeDrawCmd(createCircleEnd()));
+        shapes.add(new FillDrawCmd());
+    }
+
+    private static Shape createCircleEnd() {
+        return new Ellipse2D.Double(-4, -4, 8, 8);
+    }
+
+    private static void drawCircle(Graphics2D g, Point2D point,
+                                   Point2D startOfLine, Point2D endOfLine,
+                                   Color lineColor, Color interiorColor) {
+        AffineTransform oldAf = g.getTransform();
+        AffineTransform af = createRotation(point, startOfLine, endOfLine);
+        AffineTransform gAf = g.getTransform();
+        gAf.concatenate(af);
+        g.setTransform(gAf);
+        g.setColor(lineColor);
+        g.fill(createCircleEnd());
+        g.setTransform(oldAf);
+    }
+
+    public static void diamondDrawOps(Shapes shapes, AffineTransform at,
+                                      Point2D point, Point2D start,
+                                      Point2D end, Color lineColor,
+                                      Color internalColor) {
+        AffineTransform tx = new AffineTransform();
+        Line2D.Double line = new Line2D.Double(start, end);
+        tx.setToIdentity();
+        double angle = Math.atan2(line.y2 - line.y1, line.x2 - line.x1);
+        tx.translate(point.getX(), point.getY());
+        tx.rotate(angle - (Math.PI / 4));
+
+        AffineTransform af = createRotation(point, start, end);
+        at = new AffineTransform(at);
+        at.concatenate(tx);
+        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new ColorDrawCmd(lineColor));
+        shapes.add(new ShapeDrawCmd(createSquareEnd()));
+        shapes.add(new FillDrawCmd());
+    }
+
+
+    private static void drawDiamond(Graphics2D g, Point2D point,
+                                    Point2D startOfLine, Point2D endOfLine,
+                                    Color lineColor, Color interiorColor) {
+        AffineTransform oldAf = g.getTransform();
+        AffineTransform tx = new AffineTransform();
+        Line2D.Double line = new Line2D.Double(startOfLine, endOfLine);
+        tx.setToIdentity();
+        double angle = Math.atan2(line.y2 - line.y1, line.x2 - line.x1);
+        tx.translate(point.getX(), point.getY());
+        // quarter rotation
+        tx.rotate(angle - (Math.PI / 4));
+        AffineTransform gAf = g.getTransform();
+        gAf.concatenate(tx);
+        g.setTransform(gAf);
+        g.setColor(lineColor);
+        g.fill(createSquareEnd());
+        g.setTransform(oldAf);
+    }
+
+    public static void squareDrawOps(Shapes shapes, AffineTransform at,
+                                     Point2D point, Point2D start,
+                                     Point2D end, Color lineColor,
+                                     Color internalColor) {
+        AffineTransform af = createRotation(point, start, end);
+        at = new AffineTransform(at);
+        at.concatenate(af);
+        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new ColorDrawCmd(lineColor));
+        shapes.add(new ShapeDrawCmd(createSquareEnd()));
+        shapes.add(new FillDrawCmd());
+    }
+
+    private static Shape createSquareEnd() {
+        return new Rectangle2D.Double(-4, -4, 8, 8);
+    }
+
+    private static void drawSquare(Graphics2D g, Point2D point,
+                                   Point2D startOfLine, Point2D endOfLine,
+                                   Color lineColor, Color interiorColor) {
+        AffineTransform oldAf = g.getTransform();
+        AffineTransform af = createRotation(point, startOfLine, endOfLine);
+        AffineTransform gAf = g.getTransform();
+        gAf.concatenate(af);
+        g.setTransform(gAf);
+        g.setColor(lineColor);
+        g.fill(createSquareEnd());
+        g.setTransform(oldAf);
+    }
+
+    public static void openArrowEndDrawOps(Shapes shapes, AffineTransform at,
+                                           Point2D start, Point2D end,
+                                           Color lineColor, Color internalColor) {
+        AffineTransform af = createRotation(end, start, end);
+        at = new AffineTransform(at);
+        at.concatenate(af);
+        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new ColorDrawCmd(lineColor));
+        shapes.add(new ShapeDrawCmd(createOpenArrowEnd()));
+        shapes.add(new DrawDrawCmd());
+    }
+
+    private static Shape createOpenArrowEnd() {
+        GeneralPath arrowHead = new GeneralPath();
+        arrowHead.moveTo(0, 0);
+        arrowHead.lineTo(5, -10);
+        arrowHead.moveTo(0, 0);
+        arrowHead.lineTo(-5, -10);
+        arrowHead.closePath();
+        return arrowHead;
+    }
+
+    private static void drawOpenArrowEnd(Graphics2D g,
+                                         Point2D startOfLine, Point2D endOfLine,
+                                         Color lineColor, Color interiorColor) {
+        Shape arrowHead = createOpenArrowEnd();
+        AffineTransform oldAf = g.getTransform();
+        AffineTransform af = createRotation(endOfLine, startOfLine, endOfLine);
+        AffineTransform gAf = g.getTransform();
+        gAf.concatenate(af);
+        g.setTransform(gAf);
+        g.setColor(lineColor);
+        g.draw(arrowHead);
+        g.setTransform(oldAf);
+    }
+
+    public static void openArrowStartDrawOps(Shapes shapes, AffineTransform at,
+                                             Point2D start, Point2D end,
+                                             Color lineColor, Color internalColor) {
+        AffineTransform af = createRotation(start, start, end);
+        at = new AffineTransform(at);
+        at.concatenate(af);
+        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new ColorDrawCmd(lineColor));
+        shapes.add(new ShapeDrawCmd(createOpenArrowStart()));
+        shapes.add(new DrawDrawCmd());
+    }
+
+    private static Shape createOpenArrowStart() {
+        GeneralPath arrowHead = new GeneralPath();
+        arrowHead.moveTo(0, 0);
+        arrowHead.lineTo(5, 10);
+        arrowHead.moveTo(0, 0);
+        arrowHead.lineTo(-5, 10);
+        arrowHead.closePath();
+        return arrowHead;
+    }
+
+    private static void drawOpenArrowStart(Graphics2D g,
+                                           Point2D startOfLine, Point2D endOfLine,
+                                           Color lineColor, Color interiorColor) {
+        Shape arrowHead = createOpenArrowStart();
+        AffineTransform oldAf = g.getTransform();
+        AffineTransform af = createRotation(startOfLine, startOfLine, endOfLine);
+        AffineTransform gAf = g.getTransform();
+        gAf.concatenate(af);
+        g.setTransform(gAf);
+        g.setColor(lineColor);
+        g.draw(arrowHead);
+        g.setTransform(oldAf);
+    }
+
+    public static void closedArrowStartDrawOps(Shapes shapes, AffineTransform at,
+                                               Point2D start, Point2D end,
+                                               Color lineColor, Color internalColor) {
+        AffineTransform af = createRotation(start, start, end);
+        at = new AffineTransform(at);
+        at.concatenate(af);
+        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new ColorDrawCmd(internalColor));
+        shapes.add(new ShapeDrawCmd(createClosedArrowStart()));
+        shapes.add(new FillDrawCmd());
+        shapes.add(new ColorDrawCmd(lineColor));
+        shapes.add(new ShapeDrawCmd(createClosedArrowStart()));
+        shapes.add(new DrawDrawCmd());
+    }
+
+    private static Shape createClosedArrowStart() {
+        Polygon arrowHead = new Polygon();
+        arrowHead.addPoint(0, -5);
+        arrowHead.addPoint(-5, 5);
+        arrowHead.addPoint(5, 5);
+        return arrowHead;
+    }
+
+    private static void drawClosedArrowStart(Graphics2D g,
+                                             Point2D startOfLine, Point2D endOfLine,
+                                             Color lineColor, Color interiorColor) {
+        Shape arrowHead = createClosedArrowStart();
+        AffineTransform oldAf = g.getTransform();
+        AffineTransform af = createRotation(startOfLine, startOfLine, endOfLine);
+        AffineTransform gAf = g.getTransform();
+        gAf.concatenate(af);
+        g.setTransform(gAf);
+        g.setColor(interiorColor);
+        g.fill(arrowHead);
+        g.setColor(lineColor);
+        g.draw(arrowHead);
+        g.setTransform(oldAf);
+    }
+
+    public static void closedArrowEndDrawOps(Shapes shapes, AffineTransform at,
+                                             Point2D start, Point2D end,
+                                             Color lineColor, Color internalColor) {
+        AffineTransform af = createRotation(end, start, end);
+        at = new AffineTransform(at);
+        at.concatenate(af);
+
+        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new ColorDrawCmd(internalColor));
+        shapes.add(new ShapeDrawCmd(createClosedArrowEnd()));
+        shapes.add(new FillDrawCmd());
+        shapes.add(new ColorDrawCmd(lineColor));
+        shapes.add(new ShapeDrawCmd(createClosedArrowEnd()));
+        shapes.add(new DrawDrawCmd());
+    }
+
+
+    private static Shape createClosedArrowEnd() {
+        Polygon arrowHead = new Polygon();
+        arrowHead.addPoint(0, 5);
+        arrowHead.addPoint(-5, -5);
+        arrowHead.addPoint(5, -5);
+        return arrowHead;
+    }
+
+    private static void drawClosedArrowEnd(Graphics2D g,
+                                           Point2D startOfLine, Point2D endOfLine,
+                                           Color lineColor, Color interiorColor) {
+        Shape arrowHead = createClosedArrowEnd();
+        AffineTransform oldAf = g.getTransform();
+        AffineTransform af = createRotation(endOfLine, startOfLine, endOfLine);
+        AffineTransform gAf = g.getTransform();
+        gAf.concatenate(af);
+        g.setTransform(gAf);
+        g.setColor(interiorColor);
+        g.fill(arrowHead);
+        g.setColor(lineColor);
+        g.draw(arrowHead);
+        g.setTransform(oldAf);
+    }
+
+    private static AffineTransform createRotation(Point2D point,
+                                                  Point2D startOfLine,
+                                                  Point2D endOfLine) {
+        AffineTransform tx = new AffineTransform();
+        Line2D.Double line = new Line2D.Double(startOfLine, endOfLine);
+        tx.setToIdentity();
+        double angle = Math.atan2(line.y2 - line.y1, line.x2 - line.x1);
+        tx.translate(point.getX(), point.getY());
+        tx.rotate(angle - (Math.PI / 2));
+        return tx;
     }
 }

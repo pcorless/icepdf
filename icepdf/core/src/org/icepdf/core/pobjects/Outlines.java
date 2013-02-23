@@ -30,7 +30,7 @@ import java.util.HashMap;
  * the packageorg.icepdf.core.ri.common provides an example on converting
  * this hierarchy to a Swing JTree.</p>
  *
- * @see org.icepdf.ri.common.OutlineItemTreeNode
+ * @see org.icepdf.ri.common.utility.outline.OutlineItemTreeNode
  * @see org.icepdf.core.pobjects.OutlineItem
  * @since 1.0
  */

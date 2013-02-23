@@ -22,8 +22,7 @@ import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.core.views.DocumentView;
 import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.common.*;
-import org.icepdf.core.views.swing.AbstractPageViewComponent;
+import org.icepdf.ri.common.tools.*;
 
 import javax.swing.*;
 import java.awt.*;

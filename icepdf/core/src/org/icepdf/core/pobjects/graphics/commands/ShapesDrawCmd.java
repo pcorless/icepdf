@@ -50,7 +50,7 @@ public class ShapesDrawCmd extends AbstractDrawCmd {
                 shapes != null) {
             shapes.setPageParent(parentPage);
             shapes.setPaintAlpha(paintAlpha);
-            shapes.paint(g, null);
+            shapes.paint(g);
             shapes.setPageParent(null);
         }
         return currentShape;

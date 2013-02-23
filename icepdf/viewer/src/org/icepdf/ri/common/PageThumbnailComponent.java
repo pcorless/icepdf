@@ -15,7 +15,6 @@
 
 package org.icepdf.ri.common;
 
-import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.Thumbnail;
@@ -217,7 +216,7 @@ public class PageThumbnailComponent extends JComponent implements MouseListener 
                             Page.BOUNDARY_CROPBOX,
                             0,
                             thumbNailZoom,
-                            null, false, false);
+                            false, false);
                 }
                 bufferedPageImageReference = new SoftReference<Image>(image);
                 initiatedThumbnailGeneration = false;

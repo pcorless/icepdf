@@ -34,7 +34,7 @@ import java.util.List;
  * hierarchy.  The root node of the outline hierarchy can be accessed through
  * the Outlines class. </p>
  *
- * @see org.icepdf.ri.common.OutlineItemTreeNode
+ * @see org.icepdf.ri.common.utility.outline.OutlineItemTreeNode
  * @see org.icepdf.core.pobjects.Outlines
  * @since 2.0
  */
