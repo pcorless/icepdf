@@ -16,8 +16,8 @@ package org.icepdf.ri.viewer;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -100,7 +100,7 @@ public class WindowManager implements WindowManagementCallback {
         controllers.add(controller);
         // guild a new swing viewer with remembered view settings.
         int viewType = DocumentViewControllerImpl.ONE_PAGE_VIEW;
-        int pageFit = org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_WIDTH;
+        int pageFit = DocumentViewController.PAGE_FIT_WINDOW_WIDTH;
         try {
             viewType = getProperties().getInt("document.viewtype",
                     DocumentViewControllerImpl.ONE_PAGE_VIEW);

@@ -18,9 +18,6 @@ import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.UndoCaretaker;
 
 import java.awt.*;

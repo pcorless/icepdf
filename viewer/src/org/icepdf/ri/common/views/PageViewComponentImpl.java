@@ -25,9 +25,6 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
@@ -65,7 +62,7 @@ import java.util.logging.Logger;
  * @see org.icepdf.ri.common.views.TwoPageView
  * @see org.icepdf.ri.common.views.AbstractDocumentView
  * @see org.icepdf.ri.common.views.AbstractDocumentViewModel
- * @see org.icepdf.core.views.DocumentViewController
+ * @see DocumentViewController
  *      <p/>
  *      <p>The page view takes advantage of a buffered display to speed up page scrolling
  *      and provide users with a better overall UI experiance.

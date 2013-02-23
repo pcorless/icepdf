@@ -217,14 +217,12 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     /**
      * Gets an instance of a FreeTextAnnotation that has valid Object Reference.
      *
-     * @param library         document library
-     * @param rect            bounding rectangle in user space
-     * @param annotationState annotation state object of undo
+     * @param library document library
+     * @param rect    bounding rectangle in user space
      * @return new FreeTextAnnotation Instance.
      */
     public static FreeTextAnnotation getInstance(Library library,
-                                                 Rectangle rect,
-                                                 AnnotationState annotationState) {
+                                                 Rectangle rect) {
         // state manager
         StateManager stateManager = library.getStateManager();
 
@@ -246,18 +244,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         freeTextAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         freeTextAnnotation.setNew(true);
 
-        // apply state
-        if (annotationState != null) {
-            annotationState.restore(freeTextAnnotation);
-        }
-        // some defaults just for display purposes.
-        else {
-            annotationState = new AnnotationState(
-                    Annotation.INVISIBLE_RECTANGLE,
-                    LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                    BorderStyle.BORDER_STYLE_SOLID, Color.RED);
-            annotationState.restore(freeTextAnnotation);
-        }
         return freeTextAnnotation;
     }
 

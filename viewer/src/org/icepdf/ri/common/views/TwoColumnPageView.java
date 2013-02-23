@@ -14,8 +14,6 @@
  */
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.PageViewComponent;
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
 import org.icepdf.ri.common.SwingController;

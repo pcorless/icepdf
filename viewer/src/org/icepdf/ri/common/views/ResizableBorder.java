@@ -16,7 +16,6 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.views.AnnotationComponent;
 
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;

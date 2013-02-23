@@ -153,14 +153,12 @@ public class TextAnnotation extends MarkupAnnotation {
     /**
      * Gets an instance of a TextAnnotation that has valid Object Reference.
      *
-     * @param library         document library
-     * @param rect            bounding rectangle in user space
-     * @param annotationState annotation state object of undo
+     * @param library document library
+     * @param rect    bounding rectangle in user space
      * @return new TextAnnotation Instance.
      */
     public static TextAnnotation getInstance(Library library,
-                                             Rectangle rect,
-                                             AnnotationState annotationState) {
+                                             Rectangle rect) {
         // state manager
         StateManager stateManager = library.getStateManager();
 
@@ -184,18 +182,6 @@ public class TextAnnotation extends MarkupAnnotation {
         textAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         textAnnotation.setNew(true);
 
-        // apply state
-        if (annotationState != null) {
-            annotationState.restore(textAnnotation);
-        }
-        // some defaults just for display purposes.
-        else {
-            annotationState = new AnnotationState(
-                    Annotation.INVISIBLE_RECTANGLE,
-                    LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                    BorderStyle.BORDER_STYLE_SOLID, Color.RED);
-            annotationState.restore(textAnnotation);
-        }
         return textAnnotation;
     }
 

@@ -14,7 +14,7 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewController;
 
 import java.awt.*;
 import java.awt.event.InputEvent;

@@ -14,7 +14,6 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -24,9 +23,10 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationCallback;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
@@ -107,7 +107,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                     AnnotationFactory.buildAnnotation(
                             documentViewModel.getDocument().getPageTree().getLibrary(),
                             highLightType,
-                            tBbox, null);
+                            tBbox);
 
             // pass outline shapes and bounds to create the highlight shapes
             annotation.setAppearanceStream(tBbox, highlightBounds, highlightPath);

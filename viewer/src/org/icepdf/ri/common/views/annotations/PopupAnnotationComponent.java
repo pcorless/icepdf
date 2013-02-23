@@ -14,18 +14,13 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
-import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.ResizableBorder;
+import org.icepdf.ri.common.views.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

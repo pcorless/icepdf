@@ -92,14 +92,12 @@ public class SquareAnnotation extends MarkupAnnotation {
     /**
      * Gets an instance of a SquareAnnotation that has valid Object Reference.
      *
-     * @param library         document library
-     * @param rect            bounding rectangle in user space
-     * @param annotationState annotation state object of undo
+     * @param library document library
+     * @param rect    bounding rectangle in user space
      * @return new SquareAnnotation Instance.
      */
     public static SquareAnnotation getInstance(Library library,
-                                               Rectangle rect,
-                                               AnnotationState annotationState) {
+                                               Rectangle rect) {
         // state manager
         StateManager stateManager = library.getStateManager();
 
@@ -121,18 +119,6 @@ public class SquareAnnotation extends MarkupAnnotation {
         squareAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         squareAnnotation.setNew(true);
 
-        // apply state
-        if (annotationState != null) {
-            annotationState.restore(squareAnnotation);
-        }
-        // some defaults just for display purposes.
-        else {
-            annotationState = new AnnotationState(
-                    Annotation.VISIBLE_RECTANGLE,
-                    LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                    BorderStyle.BORDER_STYLE_SOLID, Color.RED);
-            annotationState.restore(squareAnnotation);
-        }
         return squareAnnotation;
     }
 

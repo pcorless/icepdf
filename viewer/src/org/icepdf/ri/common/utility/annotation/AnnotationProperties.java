@@ -14,7 +14,7 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
-import org.icepdf.core.views.AnnotationComponent;
+import org.icepdf.ri.common.views.AnnotationComponent;
 
 /**
  * @since 4.0

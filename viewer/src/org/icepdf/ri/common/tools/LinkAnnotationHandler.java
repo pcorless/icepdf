@@ -14,12 +14,12 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationCallback;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
@@ -83,7 +83,7 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
         Annotation annotation = AnnotationFactory.buildAnnotation(
                 documentViewModel.getDocument().getPageTree().getLibrary(),
                 Annotation.SUBTYPE_LINK,
-                rectToDraw, null);
+                rectToDraw);
 
         // create the annotation object.
         AbstractAnnotationComponent comp =

@@ -14,15 +14,15 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationCallback;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
@@ -106,7 +106,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
                 AnnotationFactory.buildAnnotation(
                         documentViewModel.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_FREE_TEXT,
-                        tBbox, null);
+                        tBbox);
         annotation.setCreationDate(PDate.createDate(new Date()));
         annotation.setTitleText(System.getProperty("user.name"));
         annotation.setContents(" ");

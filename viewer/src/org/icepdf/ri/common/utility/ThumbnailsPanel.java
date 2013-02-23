@@ -17,10 +17,10 @@ package org.icepdf.ri.common.utility;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.PageThumbnailComponent;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
