@@ -43,42 +43,39 @@ public class AnnotationFactory {
      * This call adds the new Annotation object to the document library as well
      * as the document StateManager.
      *
-     * @param library         library to register annotation with
-     * @param subType         type of annotation to create
-     * @param rect            bounds of new annotation specified in user space.
-     * @param annotationState annotation state to copy state rom.
+     * @param library library to register annotation with
+     * @param subType type of annotation to create
+     * @param rect    bounds of new annotation specified in user space.
      * @return new annotation object with the same properties as the one
      *         specified in annotaiton state.
      */
     public static Annotation buildAnnotation(Library library,
                                              final Name subType,
-                                             Rectangle rect,
-                                             AnnotationState annotationState) {
+                                             Rectangle rect) {
         // build up a link annotation
         if (subType.equals(Annotation.SUBTYPE_LINK)) {
-            return LinkAnnotation.getInstance(library, rect, annotationState);
+            return LinkAnnotation.getInstance(library, rect);
         }
         // highlight version of a TextMarkup annotation.
         else if (subType.equals(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) ||
                 subType.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) ||
                 subType.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
             return TextMarkupAnnotation.getInstance(library, rect,
-                    subType,
-                    annotationState);
+                    subType);
         } else if (subType.equals(Annotation.SUBTYPE_LINE)) {
-            return LineAnnotation.getInstance(library, rect, annotationState);
+            return LineAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_SQUARE)) {
-            return SquareAnnotation.getInstance(library, rect, annotationState);
+            return SquareAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_CIRCLE)) {
-            return CircleAnnotation.getInstance(library, rect, annotationState);
+            return CircleAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_INK)) {
-            return InkAnnotation.getInstance(library, rect, annotationState);
+            return InkAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_FREE_TEXT)) {
-            return FreeTextAnnotation.getInstance(library, rect, annotationState);
+            return FreeTextAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_TEXT)) {
-            return TextAnnotation.getInstance(library, rect, annotationState);
+            return TextAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
-            return PopupAnnotation.getInstance(library, rect, annotationState);
+            return PopupAnnotation.getInstance(library, rect);
         } else {
             logger.warning("Unsupported Annotation type. ");
             return null;

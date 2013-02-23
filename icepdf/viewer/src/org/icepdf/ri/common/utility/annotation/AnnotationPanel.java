@@ -15,8 +15,8 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.AnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;

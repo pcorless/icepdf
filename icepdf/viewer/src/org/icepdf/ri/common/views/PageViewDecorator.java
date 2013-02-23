@@ -14,14 +14,13 @@
  */
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.ColorUtil;
-import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.core.util.Defs;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>The PageViewDecorator class adds a page border and shadow to all of the page
@@ -65,8 +64,8 @@ public class PageViewDecorator extends JComponent {
                     "org.icepdf.core.views.page.shadow.color", "#333333");
             int colorValue = ColorUtil.convertColor(color);
             pageShadowColor =
-                    new Color( colorValue >= 0? colorValue :
-                            Integer.parseInt("333333", 16 ));
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("333333", 16));
 
         } catch (NumberFormatException e) {
             if (log.isLoggable(Level.WARNING)) {
@@ -80,8 +79,8 @@ public class PageViewDecorator extends JComponent {
                     "org.icepdf.core.views.page.paper.color", "#FFFFFF");
             int colorValue = ColorUtil.convertColor(color);
             pageColor =
-                    new Color( colorValue >= 0? colorValue :
-                            Integer.parseInt("FFFFFF", 16 ));
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("FFFFFF", 16));
         } catch (NumberFormatException e) {
             if (log.isLoggable(Level.WARNING)) {
                 log.warning("Error reading page paper color.");
@@ -93,14 +92,15 @@ public class PageViewDecorator extends JComponent {
                     "org.icepdf.core.views.page.border.color", "#000000");
             int colorValue = ColorUtil.convertColor(color);
             pageBorderColor =
-                    new Color( colorValue >= 0? colorValue :
-                            Integer.parseInt("000000", 16 ));
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("000000", 16));
         } catch (NumberFormatException e) {
             if (log.isLoggable(Level.WARNING)) {
                 log.warning("Error reading page paper color.");
             }
         }
     }
+
     public PageViewDecorator(JComponent pageViewComponent) {
         setLayout(new GridLayout(1, 1, 0, 0));
 

@@ -14,29 +14,25 @@
  */
 package org.icepdf.ri.common;
 
-import org.icepdf.core.Controller;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentView;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.ThumbnailsPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.thumbs.SearchPanel;
-import org.icepdf.ri.common.views.DocumentViewControllerImpl;
-import org.icepdf.ri.common.views.DocumentViewModelImpl;
+import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.util.*;
 
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -279,7 +275,7 @@ public class SwingController
      *
      * @return page view controller.
      */
-    public org.icepdf.core.views.DocumentViewController getDocumentViewController() {
+    public DocumentViewController getDocumentViewController() {
         return documentViewController;
     }
 
@@ -1354,101 +1350,101 @@ public class SwingController
             if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_PAN) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_HAND_OPEN);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_HAND_OPEN);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_SELECT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(
                                 DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_ZOOM_IN);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_IN);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(
                                 DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT);
-                documentViewController.setViewCursor(org.icepdf.core.views.DocumentViewController.CURSOR_ZOOM_OUT);
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_OUT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_WAIT) {
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_WAIT);
+                setCursorOnComponents(DocumentViewController.CURSOR_WAIT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_NONE) {
-                setCursorOnComponents(org.icepdf.core.views.DocumentViewController.CURSOR_DEFAULT);
+                setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             }
             if (actualToolMayHaveChanged) {
                 reflectToolInToolButtons();
@@ -1558,11 +1554,11 @@ public class SwingController
             return;
         }
         reflectSelectionInButton(fitWidthButton,
-                isDocumentFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_WIDTH));
+                isDocumentFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH));
         reflectSelectionInButton(fitHeightButton,
-                isDocumentFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT));
+                isDocumentFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT));
         reflectSelectionInButton(fitActualSizeButton,
-                isDocumentFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_ACTUAL_SIZE));
+                isDocumentFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE));
     }
 
     /**
@@ -2067,7 +2063,7 @@ public class SwingController
         setPageFitMode(PropertiesManager.checkAndStoreIntegerProperty(
                 propertiesManager,
                 PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
-                org.icepdf.core.views.DocumentViewController.PAGE_FIT_NONE), false);
+                DocumentViewController.PAGE_FIT_NONE), false);
 
         // Apply any ViewerPreferences from the doc
         applyViewerPreferences(catalog, propertiesManager);
@@ -3081,7 +3077,7 @@ public class SwingController
         // update gui
         reflectZoomInZoomComboBox();    // Might change fit value
         if (!becauseOfValidFitMode)
-            setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_NONE, false);
+            setPageFitMode(DocumentViewController.PAGE_FIT_NONE, false);
     }
 
     /**
@@ -3716,15 +3712,15 @@ public class SwingController
                     } else if (source == fitActualSizeMenuItem) {
                         // Clicking only seems to invoke an itemStateChanged() event,
                         //  so this is probably redundant
-                        setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
+                        setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
                     } else if (source == fitPageMenuItem) {
                         // Clicking only seems to invoke an itemStateChanged() event
                         //  so this is probably redundant
-                        setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
+                        setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
                     } else if (source == fitWidthMenuItem) {
                         // Clicking only seems to invoke an itemStateChanged() event
                         //  so this is probably redundant
-                        setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
+                        setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
                     } else if (source == zoomInMenuItem || source == zoomInButton) {
                         zoomIn();
                     } else if (source == zoomOutMenuItem || source == zoomOutButton) {
@@ -3834,17 +3830,17 @@ public class SwingController
                 }
             } else if (source == fitActualSizeButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
-                    setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
+                    setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
                     doSetFocus = true;
                 }
             } else if (source == fitHeightButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
-                    setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
+                    setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
                     doSetFocus = true;
                 }
             } else if (source == fitWidthButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
-                    setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
+                    setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
                     doSetFocus = true;
                 }
             } else if (source == fontEngineButton) {
@@ -4045,7 +4041,7 @@ public class SwingController
         JFrame v = viewer;
 
         // assign view properties so that they can be saved on close
-        org.icepdf.core.views.DocumentViewController viewControl = getDocumentViewController();
+        DocumentViewController viewControl = getDocumentViewController();
         Properties viewProperties = new Properties();
         viewProperties.setProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, String.valueOf(viewControl.getFitMode()));
         viewProperties.setProperty("document.viewtype", String.valueOf(viewControl.getViewMode()));
@@ -4224,13 +4220,13 @@ public class SwingController
                     print(true);
                 } else if (c == KeyEventConstants.KEY_CODE_FIT_ACTUAL &&
                         m == KeyEventConstants.MODIFIER_FIT_ACTUAL) {
-                    setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
+                    setPageFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE, false);
                 } else if (c == KeyEventConstants.KEY_CODE_FIT_PAGE &&
                         m == KeyEventConstants.MODIFIER_FIT_PAGE) {
-                    setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
+                    setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, false);
                 } else if (c == KeyEventConstants.KEY_CODE_FIT_WIDTH &&
                         m == KeyEventConstants.MODIFIER_FIT_WIDTH) {
-                    setPageFitMode(org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
+                    setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, false);
                 } else if (c == KeyEventConstants.KEY_CODE_ZOOM_IN &&
                         m == KeyEventConstants.MODIFIER_ZOOM_IN) {
                     zoomIn();

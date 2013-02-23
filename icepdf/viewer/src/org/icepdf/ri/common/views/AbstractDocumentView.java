@@ -18,10 +18,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentView;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.tools.*;
 
 import javax.swing.*;

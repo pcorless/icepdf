@@ -22,9 +22,9 @@ import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.TextSpriteDrawCmd;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;

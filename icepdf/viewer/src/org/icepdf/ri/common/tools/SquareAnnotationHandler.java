@@ -14,15 +14,15 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationCallback;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
@@ -131,7 +131,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                 AnnotationFactory.buildAnnotation(
                         documentViewModel.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_SQUARE,
-                        tBbox, null);
+                        tBbox);
         annotation.setColor(lineColor);
         annotation.setFillColor(internalColor);
         annotation.setRectangle(rectangle);

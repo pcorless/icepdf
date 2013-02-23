@@ -22,8 +22,8 @@ import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.views.AnnotationComponent;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

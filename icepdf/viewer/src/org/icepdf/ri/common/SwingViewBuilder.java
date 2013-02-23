@@ -21,6 +21,7 @@ import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.thumbs.SearchPanel;
+import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
@@ -351,7 +352,7 @@ public class SwingViewBuilder {
         // Use all the defaults
         this(c, null, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
-                org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
+                DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
     }
 
     /**
@@ -364,7 +365,7 @@ public class SwingViewBuilder {
     public SwingViewBuilder(SwingController c, PropertiesManager properties) {
         this(c, properties, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
-                org.icepdf.core.views.DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
+                DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
     }
 
     /**
@@ -1597,7 +1598,7 @@ public class SwingViewBuilder {
         splitpane.setLeftComponent(buildUtilityTabbedPane());
 
         // set the viewController embeddable flag.
-        org.icepdf.core.views.DocumentViewController viewController =
+        DocumentViewController viewController =
                 viewerController.getDocumentViewController();
         // will add key event listeners
         viewerController.setIsEmbeddedComponent(embeddableComponent);

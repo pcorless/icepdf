@@ -88,14 +88,12 @@ public class InkAnnotation extends MarkupAnnotation {
     /**
      * Gets an instance of a InkAnnotation that has valid Object Reference.
      *
-     * @param library         document library
-     * @param rect            bounding rectangle in user space
-     * @param annotationState annotation state object of undo
+     * @param library document library
+     * @param rect    bounding rectangle in user space
      * @return new InkAnnotation Instance.
      */
     public static InkAnnotation getInstance(Library library,
-                                            Rectangle rect,
-                                            AnnotationState annotationState) {
+                                            Rectangle rect) {
         // state manager
         StateManager stateManager = library.getStateManager();
 
@@ -117,18 +115,6 @@ public class InkAnnotation extends MarkupAnnotation {
         inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         inkAnnotation.setNew(true);
 
-        // apply state
-        if (annotationState != null) {
-            annotationState.restore(inkAnnotation);
-        }
-        // some defaults just for display purposes.
-        else {
-            annotationState = new AnnotationState(
-                    Annotation.INVISIBLE_RECTANGLE,
-                    LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                    BorderStyle.BORDER_STYLE_SOLID, Color.RED);
-            annotationState.restore(inkAnnotation);
-        }
         return inkAnnotation;
     }
 

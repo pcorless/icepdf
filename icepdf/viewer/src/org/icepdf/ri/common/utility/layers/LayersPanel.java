@@ -17,10 +17,10 @@ package org.icepdf.ri.common.utility.layers;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.OptionalContent;
 import org.icepdf.core.pobjects.OptionalContentGroup;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;

@@ -15,7 +15,6 @@
 package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.views.*;
 import org.icepdf.ri.common.tools.*;
 
 import javax.swing.*;

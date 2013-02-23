@@ -14,14 +14,14 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationCallback;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
@@ -78,7 +78,7 @@ public class TextAnnotationHandler implements ToolHandler {
                 AnnotationFactory.buildAnnotation(
                         library,
                         Annotation.SUBTYPE_TEXT,
-                        bbox, null);
+                        bbox);
         markupAnnotation.setCreationDate(PDate.createDate(new Date()));
         markupAnnotation.setTitleText(System.getProperty("user.name"));
         markupAnnotation.setContents("");
@@ -96,7 +96,7 @@ public class TextAnnotationHandler implements ToolHandler {
                 AnnotationFactory.buildAnnotation(
                         library,
                         Annotation.SUBTYPE_POPUP,
-                        bbox, null);
+                        bbox);
 
         // setup up some default values
         popupAnnotation.setOpen(true);

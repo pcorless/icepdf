@@ -12,12 +12,10 @@
  * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core;
+package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.PageViewComponent;
 
 /**
  * <p>Annotation callback allows developers to control how Annotation and
@@ -26,7 +24,7 @@ import org.icepdf.core.views.PageViewComponent;
  * and border stroke width before the annotation is painted.</p>
  *
  * @author ICEsoft Technologies, Inc.
- * @see org.icepdf.core.views.DocumentViewController#setAnnotationCallback(AnnotationCallback)
+ * @see org.icepdf.ri.common.views.DocumentViewController#setAnnotationCallback(AnnotationCallback)
  * @since 2.6
  */
 public interface AnnotationCallback {

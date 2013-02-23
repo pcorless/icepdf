@@ -95,14 +95,12 @@ public class CircleAnnotation extends MarkupAnnotation {
     /**
      * Gets an instance of a CircleAnnotation that has valid Object Reference.
      *
-     * @param library         document library
-     * @param rect            bounding rectangle in user space
-     * @param annotationState annotation state object of undo
+     * @param library document library
+     * @param rect    bounding rectangle in user space
      * @return new CircleAnnotation Instance.
      */
     public static CircleAnnotation getInstance(Library library,
-                                               Rectangle rect,
-                                               AnnotationState annotationState) {
+                                               Rectangle rect) {
         // state manager
         StateManager stateManager = library.getStateManager();
 
@@ -124,18 +122,6 @@ public class CircleAnnotation extends MarkupAnnotation {
         circleAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         circleAnnotation.setNew(true);
 
-        // apply state
-        if (annotationState != null) {
-            annotationState.restore(circleAnnotation);
-        }
-        // some defaults just for display purposes.
-        else {
-            annotationState = new AnnotationState(
-                    Annotation.INVISIBLE_RECTANGLE,
-                    LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                    BorderStyle.BORDER_STYLE_SOLID, Color.RED);
-            annotationState.restore(circleAnnotation);
-        }
         return circleAnnotation;
     }
 

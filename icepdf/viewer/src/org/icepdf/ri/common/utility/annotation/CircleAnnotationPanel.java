@@ -15,12 +15,12 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
-import org.icepdf.core.views.AnnotationComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractDocumentViewModel;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AnnotationState;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;

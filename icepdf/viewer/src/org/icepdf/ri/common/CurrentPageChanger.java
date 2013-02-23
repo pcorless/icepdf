@@ -15,11 +15,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.PageViewComponent;
-import org.icepdf.ri.common.views.AbstractDocumentView;
-import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.views.*;
 
 import javax.swing.*;
 import java.awt.*;

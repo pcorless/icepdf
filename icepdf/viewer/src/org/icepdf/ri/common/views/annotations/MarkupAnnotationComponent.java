@@ -14,18 +14,14 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
-import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.*;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;

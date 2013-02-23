@@ -17,16 +17,10 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.AnnotationState;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.DocumentViewModel;
-import org.icepdf.core.views.PageViewComponent;
-import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.ResizableBorder;
+import org.icepdf.ri.common.views.*;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;

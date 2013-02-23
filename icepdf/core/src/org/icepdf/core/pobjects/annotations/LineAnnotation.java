@@ -235,14 +235,12 @@ public class LineAnnotation extends MarkupAnnotation {
     /**
      * Gets an instance of a LineAnnotation that has valid Object Reference.
      *
-     * @param library         document library
-     * @param rect            bounding rectangle in user space
-     * @param annotationState annotation state object of undo
+     * @param library document library
+     * @param rect    bounding rectangle in user space
      * @return new LineAnnotation Instance.
      */
     public static LineAnnotation getInstance(Library library,
-                                             Rectangle rect,
-                                             AnnotationState annotationState) {
+                                             Rectangle rect) {
         // state manager
         StateManager stateManager = library.getStateManager();
 
@@ -264,18 +262,6 @@ public class LineAnnotation extends MarkupAnnotation {
         lineAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         lineAnnotation.setNew(true);
 
-        // apply state
-        if (annotationState != null) {
-            annotationState.restore(lineAnnotation);
-        }
-        // some defaults just for display purposes.
-        else {
-            annotationState = new AnnotationState(
-                    Annotation.INVISIBLE_RECTANGLE,
-                    LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                    BorderStyle.BORDER_STYLE_SOLID, Color.RED);
-            annotationState.restore(lineAnnotation);
-        }
         return lineAnnotation;
     }
 

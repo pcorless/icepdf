@@ -12,11 +12,10 @@
  * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.views;
+package org.icepdf.ri.common.views;
 
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.ri.common.views.AbstractPageViewComponent;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
