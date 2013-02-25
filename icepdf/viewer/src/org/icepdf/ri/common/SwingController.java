@@ -186,8 +186,11 @@ public class SwingController
     private JToggleButton zoomOutToolButton;
 
     private JToggleButton selectToolButton;
-    private JToggleButton linkAnnotationToolButton;
     private JToggleButton highlightAnnotationToolButton;
+    private JToggleButton textAnnotationToolButton;
+
+    private JToggleButton linkAnnotationToolButton;
+    private JToggleButton highlightAnnotationUtilityToolButton;
     private JToggleButton strikeOutAnnotationToolButton;
     private JToggleButton underlineAnnotationToolButton;
     private JToggleButton lineAnnotationToolButton;
@@ -196,7 +199,7 @@ public class SwingController
     private JToggleButton circleAnnotationToolButton;
     private JToggleButton inkAnnotationToolButton;
     private JToggleButton freeTextAnnotationToolButton;
-    private JToggleButton textAnnotationToolButton;
+    private JToggleButton textAnnotationUtilityToolButton;
 
     private JToolBar completeToolBar;
 
@@ -834,6 +837,14 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
+    public void setHighlightAnnotationUtilityToolButton(JToggleButton btn) {
+        highlightAnnotationUtilityToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
     public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
         strikeOutAnnotationToolButton = btn;
         btn.addItemListener(this);
@@ -900,6 +911,14 @@ public class SwingController
      */
     public void setTextAnnotationToolButton(JToggleButton btn) {
         textAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setTextAnnotationUtilityToolButton(JToggleButton btn) {
+        textAnnotationUtilityToolButton = btn;
         btn.addItemListener(this);
     }
 
@@ -1120,6 +1139,7 @@ public class SwingController
         setEnabled(selectToolButton, opened && canModify);
         setEnabled(linkAnnotationToolButton, opened && canModify);
         setEnabled(highlightAnnotationToolButton, opened && canModify);
+        setEnabled(highlightAnnotationUtilityToolButton, opened && canModify);
         setEnabled(strikeOutAnnotationToolButton, opened && canModify);
         setEnabled(underlineAnnotationToolButton, opened && canModify);
         setEnabled(lineAnnotationToolButton, opened && canModify);
@@ -1129,6 +1149,7 @@ public class SwingController
         setEnabled(inkAnnotationToolButton, opened && canModify);
         setEnabled(freeTextAnnotationToolButton, opened && canModify);
         setEnabled(textAnnotationToolButton, opened && canModify);
+        setEnabled(textAnnotationUtilityToolButton, opened && canModify);
         setEnabled(fontEngineButton, opened);
         setEnabled(facingPageViewContinuousButton, opened);
         setEnabled(singlePageViewContinuousButton, opened);
@@ -1499,6 +1520,10 @@ public class SwingController
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
                 ));
+        reflectSelectionInButton(highlightAnnotationUtilityToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
+                ));
         reflectSelectionInButton(strikeOutAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION
@@ -1532,6 +1557,10 @@ public class SwingController
                         DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION
                 ));
         reflectSelectionInButton(textAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION
+                ));
+        reflectSelectionInButton(textAnnotationUtilityToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION
                 ));
@@ -2297,6 +2326,7 @@ public class SwingController
         selectToolButton = null;
         linkAnnotationToolButton = null;
         highlightAnnotationToolButton = null;
+        highlightAnnotationUtilityToolButton = null;
         underlineAnnotationToolButton = null;
         strikeOutAnnotationToolButton = null;
         lineAnnotationToolButton = null;
@@ -2306,6 +2336,7 @@ public class SwingController
         inkAnnotationToolButton = null;
         freeTextAnnotationToolButton = null;
         textAnnotationToolButton = null;
+        textAnnotationUtilityToolButton = null;
 
         fontEngineButton = null;
 
@@ -3893,7 +3924,8 @@ public class SwingController
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 }
-            } else if (source == highlightAnnotationToolButton) {
+            } else if (source == highlightAnnotationToolButton ||
+                    source == highlightAnnotationUtilityToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
@@ -3938,7 +3970,8 @@ public class SwingController
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
                 }
-            } else if (source == textAnnotationToolButton) {
+            } else if (source == textAnnotationToolButton ||
+                    source == textAnnotationUtilityToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);

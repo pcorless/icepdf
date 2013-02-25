@@ -58,6 +58,10 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         this.setEnabled(false);
     }
 
+    public void setAnnotationUtilityToolbar(JToolBar annotationUtilityToolbar) {
+        addGB(annotationPanel, annotationUtilityToolbar, 0, 0, 1, 1);
+    }
+
     public AnnotationPanelAdapter buildAnnotationPropertyPanel(AnnotationComponent annotationComp) {
         if (annotationComp != null) {
             // check action type
@@ -99,7 +103,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         annotationPropertyPanel = buildAnnotationPropertyPanel(annotation);
         if (annotationPropertyPanel != null) {
             annotationPropertyPanel.setAnnotationComponent(annotation);
-            addGB(annotationPanel, annotationPropertyPanel, 0, 0, 1, 1);
+            addGB(annotationPanel, annotationPropertyPanel, 0, 1, 1, 1);
         }
 
         // add the new action
@@ -138,10 +142,10 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
 
         // panels to add.
         if (annotationPropertyPanel != null) {
-            addGB(annotationPanel, annotationPropertyPanel, 0, 0, 1, 1);
+            addGB(annotationPanel, annotationPropertyPanel, 0, 1, 1, 1);
         }
-        addGB(annotationPanel, borderPanel, 0, 1, 1, 1);
-        addGB(annotationPanel, actionsPanel, 0, 2, 1, 1);
+        addGB(annotationPanel, borderPanel, 0, 2, 1, 1);
+        addGB(annotationPanel, actionsPanel, 0, 3, 1, 1);
 
     }
 
