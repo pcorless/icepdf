@@ -475,6 +475,142 @@ public class Parser {
     }
 
     /**
+     * @return
+     * @throws java.io.IOException
+     */
+    public String peek2() throws IOException {
+        reader.mark(2);
+        char c[] = new char[2];
+        c[0] = (char) reader.read();
+        c[1] = (char) reader.read();
+        String s = new String(c);
+        reader.reset();
+        return s;
+    }
+
+    /**
+     * @return true if ate the ending EI delimiter
+     * @throws java.io.IOException
+     */
+    public boolean readLineForInlineImage(OutputStream out) throws IOException {
+        // The encoder might not have put EI on its own line (as it should),
+        //  but might just put it right after the data
+        final int STATE_PRE_E = 0;
+        final int STATE_PRE_I = 1;
+        final int STATE_PRE_WHITESPACE = 2;
+        int state = STATE_PRE_E;
+
+        while (true) {
+            int c = reader.read();
+            if (c < 0)
+                break;
+            if (state == STATE_PRE_E && c == 'E') {
+                state++;
+                continue;
+            } else if (state == STATE_PRE_I && c == 'I') {
+                state++;
+                continue;
+            } else if (state == STATE_PRE_WHITESPACE && isWhitespace((char) (0xFF & c))) {
+                // It's hard to tell if the EI + whitespace is part of the
+                //  image data or not, given that many PDFs are mis-encoded,
+                //  and don't give whitespace when necessary. So, instead of
+                //  assuming the need for whitespace, we're going to assume
+                //  that this is the real EI, and apply a heuristic to prove
+                //  ourselves wrong.
+                boolean imageDataFound = isStillInlineImageData(reader, 32);
+                if (imageDataFound) {
+                    out.write('E');
+                    out.write('I');
+                    out.write(c);
+                    state = STATE_PRE_E;
+
+                    if (c == '\r' || c == '\n') {
+                        break;
+                    }
+                } else
+                    return true;
+            } else {
+                // If we got a fragment of the EI<whitespace> sequence, then we withheld
+                //  what we had so far.  But if we're here, that fragment was incomplete,
+                //  so that was actual embedded data, and not the delimiter, so we have
+                //  to write it out.
+                if (state > STATE_PRE_E)
+                    out.write('E');
+                if (state > STATE_PRE_I)
+                    out.write('I');
+                state = STATE_PRE_E;
+
+                out.write((byte) c);
+                if (c == '\r' || c == '\n') {
+                    break;
+                }
+            }
+        }
+        // If the input ends right after the EI, but with no whitespace,
+        //  then we're still done
+        if (state == STATE_PRE_WHITESPACE)
+            return true;
+        return false;
+    }
+
+    /**
+     * We want to be conservative in deciding that we're still in the inline
+     * image, since we haven't found any of these cases before now.
+     */
+    private static boolean isStillInlineImageData(
+            InputStream reader, int numBytesToCheck)
+            throws IOException {
+        boolean imageDataFound = false;
+        boolean onlyWhitespaceSoFar = true;
+        reader.mark(numBytesToCheck);
+        byte[] toCheck = new byte[numBytesToCheck];
+        int numReadToCheck = reader.read(toCheck);
+        for (int i = 0; i < numReadToCheck; i++) {
+            char charToCheck = (char) (((int) toCheck[i]) & 0xFF);
+
+            // If the very first thing we read is a Q or S token
+            boolean typicalTextTokenInContentStream =
+                    (charToCheck == 'Q' || charToCheck == 'q' ||
+                            charToCheck == 'S' || charToCheck == 's');
+            if (onlyWhitespaceSoFar &&
+                    typicalTextTokenInContentStream &&
+                    (i + 1 < numReadToCheck) &&
+                    isWhitespace((char) (((int) toCheck[i + 1]) & 0xFF))) {
+                break;
+            }
+            if (!isWhitespace(charToCheck))
+                onlyWhitespaceSoFar = false;
+
+            // If we find some binary image data
+            if (!isExpectedInContentStream(charToCheck)) {
+                imageDataFound = true;
+                break;
+            }
+        }
+        reader.reset();
+        return imageDataFound;
+    }
+
+    /**
+     * This is not necessarily an exhaustive list of characters one would
+     * expect in a Content Stream, it's a heuristic for whether the data
+     * might still be part of an inline image, or the lattercontent stream
+     */
+    private static boolean isExpectedInContentStream(char c) {
+        return ((c >= 'a' && c <= 'Z') ||
+                (c >= 'A' && c <= 'Z') ||
+                (c >= '0' && c <= '9') ||
+                isWhitespace(c) ||
+                isDelimiter(c) ||
+                (c == '\\') ||
+                (c == '\'') ||
+                (c == '\"') ||
+                (c == '*') ||
+                (c == '.'));
+    }
+
+
+    /**
      * Utility Method for getting a PObject from the stack and adding it to the
      * library.  The retrieved PObject has an ObjectReference added to it for
      * decryption purposes.
