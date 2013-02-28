@@ -16,8 +16,9 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -243,7 +244,8 @@ public class TextAnnotation extends MarkupAnnotation {
         }
         // parse the shapes and assign to this instance
         try {
-            ContentParser cp = new ContentParser(library, null);
+            ContentParser cp = ContentParserFactory.getInstance()
+                    .getContentParser(library, null);
             shapes = cp.parse(new byte[][]{iconContentString.getBytes()}).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
