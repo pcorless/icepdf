@@ -99,7 +99,7 @@ public class DocumentState {
         zoomLevels.add(new SelectItem(3.0f, "300%"));
     }
 
-    public DocumentState(String documentPath ) {
+    public DocumentState(String documentPath) {
         this(documentPath, false);
     }
 
@@ -108,7 +108,7 @@ public class DocumentState {
      *
      * @param documentPath path to PDF document.
      */
-    public DocumentState(String documentPath, boolean sharedSession ) {
+    public DocumentState(String documentPath, boolean sharedSession) {
         documentName = documentPath.substring(documentPath.lastIndexOf(File.separatorChar) + 1);
         this.documentPath = documentPath;
         isStateChanged = true;
@@ -117,7 +117,7 @@ public class DocumentState {
         pdfResource = new PDFResource();
     }
 
-    public DocumentState(DocumentState documentState){
+    public DocumentState(DocumentState documentState) {
         documentName = documentState.getDocumentName();
         documentPath = documentState.getDocumentPath();
         isStateChanged = true;
@@ -138,18 +138,18 @@ public class DocumentState {
 
         synchronized (documentLock) {
 
-            if (document == null ) {
+            if (document == null) {
 
-                if (sharedSession){
+                if (sharedSession) {
                     Document documentReference = documentCache.get(documentPath);
-                    if (documentReference != null){
+                    if (documentReference != null) {
                         document = documentReference;
-                    }else{
+                    } else {
                         document = new Document();
                         document.setFile(documentPath);
                         documentCache.put(documentPath, document);
                     }
-                }else{
+                } else {
                     document = new Document();
                     document.setFile(documentPath);
                 }
@@ -219,8 +219,8 @@ public class DocumentState {
         synchronized (documentLock) {
             if (document != null) {
 
-                if (logger.isLoggable(Level.FINE)){
-                    logger.fine("Capturing " + documentName + " " + pageCursor );
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Capturing " + documentName + " " + pageCursor);
                 }
 
                 // check page bounds just encase.
@@ -270,12 +270,10 @@ public class DocumentState {
                 // quickly invalidate content streams so we can swap font
                 // implementations.
                 for (int i = 0, max = getDocumentLength(); i < max; i++) {
-                    page = document.getPageTree().getPage(i, this);
+                    page = document.getPageTree().getPage(i);
                     if (page.isInitiated()) {
                         page.getLibrary().disposeFontResources();
-                        page.reduceMemory();
                     }
-                    document.getPageTree().releasePage(page, this);
                 }
                 // mark state as dirty
                 isStateChanged = true;
