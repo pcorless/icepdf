@@ -209,6 +209,7 @@ public class PageThumbnailComponent extends JComponent implements MouseListener 
                         BufferedImage.TYPE_INT_ARGB);
                 Graphics2D imageGraphics = image.createGraphics();
                 Page page = pageTree.getPage(pageIndex);
+                page.init();
                 // we need to parse and pain the page
                 if (page != null) {
                     page.paint(imageGraphics,
@@ -216,7 +217,7 @@ public class PageThumbnailComponent extends JComponent implements MouseListener 
                             Page.BOUNDARY_CROPBOX,
                             0,
                             thumbNailZoom,
-                            false, false);
+                            true, false);
                 }
                 bufferedPageImageReference = new SoftReference<Image>(image);
                 initiatedThumbnailGeneration = false;

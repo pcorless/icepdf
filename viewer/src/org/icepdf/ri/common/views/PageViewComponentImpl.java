@@ -18,7 +18,6 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.ColorUtil;
@@ -28,7 +27,6 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,7 +37,6 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -983,25 +980,7 @@ public class PageViewComponentImpl extends
                 // add annotation components to container, this only done
                 // once, but Annotation state can be refreshed with the api
                 // when needed.
-                List<Annotation> annotations = page.getAnnotations();
-                if (annotations != null && annotations.size() > 0) {
-                    // we don't want to re-initialize the component as we'll
-                    // get duplicates if the page has be gc'd
-                    if (annotationComponents == null) {
-                        annotationComponents =
-                                new ArrayList<AnnotationComponent>(annotations.size());
-                        for (Annotation annotation : annotations) {
-                            AbstractAnnotationComponent comp =
-                                    AnnotationComponentFactory.buildAnnotationComponent(
-                                            annotation, documentViewController,
-                                            pageComponent, documentViewModel);
-                            // add for painting
-                            annotationComponents.add(comp);
-                            // add to layout
-                            add(comp);
-                        }
-                    }
-                }
+                refreshAnnotationComponents(page);
                 pageComponent.validate();
 
                 // fire page annotation initialized callback
@@ -1077,6 +1056,14 @@ public class PageViewComponentImpl extends
                             logger.fine("Page Initialization Interrupted: " + pageIndex);
                         }
                     }
+                }
+
+                // check annotation states, there is apossibility that the
+                // page was initialized by some other process and in such
+                // a case the pageInitializer would not have build the up the
+                // annotationComponents.
+                if (page.getAnnotations() != null && annotationComponents == null) {
+                    refreshAnnotationComponents(page);
                 }
 
                 // paint page content

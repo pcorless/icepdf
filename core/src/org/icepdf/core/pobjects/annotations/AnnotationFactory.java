@@ -32,8 +32,6 @@ public class AnnotationFactory {
     private static final Logger logger =
             Logger.getLogger(AnnotationFactory.class.toString());
 
-    public static final int LINK_ANNOTATION = 1;
-
     /**
      * Creates a new Annotation object using properties from the annotationState
      * paramater.  If no annotaitonState is provided a LinkAnnotation is returned
@@ -76,6 +74,8 @@ public class AnnotationFactory {
             return TextAnnotation.getInstance(library, rect);
         } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
             return PopupAnnotation.getInstance(library, rect);
+        } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
+            return WidgetAnnotation.getInstance(library, rect);
         } else {
             logger.warning("Unsupported Annotation type. ");
             return null;

@@ -15,10 +15,14 @@
 package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.ri.common.tools.*;
+import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Abstract PageViewComponent.
@@ -148,6 +152,28 @@ public abstract class AbstractPageViewComponent
         if (currentToolHandler != null) {
             addMouseListener(currentToolHandler);
             addMouseMotionListener(currentToolHandler);
+        }
+    }
+
+    public void refreshAnnotationComponents(Page page) {
+        List<Annotation> annotations = page.getAnnotations();
+        if (annotations != null && annotations.size() > 0) {
+            // we don't want to re-initialize the component as we'll
+            // get duplicates if the page has be gc'd
+            if (annotationComponents == null) {
+                annotationComponents =
+                        new ArrayList<AnnotationComponent>(annotations.size());
+                for (Annotation annotation : annotations) {
+                    AbstractAnnotationComponent comp =
+                            AnnotationComponentFactory.buildAnnotationComponent(
+                                    annotation, documentViewController,
+                                    this, documentViewModel);
+                    // add for painting
+                    annotationComponents.add(comp);
+                    // add to layout
+                    add(comp);
+                }
+            }
         }
     }
 

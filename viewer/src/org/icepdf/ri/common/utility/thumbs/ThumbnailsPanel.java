@@ -13,7 +13,7 @@
  * governing permissions and limitations under the License.
  */
 
-package org.icepdf.ri.common.utility;
+package org.icepdf.ri.common.utility.thumbs;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;

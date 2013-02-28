@@ -19,7 +19,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
-import org.icepdf.ri.common.utility.thumbs.SearchPanel;
+import org.icepdf.ri.common.utility.search.SearchPanel;
 
 import javax.swing.*;
 import java.awt.*;

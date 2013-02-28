@@ -86,6 +86,9 @@ public class AnnotationComponentFactory {
             } else if (Annotation.SUBTYPE_FREE_TEXT.equals(subtype)) {
                 return new FreeTextAnnotationComponent(annotation, documentViewController,
                         pageViewComponent, documentViewModel);
+            } else if (Annotation.SUBTYPE_WIDGET.equals(subtype)) {
+                return new WidgetAnnotationComponent(annotation, documentViewController,
+                        pageViewComponent, documentViewModel);
             } else {
                 return new AbstractAnnotationComponent(annotation, documentViewController,
                         pageViewComponent, documentViewModel) {
