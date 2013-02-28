@@ -17,8 +17,9 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
@@ -143,7 +144,8 @@ public class Form extends Stream {
         }
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream. 
-        ContentParser cp = new ContentParser(library, leafResources);
+        ContentParser cp = ContentParserFactory.getInstance()
+                .getContentParser(library, resources);
         cp.setGraphicsState(graphicsState);
         byte[] in = getDecodedStreamBytes();
         if (in != null) {

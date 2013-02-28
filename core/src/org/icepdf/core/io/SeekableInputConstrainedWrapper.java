@@ -148,18 +148,6 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         return this;
     }
 
-
-    public void beginThreadAccess() {
-        if (streamDataInput != null)
-            streamDataInput.beginThreadAccess();
-    }
-
-    public void endThreadAccess() {
-        if (streamDataInput != null)
-            streamDataInput.endThreadAccess();
-    }
-
-
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString());
