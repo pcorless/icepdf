@@ -29,7 +29,12 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * The <code>PageCapture</code> class is an example of how to save page
@@ -37,7 +42,7 @@ import java.util.ResourceBundle;
  * page in the document is captured as an image and saved to disk as a
  * PNG graphic file.
  *
- * @since 2.0
+ * @since 5.0
  */
 public class PageCapture {
     public static void main(String[] args) {
@@ -52,10 +57,33 @@ public class PageCapture {
                 ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
         new FontPropertiesManager(properties, System.getProperties(), messageBundle);
 
+        // start the capture
+        PageCapture pageCapture = new PageCapture();
+        pageCapture.capturePages(filePath);
+
+    }
+
+    public void capturePages(String filePath) {
         // open the url
         Document document = new Document();
+
+        // setup two threads to handle image extraction.
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
         try {
             document.setFile(filePath);
+            // create a list of callables.
+            int pages = document.getNumberOfPages();
+            java.util.List<Callable<Void>> callables = new ArrayList<Callable<Void>>(pages);
+            for (int i = 0; i <= pages; i++) {
+                callables.add(new CapturePage(document, i));
+            }
+            executorService.invokeAll(callables);
+            executorService.submit(new DocumentCloser(document)).get();
+
+        } catch (InterruptedException e) {
+            System.out.println("Error parsing PDF document " + e);
+        } catch (ExecutionException e) {
+            System.out.println("Error parsing PDF document " + e);
         } catch (PDFException ex) {
             System.out.println("Error parsing PDF document " + ex);
         } catch (PDFSecurityException ex) {
@@ -65,15 +93,26 @@ public class PageCapture {
         } catch (IOException ex) {
             System.out.println("Error handling PDF document " + ex);
         }
+        executorService.shutdown();
+    }
 
+    /**
+     * Captures images found in a page  parse to file.
+     */
+    public class CapturePage implements Callable<Void> {
+        private Document document;
+        private int pageNumber;
+        private float scale = 1f;
+        private float rotation = 0f;
 
-        // save page caputres to file.
-        float scale = 1f;
-        float rotation = 0f;
+        private CapturePage(Document document, int pageNumber) {
+            this.document = document;
+            this.pageNumber = pageNumber;
+        }
 
-        // Paint each pages content to an image and write the image to file
-        for (int i = 0; i < document.getNumberOfPages(); i++) {
-            Page page = document.getPageTree().getPage(i);
+        public Void call() {
+            Page page = document.getPageTree().getPage(pageNumber);
+            page.init();
             PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
 
             int pageWidth = (int) sz.getWidth();
@@ -86,21 +125,37 @@ public class PageCapture {
 
             page.paint(g, GraphicsRenderingHints.PRINT,
                     Page.BOUNDARY_CROPBOX, rotation, scale);
-
-
             g.dispose();
             // capture the page image to file
             try {
-                System.out.println("\t capturing page " + i);
-                File file = new File("imageCapture1_" + i + ".png");
+                System.out.println("Capturing page " + pageNumber);
+                File file = new File("imageCapture_" + pageNumber + ".png");
                 ImageIO.write(image, "png", file);
 
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
             image.flush();
+            return null;
         }
-        // clean up resources
-        document.dispose();
+    }
+
+    /**
+     * Disposes the document.
+     */
+    public class DocumentCloser implements Callable<Void> {
+        private Document document;
+
+        private DocumentCloser(Document document) {
+            this.document = document;
+        }
+
+        public Void call() {
+            if (document != null) {
+                document.dispose();
+                System.out.println("Document disposed");
+            }
+            return null;
+        }
     }
 }
