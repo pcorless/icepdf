@@ -38,7 +38,7 @@ public class AnnotationState implements Memento {
 
     // simple normalized version of properties
     protected Integer linkType;
-    protected String highlightStyle;
+    protected Name highlightStyle;
     protected float lineThickness;
     protected Name lineStyle;
     protected Color color;
@@ -83,7 +83,7 @@ public class AnnotationState implements Memento {
         }
     }
 
-    public AnnotationState(Integer linkType, String highlightStyle,
+    public AnnotationState(Integer linkType, Name highlightStyle,
                            float lineThickness, Name lineStyle, Color color) {
         this.linkType = linkType;
         this.highlightStyle = highlightStyle;
@@ -225,12 +225,12 @@ public class AnnotationState implements Memento {
             if (object != null && object instanceof Name) {
                 linkAnnotation.getEntries().put(
                         LinkAnnotation.HIGHLIGHT_MODE_KEY,
-                        new Name(highlightStyle));
+                        highlightStyle);
             } else {
                 // add the new entry
                 linkAnnotation.getEntries().put(
                         LinkAnnotation.HIGHLIGHT_MODE_KEY,
-                        new Name(highlightStyle));
+                        highlightStyle);
             }
         }
     }
