@@ -72,25 +72,25 @@ public class LinkAnnotation extends Annotation {
     /**
      * Indicates that the annotation has no highlight effect.
      */
-    public static final String HIGHLIGHT_NONE = "N";
+    public static final Name HIGHLIGHT_NONE = new Name("N");
 
     /**
      * Indicates that the annotation rectangle colours should be inverted for
      * its highlight effect.
      */
-    public static final String HIGHLIGHT_INVERT = "I";
+    public static final Name HIGHLIGHT_INVERT = new Name("I");
 
     /**
      * Indicates that the annotation rectangle border should be inverted for its
      * highlight effect.
      */
-    public static final String HIGHLIGHT_OUTLINE = "O";
+    public static final Name HIGHLIGHT_OUTLINE = new Name("O");
 
     /**
      * Indicates that the annotation rectangle border should be pushed below the
      * surface of th page.
      */
-    public static final String HIGHLIGHT_PUSH = "P";
+    public static final Name HIGHLIGHT_PUSH = new Name("P");
 
     /**
      * Creates a new instance of a LinkAnnotation.
@@ -145,15 +145,15 @@ public class LinkAnnotation extends Annotation {
      * @return one of the predefined highlight effects, HIGHLIGHT_NONE,
      *         HIGHLIGHT_OUTLINE or HIGHLIGHT_PUSH.
      */
-    public String getHighlightMode() {
+    public Name getHighlightMode() {
         Object possibleName = getObject(HIGHLIGHT_MODE_KEY);
         if (possibleName instanceof Name) {
             Name name = (Name) possibleName;
-            if (HIGHLIGHT_NONE.equalsIgnoreCase(name.getName())) {
+            if (HIGHLIGHT_NONE.equals(name)) {
                 return HIGHLIGHT_NONE;
-            } else if (HIGHLIGHT_OUTLINE.equalsIgnoreCase(name.getName())) {
+            } else if (HIGHLIGHT_OUTLINE.equals(name)) {
                 return HIGHLIGHT_OUTLINE;
-            } else if (HIGHLIGHT_PUSH.equalsIgnoreCase(name.getName())) {
+            } else if (HIGHLIGHT_PUSH.equals(name)) {
                 return HIGHLIGHT_PUSH;
             }
         }

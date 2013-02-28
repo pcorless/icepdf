@@ -20,8 +20,9 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
-import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -261,7 +262,8 @@ public class TilingPattern extends Stream implements Pattern {
 
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream.
-        ContentParser cp = new ContentParser(library, leafResources);
+        ContentParser cp = ContentParserFactory.getInstance()
+                .getContentParser(library, resources);
         cp.setGraphicsState(parentGraphicState);
         try {
             shapes = cp.parse(new byte[][]{getDecodedStreamBytes()}).getShapes();

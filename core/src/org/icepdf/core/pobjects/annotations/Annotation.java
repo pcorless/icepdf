@@ -17,9 +17,10 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.util.ContentParser;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -351,6 +352,7 @@ public class Annotation extends Dictionary {
     public static final Name SUBTYPE_POLYLINE = new Name("PolyLine");
     public static final Name SUBTYPE_HIGHLIGHT = new Name("Highlight");
     public static final Name SUBTYPE_POPUP = new Name("Popup");
+    public static final Name SUBTYPE_WIDGET = new Name("Widget");
     public static final Name SUBTYPE_INK = new Name("Ink");
     public static final Name SUBTYPE_FREE_TEXT = new Name("FreeText");
     public static final Name SUBTYPE_TEXT = new Name("Text");
@@ -508,6 +510,8 @@ public class Annotation extends Dictionary {
                 annot = new TextAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
                 annot = new PopupAnnotation(library, hashMap);
+            } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
+                annot = new WidgetAnnotation(library, hashMap);
             }
         }
         if (annot == null) {
@@ -589,7 +593,8 @@ public class Annotation extends Dictionary {
                 bbox = library.getRectangle(stream.getEntries(), BBOX_VALUE);
                 matrix = new AffineTransform();
                 try {
-                    ContentParser cp = new ContentParser(library, res);
+                    ContentParser cp = ContentParserFactory.getInstance()
+                            .getContentParser(library, res);
                     shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}).getShapes();
                 } catch (Exception e) {
                     shapes = new Shapes();
@@ -1024,12 +1029,12 @@ public class Annotation extends Dictionary {
         g.setRenderingHints(grh.getRenderingHints(renderHintType));
         g.setTransform(at);
         Shape preAppearanceStreamClip = g.getClip();
-        g.clip(deriveDrawingRectangle());
+//        g.clip(deriveDrawingRectangle());
 
         renderAppearanceStream(g);
 
         g.setTransform(at);
-        g.setClip(preAppearanceStreamClip);
+//        g.setClip(preAppearanceStreamClip);
 
         if (tabSelected) {
             renderBorderTabSelected(g);
