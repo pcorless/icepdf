@@ -47,6 +47,24 @@
                 "
             />
 
+    <target name="update.product.info">
+        <copy file="${productinfo.src}/${productinfo.file}"
+              todir="${productinfo.dest}" overwrite="true"/>
+        <replace file="${productinfo.dest}/${productinfo.file}">
+            <replacefilter token="@company@" value="${company}"/>
+            <replacefilter token="@product@" value="${product}"/>
+            <replacefilter token="@version.primary@"
+                           value="${version.primary}"/>
+            <replacefilter token="@version.secondary@"
+                           value="${version.secondary}"/>
+            <replacefilter token="@version.tertiary@"
+                           value="${version.tertiary}"/>
+            <replacefilter token="@release.type@" value="${release.type}"/>
+            <replacefilter token="@revision@" value="${revision}"/>
+            <replacefilter token="@build.number@" value="${build.number}"/>
+        </replace>
+    </target>
+
     <path id="compile.run.classpath">
         <pathelement location="${build.classes.dir}"/>
         <fileset dir="${build.lib.dir}" >
@@ -75,6 +93,7 @@
             <javac destdir="${build.classes.dir}" sourcepath="" encoding="UTF-8"
                    source="${compile.source}" target="${compile.target}"
                    debug="${compile.debug}" failonerror="@{failonerror}" >
+                <compilerarg line="-XDignore.symbol.file" compiler="modern"/>
                 <src location="${src.dir}"/>
                 <include name="**/*.java"/>
                 <exclude name="@{src.javac.excludes}" />
