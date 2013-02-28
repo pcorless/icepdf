@@ -15,17 +15,13 @@
 
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
-import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
-import org.icepdf.core.pobjects.graphics.text.WordText;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 
 /**
  * The <code>PageTextExtraction</code> class is an example of how to extract
@@ -61,10 +57,13 @@ public class PageTextExtraction {
 
             // Get text from the first page of the document, assuming that there
             // is text to extract.
-            int pagNumber = 0;
-            PageText pageText = document.getPageText(pagNumber);
-            if (pageText != null && pageText.getPageLines() != null) {
-                fileWriter.write(pageText.toString());
+            for (int pageNumber = 0, max = document.getNumberOfPages();
+                 pageNumber < max; pageNumber++) {
+                PageText pageText = document.getPageText(pageNumber);
+                System.out.println("Extracting page text: " + pageNumber);
+                if (pageText != null && pageText.getPageLines() != null) {
+                    fileWriter.write(pageText.toString());
+                }
             }
 
             // close the writer
