@@ -13,15 +13,15 @@
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.AnnotationCallback;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.views.AnnotationComponent;
-import org.icepdf.core.views.DocumentViewController;
-import org.icepdf.core.views.PageViewComponent;
+import org.icepdf.ri.common.views.AnnotationCallback;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.PageViewComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.awt.*;
@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class represents a basic implemenation of the AnnotationCallback.  This
+ * This class represents a basic implementation of the AnnotationCallback.  This
  * class also modifies the border of annotation for initial display, showing a
  * border around all annotation.  When an annotation is clicked on we then change
  * the colour of the annotation to an alternate colour to indicate that the link
@@ -59,10 +59,6 @@ public class MyAnnotationCallback implements AnnotationCallback {
         this.documentViewController = documentViewController;
         // annotations click on history
         annotationHistory = new WeakHashMap<String, AnnotationState>();
-    }
-
-    public void newAnnotation(PageViewComponent page, Rectangle rect) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     /**
@@ -156,7 +152,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
      * @param page page that annotation was added to.
      */
     public void newAnnotation(PageViewComponent page, AnnotationComponent annotation) {
-        //To change body of implemented methods use File | Settings | File Templates.
+
     }
 
     /**

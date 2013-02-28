@@ -21,8 +21,7 @@ import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.AnnotationState;
-import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
@@ -31,7 +30,6 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +81,7 @@ public class NewAnnotationPrePageLoad {
         SwingViewBuilder factory = new SwingViewBuilder(controller);
         JPanel viewerComponentPanel = factory.buildViewerPanel();
         JFrame applicationFrame = new JFrame();
-        applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        applicationFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         applicationFrame.getContentPane().add(viewerComponentPanel);
 
         // add interactive mouse link annotation support via callback
@@ -118,12 +116,6 @@ public class NewAnnotationPrePageLoad {
          * Apply the search -> annotation results before the gui is build
          */
 
-        // new annotation look and feel
-        AnnotationState annotationState =
-                new AnnotationState(Annotation.VISIBLE_RECTANGLE,
-                        LinkAnnotation.HIGHLIGHT_INVERT, 1f,
-                        BorderStyle.BORDER_STYLE_SOLID, Color.GRAY);
-
         // list of founds words to print out
         ArrayList<WordText> foundWords;
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
@@ -132,14 +124,14 @@ public class NewAnnotationPrePageLoad {
             if (foundWords != null) {
                 // get the current page lock and start adding the annotations
                 Page page = document.getPageTree().getPage(pageIndex);
+
                 for (WordText wordText : foundWords) {
                     // create a  new link annotation
-//                    LinkAnnotation linkAnnotation = (LinkAnnotation)
-//                            AnnotationFactory.buildAnnotation(
-//                                    document.getPageTree().getLibrary(),
-//                                    AnnotationFactory.LINK_ANNOTATION,
-//                                    wordText.getBounds().getBounds(),
-//                                    annotationState);
+                    LinkAnnotation linkAnnotation = (LinkAnnotation)
+                            AnnotationFactory.buildAnnotation(
+                                    document.getPageTree().getLibrary(),
+                                    Annotation.SUBTYPE_LINK,
+                                    wordText.getBounds().getBounds());
                     // create a new URI action
                     org.icepdf.core.pobjects.actions.Action action =
                             createURIAction(document.getPageTree().getLibrary(),
@@ -151,9 +143,9 @@ public class NewAnnotationPrePageLoad {
 //                                    document.getPageTree().getLibrary(),
 //                                    document, document.getNumberOfPages() - 1);
                     // add the action to the annotation
-//                    linkAnnotation.addAction(action);
-//                    // add it to the page.
-//                    page.addAnnotation(linkAnnotation);
+                    linkAnnotation.addAction(action);
+                    // add it to the page.
+                    page.addAnnotation(linkAnnotation);
                 }
             }
             // removed the search highlighting
