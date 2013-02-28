@@ -16,6 +16,7 @@
 
 import org.icepdf.ri.common.ComponentKeyBinding;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.swing.*;
@@ -39,7 +40,7 @@ public class ViewerComponentExample {
         controller.setIsEmbeddedComponent(true);
 
         // set the viewController embeddable flag.
-        org.icepdf.core.views.DocumentViewController viewController =
+        DocumentViewController viewController =
                 controller.getDocumentViewController();
 
         JPanel viewerComponentPanel = new JPanel();
@@ -55,10 +56,10 @@ public class ViewerComponentExample {
 
         // build a containing JFrame for display
         JFrame applicationFrame = new JFrame();
-        applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        applicationFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         applicationFrame.getContentPane().add(viewerComponentPanel);
 
-        // Now that the GUI is all in place, we can try openning a PDF
+        // Now that the GUI is all in place, we can try opening a PDF
         controller.openDocument(filePath);
 
         // hard set the page view to single page which effectively give a single
