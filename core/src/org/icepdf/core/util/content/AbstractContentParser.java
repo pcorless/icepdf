@@ -1086,18 +1086,22 @@ public abstract class AbstractContentParser implements ContentParser {
             }
             optionalContents = new OptionalContentGroup(tmp.getName(), true);
         }
-        oCGs.add(optionalContents);
+        if (oCGs != null) {
+            oCGs.add(optionalContents);
+        }
     }
 
     protected static void consume_EMC(Shapes shapes,
                                       LinkedList<OptionalContents> oCGs) {
         // add the new draw command to the stack.
         // restore the main stack.
-        OptionalContents optionalContents = oCGs.removeLast();
-        // mark the end of an OCG.
-        if (optionalContents.isOCG()) {
-            // push the OC end command on the shapes
-            shapes.add(new OCGEndDrawCmd());
+        if (oCGs != null) {
+            OptionalContents optionalContents = oCGs.removeLast();
+            // mark the end of an OCG.
+            if (optionalContents.isOCG()) {
+                // push the OC end command on the shapes
+                shapes.add(new OCGEndDrawCmd());
+            }
         }
     }
 
@@ -1120,7 +1124,9 @@ public abstract class AbstractContentParser implements ContentParser {
                 optionalContents =
                         new OptionalContentGroup(tmp.getName(), true);
             }
-            oCGs.add(optionalContents);
+            if (oCGs != null) {
+                oCGs.add(optionalContents);
+            }
         }
     }
 
