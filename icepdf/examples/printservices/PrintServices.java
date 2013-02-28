@@ -17,9 +17,9 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.views.DocumentViewController;
 import org.icepdf.ri.common.PrintHelper;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.print.*;
@@ -57,7 +57,7 @@ public class PrintServices {
     private static final Logger logger =
             Logger.getLogger(PrintServices.class.toString());
 
-    static{
+    static {
         Defs.setProperty("java.awt.headless", "true");
         Defs.setProperty("org.icepdf.core.scaleImages", "false");
         Defs.setProperty("org.icepdf.core.print.disableAlpha", "true");
@@ -154,11 +154,11 @@ public class PrintServices {
                         selectedService.getName());
         Class[] supportedAttributes =
                 selectedService.getSupportedAttributeCategories();
-        for (int i = 0, max = supportedAttributes.length; i < max; i++) {
-            System.out.println("   " + supportedAttributes[i].getName() +
+        for (Class supportedAttribute : supportedAttributes) {
+            System.out.println("   " + supportedAttribute.getName() +
                     ":= " +
                     selectedService.getDefaultAttributeValue(
-                            supportedAttributes[i]));
+                            supportedAttribute));
         }
 
         // Open the document, create a PrintHelper and finally print the document
