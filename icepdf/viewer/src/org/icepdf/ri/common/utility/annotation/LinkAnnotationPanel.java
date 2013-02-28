@@ -14,6 +14,7 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.SwingController;
@@ -58,7 +59,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private JComboBox highlightStyleBox;
 
     // appearance properties to take care of.
-    private String highlightStyle;
+    private Name highlightStyle;
 
     public LinkAnnotationPanel(SwingController controller) {
         super(new GridLayout(1, 2, 5, 2), true);
@@ -114,7 +115,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         ValueLabelItem item = (ValueLabelItem) e.getItem();
         if (e.getStateChange() == ItemEvent.SELECTED) {
             if (e.getSource() == highlightStyleBox) {
-                highlightStyle = (String) item.getValue();
+                highlightStyle = (Name) item.getValue();
             }
             // save the action state back to the document structure.
             updateAnnotationState();

@@ -14,6 +14,7 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
@@ -81,7 +82,7 @@ public class LinkAnnotationComponent extends MarkupAnnotationComponent {
             Graphics2D gg2 = (Graphics2D) g;
 
             LinkAnnotation linkAnnotation = (LinkAnnotation) annotation;
-            String highlightMode = linkAnnotation.getHighlightMode();
+            Name highlightMode = linkAnnotation.getHighlightMode();
             Rectangle2D rect = new Rectangle(0, 0, getWidth(), getHeight());
             if (LinkAnnotation.HIGHLIGHT_INVERT.equals(highlightMode)) {
                 gg2.setColor(annotationHighlightColor);
