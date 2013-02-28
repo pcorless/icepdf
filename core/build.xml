@@ -97,24 +97,6 @@
         <clean />
     </target>
 
-    <target name="update.product.info">
-        <copy file="${productinfo.src}/${productinfo.file}"
-              todir="${productinfo.dest}" overwrite="true"/>
-        <replace file="${productinfo.dest}/${productinfo.file}">
-            <replacefilter token="@company@" value="${company}"/>
-            <replacefilter token="@product@" value="${product}"/>
-            <replacefilter token="@version.primary@"
-                           value="${version.primary}"/>
-            <replacefilter token="@version.secondary@"
-                           value="${version.secondary}"/>
-            <replacefilter token="@version.tertiary@"
-                           value="${version.tertiary}"/>
-            <replacefilter token="@release.type@" value="${release.type}"/>
-            <replacefilter token="@revision@" value="${revision}"/>
-            <replacefilter token="@build.number@" value="${build.number}"/>
-        </replace>
-    </target>
-
     <target name="src-jar" depends="" >
         <jar destfile="${build.dir}/icepdf-core-sources.jar">
             <fileset dir="${src.dir}" includes="**/*.java"/>
