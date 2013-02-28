@@ -62,9 +62,9 @@ public class SearchControllerHeadless {
         DocumentSearchController searchController =
                 new DocumentSearchControllerImpl(document);
         // add a specified search terms.
-        searchController.addSearchTerm("TABLE", true, false);
-        searchController.addSearchTerm("CONTENTS", true, false);
-        searchController.addSearchTerm("Chapter", true, false);
+        searchController.addSearchTerm("PDF", true, false);
+        searchController.addSearchTerm("Part", true, false);
+        searchController.addSearchTerm("Contents", true, false);
 
         // Paint each pages content to an image and write the image to file
         for (int i = 0; i < 5; i++) {

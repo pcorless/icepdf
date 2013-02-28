@@ -31,7 +31,7 @@ import java.util.ArrayList;
  * of search terms can be specefied after the file name.
  * <p/>
  * Example:
- *   SearchHighlight "c:\DevelopersGuide.pdf" "PDF" "ICEsoft" "ICEfaces" "ICEsoft technologies"
+ * SearchHighlight "c:\DevelopersGuide.pdf" "PDF" "ICEsoft" "ICEfaces" "ICEsoft technologies"
  *
  * @since 4.0
  */
@@ -61,7 +61,7 @@ public class SearchController {
         JPanel viewerComponentPanel = factory.buildViewerPanel();
 
         JFrame applicationFrame = new JFrame();
-        applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        applicationFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         applicationFrame.getContentPane().add(viewerComponentPanel);
 
         // Now that the GUI is all in place, we can try opening the PDF
@@ -89,8 +89,8 @@ public class SearchController {
              pageIndex++) {
             foundWords = searchController.searchPage(pageIndex);
             System.out.println("Page " + pageIndex);
-            if (foundWords != null){
-                for (WordText wordText : foundWords){
+            if (foundWords != null) {
+                for (WordText wordText : foundWords) {
                     System.out.println("    found hit: " + wordText.toString());
                 }
             }
