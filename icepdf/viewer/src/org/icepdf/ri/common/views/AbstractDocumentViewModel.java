@@ -17,15 +17,12 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.UndoCaretaker;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -68,72 +65,18 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     // page tool settings
     protected int userToolModeFlag, oldUserToolModeFlag;
 
-    protected ThreadPoolExecutor pageInitilizationThreadPool;
-    protected ThreadPoolExecutor pagePainterThreadPool;
-
     // 10 pages doesn't take to long to look at, any more and people will notice
     // the rest of the page sizes will be figured out later.
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
-    protected static int maxPainterThreads;
-    protected static int maxPageInitThreads;
-
-    private static final long KEEP_ALIVE_TIME = 3;
-
-    static {
-        try {
-            maxPainterThreads =
-                    Defs.intProperty("org.icepdf.core.views.painterthreads", 1);
-            if (maxPainterThreads < 1) {
-                maxPainterThreads = 1;
-            }
-        } catch (NumberFormatException e) {
-            log.warning("Error reading buffered scale factor");
-        }
-
-        try {
-            maxPageInitThreads =
-                    Defs.intProperty("org.icepdf.core.views.pageinitthreads", 3);
-            if (maxPageInitThreads < 1) {
-                maxPageInitThreads = 1;
-            }
-        } catch (NumberFormatException e) {
-            log.warning("Error reading buffered scale factor");
-        }
-
-    }
-
     public AbstractDocumentViewModel(Document currentDocument) {
         this.currentDocument = currentDocument;
-
-        // build a Thread pools
-        initPageInitializationThreadPool();
-        initPagePainterThreadPool();
-
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
     }
 
     public Document getDocument() {
         return currentDocument;
-    }
-
-    public void executePageInitialization(Runnable runnable) throws InterruptedException {
-        try {
-            pageInitilizationThreadPool.execute(runnable);
-        } catch (RejectedExecutionException e) {
-            log.severe("Page Initialization Thread Pool was shutdown.");
-            initPageInitializationThreadPool();
-        }
-    }
-
-    public void executePagePainter(Runnable runnable) throws InterruptedException {
-        try {
-            pagePainterThreadPool.execute(runnable);
-        } catch (RejectedExecutionException e) {
-            log.severe("Page Painter Thread Pool was shutdown.");
-            initPagePainterThreadPool();
-        }
     }
 
     public List<AbstractPageViewComponent> getPageComponents() {
@@ -335,16 +278,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             }
             pageComponents.clear();
         }
-
-        // do a little clean up.
-        pageInitilizationThreadPool.purge();
-        pagePainterThreadPool.purge();
-
-        if (log.isLoggable(Level.FINER)) {
-            log.finer("ShutdownNow for thread pool executors. ");
-        }
-        pageInitilizationThreadPool.shutdownNow();
-        pagePainterThreadPool.shutdownNow();
     }
 
     /**
@@ -387,39 +320,5 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public void addMemento(Memento oldMementoState, Memento newMementoState) {
         undoCaretaker.addState(oldMementoState, newMementoState);
-    }
-
-    private void initPageInitializationThreadPool() {
-        log.fine("Starting PageInitializationThreadPool. ");
-        pageInitilizationThreadPool = new ThreadPoolExecutor(
-                maxPageInitThreads, maxPageInitThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        pageInitilizationThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-pageInitializer");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
-    }
-
-    private void initPagePainterThreadPool() {
-        log.fine("Starting PagePainterThreadPool. ");
-        pagePainterThreadPool = new ThreadPoolExecutor(
-                maxPainterThreads, maxPainterThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        pagePainterThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-pagePainter");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
     }
 }

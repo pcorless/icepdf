@@ -16,15 +16,12 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.Library;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -47,19 +44,12 @@ public class ImagePool {
     // Image pool
     private final LinkedHashMap<Reference, BufferedImage> fCache;
 
-    // thread pool for processing image loads.
-    private final ThreadPoolExecutor imageInitializationThreadPool;
-    private static final long KEEP_ALIVE_TIME = 10;
-
-
     private static int defaultSize;
-    private static int imageExecutorSize;
 
     static {
         // Default size is 1/4 of heap size.
         defaultSize = (int) ((Runtime.getRuntime().maxMemory() / 1024L / 1024L) / 4L);
         defaultSize = Defs.intProperty("org.icepdf.core.views.imagePoolSize", defaultSize);
-        imageExecutorSize = Defs.intProperty("org.icepdf.core.views.imagePoolThreads", 4);
     }
 
     public ImagePool() {
@@ -69,24 +59,7 @@ public class ImagePool {
     public ImagePool(long maxCacheSize) {
         fCache = new MemoryImageCache(maxCacheSize);
 
-        log.fine("Starting PageInitializationThreadPool. ");
-        imageInitializationThreadPool = new ThreadPoolExecutor(
-                imageExecutorSize, imageExecutorSize, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        imageInitializationThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-imagePool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
-    }
 
-    public void shutDownPool() {
-        imageInitializationThreadPool.shutdownNow();
     }
 
     public void put(Reference ref, BufferedImage image) {
@@ -100,7 +73,7 @@ public class ImagePool {
     }
 
     public void execute(ImageReference imageReference) {
-        imageInitializationThreadPool.execute(imageReference);
+        Library.execute(imageReference);
     }
 
     private static class MemoryImageCache extends LinkedHashMap<Reference, BufferedImage> {

@@ -26,7 +26,7 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 /**
@@ -42,6 +42,26 @@ public class Library {
 
     private static final Logger log =
             Logger.getLogger(Library.class.toString());
+
+    protected static ThreadPoolExecutor commonThreadPool;
+
+    protected static int maxPoolThreads;
+    private static final long KEEP_ALIVE_TIME = 3;
+
+    static {
+        try {
+            maxPoolThreads =
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 4);
+            if (maxPoolThreads < 1) {
+                maxPoolThreads = 4;
+            }
+        } catch (NumberFormatException e) {
+            log.warning("Error reading buffered scale factor");
+        }
+
+        log.fine("Starting ICEpdf Thread Pool: " + maxPoolThreads + " threads.");
+        initializeThreadPool();
+    }
 
     // new incremental file loader class.
     private LazyObjectLoader lazyObjectLoader;
@@ -628,5 +648,37 @@ public class Library {
 
     public ImagePool getImagePool() {
         return imagePool;
+    }
+
+    public static void initializeThreadPool() {
+
+        log.fine("Starting ICEpdf Thread Pool: " + maxPoolThreads + " threads.");
+        commonThreadPool = new ThreadPoolExecutor(
+                maxPoolThreads, maxPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        // set a lower thread priority
+        commonThreadPool.setThreadFactory(new ThreadFactory() {
+            public Thread newThread(java.lang.Runnable command) {
+                Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-thread-pool");
+                newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
+                return newThread;
+            }
+        });
+    }
+
+    public static void shutdownThreadPool() {
+        // do a little clean up.
+        commonThreadPool.purge();
+        commonThreadPool.shutdownNow();
+    }
+
+    public static void execute(Runnable runnable) {
+        try {
+            commonThreadPool.execute(runnable);
+        } catch (RejectedExecutionException e) {
+            log.severe("ICEpdf Common Thread Pool was shutdown!");
+        }
     }
 }
