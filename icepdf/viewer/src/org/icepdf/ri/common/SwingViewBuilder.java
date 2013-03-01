@@ -1194,8 +1194,8 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JButton buildShowHideUtilityPaneButton() {
-        JButton btn = makeToolbarButton(
+    public JToggleButton buildShowHideUtilityPaneButton() {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.utilityPane.label"),
                 messageBundle.getString("viewer.toolbar.utilityPane.tooltip"),
                 "utility_pane", Images.SIZE_LARGE, buttonFont);

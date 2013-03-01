@@ -153,7 +153,7 @@ public class SwingController
     private JButton saveAsFileButton;
     private JButton printButton;
     private JButton searchButton;
-    private JButton showHideUtilityPaneButton;
+    private JToggleButton showHideUtilityPaneButton;
 
     private JButton firstPageButton;
     private JButton previousPageButton;
@@ -658,7 +658,7 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setShowHideUtilityPaneButton(JButton btn) {
+    public void setShowHideUtilityPaneButton(JToggleButton btn) {
         showHideUtilityPaneButton = btn;
         btn.addActionListener(this);
     }
@@ -1572,6 +1572,8 @@ public class SwingController
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT
                 ));
+        reflectSelectionInButton(showHideUtilityPaneButton,
+                isUtilityPaneVisible());
     }
 
     /**
