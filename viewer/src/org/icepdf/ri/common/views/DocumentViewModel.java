@@ -162,10 +162,6 @@ public interface DocumentViewModel {
      */
     public void clearSelectedPageText();
 
-    public void executePageInitialization(Runnable runnable) throws InterruptedException;
-
-    public void executePagePainter(Runnable runnable) throws InterruptedException;
-
     /**
      * Gets the page components associated with this view model.
      *

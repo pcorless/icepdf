@@ -65,10 +65,8 @@ public class Document {
      * @return version number of ICEpdf's rendering core.
      */
     public static String getLibraryVersion() {
-        return new StringBuilder().append(ProductInfo.PRIMARY).append(".").
-                append(ProductInfo.SECONDARY).append(".").
-                append(ProductInfo.TERTIARY).append(" ").
-                append(ProductInfo.RELEASE_TYPE).toString();
+        return ProductInfo.PRIMARY + "." + ProductInfo.SECONDARY + "." +
+                ProductInfo.TERTIARY + " " + ProductInfo.RELEASE_TYPE;
     }
 
     // core catalog, root of the document hierarchy.
@@ -966,9 +964,6 @@ public class Document {
                 logger.log(Level.FINE, "Error closing document input stream.", e);
             }
             documentSeekableInput = null;
-        }
-        if (library != null) {
-            library.getImagePool().shutDownPool();
         }
 
         String fileToDelete = getDocumentCachedFilePath();

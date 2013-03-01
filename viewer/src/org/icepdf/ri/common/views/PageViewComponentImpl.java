@@ -20,10 +20,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.util.ColorUtil;
-import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.GraphicsRenderingHints;
-import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.util.*;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
@@ -1047,15 +1044,8 @@ public class PageViewComponentImpl extends
                 if (page != null && !page.isInitiated() &&
                         !pageInitializer.isRunning() &&
                         !pageInitializer.hasBeenQueued()) {
-                    try {
-                        pageInitializer.setHasBeenQueued(true);
-                        documentViewModel.executePageInitialization(pageInitializer);
-                    } catch (InterruptedException ex) {
-                        pageInitializer.setHasBeenQueued(false);
-                        if (logger.isLoggable(Level.WARNING)) {
-                            logger.fine("Page Initialization Interrupted: " + pageIndex);
-                        }
-                    }
+                    pageInitializer.setHasBeenQueued(true);
+                    Library.execute(pageInitializer);
                 }
 
                 // check annotation states, there is apossibility that the
@@ -1077,16 +1067,9 @@ public class PageViewComponentImpl extends
                         (isPageStateDirty() || isBufferDirty)
                         ) {
 
-                    try {
-                        pagePainter.setHasBeenQueued(true);
-                        pagePainter.setIsBufferDirty(isBufferDirty);
-                        documentViewModel.executePagePainter(pagePainter);
-                    } catch (InterruptedException ex) {
-                        pagePainter.setHasBeenQueued(false);
-                        if (logger.isLoggable(Level.WARNING)) {
-                            logger.fine("Page Painter Interrupted: " + pageIndex);
-                        }
-                    }
+                    pagePainter.setHasBeenQueued(true);
+                    pagePainter.setIsBufferDirty(isBufferDirty);
+                    Library.execute(pagePainter);
                 }
 
                 // paint page content
