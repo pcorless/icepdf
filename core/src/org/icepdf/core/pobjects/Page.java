@@ -306,6 +306,14 @@ public class Page extends Dictionary {
     }
 
     /**
+     * Reset the pages initialized flag and as a result subsequent calls to
+     * this page may trigger a call to init().
+     */
+    public void resetInitializedState() {
+        isInited = false;
+    }
+
+    /**
      * Initialize the Page object.  This method triggers the parsing of a page's
      * child elements.  Once a page has been initialized, it can be painted.
      */
@@ -1179,7 +1187,11 @@ public class Page extends Dictionary {
      */
     public List<Annotation> getAnnotations() {
         if (!isInited) {
-            init();
+            try {
+                initPageAnnotations();
+            } catch (InterruptedException e) {
+                logger.finer("Interrupt exception getting annotations. ");
+            }
         }
         return annotations;
     }
