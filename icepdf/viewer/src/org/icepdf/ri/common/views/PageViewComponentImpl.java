@@ -247,10 +247,16 @@ public class PageViewComponentImpl extends
         pagePainter = new PagePainter();
     }
 
+    /**
+     * Should only be called by the demo application as it triggers the
+     * current page state to be marked as uninitialized and will trigger a
+     * full parse of the page if accessed again.
+     */
     public void invalidatePage() {
         if (inited) {
             Page page = pageTree.getPage(pageIndex);
             page.getLibrary().disposeFontResources();
+            page.resetInitializedState();
             currentZoom = -1;
         }
     }
@@ -552,6 +558,7 @@ public class PageViewComponentImpl extends
                         0,
                         1).toDimension());
             }
+            isPageSizeCalculated = true;
         }
     }
 
@@ -846,10 +853,11 @@ public class PageViewComponentImpl extends
     }
 
     private boolean isPageStateDirty() {
-        return currentZoom != documentViewModel.getViewZoom() ||
+        boolean tmp = currentZoom != documentViewModel.getViewZoom() ||
                 currentRotation != documentViewModel.getViewRotation()
                 || oldClipBounds.width != clipBounds.width
                 || oldClipBounds.height != clipBounds.height;
+        return tmp;
     }
 
     private boolean isPageIntersectViewport() {
@@ -920,6 +928,7 @@ public class PageViewComponentImpl extends
 
             try {
                 createBufferedPageImage(this);
+                isBufferyDirty = false;
             } catch (Throwable e) {
                 logger.log(Level.WARNING,
                         "Error creating buffer, page: " + pageIndex, e);
@@ -1052,12 +1061,15 @@ public class PageViewComponentImpl extends
                 // page was initialized by some other process and in such
                 // a case the pageInitializer would not have build the up the
                 // annotationComponents.
-                if (page.getAnnotations() != null && annotationComponents == null) {
+                if (!pageInitializer.isRunning() &&
+                        page.isInitiated() &&
+                        page.getAnnotations() != null &&
+                        annotationComponents == null) {
                     refreshAnnotationComponents(page);
                 }
 
                 // paint page content
-                boolean isBufferDirty = isBufferDirty() || pagePainter.isBufferDirty();
+                boolean isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
                 boolean tmp = !pageInitializer.isRunning() &&
                         page.isInitiated() &&
                         !pagePainter.isRunning() &&

@@ -46,7 +46,7 @@ public class Library {
     protected static ThreadPoolExecutor commonThreadPool;
 
     protected static int maxPoolThreads;
-    private static final long KEEP_ALIVE_TIME = 3;
+    private static final long KEEP_ALIVE_TIME = 10;
 
     static {
         try {
