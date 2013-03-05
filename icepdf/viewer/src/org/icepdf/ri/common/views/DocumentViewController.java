@@ -18,6 +18,7 @@ import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyListener;
 
@@ -121,6 +122,10 @@ public interface DocumentViewController {
 
     public boolean setZoomIn(Point point);
 
+    boolean setZoomCentered(float zoom, Point centeringPoint, boolean becauseOfValidFitMode);
+
+    boolean setZoomToViewPort(float zoom, Point viewPortPosition, int pageIndex, boolean becauseOfValidFitMode);
+
     public boolean setZoomOut();
 
     public boolean setZoomOut(Point point);
@@ -152,6 +157,8 @@ public interface DocumentViewController {
     public Adjustable getHorizontalScrollBar();
 
     public Adjustable getVerticalScrollBar();
+
+    public JViewport getViewPort();
 
     public void setAnnotationCallback(AnnotationCallback annotationCallback);
 

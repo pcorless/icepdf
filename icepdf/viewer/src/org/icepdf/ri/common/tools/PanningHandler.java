@@ -132,4 +132,12 @@ public class PanningHandler implements ToolHandler {
     public void paintTool(Graphics g) {
         // nothing to paint for paning.
     }
+
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
 }

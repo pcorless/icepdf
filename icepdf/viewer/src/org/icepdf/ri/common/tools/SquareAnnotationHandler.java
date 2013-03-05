@@ -185,6 +185,14 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
 
     }
 
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
+
     public void mouseDragged(MouseEvent e) {
         updateSelectionSize(e, pageViewComponent);
         rectangle.setRect(rectToDraw);

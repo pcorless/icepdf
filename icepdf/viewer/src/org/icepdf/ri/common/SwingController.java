@@ -183,7 +183,7 @@ public class SwingController
     private JToggleButton panToolButton;
     private JToggleButton textSelectToolButton;
     private JToggleButton zoomInToolButton;
-    private JToggleButton zoomOutToolButton;
+    private JToggleButton zoomDynamicToolButton;
 
     private JToggleButton selectToolButton;
     private JToggleButton highlightAnnotationToolButton;
@@ -926,8 +926,8 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setZoomOutToolButton(JToggleButton btn) {
-        zoomOutToolButton = btn;
+    public void setZoomDynamicToolButton(JToggleButton btn) {
+        zoomDynamicToolButton = btn;
         btn.addItemListener(this);
     }
 
@@ -1134,7 +1134,7 @@ public class SwingController
         setEnabled(rotateRightButton, opened);
         setEnabled(panToolButton, opened);
         setEnabled(zoomInToolButton, opened);
-        setEnabled(zoomOutToolButton, opened);
+        setEnabled(zoomDynamicToolButton, opened);
         setEnabled(textSelectToolButton, opened && canExtract);
         setEnabled(selectToolButton, opened && canModify);
         setEnabled(linkAnnotationToolButton, opened && canModify);
@@ -1456,10 +1456,10 @@ public class SwingController
                                 DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_IN);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
-            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT) {
+            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(
-                                DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT);
+                                DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_OUT);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_WAIT) {
@@ -1568,9 +1568,9 @@ public class SwingController
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN
                 ));
-        reflectSelectionInButton(zoomOutToolButton,
+        reflectSelectionInButton(zoomDynamicToolButton,
                 documentViewController.isToolModeSelected(
-                        DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT
+                        DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC
                 ));
         reflectSelectionInButton(showHideUtilityPaneButton,
                 isUtilityPaneVisible());
@@ -2323,7 +2323,7 @@ public class SwingController
 
         panToolButton = null;
         zoomInToolButton = null;
-        zoomOutToolButton = null;
+        zoomDynamicToolButton = null;
         textSelectToolButton = null;
         selectToolButton = null;
         linkAnnotationToolButton = null;
@@ -3902,10 +3902,10 @@ public class SwingController
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN);
                     doSetFocus = true;
                 }
-            } else if (source == zoomOutToolButton) {
+            } else if (source == zoomDynamicToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
-                    tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT;
-                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_OUT);
+                    tool = DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC;
+                    setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC);
                     doSetFocus = true;
                 }
             } else if (source == textSelectToolButton) {

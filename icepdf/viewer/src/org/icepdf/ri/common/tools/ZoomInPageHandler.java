@@ -38,6 +38,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
     private AbstractPageViewComponent pageViewComponent;
     private DocumentViewController documentViewController;
     private DocumentViewModel documentViewModel;
+    private Point initialPoint = new Point();
 
     public ZoomInPageHandler(DocumentViewController documentViewController,
                              AbstractPageViewComponent pageViewComponent,
@@ -45,6 +46,8 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         this.documentViewController = documentViewController;
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
+
+        selectionBoxColour = Color.DARK_GRAY;
     }
 
     public void mouseDragged(MouseEvent e) {
@@ -59,7 +62,12 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         if ((e.getModifiers() & MouseEvent.MOUSE_PRESSED) != 0) {
             if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) {
                 // zoom in
-                documentViewController.setZoomIn(e.getPoint());
+                Point pageOffset = documentViewModel.getPageBounds(
+                        pageViewComponent.getPageIndex()).getLocation();
+                Point mouse = e.getPoint();
+                mouse.setLocation(pageOffset.x + mouse.x,
+                        pageOffset.y + mouse.y);
+                documentViewController.setZoomIn(mouse);
             }
         }
     }
@@ -68,6 +76,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         // start selection box.
         if (documentViewController != null) {
             resetRectangle(e.getX(), e.getY());
+            initialPoint.setLocation(e.getPoint());
         }
     }
 
@@ -76,17 +85,32 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
             // update selection rectangle
             updateSelectionSize(e, pageViewComponent);
 
-            // check if we are over a page
-            AbstractPageViewComponent pageComponent =
-                    isOverPageComponent(pageViewComponent, e);
+            // adjust the starting position of rectToDraw to match the actual
+            // view position of the rectangle as the mouseEven position is
+            // is relative to the page and now the view.
+            Point pageOffset = documentViewModel.getPageBounds(
+                    pageViewComponent.getPageIndex()).getLocation();
 
-            // zoom in on rectangle bounds.
-            double zoom = ZoomInPageHandler.calculateZoom(
-                    documentViewModel.getViewZoom(),
-                    rectToDraw,
-                    pageViewComponent.getBounds());
-            documentViewController.setZoom((float) zoom);
+            Rectangle absoluteRectToDraw = new Rectangle(
+                    pageOffset.x + rectToDraw.x,
+                    pageOffset.y + rectToDraw.y,
+                    rectToDraw.width, rectToDraw.height);
 
+            if (documentViewController.getViewPort() != null &&
+                    absoluteRectToDraw.getWidth() > 0 &&
+                    absoluteRectToDraw.getHeight() > 0) {
+                // zoom in on rectangle bounds.
+                float zoom = ZoomInPageHandler.calculateZoom(documentViewController,
+                        absoluteRectToDraw, documentViewModel);
+
+                // calculate the delta relative to current page position
+                int pageIndex = pageViewComponent.getPageIndex();
+                Rectangle location = documentViewModel.getPageBounds(pageIndex);
+                Point delta = new Point(
+                        absoluteRectToDraw.x - location.x,
+                        absoluteRectToDraw.y - location.y);
+                documentViewController.setZoomToViewPort(zoom, delta, pageIndex, true);
+            }
             // clear the rectangle
             clearRectangle(pageViewComponent);
         }
@@ -114,17 +138,29 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         paintSelectionBox(g);
     }
 
-    public static double calculateZoom(float currentZoom,
-                                       Rectangle rectangle, Rectangle parentBounds) {
-        // assume rectangle is always smaller then parent bounds.
-//        double widthRatio = rectangle.getWidth() / parentBounds.getWidth();
-//        double heightRatio = rectangle.getHeight() / parentBounds.getHeight();
-//        double zoom;
-//        if (widthRatio > heightRatio){
-//            zoom = currentZoom / (rectangle.getWidth() * parentBounds.getWidth());
-//        } else{
-//            zoom = currentZoom / (rectangle.getHeight() * parentBounds.getHeight());
-//        }
-        return currentZoom;
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
+
+    public static float calculateZoom(DocumentViewController documentViewController,
+                                      Rectangle rectToDraw,
+                                      DocumentViewModel documentViewModel) {
+
+        Dimension viewport = documentViewController.getViewPort().getParent().getSize();
+        int selectionMax = rectToDraw.width;
+        int screenMax = viewport.width;
+        // find the largest dimension of the selection rectangle.
+        if (screenMax < viewport.getHeight()) {
+            screenMax = viewport.height;
+        }
+        if (selectionMax < rectToDraw.getHeight()) {
+            selectionMax = rectToDraw.height;
+        }
+        // figure out the zoom ratio
+        return (screenMax / (float) selectionMax) * documentViewModel.getViewZoom();
     }
 }

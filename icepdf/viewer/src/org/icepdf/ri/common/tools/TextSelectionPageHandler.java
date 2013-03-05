@@ -696,6 +696,13 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
     }
 
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
 
     /**
      * Utility for painting text bounds.

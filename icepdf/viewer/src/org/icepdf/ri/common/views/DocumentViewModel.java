@@ -45,7 +45,7 @@ public interface DocumentViewModel {
     /**
      * Display tool constant for adding a zoom out tool.
      */
-    public int DISPLAY_TOOL_ZOOM_SELECTED_AREA = 4;
+    public int DISPLAY_TOOL_ZOOM_DYNAMIC = 4;
     /**
      * Display tool constant for adding a text selection tool.
      */

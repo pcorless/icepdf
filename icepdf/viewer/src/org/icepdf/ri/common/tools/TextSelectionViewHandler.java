@@ -173,4 +173,12 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
 
     }
+
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
 }

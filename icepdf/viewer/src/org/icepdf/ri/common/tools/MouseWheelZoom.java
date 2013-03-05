@@ -17,6 +17,7 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.ri.common.views.DocumentViewController;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
@@ -51,10 +52,14 @@ public class MouseWheelZoom implements MouseWheelListener {
                 ||
                 (e.getModifiers() & InputEvent.META_MASK) == InputEvent.META_MASK) {
             documentScrollPane.setWheelScrollingEnabled(false);
+            Point offset = documentScrollPane.getViewport().getViewPosition();
+            int viewWidth = documentScrollPane.getViewport().getWidth() / 2;
+            int viewHeight = documentScrollPane.getViewport().getHeight() / 2;
+            offset.setLocation(offset.x + viewWidth, offset.y + viewHeight);
             if (rotation > 0) {
-                documentViewController.setZoomOut();
+                documentViewController.setZoomOut(offset);
             } else {
-                documentViewController.setZoomIn();
+                documentViewController.setZoomIn(offset);
             }
         } else {
             documentScrollPane.setWheelScrollingEnabled(true);

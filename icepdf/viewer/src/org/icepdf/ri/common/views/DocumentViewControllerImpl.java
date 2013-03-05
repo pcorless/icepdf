@@ -231,6 +231,10 @@ public class DocumentViewControllerImpl
         return documentViewScrollPane.getVerticalScrollBar();
     }
 
+    public JViewport getViewPort() {
+        return documentViewScrollPane.getViewport();
+    }
+
     /**
      * Set an annotation callback.
      *
@@ -401,7 +405,7 @@ public class DocumentViewControllerImpl
                 // apply zoom, from destination
                 if (destination.getZoom() != null &&
                         destination.getZoom() > 0.0f) {
-                    setZoom(destination.getZoom(), null, false);
+                    setZoomCentered(destination.getZoom(), null, false);
                 }
                 Point newViewPosition = new Point(pageBounds.getLocation());
                 float zoom = getZoom();
@@ -606,9 +610,9 @@ public class DocumentViewControllerImpl
             // If we're scrolled all the way to the top, center to top of document when zoom,
             //  otherwise the view will zoom into the general center of the page
             if (getVerticalScrollBar().getValue() == 0) {
-                setZoom(newZoom, new Point(0, 0), true);
+                setZoomCentered(newZoom, new Point(0, 0), true);
             } else {
-                setZoom(newZoom, null, true);
+                setZoomCentered(newZoom, null, true);
             }
         }
 
@@ -730,7 +734,7 @@ public class DocumentViewControllerImpl
      * @return if zoom actually changed
      */
     public boolean setZoom(float viewZoom) {
-        return setZoom(viewZoom, null, false);
+        return setZoomCentered(viewZoom, null, false);
     }
 
     public boolean setZoomIn() {
@@ -907,21 +911,21 @@ public class DocumentViewControllerImpl
      */
     public boolean setZoomIn(Point p) {
         float zoom = getZoom() * ZOOM_FACTOR;
-        return setZoom(zoom, p, false);
+        return setZoomCentered(zoom, p, false);
     }
 
     /**
      * Decreases the current page visualization zoom factor by 20%.
      *
-     * @param p Recenter the scrollpane here
+     * @param p Recenter the scrollPane here
      */
     public boolean setZoomOut(Point p) {
         float zoom = getZoom() / ZOOM_FACTOR;
-        return setZoom(zoom, p, false);
+        return setZoomCentered(zoom, p, false);
     }
 
     /**
-     * Utility function for centering the viewport around the given point.
+     * Utility function for centering the view Port around the given point.
      *
      * @param centeringPoint which the view is to be centered on.
      */
@@ -935,32 +939,32 @@ public class DocumentViewControllerImpl
             return;
 
         // get view port information
-        int scrollpaneWidth = documentViewScrollPane.getViewport().getWidth();
-        int scrollpaneHeight = documentViewScrollPane.getViewport().getHeight();
+        int viewPortWidth = documentViewScrollPane.getViewport().getWidth();
+        int viewPortHeight = documentViewScrollPane.getViewport().getHeight();
 
         int scrollPaneX = documentViewScrollPane.getViewport().getViewPosition().x;
         int scrollPaneY = documentViewScrollPane.getViewport().getViewPosition().y;
 
-        Dimension pageSize = documentView.getPreferredSize();
-        int pageWidth = pageSize.width;
-        int pageHeight = pageSize.height;
+        Dimension pageViewSize = documentView.getPreferredSize();
+        int pageViewWidth = pageViewSize.width;
+        int pageViewHeight = pageViewSize.height;
 
         // calculate center coordinates of view port x,y
-        centeringPoint.setLocation(centeringPoint.x - (scrollpaneWidth / 2),
-                centeringPoint.y - (scrollpaneHeight / 2));
+        centeringPoint.setLocation(centeringPoint.x - (viewPortWidth / 2),
+                centeringPoint.y - (viewPortHeight / 2));
 
         // compensate centering point to make sure that preferred site is
         // respected when moving the view port x,y.
 
-        // Special case when page height or width is smaller then the viewport
+        // Special case when page height or width is smaller then the viewPort
         // size.  Respect the zoom but don't try and center on the click
-        if (pageWidth < scrollpaneWidth || pageHeight < scrollpaneHeight) {
-            if (centeringPoint.x >= pageWidth - scrollpaneWidth ||
+        if (pageViewWidth < viewPortWidth || pageViewHeight < viewPortHeight) {
+            if (centeringPoint.x >= pageViewWidth - viewPortWidth ||
                     centeringPoint.x < 0) {
                 centeringPoint.x = scrollPaneX;
             }
 
-            if (centeringPoint.y >= pageHeight - scrollpaneHeight ||
+            if (centeringPoint.y >= pageViewHeight - viewPortHeight ||
                     centeringPoint.y < 0) {
                 centeringPoint.y = scrollPaneY;
             }
@@ -969,21 +973,20 @@ public class DocumentViewControllerImpl
         // the page with out shifting the view port paste the pages width
         else {
             // adjust horizontal
-            if (centeringPoint.x + scrollpaneWidth > pageWidth) {
-                centeringPoint.x = (pageWidth - scrollpaneWidth);
+            if (centeringPoint.x + viewPortWidth > pageViewWidth) {
+                centeringPoint.x = (pageViewWidth - viewPortWidth);
             } else if (centeringPoint.x < 0) {
                 centeringPoint.x = 0;
             }
 
             // adjust vertical
-            if (centeringPoint.y + scrollpaneHeight > pageHeight) {
-                centeringPoint.y = (pageHeight - scrollpaneHeight);
+            if (centeringPoint.y + viewPortHeight > pageViewHeight) {
+                centeringPoint.y = (pageViewHeight - viewPortHeight);
             } else if (centeringPoint.y < 0) {
                 centeringPoint.y = 0;
             }
         }
         // not sure why, but have to set twice for reliable results
-        documentViewScrollPane.getViewport().setViewPosition(centeringPoint);
         documentViewScrollPane.getViewport().setViewPosition(centeringPoint);
     }
 
@@ -996,7 +999,7 @@ public class DocumentViewControllerImpl
      * @param centeringPoint        point to center on.
      * @return true if the zoom level changed, false otherwise.
      */
-    private boolean setZoom(float zoom, Point centeringPoint, boolean becauseOfValidFitMode) {
+    public boolean setZoomCentered(float zoom, Point centeringPoint, boolean becauseOfValidFitMode) {
         if (documentViewModel == null) {
             return false;
         }
@@ -1018,17 +1021,14 @@ public class DocumentViewControllerImpl
         // apply zoom
         boolean changed = documentViewModel.setViewZoom(zoom);
         // get the view port validate the viewport and shift the components
-        documentViewScrollPane.revalidate();
+        documentViewScrollPane.validate();
 
         // center zoom calculation, find current center and pass
         // it along to zoomCenter function.
-        if (changed) {
-            float zoomFactor = zoom / previousZoom;
-            if (centeringPoint != null) {
-                centeringPoint.setLocation(
-                        centeringPoint.x * zoomFactor,
-                        centeringPoint.y * zoomFactor);
-            }
+        if (changed && centeringPoint != null) {
+            centeringPoint.setLocation(
+                    (centeringPoint.x / previousZoom) * zoom,
+                    (centeringPoint.y / previousZoom) * zoom);
         }
         // still center on click
         zoomCenter(centeringPoint);
@@ -1040,6 +1040,61 @@ public class DocumentViewControllerImpl
 
         return changed;
     }
+
+    /**
+     * Zoom to a new zoom level, the viewPort position is set by the addition
+     * of the zoomPointDelta to the page bounds as defined by the view.
+     *
+     * @param zoom                  zoom level which should be in the range of zoomLevels array
+     * @param becauseOfValidFitMode true will update ui elements with zoom state.
+     * @param zoomPointDelta        point to center on.
+     * @param pageIndex             page to zoom in on.
+     * @return true if the zoom level changed, false otherwise.
+     */
+    public boolean setZoomToViewPort(float zoom, Point zoomPointDelta, int pageIndex,
+                                     boolean becauseOfValidFitMode) {
+        if (documentViewModel == null) {
+            return false;
+        }
+        // make sure the zoom falls in between the zoom range
+        if (zoomLevels != null) {
+            if (zoom < zoomLevels[0])
+                zoom = zoomLevels[0];
+            else if (zoom > zoomLevels[zoomLevels.length - 1])
+                zoom = zoomLevels[zoomLevels.length - 1];
+        }
+
+        // set a default centering point if null
+        if (zoomPointDelta == null) {
+            zoomPointDelta = new Point();
+        }
+        // grab previous zoom so that zoom factor can be calculated
+        float previousZoom = getZoom();
+
+        // apply zoom
+        boolean changed = documentViewModel.setViewZoom(zoom);
+        documentViewScrollPane.validate();
+
+        // center zoom calculation, find current center and pass
+        // it along to zoomCenter function.
+        if (changed) {
+            Rectangle bounds = documentViewModel.getPageBounds(pageIndex);
+            zoomPointDelta.setLocation(
+                    (zoomPointDelta.x / previousZoom) * zoom,
+                    (zoomPointDelta.y / previousZoom) * zoom);
+            zoomPointDelta.setLocation(bounds.x + zoomPointDelta.x,
+                    bounds.y + zoomPointDelta.y);
+            getViewPort().setViewPosition(zoomPointDelta);
+        }
+
+        // update the UI controls
+        if (viewerController != null) {
+            viewerController.doCommonZoomUIUpdates(becauseOfValidFitMode);
+        }
+
+        return changed;
+    }
+
 
     /**
      * Utility method for finding the center point of the viewport
@@ -1073,19 +1128,6 @@ public class DocumentViewControllerImpl
         return documentViewModel;
     }
 
-//    private Page getPageLock(int pageNumber) {
-//        PageTree pageTree = getPageTree();
-//        if (pageTree == null)
-//            return null;
-//        return pageTree.getPage(pageNumber, this);
-//    }
-//
-//    private void removePageLock(Page page) {
-//        PageTree pageTree = getPageTree();
-//        if (pageTree != null) {
-//            pageTree.releasePage(page, this);
-//        }
-//    }
     //
     // ComponentListener interface
     //

@@ -14,7 +14,9 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.InputEvent;
@@ -28,22 +30,34 @@ import java.util.logging.Logger;
  *
  * @since 4.0
  */
-public class ZoomOutHandler implements ToolHandler {
+public class ZoomOutPageHandler implements ToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(ZoomOutHandler.class.toString());
+            Logger.getLogger(ZoomOutPageHandler.class.toString());
 
+    private AbstractPageViewComponent pageViewComponent;
     private DocumentViewController documentViewController;
+    private DocumentViewModel documentViewModel;
 
-    public ZoomOutHandler(DocumentViewController documentViewController) {
+    public ZoomOutPageHandler(DocumentViewController documentViewController,
+                              AbstractPageViewComponent pageViewComponent,
+                              DocumentViewModel documentViewModel) {
         this.documentViewController = documentViewController;
+        this.pageViewComponent = pageViewComponent;
+        this.documentViewModel = documentViewModel;
     }
+
 
     public void mouseClicked(MouseEvent e) {
         if ((e.getModifiers() & MouseEvent.MOUSE_PRESSED) != 0) {
             if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) {
-                // zoom out.
-                documentViewController.setZoomOut(e.getPoint());
+                // zoom in
+                Point pageOffset = documentViewModel.getPageBounds(
+                        pageViewComponent.getPageIndex()).getLocation();
+                Point mouse = e.getPoint();
+                mouse.setLocation(pageOffset.x + mouse.x,
+                        pageOffset.y + mouse.y);
+                documentViewController.setZoomOut(mouse);
             }
         }
     }
@@ -71,6 +85,14 @@ public class ZoomOutHandler implements ToolHandler {
     }
 
     public void paintTool(Graphics g) {
+
+    }
+
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
 
     }
 }

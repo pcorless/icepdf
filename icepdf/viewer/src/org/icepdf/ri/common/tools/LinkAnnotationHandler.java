@@ -126,6 +126,14 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
 
     }
 
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
+
     @Override
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
 
