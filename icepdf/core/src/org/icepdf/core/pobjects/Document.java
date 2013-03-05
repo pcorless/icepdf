@@ -848,6 +848,7 @@ public class Document {
      */
     public PDimension getPageDimension(int pageNumber, float userRotation) {
         Page page = catalog.getPageTree().getPage(pageNumber);
+        page.init();
         return page.getSize(userRotation);
     }
 
@@ -866,6 +867,7 @@ public class Document {
      */
     public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom) {
         Page page = catalog.getPageTree().getPage(pageNumber);
+        page.init();
         if (page != null) {
             return page.getSize(userRotation, userZoom);
         } else {
@@ -942,6 +944,7 @@ public class Document {
     public void paintPage(int pageNumber, Graphics g, final int renderHintType,
                           final int pageBoundary, float userRotation, float userZoom) {
         Page page = catalog.getPageTree().getPage(pageNumber);
+        page.init();
         PDimension sz = page.getSize(userRotation, userZoom);
         int pageWidth = (int) sz.getWidth();
         int pageHeight = (int) sz.getHeight();
@@ -999,7 +1002,7 @@ public class Document {
                 out.write(buffer, 0, length);
             }
         } catch (Throwable e) {
-            logger.log(Level.FINE, "Error writting PDF output stream.", e);
+            logger.log(Level.FINE, "Error writing PDF output stream.", e);
             throw new IOException(e.getMessage());
         } finally {
             try {
@@ -1021,8 +1024,12 @@ public class Document {
      */
     public long saveToOutputStream(OutputStream out) throws IOException {
         long documentLength = writeToOutputStream(out);
-        long appendedLength = appendIncrementalUpdate(out, documentLength);
-        return documentLength + appendedLength;
+        if (true) {
+            long appendedLength = appendIncrementalUpdate(out, documentLength);
+            return documentLength + appendedLength;
+        } else {
+            return documentLength;
+        }
     }
 
     /**
@@ -1060,6 +1067,7 @@ public class Document {
                               final int renderHintType, final int pageBoundary,
                               float userRotation, float userZoom) {
         Page page = catalog.getPageTree().getPage(pageNumber);
+        page.init();
         PDimension sz = page.getSize(pageBoundary, userRotation, userZoom);
 
         int pageWidth = (int) sz.getWidth();
@@ -1165,6 +1173,7 @@ public class Document {
      */
     public List<Image> getPageImages(int pageNumber) {
         Page pg = catalog.getPageTree().getPage(pageNumber);
+        pg.init();
         return pg.getImages();
     }
 

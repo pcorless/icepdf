@@ -26,6 +26,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
     private long filePositionOfStreamData;
     private long lengthOfStreamData;
     private long filePositionBeforeUse;
+    private boolean usedYet;
 
     public SeekableInputConstrainedWrapper(
             SeekableInput in, long offset, long length) {
@@ -33,10 +34,14 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         filePositionOfStreamData = offset;
         lengthOfStreamData = length;
         filePositionBeforeUse = 0L;
+        usedYet = false;
     }
 
 
     private void ensureReadyOnFirstUse() throws IOException {
+        if (usedYet)
+            return;
+        usedYet = true;
         filePositionBeforeUse = streamDataInput.getAbsolutePosition();
         streamDataInput.seekAbsolute(filePositionOfStreamData);
     }
