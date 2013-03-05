@@ -60,4 +60,12 @@ public class AnnotationSelectionHandler extends MouseAdapter
     public void mouseMoved(MouseEvent e) {
 
     }
+
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
 }

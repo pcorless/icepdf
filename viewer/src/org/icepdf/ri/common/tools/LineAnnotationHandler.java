@@ -230,6 +230,14 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
     }
 
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
+
     @Override
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
 

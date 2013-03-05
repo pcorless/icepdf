@@ -28,6 +28,23 @@ public interface ToolHandler extends MouseInputListener {
      *
      * @param g graphics context
      */
-    public void paintTool(Graphics g);
+    void paintTool(Graphics g);
+
+
+    /**
+     * Callback code that allows post construct task to take place when the
+     * tool is selected via the
+     * {@link org.icepdf.ri.common.views.AbstractDocumentView#setToolMode(int)}
+     * call.
+     */
+    void installTool();
+
+    /**
+     * Callback code that allows pre destroy task to take place when the
+     * tool is unselected via the
+     * {@link org.icepdf.ri.common.views.AbstractDocumentView#setToolMode(int)}
+     * call.
+     */
+    void uninstallTool();
 
 }

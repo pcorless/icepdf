@@ -188,6 +188,7 @@ public abstract class AbstractDocumentView
 
     public void setToolMode(final int viewToolMode) {
         if (currentTool != null) {
+            currentTool.uninstallTool();
             removeMouseListener(currentTool);
             removeMouseMotionListener(currentTool);
         }
@@ -200,8 +201,9 @@ public abstract class AbstractDocumentView
                 currentTool = new ZoomInViewHandler(documentViewController,
                         documentViewModel, this);
                 break;
-            case DocumentViewModel.DISPLAY_TOOL_ZOOM_OUT:
-                currentTool = new ZoomOutHandler(documentViewController);
+            case DocumentViewModel.DISPLAY_TOOL_ZOOM_DYNAMIC:
+                currentTool = new DynamicZoomHandler(documentViewController,
+                        documentScrollpane);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION:
                 currentTool = new TextSelectionViewHandler(documentViewController,
@@ -218,6 +220,7 @@ public abstract class AbstractDocumentView
                 break;
         }
         if (currentTool != null) {
+            currentTool.installTool();
             addMouseListener(currentTool);
             addMouseMotionListener(currentTool);
         }

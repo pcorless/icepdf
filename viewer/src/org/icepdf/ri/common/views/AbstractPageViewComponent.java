@@ -53,6 +53,7 @@ public abstract class AbstractPageViewComponent
      */
     public void setToolMode(final int viewToolMode) {
         if (currentToolHandler != null) {
+            currentToolHandler.uninstallTool();
             removeMouseListener(currentToolHandler);
             removeMouseMotionListener(currentToolHandler);
         }
@@ -150,6 +151,7 @@ public abstract class AbstractPageViewComponent
                 currentToolHandler = null;
         }
         if (currentToolHandler != null) {
+            currentToolHandler.installTool();
             addMouseListener(currentToolHandler);
             addMouseMotionListener(currentToolHandler);
         }

@@ -186,6 +186,14 @@ public class TextAnnotationHandler implements ToolHandler {
 
     }
 
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
+
     /**
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.

@@ -102,16 +102,19 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
             // update selection rectangle
             updateSelectionSize(e, parentComponent);
 
-            // check if we are over a page
-            AbstractPageViewComponent pageComponent =
-                    isOverPageComponent(parentComponent, e);
+            if (documentViewController.getViewPort() != null &&
+                    rectToDraw.getWidth() > 0 &&
+                    rectToDraw.getHeight() > 0) {
+                // zoom in on rectangle bounds.
+                float zoom = ZoomInPageHandler.calculateZoom(
+                        documentViewController, rectToDraw, documentViewModel);
 
-            // zoom in on rectangle bounds.
-            double zoom = ZoomInPageHandler.calculateZoom(
-                    documentViewModel.getViewZoom(),
-                    rectToDraw,
-                    parentComponent.getDocumentScrollpane().getViewport().getBounds());
-            documentViewController.setZoom((float) zoom);
+                // scale the zoom box center to the new location
+                Point center = new Point((int) rectToDraw.getCenterX(),
+                        (int) rectToDraw.getCenterY());
+
+                documentViewController.setZoomCentered(zoom, center, true);
+            }
 
             // clear the rectangle
             clearRectangle(parentComponent);
@@ -130,6 +133,14 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
                 }
             }
         }
+    }
+
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
     }
 
     public void mouseEntered(MouseEvent e) {

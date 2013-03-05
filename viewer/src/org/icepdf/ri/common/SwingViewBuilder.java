@@ -1625,7 +1625,7 @@ public class SwingViewBuilder {
                 messageBundle.getString("viewer.toolbar.tool.zoomDynamic.tooltip"),
                 "zoom_dynamic", Images.SIZE_LARGE, buttonFont);
         if (viewerController != null && btn != null)
-            viewerController.setZoomOutToolButton(btn);
+            viewerController.setZoomDynamicToolButton(btn);
         return btn;
     }
 

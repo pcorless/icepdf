@@ -171,6 +171,14 @@ public class InkAnnotationHandler implements ToolHandler {
 
     }
 
+    public void installTool() {
+
+    }
+
+    public void uninstallTool() {
+
+    }
+
     public void mouseDragged(MouseEvent e) {
         inkPath.lineTo(e.getX(), e.getY());
         pageViewComponent.repaint();
