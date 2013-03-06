@@ -145,7 +145,7 @@ public class Form extends Stream {
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream. 
         ContentParser cp = ContentParserFactory.getInstance()
-                .getContentParser(library, resources);
+                .getContentParser(library, leafResources);
         cp.setGraphicsState(graphicsState);
         byte[] in = getDecodedStreamBytes();
         if (in != null) {
