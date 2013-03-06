@@ -1615,7 +1615,7 @@ public abstract class AbstractContentParser implements ContentParser {
                                              Shapes shapes, int rmode) {
         // setup textSprite with a strokeColor and the correct rmode
         textSprites.setRMode(rmode);
-        textSprites.setStrokeColor(graphicState.getFillColor());
+        textSprites.setStrokeColor(graphicState.getStrokeColor());
         // save the old line width
         float old = graphicState.getLineWidth();
 
