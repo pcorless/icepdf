@@ -1013,6 +1013,10 @@ public class ImageStream extends Stream {
                         else if (colorSpaceCompCount == 4) {
                             for (int i = 0; i < colorSpaceCompCount; i++) {
                                 f[i] = in.getBits(bitsPerColour);
+                                // apply decode
+                                if (decode[0] > decode[1]) {
+                                    f[i] = maxColourValue - f[i];
+                                }
                             }
                             PColorSpace.reverseInPlace(f);
                             colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
