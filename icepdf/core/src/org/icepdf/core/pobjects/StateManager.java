@@ -20,11 +20,11 @@ import java.util.logging.Logger;
 /**
  * This class is responsible for keeping track of which object in the document
  * have change.  When a file is written to disk this class is used to find
- * the object that shoud be written in the body section of the file as part of
+ * the object that should be written in the body section of the file as part of
  * an incremental update.
  * <p/>
  * Once this object is created should be added to the library so that is
- * accessable by any PObject.
+ * accessible by any PObject.
  *
  * @since 4.0
  */

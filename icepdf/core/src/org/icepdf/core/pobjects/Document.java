@@ -21,11 +21,15 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.security.SecurityManager;
-import org.icepdf.core.util.*;
+import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.LazyObjectLoader;
+import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Parser;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -68,6 +72,22 @@ public class Document {
         return ProductInfo.PRIMARY + "." + ProductInfo.SECONDARY + "." +
                 ProductInfo.TERTIARY + " " + ProductInfo.RELEASE_TYPE;
     }
+
+    private static final String INCREMENTAL_UPDATER =
+            "org.icepdf.core.util.IncrementalUpdater";
+
+    private static boolean foundIncrementalUpdater;
+
+    static {
+        // check class bath for NFont library, and declare results.
+        try {
+            Class.forName(INCREMENTAL_UPDATER);
+            foundIncrementalUpdater = true;
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.WARNING, "PDF write support was not found on the class path");
+        }
+    }
+
 
     // core catalog, root of the document hierarchy.
     private Catalog catalog;
@@ -1024,25 +1044,21 @@ public class Document {
      */
     public long saveToOutputStream(OutputStream out) throws IOException {
         long documentLength = writeToOutputStream(out);
-        if (true) {
-            long appendedLength = appendIncrementalUpdate(out, documentLength);
-            return documentLength + appendedLength;
-        } else {
-            return documentLength;
-        }
-    }
+        if (foundIncrementalUpdater) {
 
-    /**
-     * If ICEpdf Pro, then use append an incremental update of any edits.
-     *
-     * @param out            OutputStream to which the incremental update bytes are written.
-     * @param documentLength Length of the PDF file sp far, before the incremental update.
-     * @return The number of bytes written for the incremental update.
-     * @throws IOException
-     */
-    protected long appendIncrementalUpdate(OutputStream out, long documentLength)
-            throws IOException {
-        return IncrementalUpdater.appendIncrementalUpdate(this, out, documentLength);
+            try {
+                Class incrementalUpdaterClass = Class.forName(INCREMENTAL_UPDATER);
+                Class[] args = {Document.class, OutputStream.class, Long.TYPE};
+                Object[] argValues = {this, out, documentLength};
+                Method method = incrementalUpdaterClass.getDeclaredMethod(
+                        "appendIncrementalUpdate", args);
+                long appendedLength = (Long) method.invoke(null, argValues);
+                return documentLength + appendedLength;
+            } catch (Throwable e) {
+                logger.log(Level.FINE, "Could not call incremental updater.", e);
+            }
+        }
+        return documentLength;
     }
 
     /**

@@ -301,7 +301,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
-                messageBundle.getString("viewer.utilityPane.annotation.square.appearance.title"),
+                messageBundle.getString("viewer.utilityPane.annotation.freeText.appearance.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
 

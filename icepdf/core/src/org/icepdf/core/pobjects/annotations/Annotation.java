@@ -24,7 +24,7 @@ import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -1310,7 +1310,10 @@ public class Annotation extends Dictionary {
         // put colour back in to the dictionary
         float[] compArray = new float[3];
         this.color.getColorComponents(compArray);
-        List colorValues = Arrays.asList(compArray);
+        List<Float> colorValues = new ArrayList<Float>(compArray.length);
+        for (float comp : compArray) {
+            colorValues.add(comp);
+        }
         entries.put(Annotation.COLOR_KEY, colorValues);
     }
 
