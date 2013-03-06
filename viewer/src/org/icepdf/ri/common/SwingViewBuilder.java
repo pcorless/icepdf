@@ -1427,7 +1427,7 @@ public class SwingViewBuilder {
 
     public JToolBar buildAnnotationUtilityToolBar() {
         JToolBar toolbar = new JToolBar();
-        commonToolBarSetup(toolbar, false);
+        commonToolBarSetup(toolbar, true);
         addToToolBar(toolbar, buildHighlightAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
         addToToolBar(toolbar, buildStrikeOutAnnotationToolButton());
         addToToolBar(toolbar, buildUnderlineAnnotationToolButton());
