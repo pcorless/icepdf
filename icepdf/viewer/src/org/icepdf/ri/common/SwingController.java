@@ -2797,6 +2797,22 @@ public class SwingController
     }
 
     /**
+     * Sets the default MediaSizeName and creates an new instance of the
+     * the PrintHelp with the new media size.  The media size is also
+     * persisted to the PropertiesManager.
+     *
+     * @param mediaSize MediaSizeName constant of paper size to print to.
+     */
+    public void setPrintDefaultMediaSizeName(MediaSizeName mediaSize) {
+        PrintHelper printHelper = new PrintHelper(documentViewController, getPageTree(),
+                mediaSize,
+                PrintQuality.NORMAL);
+        viewModel.setPrintHelper(printHelper);
+        // save new printer attributes to properties
+        savePrinterProperties(printHelper);
+    }
+
+    /**
      * @param withDialog If should show a print dialog before starting to print
      */
     public void print(final boolean withDialog) {
