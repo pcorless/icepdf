@@ -348,6 +348,10 @@ public class TilingPattern extends Stream implements Pattern {
 
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, Rectangle2D bBoxMod) {
 
+        if (tilingShapes == null) {
+            return;
+        }
+
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
 
