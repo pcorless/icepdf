@@ -18,7 +18,8 @@ import org.icepdf.core.io.SeekableByteArrayInputStream;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.fonts.*;
+import org.icepdf.core.pobjects.fonts.FontFactory;
+import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -46,6 +47,7 @@ public class ContentParser {
             Logger.getLogger(ContentParser.class.toString());
 
     private static boolean disableTransparencyGroups;
+
     static {
         // decide if large images will be scaled
         disableTransparencyGroups =
@@ -772,11 +774,11 @@ public class ContentParser {
                                 // by the pattern dictionary and respect the current clip
 
                                 // apply a rudimentary softmask for an shading .
-                                if (graphicState.getSoftMask() != null){
+                                if (graphicState.getSoftMask() != null) {
                                     setAlpha(shapes,
                                             graphicState.getAlphaRule(),
                                             0.50f);
-                                }else{
+                                } else {
                                     setAlpha(shapes,
                                             graphicState.getAlphaRule(),
                                             graphicState.getFillAlpha());
@@ -818,12 +820,10 @@ public class ContentParser {
                     }
                 }
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             // eat the result as it a normal occurrence
             logger.finer("End of Content Stream");
-        }
-        catch (NoninvertibleTransformException e) {
+        } catch (NoninvertibleTransformException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         } finally {
             // End of stream set alpha state back to 1.0f, so that other
@@ -890,7 +890,7 @@ public class ContentParser {
                         stack.clear();
                     }
                     // pick up on xObject content streams.
-                    else if (tok.equals(PdfOps.Do_TOKEN)){
+                    else if (tok.equals(PdfOps.Do_TOKEN)) {
                         consume_Do(graphicState, stack, shapes, resources, false);
                         stack.clear();
                     }
@@ -1011,7 +1011,7 @@ public class ContentParser {
                     advance.setLocation(0, 0);
                     // x,y are expressed in unscaled but we don't scale until
                     // a text showing operator is called.
-                    graphicState.translate(x,  -y );
+                    graphicState.translate(x, -y);
                     float newY = (float) graphicState.getCTM().getTranslateY();
                     // capture x coord of BT y offset, tm, Td, TD.
                     if (isYstart) {
@@ -1024,7 +1024,7 @@ public class ContentParser {
 
                     // ty will dictate the vertical shift, many pdf will use
                     // ty=0 do just do a horizontal shift for layout.
-                    if (y != 0 && Math.round(newY) !=  Math.round(oldY)) {
+                    if (y != 0 && Math.round(newY) != Math.round(oldY)) {
                         pageText.newLine();
                     }
                 }
@@ -1045,11 +1045,11 @@ public class ContentParser {
                     Object next;
                     // initialize an identity matrix, add parse out the
                     // numbers we have working from f6 down to f1.
-                    float[] tm = new float[]{1f,0,0,1f,0,0};
-                    for (int i=0,hits = 5, max = stack.size(); hits != -1 && i < max; i++){
+                    float[] tm = new float[]{1f, 0, 0, 1f, 0, 0};
+                    for (int i = 0, hits = 5, max = stack.size(); hits != -1 && i < max; i++) {
                         next = stack.pop();
-                        if (next instanceof  Number){
-                            tm[hits] = ((Number)next).floatValue();
+                        if (next instanceof Number) {
+                            tm[hits] = ((Number) next).floatValue();
                             hits--;
                         }
                     }
@@ -1426,7 +1426,7 @@ public class ContentParser {
         // in MODE_ADD or MODE_Fill_Add which require that the we push the
         // shapes that make up the clipping path to the shapes stack.  When
         // encountered the path will be used as the current clip.
-        if (!glyphOutlineClip.isEmpty()){
+        if (!glyphOutlineClip.isEmpty()) {
             // set the clips so further clips can use the clip outline
             graphicState.setClip(glyphOutlineClip.getGlyphOutlineClip());
             // add the glyphOutline so the clip can be calculated.
@@ -1892,15 +1892,15 @@ public class ContentParser {
      * Process the xObject content.
      *
      * @param graphicState graphic state to appent
-     * @param stack stack of object being parsed.
-     * @param shapes shapes object.
-     * @param resources associated resources.
-     * @param viewParse true indicates parsing is for a normal view.  If false
-     * the consumption of Do will skip Image based xObjects for performance.
+     * @param stack        stack of object being parsed.
+     * @param shapes       shapes object.
+     * @param resources    associated resources.
+     * @param viewParse    true indicates parsing is for a normal view.  If false
+     *                     the consumption of Do will skip Image based xObjects for performance.
      */
     private static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
-                                Shapes shapes, Resources resources,
-                                boolean viewParse){
+                                            Shapes shapes, Resources resources,
+                                            boolean viewParse) {
         // collectTokenFrequency(PdfOps.Do_TOKEN);
         String xobjectName = ((Name) (stack.pop())).getName();
         // Form XObject
@@ -1963,9 +1963,9 @@ public class ContentParser {
                 // by paint the xObject to an image.
                 if (!disableTransparencyGroups &&
                         formXObject.isTransparencyGroup() &&
-                       graphicState.getFillAlpha() < 1.0f &&
+                        graphicState.getFillAlpha() < 1.0f &&
                         (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
-                         formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
+                                formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
                     // add the hold form for further processing.
                     shapes.add(formXObject);
                 }
@@ -2041,8 +2041,7 @@ public class ContentParser {
             // from a class cast exception point of view.
             graphicState.setDashArray(dashArray);
             graphicState.setDashPhase(dashPhase);
-        }
-        catch (ClassCastException e) {
+        } catch (ClassCastException e) {
             logger.log(Level.FINE, "Dash pattern syntax error: ", e);
         }
         // update stroke state with possibly new dash data.
@@ -2111,21 +2110,21 @@ public class ContentParser {
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
         if (graphicState.getTextState().font == null ||
-                graphicState.getTextState().font.getFont() == null){
+                graphicState.getTextState().font.getFont() == null) {
             // turn on the old awt font engine, as we have a null font
             FontFactory fontFactory = FontFactory.getInstance();
             boolean awtState = fontFactory.isAwtFontSubstitution();
             fontFactory.setAwtFontSubstitution(true);
             // get the first pages resources, no need to lock the page, already locked.
-            Resources res = resources.getLibrary().getCatalog().getPageTree().getPage(0,null).getResources();
+            Resources res = resources.getLibrary().getCatalog().getPageTree().getPage(0, null).getResources();
             // try and get a font off the first page.
             Object pageFonts = res.getEntries().get("Font");
-            if (pageFonts instanceof Hashtable){
+            if (pageFonts instanceof Hashtable) {
                 // get first font
-                Reference fontRef = (Reference)((Hashtable)pageFonts).get(name2);
+                Reference fontRef = (Reference) ((Hashtable) pageFonts).get(name2);
                 graphicState.getTextState().font =
-                    (org.icepdf.core.pobjects.fonts.Font)resources.getLibrary()
-                            .getObject(fontRef);
+                        (org.icepdf.core.pobjects.fonts.Font) resources.getLibrary()
+                                .getObject(fontRef);
                 // might get a null pointer but we'll get on on deriveFont too
                 graphicState.getTextState().font.init();
             }
@@ -2143,7 +2142,7 @@ public class ContentParser {
     }
 
     private static void consume_Tz(GraphicsState graphicState, Stack stack,
-                            boolean inTextBlock) {
+                                   boolean inTextBlock) {
 //        collectTokenFrequency(PdfOps.Tz_TOKEN);
         Object ob = stack.pop();
         if (ob instanceof Number) {
@@ -2223,7 +2222,7 @@ public class ContentParser {
         // font metrics data
         float textRise = textState.trise;
         float charcterSpace = textState.cspace * textState.hScalling;
-        float whiteSpace = textState.wspace* textState.hScalling;
+        float whiteSpace = textState.wspace * textState.hScalling;
         int textLength = displayText.length();
 
         // create a new sprite to hold the text objects
@@ -2455,16 +2454,15 @@ public class ContentParser {
                 graphicState = graphicState.restore();
                 // 1x1 tiles don't seem to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
-                if ((tilingPattern.getBBox().getWidth() > 1 &&
-                        tilingPattern.getBBox().getHeight() > 1) ){
+                if ((tilingPattern.getbBoxMod().getWidth() > 1 &&
+                        tilingPattern.getbBoxMod().getHeight() > 1)) {
                     shapes.add(tilingPattern);
-                }
-                else{
+                } else {
                     // draw partial fill colour
                     if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
+                            TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
                         shapes.add(tilingPattern.getUnColored());
-                    }else{
+                    } else {
                         shapes.add(tilingPattern.getFirstColor());
                     }
                 }
@@ -2553,16 +2551,15 @@ public class ContentParser {
                 graphicState = graphicState.restore();
                 // tiles nee to be 1x1 or larger to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
-                if ((tilingPattern.getBBox().getWidth() >= 1 ||
-                        tilingPattern.getBBox().getHeight() >= 1) ){
+                if ((tilingPattern.getbBoxMod().getWidth() >= 1 ||
+                        tilingPattern.getbBoxMod().getHeight() >= 1)) {
                     shapes.add(tilingPattern);
-                }
-                else{
+                } else {
                     // draw partial fill colour
                     if (tilingPattern.getPaintType() ==
-                        TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
+                            TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
                         shapes.add(tilingPattern.getUnColored());
-                    }else{
+                    } else {
                         shapes.add(tilingPattern.getFirstColor());
                     }
                 }
@@ -2626,7 +2623,7 @@ public class ContentParser {
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
         AffineTransform oldHScaling = new AffineTransform(graphicState.getCTM());
-        float hScalling =  graphicState.getTextState().hScalling;
+        float hScalling = graphicState.getTextState().hScalling;
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
                         af.getScaleX() * hScalling,
