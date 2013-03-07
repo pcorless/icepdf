@@ -96,14 +96,14 @@ public class Stream extends Dictionary {
                         true);
         // sniff out jdk 1.5 version
         String version = System.getProperty("java.version");
-        if (version.contains("1.5")){
-            redIndex  = 2;
+        if (version.contains("1.5")) {
+            redIndex = 2;
             blueIndex = 0;
         }
         // define alternate page size ration w/h, default Legal.
         pageRatio =
                 Defs.sysPropertyDouble("org.icepdf.core.pageRatio",
-                        8.26/11.68);
+                        8.26 / 11.68);
 
         // force jai as the default ccittfax decode.
         forceJaiccittfax =
@@ -258,7 +258,7 @@ public class Stream extends Dictionary {
         // named filters can be assigned correctly.
         if (library.securityManager != null) {
             // check see of there is a decodeParams for a crypt filter.
-            Hashtable decodeParams = library.getDictionary(entries,"DecodeParam");
+            Hashtable decodeParams = library.getDictionary(entries, "DecodeParam");
             input = library.getSecurityManager().getEncryptionInputStream(
                     getPObjectReference(), library.getSecurityManager().getDecryptionKey(),
                     decodeParams,
@@ -358,8 +358,7 @@ public class Stream extends Dictionary {
 
             byte[] ret = out.toByteArray();
             return ret;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
         }
 
@@ -402,8 +401,7 @@ public class Stream extends Dictionary {
             byte[] data = out.relinquishByteArray();
             Object[] ret = new Object[]{data, size};
             return ret;
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
         }
 
@@ -436,8 +434,7 @@ public class Stream extends Dictionary {
             }
             if (input != null)
                 input.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
         }
     }
@@ -543,12 +540,11 @@ public class Stream extends Dictionary {
             if (!cache) {
                 try {
                     streamInput.dispose();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     logger.log(Level.FINE, "Error disposing stream.", e);
                 }
                 streamInput = null;
-            }else{
+            } else {
                 library.removeObject(this.getPObjectReference());
             }
         }
@@ -595,8 +591,7 @@ public class Stream extends Dictionary {
             bufferedInput.reset();
             if (dataRead > 0)
                 jpegEncoding = getJPEGEncoding(data, dataRead);
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             logger.log(Level.FINE, "Problem determining JPEG type: ", ioe);
         }
         if (Tagger.tagging)
@@ -650,7 +645,7 @@ public class Stream extends Dictionary {
                             ? (WritableRaster) r : r.createCompatibleWritableRaster();
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
                     // YCCK to RGB works better if an CMYK intermediate is used, but slower.
-                    alterRasterYCCK2CMYK(wr, decode,bitspercomponent);
+                    alterRasterYCCK2CMYK(wr, decode, bitspercomponent);
                     tmpImage = alterRasterCMYK2BGRA(wr, smaskImage, maskImage);
                 } else if (jpegEncoding == JPEG_ENC_GRAY && bitspercomponent == 8) {
                     //System.out.println("Stream.dctDecode()    JPEG_ENC_GRAY");
@@ -670,10 +665,10 @@ public class Stream extends Dictionary {
                     }
                     tmpImage = makeGrayBufferedImage(wr);
                     // apply mask value
-                    if (maskImage != null){
+                    if (maskImage != null) {
                         tmpImage = applyExplicitMask(tmpImage, maskImage);
                     }
-                    if (smaskImage != null){
+                    if (smaskImage != null) {
                         tmpImage = applyExplicitSMask(tmpImage, smaskImage);
                     }
                 } else {
@@ -720,8 +715,7 @@ public class Stream extends Dictionary {
                         }
                     }
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.log(Level.FINE, "Problem loading JPEG image via JPEGImageDecoder: ", e);
             }
             if (tmpImage != null) {
@@ -732,8 +726,7 @@ public class Stream extends Dictionary {
 
         try {
             bufferedInput.close();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.FINE, "Error closing image stream.", e);
         }
 
@@ -760,8 +753,7 @@ public class Stream extends Dictionary {
                     Class jaiClass = Class.forName("javax.media.jai.JAI");
                     Method jaiCreate = jaiClass.getMethod("create", String.class, ParameterBlock.class);
                     javax_media_jai_RenderedOp_op = jaiCreate.invoke(null, "jpeg", pb);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                 }
 
                 if (javax_media_jai_RenderedOp_op != null) {
@@ -811,15 +803,13 @@ public class Stream extends Dictionary {
                         }
                     }
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.log(Level.FINE, "Problem loading JPEG image via JAI: ", e);
             }
 
             try {
                 input.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 logger.log(Level.FINE, "Problem closing image stream. ", e);
             }
         }
@@ -836,8 +826,7 @@ public class Stream extends Dictionary {
                             Tagger.tagImage("HandledBy=DCTDecode_ToolkitCreateImage");
                     }
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.log(Level.FINE, "Problem loading JPEG image via Toolkit: ", e);
             }
         }
@@ -851,9 +840,9 @@ public class Stream extends Dictionary {
     /**
      * Utility method to decode JBig2 images.
      *
-     * @param width  width of image
-     * @param height height of image
-     * @param fill colour fill to be applied to a mask
+     * @param width     width of image
+     * @param height    height of image
+     * @param fill      colour fill to be applied to a mask
      * @param imageMask true to indicate image should be treated as a mask
      * @return buffered image of decoded jbig2 image stream.   Null if an error
      *         occured during decode.
@@ -865,7 +854,7 @@ public class Stream extends Dictionary {
             Class jbig2DecoderClass = Class.forName("org.jpedal.jbig2.JBIG2Decoder");
             // create instance of decoder
             Constructor jbig2DecoderClassConstructor =
-                        jbig2DecoderClass.getDeclaredConstructor();
+                    jbig2DecoderClass.getDeclaredConstructor();
             Object jbig2Decoder = jbig2DecoderClassConstructor.newInstance();
 
             checkMemory(108 * 1024);
@@ -874,12 +863,12 @@ public class Stream extends Dictionary {
             if (decodeParms != null) {
                 Stream globalsStream = null;
                 Object jbigGlobals = library.getObject(decodeParms, "JBIG2Globals");
-                if (jbigGlobals instanceof Stream){
+                if (jbigGlobals instanceof Stream) {
                     globalsStream = (Stream) library.getObject(decodeParms, "JBIG2Globals");
                 }
-                if (globalsStream != null){
+                if (globalsStream != null) {
                     byte[] globals = globalsStream.getDecodedStreamBytes();
-                    if (globals != null && globals.length > 0 ) {
+                    if (globals != null && globals.length > 0) {
                         // invoked ecoder.setGlobalData(globals);
                         Class partypes[] = new Class[1];
                         partypes[0] = byte[].class;
@@ -912,15 +901,14 @@ public class Stream extends Dictionary {
             argTypes = new Class[]{Integer.TYPE};
             arglist = new Object[]{0};
             Method getPageAsBufferedImage = jbig2DecoderClass.getMethod("getPageAsBufferedImage", argTypes);
-            tmpImage = (BufferedImage)getPageAsBufferedImage.invoke(jbig2Decoder, arglist);
-        }catch (ClassNotFoundException e) {
+            tmpImage = (BufferedImage) getPageAsBufferedImage.invoke(jbig2Decoder, arglist);
+        } catch (ClassNotFoundException e) {
             logger.warning("JBIG2 image library could not be found");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Problem loading JBIG2 image: ", e);
         }
         // apply the fill colour and alpha if masking is enabled.
-        if (imageMask){
+        if (imageMask) {
             tmpImage = applyExplicitMask(tmpImage, fill);
         }
         return tmpImage;
@@ -996,26 +984,25 @@ public class Stream extends Dictionary {
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
                 tmpImage = alterRasterCMYK2BGRA(wr, sMaskImage, maskImage);
-            } else if ((colourSpace instanceof DeviceGray )
+            } else if ((colourSpace instanceof DeviceGray)
                     && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
                 tmpImage = makeGrayBufferedImage(wr);
-            } else if (colourSpace instanceof Separation){
+            } else if (colourSpace instanceof Separation) {
                 WritableRaster wr = tmpImage.getRaster();
                 alterRasterY2Gray(wr, bitsPerComponent, decode);
-            }else if (colourSpace instanceof Indexed){
+            } else if (colourSpace instanceof Indexed) {
                 tmpImage = applyIndexColourModel(tmpImage, width, height, colourSpace, bitsPerComponent);
             }
 
             // check for a mask value
-            if (maskImage != null){
+            if (maskImage != null) {
                 tmpImage = applyExplicitMask(tmpImage, maskImage);
             }
-            if (sMaskImage != null){
+            if (sMaskImage != null) {
                 tmpImage = applyExplicitSMask(tmpImage, sMaskImage);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
         }
 
@@ -1084,12 +1071,12 @@ public class Stream extends Dictionary {
                 // the image.
                 inBlack = (values[3] / 255.0f);
 
-                if (inCyan != 0 && inMagenta != 0 && inYellow != 0 ){
+                if (inCyan != 0 && inMagenta != 0 && inYellow != 0) {
                     inBlack /= DeviceCMYK.cmykBlackRatio;
                 }
 
                 if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
-                        inYellow == lastYellow && inBlack == lastBlack)){
+                        inYellow == lastYellow && inBlack == lastBlack)) {
 
                     c = clip(0, 1, inCyan + inBlack);
                     m = clip(0, 1, inMagenta + inBlack);
@@ -1102,23 +1089,23 @@ public class Stream extends Dictionary {
                     ag = c * (1 - m) * y2;
                     ab = c * m * (1 - y2);
 
-                    outRed = (float)clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
-                    outGreen = (float)clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
-                    outBlue = (float)clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
+                    outRed = (float) clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
+                    outGreen = (float) clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
+                    outBlue = (float) clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
                     rValue = (int) (outRed * 255);
                     gValue = (int) (outGreen * 255);
                     bValue = (int) (outBlue * 255);
                     alpha = 0xFF;
                 }
                 lastCyan = inCyan;
-                lastMagenta  = inMagenta;
+                lastMagenta = inMagenta;
                 lastYellow = inYellow;
-                lastBlack =  inBlack;
+                lastBlack = inBlack;
 
                 // this fits into the larger why are we doing this on a case by case basis.
-                if (y < smaskHeight && x < smaskWidth && smaskRaster != null){
+                if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
                     alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
-                }else if (y < maskHeight && x < maskWidth && maskRaster != null) {
+                } else if (y < maskHeight && x < maskWidth && maskRaster != null) {
                     // When making an ImageMask, the alpha channel is setup so that
                     //  it both works correctly for the ImageMask being painted,
                     //  and also for when it's used here, to determine the alpha
@@ -1158,8 +1145,8 @@ public class Stream extends Dictionary {
     }
 
     private static BufferedImage alterRasterYCbCr2RGB(WritableRaster wr,
-                BufferedImage smaskImage, BufferedImage maskImage,
-                Vector<Integer> decode, int bitsPerComponent) {
+                                                      BufferedImage smaskImage, BufferedImage maskImage,
+                                                      Vector<Integer> decode, int bitsPerComponent) {
         float[] values;
         int width = wr.getWidth();
         int height = wr.getHeight();
@@ -1168,7 +1155,7 @@ public class Stream extends Dictionary {
             for (int x = 0; x < width; x++) {
                 // apply decode param.
                 values = getNormalizedComponents(
-                        (byte[])wr.getDataElements(x,y,null),
+                        (byte[]) wr.getDataElements(x, y, null),
                         decode,
                         maxValue);
 
@@ -1227,9 +1214,10 @@ public class Stream extends Dictionary {
      * BGRA.  The conversion is not perfect giving a bit of a greenish hue to the
      * image in question.  I've tweaked the core Adobe algorithm ot give slightly
      * "better" colour representation but it does seem to make red a little light.
-     * @param wr  image stream to convert colour space.
+     *
+     * @param wr         image stream to convert colour space.
      * @param smaskImage smask used to apply alpha values.
-     * @param maskImage maks image for drop out.
+     * @param maskImage  maks image for drop out.
      */
     private static void alterRasterYCCK2BGRA(WritableRaster wr,
                                              BufferedImage smaskImage,
@@ -1264,7 +1252,7 @@ public class Stream extends Dictionary {
             for (int x = 0; x < width; x++) {
                 // apply decode param.
                 origValues = getNormalizedComponents(
-                        (byte[])wr.getDataElements(x,y,null),
+                        (byte[]) wr.getDataElements(x, y, null),
                         decode,
                         maxValue);
 
@@ -1274,8 +1262,8 @@ public class Stream extends Dictionary {
 //                float K = origValues[3] * 255;
 
                 // removing alteration for now as some samples are too dark.
-               // Y *= .95; // gives a darker image,  as y approaches zero,
-                         // the image becomes darke
+                // Y *= .95; // gives a darker image,  as y approaches zero,
+                // the image becomes darke
 
                 float Cr_128 = Cr - 128;
                 float Cb_128 = Cb - 128;
@@ -1295,7 +1283,7 @@ public class Stream extends Dictionary {
                 // ICEsoft custom algorithm, results may vary, res are a little
                 // off but over all a better conversion/ then the stoke algorithms.
                 double rVal = Y + (1.4020 * Cr_128);
-                double gVal = Y + (.14414 * Cb_128) + (.11413636  * Cr_128);
+                double gVal = Y + (.14414 * Cb_128) + (.11413636 * Cr_128);
                 double bVal = Y + (1.772 * Cb_128);
 
                 // Intel IPP conversion for ITU-R BT.601 for video
@@ -1318,9 +1306,9 @@ public class Stream extends Dictionary {
                 byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
                 byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
                 int alpha = 0xFF;
-                if (y < smaskHeight && x < smaskWidth && smaskRaster != null){
+                if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
                     alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
-                }else if (y < maskHeight && x < maskWidth && maskRaster != null) {
+                } else if (y < maskHeight && x < maskWidth && maskRaster != null) {
                     // When making an ImageMask, the alpha channel is setup so that
                     //  it both works correctly for the ImageMask being painted,
                     //  and also for when it's used here, to determine the alpha
@@ -1345,8 +1333,9 @@ public class Stream extends Dictionary {
      * RGB.
      * NOTE: no masking here, as it is done later in the call to
      * {@see alterRasterCMYK2BGRA}
-     * @param wr writable raster to alter.
-     * @param decode decode vector.
+     *
+     * @param wr               writable raster to alter.
+     * @param decode           decode vector.
      * @param bitsPerComponent bits per component .
      */
     private static void alterRasterYCCK2CMYK(WritableRaster wr,
@@ -1355,8 +1344,8 @@ public class Stream extends Dictionary {
 
         float[] origValues;
         double[] pixels = new double[4];
-        double Y,Cb,Cr,K;
-        double lastY = -1,lastCb = -1,lastCr = -1,lastK = -1;
+        double Y, Cb, Cr, K;
+        double lastY = -1, lastCb = -1, lastCr = -1, lastK = -1;
         double c = 0, m = 0, y2 = 0, k = 0;
 
         int width = wr.getWidth();
@@ -1367,27 +1356,27 @@ public class Stream extends Dictionary {
             for (int x = 0; x < width; x++) {
                 // apply decode param.
                 origValues = getNormalizedComponents(
-                        (byte[])wr.getDataElements(x,y,null),
+                        (byte[]) wr.getDataElements(x, y, null),
                         decode,
                         maxValue);
 
                 Y = origValues[0] * 255;
                 Cb = origValues[1] * 255;
-                Cr = origValues[2]* 255;
-                K = origValues[3]* 255;
+                Cr = origValues[2] * 255;
+                K = origValues[3] * 255;
 
-                if (!(lastY == y && lastCb == Cb && lastCr == Cr && lastK == K )){
+                if (!(lastY == y && lastCb == Cb && lastCr == Cr && lastK == K)) {
 
                     // intel codecs, http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
                     // Intel IPP conversion for JPEG codec.
-                    c = 255 - (Y + (1.402 * Cr) - 179.456 );
+                    c = 255 - (Y + (1.402 * Cr) - 179.456);
                     m = 255 - (Y - (0.34414 * Cb) - (0.71413636 * Cr) + 135.45984);
                     y2 = 255 - (Y + (1.7718 * Cb) - 226.816);
                     k = K;
 
-                    c = clip(0,255,c);
-                    m = clip(0,255,m);
-                    y2 = clip(0,255,y2);
+                    c = clip(0, 255, c);
+                    m = clip(0, 255, m);
+                    y2 = clip(0, 255, y2);
                 }
 
                 lastY = Y;
@@ -1407,10 +1396,11 @@ public class Stream extends Dictionary {
 
     /**
      * Apply the Decode Array domain for each colour component.
+     *
      * @param pixels colour to process by decode
      * @param decode decode array for colour space
-     * @param xMax domain max for the second point on the interpolation line
-     * always (2<sup>bitsPerComponent</sup> - 1).
+     * @param xMax   domain max for the second point on the interpolation line
+     *               always (2<sup>bitsPerComponent</sup> - 1).
      * @return
      */
     private static float[] getNormalizedComponents(
@@ -1423,8 +1413,8 @@ public class Stream extends Dictionary {
         // interpolate each colour component for the given decode domain.
         for (int i = 0; i < pixels.length; i++) {
             val = pixels[i] & 0xff;
-            yMin = ((Number)decode.get(i * 2)).floatValue();
-            yMax = ((Number)decode.get((i * 2) + 1)).floatValue();
+            yMin = ((Number) decode.get(i * 2)).floatValue();
+            yMax = ((Number) decode.get((i * 2) + 1)).floatValue();
             normComponents[i] =
                     Function.interpolate(val, 0, xMax, yMin, yMax);
         }
@@ -1433,8 +1423,8 @@ public class Stream extends Dictionary {
 
 
     private static void alterRasterYCbCrA2RGBA_new(WritableRaster wr,
-                BufferedImage smaskImage, BufferedImage maskImage,
-                Vector<Integer> decode, int bitsPerComponent) {
+                                                   BufferedImage smaskImage, BufferedImage maskImage,
+                                                   Vector<Integer> decode, int bitsPerComponent) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
         int smaskHeight = 0;
@@ -1505,7 +1495,7 @@ public class Stream extends Dictionary {
                 rgbaValues[0] = rByte;
                 rgbaValues[1] = gByte;
                 rgbaValues[2] = bByte;
-                rgbaValues[3] = (int)alpha;
+                rgbaValues[3] = (int) alpha;
 
                 wr.setPixel(x, y, rgbaValues);
             }
@@ -1541,8 +1531,8 @@ public class Stream extends Dictionary {
         // masks its better to scale the base image up to the mask size.
         if (baseWidth != maskWidth || baseHeight != maskHeight) {
             // calculate scale factors.
-            double scaleX = maskWidth / (double) baseWidth ;
-            double scaleY = maskHeight / (double)  baseHeight;
+            double scaleX = maskWidth / (double) baseWidth;
+            double scaleY = maskHeight / (double) baseHeight;
             // scale the mask to match the base image.
             AffineTransform tx = new AffineTransform();
             tx.scale(scaleX, scaleY);
@@ -1572,7 +1562,7 @@ public class Stream extends Dictionary {
      * as a source of mask shape or mask opacity values in the transparent imaging
      * model. The alpha source parameter in the graphics state determines whether
      * the mask values shall be interpreted as shape or opacity.
-     *
+     * <p/>
      * If present, this entry shall override the current soft mask in the graphics
      * state, as well as the image’s Mask entry, if any. However, the other
      * transparency-related graphics state parameters—blend mode and alpha
@@ -1595,8 +1585,8 @@ public class Stream extends Dictionary {
         // masks its better to scale the base image up to the mask size.
         if (baseWidth != maskWidth || baseHeight != maskHeight) {
             // calculate scale factors.
-            double scaleX = maskWidth / (double) baseWidth ;
-            double scaleY = maskHeight / (double)  baseHeight;
+            double scaleX = maskWidth / (double) baseWidth;
+            double scaleY = maskHeight / (double) baseHeight;
             // scale the mask to match the base image.
             AffineTransform tx = new AffineTransform();
             tx.scale(scaleX, scaleY);
@@ -1625,8 +1615,9 @@ public class Stream extends Dictionary {
      * to the flagged bytes and a transparency value otherwise. This method
      * creates a new BufferedImage with a transparency model so it will cause
      * a memory spike.
+     *
      * @param baseImage masking image.
-     * @param fill fill value to apply to mask.
+     * @param fill      fill value to apply to mask.
      * @return masked image encoded with the fill colour and transparency.
      */
     private static BufferedImage applyExplicitMask(BufferedImage baseImage, Color fill) {
@@ -1707,7 +1698,7 @@ public class Stream extends Dictionary {
         }
 
         if (smaskRaster == null && maskRaster == null &&
-                (maskMinRGB == null || maskMaxRGB == null)){
+                (maskMinRGB == null || maskMaxRGB == null)) {
             return null;
         }
 
@@ -1810,33 +1801,33 @@ public class Stream extends Dictionary {
         int[] rgbaValues = new int[4];
         int width = wr.getWidth();
         int height = wr.getHeight();
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    wr.getPixel(x, y, rgbaValues);
-                    int red = rgbaValues[0];
-                    int green = rgbaValues[1];
-                    int blue = rgbaValues[2];
-    
-                    int alpha = 0xFF;
-                    if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
-                        // Alpha equals greyscale value of smask
-                        alpha = (smaskImage.getRGB(x, y)) & 0xFF;//(smaskRaster.getSample(x, y, 0) & 0xFF);
-                    } else if (y < maskHeight && x < maskWidth && maskRaster != null) {
-                        // When making an ImageMask, the alpha channnel is setup so that
-                        //  it both works correctly for the ImageMask being painted,
-                        //  and also for when it's used here, to determine the alpha
-                        //  of an image that it's masking
-                        alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
-                    } else if (blue >= maskMinBlue && blue <= maskMaxBlue &&
-                            green >= maskMinGreen && green <= maskMaxGreen &&
-                            red >= maskMinRed && red <= maskMaxRed) {
-                        alpha = 0x00;
-                    }
-                    if (alpha != 0xFF) {
-                        rgbaValues[3] = alpha;
-                        wr.setPixel(x, y, rgbaValues);
-                    }
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                wr.getPixel(x, y, rgbaValues);
+                int red = rgbaValues[0];
+                int green = rgbaValues[1];
+                int blue = rgbaValues[2];
+
+                int alpha = 0xFF;
+                if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
+                    // Alpha equals greyscale value of smask
+                    alpha = (smaskImage.getRGB(x, y)) & 0xFF;//(smaskRaster.getSample(x, y, 0) & 0xFF);
+                } else if (y < maskHeight && x < maskWidth && maskRaster != null) {
+                    // When making an ImageMask, the alpha channnel is setup so that
+                    //  it both works correctly for the ImageMask being painted,
+                    //  and also for when it's used here, to determine the alpha
+                    //  of an image that it's masking
+                    alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
+                } else if (blue >= maskMinBlue && blue <= maskMaxBlue &&
+                        green >= maskMinGreen && green <= maskMaxGreen &&
+                        red >= maskMinRed && red <= maskMaxRed) {
+                    alpha = 0x00;
                 }
+                if (alpha != 0xFF) {
+                    rgbaValues[3] = alpha;
+                    wr.setPixel(x, y, rgbaValues);
+                }
+            }
         }
         return wr;
     }
@@ -1877,7 +1868,7 @@ public class Stream extends Dictionary {
             for (int x = 0; x < width; x++) {
                 wr.getPixel(x, y, values);
                 Y = values[0];
-                Y = defaultDecode?255 - Y:Y;
+                Y = defaultDecode ? 255 - Y : Y;
                 Y = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
                 values[0] = Y;
                 wr.setPixel(x, y, values);
@@ -1974,7 +1965,7 @@ public class Stream extends Dictionary {
      * Utility to build an RGBA buffered image using the specified raster and
      * a Transparency.OPAQUE transparency model.
      *
-     * @param wr           writable raster of image.
+     * @param wr writable raster of image.
      * @return constructed image.
      */
     private static BufferedImage makeRGBABufferedImage(WritableRaster wr) {
@@ -2155,7 +2146,7 @@ public class Stream extends Dictionary {
                 decoder.decodeT6(decodedStreamData, streamData, 0, rows);
             }
         } catch (Exception e) {
-            logger.warning("Error decoding CCITTFax image k: " + k );
+            logger.warning("Error decoding CCITTFax image k: " + k);
             // IText 5.03 doesn't correctly assign a k value for the deocde,
             // as  result we can try one more time using the T6.
             decoder.decodeT6(decodedStreamData, streamData, 0, rows);
@@ -2242,10 +2233,10 @@ public class Stream extends Dictionary {
         // of an CCITTfax image that is basically the same use as the page, we
         // use the page dimensions to try and determine the page size.
         // This will fail miserably if the image isn't full page.
-        if (height == 0){
-            height = (int)((1/pageRatio)*width);
-        }else if (width == 0){
-            width = (int)(pageRatio*height);
+        if (height == 0) {
+            height = (int) ((1 / pageRatio) * width);
+        } else if (width == 0) {
+            width = (int) (pageRatio * height);
         }
 
         // check for available memory, get colour space and bit count
@@ -2258,7 +2249,7 @@ public class Stream extends Dictionary {
             int depth = colourSpace.getNumComponents();
             decode = new Vector<Integer>(depth);
             // add a decode param for each colour channel.
-            for (int i= 0; i < depth; i++){
+            for (int i = 0; i < depth; i++) {
                 decode.addElement(0);
                 decode.addElement(1);
             }
@@ -2458,15 +2449,15 @@ public class Stream extends Dictionary {
             // try default ccittfax decode.
             if (Tagger.tagging)
                 Tagger.tagImage("CCITTFaxDecode");
-            try{
+            try {
                 // corner case where a user may want to use JAI because of
                 // speed or compatibility requirements.
-                if (forceJaiccittfax){
+                if (forceJaiccittfax) {
                     throw new Throwable("Forcing CCITTFAX decode via JAI");
                 }
                 data = ccittFaxDecode(width, height);
                 dataLength = data.length;
-            }catch(Throwable e){
+            } catch (Throwable e) {
                 // on a failure then fall back to JAI for a try. likely
                 // will not happen.
                 if (Tagger.tagging) {
@@ -2474,7 +2465,7 @@ public class Stream extends Dictionary {
                 }
                 BufferedImage decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
                         this, library, entries, fill);
-                if (decodedImage != null){
+                if (decodedImage != null) {
                     return decodedImage;
                 }
             }
@@ -2508,8 +2499,7 @@ public class Stream extends Dictionary {
                 if (decodedImage != null) {
                     return decodedImage;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.log(Level.FINE, "Error building image raster.", e);
             }
         }
@@ -2624,8 +2614,8 @@ public class Stream extends Dictionary {
                     for (int x = 0; x < width; x++) {
                         wr.getPixel(x, y, origValues);
                         origValues = getNormalizedComponents(
-                                (byte[])wr.getDataElements(x,y,null), decode, maxValue);
-                        float gray = origValues[0] *255;
+                                (byte[]) wr.getDataElements(x, y, null), decode, maxValue);
+                        float gray = origValues[0] * 255;
                         byte rByte = (gray < 0) ? (byte) 0 : (gray > 255) ? (byte) 0xFF : (byte) gray;
                         origValues[0] = rByte;
                         wr.setPixel(x, y, origValues);
@@ -2638,11 +2628,11 @@ public class Stream extends Dictionary {
             }
             // apply explicit mask
 
-            if (maskImage != null){
+            if (maskImage != null) {
                 img = applyExplicitMask(img, maskImage);
             }
             // apply soft mask
-            if (smaskImage != null){
+            if (smaskImage != null) {
                 img = alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
             }
         } else if (colourSpace instanceof DeviceRGB) {
@@ -2717,8 +2707,7 @@ public class Stream extends Dictionary {
                     ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                     img = alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
-                }
-                else{
+                } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitspercomponent, new Point(0, 0));
                     ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
@@ -2736,7 +2725,7 @@ public class Stream extends Dictionary {
                 for (int i = 0; i < colorsLength; i++) {
                     cmap[i] = colors[i].getRGB();
                 }
-                for (int i = colorsLength; i < cmap.length; i++){
+                for (int i = colorsLength; i < cmap.length; i++) {
                     cmap[i] = 0xFF000000;
                 }
 
@@ -2752,7 +2741,7 @@ public class Stream extends Dictionary {
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
                     ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, true, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                }else if (usingAlpha) {
+                } else if (usingAlpha) {
                     checkMemory(width * height * 4);
                     int[] rgbaData = new int[width * height];
                     for (int index = 0; index < dataLength; index++) {
@@ -2768,7 +2757,7 @@ public class Stream extends Dictionary {
                     ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                     ColorModel cm = new DirectColorModel(cs, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000, false, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                }else {
+                } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
@@ -2957,6 +2946,10 @@ public class Stream extends Dictionary {
                         else if (colorSpaceCompCount == 4) {
                             for (int i = 0; i < colorSpaceCompCount; i++) {
                                 f[i] = in.getBits(bitsPerColour);
+                                // apply decode
+                                if (decodeArray[0] > decodeArray[1]) {
+                                    f[i] = maxColourValue - f[i];
+                                }
                             }
                             PColorSpace.reverseInPlace(f);
                             colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
@@ -2982,8 +2975,7 @@ public class Stream extends Dictionary {
                 WritableRaster wr = bim.getRaster();
                 alterRasterRGBA(wr, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             logger.log(Level.FINE, "Error parsing image.", e);
         }
 
@@ -2996,7 +2988,7 @@ public class Stream extends Dictionary {
      * code for now but will be consolidate as we move to to 5.0
      */
     private static BufferedImage applyIndexColourModel(BufferedImage image,
-               int width, int height, PColorSpace colourSpace,int bitspercomponent){
+                                                       int width, int height, PColorSpace colourSpace, int bitspercomponent) {
         BufferedImage img;
         colourSpace.init();
         // build out the colour table.
@@ -3006,7 +2998,7 @@ public class Stream extends Dictionary {
         for (int i = 0; i < colorsLength; i++) {
             cmap[i] = colors[i].getRGB();
         }
-        for (int i = colorsLength; i < cmap.length; i++){
+        for (int i = colorsLength; i < cmap.length; i++) {
             cmap[i] = 0xFF000000;
         }
         // build a new buffer with indexed colour model.
@@ -3125,22 +3117,23 @@ public class Stream extends Dictionary {
 
     /**
      * Clips the value according to the specified floor and ceiling.
-     * @param floor floor value of clip
+     *
+     * @param floor   floor value of clip
      * @param ceiling ceiling value of clip
-     * @param value value to clip.
+     * @param value   value to clip.
      * @return clipped value.
      */
     private static double clip(double floor, double ceiling, double value) {
-        if (value < floor){
+        if (value < floor) {
             value = floor;
         }
-        if (value > ceiling){
+        if (value > ceiling) {
             value = ceiling;
         }
         return value;
     }
 
-    private static void displayImage(BufferedImage bufferedImage){
+    private static void displayImage(BufferedImage bufferedImage) {
 
         int width2 = bufferedImage.getWidth();
         int height2 = bufferedImage.getHeight();
@@ -3170,7 +3163,7 @@ public class Stream extends Dictionary {
         image.setSize(new Dimension(bi.getWidth(), bi.getHeight()));
 
         JPanel test = new JPanel();
-        test.setPreferredSize(new Dimension(1200,1200));
+        test.setPreferredSize(new Dimension(1200, 1200));
         JScrollPane tmp = new JScrollPane(image);
         tmp.revalidate();
         f.setSize(new Dimension(800, 800));
