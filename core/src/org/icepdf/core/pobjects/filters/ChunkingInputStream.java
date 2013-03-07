@@ -61,7 +61,7 @@ public abstract class ChunkingInputStream extends InputStream {
         int mayRead = in.available();
         int currRead;
         try {
-            while (mayRead > 0 && read < length) {
+            while (mayRead >= 0 && read < length) {
                 currRead = in.read(buffer, offset + read, length - read);
                 if (currRead < 0 && read == 0)
                     return currRead;
