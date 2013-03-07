@@ -1095,7 +1095,7 @@ public abstract class AbstractContentParser implements ContentParser {
                                       LinkedList<OptionalContents> oCGs) {
         // add the new draw command to the stack.
         // restore the main stack.
-        if (oCGs != null) {
+        if (oCGs != null && !oCGs.isEmpty()) {
             OptionalContents optionalContents = oCGs.removeLast();
             // mark the end of an OCG.
             if (optionalContents.isOCG()) {
@@ -1615,7 +1615,7 @@ public abstract class AbstractContentParser implements ContentParser {
                                              Shapes shapes, int rmode) {
         // setup textSprite with a strokeColor and the correct rmode
         textSprites.setRMode(rmode);
-        textSprites.setStrokeColor(graphicState.getFillColor());
+        textSprites.setStrokeColor(graphicState.getStrokeColor());
         // save the old line width
         float old = graphicState.getLineWidth();
 
