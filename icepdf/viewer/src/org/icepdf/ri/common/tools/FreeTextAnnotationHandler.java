@@ -107,7 +107,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
                         documentViewModel.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_FREE_TEXT,
                         tBbox);
-        annotation.setCreationDate(PDate.createDate(new Date()));
+        annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(System.getProperty("user.name"));
         annotation.setContents(" ");
 

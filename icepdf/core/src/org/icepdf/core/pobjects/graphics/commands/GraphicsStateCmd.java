@@ -14,6 +14,7 @@
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
@@ -22,29 +23,28 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 
 /**
- * The StrokeDrawCmd stores a Stroke object and when executed the stroke
- * is applied to the graphics context.
+ * GraphicsStateCmd currently doesn't paint anything but rather acts as a
+ * queue for the PostScriptEncoder to write out a named graphics context.
+ * This command would not normally be used in
  *
  * @since 5.0
  */
-public class StrokeDrawCmd extends AbstractDrawCmd {
+public class GraphicsStateCmd extends AbstractDrawCmd {
 
-    private Stroke stroke;
+    private Name graphicStateName;
 
-    public StrokeDrawCmd(Stroke stroke) {
-        this.stroke = stroke;
+    public GraphicsStateCmd(Name graphicStateName) {
+        this.graphicStateName = graphicStateName;
     }
 
     @Override
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
-                              OptionalContentState optionalContentState,
-                              boolean paintAlpha, PaintTimer paintTimer) {
-        g.setStroke(stroke);
+                              OptionalContentState optionalContentState, boolean paintAlpha, PaintTimer paintTimer) {
         return currentShape;
     }
 
-    public Stroke getStroke() {
-        return stroke;
+    public Name getGraphicStateName() {
+        return graphicStateName;
     }
 }

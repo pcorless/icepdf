@@ -126,7 +126,8 @@ public class LinkAnnotation extends Annotation {
         } else {
             entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
         }
-        // build up a link annotation
+        // write out the default highlight state.
+        entries.put(HIGHLIGHT_MODE_KEY, HIGHLIGHT_INVERT);
 
         // create the new instance
         LinkAnnotation linkAnnotation = new LinkAnnotation(library, entries);

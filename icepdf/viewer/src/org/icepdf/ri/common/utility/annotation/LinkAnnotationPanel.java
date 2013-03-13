@@ -153,15 +153,6 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
         // store new state from panel
         AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-        AnnotationState changes = new AnnotationState(
-                null, highlightStyle, 0, null, null);
-        // apply new properties to the action and the component
-        newState.apply(changes);
-
-        LinkAnnotation linkAnnotation = (LinkAnnotation)
-                currentAnnotationComponent.getAnnotation();
-//        linkAnnotation.set();
-
 
         // Add our states to the undo caretaker
         ((AbstractDocumentViewModel) controller.getDocumentViewController().
@@ -173,7 +164,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     }
 
     /**
-     * Method to enable appearence input fields for an invisible rectangle
+     * Method to enable appearance input fields for an invisible rectangle
      *
      * @param linkType invisible rectangle or visible, your pick.
      */

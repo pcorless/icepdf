@@ -15,7 +15,9 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.PDate;
+import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -79,7 +81,7 @@ public class TextAnnotationHandler implements ToolHandler {
                         library,
                         Annotation.SUBTYPE_TEXT,
                         bbox);
-        markupAnnotation.setCreationDate(PDate.createDate(new Date()));
+        markupAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
         markupAnnotation.setTitleText(System.getProperty("user.name"));
         markupAnnotation.setContents("");
 
@@ -97,6 +99,11 @@ public class TextAnnotationHandler implements ToolHandler {
                         library,
                         Annotation.SUBTYPE_POPUP,
                         bbox);
+        // save the annotation
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(popupAnnotation,
+                popupAnnotation.getPObjectReference()));
+        library.addObject(popupAnnotation, popupAnnotation.getPObjectReference());
 
         // setup up some default values
         popupAnnotation.setOpen(true);

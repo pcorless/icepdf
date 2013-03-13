@@ -14,10 +14,8 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.ColorUtil;
@@ -29,6 +27,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -116,6 +115,17 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public static final Name KEY_QUAD_POINTS = new Name("QuadPoints");
 
     /**
+     * Named graphics state name used to store highlight transparency values.
+     */
+    public static final Name EXTGSTATE_NAME = new Name("ip1");
+
+    /**
+     * Highlight transparency default
+     */
+    public static final float HIGHLIGHT_ALPHA = 0.3f;
+
+
+    /**
      * Converted Quad points.
      */
     private Shape[] quadrilaterals;
@@ -141,10 +151,10 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             GeneralPath shape;
             for (int i = 0, count = 0; i < size; i++, count += 8) {
                 shape = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 4);
-                shape.moveTo((Float) quadPoints.get(count), (Float) quadPoints.get(count + 1));
-                shape.lineTo((Float) quadPoints.get(count + 2), (Float) quadPoints.get(count + 3));
+                shape.moveTo((Float) quadPoints.get(count + 6), (Float) quadPoints.get(count + 7));
                 shape.lineTo((Float) quadPoints.get(count + 4), (Float) quadPoints.get(count + 5));
-                shape.lineTo((Float) quadPoints.get(count + 6), (Float) quadPoints.get(count + 7));
+                shape.lineTo((Float) quadPoints.get(count), (Float) quadPoints.get(count + 1));
+                shape.lineTo((Float) quadPoints.get(count + 2), (Float) quadPoints.get(count + 3));
                 shape.closePath();
                 quadrilaterals[i] = shape;
             }
@@ -197,6 +207,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         // set default link annotation values.
         entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
         entries.put(Dictionary.SUBTYPE_KEY, subType);
+        entries.put(Annotation.FLAG_KEY, 4);
         // coordinates
         if (rect != null) {
             entries.put(Annotation.RECTANGLE_KEY,
@@ -207,8 +218,11 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
         TextMarkupAnnotation textMarkupAnnotation =
                 new TextMarkupAnnotation(library, entries);
+        entries.put(NM_KEY,
+                new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
         textMarkupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         textMarkupAnnotation.setNew(true);
+        textMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
         return textMarkupAnnotation;
     }
 
@@ -220,17 +234,90 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 SUBTYPE_STRIKE_OUT.equals(subType);
     }
 
-    public void setKeyQuadPoints(Rectangle2D bbox, GeneralPath path) {
-        // todo if time permits for backwards compatibility.
-    }
-
     /**
      * Resets the annotations appearance stream.
      */
     public void resetAppearanceStream() {
+        // build the appears shapes.
         setAppearanceStream(bbox,
                 markupBounds,
                 markupPath);
+        // create the quad points
+        List<Float> quadPoints = new ArrayList<Float>();
+        if (markupBounds != null) {
+            Rectangle2D bounds;
+            // build out the square in quadrant 1.
+            for (Shape shape : markupBounds) {
+                bounds = shape.getBounds2D();
+
+                quadPoints.add((float) bounds.getX());
+                quadPoints.add((float) (bounds.getY() + bounds.getHeight()));
+
+                quadPoints.add((float) (bounds.getX() + bounds.getWidth()));
+                quadPoints.add((float) (bounds.getY() + bounds.getHeight()));
+
+                quadPoints.add((float) (bounds.getX()));
+                quadPoints.add((float) (bounds.getY()));
+
+                quadPoints.add((float) (bounds.getX() + bounds.getWidth()));
+                quadPoints.add((float) (bounds.getY()));
+            }
+        }
+        entries.put(KEY_QUAD_POINTS, quadPoints);
+        setModifiedDate(PDate.formatDateTime(new Date()));
+
+        // create/update the appearance stream of the xObject.
+        StateManager stateManager = library.getStateManager();
+        Object AP = getObject(APPEARANCE_STREAM_KEY);
+        Form form = null;
+        if (AP instanceof HashMap) {
+            Object N = library.getObject(
+                    (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
+            if (N instanceof HashMap) {
+                Object AS = getObject(APPEARANCE_STATE_KEY);
+                if (AS != null && AS instanceof Name)
+                    N = library.getObject((HashMap) N, (Name) AS);
+            }
+            // n should be a Form but we have a few cases of Stream
+            if (N instanceof Form) {
+                form = (Form) N;
+            }
+            // else a stream, we won't support this for annotations.
+        } else {
+            // create a new xobject/form object
+            HashMap formEntries = new HashMap();
+            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
+            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
+            form = new Form(library, formEntries, null);
+            form.setPObjectReference(stateManager.getNewReferencNumber());
+            library.addObject(form, form.getPObjectReference());
+        }
+
+        if (form != null) {
+            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
+                    (float) bbox.getWidth(), (float) bbox.getHeight());
+            form.setAppearance(shapes, matrix, formBbox);
+            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
+                // add the transparency graphic context settings.
+                Resources resources = form.getResources();
+                HashMap graphicsProperties = new HashMap(2);
+                HashMap graphicsState = new HashMap(1);
+                graphicsProperties.put(GraphicsState.CA_STROKING_KEY, HIGHLIGHT_ALPHA);
+                graphicsProperties.put(GraphicsState.CA_NON_STROKING_KEY, HIGHLIGHT_ALPHA);
+                graphicsState.put(EXTGSTATE_NAME, graphicsProperties);
+                resources.getEntries().put(Resources.EXTGSTATE_KEY, graphicsState);
+                form.setResources(resources);
+            }
+            // update the AP's stream bytes so contents can be written out
+            form.setRawBytes(
+                    PostScriptEncoder.generatePostScript(shapes.getShapes()));
+            HashMap appearanceRefs = new HashMap();
+            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
+
+            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+        }
+
     }
 
     /**
@@ -250,62 +337,55 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
-//        af.scale(1,-1);
         af.translate(-this.bbox.getMinX(), -this.bbox.getMinY());
-        shapes = new Shapes();
 
+        // setup the stroke from the border settings.
+        BasicStroke stroke = new BasicStroke(1f);
+        shapes.add(new TransformDrawCmd(af));
+        shapes.add(new StrokeDrawCmd(stroke));
         if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
-            shapes.add(new TransformDrawCmd(af));
+            shapes.add(new GraphicsStateCmd(EXTGSTATE_NAME));
+            shapes.add(new AlphaDrawCmd(
+                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, HIGHLIGHT_ALPHA)));
             shapes.add(new ShapeDrawCmd(markupPath));
             shapes.add(new ColorDrawCmd(textMarkupColor));
             shapes.add(new FillDrawCmd());
+            shapes.add(new AlphaDrawCmd(
+                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
         } else if (SUBTYPE_STRIKE_OUT.equals(subtype)) {
-            shapes.add(new TransformDrawCmd(af));
             for (Shape shape : bounds) {
                 // calculate the line that will stroke the bounds
-                GeneralPath stroke = new GeneralPath();
+                GeneralPath strikeOutPath = new GeneralPath();
                 Rectangle2D bound = shape.getBounds2D();
                 float y = (float) (bound.getMinY() + (bound.getHeight() / 2));
-                stroke.moveTo((float) bound.getMinX(), y);
-                stroke.lineTo((float) bound.getMaxX(), y);
-                stroke.closePath();
-                shapes.add(new ShapeDrawCmd(stroke));
-                shapes.add(new StrokeDrawCmd(new BasicStroke(1f)));
+                strikeOutPath.moveTo((float) bound.getMinX(), y);
+                strikeOutPath.lineTo((float) bound.getMaxX(), y);
+                strikeOutPath.closePath();
+                shapes.add(new ShapeDrawCmd(strikeOutPath));
                 shapes.add(new ColorDrawCmd(textMarkupColor));
                 shapes.add(new DrawDrawCmd());
             }
         } else if (SUBTYPE_UNDERLINE.equals(subtype)) {
-            shapes.add(new TransformDrawCmd(af));
             for (Shape shape : bounds) {
                 // calculate the line that will stroke the bounds
-                GeneralPath stroke = new GeneralPath();
+                GeneralPath underlinePath = new GeneralPath();
                 Rectangle2D bound = shape.getBounds2D();
-                stroke.moveTo((float) bound.getMinX(), (float) bound.getMinY());
-                stroke.lineTo((float) bound.getMaxX(), (float) bound.getMinY());
-                stroke.closePath();
-                shapes.add(new ShapeDrawCmd(stroke));
+                underlinePath.moveTo((float) bound.getMinX(), (float) bound.getMinY());
+                underlinePath.lineTo((float) bound.getMaxX(), (float) bound.getMinY());
+                underlinePath.closePath();
+                shapes.add(new ShapeDrawCmd(underlinePath));
                 shapes.add(new ColorDrawCmd(textMarkupColor));
                 shapes.add(new DrawDrawCmd());
             }
         } else if (SUBTYPE_SQUIGGLY.equals(subtype)) {
             // not implemented,  need to create a custom stroke or
-            // build out a costome line move.
+            // build out a custom line move.
         }
     }
 
 
     @Override
     protected void renderAppearanceStream(Graphics2D g) {
-        // check to see if we are painting highlight annotations.
-        // if so we add some transparency to the context.
-        if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
-            // remove other alpha defs from painting
-            if (shapes != null) {
-                shapes.setPaintAlpha(false);
-            }
-        }
-
         // Appearance stream takes precedence over the quad points.
         if (shapes != null) {
             super.renderAppearanceStream(g);
@@ -313,13 +393,23 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         // draw the quad points.
         else if (quadrilaterals != null) {
 
+            // check to see if we are painting highlight annotations.
+            // if so we add some transparency to the context.
+            if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .30f));
+                // remove other alpha defs from painting
+                if (shapes != null) {
+                    shapes.setPaintAlpha(false);
+                }
+            }
+
             Object tmp = getObject(RECTANGLE_KEY);
             Rectangle2D.Float rectangle = null;
             if (tmp instanceof List) {
                 rectangle = library.getRectangle(entries, RECTANGLE_KEY);
             }
 
-            // get the current position of the userspaceRectangle
+            // get the current position of the userSpaceRectangle
             Rectangle2D.Float origRect = getUserSpaceRectangle();
             // build the transform to go back to users space
             AffineTransform af = g.getTransform();
@@ -333,17 +423,15 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             for (Shape shape : quadrilaterals) {
                 g.fill(af2.createTransformedShape(shape));
             }
-        }
-
-        // revert the alpha value.
-        if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-            // remove other alpha defs from painting
-            if (shapes != null) {
-                shapes.setPaintAlpha(true);
+            // revert the alpha value.
+            if (subtype != null && SUBTYPE_HIGHLIGHT.equals(subtype)) {
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                // remove other alpha defs from painting
+                if (shapes != null) {
+                    shapes.setPaintAlpha(true);
+                }
             }
         }
-
     }
 
     public Color getTextMarkupColor() {
@@ -353,10 +441,5 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public void setTextMarkupColor(Color textMarkupColor) {
         this.textMarkupColor = textMarkupColor;
     }
-
-    public void setSubtype(Name subtype) {
-        this.subtype = subtype;
-    }
-
 
 }

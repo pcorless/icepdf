@@ -45,16 +45,13 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
     private static final Color DEFAULT_BORDER_COLOR = Color.BLACK;
 
     // text markup sub types.
-    private final ValueLabelItem[] TEXT_MARKUP_TYPE_LIST = new ValueLabelItem[]{
+    private static final ValueLabelItem[] TEXT_MARKUP_TYPE_LIST = new ValueLabelItem[]{
             new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT, "Highlight"),
             new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT, "Strikeout"),
             new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_UNDERLINE, "Underline")};
 
     private SwingController controller;
     private ResourceBundle messageBundle;
-
-    // action instance that is being edited
-    private AnnotationComponent currentAnnotationComponent;
 
     // text markup appearance properties.
     private JComboBox textMarkupTypes;
@@ -70,7 +67,6 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
 
         // Setup the basics of the panel
         setFocusable(true);
-//        setBorder(new EmptyBorder(10, 5, 1, 5));
 
         // Add the tabbed pane to the overall panel
         createGUI();
@@ -184,14 +180,6 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
         AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
         // store new state from panel
         AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-        // todo: update how state is stored as we have a lot of annotations...
-//        AnnotationState changes = new AnnotationState(
-//                linkType, null, 0, textMarkupType, color);
-        // apply new properties to the action and the component
-//        newState.apply(changes);
-        // temporary apply new state info
-        TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation)
-                currentAnnotationComponent.getAnnotation();
 
         // Add our states to the undo caretaker
         ((AbstractDocumentViewModel) controller.getDocumentViewController().

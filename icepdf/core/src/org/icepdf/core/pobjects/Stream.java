@@ -74,7 +74,9 @@ public class Stream extends Dictionary {
     public Stream(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
         super(l, h);
         // capture raw bytes for later processing.
-        this.rawBytes = getRawStreamBytes(streamInputWrapper);
+        if (streamInputWrapper != null) {
+            this.rawBytes = getRawStreamBytes(streamInputWrapper);
+        }
     }
 
     public Stream(Library l, HashMap h, byte[] rawBytes) {
@@ -92,6 +94,10 @@ public class Stream extends Dictionary {
 
     public byte[] getRawBytes() {
         return rawBytes;
+    }
+
+    public void setRawBytes(byte[] rawBytes) {
+        this.rawBytes = rawBytes;
     }
 
     /**
@@ -140,7 +146,7 @@ public class Stream extends Dictionary {
      * is not necessarily exactly sized, and may be larger. Therefore the returned
      * Integer gives the actual valid size
      *
-     * @param presize potencial size to associate with byte array.
+     * @param presize potential size to associate with byte array.
      * @return Object[] { byte[] data, Integer sizeActualData }
      */
     public byte[] getDecodedStreamBytes(int presize) {

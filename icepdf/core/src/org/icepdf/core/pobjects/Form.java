@@ -41,6 +41,8 @@ public class Form extends Stream {
     private static final Logger logger =
             Logger.getLogger(Form.class.toString());
 
+    public static final Name TYPE_VALUE = new Name("XObject");
+    public static final Name SUB_TYPE_VALUE = new Name("Form");
     public static final Name GROUP_KEY = new Name("Group");
     public static final Name I_KEY = new Name("I");
     public static final Name K_KEY = new Name("K");
@@ -81,6 +83,13 @@ public class Form extends Stream {
         }
     }
 
+    public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
+        this.shapes = shapes;
+        this.matrix = matrix;
+        this.bbox = bbox;
+        entries.put(Form.BBOX_KEY, PRectangle.getPRectangleVector(bbox));
+        entries.put(Form.MATRIX_KEY, matrix);
+    }
 
     /**
      * Sets the GraphicsState which should be used by the content parser when
@@ -162,6 +171,19 @@ public class Form extends Stream {
         }
         inited = true;
     }
+
+    public Resources getResources() {
+        Resources leafResources = library.getResources(entries, RESOURCES_KEY);
+        if (resources == null) {
+            leafResources = new Resources(library, new HashMap());
+        }
+        return leafResources;
+    }
+
+    public void setResources(Resources resources) {
+        entries.put(RESOURCES_KEY, resources.getEntries());
+    }
+
 
     /**
      * Gets the shapes that where parsed from the content stream.

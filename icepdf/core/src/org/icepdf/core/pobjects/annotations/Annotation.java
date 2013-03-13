@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.content.ContentParser;
@@ -441,6 +442,12 @@ public class Annotation extends Dictionary {
     public static final Name M_KEY = new Name("M");
 
     /**
+     * (Optional; PDF 1.4) The annotation name, a text string uniquely
+     * identifying it among all the annotations on its page.
+     */
+    public static final Name NM_KEY = new Name("NM");
+
+    /**
      * Border property indexes for the border vector,  only applicable
      * if the border style has not been set.
      */
@@ -460,6 +467,13 @@ public class Annotation extends Dictionary {
     //
     protected AffineTransform matrix = null;
     protected Rectangle2D bbox = null;
+
+    // modified date.
+    protected PDate modifiedDate;
+    protected boolean hasBlendingMode;
+
+    // security manager need for decrypting strings.
+    protected SecurityManager securityManager;
 
     // type of annotation
     protected Name subtype;
@@ -531,6 +545,7 @@ public class Annotation extends Dictionary {
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
 
+        securityManager = library.getSecurityManager();
 
         content = library.getString(entries, CONTENTS_KEY);
 
@@ -567,6 +582,14 @@ public class Annotation extends Dictionary {
             green = Math.max(0.0f, Math.min(1.0f, green));
             blue = Math.max(0.0f, Math.min(1.0f, blue));
             color = new Color(red, green, blue);
+        }
+
+        // if no creation date check for M or modified.
+        Object value = library.getObject(entries, M_KEY);
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
+            modifiedDate = new PDate(securityManager,
+                    text.getDecryptedLiteralString(securityManager));
         }
 
         // process the streams if available.
@@ -615,6 +638,12 @@ public class Annotation extends Dictionary {
         return library.getName(entries, SUBTYPE_KEY);
     }
 
+    public void setSubtype(Name subtype) {
+        entries.put(SUBTYPE_KEY, subtype);
+        this.subtype = subtype;
+    }
+
+
     /**
      * Gets the annotation rectangle, and defines the location of the annotation on
      * the page in default user space units.
@@ -636,7 +665,7 @@ public class Annotation extends Dictionary {
      * Sets the users page rectangle for this annotation action instance
      */
     public void setUserSpaceRectangle(Rectangle2D.Float rect) {
-        if (userSpaceRectangle != null) {
+        if (userSpaceRectangle != null && rect != null) {
             userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
                     rect.width, rect.height);
             getEntries().put(Annotation.RECTANGLE_KEY,
@@ -660,9 +689,9 @@ public class Annotation extends Dictionary {
             Action action = Action.buildAction(library, (HashMap) tmp);
             // assign reference if applicable
             if (action != null &&
-                    library.isReference(entries, ACTION_KEY.getName())) {
+                    library.isReference(entries, ACTION_KEY)) {
                 action.setPObjectReference(
-                        library.getReference(entries, ACTION_KEY.getName()));
+                        library.getReference(entries, ACTION_KEY));
             }
             return action;
         }
@@ -708,7 +737,7 @@ public class Annotation extends Dictionary {
             // if found we will add the new action at the beginning of the
             // next chain.
             boolean isReference = library.isReference(getEntries(),
-                    ACTION_KEY.toString());
+                    ACTION_KEY);
             // we have a next action that is an object, mark it for delete.
             // Because its a reference no need to flag the annotation as changed.
             if (isReference) {
@@ -1393,6 +1422,43 @@ public class Annotation extends Dictionary {
         return ((getInt(FLAG_KEY) & 0x0040) != 0);
     }
 
+    public void setFlag(int flag) {
+        entries.put(FLAG_KEY, flag);
+    }
+
+    public void setModifiedDate(String modifiedDate) {
+        entries.put(M_KEY, new LiteralStringObject(modifiedDate));
+        this.modifiedDate = new PDate(securityManager, modifiedDate);
+    }
+
+    public boolean hasAppearanceStream() {
+        return library.getObject(entries, APPEARANCE_STREAM_KEY) != null;
+    }
+
+    /**
+     * Returns the appearance stream as defined by the AP dictionary key N
+     *
+     * @return N appearance stream or null.
+     */
+    public Stream getAppearanceStream() {
+        Object AP = getObject(APPEARANCE_STREAM_KEY);
+        if (AP instanceof HashMap) {
+            Object N = library.getObject(
+                    (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
+            if (N instanceof HashMap) {
+                Object AS = getObject(APPEARANCE_STATE_KEY);
+                if (AS != null && AS instanceof Name)
+                    N = library.getObject((HashMap) N, (Name) AS);
+            }
+            // n should be a Form but we have a few cases of Stream
+            if (N instanceof Stream) {
+                return (Form) N;
+            }
+        }
+        return null;
+    }
+
+
     /**
      * A locked annotation can not be deleted or its properties  such
      * as position and size to be modified by the user. This property does not
@@ -1414,6 +1480,7 @@ public class Annotation extends Dictionary {
 
     public void setContents(String content) {
         this.content = content;
+        entries.put(CONTENTS_KEY, new LiteralStringObject(content));
     }
 
     public String toString() {

@@ -17,7 +17,6 @@ package org.icepdf.core.util;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.io.*;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.CMap;
 import org.icepdf.core.pobjects.fonts.Font;
@@ -28,7 +27,10 @@ import org.icepdf.core.pobjects.graphics.TilingPattern;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -355,7 +357,11 @@ public class Parser {
                         for (int i = size - 1; i >= 0; i--) {
                             tmp[i] = stack.pop();
                         }
-                        v = Arrays.asList(tmp);
+                        // we need a mutable array so copy into an arrayList
+                        // so we can't use Arrays.asList().
+                        for (int i = 0; i < size; i++) {
+                            v.add(tmp[i]);
+                        }
                         stack.pop(); // "["
                     } else {
                         stack.clear();
