@@ -37,6 +37,8 @@ public class PostScriptEncoder {
     private static final String TRUE = "true";
     private static final String FALSE = "false";
     private static final String NAME = "/";
+    private static final String BEGIN_ARRAY = "[";
+    private static final String END_ARRAY = "]";
 
     private PostScriptEncoder() {
 
@@ -71,9 +73,9 @@ public class PostScriptEncoder {
                         .append(colors[2]).append(SPACE)
                         .append(PdfOps.RG_TOKEN).append(NEWLINE);
                 // generate the draw operands for current shape.
-                generateShaePostScript(currentShape, postScript);
+                generateShapePostScript(currentShape, postScript);
                 // add  the fill
-                postScript.append(PdfOps.S_TOKEN).append(SPACE);
+                postScript.append(PdfOps.S_TOKEN).append(NEWLINE);
             }
             // fill the shape.
             else if (drawCmd instanceof FillDrawCmd) {
@@ -84,7 +86,7 @@ public class PostScriptEncoder {
                         .append(colors[2]).append(SPACE)
                         .append(PdfOps.rg_TOKEN).append(NEWLINE);
                 // generate the draw operands for the current shape.
-                generateShaePostScript(currentShape, postScript);
+                generateShapePostScript(currentShape, postScript);
                 // add  the fill
                 postScript.append(PdfOps.f_TOKEN).append(SPACE);
 
@@ -101,9 +103,18 @@ public class PostScriptEncoder {
                         stroke.getLineWidth()).append(SPACE)
                         .append(PdfOps.w_TOKEN).append(SPACE);
                 // dash phase
-                postScript.append(stroke.getDashArray() != null ?
-                        stroke.getDashArray() : new ArrayList()).append(SPACE)
-                        .append(stroke.getDashPhase()).append(SPACE)
+                float[] dashes = stroke.getDashArray();
+                postScript.append(BEGIN_ARRAY);
+                if (dashes != null) {
+                    for (int i = 0, max = dashes.length; i < max; i++) {
+                        postScript.append(dashes[i]);
+                        if (i < max - 1) {
+                            postScript.append(SPACE);
+                        }
+                    }
+                }
+                postScript.append(END_ARRAY).append(SPACE);
+                postScript.append(stroke.getDashPhase()).append(SPACE)
                         .append(PdfOps.d_TOKEN).append(SPACE);
                 // cap butt
                 if (stroke.getEndCap() == BasicStroke.CAP_BUTT) {
@@ -150,7 +161,7 @@ public class PostScriptEncoder {
      * @param currentShape shape to build out draw commands.
      * @param postScript   string to append draw opperands to.
      */
-    private static void generateShaePostScript(Shape currentShape, StringBuilder postScript) {
+    private static void generateShapePostScript(Shape currentShape, StringBuilder postScript) {
         PathIterator pathIterator = currentShape.getPathIterator(null);
         float[] segment = new float[6];
         int segmentType;

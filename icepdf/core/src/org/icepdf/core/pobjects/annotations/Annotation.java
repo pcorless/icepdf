@@ -1148,7 +1148,7 @@ public class Annotation extends Dictionary {
                 } else if (bs.isStyleDashed()) {
                     BasicStroke stroke = new BasicStroke(
                             width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                            10.0f, bs.getDashArray(), 0.0f);
+                            width * 2.0f, bs.getDashArray(), 0.0f);
                     g.setStroke(stroke);
                     g.draw(jrect);
                 } else if (bs.isStyleBeveled()) {
