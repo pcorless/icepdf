@@ -41,6 +41,8 @@ public class Dictionary {
 
     public static final Name LENGTH_KEY = new Name("Length");
 
+    public static final Name FORM_TYPE_KEY = new Name("FormType");
+
     /**
      * Pointer to the documents <code>Library</code> object which
      * acts a central repository for the access of PDF object in the document.

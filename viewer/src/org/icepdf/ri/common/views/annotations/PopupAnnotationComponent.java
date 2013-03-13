@@ -502,7 +502,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         try {
             if (document.getLength() > 0) {
                 selectedMarkupAnnotation.setContents(
-                        document.getText(0, document.getLength() - 1));
+                        document.getText(0, document.getLength()));
             }
         } catch (BadLocationException ex) {
             ex.printStackTrace();

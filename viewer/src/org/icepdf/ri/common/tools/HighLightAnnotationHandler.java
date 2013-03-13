@@ -15,6 +15,7 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -36,6 +37,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * HighLightAnnotationHandler tool extends TextSelectionPageHandler which
@@ -111,6 +113,11 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
             // pass outline shapes and bounds to create the highlight shapes
             annotation.setAppearanceStream(tBbox, highlightBounds, highlightPath);
+            annotation.resetAppearanceStream();
+            annotation.setContents(highLightType.toString());
+            annotation.setColor(annotation.getTextMarkupColor());
+            annotation.setCreationDate(PDate.formatDateTime(new Date()));
+            annotation.setTitleText(System.getProperty("user.name"));
 
             // create new annotation given the general path
             AbstractAnnotationComponent comp =

@@ -14,10 +14,10 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.StringObject;
-import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -152,10 +152,6 @@ public class MarkupAnnotation extends Annotation {
      */
     public static final Name EX_DATA_KEY = new Name("ExData");
 
-
-    // security manager need for decrypting strings.
-    protected SecurityManager securityManager;
-
     protected String titleText;
     protected PopupAnnotation popupAnnotation;
     protected float opacity = 1.0f;
@@ -169,8 +165,6 @@ public class MarkupAnnotation extends Annotation {
 
     public MarkupAnnotation(Library l, HashMap h) {
         super(l, h);
-
-        securityManager = library.getSecurityManager();
 
         // title text
         Object value = library.getObject(entries, T_KEY);
@@ -204,13 +198,6 @@ public class MarkupAnnotation extends Annotation {
 
         // creation date
         value = library.getObject(entries, CREATION_DATE_KEY);
-        if (value != null && value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            creationDate = new PDate(securityManager,
-                    text.getDecryptedLiteralString(securityManager));
-        }
-        // if no creation date check for M or modified.
-        value = library.getObject(entries, M_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
             creationDate = new PDate(securityManager,
@@ -284,26 +271,32 @@ public class MarkupAnnotation extends Annotation {
 
     public void setTitleText(String titleText) {
         this.titleText = titleText;
+        entries.put(T_KEY, new LiteralStringObject(titleText));
     }
 
     public void setPopupAnnotation(PopupAnnotation popupAnnotation) {
         this.popupAnnotation = popupAnnotation;
+        entries.put(POPUP_KEY, popupAnnotation.getPObjectReference());
     }
 
     public void setRichText(String richText) {
         this.richText = richText;
+        entries.put(RC_KEY, new LiteralStringObject(richText));
     }
 
-    public void setCreationDate(PDate creationDate) {
-        this.creationDate = creationDate;
+    public void setCreationDate(String creationDate) {
+        this.creationDate = new PDate(securityManager, creationDate);
+        entries.put(CREATION_DATE_KEY, new LiteralStringObject(creationDate));
     }
 
     public void setInReplyToAnnotation(MarkupAnnotation inReplyToAnnotation) {
         this.inReplyToAnnotation = inReplyToAnnotation;
+        entries.put(IRT_KEY, inReplyToAnnotation.getPObjectReference());
     }
 
     public void setSubject(String subject) {
         this.subject = subject;
+        entries.put(SUBTYPE_KEY, new LiteralStringObject(subject));
     }
 
     public String toString() {

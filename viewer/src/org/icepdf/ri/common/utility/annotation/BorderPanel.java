@@ -235,11 +235,6 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
         // store new state from panel
         AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-        // todo: update how state is stored as we have a lot of annotations...
-        AnnotationState changes = new AnnotationState(
-                linkType, null, lineThickness, lineStyle, color);
-        // apply new properties to the action and the component
-        newState.apply(changes);
 
         // update thickness control as it might have changed
         lineThickness = currentAnnotationComponent.getAnnotation()

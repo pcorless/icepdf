@@ -14,13 +14,10 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.LaunchAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -51,9 +48,6 @@ public class ActionsPanel extends AnnotationPanelAdapter
 
     private SwingController controller;
     private ResourceBundle messageBundle;
-
-    // current annotation pointer
-    private AnnotationComponent currentAnnotaiton;
 
     // actionList of action actions
     private DefaultListModel actionListModel;
@@ -103,7 +97,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
      */
     public void setAnnotationComponent(AnnotationComponent annotation) {
 
-        currentAnnotaiton = annotation;
+        currentAnnotationComponent = annotation;
 
         // remove previous old annotations
         actionListModel.clear();
@@ -139,7 +133,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
 
-        if (currentAnnotaiton == null) {
+        if (currentAnnotationComponent == null) {
             logger.warning("No annotation was selected, edit is not possible.");
             return;
         }
@@ -225,15 +219,15 @@ public class ActionsPanel extends AnnotationPanelAdapter
             String uriString = showURIActionDialog(null);
             // finally do all the lifting for adding a new action for the
             // current action
-            if (uriString != null && currentAnnotaiton != null) {
+            if (uriString != null && currentAnnotationComponent != null) {
                 // create a new instance of the action type
                 org.icepdf.core.pobjects.actions.URIAction uriAction = (URIAction)
                         ActionFactory.buildAction(
-                                currentAnnotaiton.getAnnotation().getLibrary(),
+                                currentAnnotationComponent.getAnnotation().getLibrary(),
                                 ActionFactory.URI_ACTION);
                 // get action and add the new action
                 uriAction.setURI(uriString);
-                currentAnnotaiton.getAnnotation().addAction(uriAction);
+                currentAnnotationComponent.getAnnotation().addAction(uriAction);
                 // add the new action to the list.
                 actionListModel.addElement(new ActionEntry(
                         messageBundle.getString(
@@ -248,15 +242,15 @@ public class ActionsPanel extends AnnotationPanelAdapter
             String fileString = showLaunchActionDialog(null);
             // finally do all the lifting for adding a new action for the
             // current action
-            if (fileString != null && currentAnnotaiton != null) {
+            if (fileString != null && currentAnnotationComponent != null) {
                 // create a new instance of the action type
                 LaunchAction launchAction = (LaunchAction)
                         ActionFactory.buildAction(
-                                currentAnnotaiton.getAnnotation().getLibrary(),
+                                currentAnnotationComponent.getAnnotation().getLibrary(),
                                 ActionFactory.LAUNCH_ACTION);
                 // get action and add the new action
                 launchAction.setExternalFile(fileString);
-                currentAnnotaiton.getAnnotation().addAction(launchAction);
+                currentAnnotationComponent.getAnnotation().addAction(launchAction);
                 // add the new action to the list.
                 actionListModel.addElement(new ActionEntry(
                         messageBundle.getString(
@@ -284,7 +278,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
                     !oldURIValue.equals(newURIValue)) {
                 // create a new instance of the action type
                 uriAction.setURI(newURIValue);
-                currentAnnotaiton.getAnnotation().updateAction(uriAction);
+                currentAnnotationComponent.getAnnotation().updateAction(uriAction);
             }
         }
         // show goto dialog for goToAction or link annotation dest
@@ -302,7 +296,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
                     !oldLaunchValue.equals(newLaunchValue)) {
                 // create a new instance of the action type
                 launchAction.setExternalFile(newLaunchValue);
-                currentAnnotaiton.getAnnotation().updateAction(launchAction);
+                currentAnnotationComponent.getAnnotation().updateAction(launchAction);
             }
         }
     }
@@ -318,16 +312,16 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 actionEntry.getAction();
         if (action != null) {
             boolean success =
-                    currentAnnotaiton.getAnnotation().deleteAction(action);
+                    currentAnnotationComponent.getAnnotation().deleteAction(action);
             if (success) {
                 actionListModel.removeElementAt(actionList.getSelectedIndex());
                 actionList.setSelectedIndex(-1);
             }
         }
         // we must have a destination and will try and delete it.
-        else if (currentAnnotaiton.getAnnotation() instanceof LinkAnnotation) {
+        else if (currentAnnotationComponent.getAnnotation() instanceof LinkAnnotation) {
             LinkAnnotation linkAnnotation = (LinkAnnotation)
-                    currentAnnotaiton.getAnnotation();
+                    currentAnnotationComponent.getAnnotation();
             // remove the dest key and save the action, currently we don't
             // use the annotationState object to reflect his change.
             linkAnnotation.getEntries().remove(LinkAnnotation.DESTINATION_KEY);
@@ -380,7 +374,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
         }
         goToActionDialog = new GoToActionDialog(controller, this);
         // set the new annotation
-        goToActionDialog.setAnnotationComponent(currentAnnotaiton);
+        goToActionDialog.setAnnotationComponent(currentAnnotationComponent);
         // make it visible.
         goToActionDialog.setVisible(true);
     }
@@ -475,21 +469,6 @@ public class ActionsPanel extends AnnotationPanelAdapter
         }
         // todo check for an next entry
         // todo add a "none" entry
-    }
-
-    /**
-     * Utility to update the action annotation when changes have been made to
-     * 'Dest' which has the same notation as 'GoTo'.  It's the pre action way
-     * of doign things and is still very common of link Annotations. .
-     *
-     * @param annotation annotation to update/sync with parent page object.
-     */
-    private void updateCurrentAnnotation(Annotation annotation) {
-        int pageIndex = currentAnnotaiton.getPageIndex();
-        PageTree pageTree = currentAnnotaiton.getDocument().getPageTree();
-        Page page = pageTree.getPage(pageIndex);
-        // update the altered annotation.
-        page.updateAnnotation(annotation);
     }
 
     /**

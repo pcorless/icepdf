@@ -107,7 +107,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                     // apply creation date and title for the markup annotation
                     // so the popup has some content
                     if (markupAnnotation != null) {
-                        markupAnnotation.setCreationDate(PDate.createDate(new Date()));
+                        markupAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
                         markupAnnotation.setTitleText(System.getProperty("user.name"));
                         markupAnnotation.setContents("");
                     }

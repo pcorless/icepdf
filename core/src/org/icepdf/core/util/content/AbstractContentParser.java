@@ -700,7 +700,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static void consume_gs(GraphicsState graphicState, Stack stack, Resources resources) {
         Object gs = stack.pop();
-        if (gs instanceof Name) {
+        if (gs instanceof Name && resources != null) {
             // Get ExtGState and merge it with
             ExtGState extGState =
                     resources.getExtGState((Name) gs);

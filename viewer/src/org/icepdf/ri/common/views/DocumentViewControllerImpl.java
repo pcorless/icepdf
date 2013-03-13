@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
@@ -1220,7 +1221,14 @@ public class DocumentViewControllerImpl
             page.deleteAnnotation(annotationComponent.getAnnotation());
             // remove from page view.
             pageComponent.removeAnnotation(annotationComponent);
-
+            // check to see if there is an associated popup
+            if (annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
+                MarkupAnnotation markupAnnotation =
+                        (MarkupAnnotation) annotationComponent.getAnnotation();
+                if (markupAnnotation.getPopupAnnotation() != null) {
+                    page.deleteAnnotation(markupAnnotation.getPopupAnnotation());
+                }
+            }
             // store the post delete state.
             AnnotationState postDeleteState =
                     new AnnotationState(annotationComponent);

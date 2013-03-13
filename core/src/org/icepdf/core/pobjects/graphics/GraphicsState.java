@@ -15,6 +15,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Form;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Defs;
 
@@ -208,6 +209,9 @@ public class GraphicsState {
 
     private static final Logger logger =
             Logger.getLogger(GraphicsState.class.toString());
+
+    public static final Name CA_STROKING_KEY = new Name("CA");
+    public static final Name CA_NON_STROKING_KEY = new Name("ca");
 
     // allow over paint support for fill and stroke.  Still experimental
     // enabled buy default but can be turned off if required.
@@ -458,6 +462,15 @@ public class GraphicsState {
         // none stroking alpha
         if (extGState.getStrokingAlphConstant() != null) {
             setStrokeAlpha(extGState.getStrokingAlphConstant().floatValue());
+        }
+
+        // blending mode - quick hack for blending support that at lest doesn't
+        // hide the content. More work on this to follow.
+        if (extGState.getBlendingMode() != null) {
+            if (extGState.getBlendingMode().equals("Multiply")) {
+                setFillAlpha(0.70f);
+                setStrokeAlpha(0.70f);
+            }
         }
 
         if (extGState.getOverprintMode() != null) {

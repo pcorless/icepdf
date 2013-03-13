@@ -14,6 +14,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -26,6 +27,8 @@ import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.util.logging.Logger;
 
 /**
@@ -78,12 +81,14 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
             rectToDraw.setSize(new Dimension(15, 25));
         }
 
+        Rectangle tBbox = convertToPageSpace(rectToDraw);
+
         // create annotations types that that are rectangle based;
         // which is actually just link annotations
         Annotation annotation = AnnotationFactory.buildAnnotation(
                 documentViewModel.getDocument().getPageTree().getLibrary(),
                 Annotation.SUBTYPE_LINK,
-                rectToDraw);
+                tBbox);
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
@@ -142,4 +147,32 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
     public void paintTool(Graphics g) {
         paintSelectionBox(g);
     }
+
+    /**
+     * Convert the shapes that make up the annotation to page space so that
+     * they will scale correctly at different zooms.
+     *
+     * @return transformed bbox.
+     */
+    protected Rectangle convertToPageSpace(Rectangle rect) {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e1) {
+            e1.printStackTrace();
+        }
+        // convert the two points as well as the bbox.
+        Rectangle tBbox = new Rectangle(rect.x, rect.y,
+                rect.width, rect.height);
+
+        tBbox = at.createTransformedShape(tBbox).getBounds();
+
+        return tBbox;
+
+    }
+
 }

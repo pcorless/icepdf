@@ -232,6 +232,7 @@ public class ExtGState extends Dictionary {
     public static final Name ML_KEY = new Name("ML");
     public static final Name CA_KEY = new Name("CA");
     public static final Name ca_KEY = new Name("ca");
+    public static final Name BM_KEY = new Name("BM");
     public static final Name OP_KEY = new Name("OP");
     public static final Name op_KEY = new Name("op");
     public static final Name OPM_KEY = new Name("OPM");
@@ -266,6 +267,15 @@ public class ExtGState extends Dictionary {
      */
     Number getLineCapStyle() {
         return getNumber(LC_KEY);
+    }
+
+    /**
+     * Gets the blending mode assigned to the GS.
+     *
+     * @return
+     */
+    Name getBlendingMode() {
+        return library.getName(entries, BM_KEY);
     }
 
     /**

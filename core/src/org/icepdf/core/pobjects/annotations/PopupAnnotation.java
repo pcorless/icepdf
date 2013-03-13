@@ -120,6 +120,7 @@ public class PopupAnnotation extends Annotation {
 
     public void setOpen(boolean open) {
         this.open = open;
+        entries.put(OPEN_KEY, open);
     }
 
     public MarkupAnnotation getParent() {
@@ -128,5 +129,6 @@ public class PopupAnnotation extends Annotation {
 
     public void setParent(MarkupAnnotation parent) {
         this.parent = parent;
+        entries.put(PARENT_KEY, parent.getPObjectReference());
     }
 }

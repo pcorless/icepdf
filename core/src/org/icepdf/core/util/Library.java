@@ -181,7 +181,7 @@ public class Library {
      * @return true if the key value exists and is a reference, false if the
      *         dictionaryEntries are null or the key references an inline dictionary
      */
-    public boolean isReference(HashMap dictionaryEntries, String key) {
+    public boolean isReference(HashMap dictionaryEntries, Name key) {
         return dictionaryEntries != null &&
                 dictionaryEntries.get(key) instanceof Reference;
 
@@ -197,7 +197,7 @@ public class Library {
      * @return reference of the object that key points if any.  Null if the key
      *         points to an inline dictionary and not a reference.
      */
-    public Reference getReference(HashMap dictionaryEntries, String key) {
+    public Reference getReference(HashMap dictionaryEntries, Name key) {
         Object ref = dictionaryEntries.get(key);
         if (ref instanceof Reference) {
             return (Reference) ref;

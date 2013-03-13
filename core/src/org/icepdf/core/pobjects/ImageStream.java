@@ -59,6 +59,7 @@ public class ImageStream extends Stream {
     private static final Logger logger =
             Logger.getLogger(ImageStream.class.toString());
 
+    public static final Name TYPE_VALUE = new Name("Image");
     public static final Name BITSPERCOMPONENT_KEY = new Name("BitsPerComponent");
     public static final Name BPC_KEY = new Name("BPC");
     public static final Name DECODE_KEY = new Name("Decode");

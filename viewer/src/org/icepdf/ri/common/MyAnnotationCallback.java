@@ -21,8 +21,6 @@ import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.views.*;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.io.File;
@@ -145,14 +143,14 @@ public class MyAnnotationCallback implements AnnotationCallback {
         page.addAnnotation(annotationComponent.getAnnotation());
 
         // no we have let the pageComponent now about it.
-        pageComponent.addAnnotation((AbstractAnnotationComponent) annotationComponent);
+        pageComponent.addAnnotation(annotationComponent);
 
-        // create new state for memento and apply/restore to save state to
-        // document data structures. 
-        AnnotationState newAnnotationState = new AnnotationState(annotationComponent);
-        // saves the state changes back to the document structure.
-        newAnnotationState.apply(newAnnotationState);
-        newAnnotationState.restore();
+//        // create new state for memento and apply/restore to save state to
+//        // document data structures.
+//        AnnotationState newAnnotationState = new AnnotationState(annotationComponent);
+//        // saves the state changes back to the document structure.
+//        newAnnotationState.apply(newAnnotationState);
+//        newAnnotationState.restore();
 
         // finally change the current tool to the annotation selection
         documentViewController.getParentController().setDocumentToolMode(

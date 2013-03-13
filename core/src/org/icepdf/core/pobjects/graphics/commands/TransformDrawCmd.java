@@ -45,4 +45,8 @@ public class TransformDrawCmd extends AbstractDrawCmd {
         g.setTransform(af);
         return currentShape;
     }
+
+    public AffineTransform getAffineTransform() {
+        return affineTransform;
+    }
 }

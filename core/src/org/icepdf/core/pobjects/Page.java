@@ -698,40 +698,34 @@ public class Page extends Dictionary {
 
         StateManager stateManager = library.getStateManager();
 
-        Object annots = library.getArray(entries, ANNOTS_KEY);
-        boolean isAnnotAReference = library.isReference(entries, ANNOTS_KEY.getName());
+        List annots = library.getArray(entries, ANNOTS_KEY);
+        boolean isAnnotAReference = library.isReference(entries, ANNOTS_KEY);
 
         // does the page not already have an annotations or if the annots
         // dictionary is indirect.  If so we have to add the page to the state
         // manager
         if (!isAnnotAReference && annots != null) {
             // get annots array from page
-            if (annots instanceof List) {
-                // update annots dictionary with new annotations reference,
-                ArrayList v = new ArrayList((List) annots);
-                v.add(newAnnotation.getPObjectReference());
-                // add the page as state change
-                stateManager.addChange(
-                        new PObject(this, this.getPObjectReference()));
-            }
+            // update annots dictionary with new annotations reference,
+            annots.add(newAnnotation.getPObjectReference());
+            // add the page as state change
+            stateManager.addChange(
+                    new PObject(this, this.getPObjectReference()));
         } else if (isAnnotAReference && annots != null) {
             // get annots array from page
-            if (annots instanceof List) {
-                // update annots dictionary with new annotations reference,
-                List v = (List) annots;
-                v.add(newAnnotation.getPObjectReference());
-                // add the annotations reference dictionary as state has changed
-                stateManager.addChange(
-                        new PObject(annots, library.getObjectReference(
-                                entries, ANNOTS_KEY)));
-            }
+            // update annots dictionary with new annotations reference,
+            annots.add(newAnnotation.getPObjectReference());
+            // add the annotations reference dictionary as state has changed
+            stateManager.addChange(
+                    new PObject(annots, library.getObjectReference(
+                            entries, ANNOTS_KEY)));
         }
         // we need to add the a new annots reference
         else {
             List annotsVector = new ArrayList(4);
             annotsVector.add(newAnnotation.getPObjectReference());
 
-            // create a new Dictionary of annotaions using an external reference
+            // create a new Dictionary of annotations using an external reference
             PObject annotsPObject = new PObject(annotsVector,
                     stateManager.getNewReferencNumber());
 
@@ -787,10 +781,14 @@ public class Page extends Dictionary {
 
         Object annots = getObject(ANNOTS_KEY);
         boolean isAnnotAReference =
-                library.isReference(entries, ANNOTS_KEY.getName());
+                library.isReference(entries, ANNOTS_KEY);
 
         // mark the item as deleted so the state manager can clean up the reference.
         annot.setDeleted(true);
+        Stream nAp = annot.getAppearanceStream();
+        if (nAp != null) {
+            nAp.setDeleted(true);
+        }
 
         // check to see if this is an existing annotations, if the annotations
         // is existing then we have to mark either the page or annot ref as changed.
@@ -805,21 +803,29 @@ public class Page extends Dictionary {
                     new PObject(annots, library.getObjectReference(
                             entries, ANNOTS_KEY)));
         }
+        // if new annotation, then we can remove it from the state manager.
+        else if (annot.isNew()) {
+            stateManager.removeChange(
+                    new PObject(annot, annot.getPObjectReference()));
+            // check for an appearance stream which also needs to be removed.
+            if (nAp != null) {
+                stateManager.removeChange(new PObject(
+                        nAp, nAp.getPObjectReference()));
+                library.removeObject(nAp.getPObjectReference());
+            }
+        }
         // removed the annotations from the annots vector
         if (annots instanceof List) {
             // update annots dictionary with new annotations reference,
-            ArrayList v = new ArrayList((List) annots);
-            v.remove(annot.getPObjectReference());
+            ((List) annots).remove(annot.getPObjectReference());
         }
 
         // remove the annotations form the annotation cache in the page object
         if (annotations != null) {
             annotations.remove(annot);
         }
-
-        // finally remove it from the library, probably not necessary....
-//        library.removeObject(annot.getPObjectReference());
-
+        // finally remove it from the library to free up the memory
+        library.removeObject(annot.getPObjectReference());
     }
 
     /**
@@ -840,7 +846,7 @@ public class Page extends Dictionary {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
-                logger.warning("Annotation Initialization interupted");
+                logger.warning("Annotation Initialization interrupted");
             }
         }
 
