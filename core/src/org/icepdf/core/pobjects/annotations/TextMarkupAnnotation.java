@@ -268,20 +268,9 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
-        Object AP = getObject(APPEARANCE_STREAM_KEY);
-        Form form = null;
-        if (AP instanceof HashMap) {
-            Object N = library.getObject(
-                    (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
-            if (N instanceof HashMap) {
-                Object AS = getObject(APPEARANCE_STATE_KEY);
-                if (AS != null && AS instanceof Name)
-                    N = library.getObject((HashMap) N, (Name) AS);
-            }
-            // n should be a Form but we have a few cases of Stream
-            if (N instanceof Form) {
-                form = (Form) N;
-            }
+        Form form;
+        if (hasAppearanceStream()) {
+            form = (Form) getAppearanceStream();
             // else a stream, we won't support this for annotations.
         } else {
             // create a new xobject/form object
@@ -314,10 +303,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                     PostScriptEncoder.generatePostScript(shapes.getShapes()));
             HashMap appearanceRefs = new HashMap();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
-
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
         }
-
     }
 
     /**

@@ -14,16 +14,15 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -218,7 +217,7 @@ public class LineAnnotation extends MarkupAnnotation {
         }
 
         // parse out interior colour, specific to link annotations.
-        interiorColor = Color.black; // we default to black but probably should be null
+        interiorColor = null; // we default to black but probably should be null
         List C = (List) getObject(IC_KEY);
         // parse thought rgb colour.
         if (C != null && C.size() >= 3) {
@@ -229,6 +228,17 @@ public class LineAnnotation extends MarkupAnnotation {
             green = Math.max(0.0f, Math.min(1.0f, green));
             blue = Math.max(0.0f, Math.min(1.0f, blue));
             interiorColor = new Color(red, green, blue);
+        }
+
+        // check if there is an AP entry, if now generate the shapes data
+        // from the other properties.
+        if (!hasAppearanceStream() && startOfLine != null && endOfLine != null) {
+            Object tmp = getObject(RECTANGLE_KEY);
+            Rectangle2D.Float rectangle = null;
+            if (tmp instanceof List) {
+                rectangle = library.getRectangle(entries, RECTANGLE_KEY);
+            }
+            setAppearanceStream(rectangle.getBounds());
         }
     }
 
@@ -270,6 +280,41 @@ public class LineAnnotation extends MarkupAnnotation {
      */
     public void resetAppearanceStream() {
         setAppearanceStream(bbox.getBounds());
+
+        // setup the AP stream.
+        setModifiedDate(PDate.formatDateTime(new Date()));
+
+        // the line annotation render just fine without an AP stream
+        // so to make life easier it's being omitted.
+        /*
+        // create/update the appearance stream of the xObject.
+        StateManager stateManager = library.getStateManager();
+        Form form;
+        if (hasAppearanceStream()) {
+            form = (Form) getAppearanceStream();
+            // else a stream, we won't support this for annotations.
+        } else {
+            // create a new xobject/form object
+            HashMap formEntries = new HashMap();
+            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
+            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
+            form = new Form(library, formEntries, null);
+            form.setPObjectReference(stateManager.getNewReferencNumber());
+            library.addObject(form, form.getPObjectReference());
+        }
+        // build out the xObject's content stream.
+        if (form != null) {
+            form.setAppearance(shapes, matrix, bbox);
+            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            // update the AP's stream bytes so contents can be written out
+            form.setRawBytes(
+                    PostScriptEncoder.generatePostScript(shapes.getShapes()));
+            HashMap appearanceRefs = new HashMap();
+            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
+
+            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+        }
+        */
     }
 
     /**
@@ -284,7 +329,7 @@ public class LineAnnotation extends MarkupAnnotation {
         if (borderStyle.isStyleDashed()) {
             stroke = new BasicStroke(
                     borderStyle.getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                    10.0f, borderStyle.getDashArray(), 0.0f);
+                    borderStyle.getStrokeWidth() * 2.0f, borderStyle.getDashArray(), 0);
         } else {
             stroke = new BasicStroke(borderStyle.getStrokeWidth());
         }
@@ -374,18 +419,39 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setEndArrow(Name endArrow) {
         this.endArrow = endArrow;
+        List endNameArray = new ArrayList(2);
+        endNameArray.add(startArrow);
+        endNameArray.add(endArrow);
+        entries.put(LE_KEY, endNameArray);
     }
 
     public void setStartArrow(Name startArrow) {
         this.startArrow = startArrow;
+        List endNameArray = new ArrayList(2);
+        endNameArray.add(startArrow);
+        endNameArray.add(endArrow);
+        entries.put(LE_KEY, endNameArray);
     }
 
     public void setInteriorColor(Color interiorColor) {
         this.interiorColor = interiorColor;
+        float[] compArray = new float[3];
+        this.interiorColor.getColorComponents(compArray);
+        List<Float> colorValues = new ArrayList<Float>(compArray.length);
+        for (float comp : compArray) {
+            colorValues.add(comp);
+        }
+        entries.put(IC_KEY, colorValues);
     }
 
     public void setEndOfLine(Point2D endOfLine) {
         this.endOfLine = endOfLine;
+        List pointArray = new ArrayList(4);
+        pointArray.add((float) startOfLine.getX());
+        pointArray.add((float) startOfLine.getY());
+        pointArray.add((float) endOfLine.getX());
+        pointArray.add((float) endOfLine.getY());
+        entries.put(L_KEY, pointArray);
     }
 
     public static void drawLineStart(Graphics2D g, Name lineEnding,
@@ -600,9 +666,11 @@ public class LineAnnotation extends MarkupAnnotation {
         at = new AffineTransform(at);
         at.concatenate(af);
         shapes.add(new TransformDrawCmd(at));
-        shapes.add(new ColorDrawCmd(internalColor));
-        shapes.add(new ShapeDrawCmd(createClosedArrowStart()));
-        shapes.add(new FillDrawCmd());
+        if (internalColor != null) {
+            shapes.add(new ColorDrawCmd(internalColor));
+            shapes.add(new ShapeDrawCmd(createClosedArrowStart()));
+            shapes.add(new FillDrawCmd());
+        }
         shapes.add(new ColorDrawCmd(lineColor));
         shapes.add(new ShapeDrawCmd(createClosedArrowStart()));
         shapes.add(new DrawDrawCmd());
@@ -625,8 +693,10 @@ public class LineAnnotation extends MarkupAnnotation {
         AffineTransform gAf = g.getTransform();
         gAf.concatenate(af);
         g.setTransform(gAf);
-        g.setColor(interiorColor);
-        g.fill(arrowHead);
+        if (interiorColor != null) {
+            g.setColor(interiorColor);
+            g.fill(arrowHead);
+        }
         g.setColor(lineColor);
         g.draw(arrowHead);
         g.setTransform(oldAf);
@@ -640,9 +710,11 @@ public class LineAnnotation extends MarkupAnnotation {
         at.concatenate(af);
 
         shapes.add(new TransformDrawCmd(at));
-        shapes.add(new ColorDrawCmd(internalColor));
-        shapes.add(new ShapeDrawCmd(createClosedArrowEnd()));
-        shapes.add(new FillDrawCmd());
+        if (internalColor != null) {
+            shapes.add(new ColorDrawCmd(internalColor));
+            shapes.add(new ShapeDrawCmd(createClosedArrowEnd()));
+            shapes.add(new FillDrawCmd());
+        }
         shapes.add(new ColorDrawCmd(lineColor));
         shapes.add(new ShapeDrawCmd(createClosedArrowEnd()));
         shapes.add(new DrawDrawCmd());
@@ -666,8 +738,10 @@ public class LineAnnotation extends MarkupAnnotation {
         AffineTransform gAf = g.getTransform();
         gAf.concatenate(af);
         g.setTransform(gAf);
-        g.setColor(interiorColor);
-        g.fill(arrowHead);
+        if (interiorColor != null) {
+            g.setColor(interiorColor);
+            g.fill(arrowHead);
+        }
         g.setColor(lineColor);
         g.draw(arrowHead);
         g.setTransform(oldAf);

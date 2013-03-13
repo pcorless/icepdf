@@ -337,7 +337,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         if (borderStyle.isStyleDashed()) {
             stroke = new BasicStroke(
                     borderStyle.getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                    10.0f, borderStyle.getDashArray(), 0.0f);
+                    borderStyle.getStrokeWidth() * 2.0f, borderStyle.getDashArray(), 0.0f);
         } else {
             stroke = new BasicStroke(borderStyle.getStrokeWidth());
         }

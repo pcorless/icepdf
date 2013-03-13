@@ -15,6 +15,7 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -32,6 +33,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
+import java.util.Date;
 import java.util.logging.Logger;
 
 /**
@@ -147,6 +149,10 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setAppearanceStream(tBbox);
+        annotation.resetAppearanceStream();
+        annotation.setContents(annotation.getSubType().toString());
+        annotation.setCreationDate(PDate.formatDateTime(new Date()));
+        annotation.setTitleText(System.getProperty("user.name"));
 
         // create the annotation object.
         AbstractAnnotationComponent comp =

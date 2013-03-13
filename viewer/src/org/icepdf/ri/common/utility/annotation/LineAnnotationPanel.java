@@ -47,6 +47,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private static final int DEFAULT_LINE_THICKNESS = 0;
     private static final int DEFAULT_LINE_STYLE = 0;
     private static final Color DEFAULT_BORDER_COLOR = Color.DARK_GRAY;
+    private static final Color DEFAULT_FILL_COLOR = Color.DARK_GRAY;
 
     // line end types.
     private final ValueLabelItem[] END_TYPE_LIST = new ValueLabelItem[]{
@@ -84,11 +85,12 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private JComboBox lineThicknessBox;
     private JComboBox lineStyleBox;
     private JButton colorButton;
+    private JButton internalColorButton;
 
     private LineAnnotation annotation;
 
     public LineAnnotationPanel(SwingController controller) {
-        super(new GridLayout(5, 2, 5, 2), true);
+        super(new GridLayout(6, 2, 5, 2), true);
 
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();
@@ -133,6 +135,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         applySelectedValue(lineThicknessBox, annotation.getLineThickness());
         applySelectedValue(lineStyleBox, annotation.getLineStyle());
         colorButton.setBackground(annotation.getColor());
+        internalColorButton.setBackground(annotation.getInteriorColor());
 
         // disable appearance input if we have a invisible rectangle
         safeEnable(startEndTypeBox, true);
@@ -140,6 +143,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         safeEnable(lineThicknessBox, true);
         safeEnable(lineStyleBox, true);
         safeEnable(colorButton, true);
+        safeEnable(internalColorButton, true);
     }
 
     public void itemStateChanged(ItemEvent e) {
@@ -178,7 +182,24 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
             }
+        } else if (e.getSource() == internalColorButton) {
+            Color chosenColor =
+                    JColorChooser.showDialog(internalColorButton,
+                            messageBundle.getString(
+                                    "viewer.utilityPane.annotation.line.colorInternalChooserTitle"),
+                            internalColorButton.getBackground());
+            if (chosenColor != null) {
+                // change the colour of the button background
+                internalColorButton.setBackground(chosenColor);
+                annotation.setInteriorColor(chosenColor);
+
+                // save the action state back to the document structure.
+                updateAnnotationState();
+                currentAnnotationComponent.resetAppearanceShapes();
+                currentAnnotationComponent.repaint();
+            }
         }
+
     }
 
     /**
@@ -221,8 +242,16 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         colorButton.setOpaque(true);
         colorButton.setBackground(DEFAULT_BORDER_COLOR);
         add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.textMarkup.colorLabel")));
+                messageBundle.getString("viewer.utilityPane.annotation.line.colorLabel")));
         add(colorButton);
+        // line colour
+        internalColorButton = new JButton();
+        internalColorButton.addActionListener(this);
+        internalColorButton.setOpaque(true);
+        internalColorButton.setBackground(DEFAULT_FILL_COLOR);
+        add(new JLabel(
+                messageBundle.getString("viewer.utilityPane.annotation.line.colorInternalLabel")));
+        add(internalColorButton);
     }
 
     @Override
@@ -234,6 +263,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         safeEnable(lineThicknessBox, enabled);
         safeEnable(lineStyleBox, enabled);
         safeEnable(colorButton, enabled);
+        safeEnable(internalColorButton, enabled);
     }
 
     private void updateAnnotationState() {
@@ -241,12 +271,6 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
         // store new state from panel
         AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-        // todo: update how state is stored as we have a lot of annotations...
-//        AnnotationState changes = new AnnotationState(
-//                linkType, null, 0, textMarkupType, color);
-        // apply new properties to the action and the component
-//        newState.apply(changes);
-        // temporary apply new state info
 
         // Add our states to the undo caretaker
         ((AbstractDocumentViewModel) controller.getDocumentViewController().
