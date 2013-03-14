@@ -14,6 +14,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -25,10 +26,8 @@ import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -326,7 +325,7 @@ import java.util.logging.Logger;
  * @since 2.5
  */
 
-public class Annotation extends Dictionary {
+public abstract class Annotation extends Dictionary {
 
     private static final Logger logger =
             Logger.getLogger(Annotation.class.toString());
@@ -465,7 +464,7 @@ public class Annotation extends Dictionary {
     // shapes form apparenece stream
     protected Shapes shapes;
     //
-    protected AffineTransform matrix = null;
+    protected AffineTransform matrix = new AffineTransform();
     protected Rectangle2D bbox = null;
 
     // modified date.
@@ -482,7 +481,7 @@ public class Annotation extends Dictionary {
     // borders style of the annotation, can be null
     protected BorderStyle borderStyle;
     // border defined by vector
-    protected List<Number> border;
+    protected List border;
     // border color of annotation.
     protected Color color;
     // annotation bounding rectangle in user space.
@@ -529,7 +528,7 @@ public class Annotation extends Dictionary {
             }
         }
         if (annot == null) {
-            annot = new Annotation(library, hashMap);
+            annot = new GenericAnnotation(library, hashMap);
         }
         return annot;
     }
@@ -564,10 +563,30 @@ public class Annotation extends Dictionary {
         if (BS != null) {
             borderStyle = new BorderStyle(library, BS);
         }
-        // get old school border
-        Object borderObject = getObject(BORDER_KEY);
-        if (borderObject != null && borderObject instanceof List) {
-            border = (List<Number>) borderObject;
+        // else build out a border style from the old B entry or create
+        // a default invisible border.
+        else {
+            HashMap borderMap = new HashMap();
+            // get old school border
+            Object borderObject = getObject(BORDER_KEY);
+            if (borderObject != null && borderObject instanceof List) {
+                border = (List) borderObject;
+                // copy over the properties to border style.
+                if (border.size() == 3) {
+                    borderMap.put(BorderStyle.BORDER_STYLE_KEY, BorderStyle.BORDER_STYLE_SOLID);
+                    borderMap.put(BorderStyle.BORDER_WIDTH_KEY, border.get(2));
+                } else if (border.size() == 4) {
+                    borderMap.put(BorderStyle.BORDER_STYLE_KEY, BorderStyle.BORDER_STYLE_DASHED);
+                    borderMap.put(BorderStyle.BORDER_WIDTH_KEY, border.get(2));
+                    borderMap.put(BorderStyle.BORDER_DASH_KEY, Arrays.asList(3f));
+                }
+            } else {
+                // default to invisible border
+                borderMap.put(BorderStyle.BORDER_STYLE_KEY, BorderStyle.BORDER_STYLE_SOLID);
+                borderMap.put(BorderStyle.BORDER_WIDTH_KEY, 0f);
+            }
+            borderStyle = new BorderStyle(library, borderMap);
+            entries.put(BORDER_STYLE_KEY, borderStyle);
         }
 
         // parse out border colour, specific to link annotations.
@@ -915,7 +934,7 @@ public class Annotation extends Dictionary {
         }
         // look for a border, 0,0,1 has one, 0,0,0 doesn't
         else if (border != null) {
-            if (border.size() >= 3 && border.get(2).floatValue() > 0) {
+            if (border.size() >= 3 && ((Number) border.get(2)).floatValue() > 0) {
                 return VISIBLE_RECTANGLE;
             }
         }
@@ -940,7 +959,7 @@ public class Annotation extends Dictionary {
         else if (border != null) {
             if (border.size() > 3) {
                 return BorderStyle.BORDER_STYLE_DASHED;
-            } else if (border.get(2).floatValue() > 1) {
+            } else if (((Number) border.get(2)).floatValue() > 1) {
                 return BorderStyle.BORDER_STYLE_SOLID;
             }
         }
@@ -961,7 +980,7 @@ public class Annotation extends Dictionary {
         // check the border entry, will be solid or dashed
         else if (border != null) {
             if (border.size() >= 3) {
-                return border.get(2).floatValue();
+                return ((Number) border.get(2)).floatValue();
             }
         }
         return 0;
@@ -1517,6 +1536,12 @@ public class Annotation extends Dictionary {
         setUserSpaceRectangle(new Rectangle2D.Float(
                 (float) tBbox.getX(), (float) tBbox.getY(),
                 (float) tBbox.getWidth(), (float) tBbox.getHeight()));
+    }
+
+    public abstract void resetAppearanceStream(double dx, double dy);
+
+    public void resetAppearanceStream() {
+        resetAppearanceStream(0, 0);
     }
 
     public Shapes getShapes() {

@@ -56,14 +56,6 @@ public class InkAnnotation extends MarkupAnnotation {
     public InkAnnotation(Library l, HashMap h) {
         super(l, h);
 
-        // line border style
-        HashMap BS = (HashMap) getObject(BORDER_STYLE_KEY);
-        if (BS != null) {
-            borderStyle = new BorderStyle(library, BS);
-        } else {
-            borderStyle = new BorderStyle(library, new HashMap());
-        }
-
         // look for an ink list
         List<List<Float>> inkLists = library.getArray(entries, INK_LIST_KEY);
         GeneralPath inkPaths = new GeneralPath();
@@ -121,7 +113,7 @@ public class InkAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream() {
+    public void resetAppearanceStream(double dx, double dy) {
         setAppearanceStream(bbox.getBounds());
     }
 

@@ -155,6 +155,15 @@ public class MyAnnotationCallback implements AnnotationCallback {
 
     }
 
+    public void updateAnnotation(AnnotationComponent annotationComponent) {
+
+    }
+
+    public void removeAnnotation(PageViewComponent pageComponent,
+                                 AnnotationComponent annotationComponent) {
+
+    }
+
     /**
      * <p>Implemented Annotation Callback method.  This method is called when a
      * pages annotations been initialized but before the page has been painted.

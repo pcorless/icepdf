@@ -20,7 +20,11 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.ri.common.views.*;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.ri.common.views.AnnotationCallback;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.PageViewComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.io.File;
@@ -145,15 +149,46 @@ public class MyAnnotationCallback implements AnnotationCallback {
         // no we have let the pageComponent now about it.
         pageComponent.addAnnotation(annotationComponent);
 
-//        // create new state for memento and apply/restore to save state to
-//        // document data structures.
-//        AnnotationState newAnnotationState = new AnnotationState(annotationComponent);
-//        // saves the state changes back to the document structure.
-//        newAnnotationState.apply(newAnnotationState);
-//        newAnnotationState.restore();
+//        // finally change the current tool to the annotation selection
+//        documentViewController.getParentController().setDocumentToolMode(
+//                DocumentViewModel.DISPLAY_TOOL_SELECTION);
+    }
 
-        // finally change the current tool to the annotation selection
-        documentViewController.getParentController().setDocumentToolMode(
-                DocumentViewModel.DISPLAY_TOOL_SELECTION);
+    /**
+     * Update the annotation and ready state for save.
+     *
+     * @param annotationComponent annotation component to be added to page.
+     */
+    public void updateAnnotation(AnnotationComponent annotationComponent) {
+        Document document = documentViewController.getDocument();
+        PageTree pageTree = document.getPageTree();
+        Page page = pageTree.getPage(annotationComponent.getPageIndex());
+        page.updateAnnotation(annotationComponent.getAnnotation());
+    }
+
+    /**
+     * Remove the annotation and ready state for save.
+     *
+     * @param annotationComponent annotation component to be added to page.
+     */
+    public void removeAnnotation(PageViewComponent pageComponent,
+                                 AnnotationComponent annotationComponent) {
+        // remove annotation
+        Document document = documentViewController.getDocument();
+        PageTree pageTree = document.getPageTree();
+        Page page = pageTree.getPage(pageComponent.getPageIndex());
+        // remove from page
+        page.deleteAnnotation(annotationComponent.getAnnotation());
+        // remove from page view.
+        pageComponent.removeAnnotation(annotationComponent);
+        // check to see if there is an associated popup
+        if (annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
+            MarkupAnnotation markupAnnotation =
+                    (MarkupAnnotation) annotationComponent.getAnnotation();
+            if (markupAnnotation.getPopupAnnotation() != null) {
+                page.deleteAnnotation(markupAnnotation.getPopupAnnotation());
+            }
+        }
+
     }
 }

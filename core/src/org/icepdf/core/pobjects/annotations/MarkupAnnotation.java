@@ -51,7 +51,7 @@ import java.util.HashMap;
  *
  * @since 5.0
  */
-public class MarkupAnnotation extends Annotation {
+public abstract class MarkupAnnotation extends Annotation {
 
     /**
      * Optional; PDF 1.1) The text label that shall be displayed in the title bar

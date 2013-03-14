@@ -60,4 +60,20 @@ public interface AnnotationCallback {
     public void newAnnotation(PageViewComponent page,
                               AnnotationComponent annotationComponent);
 
+    /**
+     * Update the annotation and ready state for save.
+     *
+     * @param annotationComponent annotation component to be added to page.
+     */
+    public void updateAnnotation(AnnotationComponent annotationComponent);
+
+    /**
+     * Remove the annotation and ready state for save.
+     *
+     * @param pageComponent       page that annotation should be removed.
+     * @param annotationComponent annotation component to be added to page.
+     */
+    public void removeAnnotation(PageViewComponent pageComponent,
+                                 AnnotationComponent annotationComponent);
+
 }

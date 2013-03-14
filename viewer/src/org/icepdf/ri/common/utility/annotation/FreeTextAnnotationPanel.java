@@ -18,9 +18,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 
 import javax.swing.*;
@@ -31,7 +29,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ResourceBundle;
 
 /**
  * FreeTextAnnotationPanel is a configuration panel for changing the properties
@@ -101,11 +98,8 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
             new ValueLabelItem(10f, "10"),
             new ValueLabelItem(15f, "15")};
 
-    private SwingController controller;
-    private ResourceBundle messageBundle;
-
     // action instance that is being edited
-    private AnnotationComponent currentAnnotationComponent;
+    private FreeTextAnnotation freeTextAnnotation;
 
     // font configuration
     private JComboBox fontNameBox;
@@ -123,15 +117,9 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     private JComboBox strokeStyleBox;
     private JButton strokeColorButton;
 
-    // appearance properties to take care of.
-    private FreeTextAnnotationComponent freeTextAnnotationComponent;
-    private FreeTextAnnotation freeTextAnnotation;
-
     public FreeTextAnnotationPanel(SwingController controller) {
-        super(new GridLayout(10, 2, 5, 2), true);
-
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new GridLayout(10, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -247,7 +235,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 disableInvisibleFields();
             }
             // save the action state back to the document structure.
-            updateAnnotationState();
+            updateCurrentAnnotation();
             currentAnnotationComponent.resetAppearanceShapes();
             currentAnnotationComponent.repaint();
         }
@@ -289,7 +277,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
             }
         }
         // save the action state back to the document structure.
-        updateAnnotationState();
+        updateCurrentAnnotation();
         currentAnnotationComponent.resetAppearanceShapes();
         currentAnnotationComponent.repaint();
     }
@@ -393,32 +381,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         safeEnable(fillColorButton, enabled);
 
     }
-
-    private void updateAnnotationState() {
-        // store old state
-        AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
-        // store new state from panel
-        AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-        // todo: update how state is stored as we have a lot of annotations...
-//        AnnotationState changes = new AnnotationState(
-//                linkType, null, 0, textMarkupType, color);
-        // apply new properties to the action and the component
-//        newState.apply(changes);
-
-        // temporary apply new state info
-        FreeTextAnnotationComponent annotationComponent = (FreeTextAnnotationComponent) currentAnnotationComponent;
-        // update the component appearance and write out the content stream and annotation properties.
-        annotationComponent.setAppearanceStream();
-
-        // Add our states to the undo caretaker
-        ((AbstractDocumentViewModel) controller.getDocumentViewController().
-                getDocumentViewModel()).getAnnotationCareTaker()
-                .addState(oldState, newState);
-
-        // Check with the controller whether we can enable the undo/redo menu items
-        controller.reflectUndoCommands();
-    }
-
 
     /**
      * Convenience method to ensure a component is safe to toggle the enabled state on

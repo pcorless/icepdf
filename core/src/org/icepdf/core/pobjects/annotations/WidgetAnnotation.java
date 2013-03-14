@@ -87,6 +87,11 @@ public class WidgetAnnotation extends Annotation {
     }
 
     @Override
+    public void resetAppearanceStream(double dx, double dy) {
+
+    }
+
+    @Override
     protected void renderAppearanceStream(Graphics2D g) {
         if (shapes != null) {
             super.renderAppearanceStream(g);

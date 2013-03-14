@@ -18,9 +18,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -28,7 +26,6 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ResourceBundle;
 
 /**
  * Link Annotation panel intended use is for the manipulation of LinkAnnotation
@@ -49,12 +46,6 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             new ValueLabelItem(LinkAnnotation.HIGHLIGHT_OUTLINE, "Outline"),
             new ValueLabelItem(LinkAnnotation.HIGHLIGHT_PUSH, "Push")};
 
-    private SwingController controller;
-    private ResourceBundle messageBundle;
-
-    // action instance that is being edited
-    private AnnotationComponent currentAnnotationComponent;
-
     // link action appearance properties.
     private JComboBox highlightStyleBox;
 
@@ -62,14 +53,11 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private Name highlightStyle;
 
     public LinkAnnotationPanel(SwingController controller) {
-        super(new GridLayout(1, 2, 5, 2), true);
-
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new GridLayout(1, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
-//        setBorder(new EmptyBorder(10, 5, 1, 5));
 
         // Add the tabbed pane to the overall panel
         createGUI();
@@ -118,7 +106,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 highlightStyle = (Name) item.getValue();
             }
             // save the action state back to the document structure.
-            updateAnnotationState();
+            updateCurrentAnnotation();
             currentAnnotationComponent.repaint();
         }
     }
@@ -146,21 +134,6 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         safeEnable(highlightStyleBox, enabled);
-    }
-
-    private void updateAnnotationState() {
-        // store old state
-        AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
-        // store new state from panel
-        AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-
-        // Add our states to the undo caretaker
-        ((AbstractDocumentViewModel) controller.getDocumentViewController().
-                getDocumentViewModel()).getAnnotationCareTaker()
-                .addState(oldState, newState);
-
-        // Check with the controller whether we can enable the undo/redo menu items
-        controller.reflectUndoCommands();
     }
 
     /**

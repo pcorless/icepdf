@@ -237,7 +237,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream() {
+    public void resetAppearanceStream(double dx, double dy) {
         // build the appears shapes.
         setAppearanceStream(bbox,
                 markupBounds,
@@ -324,7 +324,10 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
-        af.translate(-this.bbox.getMinX(), -this.bbox.getMinY());
+        if (userSpaceRectangle == null) {
+            userSpaceRectangle = getUserSpaceRectangle();
+        }
+        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
 
         // setup the stroke from the border settings.
         BasicStroke stroke = new BasicStroke(1f);

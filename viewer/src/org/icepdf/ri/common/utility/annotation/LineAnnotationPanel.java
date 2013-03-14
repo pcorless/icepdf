@@ -18,9 +18,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -30,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ResourceBundle;
 
 /**
  * LineAnnotationPanel is a configuration panel for changing the properties
@@ -73,12 +70,6 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID, "Solid"),
             new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED, "Dashed")};
 
-    private SwingController controller;
-    private ResourceBundle messageBundle;
-
-    // action instance that is being edited
-    private AnnotationComponent currentAnnotationComponent;
-
     // link action appearance properties.
     private JComboBox startEndTypeBox;
     private JComboBox endEndTypeBox;
@@ -90,10 +81,8 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private LineAnnotation annotation;
 
     public LineAnnotationPanel(SwingController controller) {
-        super(new GridLayout(6, 2, 5, 2), true);
-
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new GridLayout(6, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -159,7 +148,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 annotation.getBorderStyle().setBorderStyle((Name) item.getValue());
             }
             // save the action state back to the document structure.
-            updateAnnotationState();
+            updateCurrentAnnotation();
             currentAnnotationComponent.resetAppearanceShapes();
             currentAnnotationComponent.repaint();
         }
@@ -178,7 +167,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 annotation.setColor(chosenColor);
 
                 // save the action state back to the document structure.
-                updateAnnotationState();
+                updateCurrentAnnotation();
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
             }
@@ -194,7 +183,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 annotation.setInteriorColor(chosenColor);
 
                 // save the action state back to the document structure.
-                updateAnnotationState();
+                updateCurrentAnnotation();
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
             }
@@ -265,22 +254,6 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         safeEnable(colorButton, enabled);
         safeEnable(internalColorButton, enabled);
     }
-
-    private void updateAnnotationState() {
-        // store old state
-        AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
-        // store new state from panel
-        AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-
-        // Add our states to the undo caretaker
-        ((AbstractDocumentViewModel) controller.getDocumentViewController().
-                getDocumentViewModel()).getAnnotationCareTaker()
-                .addState(oldState, newState);
-
-        // Check with the controller whether we can enable the undo/redo menu items
-        controller.reflectUndoCommands();
-    }
-
 
     /**
      * Convenience method to ensure a component is safe to toggle the enabled state on

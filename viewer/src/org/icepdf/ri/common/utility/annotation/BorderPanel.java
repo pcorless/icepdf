@@ -18,9 +18,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -30,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ResourceBundle;
 
 /**
  * BorderPanel allows the configuration of an annotation's BorderStyle properties.
@@ -69,33 +66,18 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
             new ValueLabelItem(BorderStyle.BORDER_STYLE_INSET, "Inset"),
             new ValueLabelItem(BorderStyle.BORDER_STYLE_UNDERLINE, "Underline")};
 
-    private SwingController controller;
-    private ResourceBundle messageBundle;
-
-    // action instance that is being edited
-    private AnnotationComponent currentAnnotationComponent;
-
     // link action appearance properties.
     private JComboBox linkTypeBox;
     private JComboBox lineThicknessBox;
     private JComboBox lineStyleBox;
     private JButton colorButton;
 
-    // appearance properties to take care of.
-    private int linkType;
-    private float lineThickness;
-    private Name lineStyle;
-    private Color color;
-
     public BorderPanel(SwingController controller) {
-        super(new GridLayout(4, 2, 5, 2), true);
-
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new GridLayout(4, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
-//        setBorder(new EmptyBorder(10, 5, 1, 5));
 
         // Add the tabbed pane to the overall panel
         createGUI();
@@ -127,41 +109,54 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         // For convenience grab the Annotation object wrapped by the component
         Annotation annotation = currentAnnotationComponent.getAnnotation();
 
-        // apply values to appears
-        linkType = annotation.getBorderType();
-        lineThickness = annotation.getLineThickness();
-        lineStyle = annotation.getLineStyle();
-        color = annotation.getColor();
-
-        applySelectedValue(linkTypeBox, linkType);
-        applySelectedValue(lineThicknessBox, lineThickness);
-        applySelectedValue(lineStyleBox, lineStyle);
-        colorButton.setBackground(color);
+        // apply annotaiton values.
+        if (annotation.getLineThickness() == 0) {
+            applySelectedValue(linkTypeBox, Annotation.INVISIBLE_RECTANGLE);
+        } else {
+            applySelectedValue(linkTypeBox, Annotation.VISIBLE_RECTANGLE);
+        }
+        applySelectedValue(lineThicknessBox, annotation.getLineThickness());
+        applySelectedValue(lineStyleBox, annotation.getLineStyle());
+        colorButton.setBackground(annotation.getColor());
 
         // disable appearance input if we have a invisible rectangle
         enableAppearanceInputComponents(annotation.getBorderType());
     }
 
     public void itemStateChanged(ItemEvent e) {
+
+        // For convenience grab the Annotation object wrapped by the component
+        Annotation annotation = currentAnnotationComponent.getAnnotation();
+
         ValueLabelItem item = (ValueLabelItem) e.getItem();
         if (e.getStateChange() == ItemEvent.SELECTED) {
             if (e.getSource() == linkTypeBox) {
-                linkType = (Integer) item.getValue();
+                int linkType = (Integer) item.getValue();
+                if (Annotation.VISIBLE_RECTANGLE == linkType) {
+                    annotation.getBorderStyle().setStrokeWidth(1f);
+                } else {
+                    annotation.getBorderStyle().setStrokeWidth(0f);
+                }
+                applySelectedValue(lineThicknessBox, annotation.getLineThickness());
                 // enable/disable fields based on types
                 enableAppearanceInputComponents(linkType);
             } else if (e.getSource() == lineThicknessBox) {
-                lineThickness = (Float) item.getValue();
+                float lineThickness = (Float) item.getValue();
+                annotation.getBorderStyle().setStrokeWidth(lineThickness);
             } else if (e.getSource() == lineStyleBox) {
-                lineStyle = (Name) item.getValue();
+                Name lineStyle = (Name) item.getValue();
+                annotation.getBorderStyle().setBorderStyle(lineStyle);
             }
             // save the action state back to the document structure.
-            updateAnnotationState();
+            updateCurrentAnnotation();
 
             currentAnnotationComponent.repaint();
         }
     }
 
     public void actionPerformed(ActionEvent e) {
+        // For convenience grab the Annotation object wrapped by the component
+        Annotation annotation = currentAnnotationComponent.getAnnotation();
         if (e.getSource() == colorButton) {
             Color chosenColor =
                     JColorChooser.showDialog(colorButton,
@@ -170,10 +165,10 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
             if (chosenColor != null) {
                 // change the colour of the button background
                 colorButton.setBackground(chosenColor);
-                color = chosenColor;
+                annotation.setColor(chosenColor);
 
                 // save the action state back to the document structure.
-                updateAnnotationState();
+                updateCurrentAnnotation();
                 currentAnnotationComponent.repaint();
             }
         }
@@ -228,26 +223,6 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         safeEnable(lineThicknessBox, enabled);
         safeEnable(lineStyleBox, enabled);
         safeEnable(colorButton, enabled);
-    }
-
-    private void updateAnnotationState() {
-        // store old state
-        AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
-        // store new state from panel
-        AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-
-        // update thickness control as it might have changed
-        lineThickness = currentAnnotationComponent.getAnnotation()
-                .getLineThickness();
-        applySelectedValue(lineThicknessBox, lineThickness);
-
-        // Add our states to the undo caretaker
-        ((AbstractDocumentViewModel) controller.getDocumentViewController().
-                getDocumentViewModel()).getAnnotationCareTaker()
-                .addState(oldState, newState);
-
-        // Check with the controller whether we can enable the undo/redo menu items
-        controller.reflectUndoCommands();
     }
 
     /**

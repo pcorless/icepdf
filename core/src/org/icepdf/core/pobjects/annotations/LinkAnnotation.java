@@ -175,4 +175,9 @@ public class LinkAnnotation extends Annotation {
         }
         return null;
     }
+
+    @Override
+    public void resetAppearanceStream(double dx, double dy) {
+
+    }
 }

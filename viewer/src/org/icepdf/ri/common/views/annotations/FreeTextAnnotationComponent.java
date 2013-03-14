@@ -35,8 +35,6 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.parser.ParserDelegator;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -207,8 +205,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     @Override
     public void mouseDragged(MouseEvent me) {
         super.mouseDragged(me);
-        Rectangle tBbox = convertToPageSpace(getBounds());
-        annotation.syncBBoxToUserSpaceRectangle(tBbox);
+        refreshAnnotationRect();
         setAppearanceStream();
     }
 
@@ -288,32 +285,6 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         }
     }
 
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bbox.
-     */
-    protected Rectangle convertToPageSpace(Rectangle rect) {
-        Page currentPage = pageViewComponent.getPage();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
-        }
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = new Rectangle(rect.x, rect.y,
-                rect.width, rect.height);
-
-        tBbox = at.createTransformedShape(tBbox).getBounds();
-
-        return tBbox;
-
-    }
 
     private class DashedBorder extends AbstractBorder {
         private BasicStroke stroke;

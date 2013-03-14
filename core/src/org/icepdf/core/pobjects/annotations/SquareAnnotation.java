@@ -65,14 +65,6 @@ public class SquareAnnotation extends MarkupAnnotation {
     public SquareAnnotation(Library l, HashMap h) {
         super(l, h);
 
-        // line border style
-        HashMap BS = (HashMap) getObject(BORDER_STYLE_KEY);
-        if (BS != null) {
-            borderStyle = new BorderStyle(library, BS);
-        } else {
-            borderStyle = new BorderStyle(library, new HashMap());
-        }
-
         // parse out interior colour, specific to link annotations.
         fillColor = Color.WHITE; // we default to black but probably should be null
         java.util.List C = (java.util.List) getObject(IC_KEY);
@@ -125,7 +117,7 @@ public class SquareAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream() {
+    public void resetAppearanceStream(double dx, double dy) {
 
         setAppearanceStream(bbox.getBounds());
     }

@@ -119,6 +119,9 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected int cursor;
     protected Point startPos;
     protected AnnotationState previousAnnotationState;
+    // total distance moved on mouse down/up.
+    protected Point startOfMousePress;
+    protected Point endOfMousePress;
 
     public AbstractAnnotationComponent(Annotation annotation,
                                        DocumentViewController documentViewController,
@@ -234,6 +237,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         Rectangle2D rect = annotation.getUserSpaceRectangle();
         Rectangle bounds = getBounds();
         rect.setRect(commonBoundsNormalization(new GeneralPath(bounds), at));
+        annotation.syncBBoxToUserSpaceRectangle(rect);
     }
 
     /**
@@ -332,6 +336,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.
         isMousePressed = true;
+        startOfMousePress = e.getPoint();
+        endOfMousePress = e.getPoint();
 
         if (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
@@ -363,6 +369,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
             int dx = me.getX() - startPos.x;
             int dy = me.getY() - startPos.y;
+
+            endOfMousePress.setLocation(endOfMousePress.x + dx, endOfMousePress.y + dy);
 
             switch (cursor) {
                 case Cursor.N_RESIZE_CURSOR:
@@ -458,7 +466,13 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             wasResized = false;
 
             // update the bounds
-//            refreshAnnotationRect();
+            refreshAnnotationRect();
+
+            Point startOnMouseReleased = mouseEvent.getPoint();
+            double dx = endOfMousePress.getX() - startOfMousePress.getX();
+            double dy = endOfMousePress.getY() - startOfMousePress.getY();
+
+            annotation.resetAppearanceStream(dx, -dy);
 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
@@ -468,6 +482,34 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         }
         repaint();
     }
+
+    /**
+     * Convert the shapes that make up the annotation to page space so that
+     * they will scale correctly at different zooms.
+     *
+     * @return transformed bbox.
+     */
+    protected Rectangle convertToPageSpace(Rectangle rect) {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e1) {
+            e1.printStackTrace();
+        }
+        // convert the two points as well as the bbox.
+        Rectangle tBbox = new Rectangle(rect.x, rect.y,
+                rect.width, rect.height);
+
+        tBbox = at.createTransformedShape(tBbox).getBounds();
+
+        return tBbox;
+
+    }
+
 
     /**
      * Is the annotation editable
