@@ -112,12 +112,15 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                             tBbox);
 
             // pass outline shapes and bounds to create the highlight shapes
-            annotation.setAppearanceStream(tBbox, highlightBounds, highlightPath);
-            annotation.resetAppearanceStream();
             annotation.setContents(highLightType.toString());
             annotation.setColor(annotation.getTextMarkupColor());
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
             annotation.setTitleText(System.getProperty("user.name"));
+            annotation.setMarkupBounds(highlightBounds);
+            annotation.setMarkupPath(highlightPath);
+            annotation.setBBox(tBbox);
+            // finalized the appearance properties.
+            annotation.resetAppearanceStream();
 
             // create new annotation given the general path
             AbstractAnnotationComponent comp =

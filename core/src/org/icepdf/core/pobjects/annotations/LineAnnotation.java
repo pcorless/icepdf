@@ -230,7 +230,8 @@ public class LineAnnotation extends MarkupAnnotation {
             if (tmp instanceof List) {
                 rectangle = library.getRectangle(entries, RECTANGLE_KEY);
             }
-            setAppearanceStream(rectangle.getBounds());
+            setBBox(rectangle.getBounds());
+            resetAppearanceStream();
         }
     }
 
@@ -280,74 +281,21 @@ public class LineAnnotation extends MarkupAnnotation {
         setStartOfLine(startOfLine);
         setEndOfLine(endOfLine);
 
-        // setup the appearance stream for the new state.
-        setAppearanceStream(bbox.getBounds());
-
         // setup the AP stream.
         setModifiedDate(PDate.formatDateTime(new Date()));
 
-        // the line annotation render just fine without an AP stream
-        // so to make life easier it's being omitted.
-        /*
-        // create/update the appearance stream of the xObject.
-        StateManager stateManager = library.getStateManager();
-        Form form;
-        if (hasAppearanceStream()) {
-            form = (Form) getAppearanceStream();
-            // else a stream, we won't support this for annotations.
-        } else {
-            // create a new xobject/form object
-            HashMap formEntries = new HashMap();
-            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
-            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
-            form.setPObjectReference(stateManager.getNewReferencNumber());
-            library.addObject(form, form.getPObjectReference());
-        }
-        // build out the xObject's content stream.
-        if (form != null) {
-            form.setAppearance(shapes, matrix, bbox);
-            stateManager.addChange(new PObject(form, form.getPObjectReference()));
-            // update the AP's stream bytes so contents can be written out
-            form.setRawBytes(
-                    PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            HashMap appearanceRefs = new HashMap();
-            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
-
-            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
-        }
-        */
-    }
-
-    /**
-     * Sets the shapes that make up the appearance stream that match the
-     * current state of the annotation.
-     *
-     * @param bbox bounding box bounds.
-     */
-    public void setAppearanceStream(Rectangle bbox) {
-
-        BasicStroke stroke;
-        if (borderStyle.isStyleDashed()) {
-            stroke = new BasicStroke(
-                    borderStyle.getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                    borderStyle.getStrokeWidth() * 2.0f, borderStyle.getDashArray(), 0);
-        } else {
-            stroke = new BasicStroke(borderStyle.getStrokeWidth());
-        }
-
         matrix = new AffineTransform();
-        this.bbox = bbox;
         shapes = new Shapes();
 
         // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
+        af = new AffineTransform();
         if (userSpaceRectangle == null) {
             userSpaceRectangle = getUserSpaceRectangle();
         }
         af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
 
         // draw the basic line.
+        Stroke stroke = getBorderStyleStroke();
         GeneralPath line = new GeneralPath();
         line.moveTo((float) startOfLine.getX(), (float) startOfLine.getY());
         line.lineTo((float) endOfLine.getX(), (float) endOfLine.getY());
@@ -392,6 +340,7 @@ public class LineAnnotation extends MarkupAnnotation {
             squareDrawOps(
                     shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
         }
+
     }
 
     public static Logger getLogger() {

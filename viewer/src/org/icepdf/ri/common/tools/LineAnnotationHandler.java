@@ -147,12 +147,15 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setColor(lineColor);
         annotation.setInteriorColor(internalColor);
 
-        // pass outline shapes and bounds to create the highlight shapes
-        annotation.setAppearanceStream(tBbox);
-        annotation.resetAppearanceStream();
+        // setup the markup properties.
         annotation.setContents(annotation.getSubType().toString());
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(System.getProperty("user.name"));
+
+        // pass outline shapes and bounds to create the highlight shapes
+        annotation.setBBox(tBbox);
+        annotation.resetAppearanceStream();
+
 
         // create the annotation object.
         AbstractAnnotationComponent comp =

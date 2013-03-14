@@ -238,10 +238,60 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      * Resets the annotations appearance stream.
      */
     public void resetAppearanceStream(double dx, double dy) {
-        // build the appears shapes.
-        setAppearanceStream(bbox,
-                markupBounds,
-                markupPath);
+
+        matrix = new AffineTransform();
+        shapes = new Shapes();
+
+        // setup the space for the AP content stream.
+        AffineTransform af = new AffineTransform();
+        if (userSpaceRectangle == null) {
+            userSpaceRectangle = getUserSpaceRectangle();
+        }
+        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
+
+        // setup the stroke from the border settings.
+        BasicStroke stroke = new BasicStroke(1f);
+        shapes.add(new TransformDrawCmd(af));
+        shapes.add(new StrokeDrawCmd(stroke));
+        if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
+            shapes.add(new GraphicsStateCmd(EXTGSTATE_NAME));
+            shapes.add(new AlphaDrawCmd(
+                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, HIGHLIGHT_ALPHA)));
+            shapes.add(new ShapeDrawCmd(markupPath));
+            shapes.add(new ColorDrawCmd(textMarkupColor));
+            shapes.add(new FillDrawCmd());
+            shapes.add(new AlphaDrawCmd(
+                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
+        } else if (SUBTYPE_STRIKE_OUT.equals(subtype)) {
+            for (Shape shape : markupBounds) {
+                // calculate the line that will stroke the bounds
+                GeneralPath strikeOutPath = new GeneralPath();
+                Rectangle2D bound = shape.getBounds2D();
+                float y = (float) (bound.getMinY() + (bound.getHeight() / 2));
+                strikeOutPath.moveTo((float) bound.getMinX(), y);
+                strikeOutPath.lineTo((float) bound.getMaxX(), y);
+                strikeOutPath.closePath();
+                shapes.add(new ShapeDrawCmd(strikeOutPath));
+                shapes.add(new ColorDrawCmd(textMarkupColor));
+                shapes.add(new DrawDrawCmd());
+            }
+        } else if (SUBTYPE_UNDERLINE.equals(subtype)) {
+            for (Shape shape : markupBounds) {
+                // calculate the line that will stroke the bounds
+                GeneralPath underlinePath = new GeneralPath();
+                Rectangle2D bound = shape.getBounds2D();
+                underlinePath.moveTo((float) bound.getMinX(), (float) bound.getMinY());
+                underlinePath.lineTo((float) bound.getMaxX(), (float) bound.getMinY());
+                underlinePath.closePath();
+                shapes.add(new ShapeDrawCmd(underlinePath));
+                shapes.add(new ColorDrawCmd(textMarkupColor));
+                shapes.add(new DrawDrawCmd());
+            }
+        } else if (SUBTYPE_SQUIGGLY.equals(subtype)) {
+            // not implemented,  need to create a custom stroke or
+            // build out a custom line move.
+        }
+
         // create the quad points
         List<Float> quadPoints = new ArrayList<Float>();
         if (markupBounds != null) {
@@ -307,73 +357,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         }
     }
 
-    /**
-     * Sets the shapes that make up the appearance stream that match the
-     * current state of the annotation.
-     *
-     * @param bbox bounding box bounds.
-     */
-    public void setAppearanceStream(Rectangle2D bbox,
-                                    ArrayList<Shape> bounds,
-                                    GeneralPath path) {
-        matrix = new AffineTransform();
-        this.bbox = bbox;
-        shapes = new Shapes();
-        markupPath = path;
-        markupBounds = bounds;
-
-        // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
-        if (userSpaceRectangle == null) {
-            userSpaceRectangle = getUserSpaceRectangle();
-        }
-        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
-
-        // setup the stroke from the border settings.
-        BasicStroke stroke = new BasicStroke(1f);
-        shapes.add(new TransformDrawCmd(af));
-        shapes.add(new StrokeDrawCmd(stroke));
-        if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
-            shapes.add(new GraphicsStateCmd(EXTGSTATE_NAME));
-            shapes.add(new AlphaDrawCmd(
-                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, HIGHLIGHT_ALPHA)));
-            shapes.add(new ShapeDrawCmd(markupPath));
-            shapes.add(new ColorDrawCmd(textMarkupColor));
-            shapes.add(new FillDrawCmd());
-            shapes.add(new AlphaDrawCmd(
-                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
-        } else if (SUBTYPE_STRIKE_OUT.equals(subtype)) {
-            for (Shape shape : bounds) {
-                // calculate the line that will stroke the bounds
-                GeneralPath strikeOutPath = new GeneralPath();
-                Rectangle2D bound = shape.getBounds2D();
-                float y = (float) (bound.getMinY() + (bound.getHeight() / 2));
-                strikeOutPath.moveTo((float) bound.getMinX(), y);
-                strikeOutPath.lineTo((float) bound.getMaxX(), y);
-                strikeOutPath.closePath();
-                shapes.add(new ShapeDrawCmd(strikeOutPath));
-                shapes.add(new ColorDrawCmd(textMarkupColor));
-                shapes.add(new DrawDrawCmd());
-            }
-        } else if (SUBTYPE_UNDERLINE.equals(subtype)) {
-            for (Shape shape : bounds) {
-                // calculate the line that will stroke the bounds
-                GeneralPath underlinePath = new GeneralPath();
-                Rectangle2D bound = shape.getBounds2D();
-                underlinePath.moveTo((float) bound.getMinX(), (float) bound.getMinY());
-                underlinePath.lineTo((float) bound.getMaxX(), (float) bound.getMinY());
-                underlinePath.closePath();
-                shapes.add(new ShapeDrawCmd(underlinePath));
-                shapes.add(new ColorDrawCmd(textMarkupColor));
-                shapes.add(new DrawDrawCmd());
-            }
-        } else if (SUBTYPE_SQUIGGLY.equals(subtype)) {
-            // not implemented,  need to create a custom stroke or
-            // build out a custom line move.
-        }
-    }
-
-
     @Override
     protected void renderAppearanceStream(Graphics2D g) {
         // Appearance stream takes precedence over the quad points.
@@ -422,6 +405,14 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 }
             }
         }
+    }
+
+    public void setMarkupPath(GeneralPath markupPath) {
+        this.markupPath = markupPath;
+    }
+
+    public void setMarkupBounds(ArrayList<Shape> markupBounds) {
+        this.markupBounds = markupBounds;
     }
 
     public Color getTextMarkupColor() {

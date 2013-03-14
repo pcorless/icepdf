@@ -106,7 +106,8 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         annotation.setBorderStyle(borderStyle);
 
         // pass outline shapes and bounds to create the highlight shapes
-        annotation.setAppearanceStream(tBbox);
+        annotation.setBBox(tBbox);
+        annotation.resetAppearanceStream();
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
