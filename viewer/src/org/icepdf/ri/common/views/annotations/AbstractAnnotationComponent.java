@@ -370,7 +370,9 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             int dx = me.getX() - startPos.x;
             int dy = me.getY() - startPos.y;
 
-            endOfMousePress.setLocation(endOfMousePress.x + dx, endOfMousePress.y + dy);
+            if (endOfMousePress != null) {
+                endOfMousePress.setLocation(endOfMousePress.x + dx, endOfMousePress.y + dy);
+            }
 
             switch (cursor) {
                 case Cursor.N_RESIZE_CURSOR:
@@ -468,9 +470,13 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             // update the bounds
             refreshAnnotationRect();
 
-            Point startOnMouseReleased = mouseEvent.getPoint();
-            double dx = endOfMousePress.getX() - startOfMousePress.getX();
-            double dy = endOfMousePress.getY() - startOfMousePress.getY();
+            double dx = 0;
+            double dy = 0;
+            if (startOfMousePress != null &&
+                    endOfMousePress != null) {
+                dx = endOfMousePress.getX() - startOfMousePress.getX();
+                dy = endOfMousePress.getY() - startOfMousePress.getY();
+            }
 
             annotation.resetAppearanceStream(dx, -dy);
 
