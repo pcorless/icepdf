@@ -14,13 +14,12 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.PageTree;
-import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
 
 import javax.swing.*;
-import java.awt.*;
+import java.util.ResourceBundle;
 
 /**
  * All annotation and action property panels have a common method for
@@ -33,23 +32,29 @@ public abstract class AnnotationPanelAdapter extends JPanel
 
     // action instance that is being edited
     protected AnnotationComponent currentAnnotationComponent;
+    protected DocumentViewController documentViewController;
 
-    protected AnnotationPanelAdapter(LayoutManager layout, boolean isDoubleBuffered) {
-        super(layout, isDoubleBuffered);
+    protected SwingController controller;
+    protected ResourceBundle messageBundle;
+
+    protected AnnotationPanelAdapter(
+            SwingController controller) {
+        setDoubleBuffered(true);
+        this.controller = controller;
+        this.documentViewController = controller.getDocumentViewController();
+        this.messageBundle = controller.getMessageBundle();
     }
 
     /**
      * Utility to update the action annotation when changes have been made to
      * 'Dest' which has the same notation as 'GoTo'.  It's the pre action way
-     * of doign things and is still very common of link Annotations. .
-     *
-     * @param annotation annotation to update/sync with parent page object.
+     * of doing things and is still very common of link Annotations. .
      */
-    protected void updateCurrentAnnotation(Annotation annotation) {
-        int pageIndex = currentAnnotationComponent.getPageIndex();
-        PageTree pageTree = currentAnnotationComponent.getDocument().getPageTree();
-        Page page = pageTree.getPage(pageIndex);
-        // update the altered annotation.
-        page.updateAnnotation(annotation);
+    protected void updateCurrentAnnotation() {
+
+        if (documentViewController.getAnnotationCallback() != null) {
+            documentViewController.getAnnotationCallback()
+                    .updateAnnotation(currentAnnotationComponent);
+        }
     }
 }

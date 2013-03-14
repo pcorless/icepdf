@@ -200,13 +200,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             StringObject tmpRichText = (StringObject) tmp;
             richText = tmpRichText.getLiteralString();
         }
-        // border style
-        HashMap BS = (HashMap) getObject(BORDER_STYLE_KEY);
-        if (BS != null) {
-            borderStyle = new BorderStyle(library, BS);
-        } else {
-            borderStyle = new BorderStyle(library, new HashMap());
-        }
 
         // default style string
         if (library.getObject(entries, DS_KEY) != null) {
@@ -253,6 +246,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         if (!hideRenderedOutput) {
             super.render(origG, renderHintType, totalRotation, userZoom, tabSelected);
         }
+    }
+
+    @Override
+    public void resetAppearanceStream(double dx, double dy) {
+
     }
 
     /**

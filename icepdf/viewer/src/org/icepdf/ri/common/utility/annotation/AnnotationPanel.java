@@ -20,7 +20,6 @@ import org.icepdf.ri.common.views.AnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ResourceBundle;
 
 /**
  * Annotation Panel is responsible for viewing and editing Annotation properties
@@ -32,9 +31,6 @@ import java.util.ResourceBundle;
  */
 public class AnnotationPanel extends AnnotationPanelAdapter {
 
-    private SwingController controller;
-    private ResourceBundle messageBundle;
-
     // layouts constraint
     private GridBagConstraints constraints;
 
@@ -44,9 +40,8 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
     private BorderPanel borderPanel;
 
     public AnnotationPanel(SwingController controller) {
-        super(new BorderLayout(), true);
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new BorderLayout());
 
         // Setup the basics of the panel
         setFocusable(true);

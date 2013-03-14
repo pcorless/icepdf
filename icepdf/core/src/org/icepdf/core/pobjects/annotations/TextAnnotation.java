@@ -189,7 +189,7 @@ public class TextAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream() {
+    public void resetAppearanceStream(double dx, double dy) {
         setAppearanceStream(bbox.getBounds());
     }
 

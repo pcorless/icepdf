@@ -18,9 +18,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -30,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ResourceBundle;
 
 /**
  * InkAnnotationPanel is a configuration panel for changing the properties
@@ -45,7 +42,6 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     private static final int DEFAULT_LINE_THICKNESS = 0;
     private static final int DEFAULT_LINE_STYLE = 0;
     private static final Color DEFAULT_BORDER_COLOR = Color.RED;
-
 
     // line thicknesses.
     private final ValueLabelItem[] LINE_THICKNESS_LIST = new ValueLabelItem[]{
@@ -62,12 +58,6 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
             new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID, "Solid"),
             new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED, "Dashed")};
 
-    private SwingController controller;
-    private ResourceBundle messageBundle;
-
-    // action instance that is being edited
-    private AnnotationComponent currentAnnotationComponent;
-
     // link action appearance properties.
     private JComboBox lineThicknessBox;
     private JComboBox lineStyleBox;
@@ -76,10 +66,8 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     private InkAnnotation annotation;
 
     public InkAnnotationPanel(SwingController controller) {
-        super(new GridLayout(3, 2, 5, 2), true);
-
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new GridLayout(3, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -135,7 +123,7 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
                 annotation.getBorderStyle().setBorderStyle((Name) item.getValue());
             }
             // save the action state back to the document structure.
-            updateAnnotationState();
+            updateCurrentAnnotation();
             currentAnnotationComponent.resetAppearanceShapes();
             currentAnnotationComponent.repaint();
         }
@@ -154,7 +142,7 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
                 annotation.setColor(chosenColor);
 
                 // save the action state back to the document structure.
-                updateAnnotationState();
+                updateCurrentAnnotation();
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
             }
@@ -200,29 +188,6 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
         safeEnable(lineThicknessBox, enabled);
         safeEnable(lineStyleBox, enabled);
         safeEnable(colorBorderButton, enabled);
-    }
-
-    private void updateAnnotationState() {
-        // store old state
-        AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
-        // store new state from panel
-        AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-        // todo: update how state is stored as we have a lot of annotations...
-//        AnnotationState changes = new AnnotationState(
-//                linkType, null, 0, textMarkupType, color);
-        // apply new properties to the action and the component
-//        newState.apply(changes);
-        // temporary apply new state info
-        InkAnnotation lineAnnotation = (InkAnnotation)
-                currentAnnotationComponent.getAnnotation();
-
-        // Add our states to the undo caretaker
-        ((AbstractDocumentViewModel) controller.getDocumentViewController().
-                getDocumentViewModel()).getAnnotationCareTaker()
-                .addState(oldState, newState);
-
-        // Check with the controller whether we can enable the undo/redo menu items
-        controller.reflectUndoCommands();
     }
 
     /**

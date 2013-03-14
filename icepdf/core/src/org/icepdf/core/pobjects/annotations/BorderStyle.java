@@ -20,6 +20,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -100,6 +101,7 @@ public class BorderStyle extends Dictionary {
 
     public static final Name BORDER_STYLE_KEY = new Name("S");
     public static final Name BORDER_WIDTH_KEY = new Name("W");
+    public static final Name BORDER_DASH_KEY = new Name("D");
 
     public static final Color DARKEST = Color.black;
     public static final Color DARK = new Color(0xFF606060);
@@ -203,6 +205,11 @@ public class BorderStyle extends Dictionary {
     public void setBorderStyle(final Name lineStyle) {
         this.borderStyle = lineStyle;
         entries.put(BORDER_STYLE_KEY, this.borderStyle);
+        if (this.borderStyle.equals(BorderStyle.BORDER_STYLE_DASHED)) {
+            entries.put(BorderStyle.BORDER_DASH_KEY, Arrays.asList(3f));
+        } else {
+            entries.remove(BorderStyle.BORDER_DASH_KEY);
+        }
     }
 
     public boolean isStyleSolid() {

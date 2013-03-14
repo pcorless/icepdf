@@ -30,7 +30,6 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
@@ -45,9 +44,6 @@ public class ActionsPanel extends AnnotationPanelAdapter
 
     private static final Logger logger =
             Logger.getLogger(ActionsPanel.class.toString());
-
-    private SwingController controller;
-    private ResourceBundle messageBundle;
 
     // actionList of action actions
     private DefaultListModel actionListModel;
@@ -68,9 +64,8 @@ public class ActionsPanel extends AnnotationPanelAdapter
     private GoToActionDialog goToActionDialog;
 
     public ActionsPanel(SwingController controller) {
-        super(new GridLayout(2, 1, 5, 5), true);
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new GridLayout(2, 1, 5, 5));
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -158,10 +153,11 @@ public class ActionsPanel extends AnnotationPanelAdapter
             // refresh button states
             refreshActionCrud();
         }
+        updateCurrentAnnotation();
     }
 
     /**
-     * Changes events that occur whena user selects an annotation's action in
+     * Changes events that occur when a user selects an annotation's action in
      * the list actionList.
      *
      * @param e awt list event.
@@ -325,7 +321,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
             // remove the dest key and save the action, currently we don't
             // use the annotationState object to reflect his change.
             linkAnnotation.getEntries().remove(LinkAnnotation.DESTINATION_KEY);
-            updateCurrentAnnotation(linkAnnotation);
+            updateCurrentAnnotation();
             // update the list
             actionListModel.removeElementAt(actionList.getSelectedIndex());
             actionList.setSelectedIndex(-1);

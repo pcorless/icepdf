@@ -17,9 +17,7 @@ package org.icepdf.ri.common.utility.annotation;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.AbstractDocumentViewModel;
 import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationState;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -29,7 +27,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ResourceBundle;
 
 /**
  * TextAnnotationPanel is a configuration panel for changing the properties
@@ -62,22 +59,14 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             new ValueLabelItem(TextAnnotation.UP_LEFT_ARROW_ICON, TextAnnotation.UP_LEFT_ARROW_ICON.getName()),
             new ValueLabelItem(TextAnnotation.UP_ARROW_ICON, TextAnnotation.UP_ARROW_ICON.getName())};
 
-    private SwingController controller;
-    private ResourceBundle messageBundle;
-
-    // action instance that is being edited
-    private AnnotationComponent currentAnnotationComponent;
-
     // link action appearance properties.
     private JComboBox iconNameBox;
 
     private TextAnnotation annotation;
 
     public TextAnnotationPanel(SwingController controller) {
-        super(new GridLayout(1, 2, 5, 2), true);
-
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        super(controller);
+        setLayout(new GridLayout(1, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -127,7 +116,7 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 annotation.setIconName((Name) item.getValue());
             }
             // save the action state back to the document structure.
-            updateAnnotationState();
+            updateCurrentAnnotation();
             currentAnnotationComponent.resetAppearanceShapes();
             currentAnnotationComponent.repaint();
         }
@@ -160,29 +149,6 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         super.setEnabled(enabled);
         safeEnable(iconNameBox, enabled);
     }
-
-    private void updateAnnotationState() {
-        // store old state
-        AnnotationState oldState = new AnnotationState(currentAnnotationComponent);
-        // store new state from panel
-        AnnotationState newState = new AnnotationState(currentAnnotationComponent);
-        // todo: update how state is stored as we have a lot of annotations...
-//        AnnotationState changes = new AnnotationState(
-//                linkType, null, 0, textMarkupType, color);
-        // apply new properties to the action and the component
-//        newState.apply(changes);
-        // temporary apply new state info
-
-
-        // Add our states to the undo caretaker
-        ((AbstractDocumentViewModel) controller.getDocumentViewController().
-                getDocumentViewModel()).getAnnotationCareTaker()
-                .addState(oldState, newState);
-
-        // Check with the controller whether we can enable the undo/redo menu items
-        controller.reflectUndoCommands();
-    }
-
 
     /**
      * Convenience method to ensure a component is safe to toggle the enabled state on

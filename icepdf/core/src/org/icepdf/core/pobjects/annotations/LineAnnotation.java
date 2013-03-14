@@ -201,14 +201,6 @@ public class LineAnnotation extends MarkupAnnotation {
             endOfLine = new Point2D.Float((Float) value.get(2), (Float) value.get(3));
         }
 
-        // line border style
-        HashMap BS = (HashMap) getObject(BORDER_STYLE_KEY);
-        if (BS != null) {
-            borderStyle = new BorderStyle(library, BS);
-        } else {
-            borderStyle = new BorderStyle(library, new HashMap());
-        }
-
         // line ends.
         value = library.getArray(entries, LE_KEY);
         if (value != null) {
@@ -278,7 +270,17 @@ public class LineAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream() {
+    public void resetAppearanceStream(double dx, double dy) {
+
+        // adjust the line's start and end points for any potential move
+        AffineTransform af = new AffineTransform();
+        af.setToTranslation(dx, dy);
+        af.transform(startOfLine, startOfLine);
+        af.transform(endOfLine, endOfLine);
+        setStartOfLine(startOfLine);
+        setEndOfLine(endOfLine);
+
+        // setup the appearance stream for the new state.
         setAppearanceStream(bbox.getBounds());
 
         // setup the AP stream.
@@ -340,7 +342,10 @@ public class LineAnnotation extends MarkupAnnotation {
 
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
-        af.translate(-this.bbox.getMinX(), -this.bbox.getMinY());
+        if (userSpaceRectangle == null) {
+            userSpaceRectangle = getUserSpaceRectangle();
+        }
+        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
 
         // draw the basic line.
         GeneralPath line = new GeneralPath();

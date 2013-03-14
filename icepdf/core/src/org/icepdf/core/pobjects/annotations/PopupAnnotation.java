@@ -114,6 +114,11 @@ public class PopupAnnotation extends Annotation {
         return popupAnnotation;
     }
 
+    @Override
+    public void resetAppearanceStream(double dx, double dy) {
+
+    }
+
     public boolean isOpen() {
         return open;
     }
