@@ -25,6 +25,8 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.PathIterator;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -78,6 +80,37 @@ public class InkAnnotation extends MarkupAnnotation {
     }
 
     /**
+     * Converts the ink path back to an array of points.
+     *
+     * @param inkPath path to translate to an array
+     * @return an array of an array of points.
+     */
+    private List<List<Float>> convertPathToArray(Shape inkPath) {
+        List<List<Float>> inkLists = new ArrayList<List<Float>>();
+        List<Float> segment = null;
+        if (inkPath != null) {
+            PathIterator pathIterator = inkPath.getPathIterator(null);
+            float[] inkSegment = new float[6];
+            int segmentType;
+            while (!pathIterator.isDone()) {
+                segmentType = pathIterator.currentSegment(inkSegment);
+                if (segmentType == PathIterator.SEG_MOVETO) {
+                    segment = new ArrayList<Float>();
+                    segment.add(inkSegment[0]);
+                    segment.add(inkSegment[1]);
+                    inkLists.add(segment);
+                } else if (segmentType == PathIterator.SEG_LINETO) {
+                    segment.add(inkSegment[0]);
+                    segment.add(inkSegment[1]);
+                }
+                pathIterator.next();
+            }
+        }
+        return inkLists;
+    }
+
+
+    /**
      * Gets an instance of a InkAnnotation that has valid Object Reference.
      *
      * @param library document library
@@ -114,31 +147,23 @@ public class InkAnnotation extends MarkupAnnotation {
      * Resets the annotations appearance stream.
      */
     public void resetAppearanceStream(double dx, double dy) {
-        setAppearanceStream(bbox.getBounds());
-    }
 
-    /**
-     * Sets the shapes that make up the appearance stream that match the
-     * current state of the annotation.
-     *
-     * @param bbox bounding box bounds.
-     */
-    public void setAppearanceStream(Rectangle bbox) {
+        // setup clean shapes
         matrix = new AffineTransform();
-        this.bbox = bbox;
         shapes = new Shapes();
 
-        BasicStroke stroke;
-        if (borderStyle.isStyleDashed()) {
-            stroke = new BasicStroke(
-                    borderStyle.getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                    borderStyle.getStrokeWidth() * 2.0f, borderStyle.getDashArray(), 0.0f);
-        } else {
-            stroke = new BasicStroke(borderStyle.getStrokeWidth());
-        }
+        // update the circle for any dx/dy moves.
+        AffineTransform af = new AffineTransform();
+        af.setToTranslation(dx, dy);
+        inkPath = af.createTransformedShape(inkPath);
+        entries.put(INK_LIST_KEY,
+                convertPathToArray(inkPath));
+
+        // save the stroke.
+        Stroke stroke = getBorderStyleStroke();
 
         // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
+        af = new AffineTransform();
         af.translate(-this.bbox.getMinX(), -this.bbox.getMinY());
 
         shapes.add(new TransformDrawCmd(af));

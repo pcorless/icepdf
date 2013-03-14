@@ -680,6 +680,26 @@ public abstract class Annotation extends Dictionary {
         return userSpaceRectangle;
     }
 
+    public void setBBox(Rectangle bbox) {
+        this.bbox = bbox;
+    }
+
+    /**
+     * Creates a Java2D strok from the propties tht make up the BorderStyle object.
+     *
+     * @return dashed or solid stoke.
+     */
+    public Stroke getBorderStyleStroke() {
+        if (borderStyle.isStyleDashed()) {
+            return new BasicStroke(
+                    borderStyle.getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+                    borderStyle.getStrokeWidth() * 2.0f, borderStyle.getDashArray(), 0.0f);
+        } else {
+            return new BasicStroke(borderStyle.getStrokeWidth());
+        }
+    }
+
+
     /**
      * Sets the users page rectangle for this annotation action instance
      */

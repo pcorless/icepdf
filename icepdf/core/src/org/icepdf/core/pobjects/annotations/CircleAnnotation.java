@@ -25,6 +25,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -121,18 +122,16 @@ public class CircleAnnotation extends MarkupAnnotation {
      * Resets the annotations appearance stream.
      */
     public void resetAppearanceStream(double dx, double dy) {
-        setAppearanceStream(bbox.getBounds());
-    }
 
-    /**
-     * Sets the shapes that make up the appearance stream that match the
-     * current state of the annotation.
-     *
-     * @param bbox bounding box bounds.
-     */
-    public void setAppearanceStream(Rectangle bbox) {
+        // update the circle for any dx/dy moves.
+        AffineTransform af = new AffineTransform();
+        af.setToTranslation(dx, dy);
+        rectangle = af.createTransformedShape(rectangle).getBounds();
+        entries.put(Annotation.RECTANGLE_KEY,
+                PRectangle.getPRectangleVector(rectangle));
+
         matrix = new AffineTransform();
-        this.bbox = bbox;
+
         shapes = new Shapes();
 
         BasicStroke stroke;
@@ -145,12 +144,15 @@ public class CircleAnnotation extends MarkupAnnotation {
         }
 
         if (rectangle == null) {
-            rectangle = new Rectangle(bbox.x + 5, bbox.y + 5,
-                    bbox.width - 10, bbox.height - 10);
+            rectangle = new Rectangle(
+                    (int) bbox.getX() + 5,
+                    (int) bbox.getY() + 5,
+                    (int) bbox.getWidth() - 10,
+                    (int) bbox.getHeight() - 10);
         }
 
         // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
+        af = new AffineTransform();
         af.translate(-this.bbox.getMinX(), -this.bbox.getMinY());
 
         Ellipse2D.Double circle = new Ellipse2D.Double(
@@ -179,6 +181,13 @@ public class CircleAnnotation extends MarkupAnnotation {
 
     public void setFillColor(Color fillColor) {
         this.fillColor = fillColor;
+        float[] compArray = new float[3];
+        this.fillColor.getColorComponents(compArray);
+        java.util.List<Float> colorValues = new ArrayList<Float>(compArray.length);
+        for (float comp : compArray) {
+            colorValues.add(comp);
+        }
+        entries.put(IC_KEY, colorValues);
     }
 
     public Rectangle getRectangle() {
