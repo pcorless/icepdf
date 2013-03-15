@@ -76,19 +76,25 @@ public class TextAnnotationHandler implements ToolHandler {
     }
 
     public static TextAnnotation createTextAnnotation(Library library, Rectangle bbox) {
-        TextAnnotation markupAnnotation = (TextAnnotation)
+        TextAnnotation textAnnotation = (TextAnnotation)
                 AnnotationFactory.buildAnnotation(
                         library,
                         Annotation.SUBTYPE_TEXT,
                         bbox);
-        markupAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
-        markupAnnotation.setTitleText(System.getProperty("user.name"));
-        markupAnnotation.setContents("");
+        textAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
+        textAnnotation.setTitleText(System.getProperty("user.name"));
+        textAnnotation.setContents("");
+
+        // setup some default state
+        textAnnotation.setIconName(TextAnnotation.COMMENT_ICON);
+        textAnnotation.setState(TextAnnotation.STATE_UNMARKED);
+        textAnnotation.setColor(new Color(1.0f, 1.0f, 0f));
 
         // set the content stream
-        markupAnnotation.setAppearanceStream(bbox);
+        textAnnotation.setBBox(bbox);
+        textAnnotation.resetAppearanceStream();
 
-        return markupAnnotation;
+        return textAnnotation;
     }
 
     public static PopupAnnotation createPopupAnnotation(Library library, Rectangle bbox,

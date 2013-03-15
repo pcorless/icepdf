@@ -39,6 +39,7 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
 
     // default list values.
     private static final int DEFAULT_ICON_NAME = 0;
+    private static final Color DEFAULT_COLOR = new Color(1f, 1f, 0f);
 
     // line thicknesses.
     private final ValueLabelItem[] TEXT_ICON_LIST = new ValueLabelItem[]{
@@ -61,12 +62,13 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
 
     // link action appearance properties.
     private JComboBox iconNameBox;
+    private JButton colorButton;
 
     private TextAnnotation annotation;
 
     public TextAnnotationPanel(SwingController controller) {
         super(controller);
-        setLayout(new GridLayout(1, 2, 5, 2));
+        setLayout(new GridLayout(2, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -104,9 +106,11 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 currentAnnotationComponent.getAnnotation();
 
         applySelectedValue(iconNameBox, annotation.getIconName());
+        colorButton.setBackground(annotation.getColor());
 
         // disable appearance input if we have a invisible rectangle
         safeEnable(iconNameBox, true);
+        safeEnable(colorButton, true);
     }
 
     public void itemStateChanged(ItemEvent e) {
@@ -123,7 +127,23 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == colorButton) {
+            Color chosenColor =
+                    JColorChooser.showDialog(colorButton,
+                            messageBundle.getString(
+                                    "viewer.utilityPane.annotation.textMarkup.colorChooserTitle"),
+                            colorButton.getBackground());
+            if (chosenColor != null) {
+                // change the colour of the button background
+                colorButton.setBackground(chosenColor);
+                annotation.setColor(chosenColor);
 
+                // save the action state back to the document structure.
+                updateCurrentAnnotation();
+                currentAnnotationComponent.resetAppearanceShapes();
+                currentAnnotationComponent.repaint();
+            }
+        }
     }
 
     /**
@@ -142,12 +162,21 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         iconNameBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.text.iconName")));
         add(iconNameBox);
+        // fill colour
+        colorButton = new JButton();
+        colorButton.addActionListener(this);
+        colorButton.setOpaque(true);
+        colorButton.setBackground(DEFAULT_COLOR);
+        add(new JLabel(
+                messageBundle.getString("viewer.utilityPane.annotation.textMarkup.colorLabel")));
+        add(colorButton);
     }
 
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         safeEnable(iconNameBox, enabled);
+        safeEnable(colorButton, enabled);
     }
 
     /**
