@@ -15,7 +15,6 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -53,8 +52,7 @@ public class TextAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
-        TextAnnotation inkAnnotation = (TextAnnotation) annotation;
-        inkAnnotation.resetAppearanceStream();
+        annotation.resetAppearanceStream();
     }
 
     @Override

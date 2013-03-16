@@ -14,6 +14,7 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
+import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -37,12 +38,53 @@ public abstract class AnnotationPanelAdapter extends JPanel
     protected SwingController controller;
     protected ResourceBundle messageBundle;
 
+    // border styles types.
+    protected static ValueLabelItem[] VISIBLE_TYPE_LIST;
+    protected static ValueLabelItem[] LINE_THICKNESS_LIST;
+    // line styles.
+    protected static ValueLabelItem[] LINE_STYLE_LIST;
+
     protected AnnotationPanelAdapter(
             SwingController controller) {
         setDoubleBuffered(true);
         this.controller = controller;
         this.documentViewController = controller.getDocumentViewController();
         this.messageBundle = controller.getMessageBundle();
+
+        // common selection lists.
+        // line thicknesses.
+        if (LINE_THICKNESS_LIST == null) {
+            LINE_THICKNESS_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(1f,
+                            messageBundle.getString("viewer.common.number.one")),
+                    new ValueLabelItem(2f,
+                            messageBundle.getString("viewer.common.number.two")),
+                    new ValueLabelItem(3f,
+                            messageBundle.getString("viewer.common.number.three")),
+                    new ValueLabelItem(4f,
+                            messageBundle.getString("viewer.common.number.four")),
+                    new ValueLabelItem(5f,
+                            messageBundle.getString("viewer.common.number.five")),
+                    new ValueLabelItem(10f,
+                            messageBundle.getString("viewer.common.number.ten")),
+                    new ValueLabelItem(15f,
+                            messageBundle.getString("viewer.common.number.fifteen"))};
+        }
+        // setup the menu
+        if (VISIBLE_TYPE_LIST == null) {
+            VISIBLE_TYPE_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(true,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.borderType.visibleRectangle")),
+                    new ValueLabelItem(false,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.borderType.invisibleRectangle"))};
+        }
+        if (LINE_STYLE_LIST == null) {
+            LINE_STYLE_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.solid")),
+                    new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.dashed"))};
+        }
     }
 
     /**

@@ -26,6 +26,7 @@ import org.icepdf.core.util.Library;
 import javax.swing.text.DefaultStyledDocument;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -250,20 +251,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     @Override
     public void resetAppearanceStream(double dx, double dy) {
-
-    }
-
-    /**
-     * Sets the shapes that make up the appearance stream that match the
-     * current state of the annotation.
-     *
-     * @param bbox bounding box bounds.
-     */
-    public void setAppearanceStream(Rectangle bbox) {
-
         matrix = new AffineTransform();
-        this.bbox = new Rectangle();
-        this.bbox.setRect(bbox);
         if (shapes == null) {
             shapes = new Shapes();
         }
@@ -355,6 +343,36 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // actual font.
         shapes.add(new ColorDrawCmd(fontColor));
         shapes.add(new TextSpriteDrawCmd(textSprites));
+
+        // update the appearance stream
+        // create/update the appearance stream of the xObject.
+        StateManager stateManager = library.getStateManager();
+        Form form;
+        if (hasAppearanceStream()) {
+            form = (Form) getAppearanceStream();
+            // else a stream, we won't support this for annotations.
+        } else {
+            // create a new xobject/form object
+            HashMap formEntries = new HashMap();
+            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
+            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
+            form = new Form(library, formEntries, null);
+            form.setPObjectReference(stateManager.getNewReferencNumber());
+            library.addObject(form, form.getPObjectReference());
+        }
+
+        if (form != null) {
+            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
+                    (float) bbox.getWidth(), (float) bbox.getHeight());
+            form.setAppearance(shapes, matrix, formBbox);
+            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            // update the AP's stream bytes so contents can be written out
+            form.setRawBytes(
+                    PostScriptEncoder.generatePostScript(shapes.getShapes()));
+            HashMap appearanceRefs = new HashMap();
+            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
+            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+        }
     }
 
     public String getDefaultStylingString() {

@@ -42,10 +42,7 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
     private static final Color DEFAULT_BORDER_COLOR = Color.BLACK;
 
     // text markup sub types.
-    private static final ValueLabelItem[] TEXT_MARKUP_TYPE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT, "Highlight"),
-            new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT, "Strikeout"),
-            new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_UNDERLINE, "Underline")};
+    private static ValueLabelItem[] TEXT_MARKUP_TYPE_LIST;
 
     // text markup appearance properties.
     private JComboBox textMarkupTypes;
@@ -136,6 +133,17 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
      * Method to create link annotation GUI.
      */
     private void createGUI() {
+
+        // text markup types.
+        if (TEXT_MARKUP_TYPE_LIST == null) {
+            TEXT_MARKUP_TYPE_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT,
+                            "Highlight"),
+                    new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT,
+                            "Strikeout"),
+                    new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_UNDERLINE,
+                            "Underline")};
+        }
 
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),

@@ -15,7 +15,6 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -52,51 +51,13 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     private static final Color DEFAULT_STROKE_COLOR = new Color(1, 1, 1);
 
     // font styles.
-    private final ValueLabelItem[] FONT_STYLES_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(Font.PLAIN, "Plain"),
-            new ValueLabelItem(Font.ITALIC, "Italic"),
-            new ValueLabelItem(Font.BOLD, "Bold")};
+    private static ValueLabelItem[] FONT_STYLES_LIST;
 
     // font styles.
-    private final ValueLabelItem[] FONT_NAMES_LIST = new ValueLabelItem[]{
-            new ValueLabelItem("Dialog", "Dialog"),
-            new ValueLabelItem("DialogInput", "DialogInput"),
-            new ValueLabelItem("Monospaced", "Monospaced"),
-            new ValueLabelItem("Serif", "Serif"),
-            new ValueLabelItem("SansSerif", "SansSerif")};
+    private static ValueLabelItem[] FONT_NAMES_LIST;
 
     // Font size.
-    private final ValueLabelItem[] FONT_SIZES_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(6, "6"),
-            new ValueLabelItem(8, "8"),
-            new ValueLabelItem(9, "9"),
-            new ValueLabelItem(10, "10"),
-            new ValueLabelItem(12, "12"),
-            new ValueLabelItem(14, "14"),
-            new ValueLabelItem(16, "16"),
-            new ValueLabelItem(18, "18"),
-            new ValueLabelItem(20, "20"),
-            new ValueLabelItem(24, "24")};
-
-    // Fill/stroke visibility
-    private final ValueLabelItem[] PAINT_TYPE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(Boolean.TRUE, "Visible"),
-            new ValueLabelItem(Boolean.FALSE, "Invisible")};
-
-    // border styles.
-    private final ValueLabelItem[] STROKE_STYLE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID, "Solid"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED, "Dashed")};
-
-    // line thicknesses.
-    private final ValueLabelItem[] STROKE_THICKNESS_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(1f, "1"),
-            new ValueLabelItem(2f, "2"),
-            new ValueLabelItem(3f, "3"),
-            new ValueLabelItem(4f, "4"),
-            new ValueLabelItem(5f, "5"),
-            new ValueLabelItem(10f, "10"),
-            new ValueLabelItem(15f, "15")};
+    private static ValueLabelItem[] FONT_SIZES_LIST;
 
     // action instance that is being edited
     private FreeTextAnnotation freeTextAnnotation;
@@ -287,6 +248,43 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
      */
     private void createGUI() {
 
+        // font styles.
+        if (FONT_NAMES_LIST == null) {
+            FONT_NAMES_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem("Dialog",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.dialog")),
+                    new ValueLabelItem("DialogInput",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.dialogInput")),
+                    new ValueLabelItem("Monospaced",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.monospaced")),
+                    new ValueLabelItem("Serif",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.serif")),
+                    new ValueLabelItem("SansSerif",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.sanSerif"))};
+        }
+
+        // Font size.
+        if (FONT_SIZES_LIST == null) {
+            FONT_SIZES_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(6, messageBundle.getString("viewer.common.number.six")),
+                    new ValueLabelItem(8, messageBundle.getString("viewer.common.number.eight")),
+                    new ValueLabelItem(9, messageBundle.getString("viewer.common.number.nine")),
+                    new ValueLabelItem(10, messageBundle.getString("viewer.common.number.ten")),
+                    new ValueLabelItem(12, messageBundle.getString("viewer.common.number.eleven")),
+                    new ValueLabelItem(14, messageBundle.getString("viewer.common.number.fourteen")),
+                    new ValueLabelItem(16, messageBundle.getString("viewer.common.number.sixteen")),
+                    new ValueLabelItem(18, messageBundle.getString("viewer.common.number.eighteen")),
+                    new ValueLabelItem(20, messageBundle.getString("viewer.common.number.twenty")),
+                    new ValueLabelItem(24, messageBundle.getString("viewer.common.number.twentyFour"))};
+        }
+
+        if (FONT_STYLES_LIST == null) {
+            FONT_STYLES_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(Font.PLAIN, messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style.plain")),
+                    new ValueLabelItem(Font.ITALIC, messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style.italic")),
+                    new ValueLabelItem(Font.BOLD, messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style.bold"))};
+        }
+
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.utilityPane.annotation.freeText.appearance.title"),
@@ -321,19 +319,19 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         add(fontColorButton);
 
         // stroke type
-        strokeTypeBox = new JComboBox(PAINT_TYPE_LIST);
+        strokeTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
         strokeTypeBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeTypeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.type")));
         add(strokeTypeBox);
         // border thickness
-        strokeThicknessBox = new JComboBox(STROKE_THICKNESS_LIST);
+        strokeThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         strokeThicknessBox.setSelectedIndex(DEFAULT_STROKE_THICKNESS_STYLE);
         strokeThicknessBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.thickness")));
         add(strokeThicknessBox);
         // border style
-        strokeStyleBox = new JComboBox(STROKE_STYLE_LIST);
+        strokeStyleBox = new JComboBox(LINE_STYLE_LIST);
         strokeStyleBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeStyleBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.style")));
@@ -348,7 +346,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         add(strokeColorButton);
 
         // fill type
-        fillTypeBox = new JComboBox(PAINT_TYPE_LIST);
+        fillTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
         fillTypeBox.setSelectedIndex(DEFAULT_FILL_STYLE);
         fillTypeBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.type")));

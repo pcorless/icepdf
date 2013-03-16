@@ -241,7 +241,7 @@ public class SwingController
     private boolean disposed;
 
     // internationalization messages, loads message for default JVM locale.
-    private ResourceBundle messageBundle = null;
+    private static ResourceBundle messageBundle = null;
 
     private PropertiesManager propertiesManager;
 

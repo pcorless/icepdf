@@ -14,6 +14,8 @@
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
+import org.icepdf.core.pobjects.graphics.TextSprite;
+import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.PdfOps;
 
 import java.awt.*;
@@ -148,7 +150,15 @@ public class PostScriptEncoder {
             }
             // break out a text block and child paint operands.
             else if (drawCmd instanceof TextSpriteDrawCmd) {
+                postScript.append(PdfOps.BT_TOKEN);
+                TextSpriteDrawCmd textSpriteDrawCmd = (TextSpriteDrawCmd) drawCmd;
+                TextSprite textSprite = textSpriteDrawCmd.getTextSprite();
 
+                ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
+                for (GlyphText glyphText : glyphTexts) {
+
+                }
+                postScript.append(PdfOps.ET_TOKEN);
             }
         }
         return postScript.toString().getBytes();

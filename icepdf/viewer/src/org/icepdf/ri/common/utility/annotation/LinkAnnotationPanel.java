@@ -40,11 +40,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private static final int DEFAULT_HIGHLIGHT_STYLE = 1;
 
     // highlight states styles.
-    private final ValueLabelItem[] HIGHLIGHT_STYLE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(LinkAnnotation.HIGHLIGHT_NONE, "None"),
-            new ValueLabelItem(LinkAnnotation.HIGHLIGHT_INVERT, "Invert"),
-            new ValueLabelItem(LinkAnnotation.HIGHLIGHT_OUTLINE, "Outline"),
-            new ValueLabelItem(LinkAnnotation.HIGHLIGHT_PUSH, "Push")};
+    private static ValueLabelItem[] HIGHLIGHT_STYLE_LIST;
 
     // link action appearance properties.
     private JComboBox highlightStyleBox;
@@ -115,6 +111,17 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
      * Method to create link annotation GUI.
      */
     private void createGUI() {
+
+        // highlight styles.
+        HIGHLIGHT_STYLE_LIST = new ValueLabelItem[]{
+                new ValueLabelItem(LinkAnnotation.HIGHLIGHT_NONE,
+                        messageBundle.getString("viewer.utilityPane.annotation.link.none")),
+                new ValueLabelItem(LinkAnnotation.HIGHLIGHT_INVERT,
+                        messageBundle.getString("viewer.utilityPane.annotation.link.invert")),
+                new ValueLabelItem(LinkAnnotation.HIGHLIGHT_OUTLINE,
+                        messageBundle.getString("viewer.utilityPane.annotation.link.outline")),
+                new ValueLabelItem(LinkAnnotation.HIGHLIGHT_PUSH,
+                        messageBundle.getString("viewer.utilityPane.annotation.link.push"))};
 
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),

@@ -15,7 +15,6 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -42,21 +41,6 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     private static final int DEFAULT_LINE_THICKNESS = 0;
     private static final int DEFAULT_LINE_STYLE = 0;
     private static final Color DEFAULT_BORDER_COLOR = Color.RED;
-
-    // line thicknesses.
-    private final ValueLabelItem[] LINE_THICKNESS_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(1f, "1"),
-            new ValueLabelItem(2f, "2"),
-            new ValueLabelItem(3f, "3"),
-            new ValueLabelItem(4f, "4"),
-            new ValueLabelItem(5f, "5"),
-            new ValueLabelItem(10f, "10"),
-            new ValueLabelItem(15f, "15")};
-
-    // line styles.
-    private final ValueLabelItem[] LINE_STYLE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID, "Solid"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED, "Dashed")};
 
     // link action appearance properties.
     private JComboBox lineThicknessBox;
