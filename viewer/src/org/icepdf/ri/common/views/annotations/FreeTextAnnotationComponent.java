@@ -196,7 +196,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         Rectangle tBbox = convertToPageSpace(getBounds());
 
         // generate the shapes
-        freeTextAnnotation.setAppearanceStream(tBbox);
+        freeTextAnnotation.setBBox(tBbox);
         freeTextAnnotation.setContents(content);
         freeTextAnnotation.setRichText(freeTextPane.getText());
         freeTextPane.revalidate();
@@ -254,7 +254,8 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
     @Override
     public void resetAppearanceShapes() {
-
+        setAppearanceStream();
+        annotation.resetAppearanceStream();
     }
 
     public String clearXMLHeader(String strXML) {

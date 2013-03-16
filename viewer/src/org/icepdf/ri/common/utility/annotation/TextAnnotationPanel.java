@@ -42,23 +42,7 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private static final Color DEFAULT_COLOR = new Color(1f, 1f, 0f);
 
     // line thicknesses.
-    private final ValueLabelItem[] TEXT_ICON_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(TextAnnotation.COMMENT_ICON, TextAnnotation.COMMENT_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.CHECK_ICON, TextAnnotation.CHECK_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.CHECK_MARK_ICON, TextAnnotation.CHECK_MARK_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.CIRCLE_ICON, TextAnnotation.CIRCLE_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.CROSS_ICON, TextAnnotation.CROSS_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.CROSS_HAIRS_ICON, TextAnnotation.CROSS_HAIRS_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.HELP_ICON, TextAnnotation.HELP_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.INSERT_ICON, TextAnnotation.INSERT_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.KEY_ICON, TextAnnotation.KEY_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.NEW_PARAGRAPH_ICON, TextAnnotation.NEW_PARAGRAPH_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.PARAGRAPH_ICON, TextAnnotation.PARAGRAPH_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.RIGHT_ARROW_ICON, TextAnnotation.RIGHT_ARROW_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.RIGHT_POINTER_ICON, TextAnnotation.RIGHT_POINTER_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.STAR_ICON, TextAnnotation.STAR_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.UP_LEFT_ARROW_ICON, TextAnnotation.UP_LEFT_ARROW_ICON.getName()),
-            new ValueLabelItem(TextAnnotation.UP_ARROW_ICON, TextAnnotation.UP_ARROW_ICON.getName())};
+    private static ValueLabelItem[] TEXT_ICON_LIST;
 
     // link action appearance properties.
     private JComboBox iconNameBox;
@@ -150,6 +134,42 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
      * Method to create link annotation GUI.
      */
     private void createGUI() {
+
+        if (TEXT_ICON_LIST == null) {
+            TEXT_ICON_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(TextAnnotation.COMMENT_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.comment")),
+                    new ValueLabelItem(TextAnnotation.CHECK_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.check")),
+                    new ValueLabelItem(TextAnnotation.CHECK_MARK_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.checkMark")),
+                    new ValueLabelItem(TextAnnotation.CIRCLE_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.circle")),
+                    new ValueLabelItem(TextAnnotation.CROSS_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.cross")),
+                    new ValueLabelItem(TextAnnotation.CROSS_HAIRS_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.crossHairs")),
+                    new ValueLabelItem(TextAnnotation.HELP_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.help")),
+                    new ValueLabelItem(TextAnnotation.INSERT_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.insert")),
+                    new ValueLabelItem(TextAnnotation.KEY_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.key")),
+                    new ValueLabelItem(TextAnnotation.NEW_PARAGRAPH_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.newParagraph")),
+                    new ValueLabelItem(TextAnnotation.PARAGRAPH_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.paragraph")),
+                    new ValueLabelItem(TextAnnotation.RIGHT_ARROW_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.rightArrow")),
+                    new ValueLabelItem(TextAnnotation.RIGHT_POINTER_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.rightPointer")),
+                    new ValueLabelItem(TextAnnotation.STAR_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.star")),
+                    new ValueLabelItem(TextAnnotation.UP_LEFT_ARROW_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.upLeftArrow")),
+                    new ValueLabelItem(TextAnnotation.UP_ARROW_ICON,
+                            messageBundle.getString("viewer.utilityPane.annotation.text.iconName.upArrow"))};
+        }
 
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),

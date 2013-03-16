@@ -43,28 +43,8 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
     private static final int DEFAULT_LINE_STYLE = 0;
     private static final Color DEFAULT_BORDER_COLOR = Color.BLACK;
 
-    // border styles types.
-    private final ValueLabelItem[] BORDER_TYPE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(Annotation.VISIBLE_RECTANGLE, "Visible Rectangle"),
-            new ValueLabelItem(Annotation.INVISIBLE_RECTANGLE, "Invisible Rectangle")};
-
-    // line thicknesses.
-    private final ValueLabelItem[] LINE_THICKNESS_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(1f, "1"),
-            new ValueLabelItem(2f, "2"),
-            new ValueLabelItem(3f, "3"),
-            new ValueLabelItem(4f, "4"),
-            new ValueLabelItem(5f, "5"),
-            new ValueLabelItem(10f, "10"),
-            new ValueLabelItem(15f, "15")};
-
     // line styles.
-    private final ValueLabelItem[] LINE_STYLE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID, "Solid"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED, "Dashed"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_BEVELED, "Beveled"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_INSET, "Inset"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_UNDERLINE, "Underline")};
+    private static ValueLabelItem[] LINE_STYLE_LIST;
 
     // link action appearance properties.
     private JComboBox linkTypeBox;
@@ -109,7 +89,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         // For convenience grab the Annotation object wrapped by the component
         Annotation annotation = currentAnnotationComponent.getAnnotation();
 
-        // apply annotaiton values.
+        // apply annotation values.
         if (annotation.getLineThickness() == 0) {
             applySelectedValue(linkTypeBox, Annotation.INVISIBLE_RECTANGLE);
         } else {
@@ -120,7 +100,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         colorButton.setBackground(annotation.getColor());
 
         // disable appearance input if we have a invisible rectangle
-        enableAppearanceInputComponents(annotation.getBorderType());
+        enableAppearanceInputComponents(annotation.getBorderType() == Annotation.VISIBLE_RECTANGLE);
     }
 
     public void itemStateChanged(ItemEvent e) {
@@ -131,15 +111,15 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         ValueLabelItem item = (ValueLabelItem) e.getItem();
         if (e.getStateChange() == ItemEvent.SELECTED) {
             if (e.getSource() == linkTypeBox) {
-                int linkType = (Integer) item.getValue();
-                if (Annotation.VISIBLE_RECTANGLE == linkType) {
+                boolean linkVisible = (Boolean) item.getValue();
+                if (linkVisible) {
                     annotation.getBorderStyle().setStrokeWidth(1f);
                 } else {
                     annotation.getBorderStyle().setStrokeWidth(0f);
                 }
                 applySelectedValue(lineThicknessBox, annotation.getLineThickness());
                 // enable/disable fields based on types
-                enableAppearanceInputComponents(linkType);
+                enableAppearanceInputComponents(linkVisible);
             } else if (e.getSource() == lineThicknessBox) {
                 float lineThickness = (Float) item.getValue();
                 annotation.getBorderStyle().setStrokeWidth(lineThickness);
@@ -179,13 +159,27 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
      */
     private void createGUI() {
 
+        // line styles.
+        if (LINE_STYLE_LIST == null) {
+            LINE_STYLE_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.solid")),
+                    new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.dashed")),
+                    new ValueLabelItem(BorderStyle.BORDER_STYLE_BEVELED,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.beveled")),
+                    new ValueLabelItem(BorderStyle.BORDER_STYLE_INSET,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.inset")),
+                    new ValueLabelItem(BorderStyle.BORDER_STYLE_UNDERLINE,
+                            messageBundle.getString("viewer.utilityPane.annotation.border.underline"))};
+        }
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.utilityPane.annotation.border.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // border type box
-        linkTypeBox = new JComboBox(BORDER_TYPE_LIST);
+        linkTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
         linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
         linkTypeBox.addItemListener(this);
         add(new JLabel(
@@ -228,10 +222,10 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
     /**
      * Method to enable appearance input fields for an invisible rectangle
      *
-     * @param borderType invisible rectangle or visible, your pick.
+     * @param visible invisible rectangle or visible, your pick.
      */
-    private void enableAppearanceInputComponents(int borderType) {
-        if (borderType == Annotation.INVISIBLE_RECTANGLE) {
+    private void enableAppearanceInputComponents(boolean visible) {
+        if (!visible) {
             // everything but highlight style and link type
             safeEnable(linkTypeBox, true);
             safeEnable(lineThicknessBox, false);

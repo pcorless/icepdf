@@ -15,7 +15,6 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -47,28 +46,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private static final Color DEFAULT_FILL_COLOR = Color.DARK_GRAY;
 
     // line end types.
-    private final ValueLabelItem[] END_TYPE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(LineAnnotation.LINE_END_NONE, "None"),
-            new ValueLabelItem(LineAnnotation.LINE_END_OPEN_ARROW, "Open Arrow"),
-            new ValueLabelItem(LineAnnotation.LINE_END_CLOSED_ARROW, "Closed Arrow"),
-            new ValueLabelItem(LineAnnotation.LINE_END_DIAMOND, "Diamond"),
-            new ValueLabelItem(LineAnnotation.LINE_END_SQUARE, "Square"),
-            new ValueLabelItem(LineAnnotation.LINE_END_CIRCLE, "Circle")};
-
-    // line thicknesses.
-    private final ValueLabelItem[] LINE_THICKNESS_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(1f, "1"),
-            new ValueLabelItem(2f, "2"),
-            new ValueLabelItem(3f, "3"),
-            new ValueLabelItem(4f, "4"),
-            new ValueLabelItem(5f, "5"),
-            new ValueLabelItem(10f, "10"),
-            new ValueLabelItem(15f, "15")};
-
-    // fill/stroke styles.
-    private final ValueLabelItem[] LINE_STYLE_LIST = new ValueLabelItem[]{
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_SOLID, "Solid"),
-            new ValueLabelItem(BorderStyle.BORDER_STYLE_DASHED, "Dashed")};
+    private static ValueLabelItem[] END_TYPE_LIST;
 
     // link action appearance properties.
     private JComboBox startEndTypeBox;
@@ -195,6 +173,22 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
      * Method to create link annotation GUI.
      */
     private void createGUI() {
+        // line end types
+        if (END_TYPE_LIST == null) {
+            END_TYPE_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(LineAnnotation.LINE_END_NONE,
+                            messageBundle.getString("viewer.utilityPane.annotation.line.end.none")),
+                    new ValueLabelItem(LineAnnotation.LINE_END_OPEN_ARROW,
+                            messageBundle.getString("viewer.utilityPane.annotation.line.end.openArrow")),
+                    new ValueLabelItem(LineAnnotation.LINE_END_CLOSED_ARROW,
+                            messageBundle.getString("viewer.utilityPane.annotation.line.end.closedArrow")),
+                    new ValueLabelItem(LineAnnotation.LINE_END_DIAMOND,
+                            messageBundle.getString("viewer.utilityPane.annotation.line.end.diamond")),
+                    new ValueLabelItem(LineAnnotation.LINE_END_SQUARE,
+                            messageBundle.getString("viewer.utilityPane.annotation.line.end.square")),
+                    new ValueLabelItem(LineAnnotation.LINE_END_CIRCLE,
+                            messageBundle.getString("viewer.utilityPane.annotation.line.end.circle"))};
+        }
 
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
