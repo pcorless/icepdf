@@ -35,6 +35,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -74,18 +75,17 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     protected MarkupAnnotation selectedMarkupAnnotation;
 
     // add and remove commands
-    protected JMenuItem replyMenuItem = new JMenuItem("Reply");
-    protected JMenuItem deleteMenuItem = new JMenuItem("Delete");
+    protected JMenuItem replyMenuItem;
+    protected JMenuItem deleteMenuItem;
     // status change commands.
-    protected JMenuItem statusNoneMenuItem = new JCheckBoxMenuItem("None");
-    protected JMenuItem statusAcceptedItem = new JCheckBoxMenuItem("Accepted");
-    protected JMenuItem statusCancelledMenuItem = new JCheckBoxMenuItem("Cancelled");
-    protected JMenuItem statusCompletedMenuItem = new JCheckBoxMenuItem("Completed");
-    protected JMenuItem statusRejectedMenuItem = new JCheckBoxMenuItem("Rejected");
+    protected JMenuItem statusNoneMenuItem;
+    protected JMenuItem statusAcceptedItem;
+    protected JMenuItem statusCancelledMenuItem;
+    protected JMenuItem statusCompletedMenuItem;
+    protected JMenuItem statusRejectedMenuItem;
     // generic commands, open/minimize all
-    protected JMenuItem openAllMenuItem = new JMenuItem("Open all Popups");
-    protected JMenuItem minimizeAllMenuItem = new JMenuItem("Minimize Popups");
-
+    protected JMenuItem openAllMenuItem;
+    protected JMenuItem minimizeAllMenuItem;
 
     protected JPopupMenu contextMenu;
 
@@ -277,15 +277,15 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         deleteMenuItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.delete.label"));
         // status change commands.
-        statusNoneMenuItem = new JCheckBoxMenuItem(
+        statusNoneMenuItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.status.none.label"));
-        statusAcceptedItem = new JCheckBoxMenuItem(
+        statusAcceptedItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.status.accepted.label"));
-        statusCancelledMenuItem = new JCheckBoxMenuItem(
+        statusCancelledMenuItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.status.cancelled.label"));
-        statusCompletedMenuItem = new JCheckBoxMenuItem(
+        statusCompletedMenuItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.status.completed.label"));
-        statusRejectedMenuItem = new JCheckBoxMenuItem(
+        statusRejectedMenuItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.status.rejected.label"));
         // generic commands, open/minimize all
         openAllMenuItem = new JMenuItem(
@@ -346,8 +346,15 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
             this.setVisible(false);
             popupAnnotation.setOpen(false);
         } else if (source == replyMenuItem) {
+
+            // setup title message
+            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            MessageFormat formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.replyTo.label"));
+            String annotationTitle = formatter.format(argument);
+
             createNewTextAnnotation(
-                    "re: " + selectedMarkupAnnotation.getTitleText(),
+                    annotationTitle,
                     "",
                     TextAnnotation.STATE_MODEL_REVIEW,
                     TextAnnotation.STATE_REVIEW_NONE);
@@ -384,33 +391,73 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
             commentPanel.revalidate();
 
         } else if (source == statusNoneMenuItem) {
-            createNewTextAnnotation(
-                    "None: " + selectedMarkupAnnotation.getTitleText(),
-                    "None set by " + System.getProperty("user.name"),
+            // setup title message
+            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            MessageFormat formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.none.title"));
+            String title = formatter.format(argument);
+            // setup content message
+            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.none.msg"));
+            String content = formatter.format(argument);
+            createNewTextAnnotation(title, content,
                     TextAnnotation.STATE_MODEL_REVIEW,
                     TextAnnotation.STATE_REVIEW_NONE);
         } else if (source == statusAcceptedItem) {
-            createNewTextAnnotation(
-                    "Accepted: " + selectedMarkupAnnotation.getTitleText(),
-                    "Accepted set by " + System.getProperty("user.name"),
+            // setup title message
+            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            MessageFormat formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.accepted.title"));
+            String title = formatter.format(argument);
+            // setup content message
+            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.accepted.msg"));
+            String content = formatter.format(argument);
+            createNewTextAnnotation(title, content,
                     TextAnnotation.STATE_MODEL_REVIEW,
                     TextAnnotation.STATE_REVIEW_NONE);
         } else if (source == statusCancelledMenuItem) {
-            createNewTextAnnotation(
-                    "Cancelled: " + selectedMarkupAnnotation.getTitleText(),
-                    "Cancelled set by " + System.getProperty("user.name"),
+            // setup title message
+            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            MessageFormat formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.cancelled.title"));
+            String title = formatter.format(argument);
+            // setup content message
+            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.cancelled.msg"));
+            String content = formatter.format(argument);
+            createNewTextAnnotation(title, content,
                     TextAnnotation.STATE_MODEL_REVIEW,
                     TextAnnotation.STATE_REVIEW_NONE);
         } else if (source == statusCompletedMenuItem) {
-            createNewTextAnnotation(
-                    "Completed: " + selectedMarkupAnnotation.getTitleText(),
-                    "Completed set by " + System.getProperty("user.name"),
+            // setup title message
+            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            MessageFormat formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.completed.title"));
+            String title = formatter.format(argument);
+            // setup content message
+            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.completed.msg"));
+            String content = formatter.format(argument);
+            createNewTextAnnotation(title, content,
                     TextAnnotation.STATE_MODEL_REVIEW,
                     TextAnnotation.STATE_REVIEW_NONE);
         } else if (source == statusRejectedMenuItem) {
-            createNewTextAnnotation(
-                    "Rejected: " + selectedMarkupAnnotation.getTitleText(),
-                    "Rejected set by " + System.getProperty("user.name"),
+            // setup title message
+            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            MessageFormat formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.rejected.title"));
+            String title = formatter.format(argument);
+            // setup content message
+            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+            formatter = new MessageFormat(
+                    messageBundle.getString("viewer.annotation.popup.status.rejected.msg"));
+            String content = formatter.format(argument);
+            createNewTextAnnotation(title, content,
                     TextAnnotation.STATE_MODEL_REVIEW,
                     TextAnnotation.STATE_REVIEW_NONE);
         } else if (source == openAllMenuItem) {

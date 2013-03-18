@@ -32,6 +32,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -123,6 +124,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected Point startOfMousePress;
     protected Point endOfMousePress;
 
+    protected ResourceBundle messageBundle;
+
     public AbstractAnnotationComponent(Annotation annotation,
                                        DocumentViewController documentViewController,
                                        AbstractPageViewComponent pageViewComponent,
@@ -131,6 +134,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         this.documentViewModel = documentViewModel;
         this.documentViewController = documentViewController;
         this.annotation = annotation;
+        messageBundle = documentViewController.getParentController().getMessageBundle();
 
         addMouseListener(this);
         addMouseMotionListener(this);
