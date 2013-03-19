@@ -271,7 +271,9 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                     new ValueLabelItem(16, messageBundle.getString("viewer.common.number.sixteen")),
                     new ValueLabelItem(18, messageBundle.getString("viewer.common.number.eighteen")),
                     new ValueLabelItem(20, messageBundle.getString("viewer.common.number.twenty")),
-                    new ValueLabelItem(24, messageBundle.getString("viewer.common.number.twentyFour"))};
+                    new ValueLabelItem(24, messageBundle.getString("viewer.common.number.twentyFour")),
+                    new ValueLabelItem(36, messageBundle.getString("viewer.common.number.thirtySix")),
+                    new ValueLabelItem(48, messageBundle.getString("viewer.common.number.fortyEight"))};
         }
 
         // Create and setup an Appearance panel
