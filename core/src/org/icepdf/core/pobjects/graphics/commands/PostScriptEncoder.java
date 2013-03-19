@@ -41,6 +41,8 @@ public class PostScriptEncoder {
     private static final String NAME = "/";
     private static final String BEGIN_ARRAY = "[";
     private static final String END_ARRAY = "]";
+    private static final String BEGIN_STRING = "(";
+    private static final String END_STRING = ")";
 
     private PostScriptEncoder() {
 
@@ -150,15 +152,54 @@ public class PostScriptEncoder {
             }
             // break out a text block and child paint operands.
             else if (drawCmd instanceof TextSpriteDrawCmd) {
-                postScript.append(PdfOps.BT_TOKEN);
+                postScript.append(PdfOps.BT_TOKEN).append(NEWLINE);
                 TextSpriteDrawCmd textSpriteDrawCmd = (TextSpriteDrawCmd) drawCmd;
                 TextSprite textSprite = textSpriteDrawCmd.getTextSprite();
 
                 ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
-                for (GlyphText glyphText : glyphTexts) {
+                if (glyphTexts.size() > 0) {
+                    // write out stat of text paint
+                    postScript.append("1 0 0 -1 ")
+                            .append(glyphTexts.get(0).getX()).append(SPACE)
+                            .append(glyphTexts.get(0).getY()).append(SPACE).append(PdfOps.Tm_TOKEN).append(NEWLINE);
 
+                    // write out font
+                    postScript.append("/").append(textSprite.getFontName()).append(SPACE)
+                            .append(textSprite.getFontSize()).append(SPACE).append(PdfOps.Tf_TOKEN).append(NEWLINE);
+
+                    // set the colour
+                    float[] colors = textSprite.getStrokeColor().getRGBColorComponents(null);
+                    // set fill color
+                    postScript.append(colors[0]).append(SPACE)
+                            .append(colors[1]).append(SPACE)
+                            .append(colors[2]).append(SPACE)
+                            .append(PdfOps.rg_TOKEN).append(NEWLINE);
+                    float y = glyphTexts.get(0).getY();
+                    StringBuilder line = new StringBuilder();
+                    GlyphText glyphText;
+                    for (int i = 0, max = glyphTexts.size(); i < max; i++) {
+                        glyphText = glyphTexts.get(i);
+
+                        // write out the line
+                        if (y != glyphText.getY() || i == max - 1) {
+                            // make sure we write out the last character.
+                            if (i == max - 1) {
+                                line.append(glyphText.getUnicode());
+                            }
+                            postScript.append(BEGIN_ARRAY).append(BEGIN_STRING).append(line.toString()).append(END_STRING)
+                                    .append(END_ARRAY).append(SPACE)
+                                    .append(PdfOps.TJ_TOKEN).append(NEWLINE);
+                            // add shift if newline
+                            postScript.append(0).append(SPACE).append(y - glyphText.getY())
+                                    .append(SPACE).append(PdfOps.Td_TOKEN).append(NEWLINE);
+                            // update the current.
+                            y = glyphText.getY();
+                            line = new StringBuilder();
+                        }
+                        line.append(glyphText.getUnicode());
+                    }
+                    postScript.append(PdfOps.ET_TOKEN).append(NEWLINE);
                 }
-                postScript.append(PdfOps.ET_TOKEN);
             }
         }
         return postScript.toString().getBytes();
@@ -169,7 +210,7 @@ public class PostScriptEncoder {
      * iterator.
      *
      * @param currentShape shape to build out draw commands.
-     * @param postScript   string to append draw opperands to.
+     * @param postScript   string to append draw operands to.
      */
     private static void generateShapePostScript(Shape currentShape, StringBuilder postScript) {
         PathIterator pathIterator = currentShape.getPathIterator(null);

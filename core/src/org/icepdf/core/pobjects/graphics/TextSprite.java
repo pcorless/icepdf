@@ -58,6 +58,9 @@ public class TextSprite {
     private int rmode;
     // Font used to paint text
     private FontFile font;
+    // font's resource name and size, used by PS writer.
+    private String fontName;
+    private int fontSize;
 
     /**
      * <p>Creates a new TextSprit object.</p>
@@ -185,7 +188,7 @@ public class TextSprite {
      * Getst the bounds of the text that makes up this sprite.  The bounds
      * are defined PDF space and are relative to the current CTM.
      *
-     * @return
+     * @return text sprites bounds.
      */
     public Rectangle2D.Float getBounds() {
         return bounds;
@@ -245,6 +248,22 @@ public class TextSprite {
 
     public Color getStrokeColor() {
         return strokeColor;
+    }
+
+    public String getFontName() {
+        return fontName;
+    }
+
+    public void setFontName(String fontName) {
+        this.fontName = fontName;
+    }
+
+    public int getFontSize() {
+        return fontSize;
+    }
+
+    public void setFontSize(int fontSize) {
+        this.fontSize = fontSize;
     }
 
     /*

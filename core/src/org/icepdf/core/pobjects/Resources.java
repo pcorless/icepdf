@@ -137,6 +137,7 @@ public class Resources extends Dictionary {
                 }
                 // cache the font for later use.
                 library.addObject(font, ref);
+                font.setPObjectReference(ref);
             }
         }
         if (font != null) {
