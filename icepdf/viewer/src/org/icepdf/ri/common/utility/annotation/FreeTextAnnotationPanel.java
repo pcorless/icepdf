@@ -40,7 +40,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
     // default list values.
     private static final int DEFAULT_FONT_SIZE = 5;
-    private static final int DEFAULT_FONT_STYLE = Font.PLAIN;
     private static final int DEFAULT_FONT_FAMILY = 0;
     private static final Color DEFAULT_FONT_COLOR = Color.DARK_GRAY;
 
@@ -49,9 +48,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     public static final int DEFAULT_FILL_STYLE = 0;
     private static final Color DEFAULT_BORDER_COLOR = Color.LIGHT_GRAY;
     private static final Color DEFAULT_STROKE_COLOR = new Color(1, 1, 1);
-
-    // font styles.
-    private static ValueLabelItem[] FONT_STYLES_LIST;
 
     // font styles.
     private static ValueLabelItem[] FONT_NAMES_LIST;
@@ -64,7 +60,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
     // font configuration
     private JComboBox fontNameBox;
-    private JComboBox fontStyleBox;
     private JComboBox fontSizeBox;
     private JButton fontColorButton;
 
@@ -80,7 +75,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
     public FreeTextAnnotationPanel(SwingController controller) {
         super(controller);
-        setLayout(new GridLayout(10, 2, 5, 2));
+        setLayout(new GridLayout(9, 2, 5, 2));
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -121,7 +116,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
         // font comps
         applySelectedValue(fontNameBox, freeTextAnnotation.getFontName());
-        applySelectedValue(fontStyleBox, freeTextAnnotation.getFontStyle());
         applySelectedValue(fontSizeBox, freeTextAnnotation.getFontSize());
         fontColorButton.setBackground(freeTextAnnotation.getFontColor());
 
@@ -136,7 +130,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         fillColorButton.setBackground(freeTextAnnotation.getFillColor());
 
         safeEnable(fontNameBox, true);
-        safeEnable(fontStyleBox, true);
         safeEnable(fontSizeBox, true);
         safeEnable(fontColorButton, true);
 
@@ -169,8 +162,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         if (e.getStateChange() == ItemEvent.SELECTED) {
             if (e.getSource() == fontNameBox) {
                 freeTextAnnotation.setFontName((String) item.getValue());
-            } else if (e.getSource() == fontStyleBox) {
-                freeTextAnnotation.setFontStyle((Integer) item.getValue());
             } else if (e.getSource() == fontSizeBox) {
                 freeTextAnnotation.setFontSize((Integer) item.getValue());
             } else if (e.getSource() == strokeTypeBox) {
@@ -193,6 +184,9 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 freeTextAnnotation.getBorderStyle().setStrokeWidth((Float) item.getValue());
             } else if (e.getSource() == fillTypeBox) {
                 freeTextAnnotation.setFillType((Boolean) item.getValue());
+                if (freeTextAnnotation.isFillType()) {
+                    freeTextAnnotation.setColor(fillColorButton.getBackground());
+                }
                 disableInvisibleFields();
             }
             // save the action state back to the document structure.
@@ -230,7 +224,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                     JColorChooser.showDialog(fillColorButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.freeText.font.color.ChooserTitle"),
-                            fillColorButton.getBackground());
+                            fontColorButton.getBackground());
             if (chosenColor != null) {
                 // change the colour of the button background
                 fontColorButton.setBackground(chosenColor);
@@ -251,16 +245,18 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         // font styles.
         if (FONT_NAMES_LIST == null) {
             FONT_NAMES_LIST = new ValueLabelItem[]{
-                    new ValueLabelItem("Dialog",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.dialog")),
-                    new ValueLabelItem("DialogInput",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.dialogInput")),
-                    new ValueLabelItem("Monospaced",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.monospaced")),
-                    new ValueLabelItem("Serif",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.serif")),
-                    new ValueLabelItem("SansSerif",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.sanSerif"))};
+                    new ValueLabelItem("Helvetica", "Helvetica"),
+                    new ValueLabelItem("Helvetica-Oblique", "Helvetica-Oblique"),
+                    new ValueLabelItem("Helvetica-Bold", "Helvetica-Bold"),
+                    new ValueLabelItem("Helvetica-BoldOblique", "Helvetica-BoldOblique"),
+                    new ValueLabelItem("Times-Italic", "Times-Italic"),
+                    new ValueLabelItem("Times-Bold", "Times-Bold"),
+                    new ValueLabelItem("Times-BoldItalic", "Times-BoldItalic"),
+                    new ValueLabelItem("Times-Roman", "Times-Roman"), new ValueLabelItem("Courier", "Courier"),
+                    new ValueLabelItem("Courier-Oblique", "Courier-Oblique"),
+                    new ValueLabelItem("Courier-BoldOblique", "Courier-BoldOblique"),
+                    new ValueLabelItem("Courier-Bold", "Courier-Bold"),
+                    new ValueLabelItem("Courier-Bold", "Courier-Bold")};
         }
 
         // Font size.
@@ -278,13 +274,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                     new ValueLabelItem(24, messageBundle.getString("viewer.common.number.twentyFour"))};
         }
 
-        if (FONT_STYLES_LIST == null) {
-            FONT_STYLES_LIST = new ValueLabelItem[]{
-                    new ValueLabelItem(Font.PLAIN, messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style.plain")),
-                    new ValueLabelItem(Font.ITALIC, messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style.italic")),
-                    new ValueLabelItem(Font.BOLD, messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style.bold"))};
-        }
-
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.utilityPane.annotation.freeText.appearance.title"),
@@ -297,12 +286,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         fontNameBox.addItemListener(this);
         add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name")));
         add(fontNameBox);
-        // font style
-        fontStyleBox = new JComboBox(FONT_STYLES_LIST);
-        fontStyleBox.setSelectedIndex(DEFAULT_FONT_STYLE);
-        fontStyleBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.style")));
-        add(fontStyleBox);
         // border style
         fontSizeBox = new JComboBox(FONT_SIZES_LIST);
         fontSizeBox.setSelectedIndex(DEFAULT_FONT_SIZE);
@@ -367,7 +350,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
         safeEnable(fontNameBox, enabled);
         safeEnable(fontSizeBox, enabled);
-        safeEnable(fontStyleBox, enabled);
         safeEnable(fontColorButton, enabled);
 
         safeEnable(strokeTypeBox, enabled);

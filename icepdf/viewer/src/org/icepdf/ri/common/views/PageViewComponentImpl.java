@@ -18,6 +18,7 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
@@ -440,7 +441,8 @@ public class PageViewComponentImpl extends
 
                 // paint all annotations on top of the content buffer
                 for (AnnotationComponent annotation : annotationComponents) {
-                    if (((Component) annotation).isVisible()) {
+                    if (((Component) annotation).isVisible() &&
+                            !(annotation.getAnnotation() instanceof FreeTextAnnotation)) {
                         annotation.getAnnotation().render(gg2,
                                 GraphicsRenderingHints.SCREEN,
                                 documentViewModel.getViewRotation(),
@@ -1057,7 +1059,7 @@ public class PageViewComponentImpl extends
                     Library.execute(pageInitializer);
                 }
 
-                // check annotation states, there is apossibility that the
+                // check annotation states, there is a possibility that the
                 // page was initialized by some other process and in such
                 // a case the pageInitializer would not have build the up the
                 // annotationComponents.

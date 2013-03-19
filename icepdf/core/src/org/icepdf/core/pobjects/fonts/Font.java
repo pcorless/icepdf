@@ -66,6 +66,7 @@ public abstract class Font extends Dictionary {
 
     public static final Name NAME_KEY = new Name("Name");
     public static final Name BASEFONT_KEY = new Name("BaseFont");
+    public static final Name ENCODING_KEY = new Name("Encoding");
 
     // Object name always "Font"
     protected Name name;

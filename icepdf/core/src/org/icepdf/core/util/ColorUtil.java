@@ -14,6 +14,7 @@
  */
 package org.icepdf.core.util;
 
+import java.awt.*;
 import java.util.HashMap;
 
 /**
@@ -197,6 +198,19 @@ public class ColorUtil {
             name = new String(buf, 0, 7);
         }
         return name;
+    }
+
+    /**
+     * Converts a colour to hex rgb notation.  For example black is
+     * converted to #000000 and white to #FFFFFF.
+     *
+     * @param color know colour to be converted
+     * @return name of converted string, the same name is returned if their was
+     *         a conversion failure.
+     */
+    public static final String convertColorToRGB(Color color) {
+        int c = color.getRGB();
+        return String.format("#%06X", (0xFFFFFF & c));
     }
 
     /**

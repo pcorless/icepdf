@@ -17,8 +17,12 @@ package org.icepdf.core.pobjects.fonts;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.FontUtil;
 
+import java.awt.Font;
+import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -164,6 +168,7 @@ public class FontManager {
 
                     // Linux
                     "/etc/fonts/",
+                    System.getProperty("user.home") + "/.fonts/",
                     "/system/etc/fonts/",
                     "/usr/lib/X11/fonts",
                     "/usr/share/a2ps/afm/",
@@ -323,7 +328,7 @@ public class FontManager {
 
 
     /**
-     * Clears internal font list of items. Used to clean list while custructing
+     * Clears internal font list of items. Used to clean list while constructing
      * a new list.
      */
     public void clearFontList() {
@@ -644,7 +649,7 @@ public class FontManager {
 
     /**
      * Utility method for search the fontList array for an particular font name
-     * that has the specified sytle.
+     * that has the specified style.
      *
      * @param fontName fontname with any decoration information still appended to name.
      * @param flags    flags from content parser, to help guess style.
@@ -763,7 +768,7 @@ public class FontManager {
     }
 
     /**
-     * Gets a NFont instance by matching against font sytle commonalities in the
+     * Gets a NFont instance by matching against font style commonalities in the
      * Java Cores libraries.
      *
      * @param fontName font name to search for
@@ -826,7 +831,7 @@ public class FontManager {
     }
 
     /**
-     * Gets a NFont instance by matching against font sytle commonalities in the
+     * Gets a NFont instance by matching against font style commonalities in the
      * of know type1 fonts
      *
      * @param fontName font name to search for
@@ -868,8 +873,139 @@ public class FontManager {
     }
 
     /**
-     * Utitility method which maps know sytle strings to an integer value which
-     * is used later for effeciant font searching.
+     * Gets a Font instance by matching against font style commonalities in the
+     * of know type1 fonts
+     *
+     * @param fontName font name to search for
+     * @return a valid AWT Font if a match is found, null otherwise.
+     */
+    public java.awt.Font getType1AWTFont(String fontName, int fontSize) {
+        java.awt.Font font = null;
+        boolean found = false;
+        boolean isType1Available = true;
+        // find a match for family in the type 1 nfont table
+        for (int i = 0, max = TYPE1_FONT_DIFFS.length; i < max; i++) {
+            for (int j = 0, max2 = TYPE1_FONT_DIFFS[i].length; j < max2; j++) {
+                // first check to see font name matches any elements
+                if (TYPE1_FONT_DIFFS[i][0].indexOf(fontName) >= 0) {
+                    // next see if know type1 fonts are installed
+                    if (isType1Available) {
+                        font = findAWTFont(TYPE1_FONT_DIFFS[i][1]);
+                        if (font != null) {
+                            found = true;
+                            break;
+                        } else {
+                            isType1Available = false;
+                        }
+                    }
+                    // do a full search for possible matches.
+                    font = findAWTFont(TYPE1_FONT_DIFFS[i][j]);
+                    if (font != null) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            // break out of second loop
+            if (found) break;
+        }
+        if (font != null) {
+            font = font.deriveFont((float) fontSize);
+        }
+        return font;
+    }
+
+    /**
+     * Utility method for search the fontList array for an particular font name
+     * that has the specified style.
+     *
+     * @param fontName fontname with any decoration information still appended to name.
+     * @return a valid font if found, null otherwise
+     */
+    private java.awt.Font findAWTFont(String fontName) {
+
+        java.awt.Font font = null;
+        // references for system font list.
+        Object[] fontData;
+        String baseName;
+        String familyName;
+        // normalize the fontName we are trying to find a match for
+        int decorations = guessFontStyle(fontName);
+        String name = FontUtil.normalizeString(fontName);
+        int style;
+
+        if (fontList != null) {
+            for (int i = fontList.size() - 1; i >= 0; i--) {
+                fontData = fontList.get(i);
+                baseName = (String) fontData[0];
+                familyName = (String) fontData[1];
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest(baseName + " : " + familyName + "  : " + name);
+                }
+                if (name.indexOf(familyName) >= 0 ||
+                        fontName.toLowerCase().indexOf(baseName) >= 0) {
+                    style = (Integer) fontData[2];
+                    boolean found = false;
+                    // ignore this font, as the cid mapping are not correct, or ther is
+                    // just look and feel issues with them.
+                    if (baseName.equals("opensymbol") ||
+                            baseName.equals("starsymbol")
+                            || baseName.equals("arial-black")
+                            || baseName.equals("arial-blackitalic")
+                            || baseName.equals("new")
+                            // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
+                            || baseName.equals("timesnewromanps")
+                            ) {
+                        //found = false;
+                    } else if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                            ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
+                        found = true;
+                    } else if (((decorations & BOLD) == BOLD) &&
+                            ((style & BOLD) == BOLD)) {
+                        found = true;
+                    } else if (((decorations & ITALIC) == ITALIC) &&
+                            ((style & ITALIC) == ITALIC)) {
+                        found = true;
+                    } else if (((decorations & PLAIN) == PLAIN) &&
+                            ((style & PLAIN) == PLAIN)) {
+                        found = true;
+                    }
+                    // symbol type fonts don't have an associated style, so
+                    // no point trying to match  them based on style.
+                    else if (baseName.indexOf("wingdings") >= 0 ||
+                            baseName.indexOf("zapfdingbats") >= 0 ||
+                            baseName.indexOf("symbol") >= 0) {
+                        found = true;
+                    }
+
+                    if (found) {
+                        if (logger.isLoggable(Level.FINER)) {
+                            logger.finer("----> Found font: " + baseName +
+                                    " family: " + getFontSytle(style, 0) +
+                                    " for: " + fontName);
+                        }
+                        try {
+                            font = java.awt.Font.createFont(Font.TRUETYPE_FONT,
+                                    new File((String) fontData[3]));
+                        } catch (FontFormatException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        // make sure the font does indeed exist
+                        if (font != null) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return font;
+    }
+
+    /**
+     * Utility method which maps know style strings to an integer value which
+     * is used later for efficient font searching.
      * todo: move out to FontUtil and use awt contants
      *
      * @param name base name of font.

@@ -109,6 +109,8 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
                         tBbox);
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(System.getProperty("user.name"));
+        annotation.setFontSize(24);
+        annotation.setFontName("Helvetica");
         annotation.setContents(" ");
 
         // create the annotation object.

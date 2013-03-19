@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.TextSpriteDrawCmd;
@@ -72,6 +73,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
     private FreeTextAnnotation freeTextAnnotation;
 
+    // font file cache.
+    protected Font fontFile;
+
     public FreeTextAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                        final AbstractPageViewComponent pageViewComponent,
                                        final DocumentViewModel documentViewModel) {
@@ -84,7 +88,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
         freeTextAnnotation = (FreeTextAnnotation) annotation;
         // todo break out to interface so we can change the visibility more easily
-        freeTextAnnotation.setHideRenderedOutput(true);
+//        freeTextAnnotation.setHideRenderedOutput(true);
 
         // update the bounds to be bit larger as the border padding can obscure
         // the content
@@ -104,7 +108,6 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                     TextSprite tmp = ((TextSpriteDrawCmd) cmd).getTextSprite();
                     FontFile font = tmp.getFont();
                     freeTextAnnotation.setFontSize((int) font.getSize());
-                    freeTextAnnotation.setFontStyle(font.getStyle());
                     freeTextAnnotation.setFontColor(tmp.getStrokeColor());
                     // remove all text.
                     shapes.remove(i);
@@ -129,7 +132,12 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         freeTextPane.setMargin(new Insets(0, 0, 0, 0));
         // lock the field until the correct tool selects it.
         freeTextPane.setEditable(false);
-        freeTextPane.setText(freeTextAnnotation.getContents());
+        // clean up the contents make sure we have \n instead of \r
+        String contents = freeTextAnnotation.getContents();
+        if (contents != null) {
+            contents = contents.replace('\r', '\n');
+            freeTextPane.setText(contents);
+        }
 
         // setup change listener so we now when to set the annotations AP stream
         freeTextPane.getDocument().addDocumentListener(new DocumentListener() {
@@ -155,15 +163,17 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.addPropertyChangeListener(this);
 
-        setAppearanceStream();
-        freeTextPane.validate();
+        resetAppearanceShapes();
+        revalidate();
     }
 
     public void setAppearanceStream() {
         // copy over annotation properties from the free text annotation.
-        freeTextPane.setFont(new Font(freeTextAnnotation.getFontName(),
-                freeTextAnnotation.getFontStyle(),
-                freeTextAnnotation.getFontSize()));
+        if (fontFile == null || freeTextAnnotation.isFontPropertyChanged()) {
+            fontFile = FontManager.getInstance().getType1AWTFont(
+                    freeTextAnnotation.getFontName(), freeTextAnnotation.getFontSize());
+        }
+        freeTextPane.setFont(fontFile);
         freeTextPane.setForeground(freeTextAnnotation.getFontColor());
 
         if (freeTextAnnotation.isFillType()) {
@@ -205,8 +215,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     @Override
     public void mouseDragged(MouseEvent me) {
         super.mouseDragged(me);
-        refreshAnnotationRect();
-        setAppearanceStream();
+        resetAppearanceShapes();
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
@@ -221,7 +230,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                 freeText.setEditable(false);
                 if (contentTextChange) {
                     contentTextChange = false;
-                    setAppearanceStream();
+                    resetAppearanceShapes();
                 }
             }
         } else if ("focusOwner".equals(prop) &&

@@ -138,9 +138,11 @@ public class Form extends Stream {
         if (inited) {
             return;
         }
-        List v = (List) library.getObject(entries, MATRIX_KEY);
-        if (v != null) {
-            matrix = getAffineTransform(v);
+        Object v = library.getObject(entries, MATRIX_KEY);
+        if (v != null && v instanceof List) {
+            matrix = getAffineTransform((List) v);
+        } else if (v != null && v instanceof AffineTransform) {
+            matrix = (AffineTransform) v;
         }
         bbox = library.getRectangle(entries, BBOX_KEY);
         // try and find the form's resources dictionary.

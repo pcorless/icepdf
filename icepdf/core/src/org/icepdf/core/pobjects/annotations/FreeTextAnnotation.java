@@ -15,19 +15,24 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.fonts.ofont.OFont;
+import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
+import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Library;
 
 import javax.swing.text.DefaultStyledDocument;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 /**
@@ -158,6 +163,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      */
     public static final int QUADDING_RIGHT_JUSTIFIED = 2;
 
+    public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
+
     protected String defaultAppearance;
 
     protected int quadding = QUADDING_LEFT_JUSTIFIED;
@@ -170,10 +177,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     // appearance properties not to be confused with annotation properties,
     // this properties are updated by the UI components and used to regenerate
     // the annotations appearance stream and other needed properties on edits.
-    private String fontName = "Dialog";
+    private String fontName = "Helvetica";
     private int fontStyle = Font.PLAIN;
     private int fontSize = 24;
-    private Color fontColor = Color.DARK_GRAY;
+    private Color fontColor = Color.BLACK;
     // fill
     private boolean fillType = false;
     private Color fillColor = Color.WHITE;
@@ -183,11 +190,38 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     // editing placeholder
     protected DefaultStyledDocument document;
 
+    // font file is cached to avoid expensive lookups.
+    protected FontFile fontFile;
+    protected boolean fontPropertyChanged;
+
     public FreeTextAnnotation(Library l, HashMap h) {
         super(l, h);
 
         if (matrix == null) {
             matrix = new AffineTransform();
+        }
+
+        // reget colour so we can check for a null entry
+        if (library.getObject(entries, COLOR_KEY) != null &&
+                getObject(APPEARANCE_STREAM_KEY) != null) {
+
+            // iterate over shapes and try and find the fill and stroke colors.
+            if (shapes != null) {
+                Color currentColor = Color.BLACK;
+                for (DrawCmd drawCmd : shapes.getShapes()) {
+                    if (drawCmd instanceof ColorDrawCmd) {
+                        currentColor = ((ColorDrawCmd) drawCmd).getColor();
+                    } else if (drawCmd instanceof FillDrawCmd) {
+                        fillType = true;
+                        fillColor = new Color(currentColor.getRGB());
+                    } else if (drawCmd instanceof DrawDrawCmd) {
+                        strokeType = true;
+                        color = new Color(currentColor.getRGB());
+                    }
+                }
+            }
+        } else {
+            color = null;
         }
 
         defaultAppearance = library.getString(entries, DA_KEY);
@@ -205,6 +239,43 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // default style string
         if (library.getObject(entries, DS_KEY) != null) {
             defaultStylingString = library.getString(entries, DS_KEY);
+        }
+
+        // set the default quadding value
+        if (library.getObject(entries, Q_KEY) == null) {
+            entries.put(Q_KEY, 0);
+        }
+        // free text.
+        if (library.getObject(entries, IT_KEY) == null) {
+            entries.put(IT_KEY, new Name("FreeText"));
+        }
+
+        // check for defaultStylingString and if so parse out the
+        // font style, weight and name.
+        if (defaultStylingString != null) {
+            StringTokenizer toker = new StringTokenizer(defaultStylingString, ";");
+            while (toker.hasMoreElements()) {
+                String cssProperty = (String) toker.nextElement();
+                if (cssProperty != null && cssProperty.contains("font-family")) {
+                    fontName = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                } else if (cssProperty != null && cssProperty.contains("color")) {
+                    String colorString = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                    fontColor = new Color(ColorUtil.convertColor(colorString));
+                } else if (cssProperty != null && cssProperty.contains("font-weight")) {
+                    String fontStyle = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                    if (fontStyle.equals("normal")) {
+                        this.fontStyle = Font.PLAIN;
+                    } else if (fontStyle.equals("italic")) {
+                        this.fontStyle = Font.ITALIC;
+                    } else if (fontStyle.equals("bold")) {
+                        this.fontStyle = Font.BOLD;
+                    }
+                } else if (cssProperty != null && cssProperty.contains("font-size")) {
+                    String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
+                    fontSize = fontSize.substring(0, fontSize.indexOf('p'));
+                    this.fontSize = Integer.parseInt(fontSize);
+                }
+            }
         }
     }
 
@@ -262,32 +333,35 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
         af.scale(1, -1);
-        af.translate(-this.bbox.getMinX(),
-                -this.bbox.getMaxY());
-
+        af.translate(-this.bbox.getMinX(), -this.bbox.getMaxY());
         shapes.add(new TransformDrawCmd(af));
 
         // create the new font to draw with
-        Font awtFont = new Font(fontName, fontStyle, fontSize);
-        OFont font = new OFont(awtFont);
+        if (fontFile == null || fontPropertyChanged) {
+            fontFile = FontManager.getInstance().getInstance(fontName, 0);
+            fontPropertyChanged = false;
+        }
+        fontFile = fontFile.deriveFont(fontSize);
         // init font's metrics
-        font.echarAdvance(' ');
+        fontFile.echarAdvance(' ');
         TextSprite textSprites =
-                new TextSprite(font,
+                new TextSprite(fontFile,
                         content.length(),
                         new AffineTransform(new AffineTransform()));
         textSprites.setRMode(TextState.MODE_FILL);
         textSprites.setStrokeColor(fontColor);
+        textSprites.setFontName(EMBEDDED_FONT_NAME.toString());
+        textSprites.setFontSize(fontSize);
 
         // iterate over each line of text painting the strings.
         String[] lines = content.split("[\\r\\n]+");
 
         float padding = 10; // border padding of the component
-        float lineHeight = (float) font.getDescent() +
-                (float) (font.getAscent());
+        float lineHeight = (float) fontFile.getDescent() +
+                (float) (fontFile.getAscent());
 
         float advanceX = (float) bbox.getMinX() + padding;
-        float advanceY = (float) bbox.getMinY() + padding;
+        float advanceY = (float) bbox.getMinY();// + padding;
 
         float currentX;
         float currentY = advanceY + lineHeight;
@@ -302,7 +376,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             for (int i = 0; i < line.length(); i++) {
                 currentChar = line.charAt(i);
 
-                newAdvanceX = (float) font.echarAdvance(currentChar).getX();
+                newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
                 currentX = advanceX + lastx;
                 lastx += newAdvanceX;
 
@@ -372,7 +446,97 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             HashMap appearanceRefs = new HashMap();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+
+            // create the font
+            HashMap fontDictionary = new HashMap();
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
+                    org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY,
+                    new Name("Type1"));
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.NAME_KEY,
+                    EMBEDDED_FONT_NAME);
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY,
+                    new Name(fontName));
+            fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY,
+                    new Name("WinAnsiEncoding"));
+            fontDictionary.put(new Name("FirstChar"), 32);
+            fontDictionary.put(new Name("LastChar"), 255);
+
+            org.icepdf.core.pobjects.fonts.Font newFont;
+            if (form.getResources() == null ||
+                    form.getResources().getFont(EMBEDDED_FONT_NAME) == null) {
+                newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(
+                        library, fontDictionary);
+                newFont.setPObjectReference(stateManager.getNewReferencNumber());
+                library.addObject(newFont, newFont.getPObjectReference());
+                // create font entry
+                HashMap fontResources = new HashMap();
+                fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
+                // add the font resource entry.
+                HashMap resources = new HashMap();
+                resources.put(new Name("Font"), fontResources);
+                // and finally add it to the form.
+                form.getEntries().put(new Name("Resources"), resources);
+                form.setRawBytes(new String().getBytes());
+                form.init();
+            } else {
+                form.init();
+                newFont = form.getResources().getFont(EMBEDDED_FONT_NAME);
+                Reference reference = newFont.getPObjectReference();
+                newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(library, fontDictionary);
+                newFont.setPObjectReference(reference);
+            }
+            stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()));
         }
+
+        // build out a few backwards compatible strings.
+        StringBuilder dsString = new StringBuilder("font-size:")
+                .append(fontSize).append("pt;")
+                .append("font-family:").append(fontName).append(";")
+                .append("color:").append(ColorUtil.convertColorToRGB(fontColor))
+                .append(";");
+        if (fontStyle == Font.BOLD) {
+            dsString.append("font-weight:bold;");
+        }
+        if (fontStyle == Font.ITALIC) {
+            dsString.append("font-style:italic;");
+        }
+        if (fontStyle == Font.PLAIN) {
+            dsString.append("font-style:normal;");
+        }
+        entries.put(DS_KEY, new LiteralStringObject(dsString.toString()));
+
+        // write out the  color
+        if (fillType) {
+            Color color = this.color;
+            // no AP stream then we need to set color as the fillColor, just the
+            // way it is.  spec is a bit weak for FreeText.
+            if (entries.get(APPEARANCE_STREAM_KEY) == null) {
+                color = fillColor;
+            }
+            float[] compArray = new float[3];
+            color.getColorComponents(compArray);
+            java.util.List<Float> colorValues = new ArrayList<Float>(compArray.length);
+            for (float comp : compArray) {
+                colorValues.add(comp);
+            }
+            entries.put(COLOR_KEY, colorValues);
+        } else {
+            entries.remove(COLOR_KEY);
+        }
+
+        // write out the default content test.
+        entries.put(CONTENTS_KEY, new LiteralStringObject(content));
+
+        // build out the rich text string.
+        Object[] colorArgument = new Object[]{dsString};
+        MessageFormat formatter = new MessageFormat(BODY_START);
+        StringBuilder rcString = new StringBuilder(formatter.format(colorArgument));
+        for (String line : lines) {
+            rcString.append("<p>").append(line).append("</p>");
+        }
+        rcString.append(BODY_END);
+        entries.put(RC_KEY, new LiteralStringObject(rcString.toString()));
     }
 
     public String getDefaultStylingString() {
@@ -420,13 +584,12 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         this.richText = richText;
     }
 
-
     public Color getFontColor() {
         return fontColor;
     }
 
     public void setFontColor(Color fontColor) {
-        this.fontColor = fontColor;
+        this.fontColor = new Color(fontColor.getRGB());
     }
 
     public Color getFillColor() {
@@ -434,7 +597,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     public void setFillColor(Color fillColor) {
-        this.fillColor = fillColor;
+        this.fillColor = new Color(fillColor.getRGB());
     }
 
     public String getFontName() {
@@ -443,6 +606,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public void setFontName(String fontName) {
         this.fontName = fontName;
+        fontPropertyChanged = true;
     }
 
     public int getFontStyle() {
@@ -459,10 +623,15 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public void setFontSize(int fontSize) {
         this.fontSize = fontSize;
+        fontPropertyChanged = true;
     }
 
     public boolean isFillType() {
         return fillType;
+    }
+
+    public boolean isFontPropertyChanged() {
+        return fontPropertyChanged;
     }
 
     public void setFillType(boolean fillType) {
@@ -476,4 +645,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     public void setStrokeType(boolean strokeType) {
         this.strokeType = strokeType;
     }
+
+    public static final String BODY_START =
+            "<?xml version=\"1.0\"?><body xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xfa=\"http://www.xfa.org/schema/xfa-data/1.0/\" xfa:APIVersion=\"Acrobat:11.0.0\" xfa:spec=\"2.0.2\"  " +
+                    "style=\"{0}\">";
+
+    public static final String BODY_END = "</body>";
+
 }
