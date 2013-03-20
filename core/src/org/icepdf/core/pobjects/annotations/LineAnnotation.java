@@ -341,6 +341,8 @@ public class LineAnnotation extends MarkupAnnotation {
                     shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
         }
 
+        // remove appearance stream if it exists on an existing edit.
+        entries.remove(APPEARANCE_STREAM_KEY);
     }
 
     public static Logger getLogger() {

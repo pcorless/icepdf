@@ -14,10 +14,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Library;
@@ -25,7 +22,9 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -81,7 +80,6 @@ public class CircleAnnotation extends MarkupAnnotation {
             green = Math.max(0.0f, Math.min(1.0f, green));
             blue = Math.max(0.0f, Math.min(1.0f, blue));
             fillColor = new Color(red, green, blue);
-            isFillColor = true;
         }
     }
 
@@ -123,16 +121,31 @@ public class CircleAnnotation extends MarkupAnnotation {
      */
     public void resetAppearanceStream(double dx, double dy) {
 
-        // update the circle for any dx/dy moves.
-        AffineTransform af = new AffineTransform();
-        af.setToTranslation(dx, dy);
-        rectangle = af.createTransformedShape(rectangle).getBounds();
+        matrix = new AffineTransform();
+        shapes = new Shapes();
+
+        // setup the AP stream.
+        setModifiedDate(PDate.formatDateTime(new Date()));
+        // refresh rectangle
+        rectangle = getUserSpaceRectangle().getBounds();
+
         entries.put(Annotation.RECTANGLE_KEY,
                 PRectangle.getPRectangleVector(rectangle));
+        userSpaceRectangle = new Rectangle2D.Float(
+                (float) rectangle.getX(), (float) rectangle.getY(),
+                (float) rectangle.getWidth(), (float) rectangle.getHeight());
 
-        matrix = new AffineTransform();
+        int strokeWidth = (int) borderStyle.getStrokeWidth();
+        Rectangle rectangleToDraw = new Rectangle(
+                (int) rectangle.getX() + strokeWidth,
+                (int) rectangle.getY() + strokeWidth,
+                (int) rectangle.getWidth() - strokeWidth * 2,
+                (int) rectangle.getHeight() - strokeWidth * 2);
 
-        shapes = new Shapes();
+        // setup the space for the AP content stream.
+        AffineTransform af = new AffineTransform();
+        af.scale(1, -1);
+        af.translate(-this.bbox.getMinX(), -this.bbox.getMaxY());
 
         BasicStroke stroke;
         if (borderStyle.isStyleDashed()) {
@@ -143,27 +156,14 @@ public class CircleAnnotation extends MarkupAnnotation {
             stroke = new BasicStroke(borderStyle.getStrokeWidth());
         }
 
-        if (rectangle == null) {
-            rectangle = new Rectangle(
-                    (int) bbox.getX() + 5,
-                    (int) bbox.getY() + 5,
-                    (int) bbox.getWidth() - 10,
-                    (int) bbox.getHeight() - 10);
-        }
-
-        // setup the space for the AP content stream.
-        af = new AffineTransform();
-        af.translate(-this.bbox.getMinX(), -this.bbox.getMinY());
-
         Ellipse2D.Double circle = new Ellipse2D.Double(
-                rectangle.getMinX(),
-                rectangle.getMinY(),
-                rectangle.getWidth(),
-                rectangle.getHeight());
+                rectangleToDraw.getMinX(),
+                rectangleToDraw.getMinY(),
+                rectangleToDraw.getWidth(),
+                rectangleToDraw.getHeight());
 
         shapes.add(new TransformDrawCmd(af));
         shapes.add(new StrokeDrawCmd(stroke));
-        shapes.add(new ColorDrawCmd(fillColor));
         shapes.add(new ShapeDrawCmd(circle));
         if (isFillColor) {
             shapes.add(new ColorDrawCmd(fillColor));
@@ -172,6 +172,38 @@ public class CircleAnnotation extends MarkupAnnotation {
         if (borderStyle.getStrokeWidth() > 0) {
             shapes.add(new ColorDrawCmd(color));
             shapes.add(new DrawDrawCmd());
+        }
+
+        // update the appearance stream
+        // create/update the appearance stream of the xObject.
+        StateManager stateManager = library.getStateManager();
+        Form form;
+        if (hasAppearanceStream()) {
+            form = (Form) getAppearanceStream();
+            // else a stream, we won't support this for annotations.
+            // todo add back flateDecode filter
+            form.getEntries().remove(Stream.FILTER_KEY);
+        } else {
+            // create a new xobject/form object
+            HashMap formEntries = new HashMap();
+            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
+            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
+            form = new Form(library, formEntries, null);
+            form.setPObjectReference(stateManager.getNewReferencNumber());
+            library.addObject(form, form.getPObjectReference());
+        }
+
+        if (form != null) {
+            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
+                    (float) bbox.getWidth(), (float) bbox.getHeight());
+            form.setAppearance(shapes, matrix, formBbox);
+            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            // update the AP's stream bytes so contents can be written out
+            form.setRawBytes(
+                    PostScriptEncoder.generatePostScript(shapes.getShapes()));
+            HashMap appearanceRefs = new HashMap();
+            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
+            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
         }
     }
 
