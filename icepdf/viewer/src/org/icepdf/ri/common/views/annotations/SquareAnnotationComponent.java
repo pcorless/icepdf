@@ -21,6 +21,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 /**
  * The SquareAnnotationComponent encapsulates a SquareAnnotation objects.  It
@@ -55,5 +56,11 @@ public class SquareAnnotationComponent extends MarkupAnnotationComponent {
     @Override
     public void paintComponent(Graphics g) {
 
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent me) {
+        super.mouseDragged(me);
+        resetAppearanceShapes();
     }
 }

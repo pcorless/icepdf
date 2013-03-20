@@ -42,7 +42,7 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent {
         isEditable = true;
         isRollover = true;
         isMovable = true;
-        isResizable = true;
+        isResizable = false;
         isShowInvisibleBorder = false;
     }
 

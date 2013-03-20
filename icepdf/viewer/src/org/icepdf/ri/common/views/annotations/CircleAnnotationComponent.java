@@ -21,6 +21,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 /**
  * The CircleAnnotationComponent encapsulates a CircleAnnotation objects.  It
@@ -55,5 +56,11 @@ public class CircleAnnotationComponent extends MarkupAnnotationComponent {
     public void resetAppearanceShapes() {
         CircleAnnotation squareAnnotation = (CircleAnnotation) annotation;
         squareAnnotation.resetAppearanceStream();
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent me) {
+        super.mouseDragged(me);
+        resetAppearanceShapes();
     }
 }
