@@ -141,6 +141,7 @@ public class Resources extends Dictionary {
             }
         }
         if (font != null) {
+            font.setParentResource(this);
             font.init();
         }
         return font;

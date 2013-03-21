@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.fonts;
 
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -113,6 +114,9 @@ public abstract class Font extends Dictionary {
 
     // font substitution being used
     protected boolean isFontSubstitution;
+
+    // parent resource, needed by some type3 fonts to access resources.
+    protected Resources parentResource;
 
     /**
      * Map named CMap to Unicode mapping.
@@ -306,4 +310,11 @@ public abstract class Font extends Dictionary {
         return getPObjectReference() + " FONT= " + basefont + " " + entries.toString();
     }
 
+    public Resources getParentResource() {
+        return parentResource;
+    }
+
+    public void setParentResource(Resources parentResource) {
+        this.parentResource = parentResource;
+    }
 }
