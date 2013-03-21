@@ -4380,8 +4380,9 @@ public class SwingController
             setEnabled(deselectAllMenuItem, canExtract);
             setEnabled(copyMenuItem, canExtract);
         }
-        // annotation is selected
-        else if (propertyName.equals(PropertyConstants.ANNOTATION_SELECTED)) {
+        // annotation is selected or has focus
+        else if (propertyName.equals(PropertyConstants.ANNOTATION_SELECTED) ||
+                propertyName.equals(PropertyConstants.ANNOTATION_FOCUS_GAINED)) {
             // enable the delete menu
             setEnabled(deleteMenuItem, true);
             // get the current selected tool, we only care about the select tool or

@@ -172,8 +172,6 @@ public class SquareAnnotation extends MarkupAnnotation {
         if (hasAppearanceStream()) {
             form = (Form) getAppearanceStream();
             // else a stream, we won't support this for annotations.
-            // todo add back flateDecode filter
-            form.getEntries().remove(Stream.FILTER_KEY);
         } else {
             // create a new xobject/form object
             HashMap formEntries = new HashMap();
@@ -195,6 +193,13 @@ public class SquareAnnotation extends MarkupAnnotation {
             HashMap appearanceRefs = new HashMap();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+
+            // compress the form object stream.
+            if (compressAppearanceStream) {
+                form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+            } else {
+                form.getEntries().remove(Stream.FILTER_KEY);
+            }
         }
     }
 

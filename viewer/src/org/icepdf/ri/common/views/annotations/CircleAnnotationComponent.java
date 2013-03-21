@@ -40,10 +40,6 @@ public class CircleAnnotationComponent extends MarkupAnnotationComponent {
     public CircleAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-        isEditable = true;
-        isRollover = false;
-        isMovable = true;
-        isResizable = true;
         isShowInvisibleBorder = false;
     }
 
@@ -54,6 +50,7 @@ public class CircleAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
+        refreshAnnotationRect();
         CircleAnnotation squareAnnotation = (CircleAnnotation) annotation;
         squareAnnotation.resetAppearanceStream();
     }

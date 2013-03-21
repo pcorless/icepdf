@@ -128,7 +128,6 @@ public class CircleAnnotation extends MarkupAnnotation {
         setModifiedDate(PDate.formatDateTime(new Date()));
         // refresh rectangle
         rectangle = getUserSpaceRectangle().getBounds();
-
         entries.put(Annotation.RECTANGLE_KEY,
                 PRectangle.getPRectangleVector(rectangle));
         userSpaceRectangle = new Rectangle2D.Float(
@@ -204,6 +203,13 @@ public class CircleAnnotation extends MarkupAnnotation {
             HashMap appearanceRefs = new HashMap();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+
+            // compress the form object stream.
+            if (compressAppearanceStream) {
+                form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+            } else {
+                form.getEntries().remove(Stream.FILTER_KEY);
+            }
         }
     }
 

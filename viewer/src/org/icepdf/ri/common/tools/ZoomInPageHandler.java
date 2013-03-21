@@ -70,6 +70,9 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
                 documentViewController.setZoomIn(mouse);
             }
         }
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
     }
 
     public void mousePressed(MouseEvent e) {

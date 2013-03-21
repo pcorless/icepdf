@@ -228,7 +228,9 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     public void mouseClicked(MouseEvent e) {
-
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
     }
 
     public void mouseExited(MouseEvent e) {

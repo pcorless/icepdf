@@ -53,10 +53,12 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
 
+    protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
+
     // need to make the stroke cap, thickness configurable. Or potentially
     // static from the AnnotationHandle so it would look like the last
     // settings where remembered.
-    protected static BasicStroke stroke = new BasicStroke(3.0f,
+    protected static BasicStroke stroke = new BasicStroke(DEFAULT_STROKE_WIDTH,
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f);
@@ -81,7 +83,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         this.documentViewController = documentViewController;
         this.pageViewComponent = pageViewComponent;
         this.documentViewModel = documentViewModel;
-        borderStyle.setStrokeWidth(3.0f);
+        borderStyle.setStrokeWidth(DEFAULT_STROKE_WIDTH);
     }
 
     public void paintTool(Graphics g) {
@@ -119,8 +121,10 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         rectangle = convertToPageSpace(rectangle);
 
         // check to make sure the bbox isn't zero height or width
-        rectToDraw.setRect(rectToDraw.getX() - 5, rectToDraw.getY() - 5,
-                rectToDraw.getWidth() + 10, rectToDraw.getHeight() + 10);
+        rectToDraw.setRect(rectToDraw.getX() - DEFAULT_STROKE_WIDTH,
+                rectToDraw.getY() - DEFAULT_STROKE_WIDTH,
+                rectToDraw.getWidth() + DEFAULT_STROKE_WIDTH * 2,
+                rectToDraw.getHeight() + DEFAULT_STROKE_WIDTH * 2);
 
         // convert tBbox
         Rectangle tBbox = convertToPageSpace(rectToDraw);
@@ -179,7 +183,9 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     }
 
     public void mouseClicked(MouseEvent e) {
-
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
     }
 
     public void mouseMoved(MouseEvent e) {

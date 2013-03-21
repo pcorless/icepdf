@@ -447,6 +447,12 @@ public abstract class Annotation extends Dictionary {
     public static final Name NM_KEY = new Name("NM");
 
     /**
+     * Debug flag to turn off appearance stream compression for easier
+     * human file reading.
+     */
+    protected static boolean compressAppearanceStream = true;
+
+    /**
      * Border property indexes for the border vector,  only applicable
      * if the border style has not been set.
      */
@@ -1097,12 +1103,12 @@ public abstract class Annotation extends Dictionary {
         g.setRenderingHints(grh.getRenderingHints(renderHintType));
         g.setTransform(at);
         Shape preAppearanceStreamClip = g.getClip();
-//        g.clip(deriveDrawingRectangle());
+        g.clip(deriveDrawingRectangle());
 
         renderAppearanceStream(g);
 
         g.setTransform(at);
-//        g.setClip(preAppearanceStreamClip);
+        g.setClip(preAppearanceStreamClip);
 
         if (tabSelected) {
             renderBorderTabSelected(g);
@@ -1566,5 +1572,9 @@ public abstract class Annotation extends Dictionary {
 
     public Shapes getShapes() {
         return shapes;
+    }
+
+    public static void setCompressAppearanceStream(boolean compressAppearanceStream) {
+        Annotation.compressAppearanceStream = compressAppearanceStream;
     }
 }

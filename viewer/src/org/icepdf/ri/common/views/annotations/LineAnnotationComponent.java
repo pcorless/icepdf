@@ -40,11 +40,7 @@ public class LineAnnotationComponent extends MarkupAnnotationComponent {
     public LineAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-
-        isEditable = true;
         isRollover = false;
-        isMovable = true;
-        isResizable = false;
         isShowInvisibleBorder = false;
     }
 

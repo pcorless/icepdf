@@ -14,10 +14,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.PRectangle;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Library;
@@ -27,6 +24,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.PathIterator;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -151,6 +149,9 @@ public class InkAnnotation extends MarkupAnnotation {
         // setup clean shapes
         matrix = new AffineTransform();
         shapes = new Shapes();
+
+        // setup the AP stream.
+        setModifiedDate(PDate.formatDateTime(new Date()));
 
         // update the circle for any dx/dy moves.
         AffineTransform af = new AffineTransform();

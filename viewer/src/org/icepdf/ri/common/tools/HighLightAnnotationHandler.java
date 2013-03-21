@@ -71,7 +71,9 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
      * @param e mouse event
      */
     public void mouseClicked(MouseEvent e) {
-
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
     }
 
     /**
