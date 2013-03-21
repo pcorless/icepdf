@@ -14,7 +14,6 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -48,14 +47,6 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
     }
 
     public void paintComponent(Graphics g) {
-        Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null && currentPage.isInitiated()) {
-            // update bounds for for component
-            if (currentZoom != documentViewModel.getViewZoom() ||
-                    currentRotation != documentViewModel.getViewRotation()) {
-                validate();
-            }
-        }
 
         /**
          * Initial try at getting each component to paint he annotation content.

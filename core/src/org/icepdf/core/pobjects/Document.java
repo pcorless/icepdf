@@ -76,7 +76,7 @@ public class Document {
     private static final String INCREMENTAL_UPDATER =
             "org.icepdf.core.util.IncrementalUpdater";
 
-    private static boolean foundIncrementalUpdater;
+    public static boolean foundIncrementalUpdater;
 
     static {
         // check class bath for NFont library, and declare results.
@@ -1045,7 +1045,6 @@ public class Document {
     public long saveToOutputStream(OutputStream out) throws IOException {
         long documentLength = writeToOutputStream(out);
         if (foundIncrementalUpdater) {
-
             try {
                 Class incrementalUpdaterClass = Class.forName(INCREMENTAL_UPDATER);
                 Class[] args = {Document.class, OutputStream.class, Long.TYPE};

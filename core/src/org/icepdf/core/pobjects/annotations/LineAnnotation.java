@@ -222,7 +222,7 @@ public class LineAnnotation extends MarkupAnnotation {
             interiorColor = new Color(red, green, blue);
         }
 
-        // check if there is an AP entry, if now generate the shapes data
+        // check if there is an AP entry, if no generate the shapes data
         // from the other properties.
         if (!hasAppearanceStream() && startOfLine != null && endOfLine != null) {
             Object tmp = getObject(RECTANGLE_KEY);

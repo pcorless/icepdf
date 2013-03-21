@@ -14,7 +14,6 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
@@ -84,8 +83,6 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         isShowInvisibleBorder = false;
 
         freeTextAnnotation = (FreeTextAnnotation) annotation;
-        // todo break out to interface so we can change the visibility more easily
-//        freeTextAnnotation.setHideRenderedOutput(true);
 
         // update the bounds to be bit larger as the border padding can obscure
         // the content
@@ -248,14 +245,13 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
     @Override
     public void paintComponent(Graphics g) {
-        Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null && currentPage.isInitiated()) {
-            // update bounds for for component
-            if (currentZoom != documentViewModel.getViewZoom() ||
-                    currentRotation != documentViewModel.getViewRotation()) {
-                validate();
-            }
-        }
+        // show a light border when in edit mode so component is easier to see.
+        isShowInvisibleBorder = ((documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                documentViewModel.getViewToolMode() ==
+                        DocumentViewModel.DISPLAY_TOOL_FREE_TEXT_ANNOTATION) &&
+                !(annotation.getFlagReadOnly() || annotation.getFlagLocked() ||
+                        annotation.getFlagInvisible() || annotation.getFlagHidden()));
     }
 
     @Override

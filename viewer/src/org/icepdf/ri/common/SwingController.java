@@ -2408,6 +2408,17 @@ public class SwingController
             return;
         }
 
+        if (document.getStateManager().isChanged() &&
+                !document.foundIncrementalUpdater) {
+            org.icepdf.ri.util.Resources.showMessageDialog(
+                    viewer,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    messageBundle,
+                    "viewer.dialog.saveAs.noUpdates.title",
+                    "viewer.dialog.saveAs.noUpdates.msg");
+            return;
+        }
+
         // Create and display a file saving dialog
         final JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.saveAs.title"));
@@ -2705,9 +2716,37 @@ public class SwingController
      * @see #setWindowManagementCallback
      * @see #getWindowManagementCallback
      */
-    public void exit() {
+    public boolean exit() {
+        // check if document changes have been made, if so ask the user if they
+        // want to save the changes.
+        if (document != null) {
+            boolean documentChanges = document.getStateManager().isChanged();
+            if (documentChanges && document.foundIncrementalUpdater) {
+
+                Object[] colorArgument = new Object[]{document.getDocumentOrigin()};
+                MessageFormat formatter = new MessageFormat(
+                        messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));
+                String dialogMessage = formatter.format(colorArgument);
+
+                int res = JOptionPane.showConfirmDialog(viewer,
+                        dialogMessage,
+                        messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.title"),
+                        JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.OK_OPTION) {
+                    // start save as process.
+                    saveFile();
+                    // fall though and close window.
+                } else if (res == JOptionPane.NO_OPTION) {
+                    // nothing to do, just fall through.
+                } else if (res == JOptionPane.CANCEL_OPTION) {
+                    // supress the close action
+                    return true;
+                }
+            }
+        }
         if (windowManagementCallback != null)
             windowManagementCallback.quit(this, viewer, null);
+        return false;
     }
 
     /**
@@ -4097,10 +4136,15 @@ public class SwingController
         viewProperties.setProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, String.valueOf(viewControl.getFitMode()));
         viewProperties.setProperty("document.viewtype", String.valueOf(viewControl.getViewMode()));
 
-        dispose();
+        // save changes and close window
+        boolean cancelled = exit();
+        if (!cancelled) {
+            // dispose the document and other resources.
+            dispose();
 
-        if (wc != null) {
-            wc.disposeWindow(this, v, viewProperties);
+            if (wc != null) {
+                wc.disposeWindow(this, v, viewProperties);
+            }
         }
     }
 
