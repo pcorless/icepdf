@@ -40,7 +40,7 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent {
                                   AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isShowInvisibleBorder = false;
-        this.isResizable = true;
+        isResizable = false;
     }
 
     @Override

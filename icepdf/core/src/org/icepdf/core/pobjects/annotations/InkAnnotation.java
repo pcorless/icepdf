@@ -23,6 +23,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.PathIterator;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -75,6 +76,15 @@ public class InkAnnotation extends MarkupAnnotation {
             }
         }
         this.inkPath = inkPaths;
+        if (!hasAppearanceStream() && inkPath != null) {
+            Object tmp = getObject(RECTANGLE_KEY);
+            Rectangle2D.Float rectangle = null;
+            if (tmp instanceof List) {
+                rectangle = library.getRectangle(entries, RECTANGLE_KEY);
+            }
+            setBBox(rectangle.getBounds());
+            resetAppearanceStream();
+        }
     }
 
     /**
@@ -159,6 +169,9 @@ public class InkAnnotation extends MarkupAnnotation {
         inkPath = af.createTransformedShape(inkPath);
         entries.put(INK_LIST_KEY,
                 convertPathToArray(inkPath));
+
+        // we dont' write an ap stream but there might already be one so null it
+        entries.remove(APPEARANCE_STREAM_KEY);
 
         // save the stroke.
         Stroke stroke = getBorderStyleStroke();

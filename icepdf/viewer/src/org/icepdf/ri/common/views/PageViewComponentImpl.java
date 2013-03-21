@@ -1096,7 +1096,12 @@ public class PageViewComponentImpl extends
                     pagePainter.setIsBufferDirty(isBufferDirty);
                     Library.execute(pagePainter);
                     // revalidate the page.
-                    pageComponent.revalidate();
+                    Runnable doSwingWork = new Runnable() {
+                        public void run() {
+                            pageComponent.revalidate();
+                        }
+                    };
+                    SwingUtilities.invokeLater(doSwingWork);
                 }
 
                 // paint page content

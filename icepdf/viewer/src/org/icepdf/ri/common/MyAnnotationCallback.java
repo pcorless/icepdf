@@ -17,17 +17,17 @@ package org.icepdf.ri.common;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.ri.common.views.AnnotationCallback;
-import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.PageViewComponent;
+import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -187,6 +187,23 @@ public class MyAnnotationCallback implements AnnotationCallback {
                     (MarkupAnnotation) annotationComponent.getAnnotation();
             if (markupAnnotation.getPopupAnnotation() != null) {
                 page.deleteAnnotation(markupAnnotation.getPopupAnnotation());
+                // find and remove the popup component
+                ArrayList<AnnotationComponent> annotationComponents =
+                        ((AbstractPageViewComponent) pageComponent).getAnnotationComponents();
+                Reference compReference;
+                Reference popupReference = markupAnnotation.getPopupAnnotation().getPObjectReference();
+                AnnotationComponent annotationComp;
+                for (int i = 0, max = annotationComponents.size(); i < max; i++) {
+                    annotationComp = annotationComponents.get(i);
+                    compReference = annotationComp.getAnnotation().getPObjectReference();
+                    // find the component and toggle it's visibility.
+                    if (compReference.equals(popupReference)) {
+                        if (annotationComp instanceof PopupAnnotationComponent) {
+                            PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComp);
+                            pageComponent.removeAnnotation(popupComponent);
+                        }
+                    }
+                }
             }
         }
 

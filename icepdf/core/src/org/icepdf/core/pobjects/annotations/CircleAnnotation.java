@@ -180,8 +180,6 @@ public class CircleAnnotation extends MarkupAnnotation {
         if (hasAppearanceStream()) {
             form = (Form) getAppearanceStream();
             // else a stream, we won't support this for annotations.
-            // todo add back flateDecode filter
-            form.getEntries().remove(Stream.FILTER_KEY);
         } else {
             // create a new xobject/form object
             HashMap formEntries = new HashMap();

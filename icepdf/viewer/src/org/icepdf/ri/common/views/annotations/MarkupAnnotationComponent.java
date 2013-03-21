@@ -87,8 +87,26 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                         compReference = annotationComponent.getAnnotation().getPObjectReference();
                         // find the component and toggle it's visibility.
                         if (compReference.equals(popupReference)) {
-                            if (annotationComponent instanceof AbstractAnnotationComponent) {
-                                ((AbstractAnnotationComponent) annotationComponent).setVisible(popup.isOpen());
+                            if (annotationComponent instanceof PopupAnnotationComponent) {
+                                PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComponent);
+                                popupComponent.setVisible(popup.isOpen());
+                                // make sure the popup is drawn on the page and
+                                // not outside the page clip.
+                                Rectangle popupBounds = popupComponent.getBounds();
+                                Rectangle pageBounds = pageViewComponent.getBounds();
+                                if (!pageBounds.contains(popupBounds.getX(), popupBounds.getY(),
+                                        popupBounds.getWidth(), popupBounds.getHeight())) {
+                                    int x = popupBounds.x;
+                                    int y = popupBounds.y;
+                                    if (x + popupBounds.width > pageBounds.width) {
+                                        x = x - (popupBounds.width - (pageBounds.width - popupBounds.x));
+                                    }
+                                    if (y + popupBounds.height > pageBounds.height) {
+                                        y = y - (popupBounds.height - (pageBounds.height - popupBounds.y));
+                                    }
+                                    popupBounds.setLocation(x, y);
+                                    popupComponent.setBounds(popupBounds);
+                                }
                             }
                             break;
                         }

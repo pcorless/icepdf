@@ -477,7 +477,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
                 if (popupAnnotationComponent.getAnnotation() != null) {
                     PopupAnnotation popupAnnotation = (PopupAnnotation)
                             popupAnnotationComponent.getAnnotation();
-                    if (popupAnnotation.getParent().getInReplyToAnnotation() == null) {
+                    if (popupAnnotation.getParent() != null &&
+                            popupAnnotation.getParent().getInReplyToAnnotation() == null) {
                         popupAnnotationComponent.setVisible(visible);
                     }
                 }

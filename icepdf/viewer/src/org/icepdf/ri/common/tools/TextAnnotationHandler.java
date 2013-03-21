@@ -55,6 +55,8 @@ public class TextAnnotationHandler implements ToolHandler {
     protected AbstractPageViewComponent pageViewComponent;
     protected DocumentViewModel documentViewModel;
 
+    protected static final Dimension ICON_SIZE = new Dimension(23, 23);
+
     public TextAnnotationHandler(DocumentViewController documentViewController,
                                  AbstractPageViewComponent pageViewComponent,
                                  DocumentViewModel documentViewModel) {
@@ -123,7 +125,7 @@ public class TextAnnotationHandler implements ToolHandler {
     public void mouseReleased(MouseEvent e) {
 
         // convert bbox and start and end line points.
-        Rectangle bBox = new Rectangle(e.getX(), e.getY(), 20, 20);
+        Rectangle bBox = new Rectangle(e.getX(), e.getY(), ICON_SIZE.width, ICON_SIZE.height);
 
         Rectangle tBbox = convertToPageSpace(bBox).getBounds();
 
@@ -154,8 +156,20 @@ public class TextAnnotationHandler implements ToolHandler {
          * now create the respective popup annotation
          */
 
+        // position the new popup on the icon center.
+        Rectangle bBox2 = new Rectangle(e.getX() + ICON_SIZE.width / 2,
+                e.getY() + ICON_SIZE.height / 2, 215, 150);
+
+        // make sure the popup stays within the page bounds.
+        Rectangle pageBounds = pageViewComponent.getBounds();
+        if (!pageBounds.contains(bBox2.getX(), bBox2.getY(),
+                bBox2.getWidth(), bBox2.getHeight())) {
+            // center on the icon as before but take into account height width
+            // and it will be drawn more or less on the page.
+            bBox2.setLocation(bBox2.x - bBox2.width, bBox2.y - bBox2.height);
+        }
+
         // convert bbox and start and end line points.
-        Rectangle bBox2 = new Rectangle(e.getX(), e.getY(), 215, 150);
         Rectangle tBbox2 = convertToPageSpace(bBox).getBounds();
 
         // text annotation are special as the annotation has fixed size.

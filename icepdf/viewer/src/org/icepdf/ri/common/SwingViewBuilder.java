@@ -444,7 +444,7 @@ public class SwingViewBuilder {
         JFrame viewer = new JFrame();
         viewer.setIconImage(new ImageIcon(Images.get("app_icon3_24.png")).getImage());
         viewer.setTitle(messageBundle.getString("viewer.window.title.default"));
-
+        viewer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         JMenuBar menuBar = buildCompleteMenuBar();
         if (menuBar != null)
             viewer.setJMenuBar(menuBar);

@@ -15,7 +15,6 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -52,15 +51,6 @@ public class LinkAnnotationComponent extends MarkupAnnotationComponent {
     }
 
     public void paintComponent(Graphics g) {
-        Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null && currentPage.isInitiated()) {
-            // update bounds for for component
-            if (currentZoom != documentViewModel.getViewZoom() ||
-                    currentRotation != documentViewModel.getViewRotation()) {
-                validate();
-            }
-        }
-
         // sniff out tool bar state to set correct annotation border
         isEditable = ((documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
