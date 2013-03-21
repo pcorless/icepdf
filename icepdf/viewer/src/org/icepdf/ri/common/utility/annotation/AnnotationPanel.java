@@ -116,6 +116,8 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
             borderPanel.setVisible(true);
         }
 
+        setEnabled(annotation.isEditable());
+
         revalidate();
     }
 

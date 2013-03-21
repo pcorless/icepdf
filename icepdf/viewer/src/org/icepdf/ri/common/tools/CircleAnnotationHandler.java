@@ -87,8 +87,10 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         rectangle = convertToPageSpace(rectangle);
 
         // check to make sure the bbox isn't zero height or width
-        rectToDraw.setRect(rectToDraw.getX() - 5, rectToDraw.getY() - 5,
-                rectToDraw.getWidth() + 10, rectToDraw.getHeight() + 10);
+        rectToDraw.setRect(rectToDraw.getX() - DEFAULT_STROKE_WIDTH,
+                rectToDraw.getY() - DEFAULT_STROKE_WIDTH,
+                rectToDraw.getWidth() + DEFAULT_STROKE_WIDTH * 2,
+                rectToDraw.getHeight() + DEFAULT_STROKE_WIDTH * 2);
 
         // convert tBbox
         Rectangle tBbox = convertToPageSpace(rectToDraw);

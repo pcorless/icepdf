@@ -80,10 +80,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                                        final AbstractPageViewComponent pageViewComponent,
                                        final DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-        isEditable = true;
         isRollover = false;
-        isMovable = true;
-        isResizable = true;
         isShowInvisibleBorder = false;
 
         freeTextAnnotation = (FreeTextAnnotation) annotation;

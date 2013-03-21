@@ -14,6 +14,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.ri.common.views.AbstractDocumentView;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
@@ -29,13 +30,20 @@ import java.awt.event.MouseEvent;
  */
 public class PanningHandler implements ToolHandler {
 
-    private DocumentViewController documentViewController;
 
     // page mouse event manipulation
     private Point lastMousePosition = new Point();
 
-    public PanningHandler(DocumentViewController documentViewController) {
+    private DocumentViewController documentViewController;
+    private DocumentViewModel documentViewModel;
+    private AbstractDocumentView parentComponent;
+
+    public PanningHandler(DocumentViewController documentViewController,
+                          DocumentViewModel documentViewModel,
+                          AbstractDocumentView parentComponent) {
         this.documentViewController = documentViewController;
+        this.documentViewModel = documentViewModel;
+        this.parentComponent = parentComponent;
     }
 
     /**
@@ -89,7 +97,10 @@ public class PanningHandler implements ToolHandler {
      * and released) on a component.
      */
     public void mouseClicked(MouseEvent e) {
-
+        documentViewController.clearSelectedAnnotations();
+        if (parentComponent != null) {
+            parentComponent.requestFocus();
+        }
     }
 
     /**

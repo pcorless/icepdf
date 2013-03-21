@@ -40,15 +40,13 @@ public class SquareAnnotationComponent extends MarkupAnnotationComponent {
     public SquareAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-        isEditable = true;
         isRollover = false;
-        isMovable = true;
-        isResizable = true;
         isShowInvisibleBorder = false;
     }
 
     @Override
     public void resetAppearanceShapes() {
+        refreshAnnotationRect();
         SquareAnnotation squareAnnotation = (SquareAnnotation) annotation;
         squareAnnotation.resetAppearanceStream();
     }

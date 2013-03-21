@@ -95,7 +95,7 @@ public class ResizableBorder extends AbstractBorder {
     }
 
     public Insets getBorderInsets(Component component) {
-        return new Insets(10, 10, 10, 10);
+        return new Insets(5, 5, 5, 5);
     }
 
     public boolean isBorderOpaque() {

@@ -185,7 +185,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
             } else if (e.getSource() == fillTypeBox) {
                 freeTextAnnotation.setFillType((Boolean) item.getValue());
                 if (freeTextAnnotation.isFillType()) {
-                    freeTextAnnotation.setColor(fillColorButton.getBackground());
+                    freeTextAnnotation.setFillColor(fillColorButton.getBackground());
                 }
                 disableInvisibleFields();
             }

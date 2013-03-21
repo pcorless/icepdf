@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.ri.common.tools.*;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.List;
  * Abstract PageViewComponent.
  */
 public abstract class AbstractPageViewComponent
-        extends JComponent
+        extends JLayeredPane
         implements PageViewComponent {
 
     protected DocumentView parentDocumentView;
@@ -173,7 +174,11 @@ public abstract class AbstractPageViewComponent
                     // add for painting
                     annotationComponents.add(comp);
                     // add to layout
-                    add(comp);
+                    if (comp instanceof PopupAnnotationComponent) {
+                        this.add(comp, JLayeredPane.POPUP_LAYER);
+                    } else {
+                        this.add(comp, JLayeredPane.DEFAULT_LAYER);
+                    }
                 }
             }
         }

@@ -52,7 +52,9 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
     }
 
     public void mouseClicked(MouseEvent e) {
-
+        if (parentComponent != null) {
+            parentComponent.requestFocus();
+        }
     }
 
     public void mousePressed(MouseEvent e) {

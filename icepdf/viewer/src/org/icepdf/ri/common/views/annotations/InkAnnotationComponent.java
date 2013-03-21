@@ -39,15 +39,13 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent {
     public InkAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                   AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-        isEditable = true;
-        isRollover = true;
-        isMovable = true;
-        isResizable = false;
         isShowInvisibleBorder = false;
+        this.isResizable = true;
     }
 
     @Override
     public void resetAppearanceShapes() {
+        refreshAnnotationRect();
         InkAnnotation inkAnnotation = (InkAnnotation) annotation;
         inkAnnotation.resetAppearanceStream();
     }

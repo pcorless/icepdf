@@ -81,7 +81,9 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseClicked(MouseEvent e) {
-
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
     }
 
     public void mousePressed(MouseEvent e) {

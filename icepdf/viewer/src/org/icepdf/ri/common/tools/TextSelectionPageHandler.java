@@ -143,6 +143,11 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             logger.fine(currentPage.getViewText().getSelected().toString());
         }
 
+        documentViewController.clearSelectedAnnotations();
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
+
     }
 
     public void clearSelection() {

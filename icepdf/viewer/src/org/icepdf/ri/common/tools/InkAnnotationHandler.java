@@ -97,7 +97,9 @@ public class InkAnnotationHandler implements ToolHandler {
     }
 
     public void mouseClicked(MouseEvent e) {
-
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
     }
 
     public void mousePressed(MouseEvent e) {

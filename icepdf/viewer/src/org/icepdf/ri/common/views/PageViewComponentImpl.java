@@ -25,6 +25,7 @@ import org.icepdf.core.util.*;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -216,7 +217,11 @@ public class PageViewComponentImpl extends
             annotationComponents = new ArrayList<AnnotationComponent>();
         }
         annotationComponents.add(annotation);
-        this.add((AbstractAnnotationComponent) annotation);
+        if (annotation instanceof PopupAnnotationComponent) {
+            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
+        } else {
+            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.DEFAULT_LAYER);
+        }
     }
 
     /**
@@ -239,7 +244,7 @@ public class PageViewComponentImpl extends
         addPageRepaintListener();
 
         // timer will dictate when buffer repaints can take place
-        DirtyTimerAction dirtyTimerAction = new DirtyTimerAction();
+        DirtyTimerAction dirtyTimerAction = new DirtyTimerAction(this);
         isDirtyTimer = new Timer(dirtyTimerInterval, dirtyTimerAction);
         isDirtyTimer.setInitialDelay(0);
 
@@ -1028,6 +1033,12 @@ public class PageViewComponentImpl extends
 
     private class DirtyTimerAction implements ActionListener {
 
+        private AbstractPageViewComponent pageComponent;
+
+        private DirtyTimerAction(AbstractPageViewComponent pageComponent) {
+            this.pageComponent = pageComponent;
+        }
+
         public void actionPerformed(ActionEvent e) {
             if (disposing || !isPageIntersectViewport()) {
                 isDirtyTimer.stop();
@@ -1084,6 +1095,8 @@ public class PageViewComponentImpl extends
                     pagePainter.setHasBeenQueued(true);
                     pagePainter.setIsBufferDirty(isBufferDirty);
                     Library.execute(pagePainter);
+                    // revalidate the page.
+                    pageComponent.revalidate();
                 }
 
                 // paint page content

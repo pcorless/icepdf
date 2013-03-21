@@ -136,6 +136,12 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         this.annotation = annotation;
         messageBundle = documentViewController.getParentController().getMessageBundle();
 
+        // border and behavior default properties.
+        isEditable = !annotation.getFlagReadOnly();
+        isRollover = false;
+        isMovable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
+        isResizable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
+
         addMouseListener(this);
         addMouseMotionListener(this);
 
@@ -315,7 +321,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
     public void mouseClicked(MouseEvent e) {
         // clear the selection.
-//        requestFocus();
+        requestFocus();
         // on click pass event to annotation callback if we are in normal viewing
         // mode.
         if (!(AbstractPageViewComponent.isAnnotationTool(
@@ -331,8 +337,9 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
     public void mouseEntered(MouseEvent e) {
         // set border highlight when mouse over.
-        isRollover = documentViewModel.getViewToolMode() ==
-                DocumentViewModel.DISPLAY_TOOL_SELECTION;
+        isRollover = (documentViewModel.getViewToolMode() ==
+                DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                (this instanceof PopupAnnotationComponent));
         repaint();
     }
 

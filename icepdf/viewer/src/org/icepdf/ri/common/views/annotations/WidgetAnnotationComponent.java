@@ -16,10 +16,6 @@ public class WidgetAnnotationComponent extends AbstractAnnotationComponent {
     public WidgetAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-        isEditable = true;
-        isRollover = true;
-        isMovable = true;
-        isResizable = true;
         isShowInvisibleBorder = true;
     }
 

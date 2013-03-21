@@ -195,7 +195,8 @@ public abstract class AbstractDocumentView
         // assign the correct tool handler
         switch (viewToolMode) {
             case DocumentViewModel.DISPLAY_TOOL_PAN:
-                currentTool = new PanningHandler(documentViewController);
+                currentTool = new PanningHandler(documentViewController,
+                        documentViewModel, this);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_ZOOM_IN:
                 currentTool = new ZoomInViewHandler(documentViewController,

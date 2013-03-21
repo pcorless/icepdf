@@ -60,6 +60,9 @@ public class ZoomOutPageHandler implements ToolHandler {
                 documentViewController.setZoomOut(mouse);
             }
         }
+        if (pageViewComponent != null) {
+            pageViewComponent.requestFocus();
+        }
     }
 
     public void mouseDragged(MouseEvent e) {

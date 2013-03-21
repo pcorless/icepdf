@@ -36,9 +36,6 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
                                          AbstractPageViewComponent pageViewComponent,
                                          DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-
-        isEditable = true;
-        isRollover = false;
         isMovable = false;
         isResizable = false;
         isShowInvisibleBorder = false;
