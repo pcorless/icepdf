@@ -47,7 +47,7 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent {
     public void resetAppearanceShapes() {
         refreshAnnotationRect();
         InkAnnotation inkAnnotation = (InkAnnotation) annotation;
-        inkAnnotation.resetAppearanceStream();
+        inkAnnotation.resetAppearanceStream(getPageTransform());
     }
 
     @Override

@@ -48,11 +48,6 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     private static final Logger logger =
             Logger.getLogger(SquareAnnotationHandler.class.toString());
 
-    // parent page component
-    protected AbstractPageViewComponent pageViewComponent;
-    protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
-
     protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
 
     // need to make the stroke cap, thickness configurable. Or potentially
@@ -80,9 +75,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     public SquareAnnotationHandler(DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent,
                                    DocumentViewModel documentViewModel) {
-        this.documentViewController = documentViewController;
-        this.pageViewComponent = pageViewComponent;
-        this.documentViewModel = documentViewModel;
+        super(documentViewController, pageViewComponent, documentViewModel);
         borderStyle.setStrokeWidth(DEFAULT_STROKE_WIDTH);
     }
 
@@ -137,13 +130,15 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                         Annotation.SUBTYPE_SQUARE,
                         tBbox);
         annotation.setColor(lineColor);
-        annotation.setFillColor(internalColor);
+        if (annotation.isFillColor()) {
+            annotation.setFillColor(internalColor);
+        }
         annotation.setRectangle(rectangle);
         annotation.setBorderStyle(borderStyle);
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream();
+        annotation.resetAppearanceStream(getPageTransform());
 
         // create the annotation object.
         AbstractAnnotationComponent comp =

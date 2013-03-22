@@ -237,7 +237,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         matrix = new AffineTransform();
         shapes = new Shapes();

@@ -133,7 +133,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                     PopupAnnotation annotation =
                             TextAnnotationHandler.createPopupAnnotation(
                                     documentViewModel.getDocument().getPageTree().getLibrary(),
-                                    tBbox, markupAnnotation);
+                                    tBbox, markupAnnotation, getPageTransform());
 
                     // create the annotation object.
                     AbstractAnnotationComponent comp =

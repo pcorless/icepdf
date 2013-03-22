@@ -204,7 +204,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // reget colour so we can check for a null entry
         if (library.getObject(entries, COLOR_KEY) != null &&
                 getObject(APPEARANCE_STREAM_KEY) != null) {
-
             // iterate over shapes and try and find the fill and stroke colors.
             if (shapes != null) {
                 Color currentColor = Color.BLACK;
@@ -321,7 +320,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
         matrix = new AffineTransform();
         if (shapes == null) {
             shapes = new Shapes();

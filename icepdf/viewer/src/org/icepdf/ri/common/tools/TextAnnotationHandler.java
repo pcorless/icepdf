@@ -16,7 +16,6 @@ package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.PObject;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.util.Library;
@@ -46,23 +45,18 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public class TextAnnotationHandler implements ToolHandler {
+public class TextAnnotationHandler extends CommonToolHandler implements ToolHandler {
 
     private static final Logger logger =
             Logger.getLogger(TextAnnotationHandler.class.toString());
 
-    protected DocumentViewController documentViewController;
-    protected AbstractPageViewComponent pageViewComponent;
-    protected DocumentViewModel documentViewModel;
 
     protected static final Dimension ICON_SIZE = new Dimension(23, 23);
 
     public TextAnnotationHandler(DocumentViewController documentViewController,
                                  AbstractPageViewComponent pageViewComponent,
                                  DocumentViewModel documentViewModel) {
-        this.documentViewController = documentViewController;
-        this.pageViewComponent = pageViewComponent;
-        this.documentViewModel = documentViewModel;
+        super(documentViewController, pageViewComponent, documentViewModel);
     }
 
     public void paintTool(Graphics g) {
@@ -79,7 +73,8 @@ public class TextAnnotationHandler implements ToolHandler {
 
     }
 
-    public static TextAnnotation createTextAnnotation(Library library, Rectangle bbox) {
+    public static TextAnnotation createTextAnnotation(Library library, Rectangle bbox,
+                                                      AffineTransform pageSpace) {
         TextAnnotation textAnnotation = (TextAnnotation)
                 AnnotationFactory.buildAnnotation(
                         library,
@@ -96,13 +91,14 @@ public class TextAnnotationHandler implements ToolHandler {
 
         // set the content stream
         textAnnotation.setBBox(bbox);
-        textAnnotation.resetAppearanceStream();
+        textAnnotation.resetAppearanceStream(pageSpace);
 
         return textAnnotation;
     }
 
     public static PopupAnnotation createPopupAnnotation(Library library, Rectangle bbox,
-                                                        MarkupAnnotation parent) {
+                                                        MarkupAnnotation parent,
+                                                        AffineTransform pageSpace) {
         // text annotation are special as the annotation has fixed size.
         PopupAnnotation popupAnnotation = (PopupAnnotation)
                 AnnotationFactory.buildAnnotation(
@@ -119,20 +115,33 @@ public class TextAnnotationHandler implements ToolHandler {
         popupAnnotation.setOpen(true);
         popupAnnotation.setParent(parent);
         parent.setPopupAnnotation(popupAnnotation);
+        popupAnnotation.resetAppearanceStream(0, 0, pageSpace);
         return popupAnnotation;
     }
 
     public void mouseReleased(MouseEvent e) {
 
+        AffineTransform pageTransform = getPageTransform();
+        AffineTransform pageInverseTransform = new AffineTransform();
+        try {
+            pageInverseTransform = pageTransform.createInverse();
+        } catch (NoninvertibleTransformException e1) {
+            e1.printStackTrace();
+        }
+        Dimension scaledSize = new Dimension(
+                (int) Math.abs(ICON_SIZE.width * pageInverseTransform.getScaleX()),
+                (int) Math.abs(ICON_SIZE.height * pageInverseTransform.getScaleY()));
+
+
         // convert bbox and start and end line points.
-        Rectangle bBox = new Rectangle(e.getX(), e.getY(), ICON_SIZE.width, ICON_SIZE.height);
+        Rectangle bBox = new Rectangle(e.getX(), e.getY(), scaledSize.width, scaledSize.height);
 
         Rectangle tBbox = convertToPageSpace(bBox).getBounds();
 
         // text annotation are special as the annotation has fixed size.
         TextAnnotation markupAnnotation =
                 createTextAnnotation(documentViewModel.getDocument().getPageTree().getLibrary(),
-                        tBbox);
+                        tBbox, pageTransform);
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
@@ -157,8 +166,10 @@ public class TextAnnotationHandler implements ToolHandler {
          */
 
         // position the new popup on the icon center.
-        Rectangle bBox2 = new Rectangle(e.getX() + ICON_SIZE.width / 2,
-                e.getY() + ICON_SIZE.height / 2, 215, 150);
+        Rectangle bBox2 = new Rectangle(e.getX() + scaledSize.width / 2,
+                e.getY() + scaledSize.height / 2,
+                (int) Math.abs(215 * pageInverseTransform.getScaleX()),
+                (int) Math.abs(150 * pageInverseTransform.getScaleY()));
 
         // make sure the popup stays within the page bounds.
         Rectangle pageBounds = pageViewComponent.getBounds();
@@ -175,7 +186,7 @@ public class TextAnnotationHandler implements ToolHandler {
         // text annotation are special as the annotation has fixed size.
         PopupAnnotation popupAnnotation = createPopupAnnotation(
                 documentViewModel.getDocument().getPageTree().getLibrary(),
-                tBbox2, markupAnnotation);
+                tBbox2, markupAnnotation, pageTransform);
 
         // create the annotation object.
         AbstractAnnotationComponent comp2 = AnnotationComponentFactory.buildAnnotationComponent(
@@ -220,30 +231,6 @@ public class TextAnnotationHandler implements ToolHandler {
     }
 
     public void uninstallTool() {
-
-    }
-
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bbox.
-     */
-    protected Shape convertToPageSpace(Shape shape) {
-        Page currentPage = pageViewComponent.getPage();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
-        }
-
-        shape = at.createTransformedShape(shape);
-
-        return shape;
 
     }
 }

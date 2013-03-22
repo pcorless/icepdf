@@ -38,15 +38,12 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
     private static final Logger logger =
             Logger.getLogger(ZoomInPageHandler.class.toString());
 
-    private DocumentViewController documentViewController;
-    private DocumentViewModel documentViewModel;
     private AbstractDocumentView parentComponent;
 
     public ZoomInViewHandler(DocumentViewController documentViewController,
                              DocumentViewModel documentViewModel,
                              AbstractDocumentView parentComponent) {
-        this.documentViewController = documentViewController;
-        this.documentViewModel = documentViewModel;
+        super(documentViewController, null, documentViewModel);
         this.parentComponent = parentComponent;
     }
 

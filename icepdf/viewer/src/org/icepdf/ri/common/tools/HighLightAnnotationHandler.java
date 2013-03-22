@@ -122,7 +122,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             annotation.setMarkupPath(highlightPath);
             annotation.setBBox(tBbox);
             // finalized the appearance properties.
-            annotation.resetAppearanceStream();
+            annotation.resetAppearanceStream(getPageTransform());
 
             // create new annotation given the general path
             AbstractAnnotationComponent comp =

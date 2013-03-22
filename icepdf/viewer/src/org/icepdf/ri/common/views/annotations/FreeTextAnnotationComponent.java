@@ -257,7 +257,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     @Override
     public void resetAppearanceShapes() {
         setAppearanceStream();
-        annotation.resetAppearanceStream();
+        annotation.resetAppearanceStream(getPageTransform());
     }
 
     public String clearXMLHeader(String strXML) {

@@ -43,9 +43,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
     public ZoomInPageHandler(DocumentViewController documentViewController,
                              AbstractPageViewComponent pageViewComponent,
                              DocumentViewModel documentViewModel) {
-        this.documentViewController = documentViewController;
-        this.pageViewComponent = pageViewComponent;
-        this.documentViewModel = documentViewModel;
+        super(documentViewController, pageViewComponent, documentViewModel);
 
         selectionBoxColour = Color.DARK_GRAY;
     }

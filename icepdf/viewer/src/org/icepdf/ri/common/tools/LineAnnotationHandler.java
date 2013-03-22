@@ -54,11 +54,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     private static final Logger logger =
             Logger.getLogger(LineAnnotationHandler.class.toString());
 
-    // parent page component
-    protected AbstractPageViewComponent pageViewComponent;
-    protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
-
     // need to make the stroke cap, thickness configurable. Or potentially
     // static from the lineAnnotationHandle so it would look like the last
     // settings where remembered.
@@ -88,10 +83,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     public LineAnnotationHandler(DocumentViewController documentViewController,
                                  AbstractPageViewComponent pageViewComponent,
                                  DocumentViewModel documentViewModel) {
-        this.documentViewController = documentViewController;
-        this.pageViewComponent = pageViewComponent;
-        this.documentViewModel = documentViewModel;
-
+        super(documentViewController, pageViewComponent, documentViewModel);
         startLineEnding = LineAnnotation.LINE_END_NONE;
         endLineEnding = LineAnnotation.LINE_END_NONE;
     }
@@ -154,7 +146,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream();
+        annotation.resetAppearanceStream(getPageTransform());
 
 
         // create the annotation object.

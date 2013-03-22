@@ -18,6 +18,7 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.util.HashMap;
 
 
@@ -177,7 +178,7 @@ public class LinkAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
     }
 }

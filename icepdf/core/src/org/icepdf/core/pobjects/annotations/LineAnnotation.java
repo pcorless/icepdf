@@ -231,7 +231,7 @@ public class LineAnnotation extends MarkupAnnotation {
                 rectangle = library.getRectangle(entries, RECTANGLE_KEY);
             }
             setBBox(rectangle.getBounds());
-            resetAppearanceStream();
+            resetAppearanceStream(new AffineTransform());
         }
     }
 
@@ -271,11 +271,11 @@ public class LineAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         // adjust the line's start and end points for any potential move
         AffineTransform af = new AffineTransform();
-        af.setToTranslation(dx, dy);
+        af.setToTranslation(dx * pageTransform.getScaleX(), -dy * pageTransform.getScaleY());
         af.transform(startOfLine, startOfLine);
         af.transform(endOfLine, endOfLine);
         setStartOfLine(startOfLine);

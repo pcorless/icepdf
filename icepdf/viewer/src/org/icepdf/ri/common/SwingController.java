@@ -2416,7 +2416,6 @@ public class SwingController
                     messageBundle,
                     "viewer.dialog.saveAs.noUpdates.title",
                     "viewer.dialog.saveAs.noUpdates.msg");
-            return;
         }
 
         // Create and display a file saving dialog

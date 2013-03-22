@@ -50,7 +50,7 @@ public class TextAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
-        annotation.resetAppearanceStream();
+        annotation.resetAppearanceStream(getPageTransform());
     }
 
     @Override

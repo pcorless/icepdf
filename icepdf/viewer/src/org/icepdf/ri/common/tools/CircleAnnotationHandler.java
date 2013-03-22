@@ -103,13 +103,15 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
                         Annotation.SUBTYPE_CIRCLE,
                         tBbox);
         annotation.setColor(lineColor);
-        annotation.setFillColor(internalColor);
+        if (annotation.isFillColor()) {
+            annotation.setFillColor(internalColor);
+        }
         annotation.setRectangle(rectangle);
         annotation.setBorderStyle(borderStyle);
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream();
+        annotation.resetAppearanceStream(getPageTransform());
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
