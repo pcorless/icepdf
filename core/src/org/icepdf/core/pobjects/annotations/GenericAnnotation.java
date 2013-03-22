@@ -16,6 +16,7 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.util.Library;
 
+import java.awt.geom.AffineTransform;
 import java.util.HashMap;
 
 /**
@@ -37,7 +38,7 @@ public class GenericAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
     }
 }

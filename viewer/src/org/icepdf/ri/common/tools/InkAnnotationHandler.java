@@ -14,7 +14,6 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
@@ -28,9 +27,7 @@ import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.NoninvertibleTransformException;
 import java.util.logging.Logger;
 
 /**
@@ -44,15 +41,10 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public class InkAnnotationHandler implements ToolHandler {
+public class InkAnnotationHandler extends CommonToolHandler implements ToolHandler {
 
     private static final Logger logger =
             Logger.getLogger(LineAnnotationHandler.class.toString());
-
-    // parent page component
-    protected AbstractPageViewComponent pageViewComponent;
-    protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
 
     // need to make the stroke cap, thickness configurable. Or potentially
     // static from the lineAnnotationHandle so it would look like the last
@@ -76,11 +68,8 @@ public class InkAnnotationHandler implements ToolHandler {
      * @param documentViewModel view model.
      */
     public InkAnnotationHandler(DocumentViewController documentViewController,
-                                AbstractPageViewComponent pageViewComponent,
-                                DocumentViewModel documentViewModel) {
-        this.documentViewController = documentViewController;
-        this.pageViewComponent = pageViewComponent;
-        this.documentViewModel = documentViewModel;
+                                AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
+        super(documentViewController, pageViewComponent, documentViewModel);
     }
 
     public void paintTool(Graphics g) {
@@ -138,7 +127,7 @@ public class InkAnnotationHandler implements ToolHandler {
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream();
+        annotation.resetAppearanceStream(getPageTransform());
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
@@ -191,27 +180,4 @@ public class InkAnnotationHandler implements ToolHandler {
 
     }
 
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bbox.
-     */
-    protected Shape convertToPageSpace(Shape shape) {
-        Page currentPage = pageViewComponent.getPage();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
-        }
-
-        shape = at.createTransformedShape(shape);
-
-        return shape;
-
-    }
 }

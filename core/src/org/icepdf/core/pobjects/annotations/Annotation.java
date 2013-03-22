@@ -1564,10 +1564,10 @@ public abstract class Annotation extends Dictionary {
                 (float) tBbox.getWidth(), (float) tBbox.getHeight()));
     }
 
-    public abstract void resetAppearanceStream(double dx, double dy);
+    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
 
-    public void resetAppearanceStream() {
-        resetAppearanceStream(0, 0);
+    public void resetAppearanceStream(AffineTransform pageSpace) {
+        resetAppearanceStream(0, 0, pageSpace);
     }
 
     public Shapes getShapes() {

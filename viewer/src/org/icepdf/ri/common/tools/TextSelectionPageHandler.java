@@ -96,11 +96,6 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         }
     }
 
-    // parent page component
-    protected AbstractPageViewComponent pageViewComponent;
-    protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
-
     /**
      * New Text selection handler.  Make sure to correctly and and remove
      * this mouse and text listeners.
@@ -111,9 +106,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     public TextSelectionPageHandler(DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent,
                                     DocumentViewModel documentViewModel) {
-        this.documentViewController = documentViewController;
-        this.pageViewComponent = pageViewComponent;
-        this.documentViewModel = documentViewModel;
+        super(documentViewController, pageViewComponent, documentViewModel);
     }
 
     /**

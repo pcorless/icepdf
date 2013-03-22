@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -115,7 +116,7 @@ public class PopupAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
     }
 

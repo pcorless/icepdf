@@ -80,6 +80,7 @@ public class CircleAnnotation extends MarkupAnnotation {
             green = Math.max(0.0f, Math.min(1.0f, green));
             blue = Math.max(0.0f, Math.min(1.0f, blue));
             fillColor = new Color(red, green, blue);
+            isFillColor = true;
         }
     }
 
@@ -119,7 +120,7 @@ public class CircleAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         matrix = new AffineTransform();
         shapes = new Shapes();
@@ -240,5 +241,8 @@ public class CircleAnnotation extends MarkupAnnotation {
 
     public void setFillColor(boolean fillColor) {
         isFillColor = fillColor;
+        if (!isFillColor) {
+            entries.remove(IC_KEY);
+        }
     }
 }

@@ -8,6 +8,7 @@ import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -87,7 +88,7 @@ public class WidgetAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
 
     }
 
