@@ -2745,8 +2745,8 @@ public class SwingController
                 }
             }
         }
-        if (windowManagementCallback != null)
-            windowManagementCallback.quit(this, viewer, null);
+//        if (windowManagementCallback != null)
+//            windowManagementCallback.quit(this, viewer, null);
         return false;
     }
 
