@@ -1047,10 +1047,10 @@ public class Document {
         if (foundIncrementalUpdater) {
             try {
                 Class incrementalUpdaterClass = Class.forName(INCREMENTAL_UPDATER);
-                Class[] args = {Document.class, OutputStream.class, Long.TYPE};
                 Object[] argValues = {this, out, documentLength};
-                Method method = incrementalUpdaterClass.getDeclaredMethod(
-                        "appendIncrementalUpdate", args);
+                Method method = incrementalUpdaterClass.getClass().getDeclaredMethod(
+                        "appendIncrementalUpdate",
+                        new Class[]{Document.class, OutputStream.class, Long.TYPE});
                 long appendedLength = (Long) method.invoke(null, argValues);
                 return documentLength + appendedLength;
             } catch (Throwable e) {
