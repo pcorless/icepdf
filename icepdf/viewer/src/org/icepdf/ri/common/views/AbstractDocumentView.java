@@ -130,8 +130,8 @@ public abstract class AbstractDocumentView
         if ("focusOwner".equals(prop) &&
                 newValue instanceof AnnotationComponent) {
             // the correct annotations for the properties pane
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Selected Annotation " + newValue);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Selected Annotation " + newValue);
             }
             DocumentViewController documentViewController =
                     getParentViewController();
@@ -143,8 +143,8 @@ public abstract class AbstractDocumentView
         } else if ("focusOwner".equals(prop) &&
                 oldValue instanceof AnnotationComponent) {
             // the correct annotations for the properties pane
-            if (logger.isLoggable(Level.INFO)) {
-                logger.info("Deselected Annotation " + oldValue);
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine("Deselected Annotation " + oldValue);
             }
             DocumentViewController documentViewController =
                     getParentViewController();
