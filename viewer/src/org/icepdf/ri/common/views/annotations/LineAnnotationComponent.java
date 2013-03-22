@@ -41,6 +41,7 @@ public class LineAnnotationComponent extends MarkupAnnotationComponent {
                                    AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isRollover = false;
+        isResizable = false;
         isShowInvisibleBorder = false;
     }
 
