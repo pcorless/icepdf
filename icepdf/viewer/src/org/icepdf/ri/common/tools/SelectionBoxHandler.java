@@ -15,6 +15,8 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -25,7 +27,7 @@ import java.awt.event.MouseEvent;
  *
  * @since 4.0
  */
-public abstract class SelectionBoxHandler {
+public abstract class SelectionBoxHandler extends CommonToolHandler {
 
     // dashed selection rectangle stroke
     protected static float dash1[] = {1.0f};
@@ -40,6 +42,12 @@ public abstract class SelectionBoxHandler {
     protected Rectangle previousRectDrawn = new Rectangle();
 
     protected Color selectionBoxColour = Color.lightGray;
+
+    protected SelectionBoxHandler(DocumentViewController documentViewController,
+                                  AbstractPageViewComponent pageViewComponent,
+                                  DocumentViewModel documentViewModel) {
+        super(documentViewController, pageViewComponent, documentViewModel);
+    }
 
     public abstract void setSelectionRectangle(Point cursorLocation, Rectangle selection);
 

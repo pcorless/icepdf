@@ -489,7 +489,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 dy = endOfMousePress.getY() - startOfMousePress.getY();
             }
 
-            annotation.resetAppearanceStream(dx, -dy);
+            annotation.resetAppearanceStream(dx, -dy, getPageTransform());
 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.
@@ -525,6 +525,21 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
         return tBbox;
 
+    }
+
+    protected AffineTransform getPageTransform() {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e1) {
+            e1.printStackTrace();
+        }
+        return at;
     }
 
 

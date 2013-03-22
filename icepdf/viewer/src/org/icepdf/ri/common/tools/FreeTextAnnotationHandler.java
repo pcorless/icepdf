@@ -15,7 +15,6 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
@@ -28,8 +27,6 @@ import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.util.Date;
 import java.util.logging.Logger;
 
@@ -51,10 +48,6 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     private static final Logger logger =
             Logger.getLogger(LineAnnotationHandler.class.toString());
 
-    // parent page component
-    protected AbstractPageViewComponent pageViewComponent;
-    protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
 
     /**
      * New Text selection handler.  Make sure to correctly and and remove
@@ -66,9 +59,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     public FreeTextAnnotationHandler(DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent,
                                      DocumentViewModel documentViewModel) {
-        this.documentViewController = documentViewController;
-        this.pageViewComponent = pageViewComponent;
-        this.documentViewModel = documentViewModel;
+        super(documentViewController, pageViewComponent, documentViewModel);
     }
 
     @Override
@@ -100,7 +91,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         }
 
         // create a fixed sized box based on the default font size.
-        Rectangle tBbox = convertToPageSpace(rectToDraw);
+        Rectangle tBbox = convertToPageSpace(rectToDraw).getBounds();
 
         // create annotations types that that are rectangle based;
         // which is actually just link annotations
@@ -166,31 +157,5 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
     }
 
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bbox.
-     */
-    protected Rectangle convertToPageSpace(Rectangle rect) {
-        Page currentPage = pageViewComponent.getPage();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
-        }
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = new Rectangle(rect.x, rect.y,
-                rect.width, rect.height);
-
-        tBbox = at.createTransformedShape(tBbox).getBounds();
-
-        return tBbox;
-
-    }
 
 }

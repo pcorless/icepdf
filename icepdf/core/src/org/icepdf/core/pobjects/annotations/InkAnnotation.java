@@ -83,7 +83,7 @@ public class InkAnnotation extends MarkupAnnotation {
                 rectangle = library.getRectangle(entries, RECTANGLE_KEY);
             }
             setBBox(rectangle.getBounds());
-            resetAppearanceStream();
+            resetAppearanceStream(new AffineTransform());
         }
     }
 
@@ -154,7 +154,7 @@ public class InkAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
 
         // setup clean shapes
         matrix = new AffineTransform();
@@ -165,7 +165,7 @@ public class InkAnnotation extends MarkupAnnotation {
 
         // update the circle for any dx/dy moves.
         AffineTransform af = new AffineTransform();
-        af.setToTranslation(dx, dy);
+        af.setToTranslation(dx * pageSpace.getScaleX(), -dy * pageSpace.getScaleY());
         inkPath = af.createTransformedShape(inkPath);
         entries.put(INK_LIST_KEY,
                 convertPathToArray(inkPath));
