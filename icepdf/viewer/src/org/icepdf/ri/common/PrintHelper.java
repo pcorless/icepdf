@@ -26,8 +26,6 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.*;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.font.FontRenderContext;
-import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -66,37 +64,6 @@ public class PrintHelper implements Printable {
     private static String waterMark;
     private static Rectangle2D waterMarkBounds;
     private static BufferedImage waterMarkRaster;
-
-    static {
-
-        waterMark = "Hello World";
-        java.awt.Font awtFont =
-                new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14);
-
-        FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
-        TextLayout textLayout = new TextLayout(waterMark, awtFont, frc);
-        waterMarkBounds = textLayout.getBounds();
-        System.out.println("advance" + textLayout.getAdvance());
-        System.out.println("baseline" + textLayout.getBaseline());
-        System.out.println("baselineoffset" + textLayout.getBaselineOffsets());
-        System.out.println("ascent" + textLayout.getAscent());
-        System.out.println("decent" + textLayout.getDescent());
-        // create a buffer using rgba so we have transparency
-        waterMarkRaster = new BufferedImage((int) waterMarkBounds.getWidth(),
-                (int) waterMarkBounds.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        // paint the buffer.
-        Graphics2D waterMarkGs = (Graphics2D) waterMarkRaster.getGraphics();
-        waterMarkGs.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14));
-        waterMarkGs.setColor(Color.BLACK);
-        waterMarkGs.setStroke(new BasicStroke(2.0f));
-        waterMarkGs.scale(1, -1);
-//        waterMarkGs.translate(textLayout.);
-//        waterMarkGs.fillRect(0, 0, (int)waterMarkBounds.getWidth(),
-//                                   (int)waterMarkBounds.getHeight());
-        waterMarkGs.drawString(waterMark, 0, 0);
-        waterMarkGs.dispose();
-    }
-
 
     /**
      * Creates a new <code>PrintHelper</code> instance defaulting the

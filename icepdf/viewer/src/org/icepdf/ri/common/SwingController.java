@@ -2135,14 +2135,16 @@ public class SwingController
 
         // check if there are layers and enable/disable the tab as needed
         OptionalContent optionalContent = document.getCatalog().getOptionalContent();
-        if (optionalContent == null || optionalContent.getOrder() == null) {
-            utilityTabbedPane.setEnabledAt(
-                    utilityTabbedPane.indexOfComponent(layersPanel),
-                    false);
-        } else {
-            utilityTabbedPane.setEnabledAt(
-                    utilityTabbedPane.indexOfComponent(layersPanel),
-                    true);
+        if (layersPanel != null) {
+            if (optionalContent == null || optionalContent.getOrder() == null) {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(layersPanel),
+                        false);
+            } else {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(layersPanel),
+                        true);
+            }
         }
 
         // add to the main pdfContentPanel the document peer
@@ -2838,6 +2840,10 @@ public class SwingController
      * Sets the default MediaSizeName and creates an new instance of the
      * the PrintHelp with the new media size.  The media size is also
      * persisted to the PropertiesManager.
+     * <p/>
+     * <b/>Note:</b> this method should only be called after a valid file or
+     * file stream has been loaded by the controller otherwise a null pointer
+     * will result.
      *
      * @param mediaSize MediaSizeName constant of paper size to print to.
      */
