@@ -1048,7 +1048,7 @@ public class Document {
             try {
                 Class incrementalUpdaterClass = Class.forName(INCREMENTAL_UPDATER);
                 Object[] argValues = {this, out, documentLength};
-                Method method = incrementalUpdaterClass.getClass().getDeclaredMethod(
+                Method method = incrementalUpdaterClass.getDeclaredMethod(
                         "appendIncrementalUpdate",
                         new Class[]{Document.class, OutputStream.class, Long.TYPE});
                 long appendedLength = (Long) method.invoke(null, argValues);
