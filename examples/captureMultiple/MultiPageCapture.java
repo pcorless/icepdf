@@ -14,25 +14,27 @@
  */
 
 
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PDimension;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.icepdf.ri.util.PropertiesManager;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
 import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
-import java.awt.image.DataBuffer;
+import javax.media.jai.*;
+import javax.media.jai.operator.ErrorDiffusionDescriptor;
 import java.awt.*;
-import java.io.*;
+import java.awt.image.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -46,12 +48,12 @@ import java.util.ResourceBundle;
  * @since 4.0
  */
 public class MultiPageCapture {
-    public static final double FAX_RESOLUTION = 200.0;
-    public static final double PRINTER_RESOLUTION = 300.0;
-    
+
+    public static final double PRINTER_RESOLUTION = 200; //150, 200, 300, 600, 1200
+
     // This compression type may be wpecific to JAI ImageIO Tools
-    public static final String COMPRESSION_TYPE_GROUP4FAX = "JPEG";
-    
+    public static final String COMPRESSION_TYPE_GROUP4FAX = "CCITT T.4";
+
     public static void main(String[] args) {
 
         // read system fonts from cached list, speeds up initial application startup
@@ -67,13 +69,13 @@ public class MultiPageCapture {
         Iterator<ImageWriter> iterator = ImageIO.getImageWritersByFormatName("tiff");
         if (!iterator.hasNext()) {
             System.out.println(
-                "ImageIO missing required plug-in to write TIFF files. " +
-                "You can download the JAI ImageIO Tools from: " +
-                "https://jai-imageio.dev.java.net/");
+                    "ImageIO missing required plug-in to write TIFF files. " +
+                            "You can download the JAI ImageIO Tools from: " +
+                            "https://jai-imageio.dev.java.net/");
             return;
         }
         boolean foundCompressionType = false;
-        for(String type : iterator.next().getDefaultWriteParam().getCompressionTypes()) {
+        for (String type : iterator.next().getDefaultWriteParam().getCompressionTypes()) {
             if (COMPRESSION_TYPE_GROUP4FAX.equals(type)) {
                 foundCompressionType = true;
                 break;
@@ -81,13 +83,13 @@ public class MultiPageCapture {
         }
         if (!foundCompressionType) {
             System.out.println(
-                "TIFF ImageIO plug-in does not support Group 4 Fax " +
-                "compression type ("+COMPRESSION_TYPE_GROUP4FAX+")");
+                    "TIFF ImageIO plug-in does not support Group 4 Fax " +
+                            "compression type (" + COMPRESSION_TYPE_GROUP4FAX + ")");
             return;
         }
 
         long intime = System.currentTimeMillis();
-        
+
         // Get a file from the command line to open
         String filePath = args[0];
 
@@ -117,60 +119,71 @@ public class MultiPageCapture {
                 final double targetDPI = PRINTER_RESOLUTION;
                 float scale = 1.0f;
                 float rotation = 0f;
-                
+
                 // Given no initial zooming, calculate our natural DPI when
                 // printed to standard US Letter paper
                 PDimension size = document.getPageDimension(i, rotation, scale);
-                double dpi = Math.sqrt((size.getWidth()*size.getWidth()) +
-                                       (size.getHeight()*size.getHeight()) ) /
-                             Math.sqrt((8.5*8.5)+(11*11));
-                
+                double dpi = Math.sqrt((size.getWidth() * size.getWidth()) +
+                        (size.getHeight() * size.getHeight())) /
+                        Math.sqrt((8.5 * 8.5) + (11 * 11));
+
                 // Calculate scale required to achieve at least our target DPI
-                if (dpi < (targetDPI-0.1)) {
+                if (dpi < (targetDPI - 0.1)) {
                     scale = (float) (targetDPI / dpi);
                     size = document.getPageDimension(i, rotation, scale);
                 }
-                
+
                 int pageWidth = (int) size.getWidth();
                 int pageHeight = (int) size.getHeight();
-                int[] cmap = new int[] { 0xFF000000, 0xFFFFFFFF };
-
-                IndexColorModel cm = new IndexColorModel(
-                    1, cmap.length,  cmap, 0, false, Transparency.BITMASK,
-                    DataBuffer.TYPE_BYTE);
 
                 BufferedImage image = new BufferedImage(
-                    pageWidth, pageHeight, BufferedImage.TYPE_BYTE_INDEXED);
+                        pageWidth, pageHeight, BufferedImage.TYPE_INT_RGB);
                 Graphics g = image.createGraphics();
                 document.paintPage(
-                    i, g, GraphicsRenderingHints.PRINT, Page.BOUNDARY_CROPBOX,
-                    rotation, scale);
+                        i, g, GraphicsRenderingHints.PRINT, Page.BOUNDARY_CROPBOX,
+                        rotation, scale);
                 g.dispose();
-                
+
+
+                // JAI filter code
+                PlanarImage surrogateImage = PlanarImage.wrapRenderedImage(image);
+                LookupTableJAI lut = new LookupTableJAI(new byte[][]{{(byte) 0x00,
+                        (byte) 0xff}, {(byte) 0x00, (byte) 0xff}, {(byte) 0x00, (byte) 0xff}});
+                ImageLayout layout = new ImageLayout();
+                byte[] map = new byte[]{(byte) 0x00, (byte) 0xff};
+                ColorModel cm = new IndexColorModel(1, 2, map, map, map);
+                layout.setColorModel(cm);
+                SampleModel sm = new MultiPixelPackedSampleModel(DataBuffer.TYPE_BYTE,
+                        surrogateImage.getWidth(),
+                        surrogateImage.getHeight(),
+                        1);
+                layout.setSampleModel(sm);
+                RenderingHints hints = new RenderingHints(JAI.KEY_IMAGE_LAYOUT, layout);
+                PlanarImage op = ErrorDiffusionDescriptor.create(surrogateImage, lut,
+                        KernelJAI.ERROR_FILTER_FLOYD_STEINBERG, hints);
+                BufferedImage dst = op.getAsBufferedImage();
+
                 // capture the page image to file
-                IIOImage img = new IIOImage(image, null, null);
+                IIOImage img = new IIOImage(dst, null, null);
                 ImageWriteParam param = writer.getDefaultWriteParam();
-                param.setCompressionMode(param.MODE_EXPLICIT);
-//                param.setCompressionQuality(0.8f);
+                param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                 param.setCompressionType(COMPRESSION_TYPE_GROUP4FAX);
                 if (i == 0) {
                     writer.write(null, img, param);
-                }
-                else {
+                } else {
                     writer.writeInsert(-1, img, param);
                 }
                 image.flush();
             }
-            
+
             ios.flush();
             ios.close();
             writer.dispose();
-        }
-        catch(IOException e) {
+        } catch (IOException e) {
             System.out.println("Error saving file  " + e);
             e.printStackTrace();
         }
-        
+
         // clean up resources
         document.dispose();
 
