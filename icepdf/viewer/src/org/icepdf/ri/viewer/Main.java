@@ -36,7 +36,7 @@ public class Main {
 
     public static void main(final String[] args) {
         // Read the image data and display the splash screen
-        URL imageURL = Images.get("icepdf-splash-2012.jpg");
+        URL imageURL = Images.get("icepdf-splash-2013.png");
 
         if (imageURL != null) {
             Image splashImage =

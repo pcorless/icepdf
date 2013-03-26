@@ -442,7 +442,7 @@ public class SwingViewBuilder {
      */
     public JFrame buildViewerFrame() {
         JFrame viewer = new JFrame();
-        viewer.setIconImage(new ImageIcon(Images.get("app_icon3_24.png")).getImage());
+        viewer.setIconImage(new ImageIcon(Images.get("icepdf-app-icon-64x64.png")).getImage());
         viewer.setTitle(messageBundle.getString("viewer.window.title.default"));
         viewer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         JMenuBar menuBar = buildCompleteMenuBar();
@@ -1937,7 +1937,7 @@ public class SwingViewBuilder {
         try {
             tmp.setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
             tmp.setPressedIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-            tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_s" + imageSize + ".png")));
+//            tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_s" + imageSize + ".png")));
             tmp.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
             tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
         } catch (NullPointerException e) {
