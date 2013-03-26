@@ -115,11 +115,11 @@ public class ShadingType2Pattern extends ShadingPattern {
         }
         tmp = library.getObject(shading, FUNCTION_KEY);
         if (tmp != null) {
-            if (!(tmp instanceof List)){
+            if (!(tmp instanceof List)) {
                 function = new Function[]{Function.getFunction(library,
                         tmp)};
-            }else{
-                List functionTemp = (List)tmp;
+            } else {
+                List functionTemp = (List) tmp;
                 function = new Function[functionTemp.size()];
                 for (int i = 0; i < functionTemp.size(); i++) {
                     function[i] = Function.getFunction(library, functionTemp.get(i));
@@ -169,10 +169,10 @@ public class ShadingType2Pattern extends ShadingPattern {
      * @param endPoint       end of line segment.
      * @return list of points found on line
      */
-    private Color[] calculateColorPoints(int numberOfPoints,
-                                         Point2D.Float startPoint,
-                                         Point2D.Float endPoint,
-                                         float t0, float t1) {
+    protected Color[] calculateColorPoints(int numberOfPoints,
+                                           Point2D.Float startPoint,
+                                           Point2D.Float endPoint,
+                                           float t0, float t1) {
         // calculate the slope
         float m = (startPoint.y - endPoint.y) / (startPoint.x - endPoint.x);
         // calculate the y intercept
@@ -217,7 +217,7 @@ public class ShadingType2Pattern extends ShadingPattern {
      * @return array of floats the evenly divide t0 and t1, length is
      *         numberOfPoints + 1
      */
-    private float[] calculateDomainEntries(int numberOfPoints, float t0, float t1) {
+    protected float[] calculateDomainEntries(int numberOfPoints, float t0, float t1) {
 
         float offset = 1.0f / numberOfPoints;
         float[] domainEntries = new float[numberOfPoints + 1];
@@ -256,12 +256,12 @@ public class ShadingType2Pattern extends ShadingPattern {
             float[] output;
             int length = function.length;
             // simple 1 in N out function
-            if (length == 1){
+            if (length == 1) {
                 output = function[0].calculate(input);
-            }else{
+            } else {
                 // vector of function for each colour component, 1 in 1 out.
                 output = new float[length];
-                for (int i= 0; i < length; i++ ){
+                for (int i = 0; i < length; i++) {
                     output[i] = function[i].calculate(input)[0];
                 }
             }

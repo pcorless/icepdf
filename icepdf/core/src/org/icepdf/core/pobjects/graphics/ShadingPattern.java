@@ -183,6 +183,8 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
             return new ShadingType2Pattern(library, attribute);
         } else if (shadingType == ShadingPattern.SHADING_PATTERN_TYPE_3) {
             return new ShadingType3Pattern(library, attribute);
+        } else if (shadingType == ShadingPattern.SHADING_PATTERN_TYPE_1) {
+            return new ShadingType1Pattern(library, attribute);
         } else {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Shading pattern of Type " + shadingType +
