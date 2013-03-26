@@ -1,19 +1,21 @@
 /*
- * Copyright 2006-2012 ICEsoft Technologies Inc.
+ * Copyright 2006-2013 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package org.icepdf.ri.viewer;
 
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.icepdf.ri.util.PropertiesManager;
@@ -23,9 +25,8 @@ import javax.swing.*;
 import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import org.icepdf.core.util.Defs;
+import java.util.logging.Logger;
 
 /**
  * <p>Launches the Viewer Application.  The following parameters can be used
@@ -101,13 +102,13 @@ public class Launcher {
     /**
      * Starts the viewe application.
      *
-     * @param contentFile URI of a file which will be loaded at runtime, can be
-     *                    null.
-     * @param contentURL  URL of a file which will be loaded at runtime, can be
-     *                    null.
+     * @param contentFile       URI of a file which will be loaded at runtime, can be
+     *                          null.
+     * @param contentURL        URL of a file which will be loaded at runtime, can be
+     *                          null.
      * @param contentProperties URI of a properties file which will be used in
      *                          place of the default path
-     * @param messageBundle messageBundle to pull strings from
+     * @param messageBundle     messageBundle to pull strings from
      */
     private static void run(String contentFile,
                             String contentURL,
@@ -190,7 +191,7 @@ public class Launcher {
             Defs.setSystemProperty("apple.laf.useScreenMenuBar", "true");
             // set the name of the application menu item (must precede the L&F setup)
             String appName = messageBundle.getString("viewer.window.title.default");
-            Defs.setSystemProperty( "com.apple.mrj.application.apple.menu.about.name", appName);
+            Defs.setSystemProperty("com.apple.mrj.application.apple.menu.about.name", appName);
         }
 
         String className =

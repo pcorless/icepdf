@@ -1,20 +1,20 @@
 <!--
-  ~ Copyright 2006-2012 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
   ~ License. You may obtain a copy of the License at
   ~
-  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~        http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing,
   ~ software distributed under the License is distributed on an "AS
-  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+  ~ express or implied. See the License for the specific language
   ~ governing permissions and limitations under the License.
   -->
 
 <ui:composition
-        xmlns:h="http://java.sun.com/jsf/html"
         xmlns:f="http://java.sun.com/jsf/core"
         xmlns:ui="http://java.sun.com/jsf/facelets"
         xmlns:ice="http://www.icesoft.com/icefaces/component">
@@ -36,11 +36,12 @@
                                       width="30" height="25"/>
                 </ice:commandLink>
             </ice:panelGroup>
-            <ice:panelGroup styleClass="floatLeft" style="padding-top:8px;padding-left:10px;">
+            <ice:panelGroup styleClass="floatLeft"
+                            style="padding-top:8px;padding-left:10px;">
                 <ice:commandLink
                         styleClass="downloadUploadLink"
                         actionListener="#{documentManager.uploadDocument}">
-                <ice:outputLabel value="#{msgs['command.open.label']}"/>
+                    <ice:outputLabel value="#{msgs['command.open.label']}"/>
                 </ice:commandLink>
             </ice:panelGroup>
 
@@ -65,7 +66,8 @@
             </ice:panelGroup>
 
             <!-- manual page entry-->
-            <ice:panelGroup styleClass="floatLeft" style="padding-top:3px;padding-left:8px;padding-right:8px;">
+            <ice:panelGroup styleClass="floatLeft"
+                            style="padding-top:3px;padding-left:8px;padding-right:8px;">
                 <ice:outputLabel value="#{msgs['command.page.entry.label']}"/>
                 <ice:inputText maxlength="5" size="2" partialSubmit="true"
                                actionListener="#{documentManager.goToPage}"
@@ -111,13 +113,14 @@
                 </ice:selectOneMenu>
             </ice:panelGroup>
 
-             <!-- spacer -->
+            <!-- spacer -->
             <ice:panelGroup styleClass="floatLeft" style="width:10px">
                 &amp;nbsp;
             </ice:panelGroup>
 
             <!-- rotate left -->
-            <ice:panelGroup styleClass="floatLeft" style="padding-left:20px;padding-right:10px">
+            <ice:panelGroup styleClass="floatLeft"
+                            style="padding-left:20px;padding-right:10px">
                 <ice:commandLink
                         styleClass="command leftCommand"
                         disabled="#{documentManager.currentDocumentState == null}"

@@ -1,18 +1,19 @@
 <!--
-  ~ Copyright 2006-2012 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
   ~ License. You may obtain a copy of the License at
   ~
-  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~        http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing,
   ~ software distributed under the License is distributed on an "AS
-  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+  ~ express or implied. See the License for the specific language
   ~ governing permissions and limitations under the License.
   -->
-<project name="icepdf-applet" default="icepdf.applet.jar" >
+<project name="icepdf-applet" default="icepdf.applet.jar">
 
     <property name="build.dir" location="./build/"/>
     <property name="dist.dir" location="./dist/"/>
@@ -42,7 +43,7 @@
 
     <path id="compile.run.classpath">
         <pathelement location="${build.classes.dir}"/>
-        <fileset dir="${build.lib.dir}" >
+        <fileset dir="${build.lib.dir}">
             <patternset refid="icepdf.lib.jars"/>
         </fileset>
     </path>
@@ -52,20 +53,20 @@
             <delete includeemptydirs="true" quiet="true">
                 <fileset dir="${build.dir}"/>
                 <fileset dir="${dist.dir}"/>
-             </delete>
+            </delete>
         </sequential>
     </target>
 
-    <target name="compile" >
+    <target name="compile">
         <sequential>
             <mkdir dir="${build.classes.dir}"/>
 
             <javac destdir="${build.classes.dir}" sourcepath=""
                    source="${compile.source}" target="${compile.target}"
-                   debug="${compile.debug}" failonerror="@{failonerror}" >
+                   debug="${compile.debug}" failonerror="@{failonerror}">
                 <src location="${src.dir}"/>
                 <include name="**/*.java"/>
-                <exclude name="@{src.javac.excludes}" />
+                <exclude name="@{src.javac.excludes}"/>
                 <classpath refid="compile.run.classpath"/>
             </javac>
 
@@ -80,16 +81,16 @@
             <copy file="${src.dir}/PDFApplet.html" todir="${dist.dir}"/>
 
             <copy todir="${dist.dir}" preservelastmodified="true">
-                <fileset dir="${src.dir}" >
+                <fileset dir="${src.dir}">
                     <patternset refid="icepdf.applet.files"/>
                 </fileset>
-                <fileset dir="${build.lib.dir}" >
+                <fileset dir="${build.lib.dir}">
                     <patternset refid="icepdf.lib.jars"/>
                 </fileset>
             </copy>
-            
-            <jar destfile="${dist.dir}/${jar.file.name}" duplicate="fail" >
-                <fileset dir="${build.classes.dir}" />
+
+            <jar destfile="${dist.dir}/${jar.file.name}" duplicate="fail">
+                <fileset dir="${build.classes.dir}"/>
                 <manifest>
                     <!-- ICEpdf version information -->
                     <section name="org.icepdf.pdf">

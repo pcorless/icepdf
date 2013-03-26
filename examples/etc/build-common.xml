@@ -1,19 +1,20 @@
 <!--
-  ~ Copyright 2006-2012 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
   ~ License. You may obtain a copy of the License at
   ~
-  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~        http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing,
   ~ software distributed under the License is distributed on an "AS
-  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+  ~ express or implied. See the License for the specific language
   ~ governing permissions and limitations under the License.
   -->
 
-<project name="build.common" >
+<project name="build.common">
 
     <property name="build.dir" location="./build"/>
     <property name="dist.dir" location="./dist"/>
@@ -67,7 +68,7 @@
 
     <path id="compile.run.classpath">
         <pathelement location="${build.classes.dir}"/>
-        <fileset dir="${build.lib.dir}" >
+        <fileset dir="${build.lib.dir}">
             <patternset refid="icepdf.lib.batik.jars"/>
         </fileset>
     </path>
@@ -77,11 +78,11 @@
             <delete includeemptydirs="true" quiet="true">
                 <fileset dir="${build.dir}"/>
                 <fileset dir="${dist.dir}"/>
-             </delete>
+            </delete>
         </sequential>
     </macrodef>
 
-    <macrodef name="compile" >
+    <macrodef name="compile">
         <attribute name="src.copy.excludes" default=""/>
         <attribute name="failonerror" default="true"/>
         <attribute name="src.javac.excludes" default=""/>
@@ -92,11 +93,11 @@
 
             <javac destdir="${build.classes.dir}" sourcepath="" encoding="UTF-8"
                    source="${compile.source}" target="${compile.target}"
-                   debug="${compile.debug}" failonerror="@{failonerror}" >
+                   debug="${compile.debug}" failonerror="@{failonerror}">
                 <compilerarg line="-XDignore.symbol.file" compiler="modern"/>
                 <src location="${src.dir}"/>
                 <include name="**/*.java"/>
-                <exclude name="@{src.javac.excludes}" />
+                <exclude name="@{src.javac.excludes}"/>
                 <classpath refid="compile.run.classpath"/>
                 <add.javac.elements/>
             </javac>
@@ -113,13 +114,13 @@
         <sequential>
             <delete file="${dist.dir}/@{jar.file.name}"/>
             <mkdir dir="${dist.dir}"/>
-            <jar destfile="${dist.dir}/@{jar.file.name}" duplicate="fail" >
-                <fileset dir="${build.classes.dir}" />
+            <jar destfile="${dist.dir}/@{jar.file.name}" duplicate="fail">
+                <fileset dir="${build.classes.dir}"/>
                 <fileset dir="${src.dir}">
-                    <add.jar.src.includes />
+                    <add.jar.src.includes/>
                 </fileset>
                 <manifest>
-                    <add.manifest.elements />
+                    <add.manifest.elements/>
                     <!-- ICEpdf version information -->
                     <section name="org.icepdf.pdf">
                         <attribute name="Implementation-Title"
