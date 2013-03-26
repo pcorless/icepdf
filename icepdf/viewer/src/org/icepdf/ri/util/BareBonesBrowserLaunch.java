@@ -1,15 +1,16 @@
 /*
- * Copyright 2006-2012 ICEsoft Technologies Inc.
+ * Copyright 2006-2013 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package org.icepdf.ri.util;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
  */
 public class BareBonesBrowserLaunch {
 
-private static final Logger logger =
+    private static final Logger logger =
             Logger.getLogger(BareBonesBrowserLaunch.class.toString());
 
 
@@ -42,7 +43,7 @@ private static final Logger logger =
 
     private static String os;
 
-    static{
+    static {
         os = System.getProperty("os.name").toLowerCase();
     }
 
@@ -53,7 +54,7 @@ private static final Logger logger =
      */
     public static void openURL(String url) {
         try {
-            if (logger.isLoggable(Level.FINE)){
+            if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Opening URL: " + url);
             }
 
@@ -66,7 +67,7 @@ private static final Logger logger =
             } else if (isWindows())
                 Runtime.getRuntime()
                         .exec("rundll32 url.dll,FileProtocolHandler " + url);
-            else if(isUnix()) {
+            else if (isUnix()) {
                 String[] browsers = {
                         "firefox", "opera", "konqueror", "epiphany", "mozilla",
                         "netscape"};
@@ -81,12 +82,10 @@ private static final Logger logger =
                     throw new Exception("Could not find web browser");
                 else
                     Runtime.getRuntime().exec(new String[]{browser, url});
+            } else {
+                JOptionPane.showMessageDialog(null, errMsg);
             }
-            else{
-                JOptionPane.showMessageDialog(null, errMsg );
-            }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             JOptionPane.showMessageDialog(null, errMsg + ":\n" +
                     e.getLocalizedMessage());
         }

@@ -1,15 +1,16 @@
 /*
- * Copyright 2006-2012 ICEsoft Technologies Inc.
+ * Copyright 2006-2013 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package org.icepdf.ri.common.search;
@@ -117,12 +118,11 @@ public class DocumentSearchModelImpl {
         return searchResultCache.get(pageIndex) != null;
     }
 
-    public PageText getPageTextHit(int pageIndex){
-        WeakReference<PageText> ref =  searchResultCache.get(pageIndex);
-        if (ref.get() != null){
+    public PageText getPageTextHit(int pageIndex) {
+        WeakReference<PageText> ref = searchResultCache.get(pageIndex);
+        if (ref.get() != null) {
             return ref.get();
-        }
-        else{
+        } else {
             return null;
         }
     }
@@ -138,10 +138,10 @@ public class DocumentSearchModelImpl {
      * <p/>
      *
      * @param pageIndex page indext to look at PageText results
-     * @param pageText current Page objects PageText object we want to check
-     * against whats in the cache.
+     * @param pageText  current Page objects PageText object we want to check
+     *                  against whats in the cache.
      * @return false if the search for this page should be done again, otherwise
-     * true then we should be ok and don't need to refresht the text state.
+     *         true then we should be ok and don't need to refresht the text state.
      */
     public boolean isPageTextMatch(int pageIndex, PageText pageText) {
         WeakReference<PageText> ref = searchResultCache.get(pageIndex);
@@ -161,7 +161,7 @@ public class DocumentSearchModelImpl {
     public void clearSearchResults(int page) {
         // clear highlighted state for this page index. 
         WeakReference<PageText> pageReference = searchResultCache.get(page);
-        if (pageReference != null){
+        if (pageReference != null) {
             PageText currentPageText = pageReference.get();
             if (currentPageText != null) {
                 currentPageText.clearHighlighted();

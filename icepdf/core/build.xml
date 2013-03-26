@@ -1,15 +1,16 @@
 <!--
-  ~ Copyright 2006-2012 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
   ~ License. You may obtain a copy of the License at
   ~
-  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~        http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing,
   ~ software distributed under the License is distributed on an "AS
-  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+  ~ express or implied. See the License for the specific language
   ~ governing permissions and limitations under the License.
   -->
 
@@ -21,13 +22,13 @@
               location="conf/org/icepdf/core/application"/>
     <property name="productinfo.dest"
               location="src/org/icepdf/core/application"/>
-    
+
     <!-- core jar containing core and jbig2 library -->
     <target name="jar" depends="compile" description="Creates ICEpdf core jar.">
         <!-- jar file name -->
         <property name="jar.file.name" value="icepdf-core.jar"/>
 
-        <build.jar jar.file.name="${jar.file.name}" >
+        <build.jar jar.file.name="${jar.file.name}">
             <add.jar.src.includes>
                 <include name="org/icepdf/core/pobjects/fonts/afm/"/>
             </add.jar.src.includes>
@@ -36,13 +37,14 @@
         <copy file="${dist.dir}/${jar.file.name}" todir="${build.lib.dir}"
               overwrite="true"/>
     </target>
-    
+
     <!-- core jar without the jbig2 library -->
-    <target name="core-jar" depends="compile-core-only" description="Creates ICEpdf core jar without jbig2.">
+    <target name="core-jar" depends="compile-core-only"
+            description="Creates ICEpdf core jar without jbig2.">
         <!-- jar file name, name collision, replacing with static name -->
         <!--<property name="jar.file.name" value="icepdf-core.jar"/>-->
 
-        <build.jar jar.file.name="icepdf-core.jar" >
+        <build.jar jar.file.name="icepdf-core.jar">
             <add.jar.src.includes>
                 <include name="org/icepdf/core/pobjects/fonts/afm/"/>
                 <exclude name="org/jpedal/"/>
@@ -53,14 +55,15 @@
         <copy file="${dist.dir}/icepdf-core.jar" todir="${build.lib.dir}"
               overwrite="true"/>
     </target>
-    
+
     <!-- extra jar containing only the jbig2 library -->
-    <target name="extra-jar" depends="compile-extra-only" description="Creates ICEpdf extra jar.">
+    <target name="extra-jar" depends="compile-extra-only"
+            description="Creates ICEpdf extra jar.">
         <!-- jar file name, name collision, replacing with static name  -->
         <!--<property name="jar.file.name" value="icepdf-extra.jar"/>-->
 
-        <build.jar jar.file.name="icepdf-extra.jar" >
-            <add.jar.src.includes >
+        <build.jar jar.file.name="icepdf-extra.jar">
+            <add.jar.src.includes>
                 <exclude name="org/icepdf/"/>
             </add.jar.src.includes>
         </build.jar>
@@ -70,40 +73,40 @@
     </target>
 
     <target name="compile" depends="update.product.info">
-        <compile />
+        <compile/>
     </target>
-    
+
     <target name="compile-core-only" depends="update.product.info">
         <delete includeemptydirs="true" quiet="true">
             <fileset dir="${build.dir}"/>
         </delete>
         <compile
-            src.javac.excludes="org/jpedal/" />
+                src.javac.excludes="org/jpedal/"/>
     </target>
-    
+
     <target name="compile-extra-only" depends="update.product.info">
         <delete includeemptydirs="true" quiet="true">
             <fileset dir="${build.dir}"/>
         </delete>
         <compile
-            src.javac.excludes="org/icepdf/" />
+                src.javac.excludes="org/icepdf/"/>
     </target>
 
-    <target name="build.all" depends="jar" />
+    <target name="build.all" depends="jar"/>
 
-    <target name="build.all.extra" depends="extra-jar, core-jar" />
+    <target name="build.all.extra" depends="extra-jar, core-jar"/>
 
     <target name="clean" description="clean the directory">
-        <clean />
+        <clean/>
     </target>
 
-    <target name="src-jar" depends="" >
+    <target name="src-jar" depends="">
         <jar destfile="${build.dir}/icepdf-core-sources.jar">
             <fileset dir="${src.dir}" includes="**/*.java"/>
         </jar>
     </target>
 
-    <target name="javadoc-jar" depends="javadoc" >
+    <target name="javadoc-jar" depends="javadoc">
         <jar destfile="${build.dir}/icepdf-core-javadoc.jar">
             <fileset dir="${build.dir}/javadocs" includes="**/*"/>
         </jar>
@@ -112,7 +115,7 @@
     <target name="javadoc">
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="false" useexternalfile="true" failonerror="true"
-                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API" >
+                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API">
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/core/pobjects/fonts/afm/"/>

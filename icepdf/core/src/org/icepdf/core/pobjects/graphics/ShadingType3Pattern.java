@@ -1,15 +1,16 @@
 /*
- * Copyright 2006-2012 ICEsoft Technologies Inc.
+ * Copyright 2006-2013 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
  * License. You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS
- * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
 package org.icepdf.core.pobjects.graphics;
@@ -116,11 +117,11 @@ public class ShadingType3Pattern extends ShadingPattern {
         }
         tmp = library.getObject(shading, FUNCTION_KEY);
         if (tmp != null) {
-            if (!(tmp instanceof List)){
+            if (!(tmp instanceof List)) {
                 function = new Function[]{Function.getFunction(library,
                         tmp)};
-            }else{
-                List functionTemp = (List)tmp;
+            } else {
+                List functionTemp = (List) tmp;
                 function = new Function[functionTemp.size()];
                 for (int i = 0; i < functionTemp.size(); i++) {
                     function[i] = Function.getFunction(library, functionTemp.get(i));
@@ -189,12 +190,12 @@ public class ShadingType3Pattern extends ShadingPattern {
             float[] output;
             int length = function.length;
             // simple 1 in N out function
-            if (length == 1){
+            if (length == 1) {
                 output = function[0].calculate(input);
-            }else{
+            } else {
                 // vector of function for each colour component, 1 in 1 out.
                 output = new float[length];
-                for (int i= 0; i < length; i++ ){
+                for (int i = 0; i < length; i++) {
                     output[i] = function[i].calculate(input)[0];
                 }
             }
