@@ -59,7 +59,7 @@ public class ResizableBorder extends AbstractBorder {
                             Integer.parseInt("cccccc", 16));
 
             color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.outline.color", "#666666");
+                    "org.icepdf.core.views.page.annotation.outline.colorResize", "#666666");
             colorValue = ColorUtil.convertColor(color);
             outlineResizeColor =
                     new Color(colorValue >= 0 ? colorValue :
