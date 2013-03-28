@@ -65,8 +65,10 @@ public class Indexed extends PColorSpace {
             }
             colors = textBytes;
         } else if (dictionary.elementAt(3) instanceof Reference) {
+            colors = new byte[colorSpace.getNumComponents() * (hival + 1)];
             Stream lookup = (Stream) (library.getObject((Reference) (dictionary.elementAt(3))));
-            colors = lookup.getBytes();
+            byte[] colorStream = lookup.getBytes();
+            System.arraycopy(colorStream, 0, colors, 0, colorStream.length);
         }
     }
 
@@ -117,10 +119,10 @@ public class Indexed extends PColorSpace {
     public Color getColor(float[] f) {
         init();
         int index = (int) (f[0] * (cols.length - 1));
-        if (index < cols.length){
+        if (index < cols.length) {
             return cols[index];
-        }else{
-            return cols[(int)f[0]];
+        } else {
+            return cols[(int) f[0]];
         }
 
     }
