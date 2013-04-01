@@ -79,6 +79,8 @@ public interface DocumentViewController {
 
     public static final int CURSOR_TEXT_SELECTION = 10;
 
+    public static final int CURSOR_CROSSHAIR = 11;
+
     public void setDocument(Document document);
 
     public Document getDocument();
