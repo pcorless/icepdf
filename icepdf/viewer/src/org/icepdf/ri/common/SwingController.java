@@ -1388,7 +1388,7 @@ public class SwingController
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION) {
@@ -1412,43 +1412,43 @@ public class SwingController
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
                 showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_IN) {

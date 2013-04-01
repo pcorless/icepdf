@@ -872,6 +872,8 @@ public class DocumentViewControllerImpl
             return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
         } else if (currsorType == CURSOR_TEXT_SELECTION) {
             return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
+        } else if (currsorType == CURSOR_CROSSHAIR) {
+            return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
         } else {
             return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
         }
