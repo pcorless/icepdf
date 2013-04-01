@@ -2718,7 +2718,7 @@ public class SwingController
      * @see #setWindowManagementCallback
      * @see #getWindowManagementCallback
      */
-    public boolean exit() {
+    public boolean saveChangesDialog() {
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null) {
@@ -2746,8 +2746,6 @@ public class SwingController
                 }
             }
         }
-//        if (windowManagementCallback != null)
-//            windowManagementCallback.quit(this, viewer, null);
         return false;
     }
 
@@ -3675,7 +3673,10 @@ public class SwingController
                 };
                 SwingUtilities.invokeLater(doSwingWork);
             } else if (source == closeMenuItem) {
-                closeDocument();
+                boolean isCanceled = saveChangesDialog();
+                if (!isCanceled) {
+                    closeDocument();
+                }
             } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
                 Runnable doSwingWork = new Runnable() {
                     public void run() {
@@ -3698,7 +3699,10 @@ public class SwingController
                 };
                 SwingUtilities.invokeLater(doSwingWork);
             } else if (source == exitMenuItem) {
-                exit();
+                boolean isCanceled = saveChangesDialog();
+                if (!isCanceled && windowManagementCallback != null) {
+                    windowManagementCallback.disposeWindow(this, viewer, null);
+                }
             } else if (source == showHideToolBarMenuItem) {
                 toggleToolBarVisibility();
             } else if (source == minimiseAllMenuItem) {
@@ -4143,7 +4147,7 @@ public class SwingController
         viewProperties.setProperty("document.viewtype", String.valueOf(viewControl.getViewMode()));
 
         // save changes and close window
-        boolean cancelled = exit();
+        boolean cancelled = saveChangesDialog();
         if (!cancelled) {
             // dispose the document and other resources.
             dispose();
