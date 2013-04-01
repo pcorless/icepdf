@@ -935,6 +935,15 @@ public class PageViewComponentImpl extends
             }
 
             try {
+                // revalidate the annotation components.
+                if (isPageStateDirty()) {
+                    Runnable doSwingWork = new Runnable() {
+                        public void run() {
+                            revalidate();
+                        }
+                    };
+                    SwingUtilities.invokeLater(doSwingWork);
+                }
                 createBufferedPageImage(this);
                 isBufferyDirty = false;
             } catch (Throwable e) {
@@ -1096,15 +1105,7 @@ public class PageViewComponentImpl extends
                     pagePainter.setHasBeenQueued(true);
                     pagePainter.setIsBufferDirty(isBufferDirty);
                     Library.execute(pagePainter);
-                    // revalidate the page.
-//                    Runnable doSwingWork = new Runnable() {
-//                        public void run() {
-//                            pageComponent.revalidate();
-//                        }
-//                    };
-//                    SwingUtilities.invokeLater(doSwingWork);
                 }
-
                 // paint page content
                 if (page != null &&
                         !pageInitializer.isRunning() &&
