@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -36,6 +37,13 @@ public abstract class ImageReference implements Runnable {
 
     private static final Logger logger =
             Logger.getLogger(ImageReference.class.toString());
+
+    protected static boolean useProxy;
+
+    static {
+        // decide if large images will be scaled
+        useProxy = Defs.booleanProperty("org.icepdf.core.imageProxy", true);
+    }
 
     protected final ReentrantLock lock = new ReentrantLock();
 

@@ -40,6 +40,8 @@ public class InlineImageStreamReference extends ImageReference {
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (imagePool.get(reference) == null) {
             imagePool.execute(this);
+        } else if (!useProxy && imagePool.get(reference) == null) {
+            run();
         }
     }
 
