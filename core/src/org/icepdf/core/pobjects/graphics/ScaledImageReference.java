@@ -64,8 +64,10 @@ public class ScaledImageReference extends CachedImageReference {
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
-        if (imagePool.get(reference) == null) {
+        if (useProxy && imagePool.get(reference) == null) {
             imagePool.execute(this);
+        } else if (!useProxy && imagePool.get(reference) == null) {
+            run();
         }
     }
 
@@ -78,8 +80,10 @@ public class ScaledImageReference extends CachedImageReference {
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
-        if (imagePool.get(reference) == null) {
+        if (useProxy && imagePool.get(reference) == null) {
             imagePool.execute(this);
+        } else if (!useProxy && imagePool.get(reference) == null) {
+            run();
         }
     }
 
