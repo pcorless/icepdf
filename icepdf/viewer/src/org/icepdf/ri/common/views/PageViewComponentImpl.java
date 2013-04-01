@@ -415,7 +415,8 @@ public class PageViewComponentImpl extends
                     documentViewModel.addSelectedPageText(this);
                     pageText.selectAll();
                 }
-
+                // paint selected text.
+                TextSelectionPageHandler.paintSelectedText(g, this, documentViewModel);
             }
             // paint annotation handler effect if any.
             if (currentToolHandler != null) {
@@ -465,9 +466,13 @@ public class PageViewComponentImpl extends
     }
 
     public void clearSelectedText() {
-        if (currentToolHandler instanceof TextSelectionPageHandler) {
-            ((TextSelectionPageHandler) currentToolHandler).clearSelection();
+        // on mouse click clear the currently selected sprints
+        Page currentPage = getPage();
+        // clear selected text.
+        if (currentPage.getViewText() != null) {
+            currentPage.getViewText().clearSelected();
         }
+
     }
 
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {

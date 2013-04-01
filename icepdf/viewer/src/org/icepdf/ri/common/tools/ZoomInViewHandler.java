@@ -162,6 +162,6 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
     }
 
     public void paintTool(Graphics g) {
-        paintSelectionBox(g);
+        paintSelectionBox(g, rectToDraw);
     }
 }

@@ -167,7 +167,7 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
     }
 
     public void paintTool(Graphics g) {
-        paintSelectionBox(g);
+
     }
 
     @Override

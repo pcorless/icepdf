@@ -42,7 +42,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
     protected Rectangle rectToDraw = null;
     protected Rectangle previousRectDrawn = new Rectangle();
 
-    protected Color selectionBoxColour = Color.lightGray;
+    protected static Color selectionBoxColour = Color.lightGray;
 
     protected SelectionBoxHandler(DocumentViewController documentViewController,
                                   AbstractPageViewComponent pageViewComponent,
@@ -52,7 +52,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
 
     public abstract void setSelectionRectangle(Point cursorLocation, Rectangle selection);
 
-    public void paintSelectionBox(Graphics g) {
+    public static void paintSelectionBox(Graphics g, Rectangle rectToDraw) {
         Graphics2D gg = (Graphics2D) g;
         Color oldColor = gg.getColor();
         Stroke oldStroke = gg.getStroke();
