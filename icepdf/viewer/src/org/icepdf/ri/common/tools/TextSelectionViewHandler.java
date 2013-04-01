@@ -41,15 +41,18 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
             Logger.getLogger(TextSelectionViewHandler.class.toString());
 
 
+    protected JComponent parentComponent;
+
     public TextSelectionViewHandler(DocumentViewController documentViewController,
                                     DocumentViewModel documentViewModel,
                                     JComponent parentComponent) {
         super(documentViewController, null, documentViewModel);
+        this.parentComponent = parentComponent;
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (pageViewComponent != null) {
-            pageViewComponent.requestFocus();
+        if (parentComponent != null) {
+            parentComponent.requestFocus();
         }
     }
 
@@ -63,7 +66,7 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
 
     public void mouseReleased(MouseEvent e) {
         // update selection rectangle
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e, parentComponent);
 
         // deselect rectangles on other selected pages.
         ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
@@ -71,11 +74,11 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
 
         // check if we are over a page
         AbstractPageViewComponent pageComponent =
-                isOverPageComponent(pageViewComponent, e);
+                isOverPageComponent(parentComponent, e);
 
         if (pageComponent != null) {
             MouseEvent modeEvent = SwingUtilities.convertMouseEvent(
-                    pageViewComponent, e, pageComponent);
+                    parentComponent, e, pageComponent);
 
             if (selectedPages != null &&
                     selectedPages.size() > 0) {
@@ -105,7 +108,7 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
         }
 
         // clear the rectangle
-        clearRectangle(pageViewComponent);
+        clearRectangle(parentComponent);
 
     }
 
@@ -121,8 +124,8 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
 
         // handle text selection drags.
         if (documentViewController != null) {
-            // update the currently selected box
-            updateSelectionSize(e, pageViewComponent);
+            // update the currently parentComponent box
+            updateSelectionSize(e, parentComponent);
             // clear previously selected pages
             documentViewModel.clearSelectedPageText();
             // add selection box to child pages
@@ -131,7 +134,7 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
                         documentViewModel.getPageComponents();
                 for (AbstractPageViewComponent page : pages) {
                     Rectangle tmp = SwingUtilities.convertRectangle(
-                            pageViewComponent, getRectToDraw(), page);
+                            parentComponent, getRectToDraw(), page);
                     if (page.getBounds().intersects(tmp)) {
 
                         // add the page to the page as it is marked for selection
@@ -139,12 +142,12 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
 
                         // convert the rectangle to the correct space
                         Rectangle selectRec =
-                                SwingUtilities.convertRectangle(pageViewComponent,
+                                SwingUtilities.convertRectangle(parentComponent,
                                         rectToDraw,
                                         page);
                         // set the selected region.
                         page.setSelectionRectangle(
-                                SwingUtilities.convertPoint(pageViewComponent,
+                                SwingUtilities.convertPoint(parentComponent,
                                         e.getPoint(), page),
                                 selectRec);
                     }
@@ -156,10 +159,10 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
     public void mouseMoved(MouseEvent e) {
         // check if we are over a page
         AbstractPageViewComponent pageComponent =
-                isOverPageComponent(pageViewComponent, e);
+                isOverPageComponent(parentComponent, e);
         if (pageComponent != null) {
             pageComponent.dispatchEvent(SwingUtilities.convertMouseEvent(
-                    pageViewComponent, e, pageComponent));
+                    parentComponent, e, pageComponent));
         }
     }
 
