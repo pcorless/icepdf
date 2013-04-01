@@ -144,27 +144,12 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
     }
 
-    public void clearSelection() {
-        // on mouse click clear the currently selected sprints
-        Page currentPage = pageViewComponent.getPage();
-        // clear selected text.
-        if (currentPage.getViewText() != null) {
-            currentPage.getViewText().clearSelected();
-        }
-        // reset painted rectangle
-        currentRect = new Rectangle(0, 0, 0, 0);
-        updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
-
-        pageViewComponent.repaint();
-    }
-
-
     /**
      * Invoked when a mouse button has been pressed on a component.
      */
     public void mousePressed(MouseEvent e) {
 
-        clearSelection();
+        documentViewController.clearSelectedText();
 
         // text selection box.
         int x = e.getX();
@@ -225,9 +210,10 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         // rectangle select tool
         updateSelectionSize(e, pageViewComponent);
 
-        // lock and unlock content before iterating over the pageText tree.
         Page currentPage = pageViewComponent.getPage();
         multiLineSelectHandler(currentPage, e.getPoint());
+        // add the page to the page as it is marked for selection
+        documentViewModel.addSelectedPageText(pageViewComponent);
     }
 
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
@@ -342,7 +328,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      * Utility for selecting multiple lines via l-> right type select. This
      * method should only be called from within a locked page content
      *
-     * @param currentPage   page to looking for text inersection on.
+     * @param currentPage   page to looking for text intersection on.
      * @param mouseLocation location of mouse.
      */
     private void multiLineSelectHandler(Page currentPage, Point mouseLocation) {
@@ -626,7 +612,9 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      *
      * @param g graphics to paint to.
      */
-    public void paintSelectedText(Graphics g) {
+    public static void paintSelectedText(Graphics g,
+                                         AbstractPageViewComponent pageViewComponent,
+                                         DocumentViewModel documentViewModel) {
         // ready outline paint
         Graphics2D gg = (Graphics2D) g;
         AffineTransform prePaintTransform = gg.getTransform();
@@ -682,8 +670,6 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
         gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
                 1.0f));
-        // pain selection box
-        paintSelectionBox(g);
 
         // restore graphics state to where we left it. 
         gg.setTransform(prePaintTransform);
@@ -750,7 +736,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     }
 
     public void paintTool(Graphics g) {
-        paintSelectedText(g);
-        paintSelectionBox(g);
+//        paintSelectedText(g);
+        paintSelectionBox(g, rectToDraw);
     }
 }

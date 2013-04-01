@@ -55,7 +55,7 @@ import java.util.Date;
  */
 public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
-    protected static Name highLightType;
+    protected Name highLightType;
 
     public HighLightAnnotationHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent,
@@ -88,11 +88,26 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         // clear selected rectangle
         clearRectangle(pageViewComponent);
 
+        createTextMarkupAnnotation();
+
+        // set the annotation tool to he select tool
+//        documentViewController.getParentController().setDocumentToolMode(
+//                DocumentViewModel.DISPLAY_TOOL_SELECTION);
+    }
+
+
+    public void createTextMarkupAnnotation() {
+        // mke sure we don't create a highlight annotation for every word in the
+        // document when first selecting the tool for highlighted next. .
+        if (documentViewModel.isSelectAll()) {
+            documentViewController.clearSelectedText();
+        }
+
         // get the geometric path of the selected text
         ArrayList<Shape> highlightBounds = getSelectedTextBounds();
 
         // clear the selected text
-        clearSelection();
+        documentViewController.clearSelectedText();
 
         if (highlightBounds != null) {
 
@@ -144,17 +159,11 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                 annotationCallback.newAnnotation(pageViewComponent, comp);
             }
         }
-
-        // set the annotation tool to he select tool
-//        documentViewController.getParentController().setDocumentToolMode(
-//                DocumentViewModel.DISPLAY_TOOL_SELECTION);
-
         pageViewComponent.repaint();
     }
 
     public void paintTool(Graphics g) {
-        paintSelectedText(g);
-        paintSelectionBox(g);
+        paintSelectionBox(g, rectToDraw);
     }
 
     private ArrayList<Shape> getSelectedTextBounds() {

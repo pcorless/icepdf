@@ -80,6 +80,7 @@ public abstract class AbstractPageViewComponent
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION:
                 // handler is responsible for the initial creation of the annotation
@@ -87,6 +88,7 @@ public abstract class AbstractPageViewComponent
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION:
                 // handler is responsible for the initial creation of the annotation
@@ -94,60 +96,73 @@ public abstract class AbstractPageViewComponent
                         documentViewController,
                         this,
                         documentViewModel);
+                ((HighLightAnnotationHandler) currentToolHandler).createTextMarkupAnnotation();
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
                 currentToolHandler = new StrikeOutAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                ((StrikeOutAnnotationHandler) currentToolHandler).createTextMarkupAnnotation();
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
                 currentToolHandler = new UnderLineAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                ((UnderLineAnnotationHandler) currentToolHandler).createTextMarkupAnnotation();
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:
                 currentToolHandler = new LineAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINE_ARROW_ANNOTATION:
                 currentToolHandler = new LineArrowAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_SQUARE_ANNOTATION:
                 currentToolHandler = new SquareAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_CIRCLE_ANNOTATION:
                 currentToolHandler = new CircleAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_INK_ANNOTATION:
                 currentToolHandler = new InkAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_FREE_TEXT_ANNOTATION:
                 currentToolHandler = new FreeTextAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_TEXT_ANNOTATION:
                 currentToolHandler = new TextAnnotationHandler(
                         documentViewController,
                         this,
                         documentViewModel);
+                documentViewController.clearSelectedText();
                 break;
             default:
                 currentToolHandler = null;

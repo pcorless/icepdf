@@ -138,7 +138,6 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
     }
 
     public void paintTool(Graphics g) {
-        paintSelectionBox(g);
     }
 
 }
