@@ -1391,7 +1391,7 @@ public class Page extends Dictionary {
      *
      * @return vector of Strings of all text objects inside the specified page.
      */
-    public synchronized PageText getText() {
+    public synchronized PageText getText() throws InterruptedException {
 
         // we only do this once per page
         if (isInited) {
@@ -1401,50 +1401,44 @@ public class Page extends Dictionary {
         }
 
         Shapes textBlockShapes = new Shapes();
-        try {
-            /**
-             * Finally iterate through the contents vector and concat all of the
-             * the resouse streams together so that the contant parser can
-             * go to town and build all of the pages shapes.
-             */
-            if (contents == null) {
-                // Get the value of the page's content entry
-                initPageContents();
-            }
 
-            if (resources == null) {
-                // get pages resources
-                initPageResources();
-            }
-            if (contents != null) {
-                try {
+        /**
+         * Finally iterate through the contents vector and concat all of the
+         * the resouse streams together so that the contant parser can
+         * go to town and build all of the pages shapes.
+         */
+        if (contents == null) {
+            // Get the value of the page's content entry
+            initPageContents();
+        }
 
-                    ContentParser cp = ContentParserFactory.getInstance()
-                            .getContentParser(library, resources);
-                    byte[][] streams = new byte[contents.size()][];
-                    for (int i = 0, max = contents.size(); i < max; i++) {
-                        streams[i] = contents.get(i).getDecodedStreamBytes();
-                    }
-                    textBlockShapes = cp.parseTextBlocks(streams);
-                    // print off any fuzz left on the stack
-                    if (logger.isLoggable(Level.FINER)) {
-                        Stack<Object> stack = cp.getStack();
-                        while (!stack.isEmpty()) {
-                            String tmp = stack.pop().toString();
-                            if (logger.isLoggable(Level.FINE)) {
-                                logger.fine("STACK=" + tmp);
-                            }
+        if (resources == null) {
+            // get pages resources
+            initPageResources();
+        }
+        if (contents != null) {
+            try {
+
+                ContentParser cp = ContentParserFactory.getInstance()
+                        .getContentParser(library, resources);
+                byte[][] streams = new byte[contents.size()][];
+                for (int i = 0, max = contents.size(); i < max; i++) {
+                    streams[i] = contents.get(i).getDecodedStreamBytes();
+                }
+                textBlockShapes = cp.parseTextBlocks(streams);
+                // print off any fuzz left on the stack
+                if (logger.isLoggable(Level.FINER)) {
+                    Stack<Object> stack = cp.getStack();
+                    while (!stack.isEmpty()) {
+                        String tmp = stack.pop().toString();
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine("STACK=" + tmp);
                         }
                     }
-                } catch (Exception e) {
-                    logger.log(Level.FINE, "Error getting page text.", e);
                 }
+            } catch (Exception e) {
+                logger.log(Level.FINE, "Error getting page text.", e);
             }
-        } catch (InterruptedException e) {
-            // keeps shapes vector so we can paint what we have but make init state as false
-            // so we can try to reparse it later.
-            isInited = false;
-            logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
         }
         if (textBlockShapes.getPageText() != null) {
             return textBlockShapes.getPageText();

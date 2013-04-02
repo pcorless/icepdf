@@ -315,30 +315,34 @@ public class DocumentViewControllerImpl
     }
 
     public String getSelectedText() {
-
         StringBuilder selectedText = new StringBuilder();
-        // regular page selected by user mouse, keyboard or api
-        if (!documentViewModel.isSelectAll()) {
-            ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
-                    documentViewModel.getSelectedPageText();
-            if (selectedPages != null &&
-                    selectedPages.size() > 0) {
-                for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
-                    AbstractPageViewComponent pageComp = page.get();
-                    if (pageComp != null) {
-                        int pageIndex = pageComp.getPageIndex();
-                        selectedText.append(document.getPageText(pageIndex).getSelected());
+        try {
+            // regular page selected by user mouse, keyboard or api
+            if (!documentViewModel.isSelectAll()) {
+                ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
+                        documentViewModel.getSelectedPageText();
+                if (selectedPages != null &&
+                        selectedPages.size() > 0) {
+                    for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
+                        AbstractPageViewComponent pageComp = page.get();
+                        if (pageComp != null) {
+                            int pageIndex = pageComp.getPageIndex();
+                            selectedText.append(document.getPageText(pageIndex).getSelected());
+                        }
                     }
                 }
             }
-        }
-        // select all text
-        else {
-            Document document = documentViewModel.getDocument();
-            // iterate over each page in the document
-            for (int i = 0; i < document.getNumberOfPages(); i++) {
-                selectedText.append(viewerController.getDocument().getPageText(i));
+            // select all text
+            else {
+                Document document = documentViewModel.getDocument();
+                // iterate over each page in the document
+                for (int i = 0; i < document.getNumberOfPages(); i++) {
+                    selectedText.append(viewerController.getDocument().getPageText(i));
+                }
             }
+
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
         }
         return selectedText.toString();
     }

@@ -133,7 +133,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = null;
         if (viewerController != null) {
-            pageText = viewerController.getDocument().getPageText(pageIndex);
+            try {
+                pageText = viewerController.getDocument().getPageText(pageIndex);
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
+            }
         } else if (document != null) {
             pageText = document.getPageViewText(pageIndex);
         }
@@ -265,7 +269,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = null;
         if (viewerController != null) {
-            pageText = viewerController.getDocument().getPageText(pageIndex);
+            try {
+                pageText = viewerController.getDocument().getPageText(pageIndex);
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
+            }
         } else if (document != null) {
             pageText = document.getPageViewText(pageIndex);
         }
