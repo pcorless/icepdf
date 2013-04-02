@@ -72,6 +72,8 @@ public class PageTextExtraction {
 
         } catch (IOException ex) {
             System.out.println("Error writing to file " + ex);
+        } catch (InterruptedException ex) {
+            System.out.println("Error paring page " + ex);
         }
 
         // clean up resources

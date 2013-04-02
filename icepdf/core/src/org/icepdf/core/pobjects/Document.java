@@ -1113,7 +1113,7 @@ public class Document {
      * @return page PageText data Structure.
      * @see #getPageViewText(int).
      */
-    public PageText getPageText(int pageNumber) {
+    public PageText getPageText(int pageNumber) throws InterruptedException {
         PageTree pageTree = catalog.getPageTree();
         if (pageNumber >= 0 && pageNumber < pageTree.getNumberOfPages()) {
             Page pg = pageTree.getPage(pageNumber);
