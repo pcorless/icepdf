@@ -45,6 +45,9 @@ import java.util.ResourceBundle;
  * captures to disk.  A PDF, specified at the command line, is opened, and
  * every page in the document is captured as an image and saved into one
  * multi-page group 4 fax TIFF graphics file.
+ * <p/>
+ * More information on different compression types can be found at this forum
+ * thread, http://www.icesoft.org/JForum/posts/list/17504.page
  *
  * @since 4.0
  */
