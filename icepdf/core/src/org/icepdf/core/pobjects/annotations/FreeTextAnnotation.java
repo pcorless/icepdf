@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import javax.swing.text.DefaultStyledDocument;
@@ -34,6 +35,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -166,6 +168,51 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
+    protected static Color defaultFontColor;
+    protected static Color defaultFillColor;
+    protected static int defaultFontSize;
+
+    static {
+
+        // sets annotation free text font colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.freeText.font.color", "#000000");
+            int colorValue = ColorUtil.convertColor(color);
+            defaultFontColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("000000", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading free text annotation font colour");
+            }
+        }
+
+        // sets annotation free text fill colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.freeText.fill.color", "#ffffff");
+            int colorValue = ColorUtil.convertColor(color);
+            defaultFillColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ffffff", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading free text annotation fill colour");
+            }
+        }
+
+        // sets annotation free text fill colour
+        try {
+            defaultFontSize = Defs.sysPropertyInt(
+                    "org.icepdf.core.views.page.annotation.freeText.font.size", 24);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading free text annotation fill colour");
+            }
+        }
+    }
+
     protected String defaultAppearance;
 
     protected int quadding = QUADDING_LEFT_JUSTIFIED;
@@ -180,11 +227,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     // the annotations appearance stream and other needed properties on edits.
     private String fontName = "Helvetica";
     private int fontStyle = Font.PLAIN;
-    private int fontSize = 24;
-    private Color fontColor = Color.BLACK;
+    private int fontSize = defaultFontSize;
+    private Color fontColor = defaultFontColor;
     // fill
     private boolean fillType = false;
-    private Color fillColor = Color.WHITE;
+    private Color fillColor = defaultFillColor;
     // stroke
     private boolean strokeType = false;
 

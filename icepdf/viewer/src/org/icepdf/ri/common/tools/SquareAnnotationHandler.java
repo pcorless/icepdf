@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -31,6 +33,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -58,8 +61,40 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f);
-    protected static Color lineColor = Color.RED;
-    protected static Color internalColor = Color.WHITE;
+
+    protected static Color lineColor;
+    protected static Color internalColor;
+
+    static {
+
+        // sets annotation squareCircle stroke colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.squareCircle.stroke.color", "#ff0000");
+            int colorValue = ColorUtil.convertColor(color);
+            lineColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ff0000", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading squareCircle Annotation stroke colour");
+            }
+        }
+
+        // sets annotation link squareCircle colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.squareCircle.fill.color", "#ffffff");
+            int colorValue = ColorUtil.convertColor(color);
+            internalColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ffffff", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading squareCircle Annotation fill colour");
+            }
+        }
+    }
 
     // start and end point
     protected Rectangle rectangle;
