@@ -58,7 +58,9 @@ public class DeviceCMYK extends PColorSpace {
      */
 
     /**
-     * @param f 4 component values of the cmyk, assumes compoents between
+     * Adobe photo shop algorithm or so they say.  K is assumed to be f[0]
+     *
+     * @param f 4 component values of the cmyk, assumes comopents between
      *          0.0 and 1.0
      * @return valid rgb colour object.
      */
@@ -146,40 +148,6 @@ public class DeviceCMYK extends PColorSpace {
         return new Color((int) rgb[0], (int) rgb[1], (int) rgb[2]);
 
     }
-
-    /**
-     * Adobe photo shop algorithm or so they say.
-     * <p/>
-     * cyan = Math.min(255, cyan + black); //black is from K
-     * magenta = Math.min(255, magenta + black);
-     * yellow = Math.min(255, yellow + black);
-     * rgb[0] = 255 - cyan;
-     * rgb[1] = 255 - magenta;
-     * rgb[2] = 255 - yellow;
-     *
-     * @param f 4 component values of the cmyk, assumes compoents between
-     *          0.0 and 1.0
-     * @return valid rgb colour object.
-     */
-    private static Color getAdobeColor(float[] f) {
-
-        int cyan = (int) (f[3] * 255);
-        int magenta = (int) (f[2] * 255);
-        int yellow = (int) (f[1] * 255);
-        int black = (int) (f[0] * 255);
-
-        cyan = Math.min(255, cyan + black); //black is from K
-        magenta = Math.min(255, magenta + black);
-        yellow = Math.min(255, yellow + black);
-
-        int[] rgb = new int[3];
-        rgb[0] = 255 - cyan;
-        rgb[1] = 255 - magenta;
-        rgb[2] = 255 - yellow;
-
-        return new Color(rgb[0], rgb[1], rgb[2]);
-    }
-
 
     /**
      * Current runner for conversion that looks closest to acrobat.
