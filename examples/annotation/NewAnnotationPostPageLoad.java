@@ -89,9 +89,11 @@ public class NewAnnotationPostPageLoad {
         applicationFrame.getContentPane().add(viewerComponentPanel);
 
         // add interactive mouse link annotation support via callback
-        controller.getDocumentViewController().setAnnotationCallback(
+        org.icepdf.ri.common.MyAnnotationCallback myAnnotationCallback =
                 new org.icepdf.ri.common.MyAnnotationCallback(
-                        controller.getDocumentViewController()));
+                        controller.getDocumentViewController());
+        controller.getDocumentViewController().setAnnotationCallback(
+                myAnnotationCallback);
         // set document view mode
         controller.getDocumentViewController().setViewType(
                 DocumentViewControllerImpl.ONE_COLUMN_VIEW);
@@ -167,7 +169,8 @@ public class NewAnnotationPostPageLoad {
                     linkAnnotation.addAction(action);
                     // add it to the pageComponent, not the page, as we won't
                     // see it until the page is re-initialized.
-                    pageViewComponent.addAnnotation(annotationComponent);
+                    myAnnotationCallback.newAnnotation(pageViewComponent,
+                            annotationComponent);
                 }
             }
             // removed the search highlighting
