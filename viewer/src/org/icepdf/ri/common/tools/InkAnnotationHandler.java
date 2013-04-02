@@ -19,6 +19,8 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -29,6 +31,7 @@ import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.GeneralPath;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -54,7 +57,25 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f);
-    protected static Color lineColor = Color.GREEN;
+
+    protected static Color lineColor;
+
+    static {
+
+        // sets annotation ink line colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.ink.line.color", "#00ff00");
+            int colorValue = ColorUtil.convertColor(color);
+            lineColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("00ff00", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading Ink Annotation line colour");
+            }
+        }
+    }
 
     // start and end point
     protected GeneralPath inkPath;

@@ -19,6 +19,8 @@ import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
@@ -32,6 +34,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -51,6 +54,24 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
     private static final Logger logger =
             Logger.getLogger(TextAnnotationHandler.class.toString());
 
+    protected static Color defaultFillColor;
+
+    static {
+
+        // sets annotation text fill colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.text.fill.color", "#ffff00");
+            int colorValue = ColorUtil.convertColor(color);
+            defaultFillColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ffff00", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text annotation fill colour");
+            }
+        }
+    }
 
     protected static final Dimension ICON_SIZE = new Dimension(23, 23);
 
@@ -88,7 +109,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         // setup some default state
         textAnnotation.setIconName(TextAnnotation.COMMENT_ICON);
         textAnnotation.setState(TextAnnotation.STATE_UNMARKED);
-        textAnnotation.setColor(new Color(1.0f, 1.0f, 0f));
+        textAnnotation.setColor(defaultFillColor);
 
         // set the content stream
         textAnnotation.setBBox(bbox);

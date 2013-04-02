@@ -22,6 +22,8 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -35,6 +37,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,8 +65,41 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f);
-    protected static Color lineColor = Color.RED;
-    protected static Color internalColor = Color.RED;
+
+    protected static Color lineColor;
+    protected static Color internalColor;
+
+    static {
+
+        // sets annotation link stroke colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.line.stroke.color", "#ff0000");
+            int colorValue = ColorUtil.convertColor(color);
+            lineColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ff0000", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading line Annotation stroke colour");
+            }
+        }
+
+        // sets annotation link fill colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.line.fill.color", "#ff0000");
+            int colorValue = ColorUtil.convertColor(color);
+            internalColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ff0000", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading line Annotation fill colour");
+            }
+        }
+    }
+
 
     protected static Name startLineEnding = LineAnnotation.LINE_END_NONE;
     protected static Name endLineEnding = LineAnnotation.LINE_END_NONE;
