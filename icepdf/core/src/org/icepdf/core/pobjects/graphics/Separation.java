@@ -160,6 +160,10 @@ public class Separation extends PColorSpace {
             float y[] = tintTransform.calculate(components);
             return alternate.getColor(reverse(y));
         }
+        // return transparent colour
+        if (isNone) {
+            return new Color(0, 0, 0, 0);
+        }
         // return the named colour if it was resolved, otherwise assemble the
         // alternative colour.
         // -- Only applies to subtractive devices, screens are additive but I'm
