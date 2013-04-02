@@ -110,6 +110,15 @@ public class StateManager {
     }
 
     /**
+     * Gets the number of change object in the state manager.
+     *
+     * @return zero or more changed object count.
+     */
+    public int getChangedSize() {
+        return changes.size();
+    }
+
+    /**
      * @return An Iterator<PObject> for all the changes objects, sorted
      */
     public Iterator<PObject> iteratorSortedByObjectNumber() {
