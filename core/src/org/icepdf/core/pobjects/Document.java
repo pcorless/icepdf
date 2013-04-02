@@ -1213,4 +1213,16 @@ public class Document {
     public Catalog getCatalog() {
         return catalog;
     }
+
+    /**
+     * Sets the caching mode when handling file loaded by an URI.  If enabled
+     * URI streams will be cached to disk, otherwise they will be stored in
+     * memory. This method must be set before a call to setByteArray() or
+     * setInputStream() is called.
+     *
+     * @param cachingEnabled
+     */
+    public static void setCachingEnabled(boolean cachingEnabled) {
+        isCachingEnabled = cachingEnabled;
+    }
 }
