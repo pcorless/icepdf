@@ -2913,7 +2913,7 @@ public class SwingController
         canPrint = printHelper.setupPrintService(
                 0,
                 document.getNumberOfPages() - 1,
-                1,           // default number of copies.
+                viewModel.getPrintCopies(),           // default number of copies.
                 viewModel.isShrinkToPrintableArea(),        // shrink to printable area
                 withDialog  // show print dialogl
         );

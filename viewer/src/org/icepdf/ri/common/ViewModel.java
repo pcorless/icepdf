@@ -37,6 +37,9 @@ public class ViewModel {
     // store for shrink to fit setting for SwingController prints.
     private boolean isShrinkToPrintableArea = true;
 
+    // number of copies to print
+    private int printCopies = 1;
+
     private PrintHelper printHelper;
 
     static File getDefaultFile() {
@@ -99,5 +102,24 @@ public class ViewModel {
      */
     public void setShrinkToPrintableArea(boolean shrinkToPrintableArea) {
         isShrinkToPrintableArea = shrinkToPrintableArea;
+    }
+
+    /**
+     * Number of copies to print
+     *
+     * @return number of copies to print
+     */
+    public int getPrintCopies() {
+        return printCopies;
+    }
+
+    /**
+     * Sets the number of print copies that should be make during the next
+     * print.
+     *
+     * @param printCopies one or more copies
+     */
+    public void setPrintCopies(int printCopies) {
+        this.printCopies = printCopies;
     }
 }
