@@ -76,7 +76,8 @@ public class Indexed extends PColorSpace {
             // over the data from the stream just to be sure.
             Stream lookup = (Stream) (library.getObject((Reference) (dictionary.get(3))));
             byte[] colorStream = lookup.getDecodedStreamBytes(0);
-            System.arraycopy(colorStream, 0, colors, 0, colorStream.length);
+            int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+            System.arraycopy(colorStream, 0, colors, 0, length);
         }
     }
 
