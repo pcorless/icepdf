@@ -18,6 +18,7 @@ package org.icepdf.ri.common.utility.annotation;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -111,13 +112,21 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
                 annotationPropertyPanel instanceof SquareAnnotationPanel ||
                 annotationPropertyPanel instanceof CircleAnnotationPanel ||
                 annotationPropertyPanel instanceof InkAnnotationPanel ||
-                annotationPropertyPanel instanceof FreeTextAnnotationPanel) {
+                annotationPropertyPanel instanceof FreeTextAnnotationPanel ||
+                annotation instanceof PopupAnnotationComponent) {
             borderPanel.setVisible(false);
         } else {
             borderPanel.setVisible(true);
         }
 
-        setEnabled(annotation.isEditable());
+        // hide actions panel for the popup annotation
+        if (annotation instanceof PopupAnnotationComponent) {
+            actionsPanel.setVisible(false);
+        }
+
+        if (!annotation.isEditable()) {
+            setEnabled(annotation.isEditable());
+        }
 
         revalidate();
     }

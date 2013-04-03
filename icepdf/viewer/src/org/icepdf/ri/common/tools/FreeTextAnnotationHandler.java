@@ -69,7 +69,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void paintTool(Graphics g) {
-
+        paintSelectionBox(g, rectToDraw);
     }
 
     public void mouseClicked(MouseEvent e) {
