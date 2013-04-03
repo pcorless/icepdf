@@ -68,7 +68,8 @@ public class Indexed extends PColorSpace {
             colors = new byte[colorSpace.getNumComponents() * (hival + 1)];
             Stream lookup = (Stream) (library.getObject((Reference) (dictionary.elementAt(3))));
             byte[] colorStream = lookup.getBytes();
-            System.arraycopy(colorStream, 0, colors, 0, colorStream.length);
+            int length = colors.length < colorStream.length ? colors.length : colorStream.length;
+            System.arraycopy(colorStream, 0, colors, 0, length);
         }
     }
 
