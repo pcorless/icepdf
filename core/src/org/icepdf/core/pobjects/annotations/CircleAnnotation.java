@@ -70,7 +70,7 @@ public class CircleAnnotation extends MarkupAnnotation {
         super(l, h);
 
         // parse out interior colour, specific to link annotations.
-        fillColor = Color.black; // we default to black but probably should be null
+        fillColor = Color.WHITE; // we default to black but probably should be null
         java.util.List C = (java.util.List) getObject(IC_KEY);
         // parse thought rgb colour.
         if (C != null && C.size() >= 3) {

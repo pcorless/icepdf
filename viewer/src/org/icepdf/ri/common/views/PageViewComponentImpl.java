@@ -447,7 +447,9 @@ public class PageViewComponentImpl extends
                                 DocumentViewModel.DISPLAY_TOOL_SELECTION;
 
                 // paint all annotations on top of the content buffer
-                for (AnnotationComponent annotation : annotationComponents) {
+                AnnotationComponent annotation;
+                for (int i = 0, max = annotationComponents.size(); i < max; i++) {
+                    annotation = annotationComponents.get(i);
                     if (((Component) annotation).isVisible() &&
                             !(annotation.getAnnotation() instanceof FreeTextAnnotation)) {
                         annotation.getAnnotation().render(gg2,
