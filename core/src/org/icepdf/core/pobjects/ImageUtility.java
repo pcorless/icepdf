@@ -97,7 +97,7 @@ public class ImageUtility {
 
 
     // default cmyk value,  > 255 will lighten the image.
-    private static float blackRatio = 255.0f;
+    private static float blackRatio;
 
     // JDK 1.5 imaging order flag and b/r switch
     private static int redIndex = 0;
@@ -112,7 +112,7 @@ public class ImageUtility {
         }
 
         // black ratio
-        blackRatio = Defs.intProperty("org.icepdf.core.cmyk.black", 255);
+        blackRatio = Defs.intProperty("org.icepdf.core.cmyk.image.black", 255);
     }
 
     protected static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
