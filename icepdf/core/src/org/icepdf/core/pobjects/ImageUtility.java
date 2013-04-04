@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.tag.Tagger;
+import org.icepdf.core.util.Defs;
 
 import javax.swing.*;
 import java.awt.*;
@@ -95,6 +96,9 @@ public class ImageUtility {
     };
 
 
+    // default cmyk value,  > 255 will lighten the image.
+    private static float blackRatio = 255.0f;
+
     // JDK 1.5 imaging order flag and b/r switch
     private static int redIndex = 0;
     private static int blueIndex = 2;
@@ -106,6 +110,9 @@ public class ImageUtility {
             redIndex = 2;
             blueIndex = 0;
         }
+
+        // black ratio
+        blackRatio = Defs.intProperty("org.icepdf.core.cmyk.black", 255);
     }
 
     protected static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -247,7 +254,7 @@ public class ImageUtility {
                 // lessen the amount of black, standard 255 fraction is too dark
                 // increasing the denominator has the same affect of lighting up
                 // the image.
-                inBlack = (values[3] / 768.0f);
+                inBlack = (values[3] / blackRatio);
 
                 if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
                         inYellow == lastYellow && inBlack == lastBlack)) {
