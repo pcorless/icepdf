@@ -115,6 +115,10 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
                 boolean linkVisible = (Boolean) item.getValue();
                 if (linkVisible) {
                     annotation.getBorderStyle().setStrokeWidth(1f);
+                    // on visible set a default colour so we can see it.
+                    if (annotation.getColor() == null) {
+                        annotation.setColor(Color.BLACK);
+                    }
                 } else {
                     annotation.getBorderStyle().setStrokeWidth(0f);
                 }
