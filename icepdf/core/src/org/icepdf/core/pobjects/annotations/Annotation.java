@@ -597,7 +597,7 @@ public abstract class Annotation extends Dictionary {
         }
 
         // parse out border colour, specific to link annotations.
-        color = Color.black; // we default to black but probably should be null
+        color = null; // null as some borders are set as transparent via no colour
         List C = (List) getObject(COLOR_KEY);
         // parse thought rgb colour.
         if (C != null && C.size() >= 3) {

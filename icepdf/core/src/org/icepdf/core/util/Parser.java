@@ -275,14 +275,10 @@ public class Parser {
                     Name type = (Name) library.getObject(streamHash, Dictionary.TYPE_KEY);
                     Name subtype = (Name) library.getObject(streamHash, Dictionary.SUBTYPE_KEY);
                     if (type != null) {
-                        // new Tiling Pattern Object, will have a stream. 
-                        if (type.equals("Pattern")) {
-                            stream = new TilingPattern(library, streamHash, streamInputWrapper);
-                        }
                         // found a xref stream which is made up it's own entry format
                         // different then an standard xref table, mainly used to
-                        // access cross-reference entries but also to comrpess xref tables.
-                        else if (type.equals("XRef")) {
+                        // access cross-reference entries but also to compress xref tables.
+                        if (type.equals("XRef")) {
                             stream = new Stream(library, streamHash, streamInputWrapper);
                             stream.init();
                             InputStream in = stream.getDecodedByteArrayInputStream();
@@ -308,13 +304,19 @@ public class Parser {
                         } else if (type.equals("XObject") && "Image".equals(subtype)) {
                             stream = new ImageStream(library, streamHash, streamInputWrapper);
                         }
+                        // new Tiling Pattern Object, will have a stream.
+                        else if (type.equals("Pattern")) {
+                            stream = new TilingPattern(library, streamHash, streamInputWrapper);
+                        }
                     }
-                    if (subtype != null) {
+                    if (stream == null && subtype != null) {
                         // new form object
-                        if (subtype.equals("Form") && !"pattern".equals(type)) {
-                            stream = new Form(library, streamHash, streamInputWrapper);
-                        } else if (subtype.equals("Image")) {
+                        if (subtype.equals("Image")) {
                             stream = new ImageStream(library, streamHash, streamInputWrapper);
+                        } else if (subtype.equals("Form") && !"Pattern".equals(type)) {
+                            stream = new Form(library, streamHash, streamInputWrapper);
+                        } else if (subtype.equals("Form") && "Pattern".equals(type)) {
+                            stream = new TilingPattern(library, streamHash, streamInputWrapper);
                         }
                     }
                     if (trailer != null) {
