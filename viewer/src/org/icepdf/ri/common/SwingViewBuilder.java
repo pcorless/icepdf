@@ -1363,7 +1363,7 @@ public class SwingViewBuilder {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.pageFit.fontEngine.label"),
                 messageBundle.getString("viewer.toolbar.pageFit.fontEngine.tooltip"),
-                "font-engine", 112, 25, buttonFont);
+                "font-engine", 118, 25, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setFontEngineButton(btn);
         return btn;
@@ -1975,17 +1975,17 @@ public class SwingViewBuilder {
         tmp.setRolloverEnabled(false);
         tmp.setPreferredSize(new Dimension(imageWidth, imageHeight));
         try {
-            tmp.setIcon(new ImageIcon(Images.get(imageName + "_d" + ".gif")));
-            tmp.setPressedIcon(new ImageIcon(Images.get(imageName + "_d.gif")));
-            tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_n.gif")));
-            tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_n.gif")));
+            tmp.setIcon(new ImageIcon(Images.get(imageName + "_d.png")));
+            tmp.setPressedIcon(new ImageIcon(Images.get(imageName + "_d.png")));
+            tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_n.png")));
+            tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_n.png")));
         } catch (NullPointerException e) {
 
         }
-        //tmp.setBorderPainted(false);
+        tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setContentAreaFilled(false);
-        tmp.setFocusPainted(true);
+        tmp.setFocusPainted(false);
 
         return tmp;
     }
