@@ -1972,13 +1972,17 @@ public class SwingViewBuilder {
         JToggleButton tmp = new JToggleButton(showButtonText ? title : "");
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
+        tmp.setRolloverEnabled(false);
         tmp.setPreferredSize(new Dimension(imageWidth, imageHeight));
-        tmp.setRolloverEnabled(true);
+        try {
+            tmp.setIcon(new ImageIcon(Images.get(imageName + "_d" + ".gif")));
+            tmp.setPressedIcon(new ImageIcon(Images.get(imageName + "_d.gif")));
+            tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_n.gif")));
+            tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_n.gif")));
+        } catch (NullPointerException e) {
 
-        tmp.setIcon(new ImageIcon(Images.get(imageName + "_d.gif")));
-        tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_n.gif")));
-        tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_n.gif")));
-
+        }
+        //tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
         tmp.setContentAreaFilled(false);
         tmp.setFocusPainted(true);
