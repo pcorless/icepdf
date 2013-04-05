@@ -1461,7 +1461,7 @@ public class SwingController
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(
                                 DocumentViewModelImpl.DISPLAY_TOOL_ZOOM_DYNAMIC);
-                documentViewController.setViewCursor(DocumentViewController.CURSOR_ZOOM_OUT);
+                documentViewController.setViewCursor(DocumentViewController.CURSOR_MAGNIFY);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_WAIT) {
                 setCursorOnComponents(DocumentViewController.CURSOR_WAIT);
