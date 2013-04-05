@@ -187,12 +187,30 @@ public abstract class AbstractDocumentView
      */
     public abstract void updateDocumentView();
 
-    public void setToolMode(final int viewToolMode) {
+    public ToolHandler uninstallCurrentTool() {
         if (currentTool != null) {
             currentTool.uninstallTool();
             removeMouseListener(currentTool);
             removeMouseMotionListener(currentTool);
         }
+        return currentTool;
+    }
+
+    public void installCurrentTool(ToolHandler currentTool) {
+        if (currentTool != null) {
+            currentTool.installTool();
+            addMouseListener(currentTool);
+            addMouseMotionListener(currentTool);
+            this.currentTool = currentTool;
+        }
+    }
+
+    public ToolHandler getCurrentToolHandler() {
+        return currentTool;
+    }
+
+    public void setToolMode(final int viewToolMode) {
+        uninstallCurrentTool();
         // assign the correct tool handler
         switch (viewToolMode) {
             case DocumentViewModel.DISPLAY_TOOL_PAN:
