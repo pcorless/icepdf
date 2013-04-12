@@ -393,6 +393,7 @@ public class ImageStream extends Stream {
                     }
                     decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
                             this, library, entries, fill);
+                    return decodedImage;
                 }
             }
 
