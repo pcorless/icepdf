@@ -153,7 +153,7 @@ public class FontFactory {
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.FINE, "Could not create instance oof font file " + fontType, e);
+                logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
             }
         } else if (awtFontLoading) {
             // see if the font file can be loaded with Java Fonts
