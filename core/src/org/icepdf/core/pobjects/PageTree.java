@@ -269,6 +269,21 @@ public class PageTree extends Dictionary {
                 }
                 globalIndexSoFar += numChildPages;
             }
+            // corner case where pages didn't have "pages" key.
+            else if (pageOrPages instanceof HashMap) {
+                HashMap dictionary = (HashMap) pageOrPages;
+                if (dictionary.containsKey(new Name("Kids"))) {
+                    PageTree childPageTree = new PageTree(library, dictionary);
+                    childPageTree.init();
+                    int numChildPages = childPageTree.getNumberOfPages();
+                    if (globalIndex >= globalIndexSoFar && globalIndex < (globalIndexSoFar + numChildPages)) {
+                        return childPageTree.getPagePotentiallyNotInitedByRecursiveIndex(
+                                globalIndex - globalIndexSoFar);
+                    }
+                    globalIndexSoFar += numChildPages;
+                }
+
+            }
         }
         return null;
     }
