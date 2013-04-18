@@ -137,8 +137,7 @@ public abstract class ChunkingInputStream extends InputStream {
             int toRead = Math.min(length - read, avail);
             int srcIdx = bufferPosition;
             int dstIdx = off + read;
-            for (int i = 0; i < toRead; i++)
-                b[dstIdx++] = buffer[srcIdx++];
+            System.arraycopy(buffer, srcIdx, b, dstIdx, toRead);
             bufferPosition += toRead;
             bufferAvailable -= toRead;
             read += toRead;
