@@ -1113,6 +1113,17 @@ public class ImageStream extends Stream {
     }
 
     /**
+     * Used to enable/disable the loading of CCITTFax images using JAI library.
+     * This method can be used in place of the system property
+     * org.icepdf.core.ccittfax.jai .
+     *
+     * @param enable eanb
+     */
+    public static void forceJaiCcittFax(boolean enable) {
+        forceJaiccittfax = enable;
+    }
+
+    /**
      * Return a string description of the object.  Primarily used for debugging.
      */
     public String toString() {
