@@ -187,6 +187,15 @@ public class FontFactory {
     }
 
     public FontFile createFontFile(File file, int fontType) {
+        try {
+            return createFontFile(file.toURI().toURL(), fontType);
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Could not create instance oof font file " + fontType, e);
+        }
+        return null;
+    }
+
+    public FontFile createFontFile(URL url, int fontType) {
         FontFile fontFile = null;
         if (foundFontEngine()) {
             try {
@@ -196,7 +205,7 @@ public class FontFactory {
                     Class[] urlArg = {URL.class};
                     Constructor fontClassConstructor =
                             fontClass.getDeclaredConstructor(urlArg);
-                    Object[] fontUrl = {file.toURI().toURL()};
+                    Object[] fontUrl = {url};
                     fontFile = (FontFile) fontClassConstructor.newInstance(fontUrl);
                 }
             } catch (Throwable e) {
@@ -205,14 +214,14 @@ public class FontFactory {
         } else {
             // see if the font file can be loaded with Java Fonts
             try {
-                java.awt.Font javaFont = java.awt.Font.createFont(fontType, file);
+                java.awt.Font javaFont = java.awt.Font.createFont(fontType, url.openStream());
                 if (javaFont != null) {
 
                     // create instance of OFont.
                     fontFile = new OFont(javaFont);
 
                     if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("Successfully loaded OFont: " + file.toURI().toURL());
+                        logger.fine("Successfully loaded OFont: " + url);
                     }
                 }
             } catch (Throwable e) {

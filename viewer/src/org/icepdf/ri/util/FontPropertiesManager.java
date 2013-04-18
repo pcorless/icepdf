@@ -81,6 +81,13 @@ public class FontPropertiesManager {
         // create a new Font Manager.
         this.fontManager = FontManager.getInstance();
 
+        // read some fonts from a jars
+        fontManager.readFontPackage("fonts", Arrays.asList(
+                new String[]{"CenturySchL-Bold.pfb",
+                        "Dingbats.pfb",
+                        "NimbusMonL-Bold.pfb",
+                        "NimbusSanL-Bold.pfb"}));
+
         setupHomeDir(null);
 
         recordMofifTime();
