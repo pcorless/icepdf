@@ -42,7 +42,7 @@ public class Indexed extends PColorSpace {
     private Color[] cols;
 
     /**
-     * Contructs a new instance of the indexed colour space. Pares the indexed
+     * Constructs a new instance of the indexed colour space. Pares the indexed
      * colour pattern: [/Indexed base hival lookup] where base is an array or
      * name that identifies the base colour space. Hival parameter is an integer
      * that specifies the maximum valid index value. Lookup is the colour table

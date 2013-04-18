@@ -102,8 +102,8 @@ public class DeviceN extends PColorSpace {
         if (foundCMYK) {
             return new DeviceCMYK(null, null).getColor(f);
         } else {
-            float y[] = tintTransform.calculate(f);
-            return alternate.getColor(reverse(y));
+            float y[] = tintTransform.calculate(reverse(f));
+            return alternate.getColor(y);
         }
     }
 }
