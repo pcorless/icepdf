@@ -16,7 +16,7 @@
 package org.icepdf.core.util;
 
 /**
- * Font utility contians a bunch of commonly used font utility methods.
+ * Font utility contains a bunch of commonly used font utility methods.
  *
  * @since 3.1
  */
