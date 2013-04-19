@@ -112,7 +112,7 @@ public abstract class PColorSpace extends Dictionary {
                 } else if (colorant.equals(DeviceCMYK.DEVICECMYK_KEY)) {
                     return new DeviceCMYK(library, null);
                 } else if (colorant.equals(DeviceGray.DEVICEGRAY_KEY)) {
-                    return new DeviceRGB(library, null);
+                    return new DeviceGray(library, null);
                 } else if (colorant.equals(PatternColor.PATTERN_KEY)) {
                     PatternColor patternColour = new PatternColor(library, null);
                     if (v.size() > 1) {
