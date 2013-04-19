@@ -104,11 +104,21 @@ public class CrossReference {
                     long filePosition = parser.getIntSurroundedByWhitespace();  // ( (Number) getToken() ).longValue();
                     int generationNum = parser.getIntSurroundedByWhitespace(); // ( (Number) getToken() ).intValue();
                     char usedOrFree = parser.getCharSurroundedByWhitespace();  // ( (String) getToken() ).charAt( 0 );
-                    if (usedOrFree == 'n')         // Used
+                    if (usedOrFree == 'n') {         // Used
                         addUsedEntry(currNumber, filePosition, generationNum);
+                    }
                     // ignore any free entries.
-//                    else if (usedOrFree == 'f')    // Free
-//                        addFreeEntry(currNumber, (int) tenDigitNum, generationNum);
+                    else if (usedOrFree == 'f') {    // Free
+                        // check for the first entry 0000000000 65535 f  and
+                        // a object range where the first entry isn't zero.  The
+                        // code below will treat the first entry as zero and then
+                        // start counting.
+                        if (generationNum == 65535 && currNumber > 0) {
+                            // offset the count so we start counting after the zeroed entry
+                            currNumber--;
+                        }
+//                        addFreeEntry(currNumber, (int) filePosition, generationNum);
+                    }
                     currNumber++;
                 }
             }
