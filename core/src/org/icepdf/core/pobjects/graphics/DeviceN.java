@@ -75,22 +75,23 @@ public class DeviceN extends PColorSpace {
         // check to see if cymk is specified int the names, if so we can
         // uses the cmyk colour space directly, otherwise we fallback to the alternative
         // and hope it was setup correctly.
-        if (names.size() == 4) {
-            int cmykCount = 0;
-            for (Name name : names) {
-                if (name.getName().toLowerCase().startsWith("c")) {
-                    cmykCount++;
-                } else if (name.getName().toLowerCase().startsWith("m")) {
-                    cmykCount++;
-                } else if (name.getName().toLowerCase().startsWith("y")) {
-                    cmykCount++;
-                } else if (name.getName().toLowerCase().startsWith("b")) {
-                    cmykCount++;
-                }
-                if (cmykCount == 4) {
-                    foundCMYK = true;
-                }
+        int cmykCount = 0;
+        foundCMYK = true;
+        for (Name name : names) {
+            if (name.getName().toLowerCase().startsWith("c")) {
+                cmykCount++;
+            } else if (name.getName().toLowerCase().startsWith("m")) {
+                cmykCount++;
+            } else if (name.getName().toLowerCase().startsWith("y")) {
+                cmykCount++;
+            } else if (name.getName().toLowerCase().startsWith("k")) {
+                cmykCount++;
+            } else if (name.getName().toLowerCase().startsWith("b")) {
+                cmykCount += 2;
             }
+        }
+        if (cmykCount < 2) {
+            foundCMYK = false;
         }
     }
 
@@ -98,10 +99,37 @@ public class DeviceN extends PColorSpace {
         return names.size();
     }
 
+    private float[] assignCMYK(float[] f) {
+        float[] f2 = new float[4];
+        Name name;
+        for (int i = 0, max = names.size(); i < max; i++) {
+            name = names.get(i);
+            if (name.getName().toLowerCase().startsWith("c")) {
+                f2[0] = i < f.length ? f[i] : 0;
+            } else if (name.getName().toLowerCase().startsWith("m")) {
+                f2[1] = i < f.length ? f[i] : 0;
+            } else if (name.getName().toLowerCase().startsWith("y")) {
+                f2[2] = i < f.length ? f[i] : 0;
+            } else if (name.getName().toLowerCase().startsWith("b") ||
+                    name.getName().toLowerCase().startsWith("k")) {
+                f2[3] = i < f.length ? f[i] : 0;
+            }
+        }
+        return f2;
+    }
+
+
     public Color getColor(float[] f) {
+        // calculate cmyk color
         if (foundCMYK) {
-            return new DeviceCMYK(null, null).getColor(f);
-        } else {
+            if (f.length < 4) {
+                f = assignCMYK(f);
+            }
+
+            return new DeviceCMYK(null, null).getColor(reverse(f));
+        }
+        // otherwise use the alternative colour space.
+        else {
             float y[] = tintTransform.calculate(reverse(f));
             return alternate.getColor(y);
         }
