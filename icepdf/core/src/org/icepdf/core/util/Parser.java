@@ -700,6 +700,7 @@ public class Parser {
         char currentChar;
         boolean inString = false;  // currently parsing a string
         boolean hexString = false;
+        boolean inNumber = false;
         lastTokenHString = false;
 
         // strip all white space characters
@@ -714,10 +715,11 @@ public class Parser {
         while (isWhitespace(currentChar));
 
         /**
-         *  look the start of different primative pdf objects
+         *  look the start of different primitive pdf objects
          * ( - strints
          * [ - arrays
          * % - comments
+         * numbers.
          */
         if (currentChar == '(') {
             // mark that we are currrently processing a string
@@ -746,6 +748,9 @@ public class Parser {
             while (currentChar != 13 && currentChar != 10);
             // return all the text that is in the comment
             return stringBuffer.toString();
+        } else if ((currentChar >= '0' && currentChar <= '9') ||
+                currentChar == '-' || currentChar == '+') {
+            inNumber = true;
         }
 
         // mark this location in the input stream
@@ -797,13 +802,13 @@ public class Parser {
 
             // get the next byte and corresponding char
             currentByte = reader.read();
-            // if ther are no more bytes (-1) then we should return previous
-            // stringBuffer value, otherwise the last grouping of tokens will
-            // be ignored, which is very bad.
             if (currentByte >= 0) {
                 currentChar = (char) currentByte;
             } else {
-                return stringBuffer.toString();
+                // if there are no more bytes (-1) then we must have reached the end of this token,
+                // though maybe without appropriate termination of a string object. We'll just treat
+                // them as if they were.
+                break;
             }
 
             // if we are parsing a token that is a string, (...)
@@ -977,25 +982,8 @@ public class Parser {
             return new Name(stringBuffer.deleteCharAt(0));
         }
         // if a number try and parse it
-        else {
-//            boolean foundDigit = false;
-//            boolean foundDecimal = false;
-//            for (int i = stringBuffer.length() - 1; i >= 0; i--) {
-//                char curr = stringBuffer.charAt(i);
-//                if (curr == '.')
-//                    foundDecimal = true;
-//                else if (curr >= '0' && curr <= '9')
-//                    foundDigit = true;
-//            }
-            // Only bother trying to interpret as a number if contains a digit somewhere,
-            //   to reduce NumberFormatExceptions
-//            if (foundDigit) {
-            try {
-                return Float.valueOf(stringBuffer.toString());
-            } catch (NumberFormatException ex) {
-                // Debug.trace("Number format exception " + ex);
-            }
-//            }
+        else if (inNumber) {
+            return getFloat(stringBuffer);
         }
         return stringBuffer.toString();
     }
@@ -1040,15 +1028,7 @@ public class Parser {
         // Only bother trying to interpret as a number if contains a digit somewhere,
         //   to reduce NumberFormatExceptions
         if (foundDigit) {
-            try {
-                if (foundDecimal)
-                    return Float.valueOf(sb.toString());
-                else {
-                    return Integer.valueOf(sb.toString());
-                }
-            } catch (NumberFormatException ex) {
-                // Debug.trace("Number format exception " + ex);
-            }
+            return getFloat(sb);
         }
 
         if (sb.length() > 0)
@@ -1088,6 +1068,45 @@ public class Parser {
         if (makeNegative)
             num = num * -1;
         return num;
+    }
+
+    public float getFloat(StringBuilder value) {
+        float digit = 0;
+        float divisor = 10;
+        boolean isDigit;
+        boolean isDecimal = false;
+        byte[] streamBytes = value.toString().getBytes();
+        int startTokenPos = 0;
+        boolean singed = streamBytes[startTokenPos] == '-';
+        boolean positive = streamBytes[startTokenPos] == '+';
+        startTokenPos = singed || positive ? startTokenPos + 1 : startTokenPos;
+        // check for  double sign, thanks oracle forms!
+        if (singed && streamBytes[startTokenPos] == '-') {
+            startTokenPos++;
+        }
+        int current;
+        for (int i = startTokenPos, max = streamBytes.length; i < max; i++) {
+            current = streamBytes[i] - 48;
+            isDigit = streamBytes[i] >= 48 && streamBytes[i] <= 57;
+            if (!isDecimal && isDigit) {
+                digit = (digit * 10) + current;
+            } else if (isDecimal && isDigit) {
+                digit += (current / divisor);
+                divisor *= 10;
+            } else if (streamBytes[i] == 46) {
+                isDecimal = true;
+            } else {
+                // anything else we can assume malformed and should break.
+                int offset = i - startTokenPos;
+                offset = offset == 1 ? offset : offset - 1;
+                break;
+            }
+        }
+        if (singed) {
+            return -digit;
+        } else {
+            return digit;
+        }
     }
 
     public long getLongSurroundedByWhitespace() {
