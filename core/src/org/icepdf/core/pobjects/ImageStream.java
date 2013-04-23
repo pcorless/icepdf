@@ -510,13 +510,13 @@ public class ImageStream extends Stream {
                     ImageUtility.alterRasterRGB2PColorSpace(wr, colourSpace);
                     tmpImage = ImageUtility.makeRGBtoRGBABuffer(wr, width, height);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_CMYK && bitspercomponent == 8) {
-                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr);
+                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr, decode);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCbCr && bitspercomponent == 8) {
                     tmpImage = ImageUtility.alterRasterYCbCr2RGBA(wr, decode);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCCK && bitspercomponent == 8) {
                     // YCCK to RGB works better if an CMYK intermediate is used, but slower.
                     ImageUtility.alterRasterYCCK2CMYK(wr, decode);
-                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr);
+                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr, decode);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_GRAY && bitspercomponent == 8) {
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
@@ -793,7 +793,7 @@ public class ImageStream extends Stream {
                 tmpImage = ImageUtility.makeRGBBufferedImage(wr);
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
-                tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr);
+                tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr, decode);
                 return tmpImage;
             } else if ((colourSpace instanceof DeviceGray)
                     && bitsPerComponent == 8) {
