@@ -1060,6 +1060,9 @@ public class Parser {
                     num *= 10;
                     num += (curr - '0');
                     readNonWhitespace = true;
+                } else {
+                    // break as we've hit a none digit and should bail
+                    break;
                 }
             }
         } catch (IOException e) {
@@ -1097,8 +1100,6 @@ public class Parser {
                 isDecimal = true;
             } else {
                 // anything else we can assume malformed and should break.
-                int offset = i - startTokenPos;
-                offset = offset == 1 ? offset : offset - 1;
                 break;
             }
         }
@@ -1128,6 +1129,8 @@ public class Parser {
                     num *= 10L;
                     num += ((long) (curr - '0'));
                     readNonWhitespace = true;
+                } else {
+                    break;
                 }
             }
         } catch (IOException e) {
