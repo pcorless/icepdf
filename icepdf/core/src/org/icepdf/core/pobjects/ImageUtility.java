@@ -232,7 +232,8 @@ public class ImageUtility {
         return tmpImage;
     }
 
-    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr) {
+    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr,
+                                                        float[] decode) {
         int width = wr.getWidth();
         int height = wr.getHeight();
 
@@ -242,11 +243,19 @@ public class ImageUtility {
         double c, m, y2, aw, ac, am, ay, ar, ag, ab;
         float outRed, outGreen, outBlue;
         int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
-        int[] values = new int[4];
+        int[] values = new int[wr.getNumBands()];
+        byte[] dataValues = new byte[wr.getNumBands()];
+        byte[] compColors;
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, values);
+
+                compColors = (byte[]) wr.getDataElements(x, y, dataValues);
+                // apply decode param.
+                ImageUtility.getNormalizedComponents(
+                        compColors,
+                        decode,
+                        values);
 
                 inCyan = values[0] / 255.0f;
                 inMagenta = values[1] / 255.0f;
@@ -578,7 +587,8 @@ public class ImageUtility {
     }
 
     /**
-     * Apply the Decode Array domain for each colour component.
+     * Apply the Decode Array domain for each colour component.  Assumes output
+     * range is 0-1f for each value in out.
      *
      * @param pixels colour to process by decode
      * @param decode decode array for colour space
@@ -592,6 +602,25 @@ public class ImageUtility {
         // interpolate each colour component for the given decode domain.
         for (int i = 0; i < pixels.length; i++) {
             out[i] = decode[i * 2] + (pixels[i] & 0xff) * decode[(i * 2) + 1];
+        }
+    }
+
+    /**
+     * Apply the Decode Array domain for each colour component. Assumes output
+     * range is 0-255 for each value in out.
+     *
+     * @param pixels colour to process by decode
+     * @param decode decode array for colour space
+     * @param out    return value
+     *               always (2<sup>bitsPerComponent</sup> - 1).
+     */
+    protected static void getNormalizedComponents(
+            byte[] pixels,
+            float[] decode,
+            int[] out) {
+        // interpolate each colour component for the given decode domain.
+        for (int i = 0; i < pixels.length; i++) {
+            out[i] = (int) ((decode[i * 2] * 255) + (pixels[i] & 0xff) * (decode[(i * 2) + 1] * 255));
         }
     }
 
