@@ -425,12 +425,12 @@ public class Parser {
                                 stack.push(hashMap);
                             }
                         }
-                    } else if (isTrailer && deepnessCount >= 0) {
+                    } else if (isTrailer && deepnessCount == 0) {
                         // we have an xref entry
                         HashMap hashMap = new HashMap();
                         Object obj = stack.pop();
-                        // put all of the dictionary definistion into the
-                        // the hashTabl
+                        // put all of the dictionary definition into the
+                        // the new map.
                         while (!((obj instanceof String)
                                 && (obj.equals("<<"))) && !stack.isEmpty()) {
                             Object key = stack.pop();
