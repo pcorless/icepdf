@@ -92,7 +92,7 @@ public class LayersPanel extends JPanel {
 
                 nodes = new LayersTreeNode("Layers");
                 nodes.setAllowsChildren(true);
-                buildTree(layersOrder, hasRadioButtons);
+                buildTree(layersOrder, nodes, hasRadioButtons);
                 buildUI();
             }
         } else {
@@ -101,14 +101,20 @@ public class LayersPanel extends JPanel {
         }
     }
 
-    public LayersTreeNode buildTree(List<Object> layersOrder, boolean radioGroup) {
+    public void buildTree(List<Object> layersOrder, LayersTreeNode parent, boolean radioGroup) {
 
         LayersTreeNode tmp = null;
         boolean selected = true;
         // tod recursive build with parent checking.
         for (Object obj : layersOrder) {
             if (obj instanceof List) {
-                tmp = buildTree((List) obj, radioGroup);
+                LayersTreeNode newParent = null;
+                if (parent.getChildCount() > 0) {
+                    newParent = (LayersTreeNode) parent.getLastChild();
+                } else {
+                    newParent = parent;
+                }
+                buildTree((List) obj, newParent, radioGroup);
             } else if (obj instanceof String) {
                 // sets the node as selected if children are all selected.
                 if (tmp != null && selected) {
@@ -124,11 +130,7 @@ public class LayersPanel extends JPanel {
                 if (radioGroup) {
                     node.setSelectionMode(LayersTreeNode.RADIO_SELECTION);
                 }
-                if (tmp != null) {
-                    tmp.add(node);
-                } else {
-                    nodes.add(node);
-                }
+                parent.add(node);
                 // check for an unselected state, goal is to select the parent
                 // if all children are selected.
                 if (!node.isSelected()) {
@@ -136,7 +138,6 @@ public class LayersPanel extends JPanel {
                 }
             }
         }
-        return nodes;
     }
 
 
