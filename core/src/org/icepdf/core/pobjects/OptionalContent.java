@@ -156,12 +156,14 @@ public class OptionalContent extends Dictionary {
             if (toggle != null) {
                 for (Object obj : toggle) {
                     OptionalContentGroup ocg = groups.get(obj);
-                    if (isBaseOn) {
-                        // remove the off entries
-                        ocg.setVisible(false);
-                    } else {
-                        // otherwise we add the on entries.
-                        ocg.setVisible(true);
+                    if (ocg != null) {
+                        if (isBaseOn) {
+                            // remove the off entries
+                            ocg.setVisible(false);
+                        } else {
+                            // otherwise we add the on entries.
+                            ocg.setVisible(true);
+                        }
                     }
                 }
             }
@@ -191,7 +193,7 @@ public class OptionalContent extends Dictionary {
                 List orderedOCs = (List) tmp;
                 if (orderedOCs.size() > 0) {
                     order = new ArrayList<Object>(orderedOCs.size());
-                    order = parseOrderArray(orderedOCs);
+                    order = parseOrderArray(orderedOCs, null);
                 }
             }
 
@@ -201,7 +203,7 @@ public class OptionalContent extends Dictionary {
                 List orderedOCs = (List) tmp;
                 if (orderedOCs.size() > 0) {
                     rbGroups = new ArrayList<Object>(orderedOCs.size());
-                    rbGroups = parseOrderArray(orderedOCs);
+                    rbGroups = parseOrderArray(orderedOCs, null);
                 }
             }
 
@@ -210,13 +212,25 @@ public class OptionalContent extends Dictionary {
         inited = true;
     }
 
-    private List<Object> parseOrderArray(List<Object> rawOrder) {
+    private List<Object> parseOrderArray(List<Object> rawOrder, OptionalContentGroup parent) {
         List<Object> order = new ArrayList<Object>(5);
+        OptionalContentGroup group = null;
         for (Object obj : rawOrder) {
             if (obj instanceof Reference) {
-                order.add(getOCGs((Reference) obj));
-            } else if (obj instanceof List) {
-                order.addAll(parseOrderArray((List) obj));
+                Object refObject = getOCGs((Reference) obj);
+                if (refObject != null) {
+                    group = (OptionalContentGroup) refObject;
+                    if (parent != null && !parent.isVisible()) {
+                        group.setVisible(false);
+                    }
+                    order.add(group);
+                } else {
+                    obj = library.getObject((Reference) obj);
+                }
+            }
+            if (obj instanceof List) {
+                parent = group;
+                order.add(parseOrderArray((List) obj, parent));
             } else if (obj instanceof StringObject) {
                 order.add(Utils.convertStringObject(library, (StringObject) obj));
             }
