@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.text;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Line text is make up WordText objects.  This structure is to aid the
@@ -181,6 +182,8 @@ public class LineText extends AbstractText implements TextSelect {
      */
     public StringBuilder getSelected() {
         StringBuilder selectedText = new StringBuilder();
+        Collections.sort(words, new TextPositionComparator());
+
         for (WordText word : words) {
             selectedText.append(word.getSelected());
         }
