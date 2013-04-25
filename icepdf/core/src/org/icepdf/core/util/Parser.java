@@ -301,7 +301,7 @@ public class Parser {
                             trailer = new PTrailer(library, trailerHash, null, xrefStream);
                         } else if (type.equals("ObjStm")) {
                             stream = new ObjectStream(library, streamHash, streamInputWrapper);
-                        } else if (type.equals("XObject") && "Image".equals(subtype)) {
+                        } else if (type.equals("XObject") && subtype.equals("Image")) {
                             stream = new ImageStream(library, streamHash, streamInputWrapper);
                         }
                         // new Tiling Pattern Object, will have a stream.
@@ -328,6 +328,9 @@ public class Parser {
                             stream = new Stream(library, streamHash, streamInputWrapper);
                         }
                         stack.push(stream);
+                        // forcing a object return just encase the length is wrong
+                        // and we don't get to the endstream.
+                        return addPObject(library, objectReference);
                     }
                 }
                 // end if (stream)
