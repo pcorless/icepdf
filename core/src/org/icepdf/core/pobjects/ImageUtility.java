@@ -441,6 +441,58 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
+    protected static BufferedImage makeGrayBufferedImage(WritableRaster wr, PColorSpace colorSpace) {
+
+        int width = wr.getWidth();
+        int height = wr.getHeight();
+//
+//        BufferedImage tmpImage = ImageUtility.makeRGBBufferedImage(wr);
+//        BufferedImage argbImage = new BufferedImage(width,
+//                height, BufferedImage.TYPE_INT_ARGB);
+//        int[] srcBand = new int[width];
+//        int[] argbBand = new int[width];
+//        int r, g, b;
+//        for (int i = 0; i < height; i++) {
+//            tmpImage.getRGB(0, i, width, 1, srcBand, 0, width);
+//            // apply the soft mask blending
+//            for (int j = 0; j < width; j++) {
+//                r = (srcBand[j] >> 16) & 0xFF;
+//                g = (srcBand[j] >> 8) & 0xFF;
+//                b = (srcBand[j]) & 0xFF;
+//                argbBand[j] = 0xff000000 |
+//                        (r << 16) | (g << 8) | b;
+//            }
+//            argbImage.setRGB(0, i, width, 1, argbBand, 0, width);
+//        }
+//        tmpImage.flush();
+
+
+        BufferedImage rgbImage = new BufferedImage(width,
+                height, BufferedImage.TYPE_INT_RGB);
+        WritableRaster rgbRaster = rgbImage.getRaster();
+        float[] values = new float[colorSpace.getNumComponents()];
+        int[] rgbValues = new int[4];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                wr.getPixel(x, y, rgbValues);
+
+//                PColorSpace.reverseInPlace(rgbValues);
+                colorSpace.normaliseComponentsToFloats(rgbValues, values, 255.0f);
+                Color c = colorSpace.getColor(values);
+                rgbValues[0] = c.getRed();
+                rgbValues[1] = c.getGreen();
+                rgbValues[2] = c.getBlue();
+
+                rgbRaster.setPixel(x, y, rgbValues);
+            }
+        }
+        // apply the soft mask, but first we need an rgba image,
+        // this is pretty expensive, would like to find quicker method.
+//        BufferedImage tmpImage = makeRGBBufferedImage(wr);
+        return rgbImage;
+
+    }
+
     // This method returns a buffered image with the contents of an image from
     // java almanac
     protected static BufferedImage makeRGBABufferedImageFromImage(Image image) {
