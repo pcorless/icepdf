@@ -521,8 +521,10 @@ public class ImageStream extends Stream {
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
                     // Avoid converting images that are already likely gray.
-                    if (colourSpace != null) {
-                        tmpImage = ImageUtility.makeGrayBufferedImage(wr, colourSpace);
+                    if (colourSpace != null && !(colourSpace instanceof DeviceGray) &&
+                            !(colourSpace instanceof ICCBased) &&
+                            !(colourSpace instanceof Indexed)) {
+                        tmpImage = ImageUtility.makeRGBBufferedImage(wr, colourSpace);
                     } else {
                         tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                     }
