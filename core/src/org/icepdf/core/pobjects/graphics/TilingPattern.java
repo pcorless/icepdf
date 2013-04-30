@@ -17,10 +17,10 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.content.ContentParser;
 import org.icepdf.core.util.content.ContentParserFactory;
@@ -57,6 +57,38 @@ public class TilingPattern extends Stream implements Pattern {
     public static final Name YSTEP_KEY = new Name("YStep");
     public static final Name MATRIX_KEY = new Name("Matrix");
     public static final Name RESOURCES_KEY = new Name("Resources");
+
+    // change the the interpolation and anti-aliasing settings.
+    private static RenderingHints renderingHints;
+
+    static {
+        Object antiAliasing = RenderingHints.VALUE_ANTIALIAS_OFF;
+        Object interpolation = RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
+        String property = Defs.sysProperty("org.icepdf.core.tiling.antiAliasing");
+        if (property != null) {
+            if (property.equalsIgnoreCase("VALUE_ANTIALIAS_DEFAULT")) {
+                antiAliasing = RenderingHints.VALUE_ANTIALIAS_DEFAULT;
+            } else if (property.equalsIgnoreCase("VALUE_ANTIALIAS_ON")) {
+                antiAliasing = RenderingHints.VALUE_ANTIALIAS_ON;
+            } else if (property.equalsIgnoreCase("VALUE_ANTIALIAS_OFF")) {
+                antiAliasing = RenderingHints.VALUE_ANTIALIAS_OFF;
+            }
+        }
+        property = Defs.sysProperty("org.icepdf.core.tiling.interpolation");
+        if (property != null) {
+            if (property.equalsIgnoreCase("VALUE_INTERPOLATION_BICUBIC")) {
+                interpolation = RenderingHints.VALUE_INTERPOLATION_BICUBIC;
+            } else if (property.equalsIgnoreCase("VALUE_INTERPOLATION_BILINEAR")) {
+                interpolation = RenderingHints.VALUE_INTERPOLATION_BILINEAR;
+            } else if (property.equalsIgnoreCase("VALUE_INTERPOLATION_NEAREST_NEIGHBOR")) {
+                interpolation = RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
+            }
+        }
+        renderingHints = new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                interpolation);
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING, antiAliasing));
+    }
+
 
     // A code identifying the type of pattern that this dictionary describes
     private int patternType;
@@ -292,12 +324,12 @@ public class TilingPattern extends Stream implements Pattern {
      * Applies the pattern paint specified by this TilingPattern instance.
      * Handles both uncoloured and coloured pattern types.
      *
-     * @param g          graphics context to apply textured paint too.
-     * @param parentPage parent page used to lookup any resources.
+     * @param g    graphics context to apply textured paint too.
+     * @param base base transform before painting started, generally the page
+     *             space transform of the page.
      */
-    public void paintPattern(Graphics2D g, Page parentPage) {
+    public void paintPattern(Graphics2D g, final AffineTransform base) {
         if (patternPaint == null) {
-//            final AffineTransform matrixInv = getInvMatrix();
 
             int width = (int) bBoxMod.getWidth();
             int height = (int) bBoxMod.getHeight();
@@ -318,10 +350,12 @@ public class TilingPattern extends Stream implements Pattern {
             // create the pattern paint before  we paint encase there
             // is some recursive calls during the paint PDF-436
             patternPaint = new TexturePaint(bi, bBoxMod);
+//            patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
+//                    0, 0, bBoxMod.getWidth(), bBoxMod.getHeight()));
             g.setPaint(patternPaint);
 
             // apply current hints
-            canvas.setRenderingHints(g.getRenderingHints());
+            canvas.setRenderingHints(renderingHints);
             // copy over the rendering hints
             // get shapes and paint them.
             final Shapes tilingShapes = getShapes();
@@ -330,16 +364,21 @@ public class TilingPattern extends Stream implements Pattern {
             canvas.setClip(0, 0, (int) bBoxMod.getWidth(), (int) bBoxMod.getHeight());
 
             // paint the pattern
-            paintPattern(canvas, tilingShapes, bBox);
+            paintPattern(canvas, tilingShapes, base);
 
             // show it in a frame
-//            final JFrame f = new JFrame("Test");
+//            final JFrame f = new JFrame(this.toString());
 //            f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 //            f.getContentPane().add(new JComponent() {
 //                @Override
 //                public void paint(Graphics g_) {
 //                    super.paint(g_);
-//                    paintPattern((Graphics2D)g_, tilingShapes);
+//                    Graphics2D g2d = (Graphics2D) g_;
+////                    g2d.scale(2.5, 2.5);
+//                    g2d.drawLine(400,0, 400,800);
+//                    g2d.drawLine(0,400, 800,400);
+//                    g2d.translate(400,400);
+//                    paintPattern(g2d, tilingShapes, base);
 //                }
 //            });
 //            f.setSize(new Dimension(800, 800));
@@ -352,48 +391,77 @@ public class TilingPattern extends Stream implements Pattern {
         }
     }
 
-    private void paintPattern(Graphics2D g2d, Shapes tilingShapes, Rectangle2D bBoxMod) {
+    private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform base) {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
 
+        // apply current parent state
+//        g2d.setTransform(base);
+
         // apply scale an shear but not translation
-        AffineTransform af = g2d.getTransform();
-        // todo there is a still a bug here, the call to setToShear
-        // wipes out the scale, further investigation is needed.
-        if (matrix.getScaleX() != 0.0 && matrix.getScaleY() != 0.0) {
-            af.scale(matrix.getScaleX(), Math.abs(matrix.getScaleY()));
-        }
-        af.shear(matrix.getShearX(), matrix.getShearY());
-        g2d.transform(af);
+        AffineTransform af = // matrix;
+                new AffineTransform(
+                        matrix.getScaleX(),
+                        matrix.getShearY(),
+                        matrix.getShearX(),
+                        matrix.getScaleY(),
+                        0,
+                        0);
+        AffineTransform af2 = new AffineTransform(parentGraphicState.getCTM());
+        af2.concatenate(af);
+        g2d.transform(af2);
+
         // pain the key pattern
+        AffineTransform prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        // build the the tile
+        g2d.translate(xStep, 0);
+        prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        g2d.translate(0, -yStep);
+        prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        g2d.translate(-xStep, 0);
+        prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        g2d.translate(-xStep, 0);
+        prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        g2d.translate(0, yStep);
+        prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        g2d.translate(0, yStep);
+        prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        g2d.translate(xStep, 0);
+        prePaint = g2d.getTransform();
+        tilingShapes.paint(g2d);
+        g2d.setTransform(prePaint);
+
+        g2d.translate(xStep, 0);
         tilingShapes.paint(g2d);
 
-        // if we have a shear then we need to pad out the pattern
-        // so we can fill a pattern paint buffer.
-        if (matrix.getShearX() > 0 ||
-                matrix.getShearY() > 0) {
-            g2d.translate(bBoxMod.getWidth(), 0);
-            tilingShapes.paint(g2d);
-            g2d.translate(0, -bBoxMod.getHeight());
-            tilingShapes.paint(g2d);
-            g2d.translate(-bBoxMod.getWidth(), 0);
-            tilingShapes.paint(g2d);
-            g2d.translate(-bBoxMod.getWidth(), 0);
-            tilingShapes.paint(g2d);
-            g2d.translate(0, bBoxMod.getHeight());
-            tilingShapes.paint(g2d);
-            g2d.translate(0, bBoxMod.getHeight());
-            tilingShapes.paint(g2d);
-            g2d.translate(bBoxMod.getWidth(), 0);
-            tilingShapes.paint(g2d);
-            g2d.translate(bBoxMod.getWidth(), 0);
-            tilingShapes.paint(g2d);
-            // highlight key square.
-//            g2d.translate(-bBoxMod.getWidth(), -bBoxMod.getHeight());
-//            g2d.setColor(Color.red);
-//            g2d.draw(bBoxMod);
-        }
+        // highlight key square.
+//        g2d.setTransform(prePaint);
+//        g2d.translate(-xStep, -yStep);
+//        g2d.setColor(Color.red);
+//        g2d.draw(bBox);
+
         g2d.setTransform(preAf);
     }
 
