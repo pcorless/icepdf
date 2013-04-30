@@ -752,7 +752,7 @@ public class Parser {
             // return all the text that is in the comment
             return stringBuffer.toString();
         } else if ((currentChar >= '0' && currentChar <= '9') ||
-                currentChar == '-' || currentChar == '+') {
+                currentChar == '-' || currentChar == '+' || currentChar == '.') {
             inNumber = true;
         }
 
