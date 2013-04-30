@@ -42,7 +42,7 @@ public class TilingPatternDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
-        tilingPattern.paintPattern(g, parentPage);
+        tilingPattern.paintPattern(g, base);
         return currentShape;
     }
 }
