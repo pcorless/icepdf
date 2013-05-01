@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -30,6 +31,14 @@ public class DeviceCMYK extends PColorSpace {
 
     public static final Name DEVICECMYK_KEY = new Name("DeviceCMYK");
     public static final Name CMYK_KEY = new Name("CMYK");
+
+    // default cmyk value,  > 255 will lighten the image.
+    private static float blackRatio;
+
+    static {
+        // black ratio
+        blackRatio = (float) Defs.doubleProperty("org.icepdf.core.cmyk.colorant.black", 1.0);
+    }
 
     DeviceCMYK(Library l, HashMap h) {
         super(l, h);
@@ -165,7 +174,7 @@ public class DeviceCMYK extends PColorSpace {
 
         // soften the amount of black, but exclude explicit black colorant.
         if (inCyan != 0 && inMagenta != 0 && inYellow != 0) {
-            inBlack = f[0] / 100;
+            inBlack = f[0] * blackRatio;
         }
 
         double c, m, y, aw, ac, am, ay, ar, ag, ab;

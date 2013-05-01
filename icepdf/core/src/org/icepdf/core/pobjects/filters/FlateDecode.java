@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -30,6 +31,15 @@ import java.util.zip.InflaterInputStream;
  */
 
 public class FlateDecode extends ChunkingInputStream {
+
+
+    private static int DEFAULT_BUFFER_SIZE;
+
+    static {
+        DEFAULT_BUFFER_SIZE = Defs.sysPropertyInt("org.icepdf.core.flateDecode.bufferSize",
+                16384);
+    }
+
     /**
      * No predictor function is used
      */
@@ -95,7 +105,7 @@ public class FlateDecode extends ChunkingInputStream {
         bitsPerComponent = 0;
         bpp = 1;
 
-        int intermediateBufferSize = 4096;
+        int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
 
         // get decode parameters from stream properties
         HashMap decodeParmsDictionary = library.getDictionary(props, DECODE_PARMS_VALUE);

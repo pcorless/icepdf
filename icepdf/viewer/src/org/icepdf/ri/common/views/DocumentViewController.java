@@ -81,6 +81,8 @@ public interface DocumentViewController {
 
     public static final int CURSOR_CROSSHAIR = 11;
 
+    public static final int CURSOR_MAGNIFY = 12;
+
     public void setDocument(Document document);
 
     public Document getDocument();

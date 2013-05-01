@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.tag.Tagger;
+import org.icepdf.core.util.Defs;
 
 import javax.swing.*;
 import java.awt.*;
@@ -95,6 +96,9 @@ public class ImageUtility {
     };
 
 
+    // default cmyk value,  > 255 will lighten the image.
+    private static float blackRatio;
+
     // JDK 1.5 imaging order flag and b/r switch
     private static int redIndex = 0;
     private static int blueIndex = 2;
@@ -106,6 +110,9 @@ public class ImageUtility {
             redIndex = 2;
             blueIndex = 0;
         }
+
+        // black ratio
+        blackRatio = Defs.intProperty("org.icepdf.core.cmyk.image.black", 255);
     }
 
     protected static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -225,7 +232,8 @@ public class ImageUtility {
         return tmpImage;
     }
 
-    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr) {
+    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr,
+                                                        float[] decode) {
         int width = wr.getWidth();
         int height = wr.getHeight();
 
@@ -235,11 +243,19 @@ public class ImageUtility {
         double c, m, y2, aw, ac, am, ay, ar, ag, ab;
         float outRed, outGreen, outBlue;
         int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
-        int[] values = new int[4];
+        int[] values = new int[wr.getNumBands()];
+        byte[] dataValues = new byte[wr.getNumBands()];
+        byte[] compColors;
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, values);
+
+                compColors = (byte[]) wr.getDataElements(x, y, dataValues);
+                // apply decode param.
+                ImageUtility.getNormalizedComponents(
+                        compColors,
+                        decode,
+                        values);
 
                 inCyan = values[0] / 255.0f;
                 inMagenta = values[1] / 255.0f;
@@ -247,7 +263,7 @@ public class ImageUtility {
                 // lessen the amount of black, standard 255 fraction is too dark
                 // increasing the denominator has the same affect of lighting up
                 // the image.
-                inBlack = (values[3] / 768.0f);
+                inBlack = (values[3] / blackRatio);
 
                 if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
                         inYellow == lastYellow && inBlack == lastBlack)) {
@@ -425,6 +441,30 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
+    protected static BufferedImage makeRGBBufferedImage(WritableRaster wr, PColorSpace colorSpace) {
+        int width = wr.getWidth();
+        int height = wr.getHeight();
+        BufferedImage rgbImage = new BufferedImage(width,
+                height, BufferedImage.TYPE_INT_RGB);
+        WritableRaster rgbRaster = rgbImage.getRaster();
+        float[] values = new float[colorSpace.getNumComponents()];
+        int[] rgbValues = new int[4];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                wr.getPixel(x, y, rgbValues);
+
+                colorSpace.normaliseComponentsToFloats(rgbValues, values, 255.0f);
+                Color c = colorSpace.getColor(values);
+                rgbValues[0] = c.getRed();
+                rgbValues[1] = c.getGreen();
+                rgbValues[2] = c.getBlue();
+
+                rgbRaster.setPixel(x, y, rgbValues);
+            }
+        }
+        return rgbImage;
+    }
+
     // This method returns a buffered image with the contents of an image from
     // java almanac
     protected static BufferedImage makeRGBABufferedImageFromImage(Image image) {
@@ -571,7 +611,8 @@ public class ImageUtility {
     }
 
     /**
-     * Apply the Decode Array domain for each colour component.
+     * Apply the Decode Array domain for each colour component.  Assumes output
+     * range is 0-1f for each value in out.
      *
      * @param pixels colour to process by decode
      * @param decode decode array for colour space
@@ -585,6 +626,25 @@ public class ImageUtility {
         // interpolate each colour component for the given decode domain.
         for (int i = 0; i < pixels.length; i++) {
             out[i] = decode[i * 2] + (pixels[i] & 0xff) * decode[(i * 2) + 1];
+        }
+    }
+
+    /**
+     * Apply the Decode Array domain for each colour component. Assumes output
+     * range is 0-255 for each value in out.
+     *
+     * @param pixels colour to process by decode
+     * @param decode decode array for colour space
+     * @param out    return value
+     *               always (2<sup>bitsPerComponent</sup> - 1).
+     */
+    protected static void getNormalizedComponents(
+            byte[] pixels,
+            float[] decode,
+            int[] out) {
+        // interpolate each colour component for the given decode domain.
+        for (int i = 0; i < pixels.length; i++) {
+            out[i] = (int) ((decode[i * 2] * 255) + (pixels[i] & 0xff) * (decode[(i * 2) + 1] * 255));
         }
     }
 

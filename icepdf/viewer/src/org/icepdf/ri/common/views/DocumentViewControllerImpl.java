@@ -498,6 +498,9 @@ public class DocumentViewControllerImpl
         oldViewType = viewType;
         viewType = documentViewType;
         // build the new view;
+        if (documentView != null) {
+            documentView.uninstallCurrentTool();
+        }
         setViewType();
     }
 
@@ -546,7 +549,6 @@ public class DocumentViewControllerImpl
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
         }
 
-        // todo set tool mode, so that mouse listeners can be setup for this view
         // as it may have been inactive
         // notify the view of the tool change
         documentView.setToolMode(documentViewModel.getViewToolMode());
@@ -872,6 +874,8 @@ public class DocumentViewControllerImpl
             imageName = "zoom_in.gif";
         } else if (currsorType == CURSOR_ZOOM_OUT) {
             imageName = "zoom_out.gif";
+        } else if (currsorType == CURSOR_MAGNIFY) {
+            imageName = "zoom.gif";
         } else if (currsorType == CURSOR_HAND_ANNOTATION) {
             return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
         } else if (currsorType == CURSOR_TEXT_SELECTION) {

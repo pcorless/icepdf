@@ -18,10 +18,7 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.pobjects.OptionalContents;
 
 import java.awt.geom.AffineTransform;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Page text represents the root element of a page's text hierarchy which
@@ -196,6 +193,7 @@ public class PageText implements TextSelect {
 
     public StringBuilder getSelected() {
         StringBuilder selectedText = new StringBuilder();
+        Collections.sort(pageLines, new TextPositionComparator());
         for (LineText lineText : pageLines) {
             selectedText.append(lineText.getSelected());
         }

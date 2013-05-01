@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.tools.DynamicZoomHandler;
 import org.icepdf.ri.common.views.AbstractDocumentView;
 
 import javax.swing.*;
@@ -85,7 +86,8 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
                         : null;
 
         // Scrolling down but only if the ctrl mask isn't present.
-        if (!((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK)) {
+        if (!((e.getModifiers() & InputEvent.CTRL_MASK) == InputEvent.CTRL_MASK ||
+                documentView.getCurrentToolHandler() instanceof DynamicZoomHandler)) {
             int amount = e.getScrollAmount();
             int rotation = e.getWheelRotation();
 

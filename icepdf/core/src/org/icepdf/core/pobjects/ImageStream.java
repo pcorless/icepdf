@@ -393,6 +393,7 @@ public class ImageStream extends Stream {
                     }
                     decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
                             this, library, entries, fill);
+                    return decodedImage;
                 }
             }
 
@@ -509,25 +510,24 @@ public class ImageStream extends Stream {
                     ImageUtility.alterRasterRGB2PColorSpace(wr, colourSpace);
                     tmpImage = ImageUtility.makeRGBtoRGBABuffer(wr, width, height);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_CMYK && bitspercomponent == 8) {
-                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr);
+                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr, decode);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCbCr && bitspercomponent == 8) {
                     tmpImage = ImageUtility.alterRasterYCbCr2RGBA(wr, decode);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCCK && bitspercomponent == 8) {
                     // YCCK to RGB works better if an CMYK intermediate is used, but slower.
                     ImageUtility.alterRasterYCCK2CMYK(wr, decode);
-                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr);
+                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr, decode);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_GRAY && bitspercomponent == 8) {
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
                     // Avoid converting images that are already likely gray.
-                    if (!(colourSpace instanceof DeviceGray) &&
+                    if (colourSpace != null && !(colourSpace instanceof DeviceGray) &&
                             !(colourSpace instanceof ICCBased) &&
                             !(colourSpace instanceof Indexed)) {
-                        if (Tagger.tagging)
-                            Tagger.tagImage("DCTDecode_JpegSubEncoding=Y");
-                        ImageUtility.alterRasterY2Gray(wr, decode);
+                        tmpImage = ImageUtility.makeRGBBufferedImage(wr, colourSpace);
+                    } else {
+                        tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                     }
-                    tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                 } else {
                     //System.out.println("Stream.dctDecode()      EncodedColorID: " + imageDecoder.getJPEGDecodeParam().getEncodedColorID());
                     if (imageDecoder.getJPEGDecodeParam().getEncodedColorID() ==
@@ -792,7 +792,7 @@ public class ImageStream extends Stream {
                 tmpImage = ImageUtility.makeRGBBufferedImage(wr);
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
                 WritableRaster wr = tmpImage.getRaster();
-                tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr);
+                tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr, decode);
                 return tmpImage;
             } else if ((colourSpace instanceof DeviceGray)
                     && bitsPerComponent == 8) {
@@ -1109,6 +1109,17 @@ public class ImageStream extends Stream {
 
     private boolean shouldUseJPXDecode() {
         return containsFilter(JPX_DECODE_FILTERS);
+    }
+
+    /**
+     * Used to enable/disable the loading of CCITTFax images using JAI library.
+     * This method can be used in place of the system property
+     * org.icepdf.core.ccittfax.jai .
+     *
+     * @param enable eanb
+     */
+    public static void forceJaiCcittFax(boolean enable) {
+        forceJaiccittfax = enable;
     }
 
     /**

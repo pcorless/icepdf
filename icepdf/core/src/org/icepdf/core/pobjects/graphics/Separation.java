@@ -160,7 +160,7 @@ public class Separation extends PColorSpace {
             return alternate.getColor(alternateColour);
         }
         if (alternate != null && !isNone) {
-            float y[] = tintTransform.calculate(components);
+            float y[] = tintTransform.calculate(reverse(components));
             return alternate.getColor(reverse(y));
         }
         if (isNone) {
