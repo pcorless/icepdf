@@ -97,8 +97,8 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected static boolean detectPunctuation(GlyphText sprite) {
         String glyphText = sprite.getUnicode();
-        if (glyphText != null) {
-            int c = sprite.getUnicode().charAt(0);
+        if (glyphText != null && glyphText.length() > 0) {
+            int c = glyphText.charAt(0);
             return isPunctuation(c);
         } else {
             return false;
@@ -107,8 +107,8 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected static boolean detectWhiteSpace(GlyphText sprite) {
         String glyphText = sprite.getUnicode();
-        if (glyphText != null) {
-            int c = sprite.getUnicode().charAt(0);
+        if (glyphText != null && glyphText.length() > 0) {
+            int c = glyphText.charAt(0);
             return isWhiteSpace(c);
         } else {
             return false;
