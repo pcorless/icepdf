@@ -516,7 +516,7 @@ public class ImageStream extends Stream {
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCCK && bitspercomponent == 8) {
                     // YCCK to RGB works better if an CMYK intermediate is used, but slower.
                     ImageUtility.alterRasterYCCK2CMYK(wr, decode);
-                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr, decode);
+                    tmpImage = ImageUtility.alterRasterCMYK2BGRA(wr);
                 } else if (jpegEncoding == ImageUtility.JPEG_ENC_GRAY && bitspercomponent == 8) {
                     // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                     // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
@@ -524,7 +524,7 @@ public class ImageStream extends Stream {
                     if (colourSpace != null && !(colourSpace instanceof DeviceGray) &&
                             !(colourSpace instanceof ICCBased) &&
                             !(colourSpace instanceof Indexed)) {
-                        tmpImage = ImageUtility.makeRGBBufferedImage(wr, colourSpace);
+                        tmpImage = ImageUtility.makeRGBBufferedImage(wr, decode, colourSpace);
                     } else {
                         tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                     }
