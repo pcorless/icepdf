@@ -305,6 +305,70 @@ public class ImageUtility {
         return tmpImage;
     }
 
+    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr) {
+        int width = wr.getWidth();
+        int height = wr.getHeight();
+
+        // this convoluted cymk->rgba method is from DeviceCMYK class.
+        float inCyan, inMagenta, inYellow, inBlack;
+        float lastCyan = -1, lastMagenta = -1, lastYellow = -1, lastBlack = -1;
+        double c, m, y2, aw, ac, am, ay, ar, ag, ab;
+        float outRed, outGreen, outBlue;
+        int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
+        int[] values = new int[4];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                wr.getPixel(x, y, values);
+
+                inCyan = values[0] / 255.0f;
+                inMagenta = values[1] / 255.0f;
+                inYellow = values[2] / 255.0f;
+                // lessen the amount of black, standard 255 fraction is too dark
+                // increasing the denominator has the same affect of lighting up
+                // the image.
+                inBlack = (values[3] / blackRatio);
+
+                if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
+                        inYellow == lastYellow && inBlack == lastBlack)) {
+
+                    c = clip(0, 1, inCyan + inBlack);
+                    m = clip(0, 1, inMagenta + inBlack);
+                    y2 = clip(0, 1, inYellow + inBlack);
+                    aw = (1 - c) * (1 - m) * (1 - y2);
+                    ac = c * (1 - m) * (1 - y2);
+                    am = (1 - c) * m * (1 - y2);
+                    ay = (1 - c) * (1 - m) * y2;
+                    ar = (1 - c) * m * y2;
+                    ag = c * (1 - m) * y2;
+                    ab = c * m * (1 - y2);
+
+                    outRed = (float) clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
+                    outGreen = (float) clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
+                    outBlue = (float) clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
+                    rValue = (int) (outRed * 255);
+                    gValue = (int) (outGreen * 255);
+                    bValue = (int) (outBlue * 255);
+                    alpha = 0xFF;
+                }
+                lastCyan = inCyan;
+                lastMagenta = inMagenta;
+                lastYellow = inYellow;
+                lastBlack = inBlack;
+
+                values[redIndex] = rValue;
+                values[1] = gValue;
+                values[blueIndex] = bValue;
+                values[3] = alpha;
+                wr.setPixel(x, y, values);
+            }
+        }
+        // apply the soft mask, but first we need an rgba image,
+        // this is pretty expensive, would like to find quicker method.
+        BufferedImage tmpImage = makeRGBABufferedImage(wr, Transparency.TRANSLUCENT);
+        return tmpImage;
+    }
+
     /**
      * Clips the value according to the specified floor and ceiling.
      *
@@ -441,7 +505,8 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
-    protected static BufferedImage makeRGBBufferedImage(WritableRaster wr, PColorSpace colorSpace) {
+    protected static BufferedImage makeRGBBufferedImage(WritableRaster wr,
+                                                        float[] decode, PColorSpace colorSpace) {
         int width = wr.getWidth();
         int height = wr.getHeight();
         BufferedImage rgbImage = new BufferedImage(width,
@@ -451,8 +516,12 @@ public class ImageUtility {
         int[] rgbValues = new int[4];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, rgbValues);
 
+                // apply decode param.
+                getNormalizedComponents(
+                        (byte[]) wr.getDataElements(x, y, null),
+                        decode,
+                        rgbValues);
                 colorSpace.normaliseComponentsToFloats(rgbValues, values, 255.0f);
                 Color c = colorSpace.getColor(values);
                 rgbValues[0] = c.getRed();
