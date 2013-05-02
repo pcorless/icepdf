@@ -138,13 +138,20 @@ public class Separation extends PColorSpace {
         // there are couple notes in the spec that say that even know namedColor
         // is for subtractive color devices, if the named colour can be represented
         // in a additive device then it should be used over the alternate colour.
-//        if (namedColor != null) {
-//            // apply tint
-//            tint = components[0];
-//            float[] colour = namedColor.getComponents(null);
-//            namedColor = new Color(colour[0], colour[1], colour[2], tint);
-//            return namedColor;
-//        }
+        if (namedColor != null) {
+            // apply tint
+            tint = components[0];
+            if (tint != 0.0f) {
+                // apply tint as an alpha value.
+                float[] colour = namedColor.getComponents(null);
+                namedColor = new Color(colour[0], colour[1], colour[2], tint);
+            } else {
+                // tint of 0 indicates we should use produce the lightest colour
+                // possible which for rgb is white.
+                namedColor = Color.WHITE;
+            }
+            return namedColor;
+        }
 
         // the function couldn't be initiated then use the alternative colour
         // space.  The alternate colour space can be any device or CIE-based
