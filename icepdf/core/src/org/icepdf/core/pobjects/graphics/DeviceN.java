@@ -119,7 +119,7 @@ public class DeviceN extends PColorSpace {
     }
 
 
-    public Color getColor(float[] f) {
+    public Color getColor(float[] f, boolean fillAndStroke) {
         // calculate cmyk color
         if (foundCMYK) {
             if (f.length <= 4) {
