@@ -91,6 +91,8 @@ public abstract class PColorSpace extends Dictionary {
                     colorSpace = new Indexed(library, null, v);
                 } else if (colorant.equals(CalRGB.CALRGB_KEY)) {
                     colorSpace = new CalRGB(library, (HashMap) v.get(1));
+                } else if (colorant.equals(CalGray.CAL_GRAY_KEY)) {
+                    colorSpace = new CalGray(library, (HashMap) v.get(1));
                 } else if (colorant.equals(Lab.LAB_KEY)) {
                     colorSpace = new Lab(library, (HashMap) v.get(1));
                 } else if (colorant.equals(Separation.SEPARATION_KEY)) {
@@ -136,7 +138,9 @@ public abstract class PColorSpace extends Dictionary {
             if (ref != null && colorSpace != null) {
                 library.addObject(colorSpace, ref);
             }
-            return colorSpace;
+            if (colorSpace != null) {
+                return colorSpace;
+            }
         }
         return new DeviceGray(library, null);
     }
