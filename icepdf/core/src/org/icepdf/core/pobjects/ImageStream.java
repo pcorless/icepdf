@@ -159,8 +159,8 @@ public class ImageStream extends Stream {
 
         // parse colour space
         PColorSpace colourSpace = null;
-        Object o = library.getObject(entries, COLORSPACE_KEY);
-        if (resources != null) {
+        Object o = entries.get(COLORSPACE_KEY);
+        if (resources != null && o != null) {
             colourSpace = resources.getColorSpace(o);
         }
         // assume b&w image is no colour space

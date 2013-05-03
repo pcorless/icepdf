@@ -127,7 +127,7 @@ public class Lab extends PColorSpace {
      * @param f
      * @return
      */
-    public Color getColor(float[] f) {
+    public Color getColor(float[] f, boolean fillAndStroke) {
         double cie_b = f[0];
         double cie_a = f[1];
         double cie_L = f[2];

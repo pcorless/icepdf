@@ -107,7 +107,7 @@ public class ICCBased extends PColorSpace {
      * @param f
      * @return
      */
-    public Color getColor(float[] f) {
+    public Color getColor(float[] f, boolean fillAndStroke) {
         init();
         if (colorSpace != null) {
             try {
