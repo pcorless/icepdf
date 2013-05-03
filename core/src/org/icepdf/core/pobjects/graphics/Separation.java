@@ -101,8 +101,12 @@ public class Separation extends PColorSpace {
         this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));
         // see if name can be converted to a known colour.
         if (name instanceof Name) {
-            String colorName = ((Name) name).getName();
-
+            String colorName = ((Name) name).getName().toLowerCase();
+            // check for additive colours we can work ith .
+            if (!(colorName.equals("red") || colorName.equals("blue"))
+                    || colorName.equals("blue") || colorName.equals("black")) {
+                return;
+            }
             // get colour value if any
             int colorVaue = ColorUtil.convertNamedColor(colorName.toLowerCase());
             if (colorVaue != -1) {
@@ -147,7 +151,8 @@ public class Separation extends PColorSpace {
             if (tint != 0.0f) {
                 // apply tint as an alpha value.
                 float[] colour = namedColor.getComponents(null);
-                namedColor = new Color(colour[0] * tint, colour[1] * tint, colour[2] * tint);
+//                namedColor = new Color(colour[0] * tint, colour[1] * tint, colour[2] * tint);
+                namedColor = new Color(colour[0], colour[1], colour[2], tint);
             } else {
                 // tint of 0 indicates we should use produce the lightest colour
                 // possible which for rgb is white.
