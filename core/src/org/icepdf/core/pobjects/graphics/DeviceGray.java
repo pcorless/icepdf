@@ -39,7 +39,7 @@ public class DeviceGray extends PColorSpace {
         return 1;
     }
 
-    public Color getColor(float[] f) {
+    public Color getColor(float[] f, boolean fillAndStroke) {
         float color = f[0] > 1.0 ? f[0] / 255.f : f[0];
         return new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                 new Color(color, color, color).getRGBComponents(null),

@@ -71,7 +71,7 @@ public class CalRGB extends PColorSpace {
     }
 
 
-    public Color getColor(float[] f) {
+    public Color getColor(float[] f, boolean fillAndStroke) {
         if (true) {
             return new java.awt.Color(f[2], f[1], f[0]);
         }

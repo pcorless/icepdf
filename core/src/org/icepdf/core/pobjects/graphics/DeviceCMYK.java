@@ -57,7 +57,7 @@ public class DeviceCMYK extends PColorSpace {
      *          0.0 and 1.0
      * @return valid rgb colour object.
      */
-    public Color getColor(float[] f) {
+    public Color getColor(float[] f, boolean fillAndStroke) {
         return alternative2(f);
     }
 

@@ -61,41 +61,47 @@ public abstract class PColorSpace extends Dictionary {
      */
     public static PColorSpace getColorSpace(Library library, Object o) {
         if (o != null) {
+            PColorSpace colorSpace = null;
+            Reference ref = null;
             if (o instanceof Reference) {
-                o = library.getObject((Reference) o);
+                ref = (Reference) o;
+                o = library.getObject(ref);
             }
-            if (o instanceof Name) {
+
+            if (o instanceof PColorSpace) {
+                colorSpace = (PColorSpace) o;
+            } else if (o instanceof Name) {
                 if (o.equals(DeviceGray.DEVICEGRAY_KEY) ||
                         o.equals(DeviceGray.G_KEY)) {
-                    return new DeviceGray(library, null);
+                    colorSpace = new DeviceGray(library, null);
                 } else if (o.equals(DeviceRGB.DEVICERGB_KEY) ||
                         o.equals(DeviceRGB.RGB_KEY)) {
-                    return new DeviceRGB(library, null);
+                    colorSpace = new DeviceRGB(library, null);
                 } else if (o.equals(DeviceCMYK.DEVICECMYK_KEY) ||
                         o.equals(DeviceCMYK.CMYK_KEY)) {
-                    return new DeviceCMYK(library, null);
+                    colorSpace = new DeviceCMYK(library, null);
                 } else if (o.equals(PatternColor.PATTERN_KEY)) {
-                    return new PatternColor(library, null);
+                    colorSpace = new PatternColor(library, null);
                 }
             } else if (o instanceof List) {
                 List v = (List) o;
                 Name colorant = (Name) v.get(0);
                 if (colorant.equals(Indexed.INDEXED_KEY)
                         || colorant.equals(Indexed.I_KEY)) {
-                    return new Indexed(library, null, v);
+                    colorSpace = new Indexed(library, null, v);
                 } else if (colorant.equals(CalRGB.CALRGB_KEY)) {
-                    return new CalRGB(library, (HashMap) v.get(1));
+                    colorSpace = new CalRGB(library, (HashMap) v.get(1));
                 } else if (colorant.equals(Lab.LAB_KEY)) {
-                    return new Lab(library, (HashMap) v.get(1));
+                    colorSpace = new Lab(library, (HashMap) v.get(1));
                 } else if (colorant.equals(Separation.SEPARATION_KEY)) {
-                    return new Separation(
+                    colorSpace = new Separation(
                             library,
                             null,
                             v.get(1),
                             v.get(2),
                             v.get(3));
                 } else if (colorant.equals(DeviceN.DEVICEN_KEY)) {
-                    return new DeviceN(
+                    colorSpace = new DeviceN(
                             library,
                             null,
                             v.get(1),
@@ -106,26 +112,31 @@ public abstract class PColorSpace extends Dictionary {
                     /*Stream st = (Stream)library.getObject((Reference)v.elementAt(1));
                      return  PColorSpace.getColorSpace(library, library.getObject(st.getEntries(),
                      "Alternate"));*/
-                    return library.getICCBased((Reference) v.get(1));
+                    colorSpace = library.getICCBased((Reference) v.get(1));
                 } else if (colorant.equals(DeviceRGB.DEVICERGB_KEY)) {
-                    return new DeviceRGB(library, null);
+                    colorSpace = new DeviceRGB(library, null);
                 } else if (colorant.equals(DeviceCMYK.DEVICECMYK_KEY)) {
-                    return new DeviceCMYK(library, null);
+                    colorSpace = new DeviceCMYK(library, null);
                 } else if (colorant.equals(DeviceGray.DEVICEGRAY_KEY)) {
-                    return new DeviceGray(library, null);
+                    colorSpace = new DeviceGray(library, null);
                 } else if (colorant.equals(PatternColor.PATTERN_KEY)) {
                     PatternColor patternColour = new PatternColor(library, null);
                     if (v.size() > 1) {
                         patternColour.setPColorSpace(getColorSpace(library, v.get(1)));
                     }
-                    return patternColour;
+                    colorSpace = patternColour;
                 }
             } else if (o instanceof HashMap) {
-                return new PatternColor(library, (HashMap) o);
+                colorSpace = new PatternColor(library, (HashMap) o);
             }
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine("Unsupported Colorspace: " + o);
+            if (colorSpace == null && logger.isLoggable(Level.FINE)) {
+                logger.fine("Unsupported ColorSpace: " + o);
             }
+            // cache the space proper.
+            if (ref != null && colorSpace != null) {
+                library.addObject(colorSpace, ref);
+            }
+            return colorSpace;
         }
         return new DeviceGray(library, null);
     }
@@ -150,10 +161,16 @@ public abstract class PColorSpace extends Dictionary {
     }
 
     /**
-     * @param f
-     * @return
+     * Gets the colour in RGB represented by the array of colour components
+     *
+     * @param components array of component colour data
+     * @return new RGB colour composed from the components array.
      */
-    public abstract Color getColor(float[] f);
+    public Color getColor(float[] components) {
+        return getColor(components, false);
+    }
+
+    public abstract Color getColor(float[] components, boolean fillAndStroke);
 
     public void normaliseComponentsToFloats(int[] in, float[] out, float maxval) {
         int count = getNumComponents();

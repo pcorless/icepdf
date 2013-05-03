@@ -60,7 +60,7 @@ public class DeviceRGB extends PColorSpace {
      * @param colours array containing the RGB colour values.
      * @return a awt colour based on the colours array RGB values.
      */
-    public Color getColor(float[] colours) {
+    public Color getColor(float[] colours, boolean fillAndStroke) {
 
         return new Color(validateColorRange(colours[2]),
                 validateColorRange(colours[1]),

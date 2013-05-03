@@ -131,20 +131,23 @@ public class Separation extends PColorSpace {
     /**
      * Gets the colour in RGB represented by the array of colour components
      *
-     * @param components array of component colour data
+     * @param components    array of component colour data
+     * @param fillAndStroke true indicates a fill or stroke operation, so we
+     *                      will try to used the named colour and tint. This
+     *                      is generally not do for images.
      * @return new RGB colour composed from the components array.
      */
-    public Color getColor(float[] components) {
+    public Color getColor(float[] components, boolean fillAndStroke) {
         // there are couple notes in the spec that say that even know namedColor
         // is for subtractive color devices, if the named colour can be represented
         // in a additive device then it should be used over the alternate colour.
-        if (namedColor != null) {
+        if (namedColor != null && fillAndStroke) {
             // apply tint
             tint = components[0];
             if (tint != 0.0f) {
                 // apply tint as an alpha value.
                 float[] colour = namedColor.getComponents(null);
-                namedColor = new Color(colour[0], colour[1], colour[2], tint);
+                namedColor = new Color(colour[0] * tint, colour[1] * tint, colour[2] * tint);
             } else {
                 // tint of 0 indicates we should use produce the lightest colour
                 // possible which for rgb is white.
