@@ -103,8 +103,8 @@ public class Separation extends PColorSpace {
         if (name instanceof Name) {
             String colorName = ((Name) name).getName().toLowerCase();
             // check for additive colours we can work ith .
-            if (!(colorName.equals("red") || colorName.equals("blue"))
-                    || colorName.equals("blue") || colorName.equals("black")) {
+            if (!(colorName.equals("red") || colorName.equals("blue")
+                    || colorName.equals("blue") || colorName.equals("black"))) {
                 return;
             }
             // get colour value if any
