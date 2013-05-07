@@ -246,7 +246,8 @@ public abstract class AbstractContentParser implements ContentParser {
     }
 
     protected static void consume_SC(GraphicsState graphicState, Stack stack,
-                                     Library library, Resources resources) {
+                                     Library library, Resources resources,
+                                     boolean isTint) {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern
         if (o instanceof Name) {
@@ -285,9 +286,9 @@ public abstract class AbstractContentParser implements ContentParser {
                         colour[nCount] = ((Number) stack.pop()).floatValue();
                         nCount++;
                     }
-                    graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(colour, true));
-                    tilingPattern.setUnColored(
-                            graphicState.getStrokeColorSpace().getColor(colour, true));
+                    Color color = graphicState.getStrokeColorSpace().getColor(colour, isTint);
+                    graphicState.setStrokeColor(color);
+                    tilingPattern.setUnColored(color);
                 }
             }
         } else if (o instanceof Number) {
@@ -321,13 +322,13 @@ public abstract class AbstractContentParser implements ContentParser {
             // shrink the array to the correct length
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
-            graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(f, true));
+            graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(f, isTint));
         }
     }
 
 
     protected static void consume_sc(GraphicsState graphicState, Stack stack,
-                                     Library library, Resources resources) {
+                                     Library library, Resources resources, boolean isTint) {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
@@ -367,9 +368,9 @@ public abstract class AbstractContentParser implements ContentParser {
                         nCount++;
                     }
                     // fill colour to be used when painting.
-                    graphicState.setFillColor(graphicState.getFillColorSpace().getColor(colour, true));
-                    tilingPattern.setUnColored(
-                            graphicState.getFillColorSpace().getColor(colour, true));
+                    Color color = graphicState.getFillColorSpace().getColor(colour, isTint);
+                    graphicState.setFillColor(color);
+                    tilingPattern.setUnColored(color);
                 }
             }
         } else if (o instanceof Number) {
@@ -402,7 +403,7 @@ public abstract class AbstractContentParser implements ContentParser {
             // shrink the array to the correct length
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
-            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, true));
+            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, isTint));
         }
     }
 
