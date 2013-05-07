@@ -358,6 +358,7 @@ public class PrintHelper implements Printable {
         // Initiate the Page to print, not adding to the pageTree cache purposely,
         // after we finish using it we'll dispose it.
         Page currentPage = pageTree.getPage(pageIndex);
+        currentPage.init();
         PDimension pageDim = currentPage.getSize(userRotation);
 
         // Grab default page width and height
