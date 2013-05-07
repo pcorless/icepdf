@@ -142,8 +142,12 @@ public class Resources extends Dictionary {
             }
         }
         if (font != null) {
-            font.setParentResource(this);
-            font.init();
+            try {
+                font.setParentResource(this);
+                font.init();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Error initializing font.", e);
+            }
         }
         return font;
     }
