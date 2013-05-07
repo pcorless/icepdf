@@ -208,7 +208,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
         // set stroke colour
         graphicState.setStrokeColorSpace(pColorSpace);
-        graphicState.setStrokeColor(pColorSpace.getColor(PColorSpace.reverse(new float[]{c, m, y, k})));
+        graphicState.setStrokeColor(pColorSpace.getColor(
+                PColorSpace.reverse(new float[]{c, m, y, k}), true));
     }
 
     protected static void consume_k(GraphicsState graphicState, Stack stack,
@@ -222,7 +223,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
         // set fill colour
         graphicState.setFillColorSpace(pColorSpace);
-        graphicState.setFillColor(pColorSpace.getColor(PColorSpace.reverse(new float[]{c, m, y, k})));
+        graphicState.setFillColor(pColorSpace.getColor(
+                PColorSpace.reverse(new float[]{c, m, y, k}), true));
     }
 
     protected static void consume_CS(GraphicsState graphicState, Stack stack, Resources resources) {
@@ -244,7 +246,8 @@ public abstract class AbstractContentParser implements ContentParser {
     }
 
     protected static void consume_SC(GraphicsState graphicState, Stack stack,
-                                     Library library, Resources resources) {
+                                     Library library, Resources resources,
+                                     boolean isTint) {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern
         if (o instanceof Name) {
@@ -283,9 +286,9 @@ public abstract class AbstractContentParser implements ContentParser {
                         colour[nCount] = ((Number) stack.pop()).floatValue();
                         nCount++;
                     }
-                    graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(colour));
-                    tilingPattern.setUnColored(
-                            graphicState.getStrokeColorSpace().getColor(colour));
+                    Color color = graphicState.getStrokeColorSpace().getColor(colour, isTint);
+                    graphicState.setStrokeColor(color);
+                    tilingPattern.setUnColored(color);
                 }
             }
         } else if (o instanceof Number) {
@@ -319,13 +322,13 @@ public abstract class AbstractContentParser implements ContentParser {
             // shrink the array to the correct length
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
-            graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(f));
+            graphicState.setStrokeColor(graphicState.getStrokeColorSpace().getColor(f, isTint));
         }
     }
 
 
     protected static void consume_sc(GraphicsState graphicState, Stack stack,
-                                     Library library, Resources resources) {
+                                     Library library, Resources resources, boolean isTint) {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
@@ -365,9 +368,9 @@ public abstract class AbstractContentParser implements ContentParser {
                         nCount++;
                     }
                     // fill colour to be used when painting.
-                    graphicState.setFillColor(graphicState.getFillColorSpace().getColor(colour));
-                    tilingPattern.setUnColored(
-                            graphicState.getFillColorSpace().getColor(colour));
+                    Color color = graphicState.getFillColorSpace().getColor(colour, isTint);
+                    graphicState.setFillColor(color);
+                    tilingPattern.setUnColored(color);
                 }
             }
         } else if (o instanceof Number) {
@@ -400,7 +403,7 @@ public abstract class AbstractContentParser implements ContentParser {
             // shrink the array to the correct length
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
-            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f));
+            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, isTint));
         }
     }
 

@@ -70,7 +70,7 @@ public class PatternColor extends PColorSpace {
      * @param f any value.
      * @return always returns null.
      */
-    public Color getColor(float[] f) {
+    public Color getColor(float[] f, boolean fillAndStroke) {
         if (PColorSpace != null) {
             return PColorSpace.getColor(f);
         }

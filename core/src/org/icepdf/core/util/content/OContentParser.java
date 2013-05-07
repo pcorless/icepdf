@@ -314,9 +314,10 @@ public class OContentParser extends AbstractContentParser {
                     }
 
                     // Fill Color with ColorSpace
-                    else if (tok.equals(PdfOps.sc_TOKEN) ||
-                            tok.equals(PdfOps.scn_TOKEN)) {
-                        consume_sc(graphicState, stack, library, resources);
+                    else if (tok.equals(PdfOps.sc_TOKEN)) {
+                        consume_sc(graphicState, stack, library, resources, false);
+                    } else if (tok.equals(PdfOps.scn_TOKEN)) {
+                        consume_sc(graphicState, stack, library, resources, true);
                     }
 
                     // Close, fill, and then stroke the path, using the nonzero
@@ -411,9 +412,10 @@ public class OContentParser extends AbstractContentParser {
                     //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
                     //     required (n = 3).
                     //   - For DeviceCMYK, four operands are required (n = 4).
-                    else if (tok.equals(PdfOps.SC_TOKEN) ||
-                            tok.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
-                        consume_SC(graphicState, stack, library, resources);
+                    else if (tok.equals(PdfOps.SC_TOKEN)) { // Stroke Color with ColorSpace
+                        consume_SC(graphicState, stack, library, resources, false);
+                    } else if (tok.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
+                        consume_SC(graphicState, stack, library, resources, true);
                     }
 
                     // Fill and then stroke the path, using the nonzero winding
@@ -854,9 +856,10 @@ public class OContentParser extends AbstractContentParser {
                 }
 
                 // Fill Color with ColorSpace
-                else if (nextToken.equals(PdfOps.sc_TOKEN) ||
-                        nextToken.equals(PdfOps.scn_TOKEN)) {
-                    consume_sc(graphicState, stack, library, resources);
+                else if (nextToken.equals(PdfOps.sc_TOKEN)) {
+                    consume_sc(graphicState, stack, library, resources, false);
+                } else if (nextToken.equals(PdfOps.scn_TOKEN)) {
+                    consume_sc(graphicState, stack, library, resources, true);
                 }
 
                 // Same as K, but for nonstroking operations.
@@ -932,9 +935,10 @@ public class OContentParser extends AbstractContentParser {
                 //   - For DeviceRGB, CalRGB, and Lab color spaces, three operands are
                 //     required (n = 3).
                 //   - For DeviceCMYK, four operands are required (n = 4).
-                else if (nextToken.equals(PdfOps.SC_TOKEN) ||
-                        nextToken.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
-                    consume_SC(graphicState, stack, library, resources);
+                else if (nextToken.equals(PdfOps.SC_TOKEN)) { // Stroke Color with ColorSpace
+                    consume_SC(graphicState, stack, library, resources, false);
+                } else if (nextToken.equals(PdfOps.SCN_TOKEN)) { // Stroke Color with ColorSpace
+                    consume_SC(graphicState, stack, library, resources, true);
                 }
 
                 // Set the stroking color space to DeviceCMYK (or the DefaultCMYK color

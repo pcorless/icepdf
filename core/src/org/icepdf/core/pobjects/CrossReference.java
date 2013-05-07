@@ -113,7 +113,7 @@ public class CrossReference {
                         // a object range where the first entry isn't zero.  The
                         // code below will treat the first entry as zero and then
                         // start counting.
-                        if (generationNum == 65535 && currNumber > 0) {
+                        if (generationNum == 65535 && currNumber == 1) {
                             // offset the count so we start counting after the zeroed entry
                             currNumber--;
                         }
