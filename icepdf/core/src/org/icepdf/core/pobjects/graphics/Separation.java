@@ -148,16 +148,10 @@ public class Separation extends PColorSpace {
         if (namedColor != null && fillAndStroke) {
             // apply tint
             tint = components[0];
-            if (tint != 0.0f) {
-                // apply tint as an alpha value.
-                float[] colour = namedColor.getComponents(null);
+            // apply tint as an alpha value.
+            float[] colour = namedColor.getComponents(null);
 //                namedColor = new Color(colour[0] * tint, colour[1] * tint, colour[2] * tint);
-                namedColor = new Color(colour[0], colour[1], colour[2], tint);
-            } else {
-                // tint of 0 indicates we should use produce the lightest colour
-                // possible which for rgb is white.
-                namedColor = Color.WHITE;
-            }
+            namedColor = new Color(colour[0], colour[1], colour[2], tint);
             return namedColor;
         }
 
