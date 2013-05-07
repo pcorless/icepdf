@@ -236,6 +236,17 @@ public class FontManager {
                     Defs.sysProperty("java.home") + "/lib/fonts"
             };
 
+    /**
+     * Change the base font name from lucidasans which is a Java Physical Font
+     * name.  The name should be change to one of Java's logical font names:
+     * Dialog,  DialogInput, Monospaced, Serif, SansSerif.  The closest logical
+     * name that match LucidaSans is SansSerif.
+     */
+    private static String baseFontName;
+
+    static {
+        baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");
+    }
 
     // Singleton instance of class
     private static FontManager fontManager;
@@ -916,7 +927,7 @@ public class FontManager {
                 fontName.contains("frutiger") ||
                 fontName.contains("grotesk"))) {
             // important, add style information
-            font = findFont(fontList, "lucidasans-" + getFontStyle(decorations, flags), 0);
+            font = findFont(fontList, baseFontName + "-" + getFontStyle(decorations, flags), 0);
         }
         // see if we working with a mono spaced font "Mono Spaced"
         // java equivalent is "Lucida Sans Typewriter"
@@ -925,7 +936,7 @@ public class FontManager {
                 fontName.contains("prestige") ||
                 fontName.contains("eversonmono"))) {
             // important, add style information
-            font = findFont(fontList, "lucidasanstypewriter-" + getFontStyle(decorations, flags), 0);
+            font = findFont(fontList, baseFontName + "typewriter-" + getFontStyle(decorations, flags), 0);
         }
         // first try get the first match based on the style type and finally on failure
         // failure go with the serif as it is the most common font family
