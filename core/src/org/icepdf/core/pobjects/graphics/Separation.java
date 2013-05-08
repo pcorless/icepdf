@@ -76,12 +76,12 @@ public class Separation extends PColorSpace {
     // colour space, painting operators shall apply tint values to all available
     // colorants at once.
     private boolean isAll;
-    public static final String COLORANT_ALL = "All";
+    public static final String COLORANT_ALL = "all";
     // The special colorant name None shall not produce any visible output.
     // Painting operations in a Separationspace with this colorant name shall
     // have no effect on the current page.
     private boolean isNone;
-    public static final String COLORANT_NONE = "None";
+    public static final String COLORANT_NONE = "none";
     private float tint = 1.0f;
 
     /**
@@ -105,21 +105,19 @@ public class Separation extends PColorSpace {
             // check for additive colours we can work ith .
             if (!(colorName.equals("red") || colorName.equals("blue")
                     || colorName.equals("blue") || colorName.equals("black"))) {
-                return;
-            }
-            // get colour value if any
-            int colorVaue = ColorUtil.convertNamedColor(colorName.toLowerCase());
-            if (colorVaue != -1) {
-                namedColor = new Color(colorVaue);
-            } else {
                 // sniff out All or Null
                 if (colorName.equals(COLORANT_ALL)) {
                     isAll = true;
                 } else if (colorName.equals(COLORANT_NONE)) {
                     isNone = true;
                 }
+                return;
             }
-
+            // get colour value if any
+            int colorVaue = ColorUtil.convertNamedColor(colorName.toLowerCase());
+            if (colorVaue != -1) {
+                namedColor = new Color(colorVaue);
+            }
         }
     }
 
