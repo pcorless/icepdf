@@ -178,8 +178,16 @@ public abstract class AbstractDocumentView
             removeMouseMotionListener(currentTool);
         }
 
-        // wheel listener
+        // mouse/wheel listener
         documentScrollpane.removeMouseWheelListener(mouseWheelZoom);
+        removeMouseListener(this);
+
+        // focus management
+        removeFocusListener(this);
+        // add a focus management listener.
+        KeyboardFocusManager focusManager =
+                KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        focusManager.removePropertyChangeListener(this);
     }
 
     /**
