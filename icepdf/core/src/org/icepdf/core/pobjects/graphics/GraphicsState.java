@@ -599,7 +599,7 @@ public class GraphicsState {
             try {
                 afInverse = af.createInverse();
             } catch (Exception e) {
-                logger.log(Level.FINE, "Eror generating clip inverse.", e);
+                logger.log(Level.FINER, "Error generating clip inverse.", e);
             }
 
             // transform the clip.
