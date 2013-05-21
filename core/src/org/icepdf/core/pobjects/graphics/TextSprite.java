@@ -327,6 +327,7 @@ public class TextSprite {
      */
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
-        return !OPTIMIZED_DRAWING_ENABLED || shape.intersects(bounds);
+        return !OPTIMIZED_DRAWING_ENABLED ||
+                (shape != null && shape.intersects(bounds));
     }
 }
