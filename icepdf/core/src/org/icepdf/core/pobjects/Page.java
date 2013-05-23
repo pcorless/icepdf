@@ -228,10 +228,13 @@ public class Page extends Dictionary {
                 if (Thread.interrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
-                Stream tmpStream = (Stream) library.getObject((Reference) conts.get(i));
-                if (tmpStream != null) {
-                    tmpStream.setPObjectReference((Reference) conts.get(i));
-                    contents.add(tmpStream);
+                Object tmp = library.getObject((Reference) conts.get(i));
+                if (tmp instanceof Stream) {
+                    Stream tmpStream = (Stream) tmp;
+                    if (tmpStream != null) {
+                        tmpStream.setPObjectReference((Reference) conts.get(i));
+                        contents.add(tmpStream);
+                    }
                 }
             }
         }
@@ -360,7 +363,9 @@ public class Page extends Dictionary {
                     }
 
                     // pass in option group references into parse.
-                    shapes = cp.parse(streams).getShapes();
+                    if (streams.length > 0) {
+                        shapes = cp.parse(streams).getShapes();
+                    }
 
                 } catch (Exception e) {
                     shapes = new Shapes();
@@ -1381,7 +1386,11 @@ public class Page extends Dictionary {
         if (!isInited) {
             init();
         }
-        return shapes.getPageText();
+        if (shapes != null) {
+            return shapes.getPageText();
+        } else {
+            return null;
+        }
     }
 
     /**
