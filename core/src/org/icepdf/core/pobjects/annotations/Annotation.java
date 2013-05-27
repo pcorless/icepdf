@@ -1173,6 +1173,7 @@ public abstract class Annotation extends Dictionary {
         if (this instanceof SquareAnnotation ||
                 this instanceof CircleAnnotation ||
                 this instanceof LineAnnotation ||
+                this instanceof FreeTextAnnotation ||
                 this instanceof InkAnnotation) {
             return;
         }
