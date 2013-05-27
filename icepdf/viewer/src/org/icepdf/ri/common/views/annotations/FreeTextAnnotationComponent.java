@@ -85,12 +85,6 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
         freeTextAnnotation = (FreeTextAnnotation) annotation;
 
-        // update the bounds to be bit larger as the border padding can obscure
-        // the content
-        Rectangle bounds = getBounds();
-        bounds.setRect(bounds.x - 10, bounds.y - 10, bounds.width + 10, bounds.height + 10);
-        setBounds(bounds);
-
         // update the shapes array pruning any text glyphs as well as
         // extra any useful font information for the editing of this annotation.
         if (annotation.getShapes() != null) {
@@ -110,7 +104,6 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
             }
             ((FreeTextAnnotation) annotation).clearShapes();
         }
-        // create the textArea to display the text.
         // create the textArea to display the text.
         freeTextPane = new FreeTextArea(new FreeTextArea.ZoomProvider() {
             private DocumentViewModel model;

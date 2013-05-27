@@ -22,7 +22,6 @@ import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.TextState;
 import org.icepdf.core.pobjects.graphics.commands.*;
-import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -380,7 +379,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
         af.scale(1, -1);
-        af.translate(-this.bbox.getMinX(), -this.bbox.getMaxY());
+        af.translate(-bbox.getMinX(), -bbox.getMaxY());
+        // adjust of the border offset, offset is define in viewer,
+        // so we can't use the constant because of dependency issues.
+        double insets = 5 * pageTransform.getScaleX();
+        af.translate(insets, -insets);
         shapes.add(new TransformDrawCmd(af));
 
         // create the new font to draw with
@@ -401,42 +404,37 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         textSprites.setFontSize(fontSize);
 
         // iterate over each line of text painting the strings.
-        String[] lines = content.split("[\\r\\n]+");
+        StringBuilder contents = new StringBuilder(content);
 
-        float padding = 10; // border padding of the component
-        float lineHeight = (float) fontFile.getDescent() +
-                (float) (fontFile.getAscent());
+        float lineHeight = (float) (fontFile.getAscent() + fontFile.getDescent());
 
-        float advanceX = (float) bbox.getMinX() + padding;
-        float advanceY = (float) bbox.getMinY();// + padding;
+        float advanceX = (float) bbox.getMinX();
+        float advanceY = (float) bbox.getMinY();
 
         float currentX;
         float currentY = advanceY + lineHeight;
 
         float lastx = 0;
+        float newAdvanceX;
+        char currentChar;
+        for (int i = 0, max = contents.length(); i < max; i++) {
 
-        for (String line : lines) {
-            char currentChar;
-            // glyph placement params
-            float newAdvanceX;
-            GlyphText glyphText = null;
-            for (int i = 0; i < line.length(); i++) {
-                currentChar = line.charAt(i);
+            currentChar = contents.charAt(i);
 
-                newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
-                currentX = advanceX + lastx;
-                lastx += newAdvanceX;
+            newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
+            currentX = advanceX + lastx;
+            lastx += newAdvanceX;
 
-                // get normalized from from text sprite
-                glyphText = textSprites.addText(
+            // get normalized from from text sprite
+            if (!(currentChar == '\n' || currentChar == '\r')) {
+                textSprites.addText(
                         String.valueOf(currentChar), // cid
                         String.valueOf(currentChar), // unicode value
                         currentX, currentY, newAdvanceX);
-            }
-
-            if (glyphText != null) {
+            } else {
+                // move back to start of next line
                 currentY += lineHeight;
-                advanceX = (float) bbox.getMinX() + padding;
+                advanceX = (float) bbox.getMinX();
                 lastx = 0;
             }
         }
@@ -450,7 +448,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         }
 
         // background colour
-        shapes.add(new ShapeDrawCmd(bbox));
+        shapes.add(new ShapeDrawCmd(new Rectangle2D.Double(bbox.getX(), bbox.getY() + 10,
+                bbox.getWidth() - 10, bbox.getHeight() - 10)));
         if (fillType) {
             shapes.add(new ColorDrawCmd(fillColor));
             shapes.add(new FillDrawCmd());
@@ -586,6 +585,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Object[] colorArgument = new Object[]{dsString};
         MessageFormat formatter = new MessageFormat(BODY_START);
         StringBuilder rcString = new StringBuilder(formatter.format(colorArgument));
+        String[] lines = content.split("[\\r\\n]+");
         for (String line : lines) {
             rcString.append("<p>").append(line).append("</p>");
         }
