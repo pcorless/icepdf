@@ -26,6 +26,7 @@ import org.icepdf.core.util.*;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
@@ -451,7 +452,8 @@ public class PageViewComponentImpl extends
                 for (int i = 0, max = annotationComponents.size(); i < max; i++) {
                     annotation = annotationComponents.get(i);
                     if (((Component) annotation).isVisible() &&
-                            !(annotation.getAnnotation() instanceof FreeTextAnnotation)) {
+                            !(annotation.getAnnotation() instanceof FreeTextAnnotation
+                                    && ((FreeTextAnnotationComponent) annotation).isActive())) {
                         annotation.getAnnotation().render(gg2,
                                 GraphicsRenderingHints.SCREEN,
                                 documentViewModel.getViewRotation(),

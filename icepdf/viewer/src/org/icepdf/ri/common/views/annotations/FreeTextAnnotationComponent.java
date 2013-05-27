@@ -67,7 +67,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     private static final Logger logger =
             Logger.getLogger(FreeTextAnnotation.class.toString());
 
-    private JTextArea freeTextPane;
+    private FreeTextArea freeTextPane;
 
     private boolean contentTextChange;
 
@@ -111,16 +111,18 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
             ((FreeTextAnnotation) annotation).clearShapes();
         }
         // create the textArea to display the text.
-        freeTextPane = new JTextArea() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                float zoom = documentViewModel.getViewZoom();
-                Graphics2D g2 = (Graphics2D) g;
-                g2.scale(zoom, zoom);
-                // paint the component at the scale of the page.
-                super.paintComponent(g2);
+        // create the textArea to display the text.
+        freeTextPane = new FreeTextArea(new FreeTextArea.ZoomProvider() {
+            private DocumentViewModel model;
+
+            {
+                this.model = documentViewModel;
             }
-        };
+
+            public float getZoom() {
+                return this.model.getViewZoom();
+            }
+        });
         // line wrap false to force users to add line breaks.
         freeTextPane.setLineWrap(false);
         freeTextPane.setBackground(new Color(0, 0, 0, 0));
@@ -220,20 +222,21 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
         if ("focusOwner".equals(prop) &&
                 oldValue instanceof JTextArea) {
-            JTextArea freeText = (JTextArea) oldValue;
+            FreeTextArea freeText = (FreeTextArea) oldValue;
             if (freeText.equals(freeTextPane)) {
                 freeText.setEditable(false);
                 if (contentTextChange) {
                     contentTextChange = false;
                     resetAppearanceShapes();
                 }
+                freeText.setActive(false);
             }
         } else if ("focusOwner".equals(prop) &&
                 newValue instanceof JTextArea) {
-            JTextArea freeText = (JTextArea) newValue;
-            if (freeText.equals(freeTextPane) &&
-                    documentViewModel.getViewToolMode() == DocumentViewModel.DISPLAY_TOOL_SELECTION) {
+            FreeTextArea freeText = (FreeTextArea) newValue;
+            if (freeText.equals(freeTextPane)) {
                 freeText.setEditable(true);
+                freeText.setActive(true);
             }
         }
     }
@@ -259,6 +262,10 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     public void resetAppearanceShapes() {
         setAppearanceStream();
         annotation.resetAppearanceStream(getPageTransform());
+    }
+
+    public boolean isActive() {
+        return this.freeTextPane.isActive();
     }
 
     public String clearXMLHeader(String strXML) {
