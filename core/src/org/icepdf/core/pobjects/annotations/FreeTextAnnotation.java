@@ -382,7 +382,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         af.translate(-bbox.getMinX(), -bbox.getMaxY());
         // adjust of the border offset, offset is define in viewer,
         // so we can't use the constant because of dependency issues.
-        double insets = 5 * pageTransform.getScaleX();
+        double insets = 5;
         af.translate(insets, -insets);
         shapes.add(new TransformDrawCmd(af));
 
