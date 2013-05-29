@@ -167,7 +167,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         // update zoom and rotation state
         currentRotation = documentViewModel.getViewRotation();
         currentZoom = documentViewModel.getViewZoom();
-
+        resizableBorder.setZoom(currentZoom);
     }
 
     public Document getDocument() {
@@ -277,6 +277,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             refreshDirtyBounds();
             currentRotation = documentViewModel.getViewRotation();
             currentZoom = documentViewModel.getViewZoom();
+            resizableBorder.setZoom(currentZoom);
         }
 
         if (resized) {
