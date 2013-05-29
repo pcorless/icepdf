@@ -298,6 +298,13 @@ public class PageViewComponentImpl extends
             }
         }
 
+        // dispose annotations components
+        if (annotationComponents != null) {
+            for (int i = 0, max = annotationComponents.size(); i < max; i++) {
+                annotationComponents.get(i).dispose();
+            }
+        }
+
         inited = false;
     }
 

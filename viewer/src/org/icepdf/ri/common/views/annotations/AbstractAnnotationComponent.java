@@ -314,6 +314,13 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         }
     }
 
+    public void dispose() {
+        removeMouseListener(this);
+        removeMouseMotionListener(this);
+        // disabled focus until we are ready to implement our own handler.
+        removeFocusListener(this);
+    }
+
     public void mouseExited(MouseEvent mouseEvent) {
         setCursor(Cursor.getDefaultCursor());
         isRollover = false;

@@ -64,10 +64,12 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
         this.documentView.addMouseListener(this);
         this.scrollpane.getHorizontalScrollBar().addAdjustmentListener(this);
         this.scrollpane.getHorizontalScrollBar().addMouseListener(this);
-        addMouseListenerToAnyButtonsIn(scrollpane.getHorizontalScrollBar());
+
         this.scrollpane.getVerticalScrollBar().addAdjustmentListener(this);
         this.scrollpane.getVerticalScrollBar().addMouseListener(this);
-        addMouseListenerToAnyButtonsIn(scrollpane.getVerticalScrollBar());
+
+//        addMouseListenerToAnyButtonsIn(scrollpane.getHorizontalScrollBar());
+//        addMouseListenerToAnyButtonsIn(scrollpane.getVerticalScrollBar());
 
         // load wheel mouse listener
         mouseWheelCurrentPageListener = MouseWheelCurrentPageListener.install(scrollpane, this);
@@ -77,8 +79,9 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
         int children = (comp instanceof Container) ? ((Container) comp).getComponentCount() : -1;
         for (int i = 0; i < children; i++) {
             Component kid = ((Container) comp).getComponent(i);
-            if (kid instanceof javax.swing.AbstractButton)
+            if (kid instanceof javax.swing.AbstractButton) {
                 kid.addMouseListener(this);
+            }
             addMouseListenerToAnyButtonsIn(kid);
         }
     }
@@ -161,6 +164,6 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
         scrollpane.getVerticalScrollBar().removeMouseListener(this);
 
         // Remove wheel mouse listener
-        MouseWheelCurrentPageListener.uninstall(scrollpane, this);
+        MouseWheelCurrentPageListener.uninstall(scrollpane, mouseWheelCurrentPageListener);
     }
 }

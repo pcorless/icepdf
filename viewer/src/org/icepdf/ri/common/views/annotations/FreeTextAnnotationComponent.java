@@ -252,6 +252,14 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     }
 
     @Override
+    public void dispose() {
+        super.dispose();
+        KeyboardFocusManager focusManager =
+                KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        focusManager.removePropertyChangeListener(this);
+    }
+
+    @Override
     public void resetAppearanceShapes() {
         setAppearanceStream();
         annotation.resetAppearanceStream(getPageTransform());
