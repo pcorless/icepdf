@@ -41,6 +41,8 @@ public class ResizableBorder extends AbstractBorder {
     private static Color outlineColor;
     private static Color outlineResizeColor;
 
+    public static final int INSETS = 5;
+
     static {
 
         // sets annotation selected highlight colour
@@ -90,13 +92,20 @@ public class ResizableBorder extends AbstractBorder {
             new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);
 
     protected int resizeWidgetDim;
+    protected int originalResizeWidgetDim;
+    protected int inset;
 
     public ResizableBorder(int resizeBoxSize) {
-        this.resizeWidgetDim = resizeBoxSize;
+        this.originalResizeWidgetDim = resizeBoxSize;
     }
 
     public Insets getBorderInsets(Component component) {
-        return new Insets(5, 5, 5, 5);
+        return new Insets(inset, inset, inset, inset);
+    }
+
+    public void setZoom(float zoom) {
+        this.resizeWidgetDim = (int) (this.originalResizeWidgetDim * zoom);
+        this.inset = (int) (INSETS * zoom + 0.5);
     }
 
     public boolean isBorderOpaque() {
