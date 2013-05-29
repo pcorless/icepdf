@@ -102,4 +102,6 @@ public interface AnnotationComponent {
 
     public PageViewComponent getPageViewComponent();
 
+    public void dispose();
+
 }

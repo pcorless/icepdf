@@ -2370,6 +2370,7 @@ public class SwingController
 
         // Clean up the document view controller
         if (documentViewController != null) {
+            documentViewController.removePropertyChangeListener(this);
             documentViewController.dispose();
         }
 
@@ -2653,8 +2654,8 @@ public class SwingController
                                 logger.log(Level.FINE, "Error exporting to SVG");
                             }
                             final String tmpMsg;
-                            // finsished message
-                            if (error != null) {
+                            // finished message
+                            if (error == null) {
                                 Object[] messageArguments = new Object[]{
                                         String.valueOf(pageIndex + 1),
                                         file.getName()
