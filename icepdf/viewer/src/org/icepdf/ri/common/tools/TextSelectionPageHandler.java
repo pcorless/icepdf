@@ -62,6 +62,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     // text selection colour
     public static Color selectionColor;
 
+    public int selectedCount;
+
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -150,6 +152,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     public void mousePressed(MouseEvent e) {
 
         documentViewController.clearSelectedText();
+        selectedCount = 0;
 
         // text selection box.
         int x = e.getX();
@@ -172,6 +175,14 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             Page currentPage = pageViewComponent.getPage();
             // handle text selection mouse coordinates
             logger.fine(currentPage.getViewText().getSelected().toString());
+        }
+
+        if (selectedCount > 0) {
+            // add the page to the page as it is marked for selection
+            documentViewModel.addSelectedPageText(pageViewComponent);
+            documentViewController.firePropertyChange(
+                    PropertyConstants.TEXT_SELECTED,
+                    null, null);
         }
 
         // clear the rectangle
@@ -212,8 +223,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 
         Page currentPage = pageViewComponent.getPage();
         multiLineSelectHandler(currentPage, e.getPoint());
-        // add the page to the page as it is marked for selection
-        documentViewModel.addSelectedPageText(pageViewComponent);
+
     }
 
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
@@ -333,6 +343,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
      */
     private void multiLineSelectHandler(Page currentPage, Point mouseLocation) {
 
+        selectedCount = 0;
         if (currentPage != null &&
                 currentPage.isInitiated()) {
             // get page text
@@ -357,19 +368,21 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                     // check for containment, if so break into words.
                     if (pageLine.intersects(pageRectToDraw)) {
                         pageLine.setHasSelected(true);
+                        selectedCount++;
                         if (firstPageLine == null) {
                             firstPageLine = pageLine;
                         }
                         if (pageLine.getBounds().contains(pageMouseLocation)) {
-
                             ArrayList<WordText> lineWords = pageLine.getWords();
                             for (WordText word : lineWords) {
                                 if (word.intersects(pageRectToDraw)) {
                                     word.setHasHighlight(true);
+                                    selectedCount++;
                                     ArrayList<GlyphText> glyphs = word.getGlyphs();
                                     for (GlyphText glyph : glyphs) {
                                         if (glyph.intersects(pageRectToDraw)) {
                                             glyph.setSelected(true);
+                                            selectedCount++;
                                             pageViewComponent.repaint();
                                         }
                                     }
