@@ -145,17 +145,17 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public TextMarkupAnnotation(Library l, HashMap h) {
         super(l, h);
         // collect the quad points.
-        List quadPoints = library.getArray(entries, KEY_QUAD_POINTS);
+        List<Number> quadPoints = library.getArray(entries, KEY_QUAD_POINTS);
         if (quadPoints != null) {
             int size = quadPoints.size() / 8;
             quadrilaterals = new Shape[size];
             GeneralPath shape;
             for (int i = 0, count = 0; i < size; i++, count += 8) {
                 shape = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 4);
-                shape.moveTo((Float) quadPoints.get(count + 6), (Float) quadPoints.get(count + 7));
-                shape.lineTo((Float) quadPoints.get(count + 4), (Float) quadPoints.get(count + 5));
-                shape.lineTo((Float) quadPoints.get(count), (Float) quadPoints.get(count + 1));
-                shape.lineTo((Float) quadPoints.get(count + 2), (Float) quadPoints.get(count + 3));
+                shape.moveTo(quadPoints.get(count + 6).floatValue(), quadPoints.get(count + 7).floatValue());
+                shape.lineTo(quadPoints.get(count + 4).floatValue(), quadPoints.get(count + 5).floatValue());
+                shape.lineTo(quadPoints.get(count).floatValue(), quadPoints.get(count + 1).floatValue());
+                shape.lineTo(quadPoints.get(count + 2).floatValue(), quadPoints.get(count + 3).floatValue());
                 shape.closePath();
                 quadrilaterals[i] = shape;
             }
