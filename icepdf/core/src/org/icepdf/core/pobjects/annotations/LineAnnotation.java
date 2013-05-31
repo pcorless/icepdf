@@ -196,17 +196,17 @@ public class LineAnnotation extends MarkupAnnotation {
         super(l, h);
 
         // line points
-        List value = library.getArray(entries, L_KEY);
+        List<Number> value = library.getArray(entries, L_KEY);
         if (value != null) {
-            startOfLine = new Point2D.Float((Float) value.get(0), (Float) value.get(1));
-            endOfLine = new Point2D.Float((Float) value.get(2), (Float) value.get(3));
+            startOfLine = new Point2D.Float(value.get(0).floatValue(), value.get(1).floatValue());
+            endOfLine = new Point2D.Float(value.get(2).floatValue(), value.get(3).floatValue());
         }
 
         // line ends.
-        value = library.getArray(entries, LE_KEY);
-        if (value != null) {
-            startArrow = (Name) value.get(0);
-            endArrow = (Name) value.get(1);
+        List value2 = library.getArray(entries, LE_KEY);
+        if (value2 != null) {
+            startArrow = (Name) value2.get(0);
+            endArrow = (Name) value2.get(1);
         }
 
         // parse out interior colour, specific to link annotations.
