@@ -53,7 +53,7 @@ public class ShadingType2Pattern extends ShadingPattern {
     // these two values as the colour gradient varies between the starting and
     // ending points of the axis.  The variable t becomes the argument to the
     // colour function(s).  Default [0,1].
-    protected List<Float> domain;
+    protected List<Number> domain;
 
     // An array of four numbers [x0, y0, x1, y1] specifying the starting and
     // ending coordinates of the axis, expressed in the shading's target
@@ -95,9 +95,9 @@ public class ShadingType2Pattern extends ShadingPattern {
         // get type 2 specific data.
         tmp = library.getObject(shading, DOMAIN_KEY);
         if (tmp instanceof List) {
-            domain = (List<Float>) tmp;
+            domain = (List<Number>) tmp;
         } else {
-            domain = new ArrayList<Float>(2);
+            domain = new ArrayList<Number>(2);
             domain.add(new Float(0.0));
             domain.add(new Float(1.0));
         }
@@ -129,8 +129,8 @@ public class ShadingType2Pattern extends ShadingPattern {
         }
 
         // calculate the t's
-        float t0 = domain.get(0);
-        float t1 = domain.get(1);
+        float t0 = domain.get(0).floatValue();
+        float t1 = domain.get(1).floatValue();
 
         // first off, create the two needed start and end points of the line
         Point2D.Float startPoint = new Point2D.Float(
