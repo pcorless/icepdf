@@ -986,7 +986,7 @@ public class Parser {
         }
         // if a number try and parse it
         else if (inNumber) {
-            return getFloat(stringBuffer);
+            return getNumber(stringBuffer);
         }
         return stringBuffer.toString();
     }
@@ -1031,7 +1031,7 @@ public class Parser {
         // Only bother trying to interpret as a number if contains a digit somewhere,
         //   to reduce NumberFormatExceptions
         if (foundDigit) {
-            return getFloat(sb);
+            return getNumber(sb);
         }
 
         if (sb.length() > 0)
@@ -1076,8 +1076,8 @@ public class Parser {
         return num;
     }
 
-    public float getFloat(StringBuilder value) {
-        float digit = 0;
+    public Number getNumber(StringBuilder value) {
+        double digit = 0;
         float divisor = 10;
         boolean isDigit;
         boolean isDecimal = false;
