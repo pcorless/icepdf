@@ -1077,7 +1077,8 @@ public class Parser {
     }
 
     public Number getNumber(StringBuilder value) {
-        double digit = 0;
+        int digit = 0;
+        float decimal = 0;
         float divisor = 10;
         boolean isDigit;
         boolean isDecimal = false;
@@ -1097,7 +1098,7 @@ public class Parser {
             if (!isDecimal && isDigit) {
                 digit = (digit * 10) + current;
             } else if (isDecimal && isDigit) {
-                digit += (current / divisor);
+                decimal += (current / divisor);
                 divisor *= 10;
             } else if (streamBytes[i] == 46) {
                 isDecimal = true;
@@ -1106,10 +1107,19 @@ public class Parser {
                 break;
             }
         }
+
         if (singed) {
-            return -digit;
+            if (isDecimal) {
+                return -(digit + decimal);
+            } else {
+                return -digit;
+            }
         } else {
-            return digit;
+            if (isDecimal) {
+                return digit + decimal;
+            } else {
+                return digit;
+            }
         }
     }
 
