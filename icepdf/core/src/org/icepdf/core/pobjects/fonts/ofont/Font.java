@@ -301,7 +301,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
             // Assigns the First character code defined in the font's Widths array
             o = library.getObject(entries, FIRST_CHAR_KEY);
             if (o != null) {
-                firstchar = ((Float) o).intValue();
+                firstchar = ((Number) o).intValue();
             }
         }
         // check of a cid font
