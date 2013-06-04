@@ -151,8 +151,22 @@ public class ImageUtility {
             maskRaster = maskImage.getRaster();
             maskWidth = maskRaster.getWidth();
             maskHeight = maskRaster.getHeight();
+            // scale the image to match the image mask.
+            if (width < maskWidth || height < maskHeight) {
+                // calculate scale factors.
+                double scaleX = maskWidth / (double) width;
+                double scaleY = maskHeight / (double) height;
+                // scale the mask to match the base image.
+                AffineTransform tx = new AffineTransform();
+                tx.scale(scaleX, scaleY);
+                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+                BufferedImage bim = op.filter(bi, null);
+                bi.flush();
+                bi = bim;
+            }
+            width = bi.getWidth();
+            height = bi.getHeight();
         }
-
         int maskMinRed = 0xFF;
         int maskMinGreen = 0xFF;
         int maskMinBlue = 0xFF;
@@ -1462,7 +1476,7 @@ public class ImageUtility {
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
                 if (usingAlpha) {
-                    ImageUtility.alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
+                    img = ImageUtility.alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
