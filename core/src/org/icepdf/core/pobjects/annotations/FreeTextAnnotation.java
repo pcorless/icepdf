@@ -521,7 +521,6 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(
                         library, fontDictionary);
                 newFont.setPObjectReference(stateManager.getNewReferencNumber());
-                library.addObject(newFont, newFont.getPObjectReference());
                 // create font entry
                 HashMap fontResources = new HashMap();
                 fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
@@ -539,7 +538,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 newFont = new org.icepdf.core.pobjects.fonts.ofont.Font(library, fontDictionary);
                 newFont.setPObjectReference(reference);
             }
+            // update hard reference to state manager and weak library reference.
             stateManager.addChange(new PObject(newFont, newFont.getPObjectReference()));
+            library.addObject(newFont, newFont.getPObjectReference());
         }
 
         // build out a few backwards compatible strings.
