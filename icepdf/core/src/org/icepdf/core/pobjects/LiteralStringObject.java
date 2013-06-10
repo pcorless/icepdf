@@ -63,7 +63,11 @@ public class LiteralStringObject implements StringObject {
      */
     public LiteralStringObject(String string) {
         // append string data
-        stringData = new StringBuilder(string);
+        // escape the string for any special characters.
+        //   \(  - left parenthesis
+        //   \)  - right parenthesis
+        //   \\  - backslash
+        stringData = new StringBuilder(string.replaceAll("(?=[()\\\\])", "\\\\"));
     }
 
     /**
