@@ -215,21 +215,25 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
         if ("focusOwner".equals(prop) &&
                 oldValue instanceof JTextArea) {
-            FreeTextArea freeText = (FreeTextArea) oldValue;
+            JTextArea freeText = (JTextArea) oldValue;
             if (freeText.equals(freeTextPane)) {
                 freeText.setEditable(false);
                 if (contentTextChange) {
                     contentTextChange = false;
                     resetAppearanceShapes();
                 }
-                freeText.setActive(false);
+                if (freeText instanceof FreeTextArea) {
+                    ((FreeTextArea) freeText).setActive(false);
+                }
             }
         } else if ("focusOwner".equals(prop) &&
                 newValue instanceof JTextArea) {
-            FreeTextArea freeText = (FreeTextArea) newValue;
+            JTextArea freeText = (JTextArea) newValue;
             if (freeText.equals(freeTextPane)) {
                 freeText.setEditable(true);
-                freeText.setActive(true);
+                if (freeText instanceof FreeTextArea) {
+                    ((FreeTextArea) freeText).setActive(true);
+                }
             }
         }
     }
