@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.commands;
 
+import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.PdfOps;
@@ -209,7 +210,10 @@ public class PostScriptEncoder {
                                 if (i == max - 1) {
                                     line.append(glyphText.getUnicode());
                                 }
-                                postScript.append(BEGIN_ARRAY).append(BEGIN_STRING).append(line.toString()).append(END_STRING)
+                                postScript.append(BEGIN_ARRAY).append(BEGIN_STRING)
+                                        // use literal string to make sure string is escaped correctly
+                                        .append(new LiteralStringObject(line.toString()).toString())
+                                        .append(END_STRING)
                                         .append(END_ARRAY).append(SPACE)
                                         .append(PdfOps.TJ_TOKEN).append(NEWLINE);
                                 // add shift if newline
