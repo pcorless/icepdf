@@ -139,7 +139,7 @@ public class PageViewComponentImpl extends
     private static int dirtyTimerInterval = 5;
 
     // graphics configuration
-    private GraphicsConfiguration gc;
+    private static GraphicsConfiguration gc;
 
     static {
         // default value have been assigned.  Keep in mind that larger ratios will
@@ -1013,15 +1013,18 @@ public class PageViewComponentImpl extends
             }
 
             try {
-                Page page = pageTree.getPage(pageIndex);
+                final Page page = pageTree.getPage(pageIndex);
                 page.init();
 
                 // add annotation components to container, this only done
                 // once, but Annotation state can be refreshed with the api
                 // when needed.
-                refreshAnnotationComponents(page);
-                pageComponent.validate();
-
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        refreshAnnotationComponents(page);
+//                        pageComponent.validate();
+                    }
+                });
                 // fire page annotation initialized callback
                 if (documentViewController.getAnnotationCallback() != null) {
                     documentViewController.getAnnotationCallback()
@@ -1085,9 +1088,7 @@ public class PageViewComponentImpl extends
                         parentScrollPane.getVerticalScrollBar().getValueIsAdjusting()) {
                     return;
                 }
-
-                // lock page
-                Page page = pageTree.getPage(pageIndex);
+                final Page page = pageTree.getPage(pageIndex);
                 // load the page content
                 if (page != null && !page.isInitiated() &&
                         !pageInitializer.isRunning() &&
@@ -1104,7 +1105,11 @@ public class PageViewComponentImpl extends
                         page.isInitiated() &&
                         page.getAnnotations() != null &&
                         annotationComponents == null) {
-                    refreshAnnotationComponents(page);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            refreshAnnotationComponents(page);
+                        }
+                    });
                 }
 
                 // paint page content
@@ -1120,7 +1125,7 @@ public class PageViewComponentImpl extends
 
                     pagePainter.setHasBeenQueued(true);
                     pagePainter.setIsBufferDirty(isBufferDirty);
-                    Library.execute(pagePainter);
+                    Library.executePainter(pagePainter);
                 }
                 // paint page content
                 if (page != null &&

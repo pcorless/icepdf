@@ -44,7 +44,7 @@ public class ImageReferenceFactory {
     // allow scaling of large images to improve clarity on screen
 
     public enum ImageReference {
-        DEFAULT, SCALED, MIP_MAP
+        DEFAULT, SCALED, MIP_MAP // FLOYD_STEINBERG
     }
 
     private static ImageReference scaleType;

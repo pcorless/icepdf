@@ -23,7 +23,9 @@ import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 /**
@@ -33,7 +35,7 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public abstract class ImageReference implements Runnable {
+public abstract class ImageReference implements Callable<BufferedImage> {
 
     private static final Logger logger =
             Logger.getLogger(ImageReference.class.toString());
@@ -45,7 +47,7 @@ public abstract class ImageReference implements Runnable {
         useProxy = Defs.booleanProperty("org.icepdf.core.imageProxy", true);
     }
 
-    protected final ReentrantLock lock = new ReentrantLock();
+    protected FutureTask<BufferedImage> futureTask;
 
     protected ImageStream imageStream;
     protected Color fillColor;
@@ -102,10 +104,20 @@ public abstract class ImageReference implements Runnable {
     protected BufferedImage createImage() {
         // block until thread comes back.
         try {
-            lock.lock();
-            return image;
-        } finally {
-            lock.unlock();
+            image = futureTask.get();
+        } catch (InterruptedException e) {
+            logger.warning("Image loading interrupted");
+        } catch (ExecutionException e) {
+            logger.warning("Image loading execution exception");
         }
+        return image;
+    }
+
+    public ImageStream getImageStream() {
+        return imageStream;
+    }
+
+    public boolean isImage() {
+        return image != null;
     }
 }

@@ -49,10 +49,13 @@ class MipMappedImageReference extends ImageReference {
 
         int width = imageReference.getWidth();
         int height = imageReference.getHeight();
+        // disable proxy as we need to scale each image from the previous
+        // and thus need to do the downscale in one shot.
+        useProxy = false;
         while (width > 20 && height > 20) {
             width /= 2;
             height /= 2;
-            imageReference = new ScaledImageReference(imageStream, fillColor, resources,
+            imageReference = new ScaledImageReference(imageReference, fillColor, resources,
                     width, height);
             images.add(imageReference);
         }
@@ -106,6 +109,7 @@ class MipMappedImageReference extends ImageReference {
 
     // no need to implement as this class class calls ScaledImage and MipMapped
     // as needed.
-    public void run() {
+    public BufferedImage call() {
+        return null;
     }
 }
