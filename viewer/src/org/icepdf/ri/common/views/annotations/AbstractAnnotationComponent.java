@@ -160,9 +160,13 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        Rectangle location =
+        final Rectangle location =
                 at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
-        setBounds(location);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                setBounds(location);
+            }
+        });
 
         // update zoom and rotation state
         currentRotation = documentViewModel.getViewRotation();
@@ -295,10 +299,6 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     abstract public void paintComponent(Graphics g);
 
     abstract public void resetAppearanceShapes();
-
-    public void setBounds(int x, int y, int width, int height) {
-        super.setBounds(x, y, width, height);
-    }
 
     public void mouseMoved(MouseEvent me) {
 

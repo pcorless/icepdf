@@ -17,7 +17,6 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.Library;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
@@ -59,8 +58,6 @@ public class ImagePool {
 
     public ImagePool(long maxCacheSize) {
         fCache = new MemoryImageCache(maxCacheSize);
-
-
     }
 
     public void put(Reference ref, BufferedImage image) {
@@ -71,10 +68,6 @@ public class ImagePool {
 
     public BufferedImage get(Reference ref) {
         return fCache.get(ref);
-    }
-
-    public void execute(ImageReference imageReference) {
-        Library.execute(imageReference);
     }
 
     private static class MemoryImageCache extends LinkedHashMap<Reference, BufferedImage> {

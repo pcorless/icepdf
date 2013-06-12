@@ -167,7 +167,7 @@ public class PageThumbnailComponent extends JComponent implements MouseListener 
                 return;
             }
             initiatedThumbnailGeneration = true;
-            Library.execute(new PagePainter());
+            Library.executePainter(new PagePainter());
         }
 
     }
