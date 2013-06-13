@@ -90,6 +90,13 @@ public class PageText implements TextSelect {
         currentLine.addText(sprite);
     }
 
+    /**
+     * Creates a copy of the pageLines array and appends any optional content
+     * text that is marked as visible.
+     *
+     * @return list of page lines that are in the main content stream and any
+     *         visible layers.
+     */
     public ArrayList<LineText> getPageLines() {
         ArrayList<LineText> visiblePageLines = new ArrayList<LineText>(pageLines);
         // add optional content text that is visible.
@@ -103,8 +110,19 @@ public class PageText implements TextSelect {
                 }
             }
         }
-
         return visiblePageLines;
+    }
+
+    /**
+     * Adds the specified pageLines to the array of pageLines. Generally only
+     * called when passing text form xObjects up to their parent shapes text.
+     *
+     * @param pageLines page lines to add.
+     */
+    public void addPageLines(ArrayList<LineText> pageLines) {
+        if (pageLines != null) {
+            this.pageLines.addAll(pageLines);
+        }
     }
 
     public void addGlyph(GlyphText glyphText, LinkedList<OptionalContents> oCGs) {
