@@ -590,7 +590,7 @@ public abstract class AbstractContentParser implements ContentParser {
                             .applyXObjectTransform(graphicState.getCTM());
                     // add the text to the current shapes for extraction and
                     // selection purposes.
-                    formXObject.getShapes().getPageText().getPageLines().addAll(
+                    shapes.getPageText().addPageLines(
                             formXObject.getShapes().getPageText().getPageLines());
                 }
                 shapes.add(new NoClipDrawCmd());
