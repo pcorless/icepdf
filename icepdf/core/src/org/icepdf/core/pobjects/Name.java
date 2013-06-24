@@ -152,7 +152,13 @@ public class Name {
                     // convert digits to hex.
                     String hex = name.substring(i + 1, i + 3);
                     name.delete(i, i + 3);
-                    name.insert(i, convert(hex));
+                    // convert digits to hex.
+                    int charDd = Integer.parseInt(hex, 16);
+                    if (charDd <= 127) {
+                        name.insert(i, (char) charDd);
+                    } else {
+                        name.insert(i, convert(hex));
+                    }
                 }
             }
         } catch (Throwable e) {
