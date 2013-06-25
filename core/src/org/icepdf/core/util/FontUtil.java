@@ -109,6 +109,28 @@ public class FontUtil {
     }
 
     /**
+     * For a font subset, the PostScript name of the font—the value of the font’s
+     * BaseFont entry and the font descriptor’s FontName entry shall begin with
+     * a tag followed by a plus sign (+). The tag shall consist of exactly six
+     * uppercase letters; the choice of letters is arbitrary, but different
+     * subsets in the same PDF file shall have different tags
+     * <p/>
+     * This method will strip the font subset from the font name and return
+     * the font name.
+     *
+     * @param name font name to strip of subset name.
+     * @return bare font name.
+     */
+    public static String removeBaseFontSubset(String name) {
+        if (name != null && name.length() > 7) {
+            int i = name.indexOf('+') + 1;
+            return name.substring(i, name.length());
+        } else {
+            return name;
+        }
+    }
+
+    /**
      * Utility method for normailing strings, to lowercase and remove any spaces.
      *
      * @param name base name of font
