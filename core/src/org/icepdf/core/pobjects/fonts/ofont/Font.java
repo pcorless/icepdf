@@ -653,26 +653,7 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
         // crystal report ecoding specific, this will have to made more
         // robust when more examples are found.
-        if (fontName.indexOf('+') >= 0) {
-            int index = fontName.indexOf('+');
-            String tmp = fontName.substring(index + 1);
-            try {
-                Integer.parseInt(tmp);
-                fontName = fontName.substring(0, index);
-            } catch (NumberFormatException e) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("error cleaning font base name " + fontName);
-                }
-            }
-        }
-
-        // clean up the font name, strip a subtyp reference from name
-        while (fontName.indexOf('+') >= 0) {
-            int index = fontName.indexOf('+');
-
-            fontName = fontName.substring(index + 1,
-                    fontName.length());
-        }
+        fontName = FontUtil.removeBaseFontSubset(fontName);
 
         // strip commas from basefont name and replace with dashes
         if (subtype.equals("Type0")
