@@ -138,6 +138,8 @@ public class FontManager {
             "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro"
     };
 
+    private static String JAVA_FONT_PATHS = Defs.sysProperty("java.home") + "/lib/fonts";
+
     // Default system directories to scan for font programs. This variable can
     // not be declared final as it will hard wire the java.home font directory, which
     // is bad, should be different for different environments.
@@ -231,9 +233,6 @@ public class FontManager {
                     "/usr/sfw/share/a2ps/afm/",
                     "/usr/sfw/share/ghostscript/fonts/",
                     "/usr/sfw/share/ghostscript/fonts/",
-
-                    // Java default
-                    Defs.sysProperty("java.home") + "/lib/fonts"
             };
 
     /**
@@ -363,7 +362,7 @@ public class FontManager {
      * @param extraFontPaths array String object where each entry represents
      *                       a system directory path containing font programs.
      */
-    public void readSystemFonts(String[] extraFontPaths) {
+    public synchronized void readSystemFonts(String[] extraFontPaths) {
 
         // create a new font list if needed.
         if (fontList == null) {
@@ -400,38 +399,48 @@ public class FontManager {
             path = fontDirectories[i];
             // if the path is valid start reading fonts. 
             if (path != null) {
-                directory = new File(path);
-                if (directory.canRead()) {
-                    fontPaths = directory.list();
-                    for (int j = fontPaths.length - 1; j >= 0; j--) {
-                        fontName = fontPaths[j];
-                        fontPath = new StringBuilder(25);
-                        fontPath.append(directory.getAbsolutePath()).append(
-                                File.separatorChar).append(fontName);
-                        if (logger.isLoggable(Level.FINER)) {
-                            logger.finer("Trying to load font file: " + fontPath);
-                        }
-                        // try loading the font
-                        font = buildFont(fontPath.toString());
-                        // if a readable font was found
-                        if (font != null) {
-                            // normalize name
-                            fontName = font.getName().toLowerCase();
-                            // Add new font data to the font list
-                            fontList.add(new Object[]{font.getName().toLowerCase(), // original PS name
-                                    FontUtil.normalizeString(font.getFamily()), // family name
-                                    guessFontStyle(fontName), // weight and decorations, mainly bold,italic
-                                    fontPath.toString()});  // path to font on OS
-                            if (logger.isLoggable(Level.FINER)) {
-                                logger.finer("Adding system font: " + font.getName() + " " + fontPath.toString());
-                            }
-                        }
+                loadSystemFont(new File(path));
+            }
+        }
+        // read java font's lucida.
+        loadSystemFont(new File(JAVA_FONT_PATHS));
+
+        sortFontListByName();
+    }
+
+    private void loadSystemFont(File directory) {
+        if (directory.canRead()) {
+            FontFile font;
+            StringBuilder fontPath;
+            String fontName;
+            String[] fontPaths = directory.list();
+            for (int j = fontPaths.length - 1; j >= 0; j--) {
+                fontName = fontPaths[j];
+                fontPath = new StringBuilder(25);
+                fontPath.append(directory.getAbsolutePath()).append(
+                        File.separatorChar).append(fontName);
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Trying to load font file: " + fontPath);
+                }
+                // try loading the font
+                font = buildFont(fontPath.toString());
+                // if a readable font was found
+                if (font != null) {
+                    // normalize name
+                    fontName = font.getName().toLowerCase();
+                    // Add new font data to the font list
+                    fontList.add(new Object[]{font.getName().toLowerCase(), // original PS name
+                            FontUtil.normalizeString(font.getFamily()), // family name
+                            guessFontStyle(fontName), // weight and decorations, mainly bold,italic
+                            fontPath.toString()});  // path to font on OS
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer("Adding system font: " + font.getName() + " " + fontPath.toString());
                     }
                 }
             }
         }
-        sortFontListByName();
     }
+
 
     /**
      * <p>Utility method for guessing a font family name from its base name.</p>
@@ -744,6 +753,7 @@ public class FontManager {
         Object[] fontData;
         String baseName;
         String familyName;
+        String path;
         // normalize the fontName we are trying to find a match for
         int decorations = guessFontStyle(fontName);
         String name = FontUtil.normalizeString(fontName);
@@ -754,6 +764,7 @@ public class FontManager {
                 fontData = fontList.get(i);
                 baseName = (String) fontData[0];
                 familyName = (String) fontData[1];
+                path = (String) fontData[3];
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
@@ -798,7 +809,7 @@ public class FontManager {
                         if (logger.isLoggable(Level.FINER)) {
                             logger.finer("----> Found font: " + baseName +
                                     " family: " + getFontStyle(style, 0) +
-                                    " for: " + fontName);
+                                    " for: " + fontName + " " + path);
                         }
                         font = buildFont((String) fontData[3]);
                         // make sure the font does indeed exist
@@ -1126,7 +1137,7 @@ public class FontManager {
     /**
      * Utility method which maps know style strings to an integer value which
      * is used later for efficient font searching.
-     * todo: move out to FontUtil and use awt contants
+     * todo: move out to FontUtil and use awt constants
      *
      * @param name base name of font.
      * @return integer representing dffs
