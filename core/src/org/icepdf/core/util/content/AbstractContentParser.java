@@ -1355,9 +1355,14 @@ public abstract class AbstractContentParser implements ContentParser {
                         graphicState, oCGs);
             } else if (currentObject instanceof Number) {
                 f = (Number) currentObject;
-                textMetrics.getAdvance().x -=
-                        f.floatValue() * graphicState.getTextState().currentfont.getSize()
-                                / 1000.0;
+                float cspace = (graphicState.getTextState().cspace * graphicState.getTextState().hScalling)
+                        / graphicState.getTextState().currentfont.getSize();
+                float adjustment = graphicState.getTextState().currentfont.getSize() * (f.floatValue() / 1000.0f);
+                if (textMetrics.getAdvance().x - adjustment >= textMetrics.getPreviousAdvance()) {
+//                if (adjustment > 0){
+                    textMetrics.getAdvance().x -= adjustment;
+                    textMetrics.getAdvance().x += cspace;
+                }
             }
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
@@ -1447,8 +1452,10 @@ public abstract class AbstractContentParser implements ContentParser {
 
         // font metrics data
         float textRise = textState.trise;
-        float charcterSpace = textState.cspace * textState.hScalling;
-        float whiteSpace = textState.wspace * textState.hScalling;
+        float charcterSpace = (textState.cspace * textState.hScalling)
+                / graphicState.getTextState().currentfont.getSize();
+        float whiteSpace = (textState.wspace * textState.hScalling)
+                / graphicState.getTextState().currentfont.getSize();
         int textLength = displayText.length();
 
         // create a new sprite to hold the text objects
@@ -1475,7 +1482,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 currentY = lasty - textRise;
                 lastx += newAdvanceX;
                 // add the space between chars value
-                lastx += charcterSpace;
+                // lastx + charcterSpace > lastx &&
+                if (i < textLength - 1) {
+                    lastx += charcterSpace;
+                }
                 // lastly add space widths,
                 if (displayText.charAt(i) == 32) { // currently to unreliable currentFont.getSpaceEchar()
                     lastx += whiteSpace;
