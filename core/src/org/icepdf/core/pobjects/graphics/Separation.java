@@ -130,6 +130,10 @@ public class Separation extends PColorSpace {
         return 1;
     }
 
+    public boolean isNamedColor() {
+        return namedColor != null;
+    }
+
     /**
      * Gets the colour in RGB represented by the array of colour components
      *
