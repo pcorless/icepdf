@@ -1355,9 +1355,14 @@ public abstract class AbstractContentParser implements ContentParser {
                         graphicState, oCGs);
             } else if (currentObject instanceof Number) {
                 f = (Number) currentObject;
-                textMetrics.getAdvance().x -=
-                        f.floatValue() * graphicState.getTextState().currentfont.getSize()
-                                / 1000.0;
+                float fontSize = graphicState.getTextState().currentfont.getSize();
+                float cspace = (graphicState.getTextState().cspace * graphicState.getTextState().hScalling);
+                float adjustment = (f.floatValue() / 1000f) * fontSize;
+                // corner case where we get offset that break the layout, haven't found anything in the spec yet. .
+                if (!(fontSize > 1 && cspace < 0)) {
+                    textMetrics.getAdvance().x -= adjustment;
+                    textMetrics.getAdvance().x += cspace;
+                }
             }
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
@@ -1447,6 +1452,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
         // font metrics data
         float textRise = textState.trise;
+        boolean fontIsUnit = graphicState.getTextState().currentfont.getSize() == 1;
         float charcterSpace = textState.cspace * textState.hScalling;
         float whiteSpace = textState.wspace * textState.hScalling;
         int textLength = displayText.length();
@@ -1475,7 +1481,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 currentY = lasty - textRise;
                 lastx += newAdvanceX;
                 // add the space between chars value
-                lastx += charcterSpace;
+                // lastx + charcterSpace > lastx &&
+                if (i < textLength - 1 && fontIsUnit) {
+                    lastx += charcterSpace;
+                }
                 // lastly add space widths,
                 if (displayText.charAt(i) == 32) { // currently to unreliable currentFont.getSpaceEchar()
                     lastx += whiteSpace;
