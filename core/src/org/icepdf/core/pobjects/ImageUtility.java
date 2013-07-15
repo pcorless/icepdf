@@ -223,27 +223,22 @@ public class ImageUtility {
             }
         }
         // apply the soft mask.
-        BufferedImage tmpImage = bi;
         if (smaskImage != null) {
-            BufferedImage argbImage = new BufferedImage(width,
-                    height, BufferedImage.TYPE_INT_ARGB);
             int[] srcBand = new int[width];
             int[] sMaskBand = new int[width];
             // iterate over each band to apply the mask
             for (int i = 0; i < height; i++) {
-                tmpImage.getRGB(0, i, width, 1, srcBand, 0, width);
+                bi.getRGB(0, i, width, 1, srcBand, 0, width);
                 smaskImage.getRGB(0, i, width, 1, sMaskBand, 0, width);
                 // apply the soft mask blending
                 for (int j = 0; j < width; j++) {
                     sMaskBand[j] = ((sMaskBand[j] & 0xff) << 24)
                             | (srcBand[j] & ~0xff000000);
                 }
-                argbImage.setRGB(0, i, width, 1, sMaskBand, 0, width);
+                bi.setRGB(0, i, width, 1, sMaskBand, 0, width);
             }
-            tmpImage.flush();
-            tmpImage = argbImage;
         }
-        return tmpImage;
+        return bi;
     }
 
     protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr,
