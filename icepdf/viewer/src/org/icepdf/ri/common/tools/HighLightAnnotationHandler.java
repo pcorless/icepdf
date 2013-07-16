@@ -82,13 +82,14 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
      */
     public void mouseReleased(MouseEvent e) {
 
-        // update selection rectangle
-        updateSelectionSize(e, pageViewComponent);
+        // get the selection bounds
+        ArrayList<Shape> highlightBounds = getSelectedTextBounds();
 
-        // clear selected rectangle
-        clearRectangle(pageViewComponent);
+        // clear the selection
+        super.mouseReleased(e);
 
-        createTextMarkupAnnotation();
+        // create the text markup annotation.
+        createTextMarkupAnnotation(highlightBounds);
 
         // set the annotation tool to he select tool
 //        documentViewController.getParentController().setDocumentToolMode(
@@ -96,7 +97,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
     }
 
 
-    public void createTextMarkupAnnotation() {
+    public void createTextMarkupAnnotation(ArrayList<Shape> highlightBounds) {
         // mke sure we don't create a highlight annotation for every word in the
         // document when first selecting the tool for highlighted next. .
         if (documentViewModel.isSelectAll()) {
@@ -104,7 +105,9 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         }
 
         // get the geometric path of the selected text
-        ArrayList<Shape> highlightBounds = getSelectedTextBounds();
+        if (highlightBounds == null) {
+            highlightBounds = getSelectedTextBounds();
+        }
 
         // clear the selected text
         documentViewController.clearSelectedText();
