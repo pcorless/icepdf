@@ -96,7 +96,7 @@ public abstract class AbstractPageViewComponent
                         documentViewController,
                         this,
                         documentViewModel);
-                ((HighLightAnnotationHandler) currentToolHandler).createTextMarkupAnnotation();
+                ((HighLightAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION:
@@ -104,7 +104,7 @@ public abstract class AbstractPageViewComponent
                         documentViewController,
                         this,
                         documentViewModel);
-                ((StrikeOutAnnotationHandler) currentToolHandler).createTextMarkupAnnotation();
+                ((StrikeOutAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION:
@@ -112,7 +112,7 @@ public abstract class AbstractPageViewComponent
                         documentViewController,
                         this,
                         documentViewModel);
-                ((UnderLineAnnotationHandler) currentToolHandler).createTextMarkupAnnotation();
+                ((UnderLineAnnotationHandler) currentToolHandler).createTextMarkupAnnotation(null);
                 documentViewController.clearSelectedText();
                 break;
             case DocumentViewModel.DISPLAY_TOOL_LINE_ANNOTATION:
