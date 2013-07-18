@@ -65,7 +65,10 @@ public class SquareAnnotation extends MarkupAnnotation {
 
     public SquareAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
 
+    public void init() {
+        super.init();
         // parse out interior colour, specific to link annotations.
         fillColor = Color.WHITE; // we default to black but probably should be null
         java.util.List C = (java.util.List) getObject(IC_KEY);
@@ -109,6 +112,7 @@ public class SquareAnnotation extends MarkupAnnotation {
 
         // create the new instance
         SquareAnnotation squareAnnotation = new SquareAnnotation(library, entries);
+        squareAnnotation.init();
         squareAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         squareAnnotation.setNew(true);
 

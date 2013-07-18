@@ -145,16 +145,23 @@ public class Library {
         while (true) {
             SoftReference<Object> obRef = refs.get(reference);
             ob = obRef != null ? obRef.get() : null;
+            // check stateManager first to allow for annotations to be injected
+            // from a separate file.
+            if (ob == null && stateManager != null) {
+                if (stateManager.contains(reference)) {
+                    return stateManager.getChange(reference);
+                }
+            }
             if (ob == null && lazyObjectLoader != null) {
                 ob = lazyObjectLoader.loadObject(reference);
             }
-
-            if (ob instanceof PObject)
+            if (ob instanceof PObject) {
                 return ((PObject) ob).getObject();
-            else if (ob instanceof Reference)
+            } else if (ob instanceof Reference) {
                 reference = (Reference) ob;
-            else
+            } else {
                 break;
+            }
         }
         return ob;
     }
@@ -195,8 +202,9 @@ public class Library {
         Object o = dictionaryEntries.get(key);
         if (o == null)
             return null;
-        if (o instanceof Reference)
+        if (o instanceof Reference) {
             o = getObject((Reference) o);
+        }
         return o;
     }
 

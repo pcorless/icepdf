@@ -296,6 +296,7 @@ public class Page extends Dictionary {
                 // and update any references accordingly. 
                 if (ref != null & a != null) {
                     a.setPObjectReference(ref);
+                    a.init();
                 }
 
                 // add any found annotations to the vector.

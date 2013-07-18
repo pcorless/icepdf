@@ -144,6 +144,10 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      */
     public TextMarkupAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
+
+    public void init() {
+        super.init();
         // collect the quad points.
         List<Number> quadPoints = library.getArray(entries, KEY_QUAD_POINTS);
         if (quadPoints != null) {
@@ -219,6 +223,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
         TextMarkupAnnotation textMarkupAnnotation =
                 new TextMarkupAnnotation(library, entries);
+        textMarkupAnnotation.init();
         entries.put(NM_KEY,
                 new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
         textMarkupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
