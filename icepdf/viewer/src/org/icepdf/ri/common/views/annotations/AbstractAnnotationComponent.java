@@ -160,14 +160,18 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
                 documentViewModel.getViewZoom());
-        Rectangle location =
+        final Rectangle location =
                 at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
-        setBounds(location);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                setBounds(location);
+            }
+        });
 
         // update zoom and rotation state
         currentRotation = documentViewModel.getViewRotation();
         currentZoom = documentViewModel.getViewZoom();
-
+        resizableBorder.setZoom(currentZoom);
     }
 
     public Document getDocument() {
@@ -277,6 +281,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             refreshDirtyBounds();
             currentRotation = documentViewModel.getViewRotation();
             currentZoom = documentViewModel.getViewZoom();
+            resizableBorder.setZoom(currentZoom);
         }
 
         if (resized) {
@@ -295,10 +300,6 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
     abstract public void resetAppearanceShapes();
 
-    public void setBounds(int x, int y, int width, int height) {
-        super.setBounds(x, y, width, height);
-    }
-
     public void mouseMoved(MouseEvent me) {
 
         int toolMode = documentViewModel.getViewToolMode();
@@ -312,6 +313,13 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             setCursor(documentViewController.getViewCursor(
                     DocumentViewController.CURSOR_HAND_ANNOTATION));
         }
+    }
+
+    public void dispose() {
+        removeMouseListener(this);
+        removeMouseMotionListener(this);
+        // disabled focus until we are ready to implement our own handler.
+        removeFocusListener(this);
     }
 
     public void mouseExited(MouseEvent mouseEvent) {

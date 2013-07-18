@@ -166,7 +166,10 @@ public abstract class MarkupAnnotation extends Annotation {
 
     public MarkupAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
 
+    public void init() {
+        super.init();
         // title text
         Object value = library.getObject(entries, T_KEY);
         if (value != null && value instanceof StringObject) {

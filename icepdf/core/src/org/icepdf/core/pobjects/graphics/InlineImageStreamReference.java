@@ -17,9 +17,12 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.concurrent.FutureTask;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -39,9 +42,10 @@ public class InlineImageStreamReference extends ImageReference {
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            imagePool.execute(this);
+            futureTask = new FutureTask<BufferedImage>(this);
+            Library.executeImage(futureTask);
         } else if (!useProxy && imagePool.get(reference) == null) {
-            run();
+            image = call();
         }
     }
 
@@ -63,15 +67,14 @@ public class InlineImageStreamReference extends ImageReference {
         return image;
     }
 
-    public void run() {
-        lock.lock();
+    public BufferedImage call() {
+        BufferedImage image = null;
         try {
             image = imageStream.getImage(fillColor, resources);
         } catch (Throwable e) {
-            logger.warning("Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString());
-        } finally {
-            lock.unlock();
+            logger.log(Level.WARNING, "Error loading image: " + imageStream.getPObjectReference() +
+                    " " + imageStream.toString(), e);
         }
+        return image;
     }
 }

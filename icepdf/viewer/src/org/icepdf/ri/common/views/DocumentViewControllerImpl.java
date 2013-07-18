@@ -171,7 +171,7 @@ public class DocumentViewControllerImpl
     public void setDocument(Document newDocument) {
         // clean up any previous documents
         if (document != null) {
-            // parent should dispose, we just want to break reference
+            document.dispose();
             document = null;
         }
         document = newDocument;

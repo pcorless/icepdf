@@ -85,9 +85,9 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
         // get type 2 specific data.
         Object tmp = library.getObject(shading, DOMAIN_KEY);
         if (tmp instanceof java.util.List) {
-            domain = (List<Float>) tmp;
+            domain = (List<Number>) tmp;
         } else {
-            domain = new ArrayList<Float>(2);
+            domain = new ArrayList<Number>(2);
             domain.add(new Float(0.0));
             domain.add(new Float(1.0));
             domain.add(new Float(0.0));

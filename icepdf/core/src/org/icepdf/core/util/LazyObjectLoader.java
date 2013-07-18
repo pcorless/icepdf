@@ -64,9 +64,9 @@ public class LazyObjectLoader {
             try {
                 if (seekableInput != null) {
                     synchronized (streamLock) {
-                        seekableInput.beginThreadAccess();
                         CrossReference.UsedEntry usedEntry = (CrossReference.UsedEntry) entry;
                         long position = usedEntry.getFilePositionOfObject();
+                        seekableInput.beginThreadAccess();
                         long savedPosition = seekableInput.getAbsolutePosition();
                         seekableInput.seekAbsolute(position);
                         Parser parser = new Parser(seekableInput);

@@ -537,6 +537,7 @@ public abstract class Annotation extends Dictionary {
         if (annot == null) {
             annot = new GenericAnnotation(library, hashMap);
         }
+        annot.init();
         return annot;
     }
 
@@ -548,6 +549,10 @@ public abstract class Annotation extends Dictionary {
      */
     public Annotation(Library l, HashMap h) {
         super(l, h);
+    }
+
+    public void init() {
+        super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
 
@@ -566,9 +571,13 @@ public abstract class Annotation extends Dictionary {
                         SUBTYPE_POLYLINE.equals(subtype));
 
         // parse out border style if available
-        HashMap BS = (HashMap) getObject(BORDER_STYLE_KEY);
+        Object BS = getObject(BORDER_STYLE_KEY);
         if (BS != null) {
-            borderStyle = new BorderStyle(library, BS);
+            if (BS instanceof HashMap) {
+                borderStyle = new BorderStyle(library, (HashMap) BS);
+            } else if (BS instanceof BorderStyle) {
+                borderStyle = (BorderStyle) BS;
+            }
         }
         // else build out a border style from the old B entry or create
         // a default invisible border.
@@ -689,6 +698,10 @@ public abstract class Annotation extends Dictionary {
 
     public void setBBox(Rectangle bbox) {
         this.bbox = bbox;
+    }
+
+    public Rectangle2D getBbox() {
+        return bbox;
     }
 
     /**
@@ -1173,6 +1186,7 @@ public abstract class Annotation extends Dictionary {
         if (this instanceof SquareAnnotation ||
                 this instanceof CircleAnnotation ||
                 this instanceof LineAnnotation ||
+                this instanceof FreeTextAnnotation ||
                 this instanceof InkAnnotation) {
             return;
         }

@@ -68,7 +68,10 @@ public class CircleAnnotation extends MarkupAnnotation {
 
     public CircleAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
 
+    public void init() {
+        super.init();
         // parse out interior colour, specific to link annotations.
         fillColor = Color.WHITE; // we default to black but probably should be null
         java.util.List C = (java.util.List) getObject(IC_KEY);
@@ -112,6 +115,7 @@ public class CircleAnnotation extends MarkupAnnotation {
 
         // create the new instance
         CircleAnnotation circleAnnotation = new CircleAnnotation(library, entries);
+        circleAnnotation.init();
         circleAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         circleAnnotation.setNew(true);
 

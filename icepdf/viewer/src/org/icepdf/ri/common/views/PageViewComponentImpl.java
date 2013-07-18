@@ -26,6 +26,7 @@ import org.icepdf.core.util.*;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
@@ -138,7 +139,7 @@ public class PageViewComponentImpl extends
     private static int dirtyTimerInterval = 5;
 
     // graphics configuration
-    private GraphicsConfiguration gc;
+    private static GraphicsConfiguration gc;
 
     static {
         // default value have been assigned.  Keep in mind that larger ratios will
@@ -297,6 +298,13 @@ public class PageViewComponentImpl extends
             }
         }
 
+        // dispose annotations components
+        if (annotationComponents != null) {
+            for (int i = 0, max = annotationComponents.size(); i < max; i++) {
+                annotationComponents.get(i).dispose();
+            }
+        }
+
         inited = false;
     }
 
@@ -451,7 +459,8 @@ public class PageViewComponentImpl extends
                 for (int i = 0, max = annotationComponents.size(); i < max; i++) {
                     annotation = annotationComponents.get(i);
                     if (((Component) annotation).isVisible() &&
-                            !(annotation.getAnnotation() instanceof FreeTextAnnotation)) {
+                            !(annotation.getAnnotation() instanceof FreeTextAnnotation
+                                    && ((FreeTextAnnotationComponent) annotation).isActive())) {
                         annotation.getAnnotation().render(gg2,
                                 GraphicsRenderingHints.SCREEN,
                                 documentViewModel.getViewRotation(),
@@ -1004,15 +1013,18 @@ public class PageViewComponentImpl extends
             }
 
             try {
-                Page page = pageTree.getPage(pageIndex);
+                final Page page = pageTree.getPage(pageIndex);
                 page.init();
 
                 // add annotation components to container, this only done
                 // once, but Annotation state can be refreshed with the api
                 // when needed.
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
                 refreshAnnotationComponents(page);
-                pageComponent.validate();
-
+//                        pageComponent.validate();
+                    }
+                });
                 // fire page annotation initialized callback
                 if (documentViewController.getAnnotationCallback() != null) {
                     documentViewController.getAnnotationCallback()
@@ -1076,9 +1088,7 @@ public class PageViewComponentImpl extends
                         parentScrollPane.getVerticalScrollBar().getValueIsAdjusting()) {
                     return;
                 }
-
-                // lock page
-                Page page = pageTree.getPage(pageIndex);
+                final Page page = pageTree.getPage(pageIndex);
                 // load the page content
                 if (page != null && !page.isInitiated() &&
                         !pageInitializer.isRunning() &&
@@ -1095,7 +1105,11 @@ public class PageViewComponentImpl extends
                         page.isInitiated() &&
                         page.getAnnotations() != null &&
                         annotationComponents == null) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
                     refreshAnnotationComponents(page);
+                }
+                    });
                 }
 
                 // paint page content
@@ -1111,7 +1125,7 @@ public class PageViewComponentImpl extends
 
                     pagePainter.setHasBeenQueued(true);
                     pagePainter.setIsBufferDirty(isBufferDirty);
-                    Library.execute(pagePainter);
+                    Library.executePainter(pagePainter);
                 }
                 // paint page content
                 if (page != null &&

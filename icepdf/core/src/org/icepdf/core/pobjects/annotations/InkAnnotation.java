@@ -57,20 +57,23 @@ public class InkAnnotation extends MarkupAnnotation {
 
     public InkAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
 
+    public void init() {
+        super.init();
         // look for an ink list
-        List<List<Float>> inkLists = library.getArray(entries, INK_LIST_KEY);
+        List<List<Number>> inkLists = library.getArray(entries, INK_LIST_KEY);
         GeneralPath inkPaths = new GeneralPath();
         if (inkLists != null) {
             inkPath = new GeneralPath();
-            for (List<Float> inkList : inkLists) {
+            for (List<Number> inkList : inkLists) {
                 GeneralPath inkPath = null;
                 for (int i = 0, max = inkList.size() - 1; i < max; i += 2) {
                     if (inkPath == null) {
                         inkPath = new GeneralPath();
-                        inkPath.moveTo(inkList.get(i), inkList.get(i + 1));
+                        inkPath.moveTo(inkList.get(i).floatValue(), inkList.get(i + 1).floatValue());
                     } else {
-                        inkPath.lineTo(inkList.get(i), inkList.get(i + 1));
+                        inkPath.lineTo(inkList.get(i).floatValue(), inkList.get(i + 1).floatValue());
                     }
                 }
                 inkPaths.append(inkPath, false);
@@ -146,6 +149,7 @@ public class InkAnnotation extends MarkupAnnotation {
 
         // create the new instance
         InkAnnotation inkAnnotation = new InkAnnotation(library, entries);
+        inkAnnotation.init();
         inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         inkAnnotation.setNew(true);
 

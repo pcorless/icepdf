@@ -17,10 +17,12 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 /**
@@ -65,25 +67,32 @@ public class ScaledImageReference extends CachedImageReference {
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            imagePool.execute(this);
+            futureTask = new FutureTask<BufferedImage>(this);
+            Library.executeImage(futureTask);
         } else if (!useProxy && imagePool.get(reference) == null) {
-            run();
+            image = call();
         }
     }
 
-    public ScaledImageReference(ImageStream imageStream, Color fillColor, Resources resources,
+    public ScaledImageReference(ImageReference imageReference, Color fillColor, Resources resources,
                                 int width, int height) {
-        super(imageStream, fillColor, resources);
+        super(imageReference.getImageStream(), fillColor, resources);
 
         this.width = width;
         this.height = height;
 
+        // check for an repeated scale via a call from MipMap
+        if (imageReference.isImage()) {
+            image = imageReference.getImage();
+        }
+
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            imagePool.execute(this);
+            futureTask = new FutureTask<BufferedImage>(this);
+            Library.executeImage(futureTask);
         } else if (!useProxy && imagePool.get(reference) == null) {
-            run();
+            image = call();
         }
     }
 
@@ -95,10 +104,13 @@ public class ScaledImageReference extends CachedImageReference {
         return height;
     }
 
-    public void run() {
-        lock.lock();
+    public BufferedImage call() {
+        BufferedImage image = null;
         try {
+            // get the stream image if need, otherwise scale what you have.
+            if (image == null) {
             image = imageStream.getImage(fillColor, resources);
+            }
             if (image != null) {
                 int width = image.getWidth();
                 int height = image.getHeight();
@@ -122,8 +134,7 @@ public class ScaledImageReference extends CachedImageReference {
         } catch (Throwable e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString());
-        } finally {
-            lock.unlock();
         }
+        return image;
     }
 }

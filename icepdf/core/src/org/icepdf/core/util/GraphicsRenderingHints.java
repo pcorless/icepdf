@@ -374,7 +374,6 @@ public class GraphicsRenderingHints {
      * The default value is Color.white
      */
     Color printBackground = Color.white;
-    ;
 
     // take care of Screen mode default values. The general ideal is to lower
     // qality where possible to encresase drawing speed.
@@ -384,7 +383,7 @@ public class GraphicsRenderingHints {
      * composited.  The default value is
      * VALUE_ALPHA_INTERPOLATION_SPEED
      */
-    Object screenAlphaInterpolocation = RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY;
+    Object screenAlphaInterpolocation = RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED;
     /**
      * This hint controls if text and images will be drawn using anitialiasing.
      * The default value is VALUE_ANTIALIAS_ON
@@ -400,12 +399,12 @@ public class GraphicsRenderingHints {
      * This hint controls colour rendering quality.
      * The default value is VALUE_COLOR_RENDER_SPEED
      */
-    Object screenColorRendering = RenderingHints.VALUE_COLOR_RENDER_QUALITY;
+    Object screenColorRendering = RenderingHints.VALUE_COLOR_RENDER_SPEED;
     /**
      * This hint controls dithering of an image.
      * The default value is VALUE_DITHER_ENABLE
      */
-    Object screenDithering = RenderingHints.VALUE_DITHER_ENABLE;
+    Object screenDithering = RenderingHints.VALUE_DITHER_DEFAULT;
     /**
      * This hint controls fractional Metrics calculations for drawing text.
      * The default value is VALUE_FRACTIONALMETRICS_ON
@@ -415,23 +414,22 @@ public class GraphicsRenderingHints {
      * This hint controls image interpolation.
      * The default value is VALUE_INTERPOLATION_BICUBIC
      */
-    Object screenInterPolation = RenderingHints.VALUE_INTERPOLATION_BICUBIC;
+    Object screenInterPolation = RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
     /**
      * This hint controls rendering quality.
      * The default value is VALUE_RENDER_QUALITY
      */
-    Object screenRendering = RenderingHints.VALUE_RENDER_QUALITY;
+    Object screenRendering = RenderingHints.VALUE_RENDER_SPEED;
     /**
      * This hint controls stroke quality.
      * The default value is VALUE_STROKE_NORMALIZE
      */
-    Object screenStrokeControl = RenderingHints.VALUE_STROKE_NORMALIZE;
+    Object screenStrokeControl = RenderingHints.VALUE_STROKE_PURE;
     /**
      * This hints controls if the Page will paint a white background before drawing itself.
      * The default value is Color.white
      */
     Color screenBackground = Color.white;
-    ;
 
     private RenderingHints screenHints;
     private RenderingHints printHints;

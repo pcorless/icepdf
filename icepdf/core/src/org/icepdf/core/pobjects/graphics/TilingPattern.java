@@ -293,6 +293,11 @@ public class TilingPattern extends Stream implements Pattern {
             resources = leafResources;
         }
 
+        if (paintType == PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
+            parentGraphicState.setFillColor(unColored);
+            parentGraphicState.setStrokeColor(unColored);
+        }
+
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream.
         ContentParser cp = ContentParserFactory.getInstance()
@@ -408,7 +413,8 @@ public class TilingPattern extends Stream implements Pattern {
                         matrix.getScaleY(),
                         0,
                         0);
-        AffineTransform af2 = new AffineTransform(parentGraphicState.getCTM());
+//        AffineTransform af2 = new AffineTransform(parentGraphicState.getCTM());
+        AffineTransform af2 = new AffineTransform();
         af2.concatenate(af);
         g2d.transform(af2);
 

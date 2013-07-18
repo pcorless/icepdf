@@ -14,24 +14,30 @@
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
+import org.icepdf.core.pobjects.graphics.text.GlyphText;
+import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -119,6 +125,8 @@ public class NewAnnotationPrePageLoad {
 
         // list of founds words to print out
         ArrayList<WordText> foundWords;
+        DocumentViewModel documentViewModel =
+                controller.getDocumentViewController().getDocumentViewModel();
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             // get the search results for this page
             foundWords = searchController.searchPage(pageIndex);
@@ -128,25 +136,28 @@ public class NewAnnotationPrePageLoad {
 
                 for (WordText wordText : foundWords) {
                     // create a  new link annotation
-                    LinkAnnotation linkAnnotation = (LinkAnnotation)
+                    TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation)
                             AnnotationFactory.buildAnnotation(
                                     document.getPageTree().getLibrary(),
-                                    Annotation.SUBTYPE_LINK,
+                                    Annotation.SUBTYPE_HIGHLIGHT,
                                     wordText.getBounds().getBounds());
-                    // create a new URI action
-                    org.icepdf.core.pobjects.actions.Action action =
-                            createURIAction(document.getPageTree().getLibrary(),
-                                    "http://www.icepdf.org");
-                    // or create a new goTo Annotation that links to the page
-                    // number represented by pageCount.  
-//                    org.icepdf.core.pobjects.actions.Action action =
-//                            createGoToAction(
-//                                    document.getPageTree().getLibrary(),
-//                                    document, document.getNumberOfPages() - 1);
-                    // add the action to the annotation
-                    linkAnnotation.addAction(action);
+                    GeneralPath highlightPath = new GeneralPath(wordText.getBounds());
+                    ArrayList<Shape> highlightBounds = new ArrayList<Shape>();
+                    highlightBounds.add(highlightPath.getBounds2D());
+
+
+                    textMarkupAnnotation.setColor(new Color(Integer.parseInt("ffff00", 16)));
+                    textMarkupAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
+                    textMarkupAnnotation.setTitleText(System.getProperty("user.name"));
+                    textMarkupAnnotation.setMarkupBounds(highlightBounds);
+                    textMarkupAnnotation.setMarkupPath(highlightPath);
+                    textMarkupAnnotation.setBBox( wordText.getBounds().getBounds());
+                    textMarkupAnnotation.resetAppearanceStream(page.getPageTransform(
+                            documentViewModel.getPageBoundary(),
+                            documentViewModel.getViewRotation(),
+                            documentViewModel.getViewZoom()));
                     // add it to the page.
-                    page.addAnnotation(linkAnnotation);
+                    page.addAnnotation(textMarkupAnnotation);
                 }
             }
             // removed the search highlighting
@@ -160,6 +171,54 @@ public class NewAnnotationPrePageLoad {
         // The save button can be used in the UI to save a copy of the
         // document.
     }
+
+    private static ArrayList<Shape> getSelectedTextBounds(Page currentPage, DocumentViewModel documentViewModel) {
+        ArrayList<Shape> highlightBounds = null;
+        if (currentPage != null && currentPage.isInitiated()) {
+            PageText pageText = currentPage.getViewText();
+            if (pageText != null) {
+                // get page transformation
+                AffineTransform pageTransform = currentPage.getPageTransform(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom());
+                // paint the sprites
+                GeneralPath textPath;
+                for (LineText lineText : pageText.getPageLines()) {
+                    for (WordText wordText : lineText.getWords()) {
+                        // paint whole word
+                        if (wordText.isSelected() || wordText.isHighlighted()) {
+                            textPath = new GeneralPath(wordText.getBounds());
+                            textPath.transform(pageTransform);
+                            // paint highlight over any selected
+                            if (wordText.isSelected()) {
+                                if (highlightBounds == null) {
+                                    highlightBounds = new ArrayList<Shape>();
+                                }
+                                highlightBounds.add(textPath.getBounds2D());
+                            }
+
+                        }
+                        // check children
+                        else {
+                            for (GlyphText glyph : wordText.getGlyphs()) {
+                                if (glyph.isSelected()) {
+                                    textPath = new GeneralPath(glyph.getBounds());
+                                    textPath.transform(pageTransform);
+                                    if (highlightBounds == null) {
+                                        highlightBounds = new ArrayList<Shape>();
+                                    }
+                                    highlightBounds.add(textPath.getBounds2D());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return highlightBounds;
+    }
+
 
     /**
      * Utility for creation a URI action

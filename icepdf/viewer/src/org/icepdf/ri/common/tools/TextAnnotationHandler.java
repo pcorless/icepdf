@@ -203,7 +203,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         }
 
         // convert bbox and start and end line points.
-        Rectangle tBbox2 = convertToPageSpace(bBox).getBounds();
+        Rectangle tBbox2 = convertToPageSpace(bBox2).getBounds();
 
         // text annotation are special as the annotation has fixed size.
         PopupAnnotation popupAnnotation = createPopupAnnotation(
