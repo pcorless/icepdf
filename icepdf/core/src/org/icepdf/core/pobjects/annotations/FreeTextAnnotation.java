@@ -243,7 +243,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public FreeTextAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
 
+    public void init() {
+        super.init();
         if (matrix == null) {
             matrix = new AffineTransform();
         }
@@ -352,6 +355,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // create the new instance
         FreeTextAnnotation freeTextAnnotation = new FreeTextAnnotation(library, entries);
+        freeTextAnnotation.init();
         freeTextAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         freeTextAnnotation.setNew(true);
 

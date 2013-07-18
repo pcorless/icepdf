@@ -124,7 +124,10 @@ public class TextAnnotation extends MarkupAnnotation {
 
     public TextAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
 
+    public void init() {
+        super.init();
         // open state
         open = library.getBoolean(entries, OPEN_KEY);
 
@@ -182,6 +185,7 @@ public class TextAnnotation extends MarkupAnnotation {
 
         // create the new instance
         TextAnnotation textAnnotation = new TextAnnotation(library, entries);
+        textAnnotation.init();
         textAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         textAnnotation.setNew(true);
 

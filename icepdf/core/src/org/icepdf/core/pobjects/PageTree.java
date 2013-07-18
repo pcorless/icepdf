@@ -88,6 +88,14 @@ public class PageTree extends Dictionary {
     }
 
     /**
+     * Reset the pages initialized flag and as a result subsequent calls to
+     * this PageTree may trigger a call to init().
+     */
+    public void resetInitializedState() {
+        inited = false;
+    }
+
+    /**
      * Initiate the PageTree.
      */
     public synchronized void init() {

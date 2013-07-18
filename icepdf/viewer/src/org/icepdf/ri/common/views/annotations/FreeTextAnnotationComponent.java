@@ -153,6 +153,11 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                 KeyboardFocusManager.getCurrentKeyboardFocusManager();
         focusManager.addPropertyChangeListener(this);
 
+        // set the default size hen building from external file
+        if (annotation.getBbox() != null) {
+            setBounds(annotation.getBbox().getBounds());
+        }
+
         resetAppearanceShapes();
         revalidate();
     }

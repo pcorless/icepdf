@@ -54,6 +54,10 @@ public class WidgetAnnotation extends Annotation {
 
     public WidgetAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
+
+    public void init() {
+        super.init();
         fieldDictionary = new FieldDictionary(library, entries);
         Object possibleName = getObject(LinkAnnotation.HIGHLIGHT_MODE_KEY);
         if (possibleName instanceof Name) {
@@ -67,7 +71,6 @@ public class WidgetAnnotation extends Annotation {
             }
         }
         highlightMode = LinkAnnotation.HIGHLIGHT_INVERT;
-
     }
 
     /**
@@ -97,6 +100,7 @@ public class WidgetAnnotation extends Annotation {
 
         // create the new instance
         WidgetAnnotation annotation = new WidgetAnnotation(library, entries);
+        annotation.init();
         annotation.setPObjectReference(stateManager.getNewReferencNumber());
         annotation.setNew(true);
 

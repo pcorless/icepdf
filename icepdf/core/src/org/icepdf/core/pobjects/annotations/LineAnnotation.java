@@ -194,7 +194,10 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public LineAnnotation(Library l, HashMap h) {
         super(l, h);
+    }
 
+    public void init() {
+        super.init();
         // line points
         List<Number> value = library.getArray(entries, L_KEY);
         if (value != null) {
@@ -263,6 +266,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
         // create the new instance
         LineAnnotation lineAnnotation = new LineAnnotation(library, entries);
+        lineAnnotation.init();
         lineAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         lineAnnotation.setNew(true);
 

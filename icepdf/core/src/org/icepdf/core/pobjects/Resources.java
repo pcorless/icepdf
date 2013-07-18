@@ -131,6 +131,9 @@ public class Resources extends Dictionary {
             else if (ob instanceof Reference) {
                 Reference ref = (Reference) ob;
                 ob = library.getObject((Reference) ob);
+                if (ob instanceof PObject) {
+                    ob = ((PObject) ob).getObject();
+                }
                 if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
                     font = (org.icepdf.core.pobjects.fonts.Font) ob;
                 } else {

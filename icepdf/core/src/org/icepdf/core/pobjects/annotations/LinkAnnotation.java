@@ -104,6 +104,10 @@ public class LinkAnnotation extends Annotation {
         super(l, h);
     }
 
+    public void init() {
+        super.init();
+    }
+
     /**
      * Gets an instance of a LinkAnnotation that has valid Object Reference.
      *
@@ -133,6 +137,7 @@ public class LinkAnnotation extends Annotation {
 
         // create the new instance
         LinkAnnotation linkAnnotation = new LinkAnnotation(library, entries);
+        linkAnnotation.init();
         linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         linkAnnotation.setNew(true);
 

@@ -71,11 +71,11 @@ public class PopupAnnotation extends Annotation {
 
     public PopupAnnotation(Library l, HashMap h) {
         super(l, h);
-        open = library.getBoolean(entries, OPEN_KEY);
     }
 
     public void init() {
         super.init();
+        open = library.getBoolean(entries, OPEN_KEY);
         Object tmp = library.getObject(entries, PARENT_KEY);
         // should normally be a text annotation type.
         if (tmp != null && tmp instanceof MarkupAnnotation) {
@@ -110,6 +110,7 @@ public class PopupAnnotation extends Annotation {
 
         // create the new instance
         PopupAnnotation popupAnnotation = new PopupAnnotation(library, entries);
+        popupAnnotation.init();
         popupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         popupAnnotation.setNew(true);
 

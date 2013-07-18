@@ -85,11 +85,21 @@ public class StateManager {
      * Checks the state manager to see if an instance of the specified reference
      * already exists in the cache.
      *
-     * @param reference reference to look for an existing usuage.
+     * @param reference reference to look for an existing usage.
      * @return true if reference is already a key in the cache; otherwise, false.
      */
     public boolean contains(Reference reference) {
         return changes.containsKey(reference);
+    }
+
+    /**
+     * Returns an instance of the specified reference
+     *
+     * @param reference reference to look for an existing usage
+     * @return PObject of corresponding reference if present, false otherwise.
+     */
+    public Object getChange(Reference reference) {
+        return changes.get(reference);
     }
 
     /**
