@@ -62,6 +62,10 @@ public class Stream extends Dictionary {
     // original byte stream that has not been decoded
     protected byte[] rawBytes;
 
+    // default compression state for a file loaded stream,  for re-saving
+    // of form data we want to avoid re-compressing the data.
+    protected boolean compressed = true;
+
     // reference of stream, needed for encryption support
     protected Reference pObjectReference = null;
 
@@ -99,6 +103,11 @@ public class Stream extends Dictionary {
 
     public void setRawBytes(byte[] rawBytes) {
         this.rawBytes = rawBytes;
+        compressed = false;
+    }
+
+    public boolean isRawBytesCompressed() {
+        return compressed;
     }
 
     /**
