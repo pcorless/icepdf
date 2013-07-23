@@ -107,7 +107,7 @@ public class Parser {
                     //Thread.yield();
                 } catch (IOException e) {
                     // eat it as it is what is expected
-                    logger.warning("IO reading error.");
+//                    logger.warning("IO reading error.");
                     return null;
                 }
 
