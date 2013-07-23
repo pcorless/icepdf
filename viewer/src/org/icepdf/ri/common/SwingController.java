@@ -2024,7 +2024,7 @@ public class SwingController
         }
     }
 
-    private void commonNewDocumentHandling(String fileDescription) {
+    public void commonNewDocumentHandling(String fileDescription) {
         // setup custom search utility tool
         if (searchPanel != null)
             searchPanel.setDocument(document);
