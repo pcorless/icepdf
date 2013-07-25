@@ -359,6 +359,83 @@ public abstract class Annotation extends Dictionary {
     public static final Name SUBTYPE_TEXT = new Name("Text");
 
     /**
+     * If set, do not display the annotation if it does not belong to one of the
+     * standard annotation types and no annotation handler is available. If clear,
+     * display such an unknown annotation using an appearance stream specified
+     * by its appearance dictionary, if any
+     */
+    public static final int FLAG_INVISIBLE = 0x0001;
+
+    /**
+     * If set, do not display or print the annotation or allow it to interact
+     * with the user, regardless of its annotation type or whether an annotation
+     * handler is available.
+     */
+    public static final int FLAG_HIDDEN = 0x0002;
+
+    /**
+     * If set, print the annotation when the page is printed. If clear, never
+     * print the annotation, regardless of whether it is displayed on the screen.
+     */
+    public static final int FLAG_PRINT = 0x0004;
+
+    /**
+     * If set, do not scale the annotation’s appearance to match the magnification
+     * of the page. The location of the annotation on the page (defined by the
+     * upper-left corner of its annotation rectangle) shall remain fixed,
+     * regardless of the page magnification. See further discussion following
+     * this Table.
+     */
+    public static final int FLAG_NO_ZOOM = 0x0008;
+
+    /**
+     * If set, do not rotate the annotation’s appearance to match the rotation
+     * of the page. The upper-left corner of the annotation rectangle shall
+     * remain in a fixed location on the page, regardless of the page rotation.
+     * See further discussion following this Table.
+     */
+    public static final int FLAG_NO_ROTATE = 0x0010;
+
+    /**
+     * If set, do not display the annotation on the screen or allow it to interact
+     * with the user. The annotation may be printed (depending on the setting of
+     * the Print flag) but should be considered hidden for purposes of on-screen
+     * display and user interaction.
+     */
+    public static final int FLAG_NO_VIEW = 0x0020;
+
+    /**
+     * If set, do not allow the annotation to interact with the user. The
+     * annotation may be displayed or printed (depending on the settings of the
+     * NoView and Print flags) but should not respond to mouse clicks or change
+     * its appearance in response to mouse motions.
+     * <p/>
+     * This flag shall be ignored for widget annotations; its function is
+     * subsumed by the ReadOnly flag of the associated form field.
+     */
+    public static final int FLAG_READ_ONLY = 0x0040;
+
+    /**
+     * If set, do not allow the annotation to be deleted or its properties
+     * (including position and size) to be modified by the user. However, this
+     * flag does not restrict changes to the annotation’s contents, such as the
+     * value of a form field.
+     */
+    public static final int FLAG_LOCKED = 0x0080;
+
+    /**
+     * If set, invert the interpretation of the NoView flag for certain events.
+     */
+    public static final int FLAG_TOGGLE_NO_VIEW = 0x0100;
+
+    /**
+     * If set, do not allow the contents of the annotation to be modified by the
+     * user. This flag does not restrict deletion of the annotation or changes
+     * to other annotation properties, such as position and size.
+     */
+    public static final int FLAG_LOCKED_CONTENTS = 0x0200;
+
+    /**
      * Border style
      */
     public static final Name BORDER_STYLE_KEY = new Name("BS");
@@ -1455,35 +1532,61 @@ public abstract class Annotation extends Dictionary {
     }
 
     public boolean getFlagInvisible() {
-        return ((getInt(FLAG_KEY) & 0x0001) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_INVISIBLE) != 0);
     }
 
     public boolean getFlagHidden() {
-        return ((getInt(FLAG_KEY) & 0x0002) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_HIDDEN) != 0);
     }
 
     public boolean getFlagPrint() {
-        return ((getInt(FLAG_KEY) & 0x0004) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_PRINT) != 0);
     }
 
     public boolean getFlagNoZoom() {
-        return ((getInt(FLAG_KEY) & 0x0008) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_NO_ZOOM) != 0);
     }
 
     public boolean getFlagNoRotate() {
-        return ((getInt(FLAG_KEY) & 0x0010) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_NO_ROTATE) != 0);
     }
 
     public boolean getFlagNoView() {
-        return ((getInt(FLAG_KEY) & 0x0020) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_NO_VIEW) != 0);
     }
 
     public boolean getFlagReadOnly() {
-        return ((getInt(FLAG_KEY) & 0x0040) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_READ_ONLY) != 0);
     }
 
-    public void setFlag(int flag) {
-        entries.put(FLAG_KEY, flag);
+    public boolean getFlagToggleNoView() {
+        return ((getInt(FLAG_KEY) & FLAG_TOGGLE_NO_VIEW) != 0);
+    }
+
+    public boolean getFlagLockedContents() {
+        return ((getInt(FLAG_KEY) & FLAG_LOCKED_CONTENTS) != 0);
+    }
+
+    public boolean getFlagLocked() {
+        return ((getInt(FLAG_KEY) & FLAG_LOCKED) != 0);
+    }
+
+    /**
+     * Set the specified flag key to either enabled or disabled.
+     *
+     * @param flagKey flag key to set.
+     * @param enable  true or false key value.
+     */
+    public void setFlag(final int flagKey, boolean enable) {
+        int flag = getInt(FLAG_KEY);
+        boolean isEnabled = (flag & flagKey) != 0;
+        if (!enable && isEnabled) {
+            flag = flag ^ flagKey;
+            entries.put(FLAG_KEY, flag);
+        } else if (enable && !isEnabled) {
+            flag = flag | flagKey;
+            entries.put(FLAG_KEY, flag);
+        }
     }
 
     public void setModifiedDate(String modifiedDate) {
@@ -1516,22 +1619,6 @@ public abstract class Annotation extends Dictionary {
             }
         }
         return null;
-    }
-
-
-    /**
-     * A locked annotation can not be deleted or its properties  such
-     * as position and size to be modified by the user. This property does not
-     * restrict annotation contents such as the value of a form field.
-     *
-     * @return true if locked, false otherwise.
-     */
-    public boolean getFlagLocked() {
-        return ((getInt(FLAG_KEY) & 0x0080) != 0);
-    }
-
-    public boolean getFlagToggleNoView() {
-        return ((getInt(FLAG_KEY) & 0x0100) != 0);
     }
 
     public String getContents() {
