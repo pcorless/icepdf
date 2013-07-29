@@ -1355,14 +1355,8 @@ public abstract class AbstractContentParser implements ContentParser {
                         graphicState, oCGs);
             } else if (currentObject instanceof Number) {
                 f = (Number) currentObject;
-                float fontSize = graphicState.getTextState().currentfont.getSize();
-                float cspace = (graphicState.getTextState().cspace * graphicState.getTextState().hScalling);
-                float adjustment = (f.floatValue() / 1000f) * fontSize;
-                // corner case where we get offset that break the layout, haven't found anything in the spec yet. .
-                if (!(fontSize > 1 && cspace < 0)) {
-                    textMetrics.getAdvance().x -= adjustment;
-                    textMetrics.getAdvance().x += cspace;
-                }
+                textMetrics.getAdvance().x -= (f.floatValue() / 1000f) *
+                        graphicState.getTextState().currentfont.getSize();
             }
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
@@ -1452,8 +1446,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
         // font metrics data
         float textRise = textState.trise;
-        boolean fontIsUnit = graphicState.getTextState().currentfont.getSize() == 1;
-        float charcterSpace = textState.cspace * textState.hScalling;
+        float characterSpace = textState.cspace * textState.hScalling;
         float whiteSpace = textState.wspace * textState.hScalling;
         int textLength = displayText.length();
 
@@ -1473,19 +1466,16 @@ public abstract class AbstractContentParser implements ContentParser {
             // Position of the specified glyph relative to the origin of glyphVector
             // advance is handled by the particular font implementation.
             newAdvanceX = (float) currentFont.echarAdvance(currentChar).getX();
-
             newAdvanceY = newAdvanceX;
             if (!isVerticalWriting) {
                 // add fonts rise to the to glyph position (sup,sub scripts)
                 currentX = advanceX + lastx;
                 currentY = lasty - textRise;
                 lastx += newAdvanceX;
-                // add the space between chars value
-                // lastx + charcterSpace > lastx &&
-                if (i < textLength - 1 && fontIsUnit) {
-                    lastx += charcterSpace;
-                }
-                // lastly add space widths,
+                // store the pre Tc and Tw dimension.
+                textMetrics.setPreviousAdvance(lastx);
+                lastx += characterSpace;
+                // lastly add space widths, no funny corner case yet for this one.
                 if (displayText.charAt(i) == 32) { // currently to unreliable currentFont.getSpaceEchar()
                     lastx += whiteSpace;
                 }
