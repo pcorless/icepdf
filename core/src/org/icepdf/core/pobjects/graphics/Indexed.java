@@ -100,12 +100,10 @@ public class Indexed extends PColorSpace {
     /**
      * Initiate the Indexed Colour Object
      */
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }
-        inited = true;
-
         int numCSComps = colorSpace.getNumComponents();
         int b1[] = new int[numCSComps];
         float f1[] = new float[numCSComps];
@@ -117,6 +115,7 @@ public class Indexed extends PColorSpace {
             colorSpace.normaliseComponentsToFloats(b1, f1, 255.0f);
             cols[j] = colorSpace.getColor(f1);
         }
+        inited = true;
     }
 
     /**
