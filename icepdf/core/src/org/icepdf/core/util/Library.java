@@ -23,7 +23,7 @@ import org.icepdf.core.pobjects.graphics.ImagePool;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.awt.geom.Rectangle2D;
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -56,9 +56,9 @@ public class Library {
     static {
         try {
             commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 4);
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 3);
             if (commonPoolThreads < 1) {
-                commonPoolThreads = 4;
+                commonPoolThreads = 3;
             }
         } catch (NumberFormatException e) {
             log.warning("Error reading buffered scale factor");
@@ -93,10 +93,10 @@ public class Library {
     // new incremental file loader class.
     private LazyObjectLoader lazyObjectLoader;
 
-    private ConcurrentHashMap<Reference, SoftReference<Object>> refs =
-            new ConcurrentHashMap<Reference, SoftReference<Object>>(1024);
-    private ConcurrentHashMap<Reference, SoftReference<ICCBased>> lookupReference2ICCBased =
-            new ConcurrentHashMap<Reference, SoftReference<ICCBased>>(256);
+    private ConcurrentHashMap<Reference, WeakReference<Object>> refs =
+            new ConcurrentHashMap<Reference, WeakReference<Object>>(1024);
+    private ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
+            new ConcurrentHashMap<Reference, WeakReference<ICCBased>>(256);
 
     // Instead of keeping Names names, Dictionary dests, we keep
     //   a reference to the Catalog, which actually owns them
@@ -143,7 +143,7 @@ public class Library {
     public Object getObject(Reference reference) {
         Object ob;
         while (true) {
-            SoftReference<Object> obRef = refs.get(reference);
+            WeakReference<Object> obRef = refs.get(reference);
             ob = obRef != null ? obRef.get() : null;
             // check stateManager first to allow for annotations to be injected
             // from a separate file.
@@ -161,7 +161,7 @@ public class Library {
                 reference = (Reference) ob;
             } else {
                 break;
-        }
+            }
         }
         return ob;
     }
@@ -299,7 +299,7 @@ public class Library {
      * @return true, if a cross-reference entry exists for this reference; false, otherwise.
      */
     public boolean isValidEntry(Reference reference) {
-        SoftReference<Object> ob = refs.get(reference);
+        WeakReference<Object> ob = refs.get(reference);
         return (ob != null && ob.get() != null) ||
                 lazyObjectLoader != null &&
                         lazyObjectLoader.haveEntry(reference);
@@ -493,7 +493,7 @@ public class Library {
     public ICCBased getICCBased(Reference ref) {
         ICCBased cs = null;
 
-        SoftReference<ICCBased> csRef = lookupReference2ICCBased.get(ref);
+        WeakReference<ICCBased> csRef = lookupReference2ICCBased.get(ref);
         if (csRef != null) {
             cs = csRef.get();
         }
@@ -503,7 +503,7 @@ public class Library {
             if (obj instanceof Stream) {
                 Stream stream = (Stream) obj;
                 cs = new ICCBased(this, stream);
-                lookupReference2ICCBased.put(ref, new SoftReference<ICCBased>(cs));
+                lookupReference2ICCBased.put(ref, new WeakReference<ICCBased>(cs));
             }
         }
         return cs;
@@ -549,7 +549,7 @@ public class Library {
      * @param objectReference PDF object reference object.
      */
     public void addObject(Object object, Reference objectReference) {
-        refs.put(objectReference, new SoftReference<Object>(object));
+        refs.put(objectReference, new WeakReference<Object>(object));
     }
 
     /**
@@ -673,7 +673,7 @@ public class Library {
     public void disposeFontResources() {
         Set<Reference> test = refs.keySet();
         for (Reference ref : test) {
-            SoftReference<Object> reference = refs.get(ref);
+            WeakReference<Object> reference = refs.get(ref);
             Object tmp = reference != null ? reference.get() : null;
             if (tmp instanceof Font || tmp instanceof FontDescriptor) {
                 refs.remove(ref);
