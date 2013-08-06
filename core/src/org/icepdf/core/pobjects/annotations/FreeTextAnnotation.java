@@ -322,7 +322,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 } else if (cssProperty != null && cssProperty.contains("font-size")) {
                     String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
                     fontSize = fontSize.substring(0, fontSize.indexOf('p'));
-                    this.fontSize = Integer.parseInt(fontSize);
+                    try {
+                        this.fontSize = (int) Float.parseFloat(fontSize);
+                    } catch (NumberFormatException e) {
+                        logger.finer("Error parsing font size: " + fontSize);
+                    }
                 }
             }
         }
