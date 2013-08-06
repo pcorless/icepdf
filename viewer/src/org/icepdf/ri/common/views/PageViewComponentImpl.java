@@ -261,12 +261,11 @@ public class PageViewComponentImpl extends
      * full parse of the page if accessed again.
      */
     public void invalidatePage() {
-        if (inited) {
-            Page page = pageTree.getPage(pageIndex);
-            page.getLibrary().disposeFontResources();
-            page.resetInitializedState();
-            currentZoom = -1;
-        }
+        Page page = pageTree.getPage(pageIndex);
+        page.getLibrary().disposeFontResources();
+        page.resetInitializedState();
+        currentZoom = -1;
+        pagePainter.setIsBufferDirty(true);
     }
 
     public void invalidatePageBuffer() {
