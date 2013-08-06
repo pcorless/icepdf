@@ -124,6 +124,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
             actionsPanel.setVisible(false);
         }
 
+        // disable the component if the annotation is readonly.
         if (!annotation.isEditable()) {
             setEnabled(annotation.isEditable());
         }
