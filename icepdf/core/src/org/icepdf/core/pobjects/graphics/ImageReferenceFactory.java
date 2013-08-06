@@ -28,7 +28,8 @@ import java.awt.*;
  * <ul>
  * <li>org.icepdf.core.imageReference = default</li>
  * <li>org.icepdf.core.imageReference = scaled</li>
- * <li>org.icepdf.core.imageReference = mipMap</li>
+ * <li>org.icepdf.core.imageReference = mipmap</li>
+ * <li>org.icepdf.core.imageReference = smoothScaled</li>
  * </ul>
  * The default value returns an unaltered image,  scaled returns a scaled
  * image instance and there MIP mapped returns/picks a scaled image that
@@ -44,7 +45,7 @@ public class ImageReferenceFactory {
     // allow scaling of large images to improve clarity on screen
 
     public enum ImageReference {
-        DEFAULT, SCALED, MIP_MAP // FLOYD_STEINBERG
+        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED // FLOYD_STEINBERG
     }
 
     private static ImageReference scaleType;
@@ -58,6 +59,8 @@ public class ImageReferenceFactory {
             scaleType = ImageReference.SCALED;
         } else if ("mipmap".equals(imageReferencetype)) {
             scaleType = ImageReference.MIP_MAP;
+        } else if ("smoothScaled".equals(imageReferencetype)) {
+            scaleType = ImageReference.SMOOTH_SCALED;
         } else {
             scaleType = ImageReference.DEFAULT;
         }
@@ -89,6 +92,8 @@ public class ImageReferenceFactory {
         switch (scaleType) {
             case SCALED:
                 return new ScaledImageReference(imageStream, fillColor, resources);
+            case SMOOTH_SCALED:
+                return new SmoothScaledImageReference(imageStream, fillColor, resources);
             case MIP_MAP:
                 return new MipMappedImageReference(imageStream, fillColor, resources);
             default:
