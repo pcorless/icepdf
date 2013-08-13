@@ -250,6 +250,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         }
         // store the new annotation rectangle in its original user space
         Rectangle2D rect = annotation.getUserSpaceRectangle();
+        rect = new Rectangle2D.Double(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
         Rectangle bounds = getBounds();
         rect.setRect(commonBoundsNormalization(new GeneralPath(bounds), at));
         annotation.syncBBoxToUserSpaceRectangle(rect);
