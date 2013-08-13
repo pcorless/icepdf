@@ -32,6 +32,8 @@ public class DeviceCMYK extends PColorSpace {
     public static final Name DEVICECMYK_KEY = new Name("DeviceCMYK");
     public static final Name CMYK_KEY = new Name("CMYK");
 
+    private static final DeviceGray DEVICE_GRAY = new DeviceGray(null, null);
+
     // default cmyk value,  > 255 will lighten the image.
     private static float blackRatio;
 
@@ -173,8 +175,14 @@ public class DeviceCMYK extends PColorSpace {
         float inBlack = f[0];
 
         // soften the amount of black, but exclude explicit black colorant.
-        if (inCyan != 0 && inMagenta != 0 && inYellow != 0) {
+        if (!(inCyan == 0 && inMagenta == 0 && inYellow == 0)) {
             inBlack = f[0] * blackRatio;
+        }
+        // if only the  black colorant then we can treat the colour as gray,
+        // cmyk is subtractive.
+        else {
+            f[0] = 1.0f - f[0];
+            return DEVICE_GRAY.getColor(f);
         }
 
         double c, m, y, aw, ac, am, ay, ar, ag, ab;
