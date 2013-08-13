@@ -176,7 +176,7 @@ public class DeviceCMYK extends PColorSpace {
 
         // soften the amount of black, but exclude explicit black colorant.
         if (!(inCyan == 0 && inMagenta == 0 && inYellow == 0)) {
-            inBlack = f[0] * blackRatio;
+            inBlack = inBlack * blackRatio;
         }
         // if only the  black colorant then we can treat the colour as gray,
         // cmyk is subtractive.
