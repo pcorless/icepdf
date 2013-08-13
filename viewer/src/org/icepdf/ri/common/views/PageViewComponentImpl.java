@@ -972,7 +972,8 @@ public class PageViewComponentImpl extends
                 if (isPageStateDirty()) {
                     Runnable doSwingWork = new Runnable() {
                         public void run() {
-                            revalidate();
+                            invalidate();
+                            validate();
                         }
                     };
                     SwingUtilities.invokeLater(doSwingWork);
