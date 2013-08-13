@@ -29,6 +29,9 @@ public class DeviceGray extends PColorSpace {
 
     public static final Name DEVICEGRAY_KEY = new Name("DeviceGray");
     public static final Name G_KEY = new Name("G");
+    private static final ColorSpace RGB_COLOR_SPACE = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+
+    private static HashMap<Float, Color> colorHashMap = new HashMap<Float, Color>(255);
 
     public DeviceGray(Library l, HashMap h) {
         super(l, h);
@@ -40,9 +43,16 @@ public class DeviceGray extends PColorSpace {
     }
 
     public Color getColor(float[] f, boolean fillAndStroke) {
-        float color = f[0] > 1.0 ? f[0] / 255.f : f[0];
-        return new Color(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                new Color(color, color, color).getRGBComponents(null),
-                1);
+        float gray = f[0] > 1.0 ? f[0] / 255.f : f[0];
+        Color color = colorHashMap.get(f[0]);
+        if (color != null) {
+            return color;
+        } else {
+            color = new Color(RGB_COLOR_SPACE,
+                    new Color(gray, gray, gray).getRGBComponents(null),
+                    1);
+            colorHashMap.put(f[0], color);
+            return color;
+        }
     }
 }
