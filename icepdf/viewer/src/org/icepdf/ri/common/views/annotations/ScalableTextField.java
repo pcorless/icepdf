@@ -16,9 +16,10 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.util.jxlayer.JXLayer;
+import org.icepdf.ri.util.jxlayer.plaf.LayerUI;
 
 import javax.swing.*;
-import javax.swing.plaf.LayerUI;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
@@ -46,7 +47,7 @@ public class ScalableTextField extends JTextField implements ScalableField {
             public void installUI(JComponent c) {
                 super.installUI(c);
                 // enable mouse motion events for the layer's sub components
-                ((JLayer<? extends JComponent>) c).setLayerEventMask(
+                ((JXLayer<? extends JComponent>) c).setLayerEventMask(
                         AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK);
             }
 
@@ -55,11 +56,11 @@ public class ScalableTextField extends JTextField implements ScalableField {
             public void uninstallUI(JComponent c) {
                 super.uninstallUI(c);
                 // reset the layer event mask
-                ((JLayer<? extends JComponent>) c).setLayerEventMask(0);
+                ((JXLayer<? extends JComponent>) c).setLayerEventMask(0);
             }
 
             @Override
-            public void eventDispatched(AWTEvent ae, JLayer<? extends JComponent> l) {
+            public void eventDispatched(AWTEvent ae, JXLayer<? extends JComponent> l) {
                 MouseEvent e = (MouseEvent) ae;
                 // transform the point in MouseEvent using the current zoom factor
                 float zoom = documentViewModel.getViewZoom();
@@ -73,7 +74,7 @@ public class ScalableTextField extends JTextField implements ScalableField {
                 ScalableTextField.this.processMouseMotionEvent(newEvent);
             }
         };
-        new JLayer<JComponent>(this, layerUI);
+        new JXLayer<JComponent>(this, layerUI);
     }
 
     @Override
