@@ -127,8 +127,15 @@ public class CircleAnnotation extends MarkupAnnotation {
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
-        matrix = new AffineTransform();
-        shapes = new Shapes();
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+
+        appearanceState.setMatrix(new AffineTransform());
+        appearanceState.setShapes(new Shapes());
+
+        Rectangle2D bbox = appearanceState.getBbox();
+        AffineTransform matrix = appearanceState.getMatrix();
+        Shapes shapes = appearanceState.getShapes();
 
         // setup the AP stream.
         setModifiedDate(PDate.formatDateTime(new Date()));
@@ -150,7 +157,7 @@ public class CircleAnnotation extends MarkupAnnotation {
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
         af.scale(1, -1);
-        af.translate(-this.bbox.getMinX(), -this.bbox.getMaxY());
+        af.translate(-bbox.getMinX(), -bbox.getMaxY());
 
         BasicStroke stroke;
         if (borderStyle.isStyleDashed()) {

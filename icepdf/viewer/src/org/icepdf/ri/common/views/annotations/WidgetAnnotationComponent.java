@@ -33,6 +33,8 @@ public class WidgetAnnotationComponent extends AbstractAnnotationComponent {
                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isShowInvisibleBorder = true;
+        isResizable = true;
+        isMovable = true;
     }
 
     @Override
@@ -43,5 +45,9 @@ public class WidgetAnnotationComponent extends AbstractAnnotationComponent {
     @Override
     public void paintComponent(Graphics g) {
 
+    }
+
+    public boolean isActive() {
+        return false;
     }
 }

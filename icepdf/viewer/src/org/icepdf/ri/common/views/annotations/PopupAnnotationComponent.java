@@ -581,6 +581,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         }
     }
 
+    public boolean isActive() {
+        return false;
+    }
+
 
     /**
      * Gridbag constructor helper

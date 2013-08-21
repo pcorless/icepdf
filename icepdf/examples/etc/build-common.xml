@@ -94,6 +94,7 @@
             <javac destdir="${build.classes.dir}" sourcepath="" encoding="UTF-8"
                    source="${compile.source}" target="${compile.target}"
                    debug="${compile.debug}" failonerror="@{failonerror}">
+                <compilerarg value="-Xlint:unchecked"/>
                 <compilerarg line="-XDignore.symbol.file" compiler="modern"/>
                 <src location="${src.dir}"/>
                 <include name="**/*.java"/>

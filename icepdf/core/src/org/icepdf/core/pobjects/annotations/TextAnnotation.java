@@ -197,8 +197,15 @@ public class TextAnnotation extends MarkupAnnotation {
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
         // setup the context
-        matrix = new AffineTransform();
-        shapes = new Shapes();
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+
+        appearanceState.setMatrix(new AffineTransform());
+        appearanceState.setShapes(new Shapes());
+
+        Rectangle2D bbox = appearanceState.getBbox();
+        AffineTransform matrix = appearanceState.getMatrix();
+        Shapes shapes;
 
         String iconContentString;
         // get the correct icon content

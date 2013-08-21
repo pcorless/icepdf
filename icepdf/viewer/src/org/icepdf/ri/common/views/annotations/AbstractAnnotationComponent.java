@@ -24,6 +24,7 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.views.*;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
 import java.awt.event.FocusEvent;
@@ -172,7 +173,10 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         currentRotation = documentViewModel.getViewRotation();
         currentZoom = documentViewModel.getViewZoom();
         resizableBorder.setZoom(currentZoom);
+
     }
+
+    public abstract boolean isActive();
 
     public Document getDocument() {
         return documentViewModel.getDocument();
@@ -250,6 +254,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         }
         // store the new annotation rectangle in its original user space
         Rectangle2D rect = annotation.getUserSpaceRectangle();
+        rect = new Rectangle2D.Double(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
         Rectangle bounds = getBounds();
         rect.setRect(commonBoundsNormalization(new GeneralPath(bounds), at));
         annotation.syncBBoxToUserSpaceRectangle(rect);
@@ -306,8 +311,10 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
         if (toolMode == DocumentViewModel.DISPLAY_TOOL_SELECTION &&
                 !(annotation.getFlagLocked() || annotation.getFlagReadOnly())) {
-            ResizableBorder border = (ResizableBorder) getBorder();
-            setCursor(Cursor.getPredefinedCursor(border.getCursor(me)));
+            Border border = getBorder();
+            if (border instanceof ResizableBorder) {
+                setCursor(Cursor.getPredefinedCursor(((ResizableBorder) border).getCursor(me)));
+            }
         } else {
             // set cursor back to the hand cursor.
             setCursor(documentViewController.getViewCursor(

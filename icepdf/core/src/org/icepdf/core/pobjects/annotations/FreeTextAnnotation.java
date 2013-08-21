@@ -247,8 +247,12 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     public void init() {
         super.init();
-        if (matrix == null) {
-            matrix = new AffineTransform();
+
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        Shapes shapes = null;
+        if (appearance != null) {
+            AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+            shapes = appearanceState.getShapes();
         }
 
         // reget colour so we can check for a null entry
@@ -322,7 +326,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 } else if (cssProperty != null && cssProperty.contains("font-size")) {
                     String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
                     fontSize = fontSize.substring(0, fontSize.indexOf('p'));
-                    this.fontSize = Integer.parseInt(fontSize);
+                    try {
+                        this.fontSize = (int) Float.parseFloat(fontSize);
+                    } catch (NumberFormatException e) {
+                        logger.finer("Error parsing font size: " + fontSize);
+                    }
                 }
             }
         }
@@ -372,13 +380,23 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     @Override
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
-        matrix = new AffineTransform();
+
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Rectangle2D bbox = appearanceState.getBbox();
+        AffineTransform matrix = appearanceState.getMatrix();
+        Shapes shapes = appearanceState.getShapes();
+
         if (shapes == null) {
             shapes = new Shapes();
+            appearanceState.setShapes(shapes);
+        } else {
+            // remove any previous text
+            appearanceState.getShapes().getShapes().clear();
         }
 
         // remove any previous text
-        this.shapes.getShapes().clear();
+        shapes.getShapes().clear();
 
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
@@ -386,7 +404,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         af.translate(-bbox.getMinX(), -bbox.getMaxY());
         // adjust of the border offset, offset is define in viewer,
         // so we can't use the constant because of dependency issues.
-        double insets = 5;
+        double insets = 5 * pageTransform.getScaleX();
         af.translate(insets, -insets);
         shapes.add(new TransformDrawCmd(af));
 
@@ -425,11 +443,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
             currentChar = contents.charAt(i);
 
-                newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
-                currentX = advanceX + lastx;
-                lastx += newAdvanceX;
+            newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
+            currentX = advanceX + lastx;
+            lastx += newAdvanceX;
 
-                // get normalized from from text sprite
+            // get normalized from from text sprite
             if (!(currentChar == '\n' || currentChar == '\r')) {
                 textSprites.addText(
                         String.valueOf(currentChar), // cid
@@ -603,7 +621,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     public void clearShapes() {
-        shapes = null;
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        appearanceState.setShapes(null);
     }
 
     public void setDocument(DefaultStyledDocument document) {

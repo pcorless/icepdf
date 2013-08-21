@@ -177,6 +177,9 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         // for editing purposes grab anny shapes from the AP Stream and
         // store them as markupBounds and markupPath. This works ok but
         // perhaps a better way would be to reapply the bound box
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Shapes shapes = appearanceState.getShapes();
         if (shapes != null) {
             markupBounds = new ArrayList<Shape>();
             markupPath = new GeneralPath();
@@ -245,8 +248,15 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
-        matrix = new AffineTransform();
-        shapes = new Shapes();
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+
+        appearanceState.setMatrix(new AffineTransform());
+        appearanceState.setShapes(new Shapes());
+
+        Rectangle2D bbox = appearanceState.getBbox();
+        AffineTransform matrix = appearanceState.getMatrix();
+        Shapes shapes = appearanceState.getShapes();
 
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
@@ -372,6 +382,10 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
     @Override
     protected void renderAppearanceStream(Graphics2D g) {
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Shapes shapes = appearanceState.getShapes();
+
         // Appearance stream takes precedence over the quad points.
         if (shapes != null) {
             super.renderAppearanceStream(g);

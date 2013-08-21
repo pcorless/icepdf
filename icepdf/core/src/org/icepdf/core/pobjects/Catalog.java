@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public class Catalog extends Dictionary {
     public static final Name PAGES_KEY = new Name("Pages");
     public static final Name PAGELAYOUT_KEY = new Name("PageLayout");
     public static final Name PAGEMODE_KEY = new Name("PageMode");
+    public static final Name ACRO_FORM_KEY = new Name("AcroForm");
 
     private PageTree pageTree;
     private Outlines outlines;
@@ -112,6 +114,14 @@ public class Catalog extends Dictionary {
 
         // let any exception bubble up.
         pageTree.init();
+
+        // load the Acroform data.
+        tmp = library.getObject(entries, ACRO_FORM_KEY);
+        if (tmp instanceof HashMap) {
+            InteractiveForm interactiveForm = new InteractiveForm(library, (HashMap) tmp);
+            interactiveForm.init();
+        }
+        // todo namesTree contains forms javascript, might need to be initialized here
 
     }
 

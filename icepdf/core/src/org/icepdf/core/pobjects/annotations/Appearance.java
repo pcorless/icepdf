@@ -15,63 +15,59 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
-import org.icepdf.core.io.SeekableInputConstrainedWrapper;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.util.Library;
+import org.icepdf.core.pobjects.Name;
 
 import java.util.HashMap;
 
 /**
- * <h2>Refer to: 8.4.4 Appearance Streams</h2>
- * <p/>
- * <br>
- * An annotation can define as many as three separate appearances:
- * <ul>
- * <li> The normal appearance is used when the annotation is not interacting with the
- * user. This appearance is also used for printing the annotation.</li>
- * <li> The rollover appearance is used when the user moves the cursor into the annotation's
- * active area without pressing the mouse button.</li>
- * <li> The down appearance is used when the mouse button is pressed or held down
- * within the annotation's active area.</li>
- * </ul>
- * <p/>
- * <table border=1>
- * <tr>
- * <td>Key</td>
- * <td>Type</td>
- * <td>Value</td>
- * </tr>
- * <tr>
- * <td><b>N</b></td>
- * <td>stream or dictionary</td>
- * <td><i>(Required)</i> The annotation's normal appearance</td>
- * </tr>
- * <tr>
- * <td><b>R</b></td>
- * <td>stream or dictionary</td>
- * <td><i>(Optional)</i> The annotation's rollover appearance. Default value: the value of
- * the <b>N</b> entry.</td>
- * </tr>
- * <tr>
- * <td><b>D</b></td>
- * <td>stream or dictionary</td>
- * <td><i>(Optional)</i> The annotation's down appearance. Default value: the value of the
- * <b>N</b> entry.</td>
- * </tr>
- * </table>
+ * An appearance dictionary dictionary entry for N, R or D can be associated
+ * with one or more appearance streams.  For example a Widget btn annotation
+ * can have an /ON an /Off state.  This class sill store one or more
+ * named appearance streams for a dictionary entry.
  *
- * @author Mark Collette
- * @since 2.5
+ * @since 5.1
  */
-public class Appearance extends Stream {
+public class Appearance {
+
+    private HashMap<Name, AppearanceState> appearance;
+
+    private Name offName;
+    private Name onName;
+
     /**
      * Create a new instance of an Appearance stream.
-     *
-     * @param l                  library containing a hash of all document objects
-     * @param h                  HashMap of parameters specific to the Stream object.
-     * @param streamInputWrapper Accessor to stream byte data
      */
-    public Appearance(Library l, HashMap h, SeekableInputConstrainedWrapper streamInputWrapper) {
-        super(l, h, streamInputWrapper);
+    public Appearance() {
+        appearance = new HashMap<Name, AppearanceState>(2);
+    }
+
+    public boolean hasAlternativeAppearance() {
+        return appearance.size() > 1;
+    }
+
+    public void addAppearance(Name name, AppearanceState appearanceState) {
+        appearance.put(name, appearanceState);
+        if (name.getName().toLowerCase().equals("off")) {
+            offName = name;
+        } else {
+            onName = name;
+        }
+    }
+
+    public Name getOffName() {
+        return offName;
+    }
+
+    public Name getOnName() {
+        return onName;
+    }
+
+    public AppearanceState getAppearanceState(Name name) {
+        AppearanceState state = appearance.get(name);
+//        if (state != null){
+        return state;
+//        }else{
+//            state = new AppearanceState(library, entries)
+//        }
     }
 }

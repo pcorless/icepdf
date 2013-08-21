@@ -17,19 +17,17 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.content.ContentParser;
-import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -359,6 +357,83 @@ public abstract class Annotation extends Dictionary {
     public static final Name SUBTYPE_TEXT = new Name("Text");
 
     /**
+     * If set, do not display the annotation if it does not belong to one of the
+     * standard annotation types and no annotation handler is available. If clear,
+     * display such an unknown annotation using an appearance stream specified
+     * by its appearance dictionary, if any
+     */
+    public static final int FLAG_INVISIBLE = 0x0001;
+
+    /**
+     * If set, do not display or print the annotation or allow it to interact
+     * with the user, regardless of its annotation type or whether an annotation
+     * handler is available.
+     */
+    public static final int FLAG_HIDDEN = 0x0002;
+
+    /**
+     * If set, print the annotation when the page is printed. If clear, never
+     * print the annotation, regardless of whether it is displayed on the screen.
+     */
+    public static final int FLAG_PRINT = 0x0004;
+
+    /**
+     * If set, do not scale the annotation’s appearance to match the magnification
+     * of the page. The location of the annotation on the page (defined by the
+     * upper-left corner of its annotation rectangle) shall remain fixed,
+     * regardless of the page magnification. See further discussion following
+     * this Table.
+     */
+    public static final int FLAG_NO_ZOOM = 0x0008;
+
+    /**
+     * If set, do not rotate the annotation’s appearance to match the rotation
+     * of the page. The upper-left corner of the annotation rectangle shall
+     * remain in a fixed location on the page, regardless of the page rotation.
+     * See further discussion following this Table.
+     */
+    public static final int FLAG_NO_ROTATE = 0x0010;
+
+    /**
+     * If set, do not display the annotation on the screen or allow it to interact
+     * with the user. The annotation may be printed (depending on the setting of
+     * the Print flag) but should be considered hidden for purposes of on-screen
+     * display and user interaction.
+     */
+    public static final int FLAG_NO_VIEW = 0x0020;
+
+    /**
+     * If set, do not allow the annotation to interact with the user. The
+     * annotation may be displayed or printed (depending on the settings of the
+     * NoView and Print flags) but should not respond to mouse clicks or change
+     * its appearance in response to mouse motions.
+     * <p/>
+     * This flag shall be ignored for widget annotations; its function is
+     * subsumed by the ReadOnly flag of the associated form field.
+     */
+    public static final int FLAG_READ_ONLY = 0x0040;
+
+    /**
+     * If set, do not allow the annotation to be deleted or its properties
+     * (including position and size) to be modified by the user. However, this
+     * flag does not restrict changes to the annotation’s contents, such as the
+     * value of a form field.
+     */
+    public static final int FLAG_LOCKED = 0x0080;
+
+    /**
+     * If set, invert the interpretation of the NoView flag for certain events.
+     */
+    public static final int FLAG_TOGGLE_NO_VIEW = 0x0100;
+
+    /**
+     * If set, do not allow the contents of the annotation to be modified by the
+     * user. This flag does not restrict deletion of the annotation or changes
+     * to other annotation properties, such as position and size.
+     */
+    public static final int FLAG_LOCKED_CONTENTS = 0x0200;
+
+    /**
      * Border style
      */
     public static final Name BORDER_STYLE_KEY = new Name("BS");
@@ -421,7 +496,7 @@ public abstract class Annotation extends Dictionary {
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for down display.
      */
-    public static final Name APPEARANCE_STREAM_DOWN_KEY = new Name("d");
+    public static final Name APPEARANCE_STREAM_DOWN_KEY = new Name("D");
 
     /**
      * (Optional) Text that shall be displayed for the annotation or, if this
@@ -468,11 +543,8 @@ public abstract class Annotation extends Dictionary {
     public static final int VISIBLE_RECTANGLE = 1;
     public static final int INVISIBLE_RECTANGLE = 0;
 
-    // shapes form apparenece stream
-    protected Shapes shapes;
-    //
-    protected AffineTransform matrix = new AffineTransform();
-    protected Rectangle2D bbox = null;
+    protected HashMap<Name, Appearance> appearances = new HashMap<Name, Appearance>(3);
+    protected Name selectedNormalAppearance;
 
     // modified date.
     protected PDate modifiedDate;
@@ -531,7 +603,30 @@ public abstract class Annotation extends Dictionary {
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
                 annot = new PopupAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
-                annot = new WidgetAnnotation(library, hashMap);
+                // sub factory break out the various types.
+                String fieldType = library.getString(hashMap, FieldDictionary.FT_KEY);
+                if (fieldType == null) {
+                    // get type from parent object.
+                    // radio buttons type is often found in the parent dictionary.
+                    Object tmp = library.getObject(hashMap, FieldDictionary.PARENT_KEY);
+                    if (tmp instanceof HashMap) {
+                        fieldType = library.getString((HashMap) tmp, FieldDictionary.FT_KEY);
+                        hashMap.put(FieldDictionary.FT_KEY, new Name(fieldType));
+                        hashMap.put(FieldDictionary.Ff_KEY,
+                                library.getInt((HashMap) tmp, FieldDictionary.Ff_KEY));
+                    }
+                }
+                if (FieldDictionary.FT_BUTTON_VALUE.equals(fieldType)) {
+                    annot = new ButtonWidgetAnnotation(library, hashMap);
+                } else if (FieldDictionary.FT_CHOICE_VALUE.equals(fieldType)) {
+                    annot = new ChoiceWidgetAnnotation(library, hashMap);
+                } else if (FieldDictionary.FT_TEXT_VALUE.equals(fieldType)) {
+                    annot = new TextWidgetAnnotation(library, hashMap);
+                }
+                // todo signatures widget.
+                else {
+                    annot = new WidgetAnnotation(library, hashMap);
+                }
             }
         }
         if (annot == null) {
@@ -630,37 +725,77 @@ public abstract class Annotation extends Dictionary {
         // process the streams if available.
         Object AP = getObject(APPEARANCE_STREAM_KEY);
         if (AP instanceof HashMap) {
-            Object N = library.getObject(
+            // The annotations normal appearance.
+            Object appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
-            if (N instanceof HashMap) {
-                Object AS = getObject(APPEARANCE_STATE_KEY);
-                if (AS != null && AS instanceof Name)
-                    N = library.getObject((HashMap) N, (Name) AS);
+            if (appearance != null) {
+                appearances.put(APPEARANCE_STREAM_NORMAL_KEY,
+                        parseAppearanceDictionary(APPEARANCE_STREAM_NORMAL_KEY,
+                                appearance));
             }
-            // n should be a Form but we have a few cases of Stream
-            if (N instanceof Form) {
-                Form form = (Form) N;
-                form.init();
-                shapes = form.getShapes();
-                matrix = form.getMatrix();
-                bbox = form.getBBox();
-            } else if (N instanceof Stream) {
+            // (Optional) The annotation’s rollover appearance.
+            // Default value: the value of the N entry.
+            appearance = library.getObject(
+                    (HashMap) AP, APPEARANCE_STREAM_ROLLOVER_KEY);
+            if (appearance != null) {
+                appearances.put(APPEARANCE_STREAM_ROLLOVER_KEY,
+                        parseAppearanceDictionary(APPEARANCE_STREAM_ROLLOVER_KEY,
+                                appearance));
+            }
+            // (Optional) The annotation’s down appearance.
+            // Default value: the value of the N entry.
+            appearance = library.getObject(
+                    (HashMap) AP, APPEARANCE_STREAM_DOWN_KEY);
+            if (appearance != null) {
+                appearances.put(APPEARANCE_STREAM_DOWN_KEY,
+                        parseAppearanceDictionary(APPEARANCE_STREAM_DOWN_KEY,
+                                appearance));
+            }
+            // assign the default AS key as the default appearance
+            selectedNormalAppearance = (Name) getObject(APPEARANCE_STATE_KEY);
+            if (selectedNormalAppearance == null) {
+                selectedNormalAppearance = APPEARANCE_STREAM_NORMAL_KEY;
+            }
+        } else {
+            // new annotation, so setup the default apearance states.
+            Appearance newAppearance = new Appearance();
+            HashMap appearanceDictionary = new HashMap();
+            appearanceDictionary.put(BBOX_VALUE, getUserSpaceRectangle());
 
-                Stream stream = (Stream) N;
-                Resources res = library.getResources(stream.getEntries(), RESOURCES_VALUE);
-                bbox = library.getRectangle(stream.getEntries(), BBOX_VALUE);
-                matrix = new AffineTransform();
-                try {
-                    ContentParser cp = ContentParserFactory.getInstance()
-                            .getContentParser(library, res);
-                    shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}).getShapes();
-                } catch (Exception e) {
-                    shapes = new Shapes();
-                    logger.log(Level.FINE, "Error initializing Page.", e);
-                    e.printStackTrace();
+            newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
+                    new AppearanceState(library, appearanceDictionary));
+            appearances.put(APPEARANCE_STREAM_NORMAL_KEY, newAppearance);
+            selectedNormalAppearance = APPEARANCE_STREAM_NORMAL_KEY;
+        }
+
+    }
+
+    private Appearance parseAppearanceDictionary(Name appearanceDicationary,
+                                                 Object streamOrDictionary) {
+
+        Appearance appearance = new Appearance();
+
+        // iterate over all of the keys so we can index the various annotation
+        // state names.
+        if (streamOrDictionary instanceof HashMap) {
+            HashMap dictionary = (HashMap) streamOrDictionary;
+            Set keys = dictionary.keySet();
+            Object value;
+            for (Object key : keys) {
+                value = dictionary.get(key);
+                if (value instanceof Reference) {
+                    appearance.addAppearance((Name) key,
+                            new AppearanceState(library, dictionary,
+                                    library.getObject((Reference) value)));
                 }
             }
         }
+        // single entry so assign is using the default key name
+        else {
+            appearance.addAppearance(appearanceDicationary,
+                    new AppearanceState(library, entries, streamOrDictionary));
+        }
+        return appearance;
     }
 
     /**
@@ -697,11 +832,9 @@ public abstract class Annotation extends Dictionary {
     }
 
     public void setBBox(Rectangle bbox) {
-        this.bbox = bbox;
-    }
-
-    public Rectangle2D getBbox() {
-        return bbox;
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        appearanceState.setBbox(bbox);
     }
 
     /**
@@ -1143,8 +1276,12 @@ public abstract class Annotation extends Dictionary {
     }
 
     protected void renderAppearanceStream(Graphics2D g) {
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        if (appearanceState.getShapes() != null) {
 
-        if (shapes != null) {
+            AffineTransform matrix = appearanceState.getMatrix();
+            Rectangle2D bbox = appearanceState.getBbox();
 
 //            g.setColor( Color.blue );
 //            Rectangle2D.Float newRect = deriveDrawingRectangle();
@@ -1168,7 +1305,7 @@ public abstract class Annotation extends Dictionary {
             g.transform(tAs);
 
             // regular paint
-            shapes.paint(g);
+            appearanceState.getShapes().paint(g);
         }
 
     }
@@ -1455,35 +1592,61 @@ public abstract class Annotation extends Dictionary {
     }
 
     public boolean getFlagInvisible() {
-        return ((getInt(FLAG_KEY) & 0x0001) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_INVISIBLE) != 0);
     }
 
     public boolean getFlagHidden() {
-        return ((getInt(FLAG_KEY) & 0x0002) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_HIDDEN) != 0);
     }
 
     public boolean getFlagPrint() {
-        return ((getInt(FLAG_KEY) & 0x0004) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_PRINT) != 0);
     }
 
     public boolean getFlagNoZoom() {
-        return ((getInt(FLAG_KEY) & 0x0008) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_NO_ZOOM) != 0);
     }
 
     public boolean getFlagNoRotate() {
-        return ((getInt(FLAG_KEY) & 0x0010) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_NO_ROTATE) != 0);
     }
 
     public boolean getFlagNoView() {
-        return ((getInt(FLAG_KEY) & 0x0020) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_NO_VIEW) != 0);
     }
 
     public boolean getFlagReadOnly() {
-        return ((getInt(FLAG_KEY) & 0x0040) != 0);
+        return ((getInt(FLAG_KEY) & FLAG_READ_ONLY) != 0);
     }
 
-    public void setFlag(int flag) {
-        entries.put(FLAG_KEY, flag);
+    public boolean getFlagToggleNoView() {
+        return ((getInt(FLAG_KEY) & FLAG_TOGGLE_NO_VIEW) != 0);
+    }
+
+    public boolean getFlagLockedContents() {
+        return ((getInt(FLAG_KEY) & FLAG_LOCKED_CONTENTS) != 0);
+    }
+
+    public boolean getFlagLocked() {
+        return ((getInt(FLAG_KEY) & FLAG_LOCKED) != 0);
+    }
+
+    /**
+     * Set the specified flag key to either enabled or disabled.
+     *
+     * @param flagKey flag key to set.
+     * @param enable  true or false key value.
+     */
+    public void setFlag(final int flagKey, boolean enable) {
+        int flag = getInt(FLAG_KEY);
+        boolean isEnabled = (flag & flagKey) != 0;
+        if (!enable && isEnabled) {
+            flag = flag ^ flagKey;
+            entries.put(FLAG_KEY, flag);
+        } else if (enable && !isEnabled) {
+            flag = flag | flagKey;
+            entries.put(FLAG_KEY, flag);
+        }
     }
 
     public void setModifiedDate(String modifiedDate) {
@@ -1516,22 +1679,6 @@ public abstract class Annotation extends Dictionary {
             }
         }
         return null;
-    }
-
-
-    /**
-     * A locked annotation can not be deleted or its properties  such
-     * as position and size to be modified by the user. This property does not
-     * restrict annotation contents such as the value of a form field.
-     *
-     * @return true if locked, false otherwise.
-     */
-    public boolean getFlagLocked() {
-        return ((getInt(FLAG_KEY) & 0x0080) != 0);
-    }
-
-    public boolean getFlagToggleNoView() {
-        return ((getInt(FLAG_KEY) & 0x0100) != 0);
     }
 
     public String getContents() {
@@ -1572,8 +1719,11 @@ public abstract class Annotation extends Dictionary {
     }
 
     public void syncBBoxToUserSpaceRectangle(Rectangle2D bbox) {
-        this.bbox = bbox;
-        Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+
+        appearanceState.setBbox(bbox);
+        Rectangle2D tBbox = appearanceState.getMatrix().createTransformedShape(bbox).getBounds2D();
         setUserSpaceRectangle(new Rectangle2D.Float(
                 (float) tBbox.getX(), (float) tBbox.getY(),
                 (float) tBbox.getWidth(), (float) tBbox.getHeight()));
@@ -1586,7 +1736,13 @@ public abstract class Annotation extends Dictionary {
     }
 
     public Shapes getShapes() {
-        return shapes;
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        return appearanceState.getShapes();
+    }
+
+    public HashMap<Name, Appearance> getAppearances() {
+        return appearances;
     }
 
     public static void setCompressAppearanceStream(boolean compressAppearanceStream) {

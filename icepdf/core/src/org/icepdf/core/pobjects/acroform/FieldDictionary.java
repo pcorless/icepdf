@@ -19,8 +19,12 @@ package org.icepdf.core.pobjects.acroform;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.WidgetAnnotation;
 import org.icepdf.core.util.Library;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -64,6 +68,26 @@ public class FieldDictionary extends Dictionary {
      * fields of any type.
      */
     public static final Name FT_KEY = new Name("FT");
+
+    /**
+     * Button terminal field.
+     */
+    public static final Name FT_BUTTON_VALUE = new Name("Btn");
+
+    /**
+     * Text terminal field.
+     */
+    public static final Name FT_TEXT_VALUE = new Name("Tx");
+
+    /**
+     * Choice terminal field.
+     */
+    public static final Name FT_CHOICE_VALUE = new Name("Ch");
+
+    /**
+     * Signature terminal field.
+     */
+    public static final Name FT_SIGNATURE_VALUE = new Name("Sig");
 
     /**
      * (Sometimes required, as described below) An array of indirect references
@@ -136,9 +160,33 @@ public class FieldDictionary extends Dictionary {
      */
     public static final Name AA_KEY = new Name("AA");
 
+    /** general field flags **/
+
+    /**
+     * If set, the user may not change the value of the field. Any associated
+     * widget annotations will not interact with the user; that is, they will
+     * not respond to mouse clicks or change their appearance in response to mouse
+     * motions. This flag is useful for fields whose values are computed or
+     * imported from a database.
+     */
+    public static final int READ_ONLY_BIT_FLAG = 0x1;
+
+    /**
+     * If set, the field shall have a value at the time it is exported by a
+     * submit-form action (see 12.7.5.2, “Submit-Form Action”).
+     */
+    public static final int REQUIRED_BIT_FLAG = 0x2;
+
+    /**
+     * If set, the field shall not be exported by a submit-form action (see 12.7.5.2, “Submit-Form Action”).
+     */
+    public static final int NO_EXPORT_BIT_FLAG = 0x4;
+
     private org.icepdf.core.pobjects.security.SecurityManager securityManager;
 
     protected Name fieldType;
+
+    protected VariableText variableText;
 
     protected String partialFieldName;
 
@@ -148,7 +196,12 @@ public class FieldDictionary extends Dictionary {
 
     protected int flags;
 
-    protected String fieldValue;
+    protected Object fieldValue;
+    protected Object defaultFieldValue;
+
+    protected WidgetAnnotation parentField;
+
+    protected ArrayList<AbstractWidgetAnnotation> kids;
 
 
     public FieldDictionary(Library library, HashMap entries) {
@@ -160,7 +213,7 @@ public class FieldDictionary extends Dictionary {
         if (value != null) {
             fieldType = (Name) value;
         }
-
+        // field name
         value = library.getObject(entries, T_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
@@ -168,7 +221,7 @@ public class FieldDictionary extends Dictionary {
         } else if (value instanceof String) {
             partialFieldName = (String) value;
         }
-
+        // alternate field name.
         value = library.getObject(entries, TU_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
@@ -176,13 +229,75 @@ public class FieldDictionary extends Dictionary {
         } else if (value instanceof String) {
             alternativeFieldName = (String) value;
         }
-
+        // value field
         value = library.getObject(entries, V_KEY);
-        if (value != null && value instanceof StringObject) {
+        if (value instanceof Name) {
+            fieldValue = (Name) value;
+        } else if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
             fieldValue = text.getDecryptedLiteralString(securityManager);
         } else if (value instanceof String) {
-            fieldValue = (String) value;
+            fieldValue = value;
         }
+        // default value
+        value = library.getObject(entries, DV_KEY);
+        if (value != null) {
+            defaultFieldValue = value;
+        }
+
+        // load the default appearance.
+        variableText = new VariableText(library, entries);
+
+        // behaviour flags
+        flags = library.getInt(entries, Ff_KEY);
+    }
+
+    public ArrayList<AbstractWidgetAnnotation> getKids() {
+        return kids;
+    }
+
+    public AbstractWidgetAnnotation getParent() {
+        Object value = library.getObject(entries, PARENT_KEY);
+        if (value instanceof HashMap) {
+            return new ButtonWidgetAnnotation(library, (HashMap) value);
+        }
+        return null;
+    }
+
+
+    public Name getFieldType() {
+        return fieldType;
+    }
+
+    public String getPartialFieldName() {
+        return partialFieldName;
+    }
+
+    public String getAlternativeFieldName() {
+        return alternativeFieldName;
+    }
+
+    public String getExportMappingName() {
+        return exportMappingName;
+    }
+
+    public int getFlags() {
+        return flags;
+    }
+
+    public Object getFieldValue() {
+        return fieldValue;
+    }
+
+    public void setFieldValue(Object fieldValue) {
+        this.fieldValue = fieldValue;
+    }
+
+    public VariableText getVariableText() {
+        return variableText;
+    }
+
+    public Object getDefaultFieldValue() {
+        return defaultFieldValue;
     }
 }

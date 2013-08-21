@@ -76,11 +76,6 @@ public class PopupAnnotation extends Annotation {
     public void init() {
         super.init();
         open = library.getBoolean(entries, OPEN_KEY);
-        Object tmp = library.getObject(entries, PARENT_KEY);
-        // should normally be a text annotation type.
-        if (tmp != null && tmp instanceof MarkupAnnotation) {
-            parent = (MarkupAnnotation) tmp;
-        }
     }
 
     /**
@@ -132,6 +127,11 @@ public class PopupAnnotation extends Annotation {
     }
 
     public MarkupAnnotation getParent() {
+        Object tmp = library.getObject(entries, PARENT_KEY);
+        // should normally be a text annotation type.
+        if (tmp != null && tmp instanceof MarkupAnnotation) {
+            parent = (MarkupAnnotation) tmp;
+        }
         return parent;
     }
 
