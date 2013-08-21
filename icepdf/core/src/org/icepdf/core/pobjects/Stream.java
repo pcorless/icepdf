@@ -62,6 +62,10 @@ public class Stream extends Dictionary {
     // original byte stream that has not been decoded
     protected byte[] rawBytes;
 
+    // default compression state for a file loaded stream,  for re-saving
+    // of form data we want to avoid re-compressing the data.
+    protected boolean compressed = true;
+
     // reference of stream, needed for encryption support
     protected Reference pObjectReference = null;
 
@@ -99,6 +103,11 @@ public class Stream extends Dictionary {
 
     public void setRawBytes(byte[] rawBytes) {
         this.rawBytes = rawBytes;
+        compressed = false;
+    }
+
+    public boolean isRawBytesCompressed() {
+        return compressed;
     }
 
     /**
@@ -151,33 +160,41 @@ public class Stream extends Dictionary {
      * @return Object[] { byte[] data, Integer sizeActualData }
      */
     public byte[] getDecodedStreamBytes(int presize) {
-        try {
-            ByteArrayInputStream streamInput = new ByteArrayInputStream(rawBytes);
-            long rawStreamLength = rawBytes.length;
-            InputStream input = getDecodedInputStream(streamInput, rawStreamLength);
-            if (input == null) return null;
-            int outLength;
-            if (presize > 0) {
-                outLength = presize;
-            } else {
-                outLength = Math.max(4096, (int) rawStreamLength);
+        // decompress the stream
+        if (compressed) {
+            try {
+                ByteArrayInputStream streamInput = new ByteArrayInputStream(rawBytes);
+                long rawStreamLength = rawBytes.length;
+                InputStream input = getDecodedInputStream(streamInput, rawStreamLength);
+                if (input == null) return null;
+                int outLength;
+                if (presize > 0) {
+                    outLength = presize;
+                } else {
+                    outLength = Math.max(4096, (int) rawStreamLength);
+                }
+                ConservativeSizingByteArrayOutputStream out = new
+                        ConservativeSizingByteArrayOutputStream(outLength);
+                byte[] buffer = new byte[(outLength > 4096) ? 4096 : 8192];
+                while (true) {
+                    int read = input.read(buffer);
+                    if (read <= 0)
+                        break;
+                    out.write(buffer, 0, read);
+                }
+                out.flush();
+                out.close();
+                input.close();
+                out.trim();
+                return out.relinquishByteArray();
+            } catch (IOException e) {
+                logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
             }
-            ConservativeSizingByteArrayOutputStream out = new
-                    ConservativeSizingByteArrayOutputStream(outLength);
-            byte[] buffer = new byte[(outLength > 4096) ? 4096 : 8192];
-            while (true) {
-                int read = input.read(buffer);
-                if (read <= 0)
-                    break;
-                out.write(buffer, 0, read);
-            }
-            out.flush();
-            out.close();
-            input.close();
-            out.trim();
-            return out.relinquishByteArray();
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Problem decoding stream bytes: ", e);
+        }
+        // we have an edited stream which isn't compressed yet, so just return
+        // the raw bytes.
+        else {
+            return rawBytes;
         }
         return null;
     }
