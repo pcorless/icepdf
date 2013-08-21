@@ -58,8 +58,6 @@ public class ImagePool {
 
     public ImagePool(long maxCacheSize) {
         fCache = new MemoryImageCache(maxCacheSize);
-
-
     }
 
     public void put(Reference ref, BufferedImage image) {

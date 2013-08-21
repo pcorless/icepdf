@@ -110,8 +110,8 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         } catch (ExecutionException e) {
             logger.warning("Image loading execution exception");
         }
-            return image;
-        }
+        return image;
+    }
 
     public ImageStream getImageStream() {
         return imageStream;
