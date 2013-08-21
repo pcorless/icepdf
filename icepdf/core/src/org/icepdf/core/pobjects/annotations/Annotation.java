@@ -837,6 +837,12 @@ public abstract class Annotation extends Dictionary {
         appearanceState.setBbox(bbox);
     }
 
+    public Rectangle2D getBbox() {
+        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        return appearanceState.getBbox();
+    }
+
     /**
      * Creates a Java2D strok from the propties tht make up the BorderStyle object.
      *
