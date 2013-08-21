@@ -17,6 +17,7 @@ package org.icepdf.ri.common;
 
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.io.SizeInputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
@@ -59,6 +60,7 @@ import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.HashMap;
@@ -1829,46 +1831,93 @@ public class SwingController
      *
      * @param location location of a valid PDF document
      */
-    public void openDocument(URL location) {
+    public void openDocument(final URL location) {
         if (location != null) {
+            // dispose a currently open document, if one.
+            if (document != null) {
+                closeDocument();
+            }
+
+            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+
+            // load the document
+            document = new Document();
+            // create default security callback is user has not created one
+            if (documentViewController.getSecurityCallback() == null) {
+                document.setSecurityCallback(
+                        new MyGUISecurityCallback(viewer, messageBundle));
+            }
+
             try {
-                // dispose a currently open document, if one.
-                if (document != null) {
-                    closeDocument();
-                }
+                // make a connection
+                final URLConnection urlConnection = location.openConnection();
+                final int size = urlConnection.getContentLength();
+                SwingWorker worker = new SwingWorker() {
+                    public Object construct() {
+                        InputStream in = null;
+                        try {
+                            // Create ProgressMonitorInputStream
+                            Object[] messageArguments = {location.toString()};
+                            MessageFormat formatter = new MessageFormat(
+                                    messageBundle.getString("viewer.dialog.openURL.downloading.msg"));
+                            ProgressMonitorInputStream progressMonitorInputStream =
+                                    new ProgressMonitorInputStream(
+                                            viewer,
+                                            formatter.format(messageArguments),
+                                            new SizeInputStream(urlConnection.getInputStream(), size));
+                            // Create a stream on the URL connection
+                            in = new BufferedInputStream(progressMonitorInputStream);
+                            String pathOrURL = location.toString();
 
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+                            document.setInputStream(in, pathOrURL);
+                            commonNewDocumentHandling(location.getPath());
+                            setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+                        } catch (IOException ex) {
+                            if (in != null) {
+                                try {
+                                    in.close();
+                                } catch (IOException e) {
+                                    logger.log(Level.FINE, "Error opening document.", e);
+                                }
+                            }
+                            closeDocument();
+                            document = null;
+                        } catch (PDFException e) {
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.openDocument.pdfException.title",
+                                    "viewer.dialog.openDocument.pdfException.msg",
+                                    location);
+                            document = null;
+                            logger.log(Level.FINE, "Error opening document.", e);
+                        } catch (PDFSecurityException e) {
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.openDocument.pdfSecurityException.title",
+                                    "viewer.dialog.openDocument.pdfSecurityException.msg",
+                                    location);
+                            document = null;
+                            logger.log(Level.FINE, "Error opening document.", e);
+                        } catch (Exception e) {
+                            org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.openDocument.exception.title",
+                                    "viewer.dialog.openDocument.exception.msg",
+                                    location);
+                            document = null;
+                            logger.log(Level.FINE, "Error opening document.", e);
+                        }
+                        return null;
+                    }
+                };
+                worker.start();
 
-                // load the document
-                document = new Document();
-                // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
-                document.setUrl(location);
-
-                commonNewDocumentHandling(location.getPath());
-            } catch (PDFException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfException.title",
-                        "viewer.dialog.openDocument.pdfException.msg",
-                        location);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
-            } catch (PDFSecurityException e) {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.openDocument.pdfSecurityException.title",
-                        "viewer.dialog.openDocument.pdfSecurityException.msg",
-                        location);
-                document = null;
-                logger.log(Level.FINE, "Error opening document.", e);
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -1879,8 +1928,6 @@ public class SwingController
                         location);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
-            } finally {
-                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
         }
     }
@@ -2024,7 +2071,7 @@ public class SwingController
         }
     }
 
-    private void commonNewDocumentHandling(String fileDescription) {
+    public void commonNewDocumentHandling(String fileDescription) {
         // setup custom search utility tool
         if (searchPanel != null)
             searchPanel.setDocument(document);
