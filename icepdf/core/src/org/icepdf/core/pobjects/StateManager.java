@@ -79,6 +79,11 @@ public class StateManager {
      */
     public void addChange(PObject pObject) {
         changes.put(pObject.getReference(), pObject);
+        int objectNumber = pObject.getReference().getObjectNumber();
+        // check the reference numbers
+        if (nextReferenceNumber <= objectNumber) {
+            nextReferenceNumber = objectNumber + 1;
+        }
     }
 
     /**
