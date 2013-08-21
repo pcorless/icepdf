@@ -209,7 +209,7 @@ public abstract class AbstractContentParser implements ContentParser {
         // set stroke colour
         graphicState.setStrokeColorSpace(pColorSpace);
         graphicState.setStrokeColor(pColorSpace.getColor(
-                PColorSpace.reverse(new float[]{c, m, y, k}), true));
+                new float[]{k, y, m, c}, true));
     }
 
     protected static void consume_k(GraphicsState graphicState, Stack stack,
@@ -224,7 +224,7 @@ public abstract class AbstractContentParser implements ContentParser {
         // set fill colour
         graphicState.setFillColorSpace(pColorSpace);
         graphicState.setFillColor(pColorSpace.getColor(
-                PColorSpace.reverse(new float[]{c, m, y, k}), true));
+                new float[]{k, y, m, c}, true));
     }
 
     protected static void consume_CS(GraphicsState graphicState, Stack stack, Resources resources) {
