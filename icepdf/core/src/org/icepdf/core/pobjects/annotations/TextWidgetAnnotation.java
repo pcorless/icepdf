@@ -58,6 +58,13 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
 
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
+        // we won't touch password fields, we'll used the orginal display
+        TextFieldDictionary textFieldDictionary = (TextFieldDictionary) fieldDictionary;
+        TextFieldDictionary.TextFieldType textFieldType = textFieldDictionary.getTextFieldType();
+        if (textFieldType == TextFieldDictionary.TextFieldType.TEXT_PASSWORD) {
+            return;
+        }
+
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         Rectangle2D bbox = appearanceState.getBbox();
