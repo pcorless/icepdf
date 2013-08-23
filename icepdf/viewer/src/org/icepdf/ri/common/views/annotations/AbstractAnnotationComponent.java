@@ -331,6 +331,10 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     }
 
     public void mouseExited(MouseEvent mouseEvent) {
+
+        // set selected appearance state
+        annotation.setCurrentAppearance(Annotation.APPEARANCE_STREAM_NORMAL_KEY);
+
         setCursor(Cursor.getDefaultCursor());
         isRollover = false;
         repaint();
@@ -354,6 +358,14 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     }
 
     public void mouseEntered(MouseEvent e) {
+        // reset the appearance steam
+        Appearance hover = annotation.getAppearances().get(Annotation.APPEARANCE_STREAM_ROLLOVER_KEY);
+        if (hover != null && hover.hasAlternativeAppearance()) {
+            // set selected appearance state
+            hover.setSelectedName(hover.getOnName());
+            annotation.setCurrentAppearance(Annotation.APPEARANCE_STREAM_ROLLOVER_KEY);
+        }
+
         // set border highlight when mouse over.
         isRollover = (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||

@@ -1269,9 +1269,7 @@ public abstract class Annotation extends Dictionary {
         Shape annotationShape = deriveDrawingRectangle();
         g.clip(deriveDrawingRectangle());
 
-        if (annotationShape.intersects(preAppearanceStreamClip.getBounds2D())) {
-            renderAppearanceStream(g);
-        }
+        renderAppearanceStream(g);
 
         g.setTransform(at);
         g.setClip(preAppearanceStreamClip);
