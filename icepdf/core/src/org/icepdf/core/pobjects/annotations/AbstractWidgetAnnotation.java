@@ -68,15 +68,13 @@ public abstract class AbstractWidgetAnnotation extends Annotation {
 
     @Override
     protected void renderAppearanceStream(Graphics2D g) {
-        // todo tie in N, R and D states
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
 
         if (appearanceState != null &&
                 appearanceState.getShapes() != null) {
             super.renderAppearanceStream(g);
-        } else {
-
         }
     }
 

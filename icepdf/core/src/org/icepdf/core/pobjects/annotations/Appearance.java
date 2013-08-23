@@ -31,8 +31,9 @@ public class Appearance {
 
     private HashMap<Name, AppearanceState> appearance;
 
-    private Name offName;
-    private Name onName;
+    private Name selectedName = Annotation.APPEARANCE_STREAM_NORMAL_KEY;
+    private Name offName = new Name("Off");
+    private Name onName = new Name("ON");
 
     /**
      * Create a new instance of an Appearance stream.
@@ -42,7 +43,7 @@ public class Appearance {
     }
 
     public boolean hasAlternativeAppearance() {
-        return appearance.size() > 1;
+        return offName != null || onName != null;
     }
 
     public void addAppearance(Name name, AppearanceState appearanceState) {
@@ -62,12 +63,21 @@ public class Appearance {
         return onName;
     }
 
+    public Name getSelectedName() {
+        return selectedName;
+    }
+
+    public void setSelectedName(Name selectedName) {
+        this.selectedName = selectedName;
+    }
+
+    public AppearanceState getSelectedAppearanceState() {
+        AppearanceState state = appearance.get(selectedName);
+        return state;
+    }
+
     public AppearanceState getAppearanceState(Name name) {
         AppearanceState state = appearance.get(name);
-//        if (state != null){
         return state;
-//        }else{
-//            state = new AppearanceState(library, entries)
-//        }
     }
 }

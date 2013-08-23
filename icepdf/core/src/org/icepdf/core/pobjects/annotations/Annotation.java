@@ -544,7 +544,7 @@ public abstract class Annotation extends Dictionary {
     public static final int INVISIBLE_RECTANGLE = 0;
 
     protected HashMap<Name, Appearance> appearances = new HashMap<Name, Appearance>(3);
-    protected Name selectedNormalAppearance;
+    protected Name currentAppearance;
 
     // modified date.
     protected PDate modifiedDate;
@@ -725,6 +725,12 @@ public abstract class Annotation extends Dictionary {
         // process the streams if available.
         Object AP = getObject(APPEARANCE_STREAM_KEY);
         if (AP instanceof HashMap) {
+            // assign the default AS key as the default appearance
+            currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
+            Name appearanceState = (Name) getObject(APPEARANCE_STATE_KEY);
+            if (appearanceState == null) {
+                appearanceState = APPEARANCE_STREAM_NORMAL_KEY;
+            }
             // The annotations normal appearance.
             Object appearance = library.getObject(
                     (HashMap) AP, APPEARANCE_STREAM_NORMAL_KEY);
@@ -732,6 +738,7 @@ public abstract class Annotation extends Dictionary {
                 appearances.put(APPEARANCE_STREAM_NORMAL_KEY,
                         parseAppearanceDictionary(APPEARANCE_STREAM_NORMAL_KEY,
                                 appearance));
+                appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
             }
             // (Optional) The annotation’s rollover appearance.
             // Default value: the value of the N entry.
@@ -751,13 +758,8 @@ public abstract class Annotation extends Dictionary {
                         parseAppearanceDictionary(APPEARANCE_STREAM_DOWN_KEY,
                                 appearance));
             }
-            // assign the default AS key as the default appearance
-            selectedNormalAppearance = (Name) getObject(APPEARANCE_STATE_KEY);
-            if (selectedNormalAppearance == null) {
-                selectedNormalAppearance = APPEARANCE_STREAM_NORMAL_KEY;
-            }
         } else {
-            // new annotation, so setup the default apearance states.
+            // new annotation, so setup the default appearance states.
             Appearance newAppearance = new Appearance();
             HashMap appearanceDictionary = new HashMap();
             appearanceDictionary.put(BBOX_VALUE, getUserSpaceRectangle());
@@ -765,12 +767,12 @@ public abstract class Annotation extends Dictionary {
             newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
                     new AppearanceState(library, appearanceDictionary));
             appearances.put(APPEARANCE_STREAM_NORMAL_KEY, newAppearance);
-            selectedNormalAppearance = APPEARANCE_STREAM_NORMAL_KEY;
+            currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
         }
 
     }
 
-    private Appearance parseAppearanceDictionary(Name appearanceDicationary,
+    private Appearance parseAppearanceDictionary(Name appearanceDictionary,
                                                  Object streamOrDictionary) {
 
         Appearance appearance = new Appearance();
@@ -792,7 +794,7 @@ public abstract class Annotation extends Dictionary {
         }
         // single entry so assign is using the default key name
         else {
-            appearance.addAppearance(appearanceDicationary,
+            appearance.addAppearance(appearanceDictionary,
                     new AppearanceState(library, entries, streamOrDictionary));
         }
         return appearance;
@@ -832,15 +834,23 @@ public abstract class Annotation extends Dictionary {
     }
 
     public void setBBox(Rectangle bbox) {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         appearanceState.setBbox(bbox);
     }
 
     public Rectangle2D getBbox() {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         return appearanceState.getBbox();
+    }
+
+    public Name getCurrentAppearance() {
+        return currentAppearance;
+    }
+
+    public void setCurrentAppearance(Name currentAppearance) {
+        this.currentAppearance = currentAppearance;
     }
 
     /**
@@ -1256,9 +1266,12 @@ public abstract class Annotation extends Dictionary {
         g.setRenderingHints(grh.getRenderingHints(renderHintType));
         g.setTransform(at);
         Shape preAppearanceStreamClip = g.getClip();
+        Shape annotationShape = deriveDrawingRectangle();
         g.clip(deriveDrawingRectangle());
 
-        renderAppearanceStream(g);
+        if (annotationShape.intersects(preAppearanceStreamClip.getBounds2D())) {
+            renderAppearanceStream(g);
+        }
 
         g.setTransform(at);
         g.setClip(preAppearanceStreamClip);
@@ -1282,8 +1295,8 @@ public abstract class Annotation extends Dictionary {
     }
 
     protected void renderAppearanceStream(Graphics2D g) {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         if (appearanceState.getShapes() != null) {
 
             AffineTransform matrix = appearanceState.getMatrix();
@@ -1725,8 +1738,8 @@ public abstract class Annotation extends Dictionary {
     }
 
     public void syncBBoxToUserSpaceRectangle(Rectangle2D bbox) {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
 
         appearanceState.setBbox(bbox);
         Rectangle2D tBbox = appearanceState.getMatrix().createTransformedShape(bbox).getBounds2D();
@@ -1742,8 +1755,8 @@ public abstract class Annotation extends Dictionary {
     }
 
     public Shapes getShapes() {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         return appearanceState.getShapes();
     }
 

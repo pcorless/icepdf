@@ -251,7 +251,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
         Shapes shapes = null;
         if (appearance != null) {
-            AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+            AppearanceState appearanceState = appearance.getSelectedAppearanceState();
             shapes = appearanceState.getShapes();
         }
 
@@ -381,8 +381,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     @Override
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         Rectangle2D bbox = appearanceState.getBbox();
         AffineTransform matrix = appearanceState.getMatrix();
         Shapes shapes = appearanceState.getShapes();
@@ -621,8 +621,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     public void clearShapes() {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         appearanceState.setShapes(null);
     }
 

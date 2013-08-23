@@ -127,6 +127,7 @@ public class VariableText extends Dictionary {
                         // derive color
                         if (stack.size() == 1) {
                             float gray = ((Number) stack.pop()).floatValue();
+                            gray = gray > 1 ? gray / 255.0f : gray;
                             // Stroke Color Gray
                             color = new Color(gray, gray, gray);
                         } else if (stack.size() == 3) {

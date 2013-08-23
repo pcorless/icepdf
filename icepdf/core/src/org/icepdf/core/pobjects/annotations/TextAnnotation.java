@@ -197,8 +197,8 @@ public class TextAnnotation extends MarkupAnnotation {
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
         // setup the context
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
 
         appearanceState.setMatrix(new AffineTransform());
         appearanceState.setShapes(new Shapes());

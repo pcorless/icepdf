@@ -45,40 +45,31 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation {
     }
 
     public void turnOff() {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        Appearance appearance = appearances.get(currentAppearance);
         if (appearance.hasAlternativeAppearance()) {
-            selectedNormalAppearance = appearance.getOffName();
+            appearance.setSelectedName(appearance.getOffName());
         }
     }
 
     public Name toggle() {
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
+        Appearance appearance = appearances.get(currentAppearance);
+        Name selectedNormalAppearance = appearance.getSelectedName();
         if (appearance.hasAlternativeAppearance()) {
             if (!selectedNormalAppearance.equals(appearance.getOffName())) {
-                return selectedNormalAppearance = appearance.getOffName();
+                appearance.setSelectedName(appearance.getOffName());
             } else {
-                return selectedNormalAppearance = appearance.getOnName();
-            }
-        } else {
-            appearance = appearances.get(APPEARANCE_STREAM_DOWN_KEY);
-            if (appearance.hasAlternativeAppearance()) {
-                if (!selectedNormalAppearance.equals(appearance.getOffName())) {
-                    return selectedNormalAppearance = appearance.getOffName();
-                } else {
-                    return selectedNormalAppearance = appearance.getOnName();
-                }
+                appearance.setSelectedName(appearance.getOnName());
             }
         }
-        return null;
+        return appearance.getSelectedName();
     }
 
 
     public void turnOn() {
         // first check if there are more then one normal streams.
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
         if (appearance.hasAlternativeAppearance()) {
-            selectedNormalAppearance = appearance.getOnName();
+            appearance.setSelectedName(appearance.getOnName());
         }
     }
 }

@@ -289,8 +289,8 @@ public class LineAnnotation extends MarkupAnnotation {
         // setup the AP stream.
         setModifiedDate(PDate.formatDateTime(new Date()));
 
-        Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
-        AppearanceState appearanceState = appearance.getAppearanceState(selectedNormalAppearance);
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
 
         // reset transform and shapes.
         appearanceState.setMatrix(new AffineTransform());
