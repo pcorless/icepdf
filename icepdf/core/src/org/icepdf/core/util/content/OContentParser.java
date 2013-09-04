@@ -176,7 +176,11 @@ public class OContentParser extends AbstractContentParser {
                     else if (tok.equals(PdfOps.BT_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.BT_TOKEN);
                         // start parseText, which parses until ET is reached
-                        yBTstart = parseText(parser, shapes, yBTstart);
+                        try {
+                            yBTstart = parseText(parser, shapes, yBTstart);
+                        } catch (Exception e) {
+                            logger.log(Level.FINEST, "Error parsing text block", e);
+                        }
                     }
 
                     // Fill the path, using the nonzero winding number rule to
