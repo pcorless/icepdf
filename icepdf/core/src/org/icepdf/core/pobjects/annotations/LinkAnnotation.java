@@ -141,6 +141,12 @@ public class LinkAnnotation extends Annotation {
         linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         linkAnnotation.setNew(true);
 
+        // set default flags.
+        linkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        linkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        linkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        linkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+
         return linkAnnotation;
     }
 

@@ -64,7 +64,6 @@ public class PopupAnnotation extends Annotation {
      */
     public static final Name OPEN_KEY = new Name("Open");
 
-
     protected boolean open;
 
     protected MarkupAnnotation parent;
@@ -108,6 +107,12 @@ public class PopupAnnotation extends Annotation {
         popupAnnotation.init();
         popupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         popupAnnotation.setNew(true);
+
+        // set default flags.
+        popupAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        popupAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        popupAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        popupAnnotation.setFlag(Annotation.FLAG_PRINT, false);
 
         return popupAnnotation;
     }

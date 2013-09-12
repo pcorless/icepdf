@@ -1749,7 +1749,7 @@ public class SwingViewBuilder {
     }
 
     public AnnotationPanel buildAnnotationPanel() {
-        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController);
+        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, propertiesManager);
         annotationPanel.setAnnotationUtilityToolbar(buildAnnotationUtilityToolBar());
         if (viewerController != null)
             viewerController.setAnnotationPanel(annotationPanel);

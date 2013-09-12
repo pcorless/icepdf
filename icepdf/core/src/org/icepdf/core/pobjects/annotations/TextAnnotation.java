@@ -189,6 +189,12 @@ public class TextAnnotation extends MarkupAnnotation {
         textAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         textAnnotation.setNew(true);
 
+        // set default flags.
+        textAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        textAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, true);
+        textAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, true);
+        textAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+
         return textAnnotation;
     }
 

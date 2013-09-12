@@ -116,6 +116,12 @@ public class SquareAnnotation extends MarkupAnnotation {
         squareAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         squareAnnotation.setNew(true);
 
+        // set default flags.
+        squareAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        squareAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        squareAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        squareAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+
         return squareAnnotation;
     }
 

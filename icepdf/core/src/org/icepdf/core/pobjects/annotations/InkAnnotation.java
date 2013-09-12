@@ -153,6 +153,12 @@ public class InkAnnotation extends MarkupAnnotation {
         inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         inkAnnotation.setNew(true);
 
+        // set default flags.
+        inkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        inkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        inkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        inkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+
         return inkAnnotation;
     }
 
