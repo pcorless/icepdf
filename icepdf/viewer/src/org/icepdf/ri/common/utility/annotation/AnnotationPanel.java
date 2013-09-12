@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,14 +37,22 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
     // layouts constraint
     private GridBagConstraints constraints;
 
+    private PropertiesManager propertiesManager;
+
     private JPanel annotationPanel;
     private AnnotationPanelAdapter annotationPropertyPanel;
     private ActionsPanel actionsPanel;
     private BorderPanel borderPanel;
+    private FlagsPanel flagsPanel;
 
     public AnnotationPanel(SwingController controller) {
+        this(controller, null);
+    }
+
+    public AnnotationPanel(SwingController controller, PropertiesManager propertiesManager) {
         super(controller);
         setLayout(new BorderLayout());
+        this.propertiesManager = propertiesManager;
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -105,6 +114,10 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
 
         // add the new action
         actionsPanel.setAnnotationComponent(annotation);
+        // check if flags should be shown.
+        if (flagsPanel != null) {
+            flagsPanel.setAnnotationComponent(annotation);
+        }
         borderPanel.setAnnotationComponent(annotation);
 
         // hide border panel for line components
@@ -122,6 +135,10 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         // hide actions panel for the popup annotation
         if (annotation instanceof PopupAnnotationComponent) {
             actionsPanel.setVisible(false);
+            flagsPanel.setVisible(false);
+        } else {
+            actionsPanel.setVisible(true);
+            flagsPanel.setVisible(true);
         }
 
         // disable the component if the annotation is readonly.
@@ -148,12 +165,21 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         actionsPanel = new ActionsPanel(controller);
         borderPanel = new BorderPanel(controller);
 
+        if (propertiesManager == null ||
+                PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                        PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS)) {
+            flagsPanel = new FlagsPanel(controller);
+        }
+
         // panels to add.
         if (annotationPropertyPanel != null) {
             addGB(annotationPanel, annotationPropertyPanel, 0, 1, 1, 1);
         }
         addGB(annotationPanel, borderPanel, 0, 2, 1, 1);
-        addGB(annotationPanel, actionsPanel, 0, 3, 1, 1);
+        if (flagsPanel != null) {
+            addGB(annotationPanel, flagsPanel, 0, 3, 1, 1);
+        }
+        addGB(annotationPanel, actionsPanel, 0, 4, 1, 1);
 
     }
 
@@ -164,6 +190,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         if (annotationPropertyPanel != null && actionsPanel != null) {
             annotationPropertyPanel.setEnabled(enabled);
             actionsPanel.setEnabled(enabled);
+            flagsPanel.setEnabled(enabled);
             borderPanel.setEnabled(enabled);
         }
     }

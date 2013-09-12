@@ -108,6 +108,12 @@ public class PopupAnnotation extends Annotation {
         popupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         popupAnnotation.setNew(true);
 
+        // set default flags.
+        popupAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        popupAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        popupAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        popupAnnotation.setFlag(Annotation.FLAG_PRINT, false);
+
         return popupAnnotation;
     }
 
