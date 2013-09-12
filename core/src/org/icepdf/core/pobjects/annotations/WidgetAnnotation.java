@@ -104,6 +104,12 @@ public class WidgetAnnotation extends Annotation {
         annotation.setPObjectReference(stateManager.getNewReferencNumber());
         annotation.setNew(true);
 
+        // set default flags.
+        annotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        annotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        annotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        annotation.setFlag(Annotation.FLAG_PRINT, true);
+
         return annotation;
     }
 

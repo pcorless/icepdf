@@ -363,6 +363,12 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         freeTextAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
         freeTextAnnotation.setNew(true);
 
+        // set default flags.
+        freeTextAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        freeTextAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        freeTextAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        freeTextAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+
         return freeTextAnnotation;
     }
 
