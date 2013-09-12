@@ -104,6 +104,7 @@ public class PageViewComponentImpl extends
 
     private PageTree pageTree;
     private JScrollPane parentScrollPane;
+    private int previousScrollValue;
     private int pageIndex;
 
     private Rectangle pageSize = new Rectangle();
@@ -139,6 +140,8 @@ public class PageViewComponentImpl extends
     // dirty refresh timer call interval
     private static int dirtyTimerInterval = 5;
 
+    private static int scrollInitThreshold = 150;
+
     // graphics configuration
     private static GraphicsConfiguration gc;
 
@@ -160,6 +163,13 @@ public class PageViewComponentImpl extends
             dirtyTimerInterval =
                     Defs.intProperty("org.icepdf.core.views.dirtytimer.interval",
                             5);
+        } catch (NumberFormatException e) {
+            logger.log(Level.FINE, "Error reading dirty timer interval");
+        }
+        try {
+            scrollInitThreshold =
+                    Defs.intProperty("org.icepdf.core.views.scroll.initThreshold",
+                            150);
         } catch (NumberFormatException e) {
             logger.log(Level.FINE, "Error reading dirty timer interval");
         }
@@ -978,7 +988,8 @@ public class PageViewComponentImpl extends
                     Runnable doSwingWork = new Runnable() {
                         public void run() {
                             invalidate();
-                            validate();
+                            revalidate();
+//                            repaint();
                         }
                     };
                     SwingUtilities.invokeLater(doSwingWork);
@@ -1120,8 +1131,12 @@ public class PageViewComponentImpl extends
                 boolean isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
 
                 // we don't want to draw if we are scrolling
-                if (parentScrollPane != null &&
-                        parentScrollPane.getVerticalScrollBar().getValueIsAdjusting()) {
+                // calculate the number of pixels moved
+                int diff = Math.abs(previousScrollValue -
+                        parentScrollPane.getVerticalScrollBar().getValue());
+                previousScrollValue = parentScrollPane.getVerticalScrollBar().getValue();
+                // we don't want to draw if scroll distance is great then 150 px.
+                if (parentScrollPane != null && diff > scrollInitThreshold) {
                     return;
                 }
                 page = pageTree.getPage(pageIndex);
