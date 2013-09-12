@@ -55,6 +55,8 @@ public class PrintHelper implements Printable {
     private boolean printFitToMargin;
     private int printingCurrentPage;
     private int totalPagesToPrint;
+    private boolean paintAnnotation = true;
+    private boolean paintSearchHighlight = true;
 
     private static PrintService[] services;
     private PrintService printService;
@@ -416,7 +418,7 @@ public class PrintHelper implements Printable {
         currentPage.paint(printGraphics,
                 GraphicsRenderingHints.PRINT,
                 Page.BOUNDARY_CROPBOX,
-                rotation, zoomFactor);
+                rotation, zoomFactor, paintAnnotation, paintSearchHighlight);
 
         // Paint content to page buffer to reduce spool size but quality will suffer.
 //        Image image = viewController.getDocument().getPageImage(pageIndex,
@@ -615,4 +617,39 @@ public class PrintHelper implements Printable {
         return services;
     }
 
+    /**
+     * Are page annotations going to be printed?
+     *
+     * @return true if annotation are to be printed, false otherwise
+     */
+    public boolean isPaintAnnotation() {
+        return paintAnnotation;
+    }
+
+    /**
+     * Manually enable or disable the printing of annotation for a print job
+     *
+     * @param paintAnnotation true to paint annotation; otherwise false.
+     */
+    public void setPaintAnnotation(boolean paintAnnotation) {
+        this.paintAnnotation = paintAnnotation;
+    }
+
+    /**
+     * Are page search highlight's going to be printed?
+     *
+     * @return true if highlights are to be printed, false otherwise
+     */
+    public boolean isPaintSearchHighlight() {
+        return paintSearchHighlight;
+    }
+
+    /**
+     * Manually enable or disable the printing of search highlights for a print job
+     *
+     * @param paintSearchHighlight true to paint search highlights; otherwise false.
+     */
+    public void setPaintSearchHighlight(boolean paintSearchHighlight) {
+        this.paintSearchHighlight = paintSearchHighlight;
+    }
 }
