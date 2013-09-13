@@ -883,31 +883,9 @@ public abstract class AbstractContentParser implements ContentParser {
                                                TextMetrics textMetrics,
                                                GlyphOutlineClip glyphOutlineClip,
                                                LinkedList<OptionalContents> oCGs) {
-        graphicState.translate(-textMetrics.getShift(),
-                graphicState.getTextState().leading);
-
-        // apply transparency
-        setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-
-        textMetrics.setShift(0);
-        textMetrics.setPreviousAdvance(0);
-        textMetrics.getAdvance().setLocation(0, 0);
-        StringObject stringObject = (StringObject) stack.pop();
-
-        TextState textState = graphicState.getTextState();
-        // apply scaling
-        AffineTransform tmp = applyTextScaling(graphicState);
-        // draw the text.
-        drawString(stringObject.getLiteralStringBuffer(
-                textState.font.getSubTypeFormat(),
-                textState.font.getFont()),
-                textMetrics, graphicState.getTextState(),
-                shapes, glyphOutlineClip, graphicState, oCGs);
-        graphicState.set(tmp);
-        graphicState.translate(textMetrics.getAdvance().x, 0);
-        float shift = textMetrics.getShift();
-        shift += textMetrics.getAdvance().x;
-        textMetrics.setShift(shift);
+        // ' = T* + Tj,  who knew?
+        consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs);
     }
 
     protected static void consume_Td(GraphicsState graphicState, Stack stack,
