@@ -231,7 +231,8 @@ public class Page extends Dictionary {
                 Object tmp = library.getObject((Reference) conts.get(i));
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
-                    if (tmpStream != null) {
+                    // prune any zero length streams,
+                    if (tmpStream != null && tmpStream.getRawBytes().length > 0) {
                         tmpStream.setPObjectReference((Reference) conts.get(i));
                         contents.add(tmpStream);
                     }
