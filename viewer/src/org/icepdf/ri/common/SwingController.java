@@ -1386,6 +1386,7 @@ public class SwingController
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
+                showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
@@ -3510,8 +3511,8 @@ public class SwingController
             if (selectedAnnotation != null) {
                 annotationPanel.setEnabled(true);
                 annotationPanel.setAnnotationComponent(selectedAnnotation);
-                setUtilityPaneVisible(true);
             }
+            setUtilityPaneVisible(true);
 
             // select the annotationPanel tab
             if (utilityTabbedPane.getSelectedComponent() != annotationPanel) {
