@@ -989,6 +989,10 @@ public class PageViewComponentImpl extends
                     SwingUtilities.invokeLater(doSwingWork);
                 }
                 createBufferedPageImage(page, this);
+                // add annotation components to container, we try this again
+                // as the page might have been initialized via some other path
+                // like thumbnails, searches or text extraction.
+                refreshAnnotationComponents(page);
                 isBufferyDirty = false;
                 page = null;
             } catch (Throwable e) {
