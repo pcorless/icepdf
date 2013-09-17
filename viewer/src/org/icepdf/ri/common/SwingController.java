@@ -1386,7 +1386,6 @@ public class SwingController
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
-                showAnnotationPanel(null);
             } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
@@ -4019,6 +4018,7 @@ public class SwingController
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
+                    showAnnotationPanel(null);
                 }
             } else if (source == linkAnnotationToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
