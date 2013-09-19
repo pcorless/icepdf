@@ -409,8 +409,11 @@ public class Parser {
                                     stack.push(new Page(library, hashMap));
                                 } else if (n.equals(Font.TYPE)) {
                                     // do a quick check to make sure we don't have a fontDescriptor
-                                    obj = hashMap.get(FontDescriptor.FONT_BBOX);
-                                    if (obj == null) {
+                                    // FontFile is specific to font descriptors.
+                                    boolean fontDescriptor = hashMap.get(FontDescriptor.FONT_FILE) != null ||
+                                            hashMap.get(FontDescriptor.FONT_FILE_2) != null ||
+                                            hashMap.get(FontDescriptor.FONT_FILE_3) != null;
+                                    if (!fontDescriptor) {
                                         stack.push(FontFactory.getInstance()
                                                 .getFont(library, hashMap));
                                     } else {
