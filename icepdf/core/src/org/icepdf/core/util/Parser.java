@@ -408,8 +408,14 @@ public class Parser {
                                 } else if (n.equals(Page.TYPE)) {
                                     stack.push(new Page(library, hashMap));
                                 } else if (n.equals(Font.TYPE)) {
-                                    stack.push(FontFactory.getInstance()
-                                            .getFont(library, hashMap));
+                                    // do a quick check to make sure we don't have a fontDescriptor
+                                    obj = hashMap.get(FontDescriptor.FONT_BBOX);
+                                    if (obj == null) {
+                                        stack.push(FontFactory.getInstance()
+                                                .getFont(library, hashMap));
+                                    } else {
+                                        stack.push(new FontDescriptor(library, hashMap));
+                                    }
                                 } else if (n.equals(FontDescriptor.TYPE)) {
                                     stack.push(new FontDescriptor(library, hashMap));
                                 } else if (n.equals(CMap.TYPE)) {
