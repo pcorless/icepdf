@@ -69,6 +69,8 @@ public abstract class Font extends Dictionary {
     public static final Name NAME_KEY = new Name("Name");
     public static final Name BASEFONT_KEY = new Name("BaseFont");
     public static final Name ENCODING_KEY = new Name("Encoding");
+    public static final Name FIRST_CHAR_KEY = new Name("FirstChar");
+    public static final Name LAST_CHAR_KEY = new Name("LastChar");
 
     // Object name always "Font"
     protected Name name;
@@ -100,6 +102,7 @@ public abstract class Font extends Dictionary {
 
     // The first character code defined in the font's Widths array.
     protected int firstchar = 32;
+    protected int lastchar = 255;
 
     // Font Descriptor used
     protected FontDescriptor fontDescriptor;
@@ -192,9 +195,21 @@ public abstract class Font extends Dictionary {
         subtype = library.getName(entries, SUBTYPE_KEY);
 
         // figure out type
-        subTypeFormat = (subtype.getName().toLowerCase().equals("type0") |
-                subtype.getName().toLowerCase().contains("cid")) ?
-                CID_FORMAT : SIMPLE_FORMAT;
+        if (subtype != null) {
+            subTypeFormat = (subtype.getName().toLowerCase().equals("type0") |
+                    subtype.getName().toLowerCase().contains("cid")) ?
+                    CID_FORMAT : SIMPLE_FORMAT;
+        }
+
+        int tmpInt = library.getInt(entries, FIRST_CHAR_KEY);
+        if (tmpInt != 0) {
+            firstchar = tmpInt;
+        }
+        tmpInt = library.getInt(entries, LAST_CHAR_KEY);
+        if (tmpInt != 0) {
+            lastchar = tmpInt;
+        }
+
 
         // font name, SanSerif is used as it has a a robust CID, and it
         // is the most commonly used font family for pdfs
