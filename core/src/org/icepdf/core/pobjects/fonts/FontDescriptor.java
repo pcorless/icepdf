@@ -73,14 +73,14 @@ public class FontDescriptor extends Dictionary {
 
     public static final Name MISSING_WIDTH = new Name("MissingWidth");
 
-    private static final Name FONT_FILE = new Name("FontFile");
-    private static final Name FONT_FILE_2 = new Name("FontFile2");
-    private static final Name FONT_FILE_3 = new Name("FontFile3");
-    private static final Name FONT_FILE_3_TYPE_1C = new Name("Type1C");
-    private static final Name FONT_FILE_3_CID_FONT_TYPE_0 = new Name("CIDFontType0");
-    private static final Name FONT_FILE_3_CID_FONT_TYPE_2 = new Name("CIDFontType2");
-    private static final Name FONT_FILE_3_CID_FONT_TYPE_0C = new Name("CIDFontType0C");
-    private static final Name FONT_FILE_3_OPEN_TYPE = new Name("OpenType");
+    public static final Name FONT_FILE = new Name("FontFile");
+    public static final Name FONT_FILE_2 = new Name("FontFile2");
+    public static final Name FONT_FILE_3 = new Name("FontFile3");
+    public static final Name FONT_FILE_3_TYPE_1C = new Name("Type1C");
+    public static final Name FONT_FILE_3_CID_FONT_TYPE_0 = new Name("CIDFontType0");
+    public static final Name FONT_FILE_3_CID_FONT_TYPE_2 = new Name("CIDFontType2");
+    public static final Name FONT_FILE_3_CID_FONT_TYPE_0C = new Name("CIDFontType0C");
+    public static final Name FONT_FILE_3_OPEN_TYPE = new Name("OpenType");
 
     /**
      * Creates a new instance of a FontDescriptor.
@@ -264,7 +264,11 @@ public class FontDescriptor extends Dictionary {
      * Initiate the Font Descriptor object. Reads embedded font programs
      * or CMap streams.
      */
-    public void init() {
+    public synchronized void init() {
+
+        if (inited) {
+            return;
+        }
 
         /**
          * FontFile1 = A stream containing a Type 1 font program
@@ -319,6 +323,7 @@ public class FontDescriptor extends Dictionary {
             logger.log(Level.FINE, "Error Reading Embedded Font ", e);
         }
 
+        inited = true;
     }
 
     /**
