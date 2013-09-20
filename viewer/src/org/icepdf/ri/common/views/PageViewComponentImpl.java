@@ -849,6 +849,7 @@ public class PageViewComponentImpl extends
 
                 if (pagePainter.isStopPaintingRequested()) {
                     pagePainter.setIsLastPaintDirty(true);
+                    pagePainter.setIsBufferDirty(true);
                 } else {
                     pagePainter.setIsLastPaintDirty(false);
                     pagePainter.setIsBufferDirty(false);
@@ -995,6 +996,15 @@ public class PageViewComponentImpl extends
                 refreshAnnotationComponents(page);
                 isBufferyDirty = false;
                 page = null;
+                if (isPageStateDirty()) {
+                    // one more paint for the road.
+                    Runnable doSwingWork = new Runnable() {
+                        public void run() {
+                            repaint();
+                        }
+                    };
+                    SwingUtilities.invokeLater(doSwingWork);
+                }
             } catch (Throwable e) {
                 logger.log(Level.WARNING,
                         "Error creating buffer, page: " + pageIndex, e);
