@@ -198,7 +198,7 @@ public class StandardSecurityHandler extends SecurityHandler {
         return encrypt(objectReference, encryptionKey, data);
     }
 
-    public InputStream getEncryptionInputStream(
+    public synchronized InputStream getEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
             HashMap decodeParams,

@@ -59,7 +59,7 @@ public abstract class PColorSpace extends Dictionary {
      * @param o
      * @return
      */
-    public static PColorSpace getColorSpace(Library library, Object o) {
+    public synchronized static PColorSpace getColorSpace(Library library, Object o) {
         if (o != null) {
             PColorSpace colorSpace = null;
             Reference ref = null;
@@ -154,7 +154,7 @@ public abstract class PColorSpace extends Dictionary {
      * @param n       number of colours in colour space
      * @return a new PColorSpace given the value of n
      */
-    public static PColorSpace getColorSpace(Library library, float n) {
+    public synchronized static PColorSpace getColorSpace(Library library, float n) {
         if (n == 3) {
             return new DeviceRGB(library, null);
         } else if (n == 4) {
