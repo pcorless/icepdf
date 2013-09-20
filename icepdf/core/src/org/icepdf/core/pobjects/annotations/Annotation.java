@@ -498,7 +498,7 @@ public abstract class Annotation extends Dictionary {
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for down display.
      */
-    public static final Name APPEARANCE_STREAM_DOWN_KEY = new Name("d");
+    public static final Name APPEARANCE_STREAM_DOWN_KEY = new Name("D");
 
     /**
      * (Optional) Text that shall be displayed for the annotation or, if this
@@ -1615,7 +1615,7 @@ public abstract class Annotation extends Dictionary {
             }
             // n should be a Form but we have a few cases of Stream
             if (N instanceof Stream) {
-                return (Form) N;
+                return (Stream) N;
             }
         }
         return null;
