@@ -90,11 +90,11 @@ public abstract class PColorSpace extends Dictionary {
                         || colorant.equals(Indexed.I_KEY)) {
                     colorSpace = new Indexed(library, null, v);
                 } else if (colorant.equals(CalRGB.CALRGB_KEY)) {
-                    colorSpace = new CalRGB(library, (HashMap) v.get(1));
+                    colorSpace = new CalRGB(library, getHashMap(library, v.get(1)));
                 } else if (colorant.equals(CalGray.CAL_GRAY_KEY)) {
-                    colorSpace = new CalGray(library, (HashMap) v.get(1));
+                    colorSpace = new CalGray(library, getHashMap(library, v.get(1)));
                 } else if (colorant.equals(Lab.LAB_KEY)) {
-                    colorSpace = new Lab(library, (HashMap) v.get(1));
+                    colorSpace = new Lab(library, getHashMap(library, v.get(1)));
                 } else if (colorant.equals(Separation.SEPARATION_KEY)) {
                     colorSpace = new Separation(
                             library,
@@ -124,7 +124,9 @@ public abstract class PColorSpace extends Dictionary {
                 } else if (colorant.equals(PatternColor.PATTERN_KEY)) {
                     PatternColor patternColour = new PatternColor(library, null);
                     if (v.size() > 1) {
-                        patternColour.setPColorSpace(getColorSpace(library, v.get(1)));
+                        patternColour.setPColorSpace(
+                                getColorSpace(library,
+                                        getHashMap(library, v.get(1))));
                     }
                     colorSpace = patternColour;
                 }
@@ -143,6 +145,23 @@ public abstract class PColorSpace extends Dictionary {
             }
         }
         return new DeviceGray(library, null);
+    }
+
+    /**
+     * Utility to get a valid hash map for the provided Object or Reference.
+     *
+     * @param obj object or Reference from color dictionary.
+     * @return a dictionary or null if the object is not of type Reference or
+     *         HashMap.
+     */
+    private static HashMap getHashMap(Library library, Object obj) {
+        HashMap entries = null;
+        if (obj instanceof HashMap) {
+            entries = (HashMap) obj;
+        } else if (obj instanceof Reference) {
+            entries = (HashMap) library.getObject((Reference) obj);
+        }
+        return entries;
     }
 
     /**

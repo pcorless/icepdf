@@ -1692,7 +1692,7 @@ public abstract class Annotation extends Dictionary {
             }
             // n should be a Form but we have a few cases of Stream
             if (N instanceof Stream) {
-                return (Form) N;
+                return (Stream) N;
             }
         }
         return null;
