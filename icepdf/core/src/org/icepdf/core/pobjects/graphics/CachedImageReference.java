@@ -44,7 +44,7 @@ public abstract class CachedImageReference extends ImageReference {
         if (isNull) {
             return null;
         }
-        if (image != null) {
+        if (image != null && reference != null) {
             imagePool.put(reference, image);
             return image;
         }
@@ -53,9 +53,9 @@ public abstract class CachedImageReference extends ImageReference {
             return cached;
         } else {
             BufferedImage im = createImage();
-            if (im != null) {
+            if (im != null && reference != null) {
                 imagePool.put(reference, im);
-            } else {
+            } else if (reference != null) {
                 isNull = true;
             }
             return im;

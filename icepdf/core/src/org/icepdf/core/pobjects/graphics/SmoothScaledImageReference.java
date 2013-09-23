@@ -16,11 +16,12 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
-import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
@@ -78,16 +79,33 @@ public class SmoothScaledImageReference extends CachedImageReference {
                 Image scaledImage;
                 // do image scaling on larger images.  This improves the softness
                 // of some images that contains black and white text.
-                if (width > 1000 && width < 2000) {
-                    width = 1000;
-                } else if (width > 2000) {
-                    width = 2000;
+                double imageScale = 1.0;
+                // do a little scaling on a the buffer
+                if ((width >= 250 || height >= 250) && (width < 500 || height < 500)) {
+                    imageScale = 0.90;
+                } else if ((width >= 500 || height >= 500) && (width < 1000 || height < 1000)) {
+                    imageScale = 0.80;
+                } else if ((width >= 1000 || height >= 1000) && (width < 1500 || height < 1500)) {
+                    imageScale = 0.70;
+                } else if ((width >= 1500 || height >= 1500) && (width < 2000 || height < 2000)) {
+                    imageScale = 0.60;
+                } else if ((width >= 2000 || height >= 2000) && (width < 2500 || height < 2500)) {
+                    imageScale = 0.50;
+                } else if ((width >= 2500 || height >= 2500) && (width < 3000 || height < 3000)) {
+                    imageScale = 0.40;
+                } else if ((width >= 3000 || height >= 3000)) {
+                    imageScale = 0.30;
                 }
-                scaledImage = image.getScaledInstance(
-                        width, -1, Image.SCALE_SMOOTH);
-                image.flush();
-                // store the scaled image for future repaints.
-                image = ImageUtility.createBufferedImage(scaledImage);
+                // scale the image
+                if (imageScale != 1.0) {
+                    AffineTransform tx = new AffineTransform();
+                    tx.scale(imageScale, imageScale);
+                    AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BICUBIC);
+                    BufferedImage sbim = op.filter(image, null);
+                    image.flush();
+                    image = sbim;
+                }
+
             }
         } catch (Throwable e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
