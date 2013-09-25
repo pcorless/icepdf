@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.fonts.ofont.Encoding;
 
 import java.io.*;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -99,6 +100,32 @@ public class Utils {
             val |= (curr & 0xFF);
         }
         return val;
+    }
+
+    /**
+     * Write the given int as a 4 byte integer to the given outputStream.
+     *
+     * @param in stream to write byte data to.
+     * @param i  integer to convert to bytes.
+     * @throws IOException write error.
+     */
+    public static void writeInteger(OutputStream in, int i) throws IOException {
+        ByteBuffer bb = ByteBuffer.allocate(4);
+        bb.putInt(i);
+        in.write(bb.array());
+    }
+
+    /**
+     * Write the given int as a 8 byte long to the given outputStream.
+     *
+     * @param in stream to write byte data to.
+     * @param i  long to convert to bytes.
+     * @throws IOException write error.
+     */
+    public static void writeLong(OutputStream in, long i) throws IOException {
+        ByteBuffer bb = ByteBuffer.allocate(8);
+        bb.putLong(i);
+        in.write(bb.array());
     }
 
     public static String convertByteArrayToHexString(byte[] buffer, boolean addSpaceSeparator) {
