@@ -53,7 +53,7 @@ public class Stream extends Dictionary {
     public static final Name IM_KEY = new Name("IM");
     public static final Name COLORSPACE_KEY = new Name("ColorSpace");
     public static final Name CS_KEY = new Name("CS");
-    public static final Name DECODEPARAM_KEY = new Name("DecodeParam");
+    public static final Name DECODEPARAM_KEY = new Name("DecodeParms");
     public static final Name FILTER_KEY = new Name("Filter");
     public static final Name F_KEY = new Name("F");
     public static final Name INDEXED_KEY = new Name("Indexed");
