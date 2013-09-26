@@ -19,6 +19,7 @@ import org.icepdf.core.events.PaintPageEvent;
 import org.icepdf.core.events.PaintPageListener;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -795,6 +796,15 @@ public class Page extends Dictionary {
         Stream nAp = annot.getAppearanceStream();
         if (nAp != null) {
             nAp.setDeleted(true);
+            // find the xobjects font resources.
+            Object tmp = library.getObject(nAp.entries, RESOURCES_KEY);
+            if (tmp instanceof Resources) {
+                Resources resources = (Resources) tmp;
+                // only remove our font instance, if we remove another font we would have
+                // to check the document to see if it was used anywhere else.
+                Dictionary font = resources.getFont(FreeTextAnnotation.EMBEDDED_FONT_NAME);
+                font.setDeleted(true);
+            }
         }
 
         // check to see if this is an existing annotations, if the annotations
