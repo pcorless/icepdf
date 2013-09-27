@@ -59,7 +59,7 @@ public abstract class PColorSpace extends Dictionary {
      * @param o
      * @return
      */
-    public synchronized static PColorSpace getColorSpace(Library library, Object o) {
+    public static PColorSpace getColorSpace(Library library, Object o) {
         if (o != null) {
             PColorSpace colorSpace = null;
             Reference ref = null;
