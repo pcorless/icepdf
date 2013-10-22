@@ -208,15 +208,17 @@ public class StandardSecurityHandler extends SecurityHandler {
         CryptFilterEntry cryptFilter = null;
         if (decodeParams != null) {
             Name filterName = (Name) decodeParams.get(NAME_KEY);
-            // identity means don't use the cryprt filter or encryption at all
-            // for the stream.
-            if (filterName.equals(IDENTITY_KEY)) {
-                return input;
-            } else {
-                // find the filter name in the encryption dictionary
-                cryptFilter = encryptionDictionary.
-                        getCryptFilter().getCryptFilterByName(filterName);
+            if (filterName != null){
+                // identity means don't use the cryprt filter or encryption at all
+                // for the stream.
+                if (filterName.equals(IDENTITY_KEY)) {
+                    return input;
+                } else {
+                    // find the filter name in the encryption dictionary
+                    cryptFilter = encryptionDictionary.
+                            getCryptFilter().getCryptFilterByName(filterName);
 
+                }
             }
         }
         // We default to the method specified in by StrmF in the security dictionary
