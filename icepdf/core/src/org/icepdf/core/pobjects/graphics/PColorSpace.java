@@ -59,7 +59,7 @@ public abstract class PColorSpace extends Dictionary {
      * @param o
      * @return
      */
-    public synchronized static PColorSpace getColorSpace(Library library, Object o) {
+    public static PColorSpace getColorSpace(Library library, Object o) {
         if (o != null) {
             PColorSpace colorSpace = null;
             Reference ref = null;
@@ -124,9 +124,21 @@ public abstract class PColorSpace extends Dictionary {
                 } else if (colorant.equals(PatternColor.PATTERN_KEY)) {
                     PatternColor patternColour = new PatternColor(library, null);
                     if (v.size() > 1) {
-                        patternColour.setPColorSpace(
-                                getColorSpace(library,
-                                        getHashMap(library, v.get(1))));
+                        Object tmp = v.get(1);
+                        if (tmp instanceof Reference) {
+                            tmp = library.getObject((Reference) v.get(1));
+                            if (tmp instanceof PColorSpace) {
+                                patternColour.setPColorSpace((PColorSpace) tmp);
+                            } else if (tmp instanceof HashMap) {
+                                patternColour.setPColorSpace(
+                                        getColorSpace(library, tmp));
+                            }
+                        } else {
+                            patternColour.setPColorSpace(
+                                    getColorSpace(library,
+                                            getHashMap(library, v.get(1))));
+                        }
+
                     }
                     colorSpace = patternColour;
                 }
@@ -159,7 +171,10 @@ public abstract class PColorSpace extends Dictionary {
         if (obj instanceof HashMap) {
             entries = (HashMap) obj;
         } else if (obj instanceof Reference) {
-            entries = (HashMap) library.getObject((Reference) obj);
+            obj = library.getObject((Reference) obj);
+            if (obj instanceof HashMap) {
+                entries = (HashMap) obj;
+            }
         }
         return entries;
     }

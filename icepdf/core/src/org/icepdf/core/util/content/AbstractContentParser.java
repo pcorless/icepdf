@@ -1657,8 +1657,9 @@ public abstract class AbstractContentParser implements ContentParser {
                 graphicState = graphicState.restore();
                 // 1x1 tiles don't seem to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
-                if ((tilingPattern.getbBoxMod().getWidth() > 1 &&
-                        tilingPattern.getbBoxMod().getHeight() > 1)) {
+                if ((tilingPattern.getbBoxMod() != null &&
+                        (tilingPattern.getbBoxMod().getWidth() > 1 ||
+                                tilingPattern.getbBoxMod().getHeight() > 1))) {
                     shapes.add(new TilingPatternDrawCmd(tilingPattern));
                 } else {
                     // draw partial fill colour
@@ -1755,8 +1756,9 @@ public abstract class AbstractContentParser implements ContentParser {
                 graphicState = graphicState.restore();
                 // tiles nee to be 1x1 or larger to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
-                if ((tilingPattern.getbBoxMod().getWidth() >= 1 ||
-                        tilingPattern.getbBoxMod().getHeight() >= 1)) {
+                if (tilingPattern.getbBoxMod() != null &&
+                        (tilingPattern.getbBoxMod().getWidth() >= 1 ||
+                                tilingPattern.getbBoxMod().getHeight() >= 1)) {
                     shapes.add(new TilingPatternDrawCmd(tilingPattern));
                 } else {
                     // draw partial fill colour
