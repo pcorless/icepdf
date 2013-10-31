@@ -48,6 +48,9 @@ public class ImageDrawCmd extends AbstractDrawCmd {
                               boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible()) {
             image.drawImage(g, 0, 0, 1, 1);
+            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
+                parentPage.notifyPaintPageListeners();
+            }
         }
         return currentShape;
     }
