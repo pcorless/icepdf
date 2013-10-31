@@ -146,7 +146,8 @@ public class Parser {
                             generationNumber);
                 }
                 // mark that we have reached the end of the object
-                else if (nextToken.equals("endobj") || nextToken.equals("endobject")) {
+                else if (nextToken.equals("endobj") || nextToken.equals("endobject")
+                        || nextToken.equals("enbobj")) {
                     if (inObject) {
                         // set flag to false, as we are done parsing an Object
                         inObject = false;
