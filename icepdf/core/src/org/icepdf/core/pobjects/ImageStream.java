@@ -88,6 +88,8 @@ public class ImageStream extends Stream {
     // flag the forces jai to be use over our fax decode class.
     private static boolean forceJaiccittfax;
 
+    private PColorSpace colourSpace;
+
     static {
         // define alternate page size ration w/h, default Legal.
         pageRatio =
@@ -158,7 +160,7 @@ public class ImageStream extends Stream {
             Tagger.tagImage("Filter=" + getNormalisedFilterNames());
 
         // parse colour space
-        PColorSpace colourSpace = null;
+        colourSpace = null;
         Object o = entries.get(COLORSPACE_KEY);
         if (resources != null && o != null) {
             colourSpace = resources.getColorSpace(o);
@@ -1184,6 +1186,10 @@ public class ImageStream extends Stream {
      */
     public static void forceJaiCcittFax(boolean enable) {
         forceJaiccittfax = enable;
+    }
+
+    public PColorSpace getColourSpace() {
+        return colourSpace;
     }
 
     /**
