@@ -1194,12 +1194,12 @@ public abstract class Annotation extends Dictionary {
         g.setRenderingHints(grh.getRenderingHints(renderHintType));
         g.setTransform(at);
         Shape preAppearanceStreamClip = g.getClip();
-//        g.clip(deriveDrawingRectangle());
+        g.clip(deriveDrawingRectangle());
 
         renderAppearanceStream(g);
 
         g.setTransform(at);
-//        g.setClip(preAppearanceStreamClip);
+        g.setClip(preAppearanceStreamClip);
 
         if (tabSelected) {
             renderBorderTabSelected(g);
@@ -1208,7 +1208,7 @@ public abstract class Annotation extends Dictionary {
         }
 
         g.setTransform(oldAT);
-//        g.setClip(oldClip);
+        g.setClip(oldClip);
 
         ////g.dispose();
 
