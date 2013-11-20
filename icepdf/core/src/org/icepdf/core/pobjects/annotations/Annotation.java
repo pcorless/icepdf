@@ -632,7 +632,7 @@ public abstract class Annotation extends Dictionary {
         if (annot == null) {
             annot = new GenericAnnotation(library, hashMap);
         }
-        annot.init();
+//        annot.init();
         return annot;
     }
 

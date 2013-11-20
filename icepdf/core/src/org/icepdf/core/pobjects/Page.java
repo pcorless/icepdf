@@ -295,7 +295,7 @@ public class Page extends Dictionary {
                 }
                 // set the object reference, so we can save the state correct
                 // and update any references accordingly. 
-                if (ref != null & a != null) {
+                if (ref != null && a != null) {
                     a.setPObjectReference(ref);
                     a.init();
                 }
