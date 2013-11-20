@@ -651,6 +651,14 @@ public abstract class AbstractContentParser implements ContentParser {
                 for (int i = 0; i < sz; i++) {
                     dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
                 }
+                // corner case check to see if the dash array contains a first element
+                // that is very different then second which is likely the result of
+                // a MS office bug where the first element of the array isn't scaled to
+                // user space.
+                if (dashArray.length > 1 &&
+                        dashArray[0] < dashArray[1] / 10000) {
+                    dashArray[0] = dashArray[1];
+                }
             }
             // default to standard black line
             else {
