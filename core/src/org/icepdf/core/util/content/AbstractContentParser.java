@@ -209,7 +209,7 @@ public abstract class AbstractContentParser implements ContentParser {
         // set stroke colour
         graphicState.setStrokeColorSpace(pColorSpace);
         graphicState.setStrokeColor(pColorSpace.getColor(
-                PColorSpace.reverse(new float[]{c, m, y, k}), true));
+                new float[]{k, y, m, c}, true));
     }
 
     protected static void consume_k(GraphicsState graphicState, Stack stack,
@@ -224,7 +224,7 @@ public abstract class AbstractContentParser implements ContentParser {
         // set fill colour
         graphicState.setFillColorSpace(pColorSpace);
         graphicState.setFillColor(pColorSpace.getColor(
-                PColorSpace.reverse(new float[]{c, m, y, k}), true));
+                new float[]{k, y, m, c}, true));
     }
 
     protected static void consume_CS(GraphicsState graphicState, Stack stack, Resources resources) {
@@ -650,6 +650,14 @@ public abstract class AbstractContentParser implements ContentParser {
                 dashArray = new float[sz];
                 for (int i = 0; i < sz; i++) {
                     dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
+                }
+                // corner case check to see if the dash array contains a first element
+                // that is very different then second which is likely the result of
+                // a MS office bug where the first element of the array isn't scaled to
+                // user space.
+                if (dashArray.length > 1 &&
+                        dashArray[0] < dashArray[1] / 10000 ){
+                    dashArray[0] = dashArray[1];
                 }
             }
             // default to standard black line
