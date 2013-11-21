@@ -655,7 +655,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 // that is very different then second which is likely the result of
                 // a MS office bug where the first element of the array isn't scaled to
                 // user space.
-                if (dashArray.length > 1 &&
+                if (dashArray.length > 1 && dashArray[0] != 0 &&
                         dashArray[0] < dashArray[1] / 10000) {
                     dashArray[0] = dashArray[1];
                 }
