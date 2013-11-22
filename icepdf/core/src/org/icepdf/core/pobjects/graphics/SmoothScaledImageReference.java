@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -38,6 +39,23 @@ public class SmoothScaledImageReference extends CachedImageReference {
 
     private static final Logger logger =
             Logger.getLogger(ScaledImageReference.class.toString());
+
+    private static int maxImageWidth = 7000;
+    private static int maxImageHeight = 7000;
+
+    static{
+        try {
+            maxImageWidth =
+                    Integer.parseInt(Defs.sysProperty("org.icepdf.core.imageReference.smoothscaled.maxwidth",
+                            "4000"));
+
+            maxImageHeight =
+                    Integer.parseInt(Defs.sysProperty("org.icepdf.core.imageReference.smoothscaled.maxheight",
+                            "4000"));
+        } catch (NumberFormatException e) {
+            logger.warning("Error reading buffered scale factor");
+        }
+    }
 
     // scaled image size.
     private int width;
@@ -74,6 +92,9 @@ public class SmoothScaledImageReference extends CachedImageReference {
             // get the stream image if need, otherwise scale what you have.
             if (image == null) {
                 image = imageStream.getImage(fillColor, resources);
+                if (width > maxImageWidth || height > maxImageHeight){
+                    return image;
+                }
             }
             if (image != null) {
                 int width = this.width;
