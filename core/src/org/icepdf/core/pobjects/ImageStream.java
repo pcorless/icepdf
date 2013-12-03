@@ -90,6 +90,8 @@ public class ImageStream extends Stream {
 
     private PColorSpace colourSpace;
 
+    private static boolean isLevigoJBIG2ImageReaderClass;
+
     static {
         // define alternate page size ration w/h, default Legal.
         pageRatio =
@@ -99,6 +101,13 @@ public class ImageStream extends Stream {
         forceJaiccittfax =
                 Defs.sysPropertyBoolean("org.icepdf.core.ccittfax.jai",
                         false);
+        try {
+            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+            isLevigoJBIG2ImageReaderClass = true;
+            logger.info("Levigo JBIG2 image library was found on classpath");
+        } catch (ClassNotFoundException e) {
+            logger.info("Levigo JBIG2 image library was not found on classpath");
+        }
     }
 
     private int width;
@@ -686,16 +695,11 @@ public class ImageStream extends Stream {
                                       PColorSpace colourSpace, int bitspercomponent) {
         BufferedImage tmpImage = null;
 
-        Class levigoJBIG2ImageReaderClass = null;
-        try {
-            levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-        } catch (ClassNotFoundException e) {
-            logger.warning("Levigo JBIG2 image library could not be found");
-        }
         // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
         // can comply with levigo's open source licence.
-        if (levigoJBIG2ImageReaderClass != null) {
+        if (isLevigoJBIG2ImageReaderClass) {
             try {
+                Class levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
                 Class jbig2ImageReaderSpiClass = Class.forName("com.levigo.jbig2.JBIG2ImageReaderSpi");
                 Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
                 Constructor levigoJbig2DecoderClassConstructor =
