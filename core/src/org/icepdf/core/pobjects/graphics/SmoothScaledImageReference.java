@@ -121,8 +121,9 @@ public class SmoothScaledImageReference extends CachedImageReference {
                         imageScale = 0.80;
                     }
                     if (imageScale != 1.0) {
-                        image = (BufferedImage) getTrilinearScaledInstance(image, (int) (width * imageScale),
-                                (int) (height * imageScale));
+                        image = (BufferedImage) getTrilinearScaledInstance(image,
+                                (int) Math.ceil(width * imageScale),
+                                (int) Math.ceil(height * imageScale));
                     }
                 }
                 // normal rgb scale as before, as the triliear scale causes excessive blurring.
