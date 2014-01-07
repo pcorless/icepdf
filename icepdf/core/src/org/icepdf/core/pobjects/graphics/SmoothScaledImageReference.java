@@ -43,15 +43,15 @@ public class SmoothScaledImageReference extends CachedImageReference {
     private static int maxImageWidth = 7000;
     private static int maxImageHeight = 7000;
 
-    static{
+    static {
         try {
             maxImageWidth =
                     Integer.parseInt(Defs.sysProperty("org.icepdf.core.imageReference.smoothscaled.maxwidth",
-                            "4000"));
+                            String.valueOf(maxImageWidth)));
 
             maxImageHeight =
                     Integer.parseInt(Defs.sysProperty("org.icepdf.core.imageReference.smoothscaled.maxheight",
-                            "4000"));
+                            String.valueOf(maxImageHeight)));
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
         }
@@ -92,7 +92,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
             // get the stream image if need, otherwise scale what you have.
             if (image == null) {
                 image = imageStream.getImage(fillColor, resources);
-                if (width > maxImageWidth || height > maxImageHeight){
+                if (width > maxImageWidth || height > maxImageHeight) {
                     return image;
                 }
             }
@@ -107,18 +107,13 @@ public class SmoothScaledImageReference extends CachedImageReference {
                 // to basically blur the image so it more easily read and less jagged.
                 if (imageStream.getColourSpace() != null &&
                         imageStream.getColourSpace() instanceof DeviceGray) {
-                    if ((width < 500 || height < 500) ){
-                        imageScale = 0.99;
-                    }else if ((width >= 500 || height >= 500) && (width < 1500 || height < 1500)) {
-                        imageScale = 1.0;
-                    } else if ((width >= 1500 || height >= 1500) && (width < 2000 || height < 2000)) {
-                        imageScale = 0.95;
-                    } else if ((width >= 2000 || height >= 2000) && (width < 2500 || height < 2500)) {
+                    // catch type 3 fonts.
+                    if ((width < 50 || height < 50)) {
                         imageScale = 0.90;
-                    } else if ((width >= 2500 || height >= 2500) && (width < 3000 || height < 3000)) {
-                        imageScale = 0.85;
-                    } else if ((width >= 3000 || height >= 3000)) {
-                        imageScale = 0.80;
+                    }
+                    // smooth out everything else.
+                    else {
+                        imageScale = 0.99;
                     }
                     if (imageScale != 1.0) {
                         image = (BufferedImage) getTrilinearScaledInstance(image,
@@ -127,7 +122,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
                     }
                 }
                 // normal rgb scale as before, as the triliear scale causes excessive blurring.
-                else{
+                else {
                     if ((width >= 250 || height >= 250) && (width < 500 || height < 500)) {
                         imageScale = 0.90;
                     } else if ((width >= 500 || height >= 500) && (width < 1000 || height < 1000)) {
@@ -164,8 +159,9 @@ public class SmoothScaledImageReference extends CachedImageReference {
      * Applies an iterative scaling method to provide a smooth end result, once complete
      * apply a trilinear blend based on the desired width and height.   Technique
      * derived from Jim Graham example code.
-     * @param img image to scale
-     * @param targetWidth target width
+     *
+     * @param img          image to scale
+     * @param targetWidth  target width
      * @param targetHeight target height
      * @return scaled instance.
      */
