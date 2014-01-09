@@ -1497,7 +1497,7 @@ public class Page extends Dictionary {
         // remove a listener if it is already registered
         synchronized (paintPageListeners) {
             if (paintPageListeners.contains(listener)) {
-                paintPageListeners.add(listener);
+                paintPageListeners.remove(listener);
             }
 
         }
