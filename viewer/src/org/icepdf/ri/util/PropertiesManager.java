@@ -88,6 +88,7 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_UTILITY_UPANE = "application.toolbar.show.utility.upane";
 
     // properties used to hide/show utility pane tabs
+    public static final String PROPERTY_HIDE_UTILITYPANE = "application.utilitypane.hide";
     public static final String PROPERTY_SHOW_UTILITYPANE_BOOKMARKS = "application.utilitypane.show.bookmarks";
     public static final String PROPERTY_SHOW_UTILITYPANE_SEARCH = "application.utilitypane.show.search";
     public static final String PROPERTY_SHOW_UTILITYPANE_THUMBNAILS = "application.utilitypane.show.thumbs";

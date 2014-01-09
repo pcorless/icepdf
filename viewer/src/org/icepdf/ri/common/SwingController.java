@@ -2103,7 +2103,9 @@ public class SwingController
             tmp = catalog.getObject(Catalog.PAGEMODE_KEY);
             if (tmp != null && tmp instanceof Name) {
                 String pageMode = ((Name) tmp).getName();
-                showUtilityPane = pageMode.equalsIgnoreCase("UseOutlines");
+                showUtilityPane = pageMode.equalsIgnoreCase("UseOutlines") ||
+                        pageMode.equalsIgnoreCase("UseOC") ||
+                        pageMode.equalsIgnoreCase("UseThumbs");
             }
         }
 
@@ -2167,11 +2169,22 @@ public class SwingController
                 safelySelectUtilityPanel(annotationPanel);
             }
         }
-        setUtilityPaneVisible(showUtilityPane);
+
+        // showUtilityPane will be true the document has an outline, but the
+        // visibility can be over-ridden with the property application.utilitypane.show
+        boolean hideUtilityPane = PropertiesManager.checkAndStoreBooleanProperty(
+                propertiesManager,
+                PropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
+        // hide utility pane
+        if (hideUtilityPane) {
+            setUtilityPaneVisible(false);
+        } else {
+            setUtilityPaneVisible(showUtilityPane);
+        }
 
         // check if there are layers and enable/disable the tab as needed
         OptionalContent optionalContent = document.getCatalog().getOptionalContent();
-        if (layersPanel != null) {
+        if (layersPanel != null && utilityTabbedPane != null) {
             if (optionalContent == null || optionalContent.getOrder() == null) {
                 utilityTabbedPane.setEnabledAt(
                         utilityTabbedPane.indexOfComponent(layersPanel),
