@@ -34,6 +34,14 @@ import java.util.logging.Logger;
  * The pool also contains an executor pool for processing Images.  The executor
  * allows the pageInitialization thread to continue while the executor processes
  * the image data on another thread.
+ * <p/>
+ * Teh pool size can be set with the system property  org.icepdf.core.views.imagePoolSize
+ * where the default value is 1/4 the heap size.  The pool set can be specified in
+ * using a int value representing the desired size in MB.
+ * <p/>
+ * The pool can also be disabled using the boolean system property
+ * org.icepdf.core.views.imagePoolEnabled=false.  The default state is for the
+ * ImagePool to be enabled.
  *
  * @since 5.0
  */
@@ -46,10 +54,14 @@ public class ImagePool {
 
     private static int defaultSize;
 
+    private static boolean enabled;
+
     static {
         // Default size is 1/4 of heap size.
         defaultSize = (int) ((Runtime.getRuntime().maxMemory() / 1024L / 1024L) / 4L);
         defaultSize = Defs.intProperty("org.icepdf.core.views.imagePoolSize", defaultSize);
+        // enable/disable the image pool all together.
+        enabled = Defs.booleanProperty("org.icepdf.core.views.imagePoolEnabled", true);
     }
 
     public ImagePool() {
@@ -63,11 +75,17 @@ public class ImagePool {
     public void put(Reference ref, BufferedImage image) {
         // create a new reference so we don't have a hard link to the page
         // which will likely keep a page from being GC'd.
-        fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()), image);
+        if (enabled) {
+            fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()), image);
+        }
     }
 
     public BufferedImage get(Reference ref) {
-        return fCache.get(ref);
+        if (enabled) {
+            return fCache.get(ref);
+        } else {
+            return null;
+        }
     }
 
     private static class MemoryImageCache extends LinkedHashMap<Reference, BufferedImage> {
