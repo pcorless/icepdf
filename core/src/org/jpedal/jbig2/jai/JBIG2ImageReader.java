@@ -37,9 +37,9 @@
  * Other JBIG2 image decoding implementations include
  * jbig2dec (http://jbig2dec.sourceforge.net/)
  * xpdf (http://www.foolabs.com/xpdf/)
- * 
+ *
  * The final draft JBIG2 specification can be found at http://www.jpeg.org/public/fcd14492.pdf
- * 
+ *
  * All three of the above resources were used in the writing of this software, with methodologies,
  * processes and inspiration taken from all three.
  *
@@ -69,8 +69,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class JBIG2ImageReader extends ImageReader {
+
+    private static final Logger logger =
+            Logger.getLogger(JBIG2ImageReader.class.toString());
 
     private JBIG2Decoder decoder;
     private ImageInputStream stream;
@@ -200,7 +205,7 @@ public class JBIG2ImageReader extends ImageReader {
             wrDst.setRect(destinationOffset.x, destinationOffset.y, raster);
 
         } catch (RuntimeException e) {
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error reading JBIG2 image data", e);
         }
 
         return dst;
@@ -437,15 +442,17 @@ public class JBIG2ImageReader extends ImageReader {
 
                 } catch (Exception e) {
 
-                    // <start-full><start-demo>
-                    System.err.println("xx=" + xx + " yy=" + yy + " jj=" + jj + " ptr=" + ((yy + (y * sampling)) * origLineLength) + (((x * sampling) + (xx * comp) + jj)) + '/' + data.length);
+                    if (logger.isLoggable(Level.FINE)) {
+                        // <start-full><start-demo>
+                        logger.fine("xx=" + xx + " yy=" + yy + " jj=" + jj + " ptr=" + ((yy + (y * sampling)) * origLineLength) + (((x * sampling) + (xx * comp) + jj)) + '/' + data.length);
 
-                    // System.err.println("index="+index);
-                    System.err.println(((yy + (y * sampling)) * origLineLength) + " " + (((x * sampling) + (xx * comp) + jj)));
-                    System.err.println("w=" + w + " h=" + h + " sampling=" + sampling + " x=" + x + " y=" + y);
-                    // System.out.println("xx="+xx+" yy="+yy);
-                    e.printStackTrace();
-                    // <end-demo><end-full>
+                        // System.err.println("index="+index);
+                        logger.fine(((yy + (y * sampling)) * origLineLength) + " " + (((x * sampling) + (xx * comp) + jj)));
+                        logger.fine("w=" + w + " h=" + h + " sampling=" + sampling + " x=" + x + " y=" + y);
+                        // System.out.println("xx="+xx+" yy="+yy);
+                        logger.log(Level.FINE, "Error scaling image", e);
+                        // <end-demo><end-full>
+                    }
                 }
             }
         }
@@ -502,11 +509,9 @@ public class JBIG2ImageReader extends ImageReader {
             decoder.decodeJBIG2(data);
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error reading JBIG2 image data", e);
         } catch (JBIG2Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.log(Level.FINE, "Error reading JBIG2 image data", e);
         }
 
         readFile = true;

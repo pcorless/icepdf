@@ -1119,9 +1119,9 @@ public class FontManager {
                             font = java.awt.Font.createFont(Font.TRUETYPE_FONT,
                                     new File((String) fontData[3]));
                         } catch (FontFormatException e) {
-                            e.printStackTrace();
+                            logger.log(Level.FINE, "Error create new font", e);
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            logger.log(Level.FINE, "Error reading font", e);
                         }
                         // make sure the font does indeed exist
                         if (font != null) {
