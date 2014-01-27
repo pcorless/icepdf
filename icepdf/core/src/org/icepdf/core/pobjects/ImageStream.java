@@ -827,7 +827,7 @@ public class ImageStream extends Stream {
                 logger.info(
                         "ImageIO missing required plug-in to read JPEG 2000 images. " +
                                 "You can download the JAI ImageIO Tools from: " +
-                                "https://jai-imageio.dev.java.net/");
+                                "http://www.oracle.com/technetwork/java/current-142188.html");
                 return null;
             }
             // decode the image.
