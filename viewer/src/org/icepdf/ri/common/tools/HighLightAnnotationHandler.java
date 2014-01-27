@@ -39,6 +39,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Level;
 
 /**
  * HighLightAnnotationHandler tool extends TextSelectionPageHandler which
@@ -232,8 +233,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                 documentViewModel.getViewZoom());
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space.", e);
         }
         // convert the two points as well as the bbox.
         Rectangle tBbox = at.createTransformedShape(path).getBounds();
