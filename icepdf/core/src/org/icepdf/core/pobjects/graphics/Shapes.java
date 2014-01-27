@@ -138,7 +138,6 @@ public class Shapes {
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "Error painting shapes.", e);
-            e.printStackTrace();
         }
     }
 

@@ -17,6 +17,7 @@ package org.icepdf.core.io;
 
 import java.io.*;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -69,7 +70,9 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
         try {
             return (int) (m_RandomAccessFile.getFilePointer());
         } catch (IOException e) {
-            e.printStackTrace();
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.WARNING, "Error calling available", e);
+            }
         }
         return 0;
     }

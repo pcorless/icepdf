@@ -733,8 +733,7 @@ public abstract class Annotation extends Dictionary {
                     shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}).getShapes();
                 } catch (Exception e) {
                     shapes = new Shapes();
-                    logger.log(Level.FINE, "Error initializing Page.", e);
-                    e.printStackTrace();
+                    logger.log(Level.FINE, "Error initializing annotation content stream.", e);
                 }
             }
         }

@@ -267,7 +267,9 @@ public class Parser {
                                     streamDataInput, filePositionOfStreamData, size);
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, "Error getting next object", e);
+                        }
                         return null;
                     }
                     PTrailer trailer = null;
@@ -489,7 +491,6 @@ public class Parser {
             while (!complete);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Fatal error parsing PDF file stream.", e);
-            e.printStackTrace();
             return null;
         }
         // return the top of the stack
