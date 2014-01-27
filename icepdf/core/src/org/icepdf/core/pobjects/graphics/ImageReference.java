@@ -24,8 +24,8 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -102,13 +102,18 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      * @return decoded/encoded BufferedImge for the respective ImageStream.
      */
     protected BufferedImage createImage() {
-        // block until thread comes back.
         try {
-            image = futureTask.get();
+            // block until thread comes back.
+            if (futureTask != null) {
+                image = futureTask.get();
+            }
+            if (image == null) {
+                image = call();
+            }
         } catch (InterruptedException e) {
             logger.warning("Image loading interrupted");
-        } catch (ExecutionException e) {
-            logger.warning("Image loading execution exception");
+        } catch (Exception e) {
+            logger.log(Level.FINE, "Image loading execution exception", e);
         }
         return image;
     }
