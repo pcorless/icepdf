@@ -1471,6 +1471,7 @@ public class SwingController
             documentViewController.getViewContainer().repaint();
         } catch (java.awt.HeadlessException e) {
             e.printStackTrace();
+            logger.log(Level.FINE, "Headless exception during tool selection", e);
         }
     }
 
@@ -1728,7 +1729,6 @@ public class SwingController
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
-                e.printStackTrace();
             } catch (PDFSecurityException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
                         viewer,
@@ -1749,7 +1749,6 @@ public class SwingController
                         pathname);
                 document = null;
                 logger.log(Level.FINE, "Error opening document.", e);
-                e.printStackTrace();
             } finally {
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
             }
@@ -4312,9 +4311,9 @@ public class SwingController
             event.dropComplete(true);
 
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            logger.log(Level.FINE, "IO exception during file drop", ioe);
         } catch (UnsupportedFlavorException ufe) {
-            ufe.printStackTrace();
+            logger.log(Level.FINE, "Drag and drop not supported", ufe);
         }
     }
 

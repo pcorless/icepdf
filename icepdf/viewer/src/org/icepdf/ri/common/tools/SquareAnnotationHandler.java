@@ -251,8 +251,8 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                 documentViewModel.getViewZoom());
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space.", e);
         }
         // convert the two points as well as the bbox.
         Rectangle tBbox = new Rectangle(rect.x, rect.y,

@@ -40,6 +40,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
 
 /**
  * The PopupAnnotationComponent encapsulates a PopupAnnotation objects.  It
@@ -555,7 +556,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
                         document.getText(0, document.getLength()));
             }
         } catch (BadLocationException ex) {
-            ex.printStackTrace();
+            logger.log(Level.FINE, "Error updating markup annotation content", ex);
         }
     }
 

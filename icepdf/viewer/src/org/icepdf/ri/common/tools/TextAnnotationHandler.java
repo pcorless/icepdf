@@ -147,8 +147,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         AffineTransform pageInverseTransform = new AffineTransform();
         try {
             pageInverseTransform = pageTransform.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException ex) {
+            logger.log(Level.FINE, "Error converting to page space.", ex);
         }
         Dimension scaledSize = new Dimension(
                 (int) Math.abs(ICON_SIZE.width * pageInverseTransform.getScaleX()),
