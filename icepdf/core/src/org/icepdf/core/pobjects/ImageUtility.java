@@ -103,6 +103,8 @@ public class ImageUtility {
     private static int redIndex = 0;
     private static int blueIndex = 2;
 
+    private static boolean scaleQuality;
+
     static {
         // sniff out jdk 1.5 version
         String version = System.getProperty("java.version");
@@ -113,6 +115,11 @@ public class ImageUtility {
 
         // black ratio
         blackRatio = Defs.intProperty("org.icepdf.core.cmyk.image.black", 255);
+
+        // decide if large images will be scaled
+        scaleQuality =
+                Defs.booleanProperty("org.icepdf.core.imageMaskScale.quality",
+                        true);
     }
 
     protected static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -124,22 +131,9 @@ public class ImageUtility {
         int height = bi.getHeight();
 
         if (smaskImage != null) {
-            smaskRaster = smaskImage.getRaster();
-            smaskWidth = smaskRaster.getWidth();
-            smaskHeight = smaskRaster.getHeight();
-            // scale the image to match the image mask.
-            if (width < smaskWidth || height < smaskHeight) {
-                // calculate scale factors.
-                double scaleX = smaskWidth / (double) width;
-                double scaleY = smaskHeight / (double) height;
-                // scale the mask to match the base image.
-                AffineTransform tx = new AffineTransform();
-                tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-                BufferedImage bim = op.filter(bi, null);
-                bi.flush();
-                bi = bim;
-            }
+            BufferedImage[] images = scaleImagesToSameSize(bi, smaskImage);
+            bi = images[0];
+            smaskImage = images[1];
             width = bi.getWidth();
             height = bi.getHeight();
         }
@@ -148,22 +142,9 @@ public class ImageUtility {
         int maskWidth = 0;
         int maskHeight = 0;
         if (maskImage != null) {
-            maskRaster = maskImage.getRaster();
-            maskWidth = maskRaster.getWidth();
-            maskHeight = maskRaster.getHeight();
-            // scale the image to match the image mask.
-            if (width < maskWidth || height < maskHeight) {
-                // calculate scale factors.
-                double scaleX = maskWidth / (double) width;
-                double scaleY = maskHeight / (double) height;
-                // scale the mask to match the base image.
-                AffineTransform tx = new AffineTransform();
-                tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-                BufferedImage bim = op.filter(bi, null);
-                bi.flush();
-                bi = bim;
-            }
+            BufferedImage[] images = scaleImagesToSameSize(bi, maskImage);
+            bi = images[0];
+            maskImage = images[1];
             width = bi.getWidth();
             height = bi.getHeight();
         }
@@ -1086,20 +1067,10 @@ public class ImageUtility {
         final int maskWidth = maskImage.getWidth();
         final int maskHeight = maskImage.getHeight();
 
-        // we're going for quality over memory foot print here, for most
-        // masks its better to scale the base image up to the mask size.
-        if (baseWidth != maskWidth || baseHeight != maskHeight) {
-            // calculate scale factors.
-            double scaleX = maskWidth / (double) baseWidth;
-            double scaleY = maskHeight / (double) baseHeight;
-            // scale the mask to match the base image.
-            AffineTransform tx = new AffineTransform();
-            tx.scale(scaleX, scaleY);
-            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            BufferedImage sbim = op.filter(baseImage, null);
-            baseImage.flush();
-            baseImage = sbim;
-        }
+        // check to make sure the mask and the image are the same size.
+        BufferedImage[] images = scaleImagesToSameSize(baseImage, maskImage);
+        baseImage = images[0];
+        maskImage = images[1];
 
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
@@ -1156,20 +1127,10 @@ public class ImageUtility {
         final int maskWidth = sMaskImage.getWidth();
         final int maskHeight = sMaskImage.getHeight();
 
-        // we're going for quality over memory foot print here, for most
-        // masks its better to scale the base image up to the mask size.
-        if (baseWidth != maskWidth || baseHeight != maskHeight) {
-            // calculate scale factors.
-            double scaleX = maskWidth / (double) baseWidth;
-            double scaleY = maskHeight / (double) baseHeight;
-            // scale the mask to match the base image.
-            AffineTransform tx = new AffineTransform();
-            tx.scale(scaleX, scaleY);
-            AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-            BufferedImage sbim = op.filter(baseImage, null);
-            baseImage.flush();
-            baseImage = sbim;
-        }
+        // check to make sure the mask and the image are the same size.
+        BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
+        baseImage = images[0];
+        sMaskImage = images[1];
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
         baseWidth = baseImage.getWidth();
@@ -1629,5 +1590,163 @@ public class ImageUtility {
         g.drawImage(imageIn, 0, 0, null);
 
         return bufferedImageOut;
+    }
+
+    /**
+     * Utility method to scale the two provided images. There are two modes based
+     * on the system property "".  The d
+     *
+     * @param baseImage base image that mask will be applied to
+     * @param maskImage mask image that will be applied to base image.
+     * @return array of altered baseImage and maskImage, should be same size on
+     *         return.
+     */
+    public static BufferedImage[] scaleImagesToSameSize(BufferedImage baseImage,
+                                                        BufferedImage maskImage) {
+        if (scaleQuality) {
+            int width = baseImage.getWidth();
+            int height = baseImage.getHeight();
+
+            WritableRaster maskRaster = maskImage.getRaster();
+            int maskWidth = maskRaster.getWidth();
+            int maskHeight = maskRaster.getHeight();
+            // scale the image to match the image mask.
+            if (width < maskWidth || height < maskHeight) {
+                // calculate scale factors.
+                double scaleX = maskWidth / (double) width;
+                double scaleY = maskHeight / (double) height;
+                // scale the mask to match the base image.
+                AffineTransform tx = new AffineTransform();
+                tx.scale(scaleX, scaleY);
+                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+                BufferedImage bim = op.filter(baseImage, null);
+                baseImage.flush();
+                baseImage = bim;
+            }
+            return new BufferedImage[]{baseImage, maskImage};
+        } else {
+            int width = baseImage.getWidth();
+            int height = baseImage.getHeight();
+
+            WritableRaster maskRaster = maskImage.getRaster();
+            int maskWidth = maskRaster.getWidth();
+            int maskHeight = maskRaster.getHeight();
+            // scale the mask to match the smaller image.
+            if (width < maskWidth || height < maskHeight) {
+                // calculate scale factors.
+//                BufferedImage bim = (BufferedImage)
+//                        ImageUtility.getTrilinearScaledInstance(maskImage, width, height);
+                double scaleX = width / (double) maskWidth;
+                double scaleY = height / (double) maskHeight;
+                // scale the mask to match the base image.
+                AffineTransform tx = new AffineTransform();
+                tx.scale(scaleX, scaleY);
+                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+                BufferedImage bim = op.filter(maskImage, null);
+                maskImage.flush();
+                maskImage = bim;
+            }
+            return new BufferedImage[]{baseImage, maskImage};
+        }
+    }
+
+    /**
+     * Applies an iterative scaling method to provide a smooth end result, once complete
+     * apply a trilinear blend based on the desired width and height.   Technique
+     * derived from Jim Graham example code.
+     *
+     * @param img          image to scale
+     * @param targetWidth  target width
+     * @param targetHeight target height
+     * @return scaled instance.
+     */
+    public static Image getTrilinearScaledInstance(BufferedImage img,
+                                                   int targetWidth,
+                                                   int targetHeight) {
+        // Use multi-step technique: start with original size, then
+        // scale down in multiple passes with drawImage()
+        // until the target size is reached
+        int iw = img.getWidth();
+        int ih = img.getHeight();
+
+        Object hint = RenderingHints.VALUE_INTERPOLATION_BILINEAR;
+        int type = (img.getTransparency() == Transparency.OPAQUE) ?
+                BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
+
+        // First get down to no more than 2x in W & H
+        while (iw > targetWidth * 2 || ih > targetHeight * 2) {
+            iw = (iw > targetWidth * 2) ? iw / 2 : iw;
+            ih = (ih > targetHeight * 2) ? ih / 2 : ih;
+            img = scaleImage(img, type, hint, iw, ih);
+        }
+
+        // If still too wide - do a horizontal trilinear blend
+        // of img and a half-width img
+        if (iw > targetWidth) {
+            int iw2 = iw / 2;
+            BufferedImage img2 = scaleImage(img, type, hint, iw2, ih);
+            if (iw2 < targetWidth) {
+                img = scaleImage(img, type, hint, targetWidth, ih);
+                img2 = scaleImage(img2, type, hint, targetWidth, ih);
+                interpolate(img2, img, iw - targetWidth, targetWidth - iw2);
+            }
+            img = img2;
+            iw = targetWidth;
+        }
+        // iw should now be targetWidth or smaller
+
+        // If still too tall - do a vertical trilinear blend
+        // of img and a half-height img
+        if (ih > targetHeight) {
+            int ih2 = ih / 2;
+            BufferedImage img2 = scaleImage(img, type, hint, iw, ih2);
+            if (ih2 < targetHeight) {
+                img = scaleImage(img, type, hint, iw, targetHeight);
+                img2 = scaleImage(img2, type, hint, iw, targetHeight);
+                interpolate(img2, img, ih - targetHeight, targetHeight - ih2);
+            }
+            img = img2;
+            ih = targetHeight;
+        }
+        // ih should now be targetHeight or smaller
+
+        // If we are too small, then it was probably because one of
+        // the dimensions was too small from the start.
+        if (iw < targetWidth && ih < targetHeight) {
+            img = scaleImage(img, type, hint, targetWidth, targetHeight);
+        }
+
+        return img;
+    }
+
+    /**
+     * Utility to interpolate the two imges.
+     */
+    private static void interpolate(BufferedImage img1,
+                                    BufferedImage img2,
+                                    int weight1,
+                                    int weight2) {
+        float alpha = weight1;
+        alpha /= (weight1 + weight2);
+        Graphics2D g2 = img1.createGraphics();
+        g2.setComposite(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        g2.drawImage(img2, 0, 0, null);
+        g2.dispose();
+    }
+
+    /**
+     * Utility to apply image scaling using the g2.drawImage() method.
+     */
+    private static BufferedImage scaleImage(BufferedImage orig,
+                                            int type,
+                                            Object hint,
+                                            int w, int h) {
+        BufferedImage tmp = new BufferedImage(w, h, type);
+        Graphics2D g2 = tmp.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
+        g2.drawImage(orig, 0, 0, w, h, null);
+        g2.dispose();
+        return tmp;
     }
 }

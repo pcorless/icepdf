@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -116,7 +117,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
                         imageScale = 0.99;
                     }
                     if (imageScale != 1.0) {
-                        image = (BufferedImage) getTrilinearScaledInstance(image,
+                        image = (BufferedImage) ImageUtility.getTrilinearScaledInstance(image,
                                 (int) Math.ceil(width * imageScale),
                                 (int) Math.ceil(height * imageScale));
                     }
@@ -155,103 +156,5 @@ public class SmoothScaledImageReference extends CachedImageReference {
         return image;
     }
 
-    /**
-     * Applies an iterative scaling method to provide a smooth end result, once complete
-     * apply a trilinear blend based on the desired width and height.   Technique
-     * derived from Jim Graham example code.
-     *
-     * @param img          image to scale
-     * @param targetWidth  target width
-     * @param targetHeight target height
-     * @return scaled instance.
-     */
-    public Image getTrilinearScaledInstance(BufferedImage img,
-                                            int targetWidth,
-                                            int targetHeight) {
-        // Use multi-step technique: start with original size, then
-        // scale down in multiple passes with drawImage()
-        // until the target size is reached
-        int iw = img.getWidth();
-        int ih = img.getHeight();
 
-        Object hint = RenderingHints.VALUE_INTERPOLATION_BILINEAR;
-        int type = (img.getTransparency() == Transparency.OPAQUE) ?
-                BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
-
-        // First get down to no more than 2x in W & H
-        while (iw > targetWidth * 2 || ih > targetHeight * 2) {
-            iw = (iw > targetWidth * 2) ? iw / 2 : iw;
-            ih = (ih > targetHeight * 2) ? ih / 2 : ih;
-            img = scaleImage(img, type, hint, iw, ih);
-        }
-
-        // If still too wide - do a horizontal trilinear blend
-        // of img and a half-width img
-        if (iw > targetWidth) {
-            int iw2 = iw / 2;
-            BufferedImage img2 = scaleImage(img, type, hint, iw2, ih);
-            if (iw2 < targetWidth) {
-                img = scaleImage(img, type, hint, targetWidth, ih);
-                img2 = scaleImage(img2, type, hint, targetWidth, ih);
-                interpolate(img2, img, iw - targetWidth, targetWidth - iw2);
-            }
-            img = img2;
-            iw = targetWidth;
-        }
-        // iw should now be targetWidth or smaller
-
-        // If still too tall - do a vertical trilinear blend
-        // of img and a half-height img
-        if (ih > targetHeight) {
-            int ih2 = ih / 2;
-            BufferedImage img2 = scaleImage(img, type, hint, iw, ih2);
-            if (ih2 < targetHeight) {
-                img = scaleImage(img, type, hint, iw, targetHeight);
-                img2 = scaleImage(img2, type, hint, iw, targetHeight);
-                interpolate(img2, img, ih - targetHeight, targetHeight - ih2);
-            }
-            img = img2;
-            ih = targetHeight;
-        }
-        // ih should now be targetHeight or smaller
-
-        // If we are too small, then it was probably because one of
-        // the dimensions was too small from the start.
-        if (iw < targetWidth && ih < targetHeight) {
-            img = scaleImage(img, type, hint, targetWidth, targetHeight);
-        }
-
-        return img;
-    }
-
-    /**
-     * Utility to interpolate the two imges.
-     */
-    private void interpolate(BufferedImage img1,
-                             BufferedImage img2,
-                             int weight1,
-                             int weight2) {
-        float alpha = weight1;
-        alpha /= (weight1 + weight2);
-        Graphics2D g2 = img1.createGraphics();
-        g2.setComposite(
-                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-        g2.drawImage(img2, 0, 0, null);
-        g2.dispose();
-    }
-
-    /**
-     * Utility to apply image scaling using the g2.drawImage() method.
-     */
-    private BufferedImage scaleImage(BufferedImage orig,
-                                     int type,
-                                     Object hint,
-                                     int w, int h) {
-        BufferedImage tmp = new BufferedImage(w, h, type);
-        Graphics2D g2 = tmp.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
-        g2.drawImage(orig, 0, 0, w, h, null);
-        g2.dispose();
-        return tmp;
-    }
 }
