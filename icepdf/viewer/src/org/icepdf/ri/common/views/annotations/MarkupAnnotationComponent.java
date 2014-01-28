@@ -30,6 +30,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -173,8 +174,8 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                 documentViewModel.getViewZoom());
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space.", e);
         }
 
         shape = at.createTransformedShape(shape);

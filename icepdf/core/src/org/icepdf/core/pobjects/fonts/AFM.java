@@ -185,7 +185,7 @@ public class AFM {
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.log(Level.WARNING, "Error load AFM CMap files", ex);
         }
     }
 

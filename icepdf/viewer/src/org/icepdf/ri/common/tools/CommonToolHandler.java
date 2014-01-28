@@ -24,6 +24,8 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Common logicv to all annotation handlers.
@@ -31,6 +33,9 @@ import java.awt.geom.NoninvertibleTransformException;
  * @since 5.0
  */
 public class CommonToolHandler {
+
+    private static final Logger logger =
+            Logger.getLogger(CommonToolHandler.class.toString());
 
     // parent page component
     protected AbstractPageViewComponent pageViewComponent;
@@ -53,8 +58,8 @@ public class CommonToolHandler {
                 documentViewModel.getViewZoom());
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error page space transform", e);
         }
         return at;
     }
@@ -74,8 +79,8 @@ public class CommonToolHandler {
                 documentViewModel.getViewZoom());
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space", e);
         }
 
         shape = at.createTransformedShape(shape);

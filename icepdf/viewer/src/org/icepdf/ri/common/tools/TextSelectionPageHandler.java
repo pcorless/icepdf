@@ -51,7 +51,7 @@ import java.util.logging.Logger;
 public class TextSelectionPageHandler extends SelectionBoxHandler
         implements ToolHandler {
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(TextSelectionPageHandler.class.toString());
 
     /**

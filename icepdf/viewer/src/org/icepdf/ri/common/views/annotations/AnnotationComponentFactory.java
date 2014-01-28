@@ -27,6 +27,8 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.lang.reflect.Constructor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * AnnotationComponentFactory is responsible for building an annotation component
@@ -38,6 +40,9 @@ import java.lang.reflect.Constructor;
  * @since 5.0
  */
 public class AnnotationComponentFactory {
+
+    protected static final Logger logger =
+            Logger.getLogger(AnnotationComponentFactory.class.toString());
 
     private static final String BUTTON_FIELD_CLASS =
             "org.icepdf.core.pro.acroform.ButtonFieldComponent";
@@ -161,7 +166,7 @@ public class AnnotationComponentFactory {
                     pageViewComponent, documentViewModel};
             return (AbstractAnnotationComponent) widgetFieldClassConstructor.newInstance(widgetParams);
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error generating widget field", e);
         }
         return null;
     }

@@ -50,7 +50,7 @@ import java.util.logging.Logger;
 public abstract class AbstractAnnotationComponent extends JComponent implements FocusListener,
         MouseInputListener, AnnotationComponent {
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(AbstractAnnotationComponent.class.toString());
 
     protected static boolean isInteractiveAnnotationsEnabled;
@@ -250,8 +250,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 documentViewModel.getViewZoom());
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error refreshing annotation rectangle", e);
         }
         // store the new annotation rectangle in its original user space
         Rectangle2D rect = annotation.getUserSpaceRectangle();
@@ -567,8 +567,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 documentViewModel.getViewZoom());
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space.", e);
         }
         // convert the two points as well as the bbox.
         Rectangle tBbox = new Rectangle(rect.x, rect.y,
@@ -589,8 +589,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
         try {
             at = at.createInverse();
-        } catch (NoninvertibleTransformException e1) {
-            e1.printStackTrace();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error getting page transform.", e);
         }
         return at;
     }

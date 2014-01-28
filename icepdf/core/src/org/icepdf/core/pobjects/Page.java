@@ -232,6 +232,7 @@ public class Page extends Dictionary {
                 Object tmp = library.getObject((Reference) conts.get(i));
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
+                    // prune any zero length streams,
                     if (tmpStream != null && tmpStream.getRawBytes().length > 0) {
                         tmpStream.setPObjectReference((Reference) conts.get(i));
                         contents.add(tmpStream);
@@ -372,7 +373,6 @@ public class Page extends Dictionary {
                 } catch (Exception e) {
                     shapes = new Shapes();
                     logger.log(Level.FINE, "Error initializing Page.", e);
-                    e.printStackTrace();
                 }
             }
             // empty page, nothing to do.
@@ -1253,7 +1253,6 @@ public class Page extends Dictionary {
             return decodedContentStream;
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Error initializing page Contents.", e);
-            e.printStackTrace();
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error closing content stream");
         }

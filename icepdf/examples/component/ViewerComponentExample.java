@@ -17,10 +17,12 @@
 
 import org.icepdf.ri.common.ComponentKeyBinding;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.swing.*;
+import java.awt.*;
 
 
 /**
@@ -33,19 +35,17 @@ import javax.swing.*;
  */
 public class ViewerComponentExample {
     public static void main(String[] args) {
-        // Get a file from the command line to open
-        String filePath = args[0];
 
         // build a component controller
         SwingController controller = new SwingController();
+        SwingViewBuilder factory = new SwingViewBuilder(controller);
         controller.setIsEmbeddedComponent(true);
 
         // set the viewController embeddable flag.
         DocumentViewController viewController =
                 controller.getDocumentViewController();
 
-        JPanel viewerComponentPanel = new JPanel();
-        viewerComponentPanel.add(viewController.getViewContainer());
+        JPanel viewerComponentPanel = factory.buildViewerPanel();
 
         // add copy keyboard command
         ComponentKeyBinding.install(controller, viewerComponentPanel);
@@ -58,10 +58,11 @@ public class ViewerComponentExample {
         // build a containing JFrame for display
         JFrame applicationFrame = new JFrame();
         applicationFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        applicationFrame.getContentPane().add(viewerComponentPanel);
 
+        applicationFrame.getContentPane().setLayout(new BorderLayout());
+        applicationFrame.getContentPane().add(viewerComponentPanel, BorderLayout.CENTER);
+        applicationFrame.getContentPane().add(factory.buildCompleteMenuBar(), BorderLayout.NORTH);
         // Now that the GUI is all in place, we can try opening a PDF
-        controller.openDocument(filePath);
 
         // hard set the page view to single page which effectively give a single
         // page view. This should be done after openDocument as it has code that
