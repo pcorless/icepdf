@@ -25,9 +25,9 @@ import java.util.logging.Logger;
 
 
 public class OSXAdapter implements InvocationHandler {
-
     private static final Logger logger =
             Logger.getLogger(OSXAdapter.class.toString());
+
 
     protected Object targetObject;
     protected Method targetMethod;
