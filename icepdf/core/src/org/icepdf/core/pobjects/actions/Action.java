@@ -51,6 +51,10 @@ public class Action extends Dictionary {
 
     public static final Name ACTION_TYPE_URI = new Name("URI");
 
+    public static final Name ACTION_TYPE_RESET_SUBMIT = new Name("ResetForm");
+
+    public static final Name ACTION_TYPE_SUBMIT_SUBMIT = new Name("SubmitForm");
+
     // type of annotation
     private String type;
 
@@ -79,6 +83,10 @@ public class Action extends Dictionary {
                 return new LaunchAction(library, hashMap);
             } else if (actionType.equals(Action.ACTION_TYPE_URI)) {
                 return new URIAction(library, hashMap);
+            } else if (actionType.equals(Action.ACTION_TYPE_RESET_SUBMIT)) {
+                return new ResetFormAction(library, hashMap);
+            } else if (actionType.equals(Action.ACTION_TYPE_SUBMIT_SUBMIT)) {
+                return new SubmitFormAction(library, hashMap);
             }
         }
         return new Action(library, hashMap);
