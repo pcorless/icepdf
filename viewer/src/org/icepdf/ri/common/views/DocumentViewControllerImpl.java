@@ -600,7 +600,12 @@ public class DocumentViewControllerImpl
                 if (documentView != null && documentViewScrollPane != null) {
                     float viewportWidth = documentViewScrollPane.getViewport().getViewRect().width;
                     float pageViewWidth = documentView.getDocumentSize().width;
-
+                    // test if the scroll bar is not present, if so then we
+                    // should consider that the scroll bar will be visible after the
+                    // fit width is applied.
+                    if (!documentViewScrollPane.getVerticalScrollBar().isVisible()) {
+                        viewportWidth -= documentViewScrollPane.getVerticalScrollBar().getWidth();
+                    }
                     // add insert padding on each side.
                     pageViewWidth += AbstractDocumentView.layoutInserts * 2;
 
