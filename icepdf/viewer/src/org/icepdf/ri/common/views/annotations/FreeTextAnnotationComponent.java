@@ -223,7 +223,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         } else if ("focusOwner".equals(prop) &&
                 newValue instanceof JTextArea) {
             JTextArea freeText = (JTextArea) newValue;
-            if (freeText.equals(freeTextPane)) {
+            if (freeText.equals(freeTextPane) && !annotation.getFlagReadOnly()) {
                 freeText.setEditable(true);
                 if (freeText instanceof ScalableTextArea) {
                     ((ScalableTextArea) freeText).setActive(true);
