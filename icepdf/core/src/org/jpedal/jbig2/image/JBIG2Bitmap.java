@@ -37,9 +37,9 @@
  * Other JBIG2 image decoding implementations include
  * jbig2dec (http://jbig2dec.sourceforge.net/)
  * xpdf (http://www.foolabs.com/xpdf/)
- * 
+ *
  * The final draft JBIG2 specification can be found at http://www.jpeg.org/public/fcd14492.pdf
- * 
+ *
  * All three of the above resources were used in the writing of this software, with methodologies,
  * processes and inspiration taken from all three.
  *
@@ -1027,6 +1027,10 @@ public final class JBIG2Bitmap {
     }
 
     public int getPixel(int col, int row) {
+        // compensate for PDF-675
+        if (row < 0) {
+            row = 0;
+        }
         return data.get((row * width) + col) ? 1 : 0;
     }
 
