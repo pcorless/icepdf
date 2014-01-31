@@ -154,6 +154,11 @@ public class Separation extends PColorSpace {
             float[] colour = namedColor.getComponents(null);
 //                namedColor = new Color(colour[0] * tint, colour[1] * tint, colour[2] * tint);
             namedColor = new Color(colour[0], colour[1], colour[2], tint);
+            // The color model doesn't actually have transparency, so white with an alpha of 0.
+            // is still just white, not transparent.
+            if (tint == 0.0f && colour[0] == 0 && colour[1] == 0 && colour[2] == 0) {
+                return Color.WHITE;
+            }
             return namedColor;
         }
 
