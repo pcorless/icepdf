@@ -47,7 +47,7 @@ public class PageText implements TextSelect {
 
     private ArrayList<LineText> pageLines;
 
-    private HashMap<OptionalContents, PageText> optionalPageLines;
+    private LinkedHashMap<OptionalContents, PageText> optionalPageLines;
 
     public PageText() {
         pageLines = new ArrayList<LineText>(50);
@@ -56,7 +56,7 @@ public class PageText implements TextSelect {
     public void newLine(LinkedList<OptionalContents> oCGs) {
         if (oCGs != null && oCGs.size() > 0) {
             if (optionalPageLines == null) {
-                optionalPageLines = new HashMap<OptionalContents, PageText>(10);
+                optionalPageLines = new LinkedHashMap<OptionalContents, PageText>(10);
             }
             OptionalContents optionalContent = oCGs.peek();
             PageText pageText = optionalPageLines.get(optionalContent);
@@ -138,7 +138,7 @@ public class PageText implements TextSelect {
     protected void addOptionalPageLines(OptionalContents optionalContent,
                                         GlyphText sprite) {
         if (optionalPageLines == null) {
-            optionalPageLines = new HashMap<OptionalContents, PageText>(10);
+            optionalPageLines = new LinkedHashMap<OptionalContents, PageText>(10);
         }
         PageText pageText = optionalPageLines.get(optionalContent);
         if (pageText == null) {
