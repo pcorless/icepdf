@@ -196,7 +196,7 @@ public abstract class Font extends Dictionary {
 
         // figure out type
         if (subtype != null) {
-            subTypeFormat = (subtype.getName().toLowerCase().equals("type0") |
+            subTypeFormat = (subtype.getName().toLowerCase().equals("type0") ||
                     subtype.getName().toLowerCase().contains("cid")) ?
                     CID_FORMAT : SIMPLE_FORMAT;
         }

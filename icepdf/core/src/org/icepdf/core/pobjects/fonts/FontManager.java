@@ -146,16 +146,14 @@ public class FontManager {
     private static String[] SYSTEM_FONT_PATHS =
             new String[]{
                     // windows
-                    "c:\\windows\\fonts\\",
-                    "d:\\windows\\fonts\\",
-                    "e:\\windows\\fonts\\",
-                    "f:\\windows\\fonts\\",
-                    "c:\\winnt\\Fonts\\",
-                    "d:\\winnt\\Fonts\\",
+                    // windir works for winNT and older 9X system, same as "systemroot"
+                    System.getenv("WINDIR") + "\\Fonts",
                     "c:\\cygwin\\usr\\share\\ghostscript\\fonts\\",
                     "d:\\cygwin\\usr\\share\\ghostscript\\fonts\\",
 
                     // Mac
+                    Defs.sysProperty("user.home") + "/Library/Fonts/",
+                    "/Library/Fonts/",
                     "/Network/Library/Fonts/",
                     "/System/Library/Fonts/",
                     "/System Folder/Fonts",
@@ -769,6 +767,7 @@ public class FontManager {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
                 if (name.contains(familyName) ||
+                        familyName.contains(name) ||
                         fontName.toLowerCase().contains(baseName)) {
                     style = (Integer) fontData[2];
                     boolean found = false;
