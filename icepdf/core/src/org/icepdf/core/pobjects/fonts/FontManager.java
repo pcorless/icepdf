@@ -767,7 +767,7 @@ public class FontManager {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
                 if (name.contains(familyName) ||
-                        familyName.contains(name) ||
+//                        familyName.contains(name) ||
                         fontName.toLowerCase().contains(baseName)) {
                     style = (Integer) fontData[2];
                     boolean found = false;
