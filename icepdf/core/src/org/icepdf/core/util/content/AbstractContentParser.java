@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -656,7 +656,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 // a MS office bug where the first element of the array isn't scaled to
                 // user space.
                 if (dashArray.length > 1 && dashArray[0] != 0 &&
-                        dashArray[0] < dashArray[1] / 10000 ){
+                        dashArray[0] < dashArray[1] / 10000) {
                     dashArray[0] = dashArray[1];
                 }
             }
@@ -1666,7 +1666,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 // first pattern colour or the uncolour.
                 if ((tilingPattern.getbBoxMod() != null &&
                         (tilingPattern.getbBoxMod().getWidth() > 1 ||
-                        tilingPattern.getbBoxMod().getHeight() > 1))) {
+                                tilingPattern.getbBoxMod().getHeight() > 1))) {
                     shapes.add(new TilingPatternDrawCmd(tilingPattern));
                 } else {
                     // draw partial fill colour
@@ -1765,7 +1765,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 // first pattern colour or the uncolour.
                 if (tilingPattern.getbBoxMod() != null &&
                         (tilingPattern.getbBoxMod().getWidth() >= 1 ||
-                        tilingPattern.getbBoxMod().getHeight() >= 1)) {
+                                tilingPattern.getbBoxMod().getHeight() >= 1)) {
                     shapes.add(new TilingPatternDrawCmd(tilingPattern));
                 } else {
                     // draw partial fill colour
