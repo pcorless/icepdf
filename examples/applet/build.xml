@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2014 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
@@ -100,6 +100,16 @@
                                    value="${release.type} ${version.primary}.${version.secondary}.${version.tertiary}_${build.number} (${buildtime})"/>
                         <attribute name="Implementation-Vendor"
                                    value="${company}"/>
+                        <attribute name="Permissions"
+                                   value="all-permissions"/>
+                        <attribute name="Codebase"
+                                   value="http://*.icesoft.org"/>
+                        <attribute name="Application-Name"
+                                   value="ICEpdf Viewer RI"/>
+                        <attribute name="Application-Library-Allowable-Codebase"
+                                   value="http://*.icesoft.org"/>
+                        <attribute name="Trusted-Library"
+                                   value="true"/>
                     </section>
                 </manifest>
             </jar>
