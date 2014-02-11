@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -125,15 +125,15 @@ public abstract class PColorSpace extends Dictionary {
                     PatternColor patternColour = new PatternColor(library, null);
                     if (v.size() > 1) {
                         Object tmp = v.get(1);
-                        if ( tmp instanceof Reference){
+                        if (tmp instanceof Reference) {
                             tmp = library.getObject((Reference) v.get(1));
-                            if (tmp instanceof PColorSpace){
-                                patternColour.setPColorSpace((PColorSpace)tmp);
-                            }else if (tmp instanceof HashMap){
+                            if (tmp instanceof PColorSpace) {
+                                patternColour.setPColorSpace((PColorSpace) tmp);
+                            } else if (tmp instanceof HashMap) {
                                 patternColour.setPColorSpace(
                                         getColorSpace(library, tmp));
                             }
-                        }else{
+                        } else {
                             patternColour.setPColorSpace(
                                     getColorSpace(library,
                                             getHashMap(library, v.get(1))));
@@ -172,7 +172,7 @@ public abstract class PColorSpace extends Dictionary {
             entries = (HashMap) obj;
         } else if (obj instanceof Reference) {
             obj = library.getObject((Reference) obj);
-            if (obj instanceof HashMap){
+            if (obj instanceof HashMap) {
                 entries = (HashMap) obj;
             }
         }

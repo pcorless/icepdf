@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -208,7 +208,7 @@ public class StandardSecurityHandler extends SecurityHandler {
         CryptFilterEntry cryptFilter = null;
         if (decodeParams != null) {
             Name filterName = (Name) decodeParams.get(NAME_KEY);
-            if (filterName != null){
+            if (filterName != null) {
                 // identity means don't use the cryprt filter or encryption at all
                 // for the stream.
                 if (filterName.equals(IDENTITY_KEY)) {
