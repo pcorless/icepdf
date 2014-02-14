@@ -23,7 +23,10 @@ import org.icepdf.core.util.Utils;
 import java.util.HashMap;
 
 /**
+ * LZWFlateBaseDecode contains common Predictor logic for both LZW and Flate
+ * decode compression algorithms.
  *
+ * @since 5.0.6
  */
 public abstract class LZWFlateBaseDecode extends ChunkingInputStream {
 
@@ -82,6 +85,7 @@ public abstract class LZWFlateBaseDecode extends ChunkingInputStream {
     protected static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
     protected static final Name EARLY_CHANGE_VALUE = new Name("EarlyChange");
 
+    // Common LZW and Flat dictionary entries
     protected int predictor;
     protected int numComponents;
     protected int bitsPerComponent;
@@ -132,7 +136,12 @@ public abstract class LZWFlateBaseDecode extends ChunkingInputStream {
         }
     }
 
-
+    /**
+     * Apply predictor logic to buffer[] using  aboveBuffer[] from previous pass.
+     *
+     * @param numRead       number of bytes read in last pass.
+     * @param currPredictor predictor to apply to buffer data.
+     */
     protected void applyPredictor(int numRead, int currPredictor) {
         // loop back over the buffer and update with predicted values.
         for (int i = 0; i < numRead; i++) {
@@ -143,13 +152,13 @@ public abstract class LZWFlateBaseDecode extends ChunkingInputStream {
             // For current row, derive each byte from byte left-by-bpp
             else if (currPredictor == FLATE_PREDICTOR_PNG_SUB) {
                 if ((i - bytesPerPixel) >= 0) {
-                    buffer[i] += (((int) buffer[(i - bytesPerPixel)]) & 0xFF);
+                    buffer[i] += applyLeftPredictor(buffer, bytesPerPixel, i);
                 }
             }
             // For current row, derive each byte from byte above
             else if (currPredictor == FLATE_PREDICTOR_PNG_UP) {
                 if (aboveBuffer != null) {
-                    buffer[i] += aboveBuffer[i];
+                    buffer[i] += applyAbovePredictor(aboveBuffer, i);
                 }
             }
             // For current row, derive each byte from average of byte left-by-bpp and byte above
@@ -158,11 +167,11 @@ public abstract class LZWFlateBaseDecode extends ChunkingInputStream {
                 // From RFC 2083 (PNG), sum with no overflow, using >= 9 bit arithmatic
                 int left = 0;
                 if ((i - bytesPerPixel) >= 0) {
-                    left = (((int) buffer[(i - bytesPerPixel)]) & 0xFF);
+                    left = applyLeftPredictor(buffer, bytesPerPixel, i);
                 }
                 int above = 0;
                 if (aboveBuffer != null) {
-                    above = (((int) aboveBuffer[i]) & 0xFF);
+                    above = applyAbovePredictor(aboveBuffer, i);
                 }
                 int sum = left + above;
                 byte avg = (byte) ((sum >>> 1) & 0xFF);
@@ -183,15 +192,15 @@ public abstract class LZWFlateBaseDecode extends ChunkingInputStream {
                 //     return aboveLeft
                 int left = 0;
                 if ((i - bytesPerPixel) >= 0) {
-                    left = (((int) buffer[(i - bytesPerPixel)]) & 0xFF);
+                    left = applyLeftPredictor(buffer, bytesPerPixel, i);
                 }
                 int above = 0;
                 if (aboveBuffer != null) {
-                    above = (((int) aboveBuffer[i]) & 0xFF);
+                    above = applyAbovePredictor(aboveBuffer, i);
                 }
                 int aboveLeft = 0;
                 if ((i - bytesPerPixel) >= 0 && aboveBuffer != null) {
-                    aboveLeft = (((int) aboveBuffer[i - bytesPerPixel]) & 0xFF);
+                    aboveLeft = applyAboveLeftPredictor(aboveBuffer, bytesPerPixel, i);
                 }
                 int p = left + above - aboveLeft;
                 int pLeft = Math.abs(p - left);
@@ -205,5 +214,17 @@ public abstract class LZWFlateBaseDecode extends ChunkingInputStream {
                 buffer[i] += ((byte) (paeth & 0xFF));
             }
         }
+    }
+
+    private static int applyLeftPredictor(byte[] buffer, int bytesPerPixel, int i) {
+        return (((int) buffer[(i - bytesPerPixel)]) & 0xFF);
+    }
+
+    private static int applyAbovePredictor(byte[] aboveBuffer, int i) {
+        return (((int) aboveBuffer[i]) & 0xFF);
+    }
+
+    private static int applyAboveLeftPredictor(byte[] aboveBuffer, int bytesPerPixel, int i) {
+        return (((int) aboveBuffer[i - bytesPerPixel]) & 0xFF);
     }
 }
