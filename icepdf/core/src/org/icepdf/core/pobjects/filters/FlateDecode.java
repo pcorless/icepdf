@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects.filters;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -30,137 +28,32 @@ import java.util.zip.InflaterInputStream;
  * @since 2.0
  */
 
-public class FlateDecode extends ChunkingInputStream {
-
-
-    private static int DEFAULT_BUFFER_SIZE;
-
-    static {
-        DEFAULT_BUFFER_SIZE = Defs.sysPropertyInt("org.icepdf.core.flateDecode.bufferSize",
-                16384);
-    }
-
-    /**
-     * No predictor function is used
-     */
-    private static final int LZW_FLATE_PREDICTOR_NONE = 1;
-
-    /**
-     * For every row, each component is derived from corresponding component in entry to left
-     */
-    private static final int LZW_FLATE_PREDICTOR_TIFF_2 = 2;
-
-    /**
-     * For current row, PNG predictor to do nothing
-     */
-    private static final int LZW_FLATE_PREDICTOR_PNG_NONE = 10;
-
-    /**
-     * For current row, derive each byte from byte left-by-bpp
-     */
-    private static final int LZW_FLATE_PREDICTOR_PNG_SUB = 11;
-
-    /**
-     * For current row, derive each byte from byte above
-     */
-    private static final int LZW_FLATE_PREDICTOR_PNG_UP = 12;
-
-    /**
-     * For current row, derive each byte from average of byte left-by-bpp and byte above
-     */
-    private static final int LZW_FLATE_PREDICTOR_PNG_AVG = 13;
-
-    /**
-     * For current row, derive each byte from non-linear function of byte left-by-bpp and byte above and byte left-by-bpp of above
-     */
-    private static final int LZW_FLATE_PREDICTOR_PNG_PAETH = 14;
-
-    /**
-     * When given in DecodeParms dict, in stream dict, means first byte of each row is row's predictor
-     */
-    private static final int LZW_FLATE_PREDICTOR_PNG_OPTIMUM = 15;
-
-    public static final Name DECODE_PARMS_VALUE = new Name("DecodeParms");
-    public static final Name PREDICTOR_VALUE = new Name("Predictor");
-    public static final Name WIDTH_VALUE = new Name("Width");
-    public static final Name COLUMNS_VALUE = new Name("Columns");
-    public static final Name COLORS_VALUE = new Name("Colors");
-    public static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
-
+public class FlateDecode extends LZWFlateBaseDecode {
 
     private InputStream originalInputKeptSolelyForDebugging;
-    private int width;
-    private int numComponents;
-    private int bitsPerComponent;
-    private int bpp = 1;            // From RFC 2083 (PNG), it's bytes per pixel, rounded up to 1
-    private int predictor;
-    private byte[] aboveBuffer;
-
 
     public FlateDecode(Library library, HashMap props, InputStream input) {
-        super();
+
+        super(library, props);
         originalInputKeptSolelyForDebugging = input;
-        width = 0;
-        numComponents = 0;
-        bitsPerComponent = 0;
-        bpp = 1;
 
+        // Make buffer exactly large enough for one row of data (without predictor)
         int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
-
-        // get decode parameters from stream properties
-        HashMap decodeParmsDictionary = library.getDictionary(props, DECODE_PARMS_VALUE);
-        predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
-        if (predictor != LZW_FLATE_PREDICTOR_NONE && predictor != LZW_FLATE_PREDICTOR_TIFF_2 &&
-                predictor != LZW_FLATE_PREDICTOR_PNG_NONE && predictor != LZW_FLATE_PREDICTOR_PNG_SUB &&
-                predictor != LZW_FLATE_PREDICTOR_PNG_UP && predictor != LZW_FLATE_PREDICTOR_PNG_AVG &&
-                predictor != LZW_FLATE_PREDICTOR_PNG_PAETH && predictor != LZW_FLATE_PREDICTOR_PNG_OPTIMUM) {
-            predictor = LZW_FLATE_PREDICTOR_NONE;
-        }
-//System.out.println("predictor: " + predictor);
-        if (predictor != LZW_FLATE_PREDICTOR_NONE) {
-            Number widthNumber = library.getNumber(props, WIDTH_VALUE);
-            if (widthNumber != null)
-                width = widthNumber.intValue();
-            else
-                width = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
-//System.out.println("Width: " + width);
-            //int height = (int) library.getFloat(entries, "Height");
-
-            // Since DecodeParms.BitsPerComponent has a default value, I don't think we'd
-            //   look at entries.ColorSpace to know the number of components. But, here's the info:
-            //   /ColorSpace /DeviceGray: 1 comp, /DeviceRBG: 3 comps, /DeviceCMYK: 4 comps, /DeviceN: N comps
-            // I'm going to extend that to mean I won't look at entries.BitsPerComponent either
-
-            numComponents = 1;    // DecodeParms.Colors: 1,2,3,4  Default=1
-            bitsPerComponent = 8; // DecodeParms.BitsPerComponent: 1,2,4,8,16  Default=8
-
-            Object numComponentsDecodeParmsObj = library.getObject(decodeParmsDictionary, COLORS_VALUE);
-            if (numComponentsDecodeParmsObj instanceof Number) {
-                numComponents = ((Number) numComponentsDecodeParmsObj).intValue();
-//System.out.println("numComponents: " + numComponents);
-            }
-            Object bitsPerComponentDecodeParmsObj = library.getObject(decodeParmsDictionary, BITS_PER_COMPONENT_VALUE);
-            if (bitsPerComponentDecodeParmsObj instanceof Number) {
-                bitsPerComponent = ((Number) bitsPerComponentDecodeParmsObj).intValue();
-//System.out.println("bitsPerComponent: " + bitsPerComponent);
-            }
-
-            bpp = Math.max(1, Utils.numBytesToHoldBits(numComponents * bitsPerComponent));
-//System.out.println("bpp: " + bpp);
-
-            // Make buffer exactly large enough for one row of data (without predictor)
+        if (predictor != FLATE_PREDICTOR_NONE) {
             intermediateBufferSize =
                     Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
-//System.out.println("intermediateBufferSize: " + intermediateBufferSize);
         }
+        // last row of data above our current buffer
+        aboveBuffer = new byte[intermediateBufferSize];
+        setBufferSize(intermediateBufferSize);
 
         // Create the inflater input stream which will do the encoding
         setInputStream(new InflaterInputStream(input));
-        setBufferSize(intermediateBufferSize);
-        aboveBuffer = new byte[intermediateBufferSize];
+
     }
 
     protected int fillInternalBuffer() throws IOException {
+
         // Swap buffers, so that aboveBuffer is what buffer just was
         byte[] temp = aboveBuffer;
         aboveBuffer = buffer;
@@ -168,16 +61,17 @@ public class FlateDecode extends ChunkingInputStream {
 
         // If there's no predictor, then do a block at a time,
         // Else if there is a predictor, do a row at a time
-
-        if (predictor == LZW_FLATE_PREDICTOR_NONE) {
+        if (predictor == FLATE_PREDICTOR_NONE) {
             int numRead = fillBufferFromInputStream();
-            if (numRead <= 0)
+            if (numRead <= 0) {
                 return -1;
+            }
             return numRead;
-        } else if (predictor == LZW_FLATE_PREDICTOR_TIFF_2) {
+        } else if (predictor == FLATE_PREDICTOR_TIFF_2) {
             int numRead = fillBufferFromInputStream();
-            if (numRead <= 0)
+            if (numRead <= 0) {
                 return -1;
+            }
             if (bitsPerComponent == 8) {
                 for (int i = 0; i < numRead; i++) {
                     int prevIndex = i - numComponents;
@@ -187,96 +81,27 @@ public class FlateDecode extends ChunkingInputStream {
                 }
             }
             return numRead;
-
-            // Each component is derived from corresponding component in entry to left
-            //TODO Find an example PDF to develop this functionality against
-        } else if (predictor >= LZW_FLATE_PREDICTOR_PNG_NONE && predictor <= LZW_FLATE_PREDICTOR_PNG_OPTIMUM) {
-            int currPredictor = predictor;
+        }
+        // Each component is derived from corresponding component in entry to left
+        else if (predictor >= FLATE_PREDICTOR_PNG_NONE && predictor <= LZW_FLATE_PREDICTOR_PNG_OPTIMUM) {
+            int currPredictor;
             int cp = in.read();
-            //System.out.println("  PNG predictor.  Row predictor byte: " + cp);
-            if (cp < 0)
-                return -1;
+            if (cp < 0) return -1;
             // I've seen code that conditionally updates currPredictor:
             //   if predictor == LZW_FLATE_PREDICTOR_PNG_OPTIMUM
-            //       currPredictor = cp + LZW_FLATE_PREDICTOR_PNG_NONE
+            //       currPredictor = cp + FLATE_PREDICTOR_PNG_NONE
             //if( predictor == LZW_FLATE_PREDICTOR_PNG_OPTIMUM )
-            currPredictor = cp + LZW_FLATE_PREDICTOR_PNG_NONE;
-//System.out.println("bpp: " + bpp + "  predictor: " + predictor + "  cp: " + cp + "  currPredictor: " + currPredictor);
-            //System.out.println("  PNG predictor.  Row predictor used: " + currPredictor);
+            currPredictor = cp + FLATE_PREDICTOR_PNG_NONE;
 
+            // fill the buffer
             int numRead = fillBufferFromInputStream();
-            if (numRead <= 0)
-                return -1;
-//System.out.println("numRead: " + numRead);
+            if (numRead <= 0) return -1;
 
-            for (int i = 0; i < numRead; i++) {
-//System.out.print(Integer.toHexString( ((int)buffer[i]) & 0xFF) + ":");
-                // For current row, PNG predictor to do nothing
-                if (currPredictor == LZW_FLATE_PREDICTOR_PNG_NONE)
-                    break; // We could continue, but we'd do that numRead times
-                    // For current row, derive each byte from byte left-by-bpp
-                else if (currPredictor == LZW_FLATE_PREDICTOR_PNG_SUB) {
-                    if ((i - bpp) >= 0)
-                        buffer[i] += buffer[(i - bpp)];
-//System.out.print(Integer.toHexString( ((int)buffer[i]) & 0xFF) + "  ");
-                }
-                // For current row, derive each byte from byte above
-                else if (currPredictor == LZW_FLATE_PREDICTOR_PNG_UP) {
-                    if (aboveBuffer != null)
-                        buffer[i] += aboveBuffer[i];
-                }
-                // For current row, derive each byte from average of byte left-by-bpp and byte above
-                else if (currPredictor == LZW_FLATE_PREDICTOR_PNG_AVG) {
-                    // PNG AVG: output(x) = curr_line(x) + floor((curr_line(x-bpp)+above(x))/2)
-                    // From RFC 2083 (PNG), sum with no overflow, using >= 9 bit arithmatic
-                    int left = 0;
-                    if ((i - bpp) >= 0)
-                        left = (((int) buffer[(i - bpp)]) & 0xFF);
-                    int above = 0;
-                    if (aboveBuffer != null)
-                        above = (((int) aboveBuffer[i]) & 0xFF);
-                    int sum = left + above;
-                    byte avg = (byte) ((sum >>> 1) & 0xFF);
-                    buffer[i] += avg;
-                }
-                // For current row, derive each byte from non-linear function of
-                // byte left-by-bpp and byte above and byte left-by-bpp of above
-                else if (currPredictor == LZW_FLATE_PREDICTOR_PNG_PAETH) {
-                    // From RFC 2083 (PNG)
-                    // PNG PAETH:  output(x) = curr_line(x) + PaethPredictor(curr_line(x-bpp), above(x), above(x-bpp))
-                    //   PaethPredictor(left, above, aboveLeft)
-                    //     p          = left + above - aboveLeft
-                    //     pLeft      = abs(p - left)
-                    //     pAbove     = abs(p - above)
-                    //     pAboveLeft = abs(p - aboveLeft)
-                    //     if( pLeft <= pAbove && pLeft <= pAboveLeft ) return left
-                    //     if( pAbove <= pAboveLeft ) return above
-                    //     return aboveLeft
-                    int left = 0;
-                    if ((i - bpp) >= 0)
-                        left = (((int) buffer[(i - bpp)]) & 0xFF);
-                    int above = 0;
-                    if (aboveBuffer != null)
-                        above = (((int) aboveBuffer[i]) & 0xFF);
-                    int aboveLeft = 0;
-                    if ((i - bpp) >= 0 && aboveBuffer != null)
-                        aboveLeft = (((int) aboveBuffer[i - bpp]) & 0xFF);
-                    int p = left + above - aboveLeft;
-                    int pLeft = Math.abs(p - left);
-                    int pAbove = Math.abs(p - above);
-                    int pAboveLeft = Math.abs(p - aboveLeft);
-                    int paeth = ((pLeft <= pAbove && pLeft <= pAboveLeft)
-                            ? left
-                            : ((pAbove <= pAboveLeft)
-                            ? above
-                            : aboveLeft));
-                    buffer[i] += ((byte) (paeth & 0xFF));
-                }
-            }
-//System.out.println();
+            // apply predictor logic
+            applyPredictor(numRead, currPredictor);
+
             return numRead;
         }
-
         return -1;
     }
 

@@ -16,8 +16,8 @@
 package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.io.BitStream;
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,34 +27,66 @@ import java.util.Stack;
  * @author Mark Collette
  * @since 2.0
  */
-public class LZWDecode extends ChunkingInputStream {
+public class LZWDecode extends LZWFlateBaseDecode {
 
-    public static final Name DECODEPARMS_KEY = new Name("DecodeParms");
-    public static final Name EARLYCHANGE_KEY = new Name("EarlyChange");
+    // code shall represent a single character of input data (0-255).
 
+    // clear-table marking
+    private static final int CLEAR_TABLE_MARKER = 256;
+
+    // end of data marker
+    private static final int END_OF_DATA_MARKER = 257;
+
+    // table entry marker
+    private static final int TABLE_ENTRY_MARKER = 258;
 
     private BitStream inb;
+    /**
+     * An indication of when to increase the code length. If the value of this entry is 0,
+     * code length increases shall be postponed as long as possible. If the value is 1,
+     * code length increases shall occur one code early. This parameter is included because
+     * LZW sample code distributed by some vendors increases the code length one code earlier
+     * than necessary. Default value: 1.
+     */
     private int earlyChange;
+
     private int code;
     private int old_code;
     private boolean firstTime;
 
+    // codes range from 9 to 12 bytes.
     private int code_len;
     private int last_code;
     private Code[] codes;
 
 
     public LZWDecode(BitStream inb, Library library, HashMap entries) {
-        this.inb = inb;
+        super(library, entries);
 
+        this.inb = inb;
         this.earlyChange = 1; // Default value
-        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODEPARMS_KEY);
+        // look for earlyChange in teh decode params first.
+        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODE_PARMS_VALUE);
         if (decodeParmsDictionary != null) {
-            Number earlyChangeNumber = library.getNumber(decodeParmsDictionary, EARLYCHANGE_KEY);
+            Number earlyChangeNumber = library.getNumber(decodeParmsDictionary, EARLY_CHANGE_VALUE);
             if (earlyChangeNumber != null) {
                 this.earlyChange = earlyChangeNumber.intValue();
             }
         }
+        // double check early change isn't in the base dictionary.
+        Number earlyChangeNumber = library.getNumber(decodeParmsDictionary, EARLY_CHANGE_VALUE);
+        if (earlyChangeNumber != null) {
+            this.earlyChange = earlyChangeNumber.intValue();
+        }
+
+        // Make buffer exactly large enough for one row of data (without predictor)
+        int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
+        if (predictor != FLATE_PREDICTOR_NONE) {
+            intermediateBufferSize =
+                    Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
+        }
+        aboveBuffer = new byte[intermediateBufferSize];
+        setBufferSize(intermediateBufferSize);
 
         code = 0;
         old_code = 0;
@@ -64,54 +96,57 @@ public class LZWDecode extends ChunkingInputStream {
     }
 
     protected int fillInternalBuffer() throws IOException {
+
         int numRead = 0;
         // start decompression,  haven't tried to optimized this one yet for
         // speed or for memory.
-
         if (firstTime) {
             firstTime = false;
             old_code = code = inb.getBits(code_len);
-        } else if (inb.atEndOfFile())
+        } else if (inb.atEndOfFile()) {
             return -1;
+        }
 
+        // Swap buffers, so that aboveBuffer is what buffer just was
+        byte[] temp = aboveBuffer;
+        aboveBuffer = buffer;
+        buffer = temp;
+
+        Stack stack = new Stack();
+        Code c;
         do {
-            if (code == 256) {
+            if (code == CLEAR_TABLE_MARKER) {
                 initCodeTable();
-            } else if (code == 257) {
+            } else if (code == END_OF_DATA_MARKER) {
                 break;
             } else {
                 if (codes[code] != null) {
-                    Stack stack = new Stack();
+                    stack.clear();
                     codes[code].getString(stack);
-                    Code c = (Code) stack.pop();
+                    c = (Code) stack.pop();
                     addToBuffer(c.c, numRead);
                     numRead++;
-                    //System.err.println((char)c.c);
                     byte first = c.c;
                     while (!stack.empty()) {
                         c = (Code) stack.pop();
                         addToBuffer(c.c, numRead);
                         numRead++;
-                        //System.err.println((char)c.c);
                     }
-                    //							while (codes[last_code]!=null) last_code++;
+                    // while (codes[last_code]!=null) last_code++;
                     codes[last_code++] = new Code(codes[old_code], first);
                 } else {
-                    //System.err.println("MISS: "+last_code+" "+code);
                     if (code != last_code)
                         throw new RuntimeException("LZWDecode failure");
-                    Stack stack = new Stack();
+                    stack.clear();
                     codes[old_code].getString(stack);
-                    Code c = (Code) stack.pop();
+                    c = (Code) stack.pop();
                     addToBuffer(c.c, numRead);
                     numRead++;
-                    //System.err.println((char)c.c);
                     byte first = c.c;
                     while (!stack.empty()) {
                         c = (Code) stack.pop();
                         addToBuffer(c.c, numRead);
                         numRead++;
-                        //System.err.println((char)c.c);
                     }
                     addToBuffer(first, numRead);
                     numRead++;
@@ -120,7 +155,6 @@ public class LZWDecode extends ChunkingInputStream {
                 }
             }
             if (code_len < 12 && last_code == (1 << code_len) - earlyChange) {
-                //System.err.println(last_code+" "+code_len);
                 code_len++;
             }
             old_code = code;
@@ -130,15 +164,33 @@ public class LZWDecode extends ChunkingInputStream {
                 break;
         } while (numRead < (buffer.length - 512));
 
+        // buffer is complete so we can no try to apply the predictor value.
+        if (predictor >= FLATE_PREDICTOR_PNG_NONE && predictor <= LZW_FLATE_PREDICTOR_PNG_OPTIMUM) {
+//            int currPredictor;
+//            int cp = in.read();
+//            if (cp < 0) return -1;
+//            currPredictor = cp + FLATE_PREDICTOR_PNG_NONE;
+            int currPredictor = predictor;
+
+            // apply predictor logic
+//            if (numRead < (buffer.length - 512))
+//                applyPredictor(numRead, currPredictor);
+        }
+
         return numRead;
     }
 
     private void initCodeTable() {
         code_len = 9;
-        last_code = 257;
+        last_code = END_OF_DATA_MARKER;
+        // The first output code that is 10 bits long shall be the one following
+        // the creation of table entry 511, and similarly for 11 (1023) and 12 (2047) bits.
+        // Codes shall never be longer than 12 bits; therefore, entry 4095 is
+        // the last entry of the LZW table.
         codes = new Code[4096];
-        for (int i = 0; i < 256; i++)
+        for (int i = 0; i < CLEAR_TABLE_MARKER; i++) {
             codes[i] = new Code(null, (byte) i);
+        }
     }
 
     private void addToBuffer(byte b, int offset) {
@@ -146,27 +198,25 @@ public class LZWDecode extends ChunkingInputStream {
             byte[] bufferNew = new byte[buffer.length * 2];
             System.arraycopy(buffer, 0, bufferNew, 0, buffer.length);
             buffer = bufferNew;
+//            System.out.println();
         }
         buffer[offset] = b;
     }
 
-
     public void close() throws IOException {
         super.close();
-
         if (inb != null) {
             inb.close();
             inb = null;
         }
     }
 
-
     /**
      * Utility class for decode methods.
      */
     private static class Code {
-        Code prefix;
-        byte c;
+        private Code prefix;
+        private byte c;
 
         Code(Code p, byte cc) {
             prefix = p;
@@ -175,8 +225,9 @@ public class LZWDecode extends ChunkingInputStream {
 
         void getString(Stack s) {
             s.push(this);
-            if (prefix != null)
+            if (prefix != null) {
                 prefix.getString(s);
+            }
         }
     }
 }
