@@ -289,13 +289,15 @@ public class OutlineItem extends Dictionary {
             Reference oldNextReference;
             OutlineItem outLineItem;
             HashMap dictionary;
+            Object tmp;
             // iterate through children and see if then have children. 
             while (nextReference != null) {
-
                 // result the outline dictionary
-                dictionary = (HashMap) library.getObject(nextReference);
-                if (dictionary == null) {
+                tmp = library.getObject(nextReference);
+                if (tmp == null || !(tmp instanceof HashMap)) {
                     break;
+                } else {
+                    dictionary = (HashMap) tmp;
                 }
                 // create the new outline
                 outLineItem = new OutlineItem(library, dictionary);
