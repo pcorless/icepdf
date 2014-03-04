@@ -115,6 +115,7 @@
             description="Creates ICEpdf core and viewer jars.">
         <ice:subant target="jar">
             <filelist dir="." files="core, viewer"/>
+            <propertyset refid="product.info"/>
         </ice:subant>
     </target>
 
