@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects.filters;
 import org.icepdf.core.io.BitStream;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,23 +27,11 @@ import java.util.Stack;
  * @author Mark Collette
  * @since 2.0
  */
-public class LZWDecode extends LZWFlateBaseDecode {
-
-    int currentRow = 0;
+public class LZWDecode extends ChunkingInputStream {
 
     public static final Name DECODEPARMS_KEY = new Name("DecodeParms");
     public static final Name EARLYCHANGE_KEY = new Name("EarlyChange");
 
-    // code shall represent a single character of input data (0-255).
-
-    // clear-table marking
-    private static final int CLEAR_TABLE_MARKER = 256;
-
-    // end of data marker
-    private static final int END_OF_DATA_MARKER = 257;
-
-    // table entry marker
-    private static final int TABLE_ENTRY_MARKER = 258;
 
     private BitStream inb;
     private int earlyChange;
@@ -58,7 +45,6 @@ public class LZWDecode extends LZWFlateBaseDecode {
 
 
     public LZWDecode(BitStream inb, Library library, HashMap entries) {
-        super(library, entries);
         this.inb = inb;
 
         this.earlyChange = 1; // Default value
@@ -69,129 +55,98 @@ public class LZWDecode extends LZWFlateBaseDecode {
                 this.earlyChange = earlyChangeNumber.intValue();
             }
         }
-        // Make buffer exactly large enough for one row of data (without predictor)
-        int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
-        if (predictor != FLATE_PREDICTOR_NONE) {
-            intermediateBufferSize =
-                    Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
-        }
-        aboveBuffer = new byte[intermediateBufferSize];
-        setBufferSize(intermediateBufferSize);
 
         code = 0;
         old_code = 0;
         firstTime = true;
         initCodeTable();
+        setBufferSize(4096);
     }
 
     protected int fillInternalBuffer() throws IOException {
         int numRead = 0;
-        // start decompression,
-
-        buffer = new byte[aboveBuffer.length + 1];
+        // start decompression,  haven't tried to optimized this one yet for
+        // speed or for memory.
 
         if (firstTime) {
             firstTime = false;
             old_code = code = inb.getBits(code_len);
-        } else if (inb.atEndOfFile()) {
+        } else if (inb.atEndOfFile())
             return -1;
-        }
 
         do {
-            // clear dictionary
             if (code == 256) {
                 initCodeTable();
-            }
-            // stop, we're done
-            else if (code == 257) {
+            } else if (code == 257) {
                 break;
             } else {
-                // have a code already in dictionary
                 if (codes[code] != null) {
                     Stack stack = new Stack();
                     codes[code].getString(stack);
                     Code c = (Code) stack.pop();
                     addToBuffer(c.c, numRead);
                     numRead++;
-
+                    //System.err.println((char)c.c);
                     byte first = c.c;
-                    while (!stack.empty() && numRead < buffer.length) {
+                    while (!stack.empty()) {
                         c = (Code) stack.pop();
                         addToBuffer(c.c, numRead);
                         numRead++;
+                        //System.err.println((char)c.c);
                     }
+                    //							while (codes[last_code]!=null) last_code++;
                     codes[last_code++] = new Code(codes[old_code], first);
-                }
-                // create the new code entry
-                else {
-                    if (code != last_code) {
+                } else {
+                    //System.err.println("MISS: "+last_code+" "+code);
+                    if (code != last_code)
                         throw new RuntimeException("LZWDecode failure");
-                    }
                     Stack stack = new Stack();
                     codes[old_code].getString(stack);
                     Code c = (Code) stack.pop();
                     addToBuffer(c.c, numRead);
                     numRead++;
+                    //System.err.println((char)c.c);
                     byte first = c.c;
-                    while (!stack.empty() && numRead < buffer.length) {
+                    while (!stack.empty()) {
                         c = (Code) stack.pop();
                         addToBuffer(c.c, numRead);
                         numRead++;
+                        //System.err.println((char)c.c);
                     }
-                    if (numRead < buffer.length) {
-                        addToBuffer(first, numRead);
-                        numRead++;
-                    }
+                    addToBuffer(first, numRead);
+                    numRead++;
                     codes[code] = new Code(codes[old_code], first);
                     last_code++;
                 }
             }
             if (code_len < 12 && last_code == (1 << code_len) - earlyChange) {
+                //System.err.println(last_code+" "+code_len);
                 code_len++;
             }
             old_code = code;
             code = inb.getBits(code_len);
 
-            if (inb.atEndOfFile()) {
+            if (inb.atEndOfFile())
                 break;
-            }
-
         } while (numRead < (buffer.length - 512));
-        currentRow++;
-        /*
-        if (predictor >= FLATE_PREDICTOR_PNG_NONE && predictor <= LZW_FLATE_PREDICTOR_PNG_OPTIMUM) {
-            // grab the predictor type for this row.
-            int currPredictor;
-            int cp = (buffer[0] & 0xff);
-            if (cp < 0) return -1;
-            currPredictor = cp + FLATE_PREDICTOR_PNG_NONE;
 
-            // we need to trim the buffer and remove the predictor value.
-            byte[] tmp = new byte[aboveBuffer.length];
-            System.arraycopy(buffer,1,tmp,0, tmp.length - 1 );
-            buffer = tmp;
-//
-//            // apply predictor logic
-            applyPredictor(numRead-1, currPredictor);
-
-            // Swap buffers, so that aboveBuffer is what buffer just was
-            aboveBuffer = buffer;
-
-        }
-        */
-        return numRead - 1;
+        return numRead;
     }
 
     private void initCodeTable() {
         code_len = 9;
         last_code = 257;
         codes = new Code[4096];
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < 256; i++)
             codes[i] = new Code(null, (byte) i);
-        }
     }
 
     private void addToBuffer(byte b, int offset) {
+        if (offset >= buffer.length) { // Should never happen
+            byte[] bufferNew = new byte[buffer.length * 2];
+            System.arraycopy(buffer, 0, bufferNew, 0, buffer.length);
+            buffer = bufferNew;
+        }
         buffer[offset] = b;
     }
 
@@ -220,9 +175,8 @@ public class LZWDecode extends LZWFlateBaseDecode {
 
         void getString(Stack s) {
             s.push(this);
-            if (prefix != null) {
+            if (prefix != null)
                 prefix.getString(s);
-            }
         }
     }
 }
