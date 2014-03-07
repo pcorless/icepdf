@@ -211,7 +211,7 @@ public class PageText implements TextSelect {
 
     public StringBuilder getSelected() {
         StringBuilder selectedText = new StringBuilder();
-        Collections.sort(pageLines, new TextPositionComparator());
+        Collections.sort(pageLines, new LinePositionComparator());
         for (LineText lineText : pageLines) {
             selectedText.append(lineText.getSelected());
         }

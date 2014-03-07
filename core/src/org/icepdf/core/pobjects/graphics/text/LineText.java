@@ -74,7 +74,7 @@ public class LineText extends AbstractText implements TextSelect {
             currentWord = null;
         }
         //  add punctuation as new words
-        else if (WordText.detectPunctuation(sprite)) {
+        else if (WordText.detectPunctuation(sprite, currentWord)) {
             // add as a new word, nothing special otherwise
             WordText newWord = new WordText();
             newWord.setWhiteSpace(true);
@@ -182,7 +182,7 @@ public class LineText extends AbstractText implements TextSelect {
      */
     public StringBuilder getSelected() {
         StringBuilder selectedText = new StringBuilder();
-        Collections.sort(words, new TextPositionComparator());
+        Collections.sort(words, new WordPositionComparator());
 
         for (WordText word : words) {
             selectedText.append(word.getSelected());

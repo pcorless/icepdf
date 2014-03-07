@@ -65,6 +65,8 @@ public class WordText extends AbstractText implements TextSelect {
     private StringBuilder text;
     // is glyph white space.
     private boolean isWhiteSpace;
+    // reference to last added text.
+    private int previousGlyphText;
 
     public WordText() {
         text = new StringBuilder();
@@ -83,10 +85,8 @@ public class WordText extends AbstractText implements TextSelect {
         if (currentGlyph != null) {
             Rectangle2D.Float bounds1 = currentGlyph.getBounds();
             Rectangle.Float bounds2 = sprite.getBounds();
-            float space = bounds2.x - (bounds1.x + bounds1.width);
-            if (space <= 0) {
-                return false;
-            }
+            // spaces can be negative if we have a LTR layout.
+            float space = Math.abs(bounds2.x - (bounds1.x + bounds1.width));
             // half previous glyph width will be used to determine a space
             float tolerance = bounds1.width / spaceFraction;
             return space > tolerance;
@@ -95,11 +95,13 @@ public class WordText extends AbstractText implements TextSelect {
         }
     }
 
-    protected static boolean detectPunctuation(GlyphText sprite) {
+    protected static boolean detectPunctuation(GlyphText sprite, WordText currentWord) {
         String glyphText = sprite.getUnicode();
+        // make sure we don't have a decimal, we want to keep double numbers
+        // as one word.
         if (glyphText != null && glyphText.length() > 0) {
             int c = glyphText.charAt(0);
-            return isPunctuation(c);
+            return isPunctuation(c) && !isDigit(currentWord);
         } else {
             return false;
         }
@@ -126,6 +128,15 @@ public class WordText extends AbstractText implements TextSelect {
                 (c == '\n') || (c == '\f'));
     }
 
+    public static boolean isDigit(WordText currentWord) {
+        if (currentWord != null) {
+            int c = currentWord.getPreviousGlyphText();
+            return c >= 48 && c <= 57;
+        } else {
+            return false;
+        }
+    }
+
     protected WordText buildSpaceWord(GlyphText sprite) {
 
         // because we are in a normalized user space we can work with ints
@@ -133,20 +144,36 @@ public class WordText extends AbstractText implements TextSelect {
         Rectangle.Float bounds2 = sprite.getBounds();
         float space = bounds2.x - (bounds1.x + bounds1.width);
 
+
         // max width of previous and next glyph, average can be broken by l or i etc.
         float maxWidth = Math.max(bounds1.width, bounds2.width) / 2f;
         int spaces = (int) (space / maxWidth);
-        spaces = spaces < 1 ? 1 : spaces;
-        float spaceWidth = space / spaces;
+
         // add extra spaces
         WordText whiteSpace = new WordText();
-        double offset = bounds1.x + bounds1.width;
+        double offset;
         GlyphText spaceText;
-
-        Rectangle2D.Float spaceBounds = new Rectangle2D.Float(
-                bounds1.x + bounds1.width,
-                bounds1.y,
-                spaceWidth, bounds1.height);
+        Rectangle2D.Float spaceBounds;
+        // RTL layout
+        float spaceWidth = space / spaces;
+        boolean ltr = true;
+        if (spaces > 0) {
+            offset = bounds1.x + bounds1.width;
+            spaceBounds = new Rectangle2D.Float(
+                    bounds1.x + bounds1.width,
+                    bounds1.y,
+                    spaceWidth, bounds1.height);
+        }
+        // LTR layout
+        else {
+            ltr = false;
+            offset = bounds1.x - bounds1.width;
+            spaces = 1;//Math.abs(spaces);
+            spaceBounds = new Rectangle2D.Float(
+                    bounds.x - spaceWidth,
+                    bounds1.y,
+                    spaceWidth, bounds1.height);
+        }
         // todo: consider just using one space with a wider bound
         // Max out the spaces in the case the spaces value scale factor was
         // not correct.  We can end up with a very large number of spaces being
@@ -159,10 +186,16 @@ public class WordText extends AbstractText implements TextSelect {
                             spaceBounds.width,
                             spaceBounds.height),
                     String.valueOf((char) 32), String.valueOf((char) 32));
-            spaceBounds.x += spaceBounds.width;
+            if (ltr) {
+                spaceBounds.x += spaceBounds.width;
+                offset += spaceWidth;
+            } else {
+                spaceBounds.x -= spaceBounds.width;
+                offset -= spaceWidth;
+            }
             whiteSpace.addText(spaceText);
             whiteSpace.setWhiteSpace(true);
-            offset += spaceWidth;
+
         }
         return whiteSpace;
     }
@@ -182,7 +215,10 @@ public class WordText extends AbstractText implements TextSelect {
         }
 
         // append the text that maps up the sprite
-        text.append(sprite.getUnicode());
+        String unicode = sprite.getUnicode();
+        previousGlyphText = unicode != null && unicode.length() > 0 ?
+                unicode.charAt(0) : 0;
+        text.append(unicode);
     }
 
     public Rectangle2D.Float getBounds() {
@@ -247,6 +283,10 @@ public class WordText extends AbstractText implements TextSelect {
 //        else {
         return text.toString();
 //        }
+    }
+
+    public int getPreviousGlyphText() {
+        return previousGlyphText;
     }
 
     public String toString() {
