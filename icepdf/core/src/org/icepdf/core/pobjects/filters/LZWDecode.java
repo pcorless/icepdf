@@ -67,7 +67,6 @@ public class LZWDecode extends ChunkingInputStream {
         int numRead = 0;
         // start decompression,  haven't tried to optimized this one yet for
         // speed or for memory.
-
         if (firstTime) {
             firstTime = false;
             old_code = code = inb.getBits(code_len);
@@ -128,7 +127,7 @@ public class LZWDecode extends ChunkingInputStream {
 
             if (inb.atEndOfFile())
                 break;
-        } while (numRead < (buffer.length - 512));
+        } while (numRead < buffer.length);
 
         return numRead;
     }

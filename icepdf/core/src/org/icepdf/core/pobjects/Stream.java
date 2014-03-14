@@ -293,6 +293,10 @@ public class Stream extends Dictionary {
                 }
             }
         }
+        // Apply  Predictor Filter logic fo LZW or Flate streams.
+        if (PredictorDecode.isPredictor(library, entries)) {
+            input = new PredictorDecode(input, library, entries);
+        }
 
         return input;
     }
