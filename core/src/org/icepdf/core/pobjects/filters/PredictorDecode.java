@@ -149,34 +149,31 @@ public class PredictorDecode extends ChunkingInputStream {
     protected void applyPredictor(int numRead, int currPredictor) {
         // loop back over the buffer and update with predicted values.
         for (int i = 0; i < numRead; i++) {
+//System.out.print(Integer.toHexString( ((int)buffer[i]) & 0xFF) + ":");
             // For current row, PNG predictor to do nothing
             if (currPredictor == PREDICTOR_PNG_NONE) {
                 break; // We could continue, but we'd do that numRead times
-            }
-            // For current row, derive each byte from byte left-by-bpp
-            else if (currPredictor == PREDICTOR_PNG_SUB) {
-                if ((i - bytesPerPixel) >= 0) {
-                    buffer[i] += applyLeftPredictor(buffer, bytesPerPixel, i);
-                }
+                // For current row, derive each byte from byte left-by-bpp
+            } else if (currPredictor == PREDICTOR_PNG_SUB) {
+                if ((i - bitsPerComponent) >= 0)
+                    buffer[i] += buffer[(i - bitsPerComponent)];
+//System.out.print(Integer.toHexString( ((int)buffer[i]) & 0xFF) + "  ");
             }
             // For current row, derive each byte from byte above
             else if (currPredictor == PREDICTOR_PNG_UP) {
-                if (aboveBuffer != null) {
-                    buffer[i] += applyAbovePredictor(aboveBuffer, i);
-                }
+                if (aboveBuffer != null)
+                    buffer[i] += aboveBuffer[i];
             }
             // For current row, derive each byte from average of byte left-by-bpp and byte above
             else if (currPredictor == PREDICTOR_PNG_AVG) {
                 // PNG AVG: output(x) = curr_line(x) + floor((curr_line(x-bpp)+above(x))/2)
                 // From RFC 2083 (PNG), sum with no overflow, using >= 9 bit arithmatic
                 int left = 0;
-                if ((i - bytesPerPixel) >= 0) {
-                    left = applyLeftPredictor(buffer, bytesPerPixel, i);
-                }
+                if ((i - bitsPerComponent) >= 0)
+                    left = (((int) buffer[(i - bitsPerComponent)]) & 0xFF);
                 int above = 0;
-                if (aboveBuffer != null) {
-                    above = applyAbovePredictor(aboveBuffer, i);
-                }
+                if (aboveBuffer != null)
+                    above = (((int) aboveBuffer[i]) & 0xFF);
                 int sum = left + above;
                 byte avg = (byte) ((sum >>> 1) & 0xFF);
                 buffer[i] += avg;
@@ -195,17 +192,14 @@ public class PredictorDecode extends ChunkingInputStream {
                 //     if( pAbove <= pAboveLeft ) return above
                 //     return aboveLeft
                 int left = 0;
-                if ((i - bytesPerPixel) >= 0) {
-                    left = applyLeftPredictor(buffer, bytesPerPixel, i);
-                }
+                if ((i - bitsPerComponent) >= 0)
+                    left = (((int) buffer[(i - bitsPerComponent)]) & 0xFF);
                 int above = 0;
-                if (aboveBuffer != null) {
-                    above = applyAbovePredictor(aboveBuffer, i);
-                }
+                if (aboveBuffer != null)
+                    above = (((int) aboveBuffer[i]) & 0xFF);
                 int aboveLeft = 0;
-                if ((i - bytesPerPixel) >= 0 && aboveBuffer != null) {
-                    aboveLeft = applyAboveLeftPredictor(aboveBuffer, bytesPerPixel, i);
-                }
+                if ((i - bitsPerComponent) >= 0 && aboveBuffer != null)
+                    aboveLeft = (((int) aboveBuffer[i - bitsPerComponent]) & 0xFF);
                 int p = left + above - aboveLeft;
                 int pLeft = Math.abs(p - left);
                 int pAbove = Math.abs(p - above);
@@ -238,8 +232,7 @@ public class PredictorDecode extends ChunkingInputStream {
             return false;
         }
         int predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
-        if (predictor != PREDICTOR_NONE && predictor != PREDICTOR_TIFF_2 &&
-                predictor != PREDICTOR_PNG_NONE && predictor != PREDICTOR_PNG_SUB &&
+        if (predictor != PREDICTOR_PNG_NONE && predictor != PREDICTOR_PNG_SUB &&
                 predictor != PREDICTOR_PNG_UP && predictor != PREDICTOR_PNG_AVG &&
                 predictor != PREDICTOR_PNG_PAETH && predictor != PREDICTOR_PNG_OPTIMUM) {
             return false;
