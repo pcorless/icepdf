@@ -184,9 +184,6 @@ public class TilingPattern extends Stream implements Pattern {
     //  initiated flag
     private boolean inited;
 
-    // textured paint
-    private TexturePaint texturePaint;
-
     private GraphicsState parentGraphicState;
 
     // cached pattern paint
@@ -322,7 +319,6 @@ public class TilingPattern extends Stream implements Pattern {
                 bBox.getX(), bBox.getY(),
                 bBox.getWidth() == xStep ? bBox.getWidth() : xStep,
                 bBox.getHeight() == yStep ? bBox.getHeight() : yStep);
-        bBoxMod = matrix.createTransformedShape(bBoxMod).getBounds2D();
     }
 
     /**
@@ -335,6 +331,27 @@ public class TilingPattern extends Stream implements Pattern {
      */
     public void paintPattern(Graphics2D g, final AffineTransform base) {
         if (patternPaint == null) {
+
+            // base represents the current page transform, zoom and rotation,
+            // the g.getTransform() will be the state of the current graphics
+            // state.  The matrix however maps from the original page space to
+            // pattern space.  As a result we need draw the tile pattern
+            // appropriately as to take into account the g.getTransform(), as
+            // we can't scale the pattern space easily.
+
+            AffineTransform originalPageSpace;
+            try {
+                originalPageSpace = new AffineTransform(base);
+                originalPageSpace.concatenate(g.getTransform().createInverse());
+            } catch (NoninvertibleTransformException e) {
+                logger.warning("Error creating Tiling pattern transform. ");
+                originalPageSpace = new AffineTransform();
+            }
+
+            // convert to original page space
+            Rectangle2D bBoxMod = matrix.createTransformedShape(this.bBoxMod).getBounds2D();
+            // scale to the current state of g2d.
+            bBoxMod = originalPageSpace.createTransformedShape(bBoxMod).getBounds2D();
 
             int width = (int) bBoxMod.getWidth();
             int height = (int) bBoxMod.getHeight();
@@ -354,9 +371,9 @@ public class TilingPattern extends Stream implements Pattern {
 
             // create the pattern paint before  we paint encase there
             // is some recursive calls during the paint PDF-436
-            patternPaint = new TexturePaint(bi, bBoxMod);
-//            patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
-//                    0, 0, bBoxMod.getWidth(), bBoxMod.getHeight()));
+//            patternPaint = new TexturePaint(bi, bBoxMod);
+            patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
+                    0, 0, bBoxMod.getWidth(), bBoxMod.getHeight()));
             g.setPaint(patternPaint);
 
             // apply current hints
@@ -369,21 +386,21 @@ public class TilingPattern extends Stream implements Pattern {
             canvas.setClip(0, 0, (int) bBoxMod.getWidth(), (int) bBoxMod.getHeight());
 
             // paint the pattern
-            paintPattern(canvas, tilingShapes, base);
+            paintPattern(canvas, tilingShapes, originalPageSpace);
 
             // show it in a frame
 //            final JFrame f = new JFrame(this.toString());
+//            final Rectangle2D bbox2 = bBoxMod;
 //            f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 //            f.getContentPane().add(new JComponent() {
 //                @Override
 //                public void paint(Graphics g_) {
 //                    super.paint(g_);
 //                    Graphics2D g2d = (Graphics2D) g_;
-////                    g2d.scale(2.5, 2.5);
-//                    g2d.drawLine(400,0, 400,800);
-//                    g2d.drawLine(0,400, 800,400);
-//                    g2d.translate(400,400);
-//                    paintPattern(g2d, tilingShapes, base);
+//                    // draw the tile image buffer.
+//                    g2d.drawImage(bi,0,0,null);
+//                    g2d.setColor(Color.GREEN);
+//                    g2d.drawRect(0,0, (int)bbox2.getWidth(), (int)bbox2.getHeight());
 //                }
 //            });
 //            f.setSize(new Dimension(800, 800));
@@ -401,22 +418,18 @@ public class TilingPattern extends Stream implements Pattern {
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
 
-        // apply current parent state
-//        g2d.setTransform(base);
-
         // apply scale an shear but not translation
-        AffineTransform af = // matrix;
-                new AffineTransform(
-                        matrix.getScaleX(),
-                        matrix.getShearY(),
-                        matrix.getShearX(),
-                        matrix.getScaleY(),
-                        0,
-                        0);
-//        AffineTransform af2 = new AffineTransform(parentGraphicState.getCTM());
-        AffineTransform af2 = new AffineTransform();
+        AffineTransform af = new AffineTransform(matrix);
+        AffineTransform af2 = new AffineTransform(base);
         af2.concatenate(af);
-        g2d.transform(af2);
+        af2 = new AffineTransform(
+                af2.getScaleX(),
+                af2.getShearY(),
+                af2.getShearX(),
+                af2.getScaleY(),
+                0,
+                0);
+        g2d.setTransform(af2);
 
         // pain the key pattern
         AffineTransform prePaint = g2d.getTransform();
@@ -464,16 +477,23 @@ public class TilingPattern extends Stream implements Pattern {
 
         // highlight key square.
 //        g2d.setTransform(prePaint);
-//        g2d.translate(-xStep, -yStep);
 //        g2d.setColor(Color.red);
-//        g2d.draw(bBox);
+//        // direction line and bounding box
+//        g2d.fillRect((int)bBox.getX(), (int)bBox.getY(), 10,10);
+//        g2d.drawRect((int)bBox.getX(), (int)bBox.getY(), (int)bBox.getWidth()-1,(int)bBox.getHeight()-1);
+//        // Axis lines
+//        g2d.drawLine(0, 0, 400,400);
+//        g2d.setColor(Color.BLACK);
+//        g2d.drawLine(-400, 0, 400, 0);
+//        g2d.setColor(Color.BLUE);
+//        g2d.drawLine(0,400, 0,-400);
 
         g2d.setTransform(preAf);
     }
 
 
     public Paint getPaint() {
-        return texturePaint;
+        return patternPaint;
     }
 
     public int getPatternType() {
