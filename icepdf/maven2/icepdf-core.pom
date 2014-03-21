@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.icepdf</groupId>
     <artifactId>icepdf-core</artifactId>
-    <version>5.0.1</version>
+    <version>5.0.5_P02</version>
     <packaging>jar</packaging>
     <name>ICEpdf Core</name>
     <url>http://www.icepdf.org</url>
