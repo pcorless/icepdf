@@ -77,6 +77,10 @@ public abstract class AbstractContentParser implements ContentParser {
     // the text base affine transform must be accessible outside the parsTtext method
     protected AffineTransform textBlockBase;
 
+    // when parsing a type3 font we need to keep track of the the scale factor
+    // of the device space ctm.
+    protected float glyph2UserSpaceScale = 1.0f;
+
     // stack to help with the parse
     protected Stack<Object> stack = new Stack<Object>();
 
@@ -700,8 +704,11 @@ public abstract class AbstractContentParser implements ContentParser {
         setStroke(shapes, graphicState);
     }
 
-    protected static void consume_w(GraphicsState graphicState, Stack stack, Shapes shapes) {
-        graphicState.setLineWidth(((Number) stack.pop()).floatValue());
+    protected static void consume_w(GraphicsState graphicState, Stack stack,
+                                    Shapes shapes, float glyph2UserSpaceScale) {
+        // apply any type3 font scalling which is set via the glyph2User space affine transform.
+        float scale = ((Number) stack.pop()).floatValue() * glyph2UserSpaceScale;
+        graphicState.setLineWidth(scale);
         setStroke(shapes, graphicState);
     }
 
@@ -1864,5 +1871,10 @@ public abstract class AbstractContentParser implements ContentParser {
                         alpha);
         shapes.add(new AlphaDrawCmd(alphaComposite));
     }
+
+    public void setGlyph2UserSpaceScale(float scale) {
+        glyph2UserSpaceScale = scale;
+    }
+
 }
 
