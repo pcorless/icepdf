@@ -306,7 +306,7 @@ public class OContentParser extends AbstractContentParser {
                     // Set the line width in the graphics state
                     else if (tok.equals(PdfOps.w_TOKEN) ||
                             tok.equals(PdfOps.LW_TOKEN)) {
-                        consume_w(graphicState, stack, shapes);
+                        consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
                     }
 
                     // Modify the current clipping path by intersecting it with the
@@ -856,7 +856,7 @@ public class OContentParser extends AbstractContentParser {
                 // Set the line width in the graphics state
                 else if (nextToken.equals(PdfOps.w_TOKEN) ||
                         nextToken.equals(PdfOps.LW_TOKEN)) {
-                    consume_w(graphicState, stack, shapes);
+                    consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
                 }
 
                 // Fill Color with ColorSpace

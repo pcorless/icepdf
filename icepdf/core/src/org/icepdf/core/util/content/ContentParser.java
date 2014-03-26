@@ -81,4 +81,13 @@ public interface ContentParser {
      * @throws UnsupportedEncodingException encoding error.
      */
     Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException;
+
+    /**
+     * Sets the scale factor used by some graphic state parameters so that the
+     * to users space CTM scale factor can be applied.  In particular some
+     * Type3 glyphs need to take into account this scaling factor.
+     *
+     * @param scale scale factor to apply to various graphic state parameters.
+     */
+    void setGlyph2UserSpaceScale(float scale);
 }
