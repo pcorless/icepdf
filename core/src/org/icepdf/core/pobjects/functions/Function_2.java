@@ -127,7 +127,7 @@ public class Function_2 extends Function {
             // C0 and C1 should have the same length work through C0 length
             for (int j = 0; j < C0.length; j++) {
                 // apply the function as defined above.
-                yValue = (float) (C0[j] + Math.pow(x[i], N) * (C1[j] - C0[j]));
+                yValue = (float) (C0[j] + Math.pow(Math.abs(x[i]), N) * (C1[j] - C0[j]));
 
                 // Range is optional but if present should be used to clip the output
                 if (range != null)
