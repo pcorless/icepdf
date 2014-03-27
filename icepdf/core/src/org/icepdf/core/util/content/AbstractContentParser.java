@@ -333,7 +333,10 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static void consume_sc(GraphicsState graphicState, Stack stack,
                                      Library library, Resources resources, boolean isTint) {
-        Object o = stack.peek();
+        Object o = null;
+        if (!stack.isEmpty()) {
+            o = stack.peek();
+        }
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
             Name patternName = (Name) stack.pop();
