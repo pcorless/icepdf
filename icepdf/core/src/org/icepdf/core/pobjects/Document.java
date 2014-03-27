@@ -631,8 +631,10 @@ public class Document {
                 } else {
                     // add more trailer data to the original
                     PTrailer nextTrailer = (PTrailer) pdfObject;
-                    documentTrailer.addNextTrailer(nextTrailer);
-                    documentTrailer = nextTrailer;
+                    if (nextTrailer.getPrev() > 0) {
+                        documentTrailer.addNextTrailer(nextTrailer);
+                        documentTrailer = nextTrailer;
+                    }
                 }
             }
         }
