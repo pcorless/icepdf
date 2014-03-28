@@ -977,6 +977,7 @@ public class Page extends Dictionary {
      * @param userZoom     zoom factor specified by the user under which the page will
      *                     be rotated.
      * @return Dimension of width and height of the page represented in point units.
+     *         or null if the boundary box is not defined.
      */
     public PDimension getSize(final int boundary, float userRotation, float userZoom) {
         float totalRotation = getTotalRotation(userRotation);
@@ -1096,7 +1097,7 @@ public class Page extends Dictionary {
      * @return bounds of page after the chain of rules have been applied.
      */
     public PRectangle getPageBoundary(final int specifiedBox) {
-        PRectangle userSpecifiedBox = null;
+        PRectangle userSpecifiedBox;
         // required property
         if (specifiedBox == BOUNDARY_MEDIABOX) {
             userSpecifiedBox = (PRectangle) getMediaBox();
@@ -1107,27 +1108,26 @@ public class Page extends Dictionary {
         }
         // optional, default value is crop box
         else if (specifiedBox == BOUNDARY_BLEEDBOX) {
-            if (bleedBox != null)
-                userSpecifiedBox = (PRectangle) getBleedBox();
+            userSpecifiedBox = (PRectangle) getBleedBox();
         }
         // optional, default value is crop box
         else if (specifiedBox == BOUNDARY_TRIMBOX) {
-            if (trimBox != null)
-                userSpecifiedBox = (PRectangle) getTrimBox();
+            userSpecifiedBox = (PRectangle) getTrimBox();
         }
         // optional, default value is crop box
         else if (specifiedBox == BOUNDARY_ARTBOX) {
-            if (artBox != null)
-                userSpecifiedBox = (PRectangle) getArtBox();
+            userSpecifiedBox = (PRectangle) getArtBox();
         }
         // encase of bad usage, default to crop box
         else {
-            userSpecifiedBox = (PRectangle) getBleedBox();
+            userSpecifiedBox = (PRectangle) getMediaBox();
         }
 
-        // just in case, make sure we return a non null boundary
+        // just in case, make sure we return a non null boundary, and the
+        // media box is marked as required and should be in either this dictionary
+        // or a parent's
         if (userSpecifiedBox == null) {
-            userSpecifiedBox = (PRectangle) getCropBox();
+            userSpecifiedBox = (PRectangle) getMediaBox();
         }
 
         return userSpecifiedBox;
@@ -1267,18 +1267,22 @@ public class Page extends Dictionary {
      * @return media box boundary in user space units.
      */
     public Rectangle2D.Float getMediaBox() {
+        if (mediaBox != null) {
+            return mediaBox;
+        }
         // add all of the pages media box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
         if (boxDimensions != null) {
             mediaBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - MediaBox " + mediaBox);
         }
         // If mediaBox is null check with the parent pages, as media box is inheritable
         if (mediaBox == null) {
             PageTree pageTree = getParent();
             while (pageTree != null && mediaBox == null) {
                 mediaBox = pageTree.getMediaBox();
-                pageTree = pageTree.getParent();
+                if (mediaBox == null) {
+                    pageTree = pageTree.getParent();
+                }
             }
         }
         return mediaBox;
@@ -1298,17 +1302,15 @@ public class Page extends Dictionary {
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
             cropBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - CropBox " + cropBox);
         }
         // If mediaBox is null check with the parent pages, as media box is inheritable
         if (cropBox == null) {
             PageTree pageTree = getParent();
             while (pageTree != null && cropBox == null) {
-                if (pageTree.getCropBox() == null) {
-                    break;
-                }
                 cropBox = pageTree.getCropBox();
-                pageTree = pageTree.getParent();
+                if (cropBox == null) {
+                    pageTree = pageTree.getParent();
+                }
             }
         }
         // Default value of the cropBox is the MediaBox if not set implicitly
@@ -1331,11 +1333,13 @@ public class Page extends Dictionary {
      * @return art box boundary in user space units.
      */
     public Rectangle2D.Float getArtBox() {
+        if (artBox != null) {
+            return artBox;
+        }
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, ARTBOX_KEY));
         if (boxDimensions != null) {
             artBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - ArtBox " + artBox);
         }
         // Default value of the artBox is the bleed if not set implicitly
         if (artBox == null) {
@@ -1351,6 +1355,9 @@ public class Page extends Dictionary {
      * @return bleed box boundary in user space units.
      */
     public Rectangle2D.Float getBleedBox() {
+        if (bleedBox != null) {
+            return bleedBox;
+        }
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, BLEEDBOX_KEY));
         if (boxDimensions != null) {
@@ -1371,6 +1378,9 @@ public class Page extends Dictionary {
      * @return trim box boundary in user space units.
      */
     public Rectangle2D.Float getTrimBox() {
+        if (trimBox != null) {
+            return trimBox;
+        }
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, TRIMBOX_KEY));
         if (boxDimensions != null) {
