@@ -102,22 +102,12 @@ public class PageTree extends Dictionary {
         if (inited) {
             return;
         }
-        inited = true;
+
         Object parentTree = library.getObject(entries, PARENT_KEY);
         if (parentTree instanceof PageTree) {
             parent = (PageTree) parentTree;
         }
         kidsCount = library.getNumber(entries, COUNT_KEY).intValue();
-        List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
-        if (boxDimensions != null) {
-            mediaBox = new PRectangle(boxDimensions);
-//            System.out.println("PageTree - MediaBox " + mediaBox);
-        }
-        boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
-        if (boxDimensions != null) {
-            cropBox = new PRectangle(boxDimensions);
-//            System.out.println("PageTree - CropBox " + cropBox);
-        }
         kidsReferences = (List) library.getObject(entries, KIDS_KEY);
         kidsPageAndPages = new HashMap<Integer, WeakReference<Object>>(kidsReferences.size());
         // Rotation is only respected if child pages do not have their own
@@ -128,7 +118,7 @@ public class PageTree extends Dictionary {
             // mark that we have an inheritable value
             isRotationFactor = true;
         }
-
+        inited = true;
 
     }
 
@@ -139,6 +129,28 @@ public class PageTree extends Dictionary {
      * @return media box boundary in user space units.
      */
     public PRectangle getMediaBox() {
+        if (!inited) {
+            init();
+        }
+
+        if (mediaBox != null) {
+            return mediaBox;
+        }
+        // add all of the pages media box dimensions to a vector and process
+        List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
+        if (boxDimensions != null) {
+            mediaBox = new PRectangle(boxDimensions);
+        }
+        // If mediaBox is null check with the parent pages, as media box is inheritable
+        if (mediaBox == null) {
+            PageTree pageTree = getParent();
+            while (pageTree != null && mediaBox == null) {
+                mediaBox = pageTree.getMediaBox();
+                if (mediaBox == null) {
+                    pageTree = pageTree.getParent();
+                }
+            }
+        }
         return mediaBox;
     }
 
@@ -149,6 +161,28 @@ public class PageTree extends Dictionary {
      * @return crop box boundary in user space units.
      */
     public PRectangle getCropBox() {
+        if (!inited) {
+            init();
+        }
+
+        if (cropBox != null) {
+            return cropBox;
+        }
+        // add all of the pages crop box dimensions to a vector and process
+        List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
+        if (boxDimensions != null) {
+            cropBox = new PRectangle(boxDimensions);
+        }
+        // Default value of the cropBox is the MediaBox if not set implicitly
+        PRectangle mediaBox = getMediaBox();
+        if (cropBox == null && mediaBox != null) {
+            cropBox = (PRectangle) mediaBox.clone();
+        } else if (mediaBox != null) {
+            // PDF 1.5 spec states that the media box should be intersected with the
+            // crop box to get the new box. But we only want to do this if the
+            // cropBox is not the same as the mediaBox
+            cropBox = mediaBox.createCartesianIntersection(cropBox);
+        }
         return cropBox;
     }
 
