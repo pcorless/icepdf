@@ -340,9 +340,11 @@ public class TilingPattern extends Stream implements Pattern {
             // we can't scale the pattern space easily.
 
             AffineTransform originalPageSpace;
+            AffineTransform context = new AffineTransform();
             try {
                 originalPageSpace = new AffineTransform(base);
-                originalPageSpace.concatenate(g.getTransform().createInverse());
+                context = g.getTransform().createInverse();
+                originalPageSpace.concatenate(context);
             } catch (NoninvertibleTransformException e) {
                 logger.warning("Error creating Tiling pattern transform. ");
                 originalPageSpace = new AffineTransform();
@@ -353,8 +355,17 @@ public class TilingPattern extends Stream implements Pattern {
             // scale to the current state of g2d.
             bBoxMod = originalPageSpace.createTransformedShape(bBoxMod).getBounds2D();
 
-            int width = (int) bBoxMod.getWidth();
-            int height = (int) bBoxMod.getHeight();
+            // calculate the offset of the pattern so we paint it at the right coordinate,
+            // basically upside down revers.
+            double xOffset = (base.getTranslateX() - g.getTransform().getTranslateX()
+                    + matrix.getTranslateX());
+            xOffset *= context.getScaleX();
+            double yOffset = (base.getTranslateY() - g.getTransform().getTranslateY()
+                    - matrix.getTranslateY());
+            yOffset *= context.getScaleY();
+
+            int width = (int) Math.round(bBoxMod.getWidth());
+            int height = (int) Math.round(bBoxMod.getHeight());
 
             // corner cases where some bBoxes don't have a dimension.
             if (width == 0) {
@@ -363,7 +374,6 @@ public class TilingPattern extends Stream implements Pattern {
             if (height == 0) {
                 height = 1;
             }
-
             // create the new image to write too.
             final BufferedImage bi = new BufferedImage(width, height,
                     BufferedImage.TYPE_INT_ARGB);
@@ -371,9 +381,9 @@ public class TilingPattern extends Stream implements Pattern {
 
             // create the pattern paint before  we paint encase there
             // is some recursive calls during the paint PDF-436
-//            patternPaint = new TexturePaint(bi, bBoxMod);
             patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
-                    0, 0, bBoxMod.getWidth(), bBoxMod.getHeight()));
+                    xOffset, yOffset,
+                    width, height));
             g.setPaint(patternPaint);
 
             // apply current hints
@@ -383,24 +393,25 @@ public class TilingPattern extends Stream implements Pattern {
             final Shapes tilingShapes = getShapes();
 
             // add clip for bBoxMod, needed for some shapes painting.
-            canvas.setClip(0, 0, (int) bBoxMod.getWidth(), (int) bBoxMod.getHeight());
+            canvas.setClip(0, 0, width, height);
 
             // paint the pattern
             paintPattern(canvas, tilingShapes, originalPageSpace);
 
             // show it in a frame
 //            final JFrame f = new JFrame(this.toString());
-//            final Rectangle2D bbox2 = bBoxMod;
 //            f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 //            f.getContentPane().add(new JComponent() {
 //                @Override
 //                public void paint(Graphics g_) {
 //                    super.paint(g_);
 //                    Graphics2D g2d = (Graphics2D) g_;
-//                    // draw the tile image buffer.
-//                    g2d.drawImage(bi,0,0,null);
-//                    g2d.setColor(Color.GREEN);
-//                    g2d.drawRect(0,0, (int)bbox2.getWidth(), (int)bbox2.getHeight());
+////                    g2d.scale(0.125, 0.125);
+////                    // draw the tile image buffer.
+////                    g2d.drawImage(bi,0,0,null);
+//                    g2d.setColor(Color.WHITE);
+//                    g2d.fillRect(0, 0, 800, 800);
+//                    paintPattern(g2d, tilingShapes, base);
 //                }
 //            });
 //            f.setSize(new Dimension(800, 800));
@@ -435,6 +446,12 @@ public class TilingPattern extends Stream implements Pattern {
         AffineTransform prePaint = g2d.getTransform();
         tilingShapes.paint(g2d);
         g2d.setTransform(prePaint);
+
+//        g2d.setStroke(new BasicStroke(1));
+//        g2d.setColor(Color.GREEN);
+//        g2d.drawRect(1, 1, (int) bBox.getWidth() - 3, (int) bBox.getHeight() - 3);
+//        g2d.setColor(Color.RED);
+//        g2d.drawRect(1, 1, 5, 5);
 
         // build the the tile
         g2d.translate(xStep, 0);
@@ -481,12 +498,6 @@ public class TilingPattern extends Stream implements Pattern {
 //        // direction line and bounding box
 //        g2d.fillRect((int)bBox.getX(), (int)bBox.getY(), 10,10);
 //        g2d.drawRect((int)bBox.getX(), (int)bBox.getY(), (int)bBox.getWidth()-1,(int)bBox.getHeight()-1);
-//        // Axis lines
-//        g2d.drawLine(0, 0, 400,400);
-//        g2d.setColor(Color.BLACK);
-//        g2d.drawLine(-400, 0, 400, 0);
-//        g2d.setColor(Color.BLUE);
-//        g2d.drawLine(0,400, 0,-400);
 
         g2d.setTransform(preAf);
     }
@@ -588,7 +599,7 @@ public class TilingPattern extends Stream implements Pattern {
      */
     public String toString() {
         return "Tiling Pattern: \n" +
-                "           type: pattern " +
+                "              obj:  " + this.getPObjectReference() +
                 "\n    patternType: tilling" +
                 "\n      paintType: " + (paintType == PAINTING_TYPE_COLORED_TILING_PATTERN ? "colored" : "uncoloured") +
                 "\n    tilingType: " + tilingType +
