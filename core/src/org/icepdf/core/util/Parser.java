@@ -179,7 +179,13 @@ public class Parser {
                 else if (nextToken.equals("stream")) {
                     deepnessCount++;
                     // pop dictionary that defines the stream
-                    HashMap streamHash = (HashMap) stack.pop();
+                    Object tmp = stack.pop();
+                    HashMap streamHash;
+                    if (tmp instanceof Dictionary) {
+                        streamHash = ((Dictionary) tmp).getEntries();
+                    } else {
+                        streamHash = (HashMap) tmp;
+                    }
                     // find the length of the stream
                     int streamLength = library.getInt(streamHash, Dictionary.LENGTH_KEY);
 
