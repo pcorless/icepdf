@@ -392,7 +392,9 @@ public abstract class AbstractContentParser implements ContentParser {
             // peek and then pop until a none Float is found
             int nCount = 0;
             // set colour to max of 4 which is cymk,
-            int compLength = 4;
+            // we have a corner case where 5 components are defined and once
+            // pushed throw the function produce a valid color.
+            int compLength = 5;
             float colour[] = new float[compLength];
             // peek and pop all of the colour floats
             while (!stack.isEmpty() && stack.peek() instanceof Number &&
