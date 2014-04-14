@@ -1239,6 +1239,7 @@ public class ImageUtility {
         // can comply with levigo's open source licence.
         Class levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
         Class jbig2ImageReaderSpiClass = Class.forName("com.levigo.jbig2.JBIG2ImageReaderSpi");
+        Class jbig2GlobalsClass = Class.forName("com.levigo.jbig2.JBIG2Globals");
         Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
         Constructor levigoJbig2DecoderClassConstructor =
                 levigoJBIG2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);
@@ -1266,7 +1267,7 @@ public class ImageUtility {
                     if (globalSegments != null) {
                         // invoked encoder.setGlobalData(globals);
                         partypes = new Class[1];
-                        partypes[0] = com.levigo.jbig2.JBIG2Globals.class;
+                        partypes[0] = jbig2GlobalsClass;
                         arglist = new Object[1];
                         arglist[0] = globalSegments;
                         // pass the segment data back into the decoder.
