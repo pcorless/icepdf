@@ -730,7 +730,18 @@ public class ImageStream extends Stream {
                             arglist[0] = ImageIO.createImageInputStream(new ByteArrayInputStream(globals));
                             Method processGlobals =
                                     levigoJBIG2ImageReaderClass.getMethod("processGlobals", partypes);
-                            processGlobals.invoke(levigoJbig2Reader, arglist);
+                            Object globalSegments = processGlobals.invoke(levigoJbig2Reader, arglist);
+                            if (globalSegments != null){
+                                // invoked encoder.setGlobalData(globals);
+                                partypes = new Class[1];
+                                partypes[0] = com.levigo.jbig2.JBIG2Globals.class;
+                                arglist = new Object[1];
+                                arglist[0] = globalSegments;
+                                // pass the segment data back into the decoder.
+                                Method setGlobalData =
+                                        levigoJBIG2ImageReaderClass.getMethod("setGlobals", partypes);
+                                setGlobalData.invoke(levigoJbig2Reader, arglist);
+                            }
                         }
                     }
                 }
