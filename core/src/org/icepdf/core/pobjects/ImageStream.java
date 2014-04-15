@@ -820,6 +820,10 @@ public class ImageStream extends Stream {
         float k = library.getFloat(decodeParms, K_KEY);
         // default value is always false
         boolean blackIs1 = getBlackIs1(library, decodeParms);
+        // double check for blackIs1 in the main dictionary.
+        if (!blackIs1) {
+            blackIs1 = getBlackIs1(library, entries);
+        }
         // get value of key if it is available.
         boolean encodedByteAlign = false;
         Object encodedByteAlignObject = library.getObject(decodeParms, ENCODEDBYTEALIGN_KEY);
