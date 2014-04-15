@@ -599,6 +599,10 @@ public class CCITTFax {
         // get decode parameters from stream properties
         HashMap decodeParmsDictionary = library.getDictionary(streamDictionary, ImageStream.DECODEPARMS_KEY);
         boolean blackIs1 = stream.getBlackIs1(library, decodeParmsDictionary);
+        // double check for blackIs1 in the main dictionary.
+        if (!blackIs1) {
+            blackIs1 = stream.getBlackIs1(library, streamDictionary);
+        }
         float k = library.getFloat(decodeParmsDictionary, ImageStream.K_KEY);
         boolean hasHeader;
 
