@@ -88,6 +88,7 @@ public class ImageStream extends Stream {
     private static boolean forceJaiccittfax;
 
     private PColorSpace colourSpace;
+    private final Object colorSpaceAssignmentLock = new Object();
 
     private static boolean isLevigoJBIG2ImageReaderClass;
 
@@ -167,17 +168,20 @@ public class ImageStream extends Stream {
         if (Tagger.tagging)
             Tagger.tagImage("Filter=" + getNormalisedFilterNames());
 
-        // parse colour space
-        colourSpace = null;
-        Object o = entries.get(COLORSPACE_KEY);
-        if (resources != null && o != null) {
-            colourSpace = resources.getColorSpace(o);
-        }
-        // assume b&w image is no colour space
-        if (colourSpace == null) {
-            colourSpace = new DeviceGray(library, null);
-            if (Tagger.tagging)
-                Tagger.tagImage("ColorSpace_Implicit_DeviceGray");
+        // parse colour space, lock is to insure that getColorSpace()
+        // will return only after colourSpace has been set.
+        synchronized (colorSpaceAssignmentLock) {
+            colourSpace = null;
+            Object o = entries.get(COLORSPACE_KEY);
+            if (resources != null && o != null) {
+                colourSpace = resources.getColorSpace(o);
+            }
+            // assume b&w image is no colour space
+            if (colourSpace == null) {
+                colourSpace = new DeviceGray(library, null);
+                if (Tagger.tagging)
+                    Tagger.tagImage("ColorSpace_Implicit_DeviceGray");
+            }
         }
         if (Tagger.tagging)
             Tagger.tagImage("ColorSpace=" + colourSpace.getDescription());
@@ -1123,7 +1127,9 @@ public class ImageStream extends Stream {
     }
 
     public PColorSpace getColourSpace() {
-        return colourSpace;
+        synchronized (colorSpaceAssignmentLock) {
+            return colourSpace;
+        }
     }
 
     /**
