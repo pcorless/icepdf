@@ -649,7 +649,8 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                         documentViewModel.getViewZoom());
                 // paint the sprites
                 GeneralPath textPath;
-                for (LineText lineText : pageText.getPageLines()) {
+                ArrayList<LineText> visiblePageLines = pageText.getPageLines();
+                for (LineText lineText : visiblePageLines) {
                     for (WordText wordText : lineText.getWords()) {
                         // paint whole word
                         if (wordText.isSelected() || wordText.isHighlighted()) {

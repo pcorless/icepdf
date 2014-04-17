@@ -813,19 +813,6 @@ public abstract class AbstractContentParser implements ContentParser {
         if (textMetrics.isYstart()) {
             textMetrics.setyBTStart(tm[5]);
             textMetrics.setYstart(false);
-            if (previousBTStart != textMetrics.getyBTStart()) {
-                pageText.newLine(oCGs);
-            }
-        }
-        double newTransY = graphicState.getCTM().getTranslateY();
-        double newScaleY = graphicState.getCTM().getScaleY();
-        // f5 and f6 will dictate a horizontal or vertical shift
-        // this information could be used to detect new lines
-
-        if (Math.round(oldTransY) != Math.round(newTransY)) {
-            pageText.newLine(oCGs);
-        } else if (Math.abs(oldScaleY) != Math.abs(newScaleY)) {
-            pageText.newLine(oCGs);
         }
 
     }
@@ -859,11 +846,6 @@ public abstract class AbstractContentParser implements ContentParser {
         if (textMetrics.isYstart()) {
             textMetrics.setyBTStart(y);
             textMetrics.setYstart(false);
-        }
-        // ty will dictate the vertical shift, many pdf will use
-        // ty=0 do just do a horizontal shift for layout.
-        if (y != 0f) {
-            pageText.newLine(oCGs);
         }
     }
 
@@ -928,15 +910,6 @@ public abstract class AbstractContentParser implements ContentParser {
         if (textMetrics.isYstart()) {
             textMetrics.setyBTStart(newY);
             textMetrics.setYstart(false);
-            if (previousBTStart != textMetrics.getyBTStart()) {
-                pageText.newLine(oCGs);
-            }
-        }
-
-        // ty will dictate the vertical shift, many pdf will use
-        // ty=0 do just do a horizontal shift for layout.
-        if (y != 0 && Math.round(newY) != Math.round(oldY)) {
-            pageText.newLine(oCGs);
         }
     }
 

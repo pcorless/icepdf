@@ -18,7 +18,9 @@ package org.icepdf.core.util.content;
 import java.awt.geom.Point2D;
 
 /**
- *
+ * The TextMetrics class purpose is to help sort out the difference between
+ * how text is drawn vs. how it can be retrieved for text extraction such as
+ * mouse selection/clip board and output to file.
  */
 public class TextMetrics {
 

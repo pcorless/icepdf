@@ -46,14 +46,25 @@ public class WordText extends AbstractText implements TextSelect {
     // constitutes a potential space between glyphs.
     public static int spaceFraction;
 
+    private static boolean autoSpaceInsertion;
+
     static {
         // sets the shadow colour of the decorator.
         try {
             spaceFraction = Defs.sysPropertyInt(
-                    "org.icepdf.core.views.page.text.spaceFraction", 3);
+                    "org.icepdf.core.views.page.text.spaceFraction", 1);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading text selection colour");
+                logger.warning("Error reading text space fraction");
+            }
+        }
+        // sets the shadow colour of the decorator.
+        try {
+            autoSpaceInsertion = Defs.sysPropertyBoolean(
+                    "org.icepdf.core.views.page.text.autoSpace", true);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text text auto space detection");
             }
         }
     }
@@ -152,7 +163,7 @@ public class WordText extends AbstractText implements TextSelect {
         // add extra spaces
         WordText whiteSpace = new WordText();
         double offset;
-        GlyphText spaceText;
+        GlyphText spaceText = null;
         Rectangle2D.Float spaceBounds;
         // RTL layout
         float spaceWidth = space / spaces;
@@ -177,28 +188,39 @@ public class WordText extends AbstractText implements TextSelect {
         // todo: consider just using one space with a wider bound
         // Max out the spaces in the case the spaces value scale factor was
         // not correct.  We can end up with a very large number of spaces being
-        // inserted in some cases. 
-        for (int i = 0; i < spaces && i < 50; i++) {
-            spaceText = new GlyphText((float) offset,
-                    currentGlyph.getY(),
-                    new Rectangle2D.Float(spaceBounds.x,
-                            spaceBounds.y,
-                            spaceBounds.width,
-                            spaceBounds.height),
-                    String.valueOf((char) 32), String.valueOf((char) 32));
-            if (ltr) {
-                spaceBounds.x += spaceBounds.width;
-                offset += spaceWidth;
-            } else {
-                spaceBounds.x -= spaceBounds.width;
-                offset -= spaceWidth;
+        // inserted in some cases.
+        if (autoSpaceInsertion) {
+            for (int i = 0; i < spaces && i < 50; i++) {
+                whiteSpace = autoSpaceCalculation(offset, spaceBounds, whiteSpace);
+                if (ltr) {
+                    spaceBounds.x += spaceBounds.width;
+                    offset += spaceWidth;
+                } else {
+                    spaceBounds.x -= spaceBounds.width;
+                    offset -= spaceWidth;
+                }
             }
-            whiteSpace.addText(spaceText);
-            whiteSpace.setWhiteSpace(true);
-
+        } else {
+            whiteSpace = autoSpaceCalculation(offset, spaceBounds, whiteSpace);
         }
         return whiteSpace;
     }
+
+    private WordText autoSpaceCalculation(double offset,
+                                          Rectangle2D.Float spaceBounds,
+                                          WordText whiteSpace) {
+        GlyphText spaceText = new GlyphText((float) offset,
+                currentGlyph.getY(),
+                new Rectangle2D.Float(spaceBounds.x,
+                        spaceBounds.y,
+                        spaceBounds.width,
+                        spaceBounds.height),
+                String.valueOf((char) 32), String.valueOf((char) 32));
+        whiteSpace.addText(spaceText);
+        whiteSpace.setWhiteSpace(true);
+        return whiteSpace;
+    }
+
 
     protected void addText(GlyphText sprite) {
         // the sprite

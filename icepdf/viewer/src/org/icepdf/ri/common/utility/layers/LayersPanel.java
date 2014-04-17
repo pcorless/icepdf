@@ -166,6 +166,13 @@ public class LayersPanel extends JPanel {
                 List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
                 AbstractPageViewComponent page = pages.get(documentViewModel.getViewCurrentPageIndex());
                 page.invalidatePageBuffer();
+                // resort page text as layer visibility will have changed.
+                try {
+                    page.getPage().getText().sortAndFormatText();
+                } catch (InterruptedException e1) {
+                    // silent running for now.
+                }
+                // repaint the page.
                 page.repaint();
                 // repaint the tree so the checkbox states are show correctly.
                 tree.repaint();
