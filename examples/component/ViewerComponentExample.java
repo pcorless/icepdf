@@ -15,12 +15,12 @@
  */
 
 
-import org.icepdf.ri.common.ComponentKeyBinding;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
+import java.util.ResourceBundle;
 
 
 /**
@@ -40,36 +40,23 @@ public class ViewerComponentExample {
         SwingController controller = new SwingController();
         controller.setIsEmbeddedComponent(true);
 
-        // set the viewController embeddable flag.
-        DocumentViewController viewController =
-                controller.getDocumentViewController();
+        PropertiesManager properties = new PropertiesManager(
+                System.getProperties(),
+                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
 
-        JPanel viewerComponentPanel = new JPanel();
-        viewerComponentPanel.add(viewController.getViewContainer());
+        properties.set(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, "1.75");
 
-        // add copy keyboard command
-        ComponentKeyBinding.install(controller, viewerComponentPanel);
+        SwingViewBuilder factory = new SwingViewBuilder(controller, properties);
 
         // add interactive mouse link annotation support via callback
         controller.getDocumentViewController().setAnnotationCallback(
-                new org.icepdf.ri.common.MyAnnotationCallback(
-                        controller.getDocumentViewController()));
-
-        // build a containing JFrame for display
+                new org.icepdf.ri.common.MyAnnotationCallback(controller.getDocumentViewController()));
+        JPanel viewerComponentPanel = factory.buildViewerPanel();
         JFrame applicationFrame = new JFrame();
-        applicationFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        applicationFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         applicationFrame.getContentPane().add(viewerComponentPanel);
-
-        // Now that the GUI is all in place, we can try opening a PDF
+        // Now that the GUI is all in place, we can try openning a PDF
         controller.openDocument(filePath);
-
-        // hard set the page view to single page which effectively give a single
-        // page view. This should be done after openDocument as it has code that
-        // can change the view mode if specified by the file.
-        controller.setPageViewMode(
-                DocumentViewControllerImpl.ONE_PAGE_VIEW,
-                false);
-
         // show the component
         applicationFrame.pack();
         applicationFrame.setVisible(true);
