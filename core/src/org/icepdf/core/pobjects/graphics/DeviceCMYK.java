@@ -20,7 +20,12 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 /**
  * Device CMYK colour space definitions. The primary purpose of this colour
@@ -28,6 +33,9 @@ import java.util.HashMap;
  * process and the generated rgb colour is just and approximation.
  */
 public class DeviceCMYK extends PColorSpace {
+
+    private static final Logger logger =
+            Logger.getLogger(DeviceCMYK.class.toString());
 
     public static final Name DEVICECMYK_KEY = new Name("DeviceCMYK");
     public static final Name CMYK_KEY = new Name("CMYK");
@@ -37,12 +45,32 @@ public class DeviceCMYK extends PColorSpace {
     // default cmyk value,  > 255 will lighten the image.
     private static float blackRatio;
 
+    // CMYK ICC color profile.
+    private static ICC_ColorSpace iccCmykColorSpace;
+
     static {
         // black ratio
         blackRatio = (float) Defs.doubleProperty("org.icepdf.core.cmyk.colorant.black", 1.0);
+
+        // check for a custom CMYK ICC colour profile specified using system properties.
+        String customCMYKProfilePath = null;
+        try {
+            Object profileStream;
+            customCMYKProfilePath = Defs.sysProperty("org.icepdf.core.pobjects.graphics.cmyk");
+            if (customCMYKProfilePath == null) {
+                customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/UncoatedFOGRA29.icc";
+                profileStream = DeviceCMYK.class.getResourceAsStream(customCMYKProfilePath);
+            } else {
+                profileStream = new FileInputStream(customCMYKProfilePath);
+            }
+            ICC_Profile icc_profile = ICC_Profile.getInstance((InputStream) profileStream);
+            iccCmykColorSpace = new ICC_ColorSpace(icc_profile);
+        } catch (Exception exception) {
+            logger.warning("Error loading ICC color profile: " + customCMYKProfilePath);
+        }
     }
 
-    DeviceCMYK(Library l, HashMap h) {
+    public DeviceCMYK(Library l, HashMap h) {
         super(l, h);
     }
 
@@ -173,6 +201,12 @@ public class DeviceCMYK extends PColorSpace {
         float inMagenta = f[2];
         float inYellow = f[1];
         float inBlack = f[0];
+
+        // check if we have a valid ICC profile to work with
+        if (iccCmykColorSpace != null) {
+            f = iccCmykColorSpace.toRGB(reverse(f));
+            return new Color(f[0], f[1], f[2]);
+        }
 
         // soften the amount of black, but exclude explicit black colorant.
         if (!(inCyan == 0 && inMagenta == 0 && inYellow == 0)) {
