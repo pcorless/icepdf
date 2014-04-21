@@ -650,30 +650,32 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 // paint the sprites
                 GeneralPath textPath;
                 ArrayList<LineText> visiblePageLines = pageText.getPageLines();
-                for (LineText lineText : visiblePageLines) {
-                    for (WordText wordText : lineText.getWords()) {
-                        // paint whole word
-                        if (wordText.isSelected() || wordText.isHighlighted()) {
-                            textPath = new GeneralPath(wordText.getBounds());
-                            textPath.transform(pageTransform);
-                            // paint highlight over any selected
-                            if (wordText.isSelected()) {
-                                gg.setColor(selectionColor);
-                                gg.fill(textPath);
-                            }
-                            if (wordText.isHighlighted()) {
-                                gg.setColor(highlightColor);
-                                gg.fill(textPath);
-                            }
-                        }
-                        // check children
-                        else {
-                            for (GlyphText glyph : wordText.getGlyphs()) {
-                                if (glyph.isSelected()) {
-                                    textPath = new GeneralPath(glyph.getBounds());
-                                    textPath.transform(pageTransform);
+                if (visiblePageLines != null) {
+                    for (LineText lineText : visiblePageLines) {
+                        for (WordText wordText : lineText.getWords()) {
+                            // paint whole word
+                            if (wordText.isSelected() || wordText.isHighlighted()) {
+                                textPath = new GeneralPath(wordText.getBounds());
+                                textPath.transform(pageTransform);
+                                // paint highlight over any selected
+                                if (wordText.isSelected()) {
                                     gg.setColor(selectionColor);
                                     gg.fill(textPath);
+                                }
+                                if (wordText.isHighlighted()) {
+                                    gg.setColor(highlightColor);
+                                    gg.fill(textPath);
+                                }
+                            }
+                            // check children
+                            else {
+                                for (GlyphText glyph : wordText.getGlyphs()) {
+                                    if (glyph.isSelected()) {
+                                        textPath = new GeneralPath(glyph.getBounds());
+                                        textPath.transform(pageTransform);
+                                        gg.setColor(selectionColor);
+                                        gg.fill(textPath);
+                                    }
                                 }
                             }
                         }
