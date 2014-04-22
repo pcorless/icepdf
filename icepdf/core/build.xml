@@ -31,6 +31,7 @@
         <build.jar jar.file.name="${jar.file.name}">
             <add.jar.src.includes>
                 <include name="org/icepdf/core/pobjects/fonts/afm/"/>
+                <include name="org/icepdf/core/pobjects/graphics/res/"/>
             </add.jar.src.includes>
         </build.jar>
 
