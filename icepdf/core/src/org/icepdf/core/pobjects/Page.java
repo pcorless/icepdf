@@ -564,19 +564,21 @@ public class Page extends Dictionary {
                 // paint the sprites
                 GeneralPath textPath;
                 // iterate over the data structure.
-                for (LineText lineText : pageText.getPageLines()) {
-                    for (WordText wordText : lineText.getWords()) {
-                        // paint whole word
-                        if (wordText.isHighlighted()) {
-                            textPath = new GeneralPath(wordText.getBounds());
-                            g2.setColor(highlightColor);
-                            g2.fill(textPath);
-                        } else {
-                            for (GlyphText glyph : wordText.getGlyphs()) {
-                                if (glyph.isHighlighted()) {
-                                    textPath = new GeneralPath(glyph.getBounds());
-                                    g2.setColor(highlightColor);
-                                    g2.fill(textPath);
+                if (pageText.getPageLines() != null) {
+                    for (LineText lineText : pageText.getPageLines()) {
+                        for (WordText wordText : lineText.getWords()) {
+                            // paint whole word
+                            if (wordText.isHighlighted()) {
+                                textPath = new GeneralPath(wordText.getBounds());
+                                g2.setColor(highlightColor);
+                                g2.fill(textPath);
+                            } else {
+                                for (GlyphText glyph : wordText.getGlyphs()) {
+                                    if (glyph.isHighlighted()) {
+                                        textPath = new GeneralPath(glyph.getBounds());
+                                        g2.setColor(highlightColor);
+                                        g2.fill(textPath);
+                                    }
                                 }
                             }
                         }
