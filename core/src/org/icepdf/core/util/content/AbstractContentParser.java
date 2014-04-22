@@ -712,9 +712,11 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static void consume_w(GraphicsState graphicState, Stack stack,
                                     Shapes shapes, float glyph2UserSpaceScale) {
         // apply any type3 font scalling which is set via the glyph2User space affine transform.
-        float scale = ((Number) stack.pop()).floatValue() * glyph2UserSpaceScale;
-        graphicState.setLineWidth(scale);
-        setStroke(shapes, graphicState);
+        if (!stack.isEmpty()) {
+            float scale = ((Number) stack.pop()).floatValue() * glyph2UserSpaceScale;
+            graphicState.setLineWidth(scale);
+            setStroke(shapes, graphicState);
+        }
     }
 
     protected static void consume_M(GraphicsState graphicState, Stack stack, Shapes shapes) {
