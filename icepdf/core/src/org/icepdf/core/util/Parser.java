@@ -365,7 +365,12 @@ public class Parser {
                 else if (nextToken.equals("]")) {
                     deepnessCount--;
                     final int searchPosition = stack.search("[");
-                    final int size = searchPosition - 1;
+                    int size = searchPosition - 1;
+                    if (size < 0) {
+                        logger.warning("Negative array size, a  malformed content " +
+                                "stream has likely been encountered.");
+                        size = 0;
+                    }
                     List v = new ArrayList(size);
                     Object[] tmp = new Object[size];
                     if (searchPosition > 0) {
