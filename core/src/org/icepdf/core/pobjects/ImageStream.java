@@ -164,14 +164,13 @@ public class ImageStream extends Stream {
      * @return new image object
      */
     // was synchronized, not think it is needed?
-    public BufferedImage getImage(Color fill, Resources resources) {
+    public synchronized BufferedImage getImage(Color fill, Resources resources) {
         if (Tagger.tagging)
             Tagger.tagImage("Filter=" + getNormalisedFilterNames());
 
         // parse colour space, lock is to insure that getColorSpace()
         // will return only after colourSpace has been set.
         synchronized (colorSpaceAssignmentLock) {
-            colourSpace = null;
             Object o = entries.get(COLORSPACE_KEY);
             if (resources != null && o != null) {
                 colourSpace = resources.getColorSpace(o);
