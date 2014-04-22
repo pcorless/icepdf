@@ -964,16 +964,18 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static GeneralPath consume_c(Stack stack,
                                            GeneralPath geometricPath) {
-        float y3 = ((Number) stack.pop()).floatValue();
-        float x3 = ((Number) stack.pop()).floatValue();
-        float y2 = ((Number) stack.pop()).floatValue();
-        float x2 = ((Number) stack.pop()).floatValue();
-        float y1 = ((Number) stack.pop()).floatValue();
-        float x1 = ((Number) stack.pop()).floatValue();
-        if (geometricPath == null) {
-            geometricPath = new GeneralPath();
+        if (!stack.isEmpty()) {
+            float y3 = ((Number) stack.pop()).floatValue();
+            float x3 = ((Number) stack.pop()).floatValue();
+            float y2 = ((Number) stack.pop()).floatValue();
+            float x2 = ((Number) stack.pop()).floatValue();
+            float y1 = ((Number) stack.pop()).floatValue();
+            float x1 = ((Number) stack.pop()).floatValue();
+            if (geometricPath == null) {
+                geometricPath = new GeneralPath();
+            }
+            geometricPath.curveTo(x1, y1, x2, y2, x3, y3);
         }
-        geometricPath.curveTo(x1, y1, x2, y2, x3, y3);
         return geometricPath;
     }
 
