@@ -1306,6 +1306,7 @@ public class Page extends Dictionary {
             cropBox = new PRectangle(boxDimensions);
         }
         // If cropbox is null check with the parent pages, as media box is inheritable
+        boolean isParentCropBox = false;
         if (cropBox == null) {
             PageTree pageTree = getParent();
             while (pageTree != null && cropBox == null) {
@@ -1313,12 +1314,15 @@ public class Page extends Dictionary {
                     break;
                 }
                 cropBox = pageTree.getCropBox();
+                if (cropBox != null) {
+                    isParentCropBox = true;
+                }
                 pageTree = pageTree.getParent();
             }
         }
         // Default value of the cropBox is the MediaBox if not set implicitly
         PRectangle mediaBox = (PRectangle) getMediaBox();
-        if (cropBox == null && mediaBox != null) {
+        if ((cropBox == null || isParentCropBox) && mediaBox != null) {
             cropBox = (PRectangle) mediaBox.clone();
         } else if (cropBox != null && mediaBox != null) {
             // PDF 1.5 spec states that the media box should be intersected with the
