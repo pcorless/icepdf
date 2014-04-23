@@ -142,10 +142,14 @@ public class WordText extends AbstractText implements TextSelect {
     public static boolean isDigit(WordText currentWord) {
         if (currentWord != null) {
             int c = currentWord.getPreviousGlyphText();
-            return c >= 48 && c <= 57;
+            return isDigit((char) c);
         } else {
             return false;
         }
+    }
+
+    public static boolean isDigit(char c) {
+        return c >= 48 && c <= 57;
     }
 
     protected WordText buildSpaceWord(GlyphText sprite) {

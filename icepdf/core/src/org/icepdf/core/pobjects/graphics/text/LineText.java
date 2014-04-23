@@ -29,7 +29,7 @@ public class LineText extends AbstractText implements TextSelect {
 
     private WordText currentWord;
 
-    private ArrayList<WordText> words;
+    private List<WordText> words;
 
     public LineText() {
         words = new ArrayList<WordText>(16);
@@ -122,6 +122,9 @@ public class LineText extends AbstractText implements TextSelect {
         this.words.addAll(words);
     }
 
+    protected void setWords(List<WordText> words) {
+        this.words = words;
+    }
 
     /**
      * Gets the current word, if there is none, one is created.
@@ -141,7 +144,7 @@ public class LineText extends AbstractText implements TextSelect {
      *
      * @return words in a line.
      */
-    public ArrayList<WordText> getWords() {
+    public List<WordText> getWords() {
         return words;
     }
 

@@ -373,7 +373,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                             firstPageLine = pageLine;
                         }
                         if (pageLine.getBounds().contains(pageMouseLocation)) {
-                            ArrayList<WordText> lineWords = pageLine.getWords();
+                            java.util.List<WordText> lineWords = pageLine.getWords();
                             for (WordText word : lineWords) {
                                 if (word.intersects(pageRectToDraw)) {
                                     word.setHasHighlight(true);
@@ -442,7 +442,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         GlyphText fistGlyph = null;
         Rectangle2D pageRectToDraw =
                 convertRectangleToPageSpace(rectToDraw, pageTransform);
-        ArrayList<WordText> lineWords = pageLine.getWords();
+        java.util.List<WordText> lineWords = pageLine.getWords();
         for (WordText word : lineWords) {
             if (word.intersects(pageRectToDraw)) {
                 word.setHasHighlight(true);
@@ -501,7 +501,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                     // check for containment, if so break into words.
                     if (pageLine.intersects(pageRectToDraw)) {
                         pageLine.setHasSelected(true);
-                        ArrayList<WordText> lineWords = pageLine.getWords();
+                        java.util.List<WordText> lineWords = pageLine.getWords();
                         for (WordText word : lineWords) {
                             if (word.intersects(pageRectToDraw)) {
                                 word.setHasHighlight(true);
@@ -554,7 +554,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                     // check for containment, if so break into words.
                     if (pageLine.getBounds().contains(pageMouseLocation)) {
                         pageLine.setHasSelected(true);
-                        ArrayList<WordText> lineWords = pageLine.getWords();
+                        java.util.List<WordText> lineWords = pageLine.getWords();
                         for (WordText word : lineWords) {
 //                            if (word.contains(pageTransform, mouseLocation)) {
                             if (word.getBounds().contains(pageMouseLocation)) {

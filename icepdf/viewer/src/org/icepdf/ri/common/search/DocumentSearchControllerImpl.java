@@ -161,7 +161,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             // start iteration over words.
             ArrayList<LineText> pageLines = pageText.getPageLines();
             for (LineText pageLine : pageLines) {
-                ArrayList<WordText> lineWords = pageLine.getWords();
+                java.util.List<WordText> lineWords = pageLine.getWords();
                 // compare words against search terms.
                 String wordString;
                 for (WordText word : lineWords) {
@@ -297,7 +297,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             // start iteration over words.
             ArrayList<LineText> pageLines = pageText.getPageLines();
             for (LineText pageLine : pageLines) {
-                ArrayList<WordText> lineWords = pageLine.getWords();
+                java.util.List<WordText> lineWords = pageLine.getWords();
                 // compare words against search terms.
                 String wordString;
                 WordText word;
@@ -343,7 +343,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
                         LineText lineText = new LineText();
                         int lineWordsSize = lineWords.size();
-                        ArrayList<WordText> hitWords = lineText.getWords();
+                        java.util.List<WordText> hitWords = lineText.getWords();
                         // add pre padding
                         int start = i - searchPhraseHitCount - wordPadding + 1;
                         start = start < 0 ? 0 : start;
@@ -409,7 +409,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                 ArrayList<WordText> words = new ArrayList<WordText>(hits);
                 ArrayList<LineText> pageLines = searchText.getPageLines();
                 for (LineText pageLine : pageLines) {
-                    ArrayList<WordText> lineWords = pageLine.getWords();
+                    java.util.List<WordText> lineWords = pageLine.getWords();
                     for (WordText word : lineWords) {
                         if (word.isHighlighted()) {
                             words.add(word);
@@ -519,10 +519,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // found words. 
         ArrayList<String> words = new ArrayList<String>();
         char c;
+        char prevC = 32;
         for (int start = 0, curs = 0, max = phrase.length(); curs < max; curs++) {
             c = phrase.charAt(curs);
-            if (WordText.isWhiteSpace(c) ||
-                    WordText.isPunctuation(c)) {
+            if (!WordText.isDigit(prevC) && (WordText.isWhiteSpace(c) ||
+                    WordText.isPunctuation(c))) {
                 // add word segment
                 if (start != curs) {
                     words.add(phrase.substring(start, curs));
@@ -534,6 +535,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             } else if (curs + 1 == max) {
                 words.add(phrase.substring(start, curs + 1));
             }
+            prevC = c;
         }
         return words;
     }
