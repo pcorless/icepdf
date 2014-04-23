@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics.text;
 
 import org.icepdf.core.pobjects.OptionalContents;
+import org.icepdf.core.util.Defs;
 
 import java.awt.geom.AffineTransform;
 import java.util.*;
@@ -41,6 +42,13 @@ import java.util.*;
  * @since 4.0
  */
 public class PageText implements TextSelect {
+
+    private static boolean checkForDuplicates;
+
+    static {
+        checkForDuplicates = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.trim.duplicates", false);
+    }
 
     // pointer to current line during document parse, no other use.
     private LineText currentLine;
@@ -315,7 +323,7 @@ public class PageText implements TextSelect {
             // move over all
             for (LineText pageLine : visiblePageLines) {
                 // all page words will be on one line
-                ArrayList<WordText> words = pageLine.getWords();
+                java.util.List<WordText> words = pageLine.getWords();
                 if (words != null && words.size() > 0) {
                     Collections.sort(words, new LinePositionComparator());
                     // break the words into lines on every change of y
@@ -340,6 +348,41 @@ public class PageText implements TextSelect {
                     }
                 }
             }
+
+            // do a rough check for duplicate strings that are sometimes generated
+            // by Chrystal Reports.  Enable with
+            // -Dorg.icepdf.core.views.page.text.trim.duplicates=true
+            if (checkForDuplicates) {
+                // cut the string in half and compare the haves,  if they are equal
+                // we return only one.  -Dorg.icepdf.core.views.page.text.autoSpace=false
+                // should be set to aid in this detection
+                int wordCount, middle;
+                boolean mirrored;
+                List<WordText> words;
+                LineText lineText;
+                for (int k = 0, maxLines = sortedPageLines.size(); k < maxLines; k++) {
+                    lineText = sortedPageLines.get(k);
+                    if (lineText.getWords().size() > 0) {
+                        words = lineText.getWords();
+                        wordCount = words.size();
+                        mirrored = true;
+                        middle = wordCount / 2;
+                        for (int i = 0, max = middle, j = max; i < max; i++, j++) {
+                            if (!words.get(i).toString().equals(words.get(j).toString())) {
+                                mirrored = false;
+                                break;
+                            }
+                        }
+                        if (mirrored) {
+                            List<WordText> trimmedWords = words.subList(0, middle);
+                            lineText.setWords(trimmedWords);
+                        }
+                    }
+
+                }
+
+            }
+
 
             // sort each line by x coordinate.
             if (sortedPageLines.size() > 0) {
