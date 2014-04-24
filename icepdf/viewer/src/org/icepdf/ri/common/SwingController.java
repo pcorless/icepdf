@@ -1043,6 +1043,9 @@ public class SwingController
      */
     private void reflectStateInComponents() {
         boolean opened = document != null;
+        if (!opened || getPageTree() == null) {
+            return;
+        }
         int nPages = (getPageTree() != null) ? getPageTree().getNumberOfPages() : 0;
 
         // get security information for printing and text extraction

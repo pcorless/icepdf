@@ -1200,10 +1200,15 @@ public class Document {
      * hierarchy.  The PageTree can be used to obtain detailed information about
      * the Page object which makes up the document.
      *
-     * @return PageTree specified by the document hierarchy.
+     * @return PageTree specified by the document hierarchy. Null if the document
+     *         has not yet loaded or the catalog can not be found.
      */
     public PageTree getPageTree() {
-        return catalog.getPageTree();
+        if (catalog != null) {
+            return catalog.getPageTree();
+        } else {
+            return null;
+        }
     }
 
     /**
