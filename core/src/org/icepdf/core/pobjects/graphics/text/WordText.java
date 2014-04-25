@@ -52,7 +52,7 @@ public class WordText extends AbstractText implements TextSelect {
         // sets the shadow colour of the decorator.
         try {
             spaceFraction = Defs.sysPropertyInt(
-                    "org.icepdf.core.views.page.text.spaceFraction", 1);
+                    "org.icepdf.core.views.page.text.spaceFraction", 3);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text space fraction");
@@ -94,10 +94,11 @@ public class WordText extends AbstractText implements TextSelect {
 
     protected boolean detectSpace(GlyphText sprite) {
         if (currentGlyph != null) {
+            // last added glyph
             Rectangle2D.Float bounds1 = currentGlyph.getBounds();
-            Rectangle.Float bounds2 = sprite.getBounds();
+            float spriteXCoord = sprite.getBounds().x;
             // spaces can be negative if we have a LTR layout.
-            float space = Math.abs(bounds2.x - (bounds1.x + bounds1.width));
+            float space = Math.abs(spriteXCoord - (bounds1.x + bounds1.width));
             // half previous glyph width will be used to determine a space
             float tolerance = bounds1.width / spaceFraction;
             return space > tolerance;
@@ -163,7 +164,9 @@ public class WordText extends AbstractText implements TextSelect {
         // max width of previous and next glyph, average can be broken by l or i etc.
         float maxWidth = Math.max(bounds1.width, bounds2.width) / 2f;
         int spaces = (int) (space / maxWidth);
-
+        if (spaces == 0) {
+            spaces = 1;
+        }
         // add extra spaces
         WordText whiteSpace = new WordText();
         double offset;

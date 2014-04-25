@@ -422,21 +422,22 @@ public class PageViewComponentImpl extends
             Page currentPage = this.getPage();
             if (currentPage != null && currentPage.isInitiated()) {
                 PageText pageText = currentPage.getViewText();
-
-                // paint any highlighted words
-                DocumentSearchController searchController =
-                        documentViewController.getParentController()
-                                .getDocumentSearchController();
-                if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)) {
-                    searchController.searchHighlightPage(pageIndex);
+                if (pageText != null) {
+                    // paint any highlighted words
+                    DocumentSearchController searchController =
+                            documentViewController.getParentController()
+                                    .getDocumentSearchController();
+                    if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)) {
+                        searchController.searchHighlightPage(pageIndex);
+                    }
+                    // if select all we'll want to paint the selected text.
+                    if (documentViewModel.isSelectAll()) {
+                        documentViewModel.addSelectedPageText(this);
+                        pageText.selectAll();
+                    }
+                    // paint selected text.
+                    TextSelectionPageHandler.paintSelectedText(g, this, documentViewModel);
                 }
-                // if select all we'll want to paint the selected text.
-                if (documentViewModel.isSelectAll()) {
-                    documentViewModel.addSelectedPageText(this);
-                    pageText.selectAll();
-                }
-                // paint selected text.
-                TextSelectionPageHandler.paintSelectedText(g, this, documentViewModel);
             }
             // paint annotation handler effect if any.
             if (currentToolHandler != null) {
