@@ -120,7 +120,7 @@
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/core/pobjects/fonts/afm/"/>
-                <include name="org/icepdf/core/pobjects/graphics/res/"/>
+                <exclude name="org/icepdf/core/pobjects/graphics/res/"/>
             </fileset>
             <doctitle><![CDATA[<h2>ICEpdf API</h2>]]></doctitle>
         </javadoc>
