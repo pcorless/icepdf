@@ -186,9 +186,6 @@ public class TilingPattern extends Stream implements Pattern {
 
     private GraphicsState parentGraphicState;
 
-    // cached pattern paint
-    private TexturePaint patternPaint;
-
     public TilingPattern(Stream stream) {
         super(stream.getLibrary(), stream.getEntries(), stream.getRawBytes());
         initiParams();
@@ -394,9 +391,7 @@ public class TilingPattern extends Stream implements Pattern {
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D canvas = bi.createGraphics();
 
-        // create the pattern paint before  we paint encase there
-        // is some recursive calls during the paint PDF-436
-        patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
+        TexturePaint patternPaint = new TexturePaint(bi, new Rectangle2D.Double(
                 xOffset, yOffset,
                 width, height));
         g.setPaint(patternPaint);
@@ -520,7 +515,7 @@ public class TilingPattern extends Stream implements Pattern {
 
 
     public Paint getPaint() {
-        return patternPaint;
+        return null;
     }
 
     public int getPatternType() {
