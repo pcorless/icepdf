@@ -44,10 +44,14 @@ import java.util.*;
 public class PageText implements TextSelect {
 
     private static boolean checkForDuplicates;
+    private static boolean preserveColumns;
 
     static {
         checkForDuplicates = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.trim.duplicates", false);
+
+        preserveColumns = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.preserveColumns", true);
     }
 
     // pointer to current line during document parse, no other use.
@@ -80,7 +84,7 @@ public class PageText implements TextSelect {
         }
     }
 
-    protected void newLine() {
+    public void newLine() {
         // make sure we don't insert a new line if the previous has no words. 
         if (currentLine != null &&
                 currentLine.getWords().size() == 0) {
@@ -229,11 +233,15 @@ public class PageText implements TextSelect {
     }
 
     public void clearSelected() {
-        for (LineText lineText : pageLines) {
-            lineText.clearSelected();
+        if (pageLines != null) {
+            for (LineText lineText : pageLines) {
+                lineText.clearSelected();
+            }
         }
-        for (LineText lineText : sortedPageLines) {
-            lineText.clearSelected();
+        if (sortedPageLines != null) {
+            for (LineText lineText : sortedPageLines) {
+                lineText.clearSelected();
+            }
         }
         // check optional content.
         if (optionalPageLines != null) {
@@ -243,8 +251,10 @@ public class PageText implements TextSelect {
             for (OptionalContents key : keys) {
                 if (key != null) {
                     optionalLines = optionalPageLines.get(key).getAllPageLines();
-                    for (LineText lineText : optionalLines) {
-                        lineText.clearSelected();
+                    if (optionalLines != null) {
+                        for (LineText lineText : optionalLines) {
+                            lineText.clearSelected();
+                        }
                     }
                 }
             }
@@ -277,16 +287,20 @@ public class PageText implements TextSelect {
     public StringBuilder getSelected() {
         StringBuilder selectedText = new StringBuilder();
         ArrayList<LineText> pageLines = getPageLines();
-        for (LineText lineText : pageLines) {
-            selectedText.append(lineText.getSelected());
+        if (pageLines != null) {
+            for (LineText lineText : pageLines) {
+                selectedText.append(lineText.getSelected());
+            }
         }
         return selectedText;
     }
 
     public void selectAll() {
         ArrayList<LineText> pageLines = getPageLines();
-        for (LineText lineText : pageLines) {
-            lineText.selectAll();
+        if (pageLines != null) {
+            for (LineText lineText : pageLines) {
+                lineText.selectAll();
+            }
         }
     }
 
@@ -325,7 +339,9 @@ public class PageText implements TextSelect {
                 // all page words will be on one line
                 java.util.List<WordText> words = pageLine.getWords();
                 if (words != null && words.size() > 0) {
-                    Collections.sort(words, new LinePositionComparator());
+                    if (!preserveColumns) {
+                        Collections.sort(words, new LinePositionComparator());
+                    }
                     // break the words into lines on every change of y
                     double lastY = words.get(0).getBounds().y;
                     int start = 0, end = 0;
