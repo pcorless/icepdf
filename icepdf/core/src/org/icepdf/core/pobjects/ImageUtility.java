@@ -1064,7 +1064,7 @@ public class ImageUtility {
      * @param baseImage base image in which the mask weill be applied to
      * @param maskImage image mask to be applied to base image.
      */
-    protected static BufferedImage applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
+    public static BufferedImage applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
         // check to see if we need to scale the mask to match the size of the
         // base image.
         int baseWidth = baseImage.getWidth();
@@ -1124,14 +1124,7 @@ public class ImageUtility {
      *
      * @param baseImage base image in which the mask weill be applied to
      */
-    protected static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
-        // check to see if we need to scale the mask to match the size of the
-        // base image.
-        int baseWidth = baseImage.getWidth();
-        int baseHeight = baseImage.getHeight();
-
-        final int maskWidth = sMaskImage.getWidth();
-        final int maskHeight = sMaskImage.getHeight();
+    public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
 
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
@@ -1139,11 +1132,10 @@ public class ImageUtility {
         sMaskImage = images[1];
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
-        baseWidth = baseImage.getWidth();
-        baseHeight = baseImage.getHeight();
+        int baseWidth = baseImage.getWidth();
+        int baseHeight = baseImage.getHeight();
 
-        BufferedImage argbImage = new BufferedImage(baseWidth,
-                baseHeight, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage argbImage = baseImage;
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
         // iterate over each band to apply the mask
@@ -1738,6 +1730,17 @@ public class ImageUtility {
                 BufferedImage bim = op.filter(baseImage, null);
                 baseImage.flush();
                 baseImage = bim;
+            } else if (width > maskWidth || height > maskHeight) {
+                // calculate scale factors.
+                double scaleX = width / (double) maskWidth;
+                double scaleY = height / (double) maskHeight;
+                // scale the mask to match the base image.
+                AffineTransform tx = new AffineTransform();
+                tx.scale(scaleX, scaleY);
+                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+                BufferedImage bim = op.filter(maskImage, null);
+                maskImage.flush();
+                maskImage = bim;
             }
             return new BufferedImage[]{baseImage, maskImage};
         } else {

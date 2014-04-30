@@ -107,6 +107,15 @@ public class Form extends Stream {
     }
 
     /**
+     * Gets the associated graphic state instance for this form.
+     *
+     * @return external graphic state,  can be null.
+     */
+    public GraphicsState getGraphicsState() {
+        return graphicsState;
+    }
+
+    /**
      * Utility method for parsing a vector of affinetranform values to an
      * affine transform.
      *
