@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Defs;
@@ -485,26 +484,6 @@ public class GraphicsState {
         if (extGState.getSMask() != null) {
             SoftMask sMask = extGState.getSMask();
             setSoftMask(sMask);
-            Form form = sMask.getG();
-            Shapes shapes = form.getShapes();
-            List<Image> images = shapes.getImages();
-//            for (final Image image : images){
-//                final JFrame f = new JFrame("Test");
-//                f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-//                f.getContentPane().add(new JComponent() {
-//                    @Override
-//                    public void paint(Graphics g_) {
-//                        super.paint(g_);
-//                        g_.drawImage(image,0,0,null);
-//                    }
-//                });
-//                f.setSize(new Dimension(800, 800));
-//                f.setVisible(true);
-//            }
-//            System.out.println("BC " + sMask.getBC());
-//            System.out.println("Form " + form);
-//            System.out.println("Name " + sMask.getS());
-//            System.out.println();
         }
 
         // apply over print logic
@@ -525,10 +504,10 @@ public class GraphicsState {
             overprintOther = overprintStroking;
         }
         // PDF 1.2 and over
-        else if (OP != null) {
+//        else if (OP != null) {
 //            overprintStroking = OP.booleanValue();
 //            overprintOther = op.booleanValue();
-        }
+//        }
         // else default inits of false for each is fine.
     }
 
