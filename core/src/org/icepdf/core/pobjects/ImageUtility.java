@@ -398,7 +398,11 @@ public class ImageUtility {
                     @Override
                     public void paint(Graphics g_) {
                         super.paint(g_);
+                        g_.setColor(Color.green);
+                        g_.fillRect(0, 0, 800, 800);
                         g_.drawImage(bi, 0, 0, f);
+                        g_.setColor(Color.red);
+                        g_.drawRect(0, 0, bi.getWidth() - 2, bi.getHeight() - 2);
                     }
                 };
                 image.setPreferredSize(new Dimension(bi.getWidth(), bi.getHeight()));
@@ -1135,7 +1139,13 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
-        BufferedImage argbImage = baseImage;
+        BufferedImage argbImage;
+        if (hasAlpha(baseImage)) {
+            argbImage = baseImage;
+        } else {
+            argbImage = new BufferedImage(baseWidth,
+                    baseHeight, BufferedImage.TYPE_INT_ARGB);
+        }
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
         // iterate over each band to apply the mask
@@ -1172,8 +1182,13 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
-        BufferedImage imageMask = new BufferedImage(baseWidth, baseHeight,
-                BufferedImage.TYPE_INT_ARGB);
+        BufferedImage imageMask;
+        if (hasAlpha(baseImage)) {
+            imageMask = baseImage;
+        } else {
+            imageMask = new BufferedImage(baseWidth,
+                    baseHeight, BufferedImage.TYPE_INT_ARGB);
+        }
 
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.

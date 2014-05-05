@@ -306,4 +306,13 @@ public class Resources extends Dictionary {
         }
         return null;
     }
+
+    /**
+     * Checks to see if the Shading key has value in this resource dictionary.
+     *
+     * @return true if there are shading values,  false otherwise.
+     */
+    public boolean isShading() {
+        return shading != null;
+    }
 }
