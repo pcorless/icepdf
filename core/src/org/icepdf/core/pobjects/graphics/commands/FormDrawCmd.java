@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -39,6 +40,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private BufferedImage xFormBuffer;
     private int x, y;
 
+    private static boolean disableXObjectSMask;
+
+    static {
+        // decide if large images will be scaled
+        disableXObjectSMask =
+                Defs.sysPropertyBoolean("org.icepdf.core.disableXObjectSMask",
+                        true);
+
+    }
+
     public FormDrawCmd(Form xForm) {
         this.xForm = xForm;
     }
@@ -57,7 +68,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
             GraphicsState graphicsState = xForm.getGraphicsState();
             // create the buffer of the xobject content.
             xFormBuffer = createBufferXObject(parentPage, xForm, graphicsState, renderingHints);
-            if (graphicsState != null && graphicsState.getSoftMask() != null) {
+            if (!disableXObjectSMask &&
+                    graphicsState != null && graphicsState.getSoftMask() != null) {
                 SoftMask softMask = graphicsState.getSoftMask();
                 Form sMaskForm = softMask.getG();
 
