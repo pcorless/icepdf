@@ -46,18 +46,12 @@ public abstract class AbstractContentParser implements ContentParser {
             Logger.getLogger(AbstractContentParser.class.toString());
 
     private static boolean disableTransparencyGroups;
-    private static boolean disableXObjectSMask;
 
     static {
         // decide if large images will be scaled
         disableTransparencyGroups =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableTransparencyGroup",
                         false);
-        // decide if large images will be scaled
-        disableXObjectSMask =
-                Defs.sysPropertyBoolean("org.icepdf.core.disableXObjectSMask",
-                        true);
-
     }
 
     public static final float OVERPAINT_ALPHA = 0.4f;
@@ -581,9 +575,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 // slightly different then a regular xObject as we
                 // need to capture the alpha which is only possible
                 // by paint the xObject to an image.
-                if ((!disableTransparencyGroups &&
-                        (!disableXObjectSMask &&
-                                formXObject.getGraphicsState() != null &&
+                if ((!disableTransparencyGroups ||
+                        (formXObject.getGraphicsState() != null &&
                                 formXObject.getGraphicsState().getSoftMask() != null)) &&
                         formXObject.isTransparencyGroup() &&
 //                        graphicState.getFillAlpha() < 1.0f &&
