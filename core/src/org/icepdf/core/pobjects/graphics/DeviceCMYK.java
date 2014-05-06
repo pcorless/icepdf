@@ -48,9 +48,14 @@ public class DeviceCMYK extends PColorSpace {
     // CMYK ICC color profile.
     private static ICC_ColorSpace iccCmykColorSpace;
 
+    // disable icc color profile lookups as they can be slow. n
+    private static boolean disableICCCmykColorSpace;
+
     static {
         // black ratio
         blackRatio = (float) Defs.doubleProperty("org.icepdf.core.cmyk.colorant.black", 1.0);
+
+        disableICCCmykColorSpace = Defs.booleanProperty("org.icepdf.core.cmyk.disableICCProfile", false);
 
         // check for a custom CMYK ICC colour profile specified using system properties.
         String customCMYKProfilePath = null;
@@ -203,7 +208,7 @@ public class DeviceCMYK extends PColorSpace {
         float inBlack = f[0];
 
         // check if we have a valid ICC profile to work with
-        if (iccCmykColorSpace != null) {
+        if (!disableICCCmykColorSpace && iccCmykColorSpace != null) {
             f = iccCmykColorSpace.toRGB(reverse(f));
             return new Color(f[0], f[1], f[2]);
         }
