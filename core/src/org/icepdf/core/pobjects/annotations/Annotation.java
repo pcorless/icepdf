@@ -1228,6 +1228,9 @@ public abstract class Annotation extends Dictionary {
 
             // step 1. appearance bounding box (BBox) is transformed, using
             // Matrix, to produce a quadrilateral with arbitrary orientation.
+            if (bbox == null) {
+                bbox = userSpaceRectangle;
+            }
             Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
 
             // Step 2. matrix a is computed that scales and translates the
