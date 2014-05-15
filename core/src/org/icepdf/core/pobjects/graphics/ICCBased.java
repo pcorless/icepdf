@@ -46,10 +46,10 @@ public class ICCBased extends PColorSpace {
     private float[] lastInput;
     private Color lastOutput;
 
-    /**
-     * @param l
-     * @param h
-     */
+    // setting up an ICC colour look up is expensive, so if we get a failure
+    // we just fallback to the alternative space to safe cpu time.
+    private boolean failed;
+
     public ICCBased(Library l, Stream h) {
         super(l, h.getEntries());
         numcomp = h.getInt(N_KEY);
@@ -75,7 +75,7 @@ public class ICCBased extends PColorSpace {
             return;
         }
         inited = true;
-        byte[] in = null;
+        byte[] in;
         try {
             stream.init();
             in = stream.getDecodedStreamBytes(0);
@@ -103,13 +103,9 @@ public class ICCBased extends PColorSpace {
         return alternate;
     }
 
-    /**
-     * @param f
-     * @return
-     */
     public Color getColor(float[] f, boolean fillAndStroke) {
         init();
-        if (colorSpace != null) {
+        if (colorSpace != null && !failed) {
             try {
                 synchronized (this) {
                     // We cache the previous inputs and output, since images
@@ -153,10 +149,10 @@ public class ICCBased extends PColorSpace {
                     Color c = new Color(value);
 
                     // Update the cache
-                    if (lastInput == null || lastInput.length != fLength)
+                    if (lastInput == null || lastInput.length != fLength) {
                         lastInput = new float[fLength];
-                    for (int i = fLength - 1; i >= 0; i--)
-                        lastInput[i] = f[i];
+                    }
+                    System.arraycopy(f, 0, lastInput, 0, fLength - 1 + 1);
                     lastOutput = c;
 
                     return c;
@@ -170,6 +166,7 @@ public class ICCBased extends PColorSpace {
                 */
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error getting ICCBased colour", e);
+                failed = true;
             }
         }
         return alternate.getColor(f);
