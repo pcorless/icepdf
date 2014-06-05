@@ -163,7 +163,12 @@ public class Destination {
                     Dictionary dests = catalog.getDestinations();
                     if (dests != null) {
                         Object ob = dests.getObject((Name) object);
-                        if (ob instanceof HashMap) {
+                        // list of destinations name->Dest pairs.
+                        if (ob instanceof List) {
+                            parse((List) ob);
+                        }
+                        // corner case for d attached list.
+                        else if (ob instanceof HashMap) {
                             parse((List) (((HashMap) ob).get(D_KEY)));
                         } else {
                             if (logger.isLoggable(Level.FINE)) {

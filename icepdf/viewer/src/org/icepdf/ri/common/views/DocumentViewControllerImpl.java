@@ -380,7 +380,7 @@ public class DocumentViewControllerImpl
             return;
         }
 
-        if (destination == null) {
+        if (destination == null || destination.getPageReference() == null) {
             return;
         }
 
