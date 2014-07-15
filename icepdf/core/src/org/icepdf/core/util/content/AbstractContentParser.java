@@ -745,7 +745,6 @@ public abstract class AbstractContentParser implements ContentParser {
         float size = ((Number) stack.pop()).floatValue();
         Name name2 = (Name) stack.pop();
         // build the new font and initialize it.
-
         graphicState.getTextState().font = resources.getFont(name2);
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
@@ -755,26 +754,39 @@ public abstract class AbstractContentParser implements ContentParser {
             FontFactory fontFactory = FontFactory.getInstance();
             boolean awtState = fontFactory.isAwtFontSubstitution();
             fontFactory.setAwtFontSubstitution(true);
-            // get the first pages resources, no need to lock the page, already locked.
-            Resources res = resources.getLibrary().getCatalog().getPageTree()
-                    .getPage(0).getResources();
-            // try and get a font off the first page.
-            Object pageFonts = res.getEntries().get(Resources.FONT_KEY);
-            if (pageFonts instanceof HashMap) {
-                // get first font
-                Reference fontRef = (Reference) ((HashMap) pageFonts).get(name2);
-                graphicState.getTextState().font =
-                        (org.icepdf.core.pobjects.fonts.Font) resources.getLibrary()
-                                .getObject(fontRef);
-                // might get a null pointer but we'll get on on deriveFont too
-                graphicState.getTextState().font.init();
+            try {
+                // this should almost never happen but of course we have a few
+                // corner cases:
+                // get the first pages resources, no need to lock the page, already locked.
+                Page page = resources.getLibrary().getCatalog().getPageTree().getPage(0);
+                // make sure page resources are available.
+                page.init();
+                Resources res = page.getResources();
+                // try and get a font off the first page.
+                Object pageFonts = res.getEntries().get(Resources.FONT_KEY);
+                if (pageFonts instanceof HashMap) {
+                    // get first font
+                    Reference fontRef = (Reference) ((HashMap) pageFonts).get(name2);
+                    if (fontRef != null) {
+                        graphicState.getTextState().font =
+                                (org.icepdf.core.pobjects.fonts.Font) resources.getLibrary()
+                                        .getObject(fontRef);
+                        graphicState.getTextState().font.init();
+                    }
+                }
+            } catch (Throwable throwable) {
+                // keep block protected as we don't want to accidentally turn off
+                // the font engine.
+                logger.warning("Warning could not find font by named resource " + name2);
             }
             // return factory to original state.
             fontFactory.setAwtFontSubstitution(awtState);
             // if no fonts found then we just bail and accept the null pointer
         }
-        graphicState.getTextState().currentfont =
-                graphicState.getTextState().font.getFont().deriveFont(size);
+        if (graphicState.getTextState().font != null) {
+            graphicState.getTextState().currentfont =
+                    graphicState.getTextState().font.getFont().deriveFont(size);
+        }
     }
 
     protected static void consume_Tc(GraphicsState graphicState, Stack stack) {

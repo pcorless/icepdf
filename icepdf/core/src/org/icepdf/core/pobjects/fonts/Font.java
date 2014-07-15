@@ -243,6 +243,15 @@ public abstract class Font extends Dictionary {
     }
 
     /**
+     * Gets the fonts base name.
+     *
+     * @return fonts base name, "Serif" if none specified.
+     */
+    public String getBaseFont() {
+        return basefont;
+    }
+
+    /**
      * Gets the font name.
      *
      * @return string representing the font name
