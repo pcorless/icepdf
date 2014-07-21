@@ -409,8 +409,8 @@ public class PageViewComponentImpl extends
             // no pageBuffer to paint thus, we must recreate it.
             else {
                 // mark as dirty
-                currentZoom = -1;
                 if (!isDirtyTimer.isRunning()) {
+                    currentZoom = -1;
                     isDirtyTimer.start();
                 }
             }
@@ -790,7 +790,8 @@ public class PageViewComponentImpl extends
                 normalizedClipBounds.y -= pageBounds.y;
 
                 // start an an area copy from the old buffer to the new buffer.
-                if (!pagePainter.isLastPaintDirty() &&
+                if (!isPageStateDirty &&
+                        !pagePainter.isLastPaintDirty() &&
                         pagePainter.isBufferDirty() &&
                         bufferedPageImageBounds.intersects(oldBufferedPageImageBounds)) {
 
