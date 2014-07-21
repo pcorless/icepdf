@@ -681,6 +681,9 @@ public class PageViewComponentImpl extends
                 double width = ((clipBounds.width * horizontalScaleFactor) / 2.0);
                 bufferedPageImageBounds.x = (int) (clipBounds.x - width);
                 bufferedPageImageBounds.width = (int) (clipBounds.width + (width * 2.0));
+                if (bufferedPageImageBounds.width > pageSize.width) {
+                    bufferedPageImageBounds.width = pageSize.width;
+                }
             }
             // we want clip bounds width
             else {
@@ -692,7 +695,7 @@ public class PageViewComponentImpl extends
         // calculate the size of the buffers height
         if (pageSize.height <= clipBounds.height) {
             bufferedPageImageBounds.y = 0;
-            bufferedPageImageBounds.height = clipBounds.height;
+            bufferedPageImageBounds.height = pageSize.height;
         }
         // otherwise we use the size of the clipBounds * horizontal scale factor
         else {
@@ -701,6 +704,9 @@ public class PageViewComponentImpl extends
                 double height = ((clipBounds.height * verticalScaleFactor) / 2.0);
                 bufferedPageImageBounds.y = (int) (clipBounds.y - height);
                 bufferedPageImageBounds.height = (int) (clipBounds.height + (height * 2.0));
+                if (bufferedPageImageBounds.height > pageSize.height) {
+                    bufferedPageImageBounds.height = pageSize.height;
+                }
             }
             // we want clip bounds height
             else {
