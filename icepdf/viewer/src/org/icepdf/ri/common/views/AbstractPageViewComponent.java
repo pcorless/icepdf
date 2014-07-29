@@ -175,25 +175,27 @@ public abstract class AbstractPageViewComponent
     }
 
     public void refreshAnnotationComponents(Page page) {
-        List<Annotation> annotations = page.getAnnotations();
-        if (annotations != null && annotations.size() > 0) {
-            // we don't want to re-initialize the component as we'll
-            // get duplicates if the page has be gc'd
-            if (annotationComponents == null) {
-                annotationComponents =
-                        new ArrayList<AnnotationComponent>(annotations.size());
-                for (Annotation annotation : annotations) {
-                    AbstractAnnotationComponent comp =
-                            AnnotationComponentFactory.buildAnnotationComponent(
-                                    annotation, documentViewController,
-                                    this, documentViewModel);
-                    // add for painting
-                    annotationComponents.add(comp);
-                    // add to layout
-                    if (comp instanceof PopupAnnotationComponent) {
-                        this.add(comp, JLayeredPane.POPUP_LAYER);
-                    } else {
-                        this.add(comp, JLayeredPane.DEFAULT_LAYER);
+        if (page != null) {
+            List<Annotation> annotations = page.getAnnotations();
+            if (annotations != null && annotations.size() > 0) {
+                // we don't want to re-initialize the component as we'll
+                // get duplicates if the page has be gc'd
+                if (annotationComponents == null) {
+                    annotationComponents =
+                            new ArrayList<AnnotationComponent>(annotations.size());
+                    for (Annotation annotation : annotations) {
+                        AbstractAnnotationComponent comp =
+                                AnnotationComponentFactory.buildAnnotationComponent(
+                                        annotation, documentViewController,
+                                        this, documentViewModel);
+                        // add for painting
+                        annotationComponents.add(comp);
+                        // add to layout
+                        if (comp instanceof PopupAnnotationComponent) {
+                            this.add(comp, JLayeredPane.POPUP_LAYER);
+                        } else {
+                            this.add(comp, JLayeredPane.DEFAULT_LAYER);
+                        }
                     }
                 }
             }
