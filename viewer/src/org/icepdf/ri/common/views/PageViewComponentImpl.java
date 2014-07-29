@@ -61,14 +61,14 @@ import java.util.logging.Logger;
  * @see org.icepdf.ri.common.views.AbstractDocumentView
  * @see org.icepdf.ri.common.views.AbstractDocumentViewModel
  * @see DocumentViewController
- *      <p/>
- *      <p>The page view takes advantage of a buffered display to speed up page scrolling
- *      and provide users with a better overall UI experiance.
- *      The size of the buffer can also be set with the system properties
- *      "org.icepdf.core.views.buffersize.vertical" and
- *      "org.icepdf.core.views.buffersize.horizontal".  These system
- *      properties define the vertical and horizontal ratios in which the current
- *      viewport will be extended to define the buffer size.</p>
+ * <p/>
+ * <p>The page view takes advantage of a buffered display to speed up page scrolling
+ * and provide users with a better overall UI experiance.
+ * The size of the buffer can also be set with the system properties
+ * "org.icepdf.core.views.buffersize.vertical" and
+ * "org.icepdf.core.views.buffersize.horizontal".  These system
+ * properties define the vertical and horizontal ratios in which the current
+ * viewport will be extended to define the buffer size.</p>
  * @since 2.5
  */
 public class PageViewComponentImpl extends
@@ -150,11 +150,11 @@ public class PageViewComponentImpl extends
         try {
             verticalScaleFactor =
                     Double.parseDouble(Defs.sysProperty("org.icepdf.core.views.buffersize.vertical",
-                            "1.015"));
+                            "1.25"));
 
             horizontalScaleFactor =
                     Double.parseDouble(Defs.sysProperty("org.icepdf.core.views.buffersize.horizontal",
-                            "1.015"));
+                            "1.25"));
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
         }
@@ -168,9 +168,9 @@ public class PageViewComponentImpl extends
         try {
             scrollInitThreshold =
                     Defs.intProperty("org.icepdf.core.views.scroll.initThreshold",
-                            150);
+                            5);
         } catch (NumberFormatException e) {
-            logger.log(Level.FINE, "Error reading dirty timer interval");
+            logger.log(Level.FINE, "Error reading init threshold timer interval");
         }
     }
 
@@ -190,6 +190,8 @@ public class PageViewComponentImpl extends
         setFocusable(true);
         // add focus listener
         addFocusListener(this);
+
+        addComponentListener(this);
 
         // needed to propagate mouse events.
         this.documentViewModel = documentViewModel;
@@ -253,15 +255,15 @@ public class PageViewComponentImpl extends
         inited = true;
 
         // add repaint listener
-        addPageRepaintListener();
+//        addPageRepaintListener();
 
         // timer will dictate when buffer repaints can take place
-        DirtyTimerAction dirtyTimerAction = new DirtyTimerAction(this);
+        DirtyTimerAction dirtyTimerAction = new DirtyTimerAction();
         isDirtyTimer = new Timer(dirtyTimerInterval, dirtyTimerAction);
         isDirtyTimer.setInitialDelay(0);
 
         // PageInitializer and painter commands
-        pageInitializer = new PageInitializer(this);
+        pageInitializer = new PageInitializer();
         pagePainter = new PagePainter();
     }
 
@@ -271,7 +273,7 @@ public class PageViewComponentImpl extends
      * full parse of the page if accessed again.
      */
     public void invalidatePage() {
-        Page page = pageTree.getPage(pageIndex);
+        Page page = getPage();
         page.getLibrary().disposeFontResources();
         page.resetInitializedState();
         currentZoom = -1;
@@ -296,6 +298,7 @@ public class PageViewComponentImpl extends
 
         // remove focus listener
         removeFocusListener(this);
+        removeComponentListener(this);
 
         // remove repaint listener
         removePageRepaintListener();
@@ -318,7 +321,11 @@ public class PageViewComponentImpl extends
     }
 
     public Page getPage() {
-        return pageTree.getPage(pageIndex);
+        Page page = pageTree.getPage(pageIndex);
+        if (page != null) {
+            page.addPaintPageListener(this);
+        }
+        return page;
     }
 
     public void setDocumentViewCallback(DocumentView parentDocumentView) {
@@ -390,21 +397,6 @@ public class PageViewComponentImpl extends
                     g.drawImage(pageBufferImage, bufferedPageImageBounds.x,
                             bufferedPageImageBounds.y, this);
                 }
-//                if (!isPageRepaintListenerEnabled && !pagePainter.isRunning()){
-//                    addPageRepaintListener();
-//                }
-
-//                g.setColor(Color.blue);
-//                g.drawRect(oldBufferedPageImageBounds.x + 1,
-//                           oldBufferedPageImageBounds.y + 1,
-//                           oldBufferedPageImageBounds.width - 3,
-//                           oldBufferedPageImageBounds.height- 3);
-//                g.setColor(Color.red);
-//                g.drawRect(bufferedPageImageBounds.x + 1,
-//                           bufferedPageImageBounds.y + 1,
-//                           bufferedPageImageBounds.width - 2,
-//                           bufferedPageImageBounds.height- 2);
-
             }
             // no pageBuffer to paint thus, we must recreate it.
             else {
@@ -415,11 +407,24 @@ public class PageViewComponentImpl extends
                 }
             }
 
+            // clipping bounds draw bounds.
+//            if (clipBounds != null) {
+//                g.setStroke(new BasicStroke(5));
+//                g.setColor(Color.BLUE);
+//                g.drawRect(bufferedPageImageBounds.x, bufferedPageImageBounds.y,
+//                        bufferedPageImageBounds.width - 2, bufferedPageImageBounds.height - 2);
+//            }
+//            if (clipBounds != null) {
+//                g.setStroke(new BasicStroke(3));
+//                g.setColor(Color.red);
+//                g.draw(clipBounds);
+//            }
+
             // paint the annotations components
             paintAnnotations(g);
 
             // Lazy paint of highlight and select all text states.
-            Page currentPage = this.getPage();
+            Page currentPage = getPage();
             if (currentPage != null && currentPage.isInitiated()) {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
@@ -525,6 +530,10 @@ public class PageViewComponentImpl extends
     }
 
     public void componentHidden(ComponentEvent e) {
+        // stop the dirty timer
+        if (isDirtyTimer != null && isDirtyTimer.isRunning()) {
+            isDirtyTimer.stop();
+        }
     }
 
     public void componentMoved(ComponentEvent e) {
@@ -534,6 +543,10 @@ public class PageViewComponentImpl extends
     }
 
     public void componentShown(ComponentEvent e) {
+        // start the dirty timer.
+        if (isDirtyTimer != null && !isDirtyTimer.isRunning()) {
+            isDirtyTimer.start();
+        }
     }
 
     private void calculateRoughPageSize(Rectangle pageSize) {
@@ -583,7 +596,7 @@ public class PageViewComponentImpl extends
 
     private void calculatePageSize(Rectangle pageSize) {
         if (pageTree != null) {
-            Page currentPage = pageTree.getPage(pageIndex);
+            Page currentPage = getPage();
             if (currentPage != null) {
                 pageSize.setSize(currentPage.getSize(
                         documentViewModel.getPageBoundary(),
@@ -635,154 +648,169 @@ public class PageViewComponentImpl extends
      *
      * @param pagePainter painter doing the painting work.
      */
-    private synchronized void createBufferedPageImage(Page page, PagePainter pagePainter) {
+    private void createBufferedPageImage(Page page, PagePainter pagePainter) {
         if (disposing)
             return;
 
-        boolean isPageStateDirty = isPageStateDirty();
-        // Mark the image size as being fixed, we don't want the timer to
-        // accidentally stop the painting
-        currentRotation = documentViewModel.getViewRotation();
-        currentZoom = documentViewModel.getViewZoom();
-        // clear the image if it is dirty, we don't want to paint the wrong size buffer
-        Image pageBufferImage = bufferedPageImageReference.get();
-        // draw the clean buffer
-        if (isPageStateDirty && pageBufferImage != null) {
-            pageBufferImage.flush();
-        }
+        Graphics2D imageGraphics = null;
 
-        // update buffer states, before we change bufferedPageImageBounds
-        Rectangle oldBufferedPageImageBounds = new Rectangle(bufferedPageImageBounds);
-
-        // get the pages current bounds, may have changed sin
-        Rectangle pageBounds = documentViewModel.getPageBounds(pageIndex);
-
-        if (parentScrollPane != null) {
-            oldClipBounds.setBounds(clipBounds);
-            clipBounds.setBounds(parentScrollPane.getViewport().getViewRect());
-            if (oldClipBounds.width == 0 && oldClipBounds.height == 0) {
-                oldClipBounds.setBounds(clipBounds);
-            }
-        }
-
-        // calculate the intersection of the clipBounds with the page size.
-        // This will give us the basis for most of our calculations
-        bufferedPageImageBounds.setBounds(pageBounds.intersection(clipBounds));
-
-        // calculate the size of the buffers width, if the page is smaller then
-        // the clip bounds, then we use the page size as the buffer size.
-        if (pageSize.width <= clipBounds.width) {
-            bufferedPageImageBounds.x = 0;
-            bufferedPageImageBounds.width = pageSize.width;
-        }
-        // otherwise we use the size of the clipBounds * horizontal scale factor
-        else {
-            if (horizontalScaleFactor > 1.0) {
-                double width = ((clipBounds.width * horizontalScaleFactor) / 2.0);
-                bufferedPageImageBounds.x = (int) (clipBounds.x - width);
-                bufferedPageImageBounds.width = (int) (clipBounds.width + (width * 2.0));
-                if (bufferedPageImageBounds.width > pageSize.width) {
-                    bufferedPageImageBounds.width = pageSize.width;
+        // block awt from repainting during copy area calculation and clear
+        // background painting
+        synchronized (paintCopyAreaLock) {
+            boolean isPageStateDirty = isPageStateDirty();
+            // Mark the image size as being fixed, we don't want the timer to
+            // accidentally stop the painting
+            currentRotation = documentViewModel.getViewRotation();
+            currentZoom = documentViewModel.getViewZoom();
+            if (parentScrollPane != null) {
+                // check for size changes of the view port an thus we need
+                // to create a larger buffer that will fill the new screen size.
+                // it would be great to take the time to copy the old buffer over
+                // to the new one, but memory is always an issue.
+                Rectangle rect = parentScrollPane.getViewport().getViewRect();
+                if (clipBounds.width < rect.width ||
+                        clipBounds.height < rect.height) {
+                    isPageStateDirty = true;
+                }
+                clipBounds.setBounds(rect);
+                if (oldClipBounds.width == 0 && oldClipBounds.height == 0) {
+                    oldClipBounds.setBounds(clipBounds);
                 }
             }
-            // we want clip bounds width
-            else {
-                bufferedPageImageBounds.width = clipBounds.width;
-            }
-            // but we need to normalize the x coordinate to component space
-            bufferedPageImageBounds.x -= pageBounds.x;
-        }
-        // calculate the size of the buffers height
-        if (pageSize.height <= clipBounds.height) {
-            bufferedPageImageBounds.y = 0;
-            bufferedPageImageBounds.height = pageSize.height;
-        }
-        // otherwise we use the size of the clipBounds * horizontal scale factor
-        else {
 
-            if (verticalScaleFactor > 1.0) {
-                double height = ((clipBounds.height * verticalScaleFactor) / 2.0);
-                bufferedPageImageBounds.y = (int) (clipBounds.y - height);
-                bufferedPageImageBounds.height = (int) (clipBounds.height + (height * 2.0));
-                if (bufferedPageImageBounds.height > pageSize.height) {
-                    bufferedPageImageBounds.height = pageSize.height;
+            // clear the image if it is dirty, we don't want to paint the wrong size buffer
+            Image pageBufferImage = bufferedPageImageReference.get();
+
+            // update buffer states, before we change bufferedPageImageBounds
+            Rectangle oldBufferedPageImageBounds = new Rectangle(bufferedPageImageBounds);
+
+            // get the pages current bounds, may have changed sin
+            Rectangle pageBounds = documentViewModel.getPageBounds(pageIndex);
+
+            // calculate the intersection of the clipBounds with the page size.
+            // This will give us the basis for most of our calculations
+            bufferedPageImageBounds.setBounds(pageBounds.intersection(clipBounds));
+
+            // check to see if we have a bigger buffer size, if so we nee to crete a
+            // new buffer
+            if (bufferedPageImageBounds.width > oldBufferedPageImageBounds.width ||
+                    bufferedPageImageBounds.height > oldBufferedPageImageBounds.height) {
+                isPageStateDirty = true;
+            }
+
+            // calculate the size of the buffers width, if the page is smaller then
+            // the clip bounds, then we use the page size as the buffer size.
+            if (pageSize.width <= clipBounds.width) {
+                bufferedPageImageBounds.x = 0;
+                bufferedPageImageBounds.width = pageSize.width;
+            }
+            // otherwise we use the size of the clipBounds * horizontal scale factor
+            else {
+                if (horizontalScaleFactor > 1.0) {
+                    double width = (clipBounds.width * horizontalScaleFactor) - clipBounds.width;
+                    bufferedPageImageBounds.x = (int) (bufferedPageImageBounds.x - width);
+                    bufferedPageImageBounds.width = (int) (bufferedPageImageBounds.width + (width * 2.0f));
+                    if (bufferedPageImageBounds.width > pageSize.width) {
+                        bufferedPageImageBounds.width = pageSize.width;
+                    }
                 }
+                // we want clip bounds width
+                else {
+                    bufferedPageImageBounds.width = clipBounds.width;
+                }
+                // but we need to normalize the x coordinate to component space
+                bufferedPageImageBounds.x -= pageBounds.x;
             }
-            // we want clip bounds height
+            // calculate the size of the buffers height
+            if (pageSize.height <= clipBounds.height) {
+                bufferedPageImageBounds.y = 0;
+                bufferedPageImageBounds.height = pageSize.height;
+            }
+            // otherwise we use the size of the clipBounds * horizontal scale factor
             else {
-                bufferedPageImageBounds.height = clipBounds.height;
+                if (verticalScaleFactor > 1.0) {
+                    double height = (clipBounds.height * verticalScaleFactor) - clipBounds.height;
+                    bufferedPageImageBounds.y = (int) (bufferedPageImageBounds.y - height);
+                    bufferedPageImageBounds.height = (int) (bufferedPageImageBounds.height + (height * 2.0f));
+                    if (bufferedPageImageBounds.height > pageSize.height) {
+                        bufferedPageImageBounds.height = pageSize.height;
+                    }
+                }
+                // we want clip bounds height
+                else {
+                    bufferedPageImageBounds.height = clipBounds.height;
+                }
+                // but we need to normalize the y coordinate to component space
+                bufferedPageImageBounds.y -= pageBounds.y;
             }
-            // but we need to normalize the y coordinate to component space
-            bufferedPageImageBounds.y -= pageBounds.y;
-        }
 
-        // clean up old image if available, this is done before we correct the bounds,
-        // keeps the same buffer size for the zoom/rotation, but manipulate its bounds
-        // to avoid creating a series of new buffers and thus more flicker
-        // Boolean isBufferDirty = isBufferDirty();
-        // draw the clean buffer
-        if (isPageStateDirty || pageBufferImage == null) {
-            // clear old buffer
+            // final check to make sure we have valid dimensions.
+            if (bufferedPageImageBounds.width < 1 || bufferedPageImageBounds.height < 1) {
+                bufferedPageImageBounds.setBounds(pageBounds);
+            }
+
+            // clean up old image if available, this is done before we correct the bounds,
+            // keeps the same buffer size for the zoom/rotation, but manipulate its bounds
+            // to avoid creating a series of new buffers and thus more flicker
+            // Boolean isBufferDirty = isBufferDirty();
+            // draw the clean buffer
+            if (isPageStateDirty || pageBufferImage == null) {
+                // create new image and get graphics context from image
+                if (gc == null) {
+                    gc = getGraphicsConfiguration();
+                }
+                if (gc != null && this.isShowing()) {
+                    // clear old buffer
+                    if (pageBufferImage != null) {
+                        pageBufferImage.flush();
+                    }
+                    // get the optimal image for the platform
+                    pageBufferImage = gc.createCompatibleImage(
+                            bufferedPageImageBounds.width,
+                            bufferedPageImageBounds.height);
+                    // paint white, try to avoid black flicker
+                    Graphics g = pageBufferImage.getGraphics();
+                    g.setColor(pageColor);
+                    g.fillRect(0, 0, pageSize.width, pageSize.height);
+                }
+
+                bufferedPageImageReference =
+                        new SoftReference<Image>(pageBufferImage);
+                // IMPORTANT! we don't won't to do a copy area if the page state is dirty.
+                pagePainter.setIsBufferDirty(true);
+            }
+
+            // correct horizontal dimensions
+            if (bufferedPageImageBounds.x < 0) {
+                bufferedPageImageBounds.x = 0;
+            }
+            if ((bufferedPageImageBounds.x + bufferedPageImageBounds.width) > pageSize.width) {
+                bufferedPageImageBounds.width = pageSize.width - bufferedPageImageBounds.x;
+            }
+
+            // correctly vertical dimensions
+            if (bufferedPageImageBounds.y < 0) {
+                bufferedPageImageBounds.y = 0;
+            }
+            if ((bufferedPageImageBounds.y + bufferedPageImageBounds.height) > pageSize.height) {
+                bufferedPageImageBounds.height = pageSize.height - bufferedPageImageBounds.y;
+            }
+
             if (pageBufferImage != null) {
-                pageBufferImage.flush();
-            }
-
-            // create new image and get graphics context from image
-            if (gc == null) {
-                gc = getGraphicsConfiguration();
-            }
-            if (gc != null && this.isShowing()) {
-                // get the optimal image for the platform
-                pageBufferImage = gc.createCompatibleImage(
+                // get graphics context
+                imageGraphics = (Graphics2D) pageBufferImage.getGraphics();
+                // jdk 1.3.1 doesn't like a none (0,0)location for the clip,
+                imageGraphics.setClip(new Rectangle(0, 0,
                         bufferedPageImageBounds.width,
-                        bufferedPageImageBounds.height);
-                // paint white, try to avoid black flicker
-                Graphics g = pageBufferImage.getGraphics();
-                g.setColor(pageColor);
-                g.fillRect(0, 0, pageSize.width, pageSize.height);
-            }
+                        bufferedPageImageBounds.height));
 
-            bufferedPageImageReference =
-                    new SoftReference<Image>(pageBufferImage);
-            // IMPORTANT! we don't won't to do a copy area if the page state is dirty.
-            pagePainter.setIsBufferDirty(false);
-        }
+                // this is really important translate the image graphics
+                // context so that we paint the correct area of the page to the image
+                int xTrans = 0 - bufferedPageImageBounds.x;
+                int yTrans = 0 - bufferedPageImageBounds.y;
 
-        // correct horizontal dimensions
-        if (bufferedPageImageBounds.x < 0) {
-            bufferedPageImageBounds.x = 0;
-        }
-        if ((bufferedPageImageBounds.x + bufferedPageImageBounds.width) > pageSize.width) {
-            bufferedPageImageBounds.width = pageSize.width - bufferedPageImageBounds.x;
-        }
-
-        // correctly vertical dimensions
-        if (bufferedPageImageBounds.y < 0) {
-            bufferedPageImageBounds.y = 0;
-        }
-        if ((bufferedPageImageBounds.y + bufferedPageImageBounds.height) > pageSize.height) {
-            bufferedPageImageBounds.height = pageSize.height - bufferedPageImageBounds.y;
-        }
-
-        if (pageBufferImage != null) {
-            // get graphics context
-            Graphics2D imageGraphics = (Graphics2D) pageBufferImage.getGraphics();
-            // jdk 1.3.1 doesn't like a none (0,0)location for the clip,
-            imageGraphics.setClip(new Rectangle(0, 0,
-                    bufferedPageImageBounds.width,
-                    bufferedPageImageBounds.height));
-
-            // this is really important translate the image graphics
-            // context so that we paint the correct area of the page to the image
-            int xTrans = 0 - bufferedPageImageBounds.x;
-            int yTrans = 0 - bufferedPageImageBounds.y;
-
-            // copyRect is used for copy area from last good paint where possible.
-            Rectangle copyRect;
-
-            // block awt from repainting during copy area calculation and clear
-            // background painting
-            synchronized (paintCopyAreaLock) {
+                // copyRect is used for copy area from last good paint where possible.
+                Rectangle copyRect;
 
                 // adjust the buffered Page bounds to component space
                 Rectangle normalizedClipBounds = new Rectangle(clipBounds);
@@ -793,6 +821,7 @@ public class PageViewComponentImpl extends
                 if (!isPageStateDirty &&
                         !pagePainter.isLastPaintDirty() &&
                         pagePainter.isBufferDirty() &&
+//                        (clipBounds.height == oldClipBounds.height || clipBounds.width == oldClipBounds.width) &&
                         bufferedPageImageBounds.intersects(oldBufferedPageImageBounds)) {
 
                     // calculate intersection for buffer copy of a visible area, as we
@@ -845,7 +874,10 @@ public class PageViewComponentImpl extends
                         bufferedPageImageBounds.width,
                         bufferedPageImageBounds.height);
             }
+            oldClipBounds.setBounds(clipBounds);
+        }
 
+        if (imageGraphics != null) {
             // Paint the page content
             if (page != null) {
                 page.paint(imageGraphics,
@@ -864,29 +896,22 @@ public class PageViewComponentImpl extends
                 }
 
                 // one last paint once everything is done
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        if (!disposing)
-                            repaint();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+//                Runnable doSwingWork = new Runnable() {
+//                    public void run() {
+//                        if (!disposing)
+//                            repaint();
+//                    }
+//                };
+//                SwingUtilities.invokeLater(doSwingWork);
             }
             imageGraphics.dispose();
         }
-    }
 
-    private void addPageRepaintListener() {
-
-        Page currentPage = pageTree.getPage(pageIndex);
-        if (currentPage != null) {
-            currentPage.addPaintPageListener(this);
-        }
     }
 
     private void removePageRepaintListener() {
         if (inited) {
-            Page currentPage = pageTree.getPage(pageIndex);
+            Page currentPage = getPage();
             if (currentPage != null) {
                 currentPage.removePaintPageListener(this);
             }
@@ -895,11 +920,10 @@ public class PageViewComponentImpl extends
     }
 
     private boolean isPageStateDirty() {
-        boolean tmp = currentZoom != documentViewModel.getViewZoom() ||
+        return currentZoom != documentViewModel.getViewZoom() ||
                 currentRotation != documentViewModel.getViewRotation()
                 || oldClipBounds.width != clipBounds.width
                 || oldClipBounds.height != clipBounds.height;
-        return tmp;
     }
 
     private boolean isPageIntersectViewport() {
@@ -910,7 +934,7 @@ public class PageViewComponentImpl extends
 
     public void paintPage(PaintPageEvent event) {
         Object source = event.getSource();
-        Page page = pageTree.getPage(pageIndex);
+        Page page = getPage();
         if (page.equals(source)) {
             Runnable doSwingWork = new Runnable() {
                 public void run() {
@@ -972,6 +996,7 @@ public class PageViewComponentImpl extends
             synchronized (isRunningLock) {
                 isStopRequested = true;
                 isLastPaintDirty = true;
+//                isBufferyDirty = true;
                 getPage().requestInterrupt();
             }
         }
@@ -987,32 +1012,30 @@ public class PageViewComponentImpl extends
             }
 
             try {
-                // revalidate the annotation components.
-                if (isPageStateDirty()) {
-                    Runnable doSwingWork = new Runnable() {
-                        public void run() {
-                            invalidate();
-                            validate();
-                        }
-                    };
-                    SwingUtilities.invokeLater(doSwingWork);
-                }
                 createBufferedPageImage(page, this);
                 // add annotation components to container, we try this again
                 // as the page might have been initialized via some other path
                 // like thumbnails, searches or text extraction.
                 refreshAnnotationComponents(page);
-                isBufferyDirty = false;
+//                isBufferyDirty = false;
                 page = null;
-                if (isPageStateDirty()) {
+//                if (isPageStateDirty()) {
+                // revalidate the annotation components.
+//                    Runnable doSwingWork = new Runnable() {
+//                        public void run() {
+//                            invalidate();
+//                            validate();
+//                        }
+//                    };
+//                    SwingUtilities.invokeLater(doSwingWork);
                     // one more paint for the road.
-                    Runnable doSwingWork = new Runnable() {
-                        public void run() {
-                            repaint();
-                        }
-                    };
-                    SwingUtilities.invokeLater(doSwingWork);
-                }
+//                    Runnable doSwingWork = new Runnable() {
+//                        public void run() {
+//                            repaint();
+//                        }
+//                    };
+//                    SwingUtilities.invokeLater(doSwingWork);
+//                }
             } catch (Throwable e) {
                 logger.log(Level.WARNING,
                         "Error creating buffer, page: " + pageIndex, e);
@@ -1050,13 +1073,11 @@ public class PageViewComponentImpl extends
         private boolean isRunning;
         private final Object isRunningLock = new Object();
 
-        private AbstractPageViewComponent pageComponent;
         private boolean hasBeenQueued;
 
         private Page page;
 
-        private PageInitializer(AbstractPageViewComponent pageComponent) {
-            this.pageComponent = pageComponent;
+        private PageInitializer() {
         }
 
         private void setPage(Page page) {
@@ -1068,7 +1089,7 @@ public class PageViewComponentImpl extends
                 isRunning = true;
             }
             try {
-                page = pageTree.getPage(pageIndex);
+                page = getPage();
                 page.init();
 
                 // add annotation components to container, this only done
@@ -1120,12 +1141,9 @@ public class PageViewComponentImpl extends
 
     private class DirtyTimerAction implements ActionListener {
 
-        private AbstractPageViewComponent pageComponent;
-
         private Page page;
 
-        private DirtyTimerAction(AbstractPageViewComponent pageComponent) {
-            this.pageComponent = pageComponent;
+        private DirtyTimerAction() {
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -1142,62 +1160,74 @@ public class PageViewComponentImpl extends
             }
 
             // if we are scrolling, no new threads
-            if (!disposing && isPageIntersectViewport()) {
+            boolean isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
 
-                boolean isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
+            // we don't want to draw if we are scrolling
+            // calculate the number of pixels moved
+            int diff = Math.abs(previousScrollValue -
+                    parentScrollPane.getVerticalScrollBar().getValue());
+            previousScrollValue = parentScrollPane.getVerticalScrollBar().getValue();
+            // we don't want to draw if scroll distance is great then 150 px.
+            if (parentScrollPane != null && diff > scrollInitThreshold) {
+                return;
+            }
+            page = getPage();
+            // load the page content
+            if (isBufferDirty &&
+                    page != null && !page.isInitiated() &&
+                    !pageInitializer.isRunning() &&
+                    !pageInitializer.hasBeenQueued()) {
+                pageInitializer.setHasBeenQueued(true);
+                pageInitializer.setPage(page);
+                Library.execute(pageInitializer);
+            }
 
-                // we don't want to draw if we are scrolling
-                // calculate the number of pixels moved
-                int diff = Math.abs(previousScrollValue -
-                        parentScrollPane.getVerticalScrollBar().getValue());
-                previousScrollValue = parentScrollPane.getVerticalScrollBar().getValue();
-                // we don't want to draw if scroll distance is great then 150 px.
-                if (parentScrollPane != null && diff > scrollInitThreshold) {
-                    return;
+            // paint page content
+            boolean tmp = !pageInitializer.isRunning() &&
+                    page != null &&
+                    page.isInitiated() &&
+                    !pagePainter.isRunning() &&
+                    !pagePainter.hasBeenQueued();
+            isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
+            Rectangle rect = parentScrollPane.getViewport().getViewRect();
+            if (rect.width != clipBounds.width || rect.height != clipBounds.height) {
+                isBufferDirty = true;
+            }
+            if (page != null &&
+                    tmp
+                    &&
+                    (isPageStateDirty() || isBufferDirty)
+                    ) {
+                pagePainter.setPage(page);
+                pagePainter.setHasBeenQueued(true);
+                pagePainter.setIsBufferDirty(isBufferDirty);
+                Library.executePainter(pagePainter);
+            }
+            // paint page content
+            if (page != null &&
+                    !pageInitializer.isRunning() &&
+                    page.isInitiated() &&
+                    !pagePainter.hasBeenQueued() &&
+                    pagePainter.isRunning()
+                    ) {
+                // stop painting and mark buffer as dirty
+                if (isPageStateDirty()) {
+                    pagePainter.stopPaintingPage();
                 }
-                page = pageTree.getPage(pageIndex);
-                // load the page content
-                if (isBufferDirty &&
-                        page != null && !page.isInitiated() &&
-                        !pageInitializer.isRunning() &&
-                        !pageInitializer.hasBeenQueued()) {
-                    pageInitializer.setHasBeenQueued(true);
-                    pageInitializer.setPage(page);
-                    Library.execute(pageInitializer);
-                }
+            }
 
-                // paint page content
-                boolean tmp = !pageInitializer.isRunning() &&
-                        page != null &&
-                        page.isInitiated() &&
-                        !pagePainter.isRunning() &&
-                        !pagePainter.hasBeenQueued();
-                isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
-                if (page != null &&
-                        tmp &&
-                        (isPageStateDirty() || isBufferDirty)
-                        ) {
-                    pagePainter.setPage(page);
-                    pagePainter.setHasBeenQueued(true);
-                    pagePainter.setIsBufferDirty(isBufferDirty);
-                    Library.executePainter(pagePainter);
-                }
-                // paint page content
-                if (page != null &&
-                        !pageInitializer.isRunning() &&
-                        page.isInitiated() &&
-                        !pagePainter.hasBeenQueued() &&
-                        pagePainter.isRunning()
-                        ) {
-                    // stop painting and mark buffer as dirty
-                    if (isPageStateDirty()) {
-                        pagePainter.stopPaintingPage();
-                    }
-                }
-                // check annotation states, there is a possibility that the
-                // page was initialized by some other process and in such
-                // a case the pageInitializer would not have build the up the
-                // annotationComponents.
+            // check if we have a null buffer, from GC over a long period
+            // of time and the view was hidden.
+            if (bufferedPageImageReference != null &&
+                    bufferedPageImageReference.get() == null) {
+                // need to kick off the painting.
+                pagePainter.setIsBufferDirty(true);
+            }
+
+            // check annotation states, there is a possibility that the
+            // page was initialized by some other process and in such
+            // a case the pageInitializer would not have build the up the
+            // annotationComponents.
 //                if (!pageInitializer.isRunning() &&
 //                        page != null &&
 //                        page.isInitiated() &&
@@ -1209,7 +1239,6 @@ public class PageViewComponentImpl extends
 //                        }
 //                    });
 //                }
-            }
         }
     }
 }
