@@ -126,7 +126,7 @@
                         <attribute name="Implementation-Title"
                                    value="${product}"/>
                         <attribute name="Implementation-Version"
-                                   value="${release.type} ${version.primary}.${version.secondary}.${version.tertiary}_${build.number} (${buildtime})"/>
+                                   value="${release.type} ${version.primary}.${version.secondary}.${version.tertiary}_${build.number}"/>
                         <attribute name="Implementation-Vendor"
                                    value="${company}"/>
                     </section>
