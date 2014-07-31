@@ -158,9 +158,6 @@ public class Page extends Dictionary {
      */
     public static final int BOUNDARY_ARTBOX = 5;
 
-    // Flag for call to init method, very simple cache
-    private boolean isInited = false;
-
     // resources for page's parent pages, default fonts, etc.
     private Resources resources;
 
@@ -205,7 +202,7 @@ public class Page extends Dictionary {
     }
 
     public boolean isInitiated() {
-        return isInited;
+        return inited;
     }
 
     private void initPageContents() throws InterruptedException {
@@ -317,7 +314,7 @@ public class Page extends Dictionary {
      * this page may trigger a call to init().
      */
     public void resetInitializedState() {
-        isInited = false;
+        inited = false;
     }
 
     /**
@@ -327,7 +324,7 @@ public class Page extends Dictionary {
     public synchronized void init() {
         try {
             // make sure we are not revisiting this method
-            if (isInited) {
+            if (inited) {
                 return;
             }
 
@@ -380,12 +377,12 @@ public class Page extends Dictionary {
                 shapes = new Shapes();
             }
             // set the initiated flag
-            isInited = true;
+            inited = true;
 
         } catch (InterruptedException e) {
             // keeps shapes vector so we can paint what we have but make init state as false
             // so we can try to re parse it later.
-            isInited = false;
+            inited = false;
             logger.log(Level.SEVERE, "Page initializing thread interrupted.", e);
         }
 
@@ -453,7 +450,7 @@ public class Page extends Dictionary {
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom,
                       boolean paintAnnotations, boolean paintSearchHighlight) {
-        if (!isInited) {
+        if (!inited) {
             // make sure we don't do a page init on the awt thread in the viewer
             // ri, let the
             return;
@@ -524,7 +521,7 @@ public class Page extends Dictionary {
      *                             for search terms.
      */
     public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) {
-        if (!isInited) {
+        if (!inited) {
             init();
         }
 
@@ -700,7 +697,7 @@ public class Page extends Dictionary {
     public Annotation addAnnotation(Annotation newAnnotation) {
 
         // make sure the page annotations have been initialized.
-        if (!isInited) {
+        if (!inited) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
@@ -781,7 +778,7 @@ public class Page extends Dictionary {
     public void deleteAnnotation(Annotation annot) {
 
         // make sure the page annotations have been initialized.
-        if (!isInited) {
+        if (!inited) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
@@ -863,7 +860,7 @@ public class Page extends Dictionary {
         }
 
         // make sure the page annotations have been initialized.
-        if (!isInited) {
+        if (!inited) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
@@ -1213,7 +1210,7 @@ public class Page extends Dictionary {
      * @return annotation associated with page; null, if there are no annotations.
      */
     public List<Annotation> getAnnotations() {
-        if (!isInited) {
+        if (!inited) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
@@ -1412,7 +1409,7 @@ public class Page extends Dictionary {
      * @return list of text sprites for the given page.
      */
     public synchronized PageText getViewText() {
-        if (!isInited) {
+        if (!inited) {
             init();
         }
         if (shapes != null) {
@@ -1432,7 +1429,7 @@ public class Page extends Dictionary {
     public synchronized PageText getText() throws InterruptedException {
 
         // we only do this once per page
-        if (isInited) {
+        if (inited) {
             if (shapes != null && shapes.getPageText() != null) {
                 return shapes.getPageText();
             }
@@ -1492,7 +1489,7 @@ public class Page extends Dictionary {
      * @return vector of Images inside the current page
      */
     public synchronized List<Image> getImages() {
-        if (!isInited) {
+        if (!inited) {
             init();
         }
         return shapes.getImages();

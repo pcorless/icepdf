@@ -119,10 +119,13 @@ public class PageViewComponentImpl extends
     // the bounds of the buffered image.
     private Rectangle bufferedPageImageBounds = new Rectangle();
 
-    private Timer isDirtyTimer;
+    private static Timer isDirtyTimer;
+    private DirtyTimerAction dirtyTimerAction;
+    private boolean isActionListenerRegistered;
     private PageInitializer pageInitializer;
     private PagePainter pagePainter;
     private final Object paintCopyAreaLock = new Object();
+    //    private final Object isDirtyLock = new Object();
     private boolean disposing = false;
 
     // current clip
@@ -139,7 +142,7 @@ public class PageViewComponentImpl extends
     // dirty refresh timer call interval
     private static int dirtyTimerInterval = 5;
 
-    private static int scrollInitThreshold = 150;
+    private static int scrollInitThreshold = 250;
 
     // graphics configuration
     private static GraphicsConfiguration gc;
@@ -161,14 +164,14 @@ public class PageViewComponentImpl extends
         try {
             dirtyTimerInterval =
                     Defs.intProperty("org.icepdf.core.views.dirtytimer.interval",
-                            5);
+                            dirtyTimerInterval);
         } catch (NumberFormatException e) {
             logger.log(Level.FINE, "Error reading dirty timer interval");
         }
         try {
             scrollInitThreshold =
                     Defs.intProperty("org.icepdf.core.views.scroll.initThreshold",
-                            5);
+                            scrollInitThreshold);
         } catch (NumberFormatException e) {
             logger.log(Level.FINE, "Error reading init threshold timer interval");
         }
@@ -258,9 +261,16 @@ public class PageViewComponentImpl extends
 //        addPageRepaintListener();
 
         // timer will dictate when buffer repaints can take place
-        DirtyTimerAction dirtyTimerAction = new DirtyTimerAction();
-        isDirtyTimer = new Timer(dirtyTimerInterval, dirtyTimerAction);
-        isDirtyTimer.setInitialDelay(0);
+        dirtyTimerAction = new DirtyTimerAction();
+        if (isDirtyTimer == null) {
+            isDirtyTimer = new Timer(dirtyTimerInterval, dirtyTimerAction);
+            isDirtyTimer.setInitialDelay(0);
+            isDirtyTimer.start();
+        } else {
+            isDirtyTimer.addActionListener(dirtyTimerAction);
+            isDirtyTimer.setInitialDelay(0);
+        }
+        isActionListenerRegistered = true;
 
         // PageInitializer and painter commands
         pageInitializer = new PageInitializer();
@@ -287,8 +297,10 @@ public class PageViewComponentImpl extends
     public void dispose() {
 
         disposing = true;
-        if (isDirtyTimer != null)
-            isDirtyTimer.stop();
+        if (isDirtyTimer != null) {
+            isDirtyTimer.removeActionListener(dirtyTimerAction);
+            isActionListenerRegistered = false;
+        }
 
         removeComponentListener(this);
 
@@ -354,11 +366,19 @@ public class PageViewComponentImpl extends
             init();
         }
 
+        if (!isActionListenerRegistered) {
+            isDirtyTimer.addActionListener(dirtyTimerAction);
+        }
+
         // make sure the initiate the pages size
         if (!isPageSizeCalculated) {
             calculatePageSize(pageSize);
             pagePainter.setIsBufferDirty(true);
         } else if (isPageStateDirty()) {
+            if (pagePainter.isRunning()) {
+                pagePainter.stopPaintingPage();
+            }
+            pagePainter.setIsBufferDirty(true);
             calculatePageSize(pageSize);
         }
 
@@ -369,7 +389,8 @@ public class PageViewComponentImpl extends
 
         // multi thread page load
         if (enablePageLoadingProxy && isPageIntersectViewport() && !isDirtyTimer.isRunning()) {
-            isDirtyTimer.start();
+            isDirtyTimer.addActionListener(dirtyTimerAction);
+            isActionListenerRegistered = true;
         }
         // single threaded load of page content on awt thread (no flicker)
         else if (!enablePageLoadingProxy && isPageIntersectViewport() &&
@@ -398,12 +419,25 @@ public class PageViewComponentImpl extends
                             bufferedPageImageBounds.y, this);
                 }
             }
+            // experiment with a scaled buffer before repaint.
+//            else if (pageBufferImage != null && isPageStateDirty()) {
+//                synchronized (paintCopyAreaLock) {
+//                    pagePainter.setIsBufferDirty(true);
+//                    int width = (int)((bufferedPageImageBounds.width/currentZoom)*documentViewModel.getViewZoom());
+//                    int height = (int)((bufferedPageImageBounds.height/currentZoom)*documentViewModel.getViewZoom());
+//                    g.drawImage(pageBufferImage,
+//                            bufferedPageImageBounds.x,
+//                            bufferedPageImageBounds.y,
+//                            width, height, this);
+//                }
+//            }
             // no pageBuffer to paint thus, we must recreate it.
             else {
                 // mark as dirty
                 if (!isDirtyTimer.isRunning()) {
                     currentZoom = -1;
-                    isDirtyTimer.start();
+                    isDirtyTimer.addActionListener(dirtyTimerAction);
+                    isActionListenerRegistered = true;
                 }
             }
 
@@ -532,7 +566,8 @@ public class PageViewComponentImpl extends
     public void componentHidden(ComponentEvent e) {
         // stop the dirty timer
         if (isDirtyTimer != null && isDirtyTimer.isRunning()) {
-            isDirtyTimer.stop();
+            isDirtyTimer.removeActionListener(dirtyTimerAction);
+            isActionListenerRegistered = false;
         }
     }
 
@@ -545,7 +580,8 @@ public class PageViewComponentImpl extends
     public void componentShown(ComponentEvent e) {
         // start the dirty timer.
         if (isDirtyTimer != null && !isDirtyTimer.isRunning()) {
-            isDirtyTimer.start();
+            isDirtyTimer.addActionListener(dirtyTimerAction);
+            isActionListenerRegistered = true;
         }
     }
 
@@ -612,6 +648,19 @@ public class PageViewComponentImpl extends
         }
     }
 
+    private Rectangle calculatePageSize() {
+        if (pageTree != null) {
+            Page currentPage = getPage();
+            if (currentPage != null) {
+                return new Rectangle(currentPage.getSize(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom()).toDimension());
+            }
+        }
+        return null;
+    }
+
     private boolean isBufferDirty() {
         if (disposing)
             return false;
@@ -630,7 +679,7 @@ public class PageViewComponentImpl extends
             tempClipBounds = new Rectangle(clipBounds);
         }
 
-        // get the pages current bounds, may have changed sin
+        // get the pages current bounds, may have changed since last paint
         Rectangle pageBounds = documentViewModel.getPageBounds(pageIndex);
 
         // adjust the buffered Page bounds to component space
@@ -802,9 +851,9 @@ public class PageViewComponentImpl extends
                 // get graphics context
                 imageGraphics = (Graphics2D) pageBufferImage.getGraphics();
                 // jdk 1.3.1 doesn't like a none (0,0)location for the clip,
-                imageGraphics.setClip(new Rectangle(0, 0,
+                imageGraphics.setClip(0, 0,
                         bufferedPageImageBounds.width,
-                        bufferedPageImageBounds.height));
+                        bufferedPageImageBounds.height);
 
                 // this is really important translate the image graphics
                 // context so that we paint the correct area of the page to the image
@@ -824,7 +873,6 @@ public class PageViewComponentImpl extends
                         !pagePainter.isLastPaintDirty() &&
                         pagePainter.isBufferDirty() &&
                         bufferedPageImageBounds.intersects(oldBufferedPageImageBounds)) {
-
                     // calculate intersection for buffer copy of a visible area, as we
                     // can only copy graphics that are visible.
                     copyRect = bufferedPageImageBounds.intersection(oldBufferedPageImageBounds);
@@ -895,15 +943,6 @@ public class PageViewComponentImpl extends
                     pagePainter.setIsLastPaintDirty(false);
                     pagePainter.setIsBufferDirty(false);
                 }
-
-                // one last paint once everything is done
-//                Runnable doSwingWork = new Runnable() {
-//                    public void run() {
-//                        if (!disposing)
-//                            repaint();
-//                    }
-//                };
-//                SwingUtilities.invokeLater(doSwingWork);
             }
             imageGraphics.dispose();
         }
@@ -995,10 +1034,10 @@ public class PageViewComponentImpl extends
         // stop painting
         public synchronized void stopPaintingPage() {
             synchronized (isRunningLock) {
+                getPage().requestInterrupt();
                 isStopRequested = true;
                 isLastPaintDirty = true;
-//                isBufferyDirty = true;
-                getPage().requestInterrupt();
+                isBufferyDirty = true;
             }
         }
 
@@ -1021,7 +1060,6 @@ public class PageViewComponentImpl extends
                 refreshAnnotationComponents(page);
 
                 if (isPageStateDirty && page != null && page.getAnnotations() != null) {
-                    System.out.println("dirty state");
                     // revalidate the annotation components.
                     Runnable doSwingWork = new Runnable() {
                         public void run() {
@@ -1047,8 +1085,13 @@ public class PageViewComponentImpl extends
             }
 
             synchronized (isRunningLock) {
-                isStopRequested = false;
                 isRunning = false;
+            }
+        }
+
+        public void setStopRequested(boolean isStopRequested) {
+            synchronized (isRunningLock) {
+                this.isStopRequested = isStopRequested;
             }
         }
 
@@ -1150,20 +1193,24 @@ public class PageViewComponentImpl extends
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (disposing || !isPageIntersectViewport()) {
-                isDirtyTimer.stop();
+
+            boolean interestsView = isPageIntersectViewport();
+            if (disposing || !interestsView) {
+                isDirtyTimer.removeActionListener(dirtyTimerAction);
+                isActionListenerRegistered = false;
                 page = null;
                 // stop painting and mark buffer as dirty
                 if (pagePainter.isRunning()) {
                     pagePainter.stopPaintingPage();
-//                    currentZoom = -1;
+                    pagePainter.setIsLastPaintDirty(true);
                 }
                 return;
             }
 
             // if we are scrolling, no new threads
             boolean isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
-            if (isBufferDirty) {
+
+            if (isBufferDirty || pagePainter.isStopPaintingRequested()) {
                 // we don't want to draw if we are scrolling
                 // calculate the number of pixels moved
                 int diff = Math.abs(previousScrollValue -
@@ -1174,6 +1221,8 @@ public class PageViewComponentImpl extends
                     return;
                 }
                 page = getPage();
+                pagePainter.setStopRequested(false);
+
                 // load the page content
                 if (isBufferDirty &&
                         page != null && !page.isInitiated() &&
@@ -1190,7 +1239,6 @@ public class PageViewComponentImpl extends
                         page.isInitiated() &&
                         !pagePainter.isRunning() &&
                         !pagePainter.hasBeenQueued();
-                isBufferDirty = pagePainter.isBufferDirty() || isBufferDirty();
                 Rectangle rect = parentScrollPane.getViewport().getViewRect();
                 if (rect.width != clipBounds.width || rect.height != clipBounds.height) {
                     isBufferDirty = true;
@@ -1198,27 +1246,15 @@ public class PageViewComponentImpl extends
                 if (page != null &&
                         tmp
                         &&
-                        (isPageStateDirty() || isBufferDirty)
+                        (isBufferDirty)
                         ) {
                     pagePainter.setPage(page);
                     pagePainter.setHasBeenQueued(true);
                     pagePainter.setIsBufferDirty(isBufferDirty);
                     Library.executePainter(pagePainter);
                 }
-            }
-            // paint page content
-            if (page != null &&
-                    !pageInitializer.isRunning() &&
-                    page.isInitiated() &&
-                    !pagePainter.hasBeenQueued() &&
-                    pagePainter.isRunning()
-                    ) {
-                // stop painting and mark buffer as dirty
-                if (isPageStateDirty()) {
-                    pagePainter.stopPaintingPage();
-                }
-            }
 
+            }
             // check if we have a null buffer, from GC over a long period
             // of time and the view was hidden.
             if (!pagePainter.hasBeenQueued() && !pagePainter.isRunning() &&
