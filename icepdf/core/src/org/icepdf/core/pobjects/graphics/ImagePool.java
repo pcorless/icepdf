@@ -20,6 +20,7 @@ import org.icepdf.core.util.Defs;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -50,7 +51,7 @@ public class ImagePool {
             Logger.getLogger(ImagePool.class.toString());
 
     // Image pool
-    private final LinkedHashMap<Reference, BufferedImage> fCache;
+    private final Map<Reference, BufferedImage> fCache;
 
     private static int defaultSize;
 
@@ -69,7 +70,7 @@ public class ImagePool {
     }
 
     public ImagePool(long maxCacheSize) {
-        fCache = new MemoryImageCache(maxCacheSize);
+        fCache = Collections.synchronizedMap(new MemoryImageCache(maxCacheSize));
     }
 
     public void put(Reference ref, BufferedImage image) {
