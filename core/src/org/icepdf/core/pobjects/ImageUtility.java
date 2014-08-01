@@ -103,13 +103,16 @@ public class ImageUtility {
 
 
     // default cmyk value,  > 255 will lighten the image.
-    private static float blackRatio;
+    private float blackRatio;
 
     // JDK 1.5 imaging order flag and b/r switch
     private static int redIndex = 0;
     private static int blueIndex = 2;
 
     private static boolean scaleQuality;
+
+    // disable icc color profile lookups as they can be slow. n
+    private static boolean disableICCCmykColorSpace;
 
     static {
         // sniff out jdk 1.5 version
@@ -119,13 +122,34 @@ public class ImageUtility {
             blueIndex = 0;
         }
 
-        // black ratio
-        blackRatio = Defs.intProperty("org.icepdf.core.cmyk.image.black", 255);
+        disableICCCmykColorSpace = Defs.booleanProperty("org.icepdf.core.cmyk.disableICCProfile", false);
 
         // decide if large images will be scaled
         scaleQuality =
                 Defs.booleanProperty("org.icepdf.core.imageMaskScale.quality",
                         true);
+    }
+
+    private static ImageUtility imageUtility;
+
+    private ImageUtility() {
+        // black ratio
+        blackRatio = Defs.intProperty("org.icepdf.core.cmyk.image.black", 255);
+    }
+
+    public static ImageUtility getInstance() {
+        if (imageUtility == null) {
+            imageUtility = new ImageUtility();
+        }
+        return imageUtility;
+    }
+
+    public float getBlackRatio() {
+        return blackRatio;
+    }
+
+    public void setBlackRatio(float blackRatio) {
+        this.blackRatio = blackRatio;
     }
 
     protected static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -259,7 +283,7 @@ public class ImageUtility {
                 // lessen the amount of black, standard 255 fraction is too dark
                 // increasing the denominator has the same affect of lighting up
                 // the image.
-                inBlack = (values[3] / blackRatio);
+                inBlack = (values[3] / ImageUtility.getInstance().blackRatio);
 
                 if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
                         inYellow == lastYellow && inBlack == lastBlack)) {
@@ -323,7 +347,7 @@ public class ImageUtility {
                 // lessen the amount of black, standard 255 fraction is too dark
                 // increasing the denominator has the same affect of lighting up
                 // the image.
-                inBlack = (values[3] / blackRatio);
+                inBlack = (values[3] / ImageUtility.getInstance().blackRatio);
 
                 if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
                         inYellow == lastYellow && inBlack == lastBlack)) {
