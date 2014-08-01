@@ -25,6 +25,7 @@ import java.awt.color.ICC_Profile;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -48,7 +49,7 @@ public class DeviceCMYK extends PColorSpace {
     // CMYK ICC color profile.
     private static ICC_ColorSpace iccCmykColorSpace;
     // basic cache to speed up the lookup.
-    private static HashMap<String, Color> iccCmykColorCache;
+    private static ConcurrentHashMap<String, Color> iccCmykColorCache;
 
     // disable icc color profile lookups as they can be slow. n
     private static boolean disableICCCmykColorSpace;
@@ -59,7 +60,7 @@ public class DeviceCMYK extends PColorSpace {
 
         disableICCCmykColorSpace = Defs.booleanProperty("org.icepdf.core.cmyk.disableICCProfile", false);
 
-        iccCmykColorCache = new HashMap<String, Color>();
+        iccCmykColorCache = new ConcurrentHashMap<String, Color>();
 
         // check for a custom CMYK ICC colour profile specified using system properties.
         String customCMYKProfilePath = null;
