@@ -369,30 +369,19 @@ public class PageText implements TextSelect {
             // by Chrystal Reports.  Enable with
             // -Dorg.icepdf.core.views.page.text.trim.duplicates=true
             if (checkForDuplicates) {
-                // cut the string in half and compare the haves,  if they are equal
-                // we return only one.  -Dorg.icepdf.core.views.page.text.autoSpace=false
-                // should be set to aid in this detection
-                int wordCount, middle;
-                boolean mirrored;
-                List<WordText> words;
-                LineText lineText;
                 for (int k = 0, maxLines = sortedPageLines.size(); k < maxLines; k++) {
-                    lineText = sortedPageLines.get(k);
-                    if (lineText.getWords().size() > 0) {
-                        words = lineText.getWords();
-                        wordCount = words.size();
-                        mirrored = true;
-                        middle = wordCount / 2;
-                        for (int i = 0, max = middle, j = max; i < max; i++, j++) {
-                            if (!words.get(i).toString().equals(words.get(j).toString())) {
-                                mirrored = false;
-                                break;
+                    final LineText lineText = sortedPageLines.get(k);
+                    final List<WordText> words = lineText.getWords();
+                    if (words.size() > 0) {
+                        final List<WordText> trimmedWords = new ArrayList<WordText>();
+                        final Set<String> refs = new HashSet<String>();
+                        for (final WordText wordText : words) {
+                            final String key = wordText.getText() + wordText.getBounds();
+                            if (refs.add(key)) {
+                                trimmedWords.add(wordText);
                             }
                         }
-                        if (mirrored) {
-                            List<WordText> trimmedWords = words.subList(0, middle);
-                            lineText.setWords(trimmedWords);
-                        }
+                        lineText.setWords(trimmedWords);
                     }
 
                 }
