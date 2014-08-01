@@ -124,7 +124,7 @@ public class DeviceN extends PColorSpace {
         if (foundCMYK) {
             if (f.length <= 4) {
                 f = assignCMYK(f);
-                return new DeviceCMYK(null, null).getColor(reverse(f));
+                return new DeviceCMYK(null, null).getColor(f);
             }
         }
         // check order, mainly look for length > 1 and black not at the end
