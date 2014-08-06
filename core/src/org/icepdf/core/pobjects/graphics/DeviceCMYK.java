@@ -68,7 +68,7 @@ public class DeviceCMYK extends PColorSpace {
             Object profileStream;
             customCMYKProfilePath = Defs.sysProperty("org.icepdf.core.pobjects.graphics.cmyk");
             if (customCMYKProfilePath == null) {
-                customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/UncoatedFOGRA29.icc";
+                customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/CoatedFOGRA27.icc";
                 profileStream = DeviceCMYK.class.getResourceAsStream(customCMYKProfilePath);
             } else {
                 profileStream = new FileInputStream(customCMYKProfilePath);
@@ -276,4 +276,36 @@ public class DeviceCMYK extends PColorSpace {
         return value;
     }
 
+    /**
+     * Gets the ICC Color Profile found in the icepdf-core.jar at the location
+     * /org/icepdf/core/pobjects/graphics/res/ or the ICC Color Profiel
+     * specified by the system property org.icepdf.core.pobjects.graphics.cmyk.
+     *
+     * @return associated ICC CMYK Color space.
+     */
+    public static ICC_ColorSpace getIccCmykColorSpace() {
+        return iccCmykColorSpace;
+    }
+
+    /**
+     * Determines if the ICC CMYK color space should be used to convert
+     * CMYK images to RGB.
+     *
+     * @return true if the ICC CMYK color space should be used, false otherwise.
+     */
+    public static boolean isDisableICCCmykColorSpace() {
+        return disableICCCmykColorSpace;
+    }
+
+    /**
+     * Set the value of the disableICCCmykColorSpace property.  This property
+     * can be set using the system property org.icepdf.core.cmyk.disableICCProfile
+     * or overridden using this mehtod.
+     *
+     * @param disableICCCmykColorSpace true to disable the ICC CMYK color space
+     *                                 conversion, false otherwise.
+     */
+    public static void setDisableICCCmykColorSpace(boolean disableICCCmykColorSpace) {
+        DeviceCMYK.disableICCCmykColorSpace = disableICCCmykColorSpace;
+    }
 }

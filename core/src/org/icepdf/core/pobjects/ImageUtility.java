@@ -1455,6 +1455,31 @@ public class ImageUtility {
         return jpegEncoding;
     }
 
+    /**
+     * Utility method to convert an CMYK based raster to RGB.  The can be
+     * configured to use to different approaches.  The first and more accurate
+     * method uses a ICC color profile specified by the DeviceCMYK.java class.
+     * This method can be turned off using the system property
+     * org.icepdf.core.cmyk.disableICCProfile=true at which point an less
+     * precise method is used to calculate the resultan RGB color.
+     *
+     * @param cmykRaster CMYK base raster to convert to RGB.
+     * @return Buffered image representation of raster.
+     */
+    public static BufferedImage convertCmykToRgb(Raster cmykRaster, float[] decode) {
+
+        if (!DeviceCMYK.isDisableICCCmykColorSpace()) {
+            BufferedImage rgbImage = new BufferedImage(cmykRaster.getWidth(), cmykRaster.getHeight(), BufferedImage.TYPE_INT_RGB);
+            WritableRaster rgbRaster = rgbImage.getRaster();
+            ColorSpace rgbCS = rgbImage.getColorModel().getColorSpace();
+            ColorConvertOp cmykToRgb = new ColorConvertOp(DeviceCMYK.getIccCmykColorSpace(), rgbCS, null);
+            cmykToRgb.filter(cmykRaster, rgbRaster);
+            return rgbImage;
+        } else {
+            return ImageUtility.alterRasterCMYK2BGRA((WritableRaster) cmykRaster, decode);
+        }
+    }
+
     protected static BufferedImage makeImageWithRasterFromBytes(
             PColorSpace colourSpace,
             Color fill,
@@ -1746,7 +1771,7 @@ public class ImageUtility {
      * @param baseImage base image that mask will be applied to
      * @param maskImage mask image that will be applied to base image.
      * @return array of altered baseImage and maskImage, should be same size on
-     *         return.
+     * return.
      */
     public static BufferedImage[] scaleImagesToSameSize(BufferedImage baseImage,
                                                         BufferedImage maskImage) {
