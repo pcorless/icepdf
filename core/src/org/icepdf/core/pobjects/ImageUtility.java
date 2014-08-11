@@ -17,6 +17,7 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.RasterOps.*;
 import org.icepdf.core.tag.Tagger;
 import org.icepdf.core.util.Defs;
 
@@ -92,38 +93,9 @@ public class ImageUtility {
     protected static final int JPEG_ENC_YCCK = 4;
     protected static final int JPEG_ENC_GRAY = 5;
 
-    protected static String[] JPEG_ENC_NAMES = new String[]{
-            "JPEG_ENC_UNKNOWN_PROBABLY_YCbCr",
-            "JPEG_ENC_RGB",
-            "JPEG_ENC_CMYK",
-            "JPEG_ENC_YCbCr",
-            "JPEG_ENC_YCCK",
-            "JPEG_ENC_GRAY"
-    };
-
-
-    // default cmyk value,  > 255 will lighten the image.
-    private float blackRatio;
-
-    // JDK 1.5 imaging order flag and b/r switch
-    private static int redIndex = 0;
-    private static int blueIndex = 2;
-
     private static boolean scaleQuality;
 
-    // disable icc color profile lookups as they can be slow. n
-    private static boolean disableICCCmykColorSpace;
-
     static {
-        // sniff out jdk 1.5 version
-        String version = System.getProperty("java.version");
-        if (version.contains("1.5")) {
-            redIndex = 2;
-            blueIndex = 0;
-        }
-
-        disableICCCmykColorSpace = Defs.booleanProperty("org.icepdf.core.cmyk.disableICCProfile", false);
-
         // decide if large images will be scaled
         scaleQuality =
                 Defs.booleanProperty("org.icepdf.core.imageMaskScale.quality",
@@ -133,8 +105,7 @@ public class ImageUtility {
     private static ImageUtility imageUtility;
 
     private ImageUtility() {
-        // black ratio
-        blackRatio = Defs.intProperty("org.icepdf.core.cmyk.image.black", 255);
+
     }
 
     public static ImageUtility getInstance() {
@@ -142,14 +113,6 @@ public class ImageUtility {
             imageUtility = new ImageUtility();
         }
         return imageUtility;
-    }
-
-    public float getBlackRatio() {
-        return blackRatio;
-    }
-
-    public void setBlackRatio(float blackRatio) {
-        this.blackRatio = blackRatio;
     }
 
     protected static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
@@ -252,161 +215,6 @@ public class ImageUtility {
         return bi;
     }
 
-    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr,
-                                                        float[] decode) {
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-
-        // this convoluted cymk->rgba method is from DeviceCMYK class.
-        float inCyan, inMagenta, inYellow, inBlack;
-        float lastCyan = -1, lastMagenta = -1, lastYellow = -1, lastBlack = -1;
-        double c, m, y2, aw, ac, am, ay, ar, ag, ab;
-        float outRed, outGreen, outBlue;
-        int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
-        int[] values = new int[wr.getNumBands()];
-        byte[] dataValues = new byte[wr.getNumBands()];
-        byte[] compColors;
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-
-                compColors = (byte[]) wr.getDataElements(x, y, dataValues);
-                // apply decode param.
-                ImageUtility.getNormalizedComponents(
-                        compColors,
-                        decode,
-                        values);
-
-                inCyan = values[0] / 255.0f;
-                inMagenta = values[1] / 255.0f;
-                inYellow = values[2] / 255.0f;
-                // lessen the amount of black, standard 255 fraction is too dark
-                // increasing the denominator has the same affect of lighting up
-                // the image.
-                inBlack = (values[3] / ImageUtility.getInstance().blackRatio);
-
-                if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
-                        inYellow == lastYellow && inBlack == lastBlack)) {
-
-                    c = clip(0, 1, inCyan + inBlack);
-                    m = clip(0, 1, inMagenta + inBlack);
-                    y2 = clip(0, 1, inYellow + inBlack);
-                    aw = (1 - c) * (1 - m) * (1 - y2);
-                    ac = c * (1 - m) * (1 - y2);
-                    am = (1 - c) * m * (1 - y2);
-                    ay = (1 - c) * (1 - m) * y2;
-                    ar = (1 - c) * m * y2;
-                    ag = c * (1 - m) * y2;
-                    ab = c * m * (1 - y2);
-
-                    outRed = (float) clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
-                    outGreen = (float) clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
-                    outBlue = (float) clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
-                    rValue = (int) (outRed * 255);
-                    gValue = (int) (outGreen * 255);
-                    bValue = (int) (outBlue * 255);
-                    alpha = 0xFF;
-                }
-                lastCyan = inCyan;
-                lastMagenta = inMagenta;
-                lastYellow = inYellow;
-                lastBlack = inBlack;
-
-                values[redIndex] = rValue;
-                values[1] = gValue;
-                values[blueIndex] = bValue;
-                values[3] = alpha;
-                wr.setPixel(x, y, values);
-            }
-        }
-        // apply the soft mask, but first we need an rgba image,
-        // this is pretty expensive, would like to find quicker method.
-        BufferedImage tmpImage = makeRGBABufferedImage(wr, Transparency.TRANSLUCENT);
-        return tmpImage;
-    }
-
-    protected static BufferedImage alterRasterCMYK2BGRA(WritableRaster wr) {
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-
-        // this convoluted cymk->rgba method is from DeviceCMYK class.
-        float inCyan, inMagenta, inYellow, inBlack;
-        float lastCyan = -1, lastMagenta = -1, lastYellow = -1, lastBlack = -1;
-        double c, m, y2, aw, ac, am, ay, ar, ag, ab;
-        float outRed, outGreen, outBlue;
-        int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
-        int[] values = new int[4];
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, values);
-
-                inCyan = values[0] / 255.0f;
-                inMagenta = values[1] / 255.0f;
-                inYellow = values[2] / 255.0f;
-                // lessen the amount of black, standard 255 fraction is too dark
-                // increasing the denominator has the same affect of lighting up
-                // the image.
-                inBlack = (values[3] / ImageUtility.getInstance().blackRatio);
-
-                if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
-                        inYellow == lastYellow && inBlack == lastBlack)) {
-
-                    c = clip(0, 1, inCyan + inBlack);
-                    m = clip(0, 1, inMagenta + inBlack);
-                    y2 = clip(0, 1, inYellow + inBlack);
-                    aw = (1 - c) * (1 - m) * (1 - y2);
-                    ac = c * (1 - m) * (1 - y2);
-                    am = (1 - c) * m * (1 - y2);
-                    ay = (1 - c) * (1 - m) * y2;
-                    ar = (1 - c) * m * y2;
-                    ag = c * (1 - m) * y2;
-                    ab = c * m * (1 - y2);
-
-                    outRed = (float) clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
-                    outGreen = (float) clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
-                    outBlue = (float) clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
-                    rValue = (int) (outRed * 255);
-                    gValue = (int) (outGreen * 255);
-                    bValue = (int) (outBlue * 255);
-                    alpha = 0xFF;
-                }
-                lastCyan = inCyan;
-                lastMagenta = inMagenta;
-                lastYellow = inYellow;
-                lastBlack = inBlack;
-
-                values[redIndex] = rValue;
-                values[1] = gValue;
-                values[blueIndex] = bValue;
-                values[3] = alpha;
-                wr.setPixel(x, y, values);
-            }
-        }
-        // apply the soft mask, but first we need an rgba image,
-        // this is pretty expensive, would like to find quicker method.
-        BufferedImage tmpImage = makeRGBABufferedImage(wr, Transparency.TRANSLUCENT);
-        return tmpImage;
-    }
-
-    /**
-     * Clips the value according to the specified floor and ceiling.
-     *
-     * @param floor   floor value of clip
-     * @param ceiling ceiling value of clip
-     * @param value   value to clip.
-     * @return clipped value.
-     */
-    private static double clip(double floor, double ceiling, double value) {
-        if (value < floor) {
-            value = floor;
-        }
-        if (value > ceiling) {
-            value = ceiling;
-        }
-        return value;
-    }
-
     public static void displayImage(final BufferedImage bufferedImage, final String title) {
 
         if (bufferedImage == null) {
@@ -480,30 +288,22 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
-    protected static BufferedImage makeRGBtoRGBABuffer(WritableRaster wr, int width, int height) {
-        BufferedImage tmpImage = ImageUtility.makeRGBBufferedImage(wr);
-        BufferedImage argbImage = new BufferedImage(width,
-                height, BufferedImage.TYPE_INT_ARGB);
-        int[] srcBand = new int[width];
-        int[] argbBand = new int[width];
-        // iterate over each band to apply the mask
-        int r, g, b;
-        for (int i = 0; i < height; i++) {
-            tmpImage.getRGB(0, i, width, 1, srcBand, 0, width);
-            // apply the soft mask blending
-            for (int j = 0; j < width; j++) {
-                r = (srcBand[j] >> 16) & 0xFF;
-                g = (srcBand[j] >> 8) & 0xFF;
-                b = (srcBand[j]) & 0xFF;
-                argbBand[j] = 0xff000000 |
-                        (r << 16) | (g << 8) | b;
-            }
-            argbImage.setRGB(0, i, width, 1, argbBand, 0, width);
-        }
-        tmpImage.flush();
-        return argbImage;
-    }
+    protected static BufferedImage makeBufferedImage(Raster raster) {
 
+        // create a generic colour model and reuse the wraster,  intent
+        // is that this should save quite bit of memory
+        DirectColorModel colorModel = new DirectColorModel(24,
+                0x00ff0000,    // Red
+                0x0000ff00,    // Green
+                0x000000ff,    // Blue
+                0x0           // Alpha
+        );
+        raster = colorModel.createCompatibleWritableRaster(raster.getWidth(),
+                raster.getHeight());
+        return new BufferedImage(colorModel, (WritableRaster) raster, false, null);
+
+//        return new BufferedImage(raster.getWidth(), raster.getHeight(), BufferedImage.TYPE_INT_RGB);
+    }
 
     protected static BufferedImage makeRGBBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
@@ -527,35 +327,6 @@ public class ImageUtility {
                 ColorModel.OPAQUE,
                 wr.getTransferType());
         return new BufferedImage(cm, wr, false, null);
-    }
-
-    protected static BufferedImage makeRGBBufferedImage(WritableRaster wr,
-                                                        float[] decode, PColorSpace colorSpace) {
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-        BufferedImage rgbImage = new BufferedImage(width,
-                height, BufferedImage.TYPE_INT_RGB);
-        WritableRaster rgbRaster = rgbImage.getRaster();
-        float[] values = new float[colorSpace.getNumComponents()];
-        int[] rgbValues = new int[4];
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-
-                // apply decode param.
-                getNormalizedComponents(
-                        (byte[]) wr.getDataElements(x, y, null),
-                        decode,
-                        rgbValues);
-                colorSpace.normaliseComponentsToFloats(rgbValues, values, 255.0f);
-                Color c = colorSpace.getColor(values);
-                rgbValues[0] = c.getRed();
-                rgbValues[1] = c.getGreen();
-                rgbValues[2] = c.getBlue();
-
-                rgbRaster.setPixel(x, y, rgbValues);
-            }
-        }
-        return rgbImage;
     }
 
     // This method returns a buffered image with the contents of an image from
@@ -639,71 +410,6 @@ public class ImageUtility {
     }
 
     /**
-     * The basic idea is that we do a fuzzy colour conversion from YCCK to
-     * CMYK.  The conversion is not perfect but when converted again from
-     * CMYK to RGB the result is much better then going directly from YCCK to
-     * RGB.
-     * NOTE: no masking here, as it is done later in the call to
-     * {@see alterRasterCMYK2BGRA}
-     *
-     * @param wr     writable raster to alter.
-     * @param decode decode vector.
-     */
-    protected static void alterRasterYCCK2CMYK(WritableRaster wr,
-                                               float[] decode) {
-
-        float[] origValues = new float[wr.getNumBands()];
-        double[] pixels = new double[4];
-        double Y, Cb, Cr, K;
-        double lastY = -1, lastCb = -1, lastCr = -1, lastK = -1;
-        double c = 0, m = 0, y2 = 0, k = 0;
-
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                // apply decode param.
-                getNormalizedComponents(
-                        (byte[]) wr.getDataElements(x, y, null),
-                        decode,
-                        origValues);
-
-                Y = origValues[0] * 255;
-                Cb = origValues[1] * 255;
-                Cr = origValues[2] * 255;
-                K = origValues[3] * 255;
-
-                if (!(lastY == y && lastCb == Cb && lastCr == Cr && lastK == K)) {
-
-                    // intel codecs, http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
-                    // Intel IPP conversion for JPEG codec.
-                    c = 255 - (Y + (1.402 * Cr) - 179.456);
-                    m = 255 - (Y - (0.34414 * Cb) - (0.71413636 * Cr) + 135.45984);
-                    y2 = 255 - (Y + (1.7718 * Cb) - 226.816);
-                    k = K;
-
-                    c = clip(0, 255, c);
-                    m = clip(0, 255, m);
-                    y2 = clip(0, 255, y2);
-                }
-
-                lastY = Y;
-                lastCb = Cb;
-                lastCr = Cr;
-                lastK = K;
-
-                pixels[0] = c;
-                pixels[1] = m;
-                pixels[2] = y2;
-                pixels[3] = k;
-
-                wr.setPixel(x, y, pixels);
-            }
-        }
-    }
-
-    /**
      * Apply the Decode Array domain for each colour component.  Assumes output
      * range is 0-1f for each value in out.
      *
@@ -719,54 +425,6 @@ public class ImageUtility {
         // interpolate each colour component for the given decode domain.
         for (int i = 0; i < pixels.length; i++) {
             out[i] = decode[i * 2] + (pixels[i] & 0xff) * decode[(i * 2) + 1];
-        }
-    }
-
-    /**
-     * Apply the Decode Array domain for each colour component. Assumes output
-     * range is 0-255 for each value in out.
-     *
-     * @param pixels colour to process by decode
-     * @param decode decode array for colour space
-     * @param out    return value
-     *               always (2<sup>bitsPerComponent</sup> - 1).
-     */
-    protected static void getNormalizedComponents(
-            byte[] pixels,
-            float[] decode,
-            int[] out) {
-        // interpolate each colour component for the given decode domain.
-        for (int i = 0; i < pixels.length; i++) {
-            out[i] = (int) ((decode[i * 2] * 255) + (pixels[i] & 0xff) * (decode[(i * 2) + 1] * 255));
-        }
-    }
-
-    /**
-     * Convert a rgb encoded raster to the specified colour space.
-     *
-     * @param wr         writable rasters in rgb.
-     * @param colorSpace colour space to convert colours too.
-     */
-    protected static void alterRasterRGB2PColorSpace(WritableRaster wr, PColorSpace colorSpace) {
-        if (colorSpace instanceof DeviceRGB)
-            return;
-        float[] values = new float[3];
-        int[] rgbValues = new int[3];
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, rgbValues);
-
-                PColorSpace.reverseInPlace(rgbValues);
-                colorSpace.normaliseComponentsToFloats(rgbValues, values, 255.0f);
-                Color c = colorSpace.getColor(values);
-                rgbValues[0] = c.getRed();
-                rgbValues[1] = c.getGreen();
-                rgbValues[2] = c.getBlue();
-
-                wr.setPixel(x, y, rgbValues);
-            }
         }
     }
 
@@ -841,240 +499,6 @@ public class ImageUtility {
         return wr;
     }
 
-    protected static void alterRasterY2Gray(WritableRaster wr,
-                                            float[] decode) {
-        int[] values = new int[1];
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-        boolean defaultDecode = 0.0f == decode[0];
-
-        int Y;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, values);
-                Y = values[0];
-                Y = defaultDecode ? 255 - Y : Y;
-                Y = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
-                values[0] = Y;
-                wr.setPixel(x, y, values);
-            }
-        }
-    }
-
-    protected static BufferedImage alterRasterYCbCr2RGBA(WritableRaster wr,
-                                                         float[] decode) {
-        byte[] dataValues = new byte[wr.getNumBands()];
-        byte[] compColors;
-        float[] values = new float[wr.getNumBands()];
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-        for (int y = 0; y < height; y++) {
-
-            for (int x = 0; x < width; x++) {
-                compColors = (byte[]) wr.getDataElements(x, y, dataValues);
-                // apply decode param.
-                ImageUtility.getNormalizedComponents(
-                        compColors,
-                        decode,
-                        values);
-
-                float Y = values[0] * 255;
-                float Cb = values[1] * 255;
-                float Cr = values[2] * 255;
-
-                float Cr_128 = Cr - 128;
-                float Cb_128 = Cb - 128;
-
-                float rVal = Y + (1370705 * Cr_128 / 1000000);
-                float gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
-                float bVal = Y + (1732446 * Cb_128 / 1000000);
-
-                byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
-                byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
-                byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
-
-                // apply mask and smask values.
-
-                values[0] = rByte;
-                values[1] = gByte;
-                values[2] = bByte;
-
-                wr.setPixel(x, y, values);
-            }
-
-        }
-        BufferedImage tmpImage = ImageUtility.makeRGBtoRGBABuffer(wr, width, height);
-        return tmpImage;
-    }
-
-    /**
-     * The basic idea is that we do a fuzzy colour conversion from YCCK to
-     * BGRA.  The conversion is not perfect giving a bit of a greenish hue to the
-     * image in question.  I've tweaked the core Adobe algorithm ot give slightly
-     * "better" colour representation but it does seem to make red a little light.
-     *
-     * @param wr         image stream to convert colour space.
-     * @param smaskImage smask used to apply alpha values.
-     * @param maskImage  maks image for drop out.
-     */
-    protected static void alterRasterYCCK2BGRA(WritableRaster wr,
-                                               BufferedImage smaskImage,
-                                               BufferedImage maskImage,
-                                               float[] decode,
-                                               int bitsPerComponent) {
-        Raster smaskRaster = null;
-        int smaskWidth = 0;
-        int smaskHeight = 0;
-        if (smaskImage != null) {
-            smaskRaster = smaskImage.getRaster();
-            smaskWidth = smaskRaster.getWidth();
-            smaskHeight = smaskRaster.getHeight();
-        }
-
-        Raster maskRaster = null;
-        int maskWidth = 0;
-        int maskHeight = 0;
-        if (maskImage != null) {
-            maskRaster = maskImage.getRaster();
-            maskWidth = maskRaster.getWidth();
-            maskHeight = maskRaster.getHeight();
-        }
-
-        byte[] dataValues = new byte[wr.getNumBands()];
-        float[] origValues = new float[wr.getNumBands()];
-        double[] rgbaValues = new double[4];
-
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                // apply decode param.
-                ImageUtility.getNormalizedComponents(
-                        (byte[]) wr.getDataElements(x, y, dataValues),
-                        decode,
-                        origValues);
-
-                float Y = origValues[0] * 255;
-                float Cb = origValues[1] * 255;
-                float Cr = origValues[2] * 255;
-//                float K = origValues[3] * 255;
-
-                // removing alteration for now as some samples are too dark.
-                // Y *= .95; // gives a darker image,  as y approaches zero,
-                // the image becomes darke
-
-                float Cr_128 = Cr - 128;
-                float Cb_128 = Cb - 128;
-
-                // adobe conversion for CCIR Rec. 601-1 standard.
-                // http://partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf
-//                double rVal = Y + (1.4020 * Cr_128);
-//                double gVal = Y - (.3441363 * Cb_128) - (.71413636 * Cr_128);
-//                double bVal = Y + (1.772 * Cb_128);
-
-                // intel codecs, http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
-                // Intel IPP conversion for JPEG codec.
-//                double rVal = Y + (1.402 * Cr) - 179.456;
-//                double gVal = Y - (0.34414 * Cb) - (.71413636 * Cr) + 135.45984;
-//                double bVal = Y + (1.772 * Cb) - 226.816;
-
-                // ICEsoft custom algorithm, results may vary, res are a little
-                // off but over all a better conversion/ then the stoke algorithms.
-                double rVal = Y + (1.4020 * Cr_128);
-                double gVal = Y + (.14414 * Cb_128) + (.11413636 * Cr_128);
-                double bVal = Y + (1.772 * Cb_128);
-
-                // Intel IPP conversion for ITU-R BT.601 for video
-                // default 16, higher more green and darker blacks, lower less
-                // green hue and lighter blacks.
-//                double kLight = (1.164 * (Y -16 ));
-//                double rVal = kLight + (1.596 * Cr_128);
-//                double gVal = kLight - (0.392 * Cb_128) - (0.813 * Cr_128);
-//                double bVal = kLight + (1.017 * Cb_128);
-                // intel PhotoYCC Color Model [0.1],  not a likely candidate for jpegs.
-//                double y1 = Y/255.0;
-//                double c1 = Cb/255.0;
-//                double c2 = Cr/255.0;
-//                double rVal = ((0.981 * y1) + (1.315 * (c2 - 0.537))) *255.0;
-//                double gVal = ((0.981 * y1) - (0.311 * (c1 - 0.612))- (0.669 * (c2 - 0.537))) *255.0;
-//                double bVal = ((0.981 * y1) + (1.601 * (c1 - 0.612))) *255.0;
-
-                // check the range an convert as needed.
-                byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
-                byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
-                byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
-                int alpha = 0xFF;
-                if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
-                    alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
-                } else if (y < maskHeight && x < maskWidth && maskRaster != null) {
-                    // When making an ImageMask, the alpha channel is setup so that
-                    //  it both works correctly for the ImageMask being painted,
-                    //  and also for when it's used here, to determine the alpha
-                    //  of an image that it's masking
-                    alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
-                }
-
-                rgbaValues[0] = bByte;
-                rgbaValues[1] = gByte;
-                rgbaValues[2] = rByte;
-                rgbaValues[3] = alpha;
-
-                wr.setPixel(x, y, rgbaValues);
-            }
-        }
-    }
-
-    protected static void alterRasterYCbCrA2RGBA(WritableRaster wr) {
-
-
-        float[] origValues = new float[4];
-        int[] rgbaValues = new int[4];
-        int width = wr.getWidth();
-        int height = wr.getHeight();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                wr.getPixel(x, y, origValues);
-                // apply decode param.
-                // couldn't quite get this one right, doesn't decode
-                // as I would have thought.
-//                origValues = getNormalizedComponents(
-//                        (byte[])wr.getDataElements(x,y,null),
-//                        decode,
-//                        maxValue);
-
-                float Y = origValues[0];
-                float Cb = origValues[1];
-                float Cr = origValues[2];
-                float K = origValues[3];
-                Y = K - Y;
-                float Cr_128 = Cr - 128;
-                float Cb_128 = Cb - 128;
-
-                float rVal = Y + (1370705 * Cr_128 / 1000000);
-                float gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
-                float bVal = Y + (1732446 * Cb_128 / 1000000);
-
-                /*
-                // Formula used in JPEG standard. Gives pretty similar results
-                //int rVal = Y + (1402000 * Cr_128/ 1000000);
-                //int gVal = Y - (344140 * Cb_128 / 1000000) - (714140 * Cr_128 / 1000000);
-                //int bVal = Y + (1772000 * Cb_128 / 1000000);
-                */
-
-                byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
-                byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
-                byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
-                float alpha = K;
-
-                rgbaValues[0] = rByte;
-                rgbaValues[1] = gByte;
-                rgbaValues[2] = bByte;
-                rgbaValues[3] = (int) alpha;
-
-                wr.setPixel(x, y, rgbaValues);
-            }
-        }
-    }
 
     /**
      * (see 8.9.6.3, "Explicit Masking")
@@ -1235,7 +659,7 @@ public class ImageUtility {
      * from the raw image decode.  This method is only called from JPEG2000
      * code for now but will be consolidate as we move to to 5.0
      */
-    protected static BufferedImage applyIndexColourModel(BufferedImage image,
+    protected static BufferedImage applyIndexColourModel(WritableRaster wr,
                                                          int width, int height, PColorSpace colourSpace, int bitspercomponent) {
         BufferedImage img;
         colourSpace.init();
@@ -1252,9 +676,9 @@ public class ImageUtility {
             cmap[i] = 0xFF000000;
         }
         // build a new buffer with indexed colour model.
-        DataBuffer db = image.getRaster().getDataBuffer();
+        DataBuffer db = wr.getDataBuffer();
         SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
-        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
+//        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
         ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
         img = new BufferedImage(cm, wr, false, null);
         return img;
@@ -1455,6 +879,32 @@ public class ImageUtility {
         return jpegEncoding;
     }
 
+    public static BufferedImage convertSpaceToRgb(
+            Raster colourRaster, PColorSpace colorSpace,
+            float[] decode) {
+        BufferedImage rgbImage = makeBufferedImage(colourRaster);
+        WritableRaster rgbRaster = rgbImage.getRaster();
+        // apply the decode filter
+        DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+        decodeRasterOp.filter(colourRaster, (WritableRaster) colourRaster);
+        // apply colour space
+        PColorSpaceRasterOp pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, null);
+        pColorSpaceRasterOp.filter(colourRaster, rgbRaster);
+        return rgbImage;
+    }
+
+    public static BufferedImage convertGrayToRgb(Raster grayRaster,
+                                                 float[] decode) {
+        // convert from gray.
+        GrayRasterOp grayRasterOp = new GrayRasterOp(decode, null);
+        grayRasterOp.filter(grayRaster, (WritableRaster) grayRaster);
+        return ImageUtility.makeGrayBufferedImage((WritableRaster) grayRaster);
+    }
+
+
+    //
+
+
     /**
      * Utility method to convert an CMYK based raster to RGB.  The can be
      * configured to use to different approaches.  The first and more accurate
@@ -1466,17 +916,80 @@ public class ImageUtility {
      * @param cmykRaster CMYK base raster to convert to RGB.
      * @return Buffered image representation of raster.
      */
-    public static BufferedImage convertCmykToRgb(Raster cmykRaster, float[] decode) {
+    public static BufferedImage convertCmykToRgb(Raster cmykRaster,
+                                                 float[] decode) {
+        BufferedImage rgbImage = makeBufferedImage(cmykRaster);
 
         if (!DeviceCMYK.isDisableICCCmykColorSpace()) {
-            BufferedImage rgbImage = new BufferedImage(cmykRaster.getWidth(), cmykRaster.getHeight(), BufferedImage.TYPE_INT_RGB);
             WritableRaster rgbRaster = rgbImage.getRaster();
             ColorSpace rgbCS = rgbImage.getColorModel().getColorSpace();
+            // apply the decode filter
+            DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+            decodeRasterOp.filter(cmykRaster, (WritableRaster) cmykRaster);
+            // convert it to rgb
             ColorConvertOp cmykToRgb = new ColorConvertOp(DeviceCMYK.getIccCmykColorSpace(), rgbCS, null);
             cmykToRgb.filter(cmykRaster, rgbRaster);
             return rgbImage;
         } else {
-            return ImageUtility.alterRasterCMYK2BGRA((WritableRaster) cmykRaster, decode);
+            WritableRaster rgbRaster = rgbImage.getRaster();
+
+            // apply the decode filter
+            DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+            decodeRasterOp.filter(cmykRaster, (WritableRaster) cmykRaster);
+            // apply the Old non ICC color conversion code
+            // convert it to rgb
+            CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
+            cmykRasterOp.filter(cmykRaster, rgbRaster);
+            return rgbImage;
+        }
+    }
+
+    public static BufferedImage convertYCbCrToRGB(Raster yCbCrRaster,
+                                                  float[] decode) {
+
+        BufferedImage rgbImage = makeBufferedImage(yCbCrRaster);
+        WritableRaster rgbRaster = rgbImage.getRaster();
+        // apply the decode filter
+        DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+        decodeRasterOp.filter(yCbCrRaster, (WritableRaster) yCbCrRaster);
+        // convert to rgb
+        RasterOp rasterOp;
+        rasterOp = new YCbCrRasterOp(null);
+        rasterOp.filter(yCbCrRaster, rgbRaster);
+        return rgbImage;
+    }
+
+    public static BufferedImage convertYCCKToRgb(Raster ycckRaster,
+                                                 float[] decode) {
+        BufferedImage rgbImage = makeBufferedImage(ycckRaster);
+
+        if (!DeviceCMYK.isDisableICCCmykColorSpace()) {
+            WritableRaster rgbRaster = rgbImage.getRaster();
+            ColorSpace rgbCS = rgbImage.getColorModel().getColorSpace();
+            // apply the decode filter
+            DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+            decodeRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
+            // apply the  YCCK to CMYK
+            YCCKRasterOp ycckRasterOp = new YCCKRasterOp(null);
+            ycckRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
+            // convert it to rgb
+            ColorConvertOp cmykToRgb = new ColorConvertOp(DeviceCMYK.getIccCmykColorSpace(), rgbCS, null);
+            cmykToRgb.filter(ycckRaster, rgbRaster);
+            return rgbImage;
+        } else {
+            WritableRaster rgbRaster = rgbImage.getRaster();
+
+            // apply the decode filter
+            DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+            decodeRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
+            // apply the  YCCK to CMYK
+            YCCKRasterOp ycckRasterOp = new YCCKRasterOp(null);
+            ycckRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
+            // apply the Old non ICC color conversion code
+            // convert it to rgb
+            CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
+            cmykRasterOp.filter(ycckRaster, rgbRaster);
+            return rgbImage;
         }
     }
 
@@ -1485,7 +998,7 @@ public class ImageUtility {
             Color fill,
             int width, int height,
             int colorSpaceCompCount,
-            int bitspercomponent,
+            int bitsPerComponent,
             boolean imageMask,
             float[] decode,
             BufferedImage smaskImage,
@@ -1505,14 +1018,14 @@ public class ImageUtility {
         }
 
         if (colourSpace instanceof DeviceGray) {
-            if (imageMask && bitspercomponent == 1) {
+            if (imageMask && bitsPerComponent == 1) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_1_ImageMask");
 
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 WritableRaster wr = Raster.createPackedRaster(db, width, height,
-                        bitspercomponent, new Point(0, 0));
+                        bitsPerComponent, new Point(0, 0));
 
                 // From PDF 1.6 spec, concerning ImageMask and Decode array:
                 // it in different places different ways.
@@ -1530,7 +1043,7 @@ public class ImageUtility {
                 };
                 int transparentIndex = (defaultDecode ? 1 : 0);
                 IndexColorModel icm = new IndexColorModel(
-                        bitspercomponent,       // the number of bits each pixel occupies
+                        bitsPerComponent,       // the number of bits each pixel occupies
                         cmap.length,            // the size of the color component arrays
                         cmap,                   // the array of color components
                         0,                      // the starting offset of the first color component
@@ -1538,23 +1051,23 @@ public class ImageUtility {
                         transparentIndex,       // the index of the fully transparent pixel
                         db.getDataType());      // the data type of the array used to represent pixel values. The data type must be either DataBuffer.TYPE_BYTE or DataBuffer.TYPE_USHORT
                 img = new BufferedImage(icm, wr, false, null);
-            } else if (bitspercomponent == 1 || bitspercomponent == 2 || bitspercomponent == 4) {
+            } else if (bitsPerComponent == 1 || bitsPerComponent == 2 || bitsPerComponent == 4) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_124");
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
-                WritableRaster wr = Raster.createPackedRaster(db, width, height, bitspercomponent, new Point(0, 0));
+                WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
                 int[] cmap = null;
-                if (bitspercomponent == 1) {
+                if (bitsPerComponent == 1) {
                     boolean defaultDecode = 0.0f == decode[0];
                     cmap = defaultDecode ? GRAY_1_BIT_INDEX_TO_RGB : GRAY_1_BIT_INDEX_TO_RGB_REVERSED;
-                } else if (bitspercomponent == 2)
+                } else if (bitsPerComponent == 2)
                     cmap = GRAY_2_BIT_INDEX_TO_RGB;
-                else if (bitspercomponent == 4)
+                else if (bitsPerComponent == 4)
                     cmap = GRAY_4_BIT_INDEX_TO_RGB;
-                ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
-            } else if (bitspercomponent == 8) {
+            } else if (bitsPerComponent == 8) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_8");
                 //int data_length = data.length;
@@ -1579,20 +1092,12 @@ public class ImageUtility {
                     }
                 }
                 ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-                ColorModel cm = new ComponentColorModel(cs, new int[]{bitspercomponent},
+                ColorModel cm = new ComponentColorModel(cs, new int[]{bitsPerComponent},
                         false, false, ColorModel.OPAQUE, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             }
-            // apply explicit mask
-            if (maskImage != null) {
-                img = ImageUtility.applyExplicitMask(img, maskImage);
-            }
-            // apply soft mask
-            if (smaskImage != null) {
-                img = ImageUtility.applyExplicitSMask(img, smaskImage);
-            }
         } else if (colourSpace instanceof DeviceRGB) {
-            if (bitspercomponent == 8) {
+            if (bitsPerComponent == 8) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceRGB_8");
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
@@ -1601,15 +1106,16 @@ public class ImageUtility {
                 int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
                         BufferedImage.TYPE_INT_RGB;
                 img = new BufferedImage(width, height, type);
+                // convert image data to rgb, a little out of order maybe?
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
+                // todo consolidate masking
                 if (usingAlpha) {
                     img = ImageUtility.alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
-            // TODO Look at doing CMYK properly, fallback code is very slow.
-            if (false && bitspercomponent == 8) {
+            if (false && bitsPerComponent == 8) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceCMYK_8");
                 DataBuffer db = new DataBufferByte(data, dataLength);
@@ -1619,24 +1125,15 @@ public class ImageUtility {
                 SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, colorSpaceCompCount, colorSpaceCompCount * width, bandOffsets);
                 WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
                 //WritableRaster wr = Raster.createInterleavedRaster( db, width, height, colorSpaceCompCount*width, colorSpaceCompCount, bandOffsets, new Point(0,0) );
-                ColorSpace cs = null;
-//                try {
-                //cs = new ColorSpaceCMYK(); //ColorSpace.getInstance( ColorSpace.CS_PYCC );//ColorSpace.TYPE_CMYK );
-                ///cs = ColorSpaceWrapper.getICCColorSpaceInstance("C:\\Documents and Settings\\Mark Collette\\IdeaProjects\\TestJAI\\CMYK.pf");
-//                }
-//                catch (Exception csex) {
-//                    if (logger.isLoggable(Level.FINE)) {
-//                        logger.fine("Problem loading CMYK ColorSpace");
-//                    }
-//                }
+                ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
                 int[] bits = new int[colorSpaceCompCount];
                 for (int i = 0; i < colorSpaceCompCount; i++)
-                    bits[i] = bitspercomponent;
+                    bits[i] = bitsPerComponent;
                 ColorModel cm = new ComponentColorModel(cs, bits, false, false, ColorModel.OPAQUE, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             }
         } else if (colourSpace instanceof Indexed) {
-            if (bitspercomponent == 1 || bitspercomponent == 2 || bitspercomponent == 4) {
+            if (bitsPerComponent == 1 || bitsPerComponent == 2 || bitsPerComponent == 4) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_124");
                 colourSpace.init();
@@ -1645,7 +1142,7 @@ public class ImageUtility {
                 for (int i = 0; i < cmap.length; i++) {
                     cmap[i] = colors[i].getRGB();
                 }
-                int cmapMaxLength = 1 << bitspercomponent;
+                int cmapMaxLength = 1 << bitsPerComponent;
                 if (cmap.length > cmapMaxLength) {
                     int[] cmapTruncated = new int[cmapMaxLength];
                     System.arraycopy(cmap, 0, cmapTruncated, 0, cmapMaxLength);
@@ -1659,17 +1156,18 @@ public class ImageUtility {
                             (usingIndexedAlpha ? "indexed" : (usingAlpha ? "alpha" : "false")));
                 if (usingAlpha) {
                     DataBuffer db = new DataBufferByte(data, dataLength);
-                    WritableRaster wr = Raster.createPackedRaster(db, width, height, bitspercomponent, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                    WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
+                    // todo convert to alpha
                     img = ImageUtility.alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
-                    WritableRaster wr = Raster.createPackedRaster(db, width, height, bitspercomponent, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                    WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 }
-            } else if (bitspercomponent == 8) {
+            } else if (bitsPerComponent == 8) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_8");
                 colourSpace.init();
@@ -1679,20 +1177,21 @@ public class ImageUtility {
                 for (int i = 0; i < colorsLength; i++) {
                     cmap[i] = colors[i].getRGB();
                 }
-                for (int i = colorsLength; i < cmap.length; i++)
+                for (int i = colorsLength; i < cmap.length; i++) {
                     cmap[i] = 0xFF000000;
-
+                }
                 boolean usingIndexedAlpha = maskMinIndex >= 0 && maskMaxIndex >= 0;
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
                 if (Tagger.tagging)
                     Tagger.tagImage("RasterFromBytes_Indexed_8_alpha=" + (usingIndexedAlpha ? "indexed" : (usingAlpha ? "alpha" : "false")));
                 if (usingIndexedAlpha) {
-                    for (int i = maskMinIndex; i <= maskMaxIndex; i++)
+                    for (int i = maskMinIndex; i <= maskMaxIndex; i++) {
                         cmap[i] = 0x00000000;
+                    }
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, true, -1, db.getDataType());
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 } else if (usingAlpha) {
                     int[] rgbaData = new int[width * height];
@@ -1713,7 +1212,7 @@ public class ImageUtility {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
                     WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                 }
             }
@@ -1833,103 +1332,4 @@ public class ImageUtility {
         }
     }
 
-    /**
-     * Applies an iterative scaling method to provide a smooth end result, once complete
-     * apply a trilinear blend based on the desired width and height.   Technique
-     * derived from Jim Graham example code.
-     *
-     * @param img          image to scale
-     * @param targetWidth  target width
-     * @param targetHeight target height
-     * @return scaled instance.
-     */
-    public static Image getTrilinearScaledInstance(BufferedImage img,
-                                                   int targetWidth,
-                                                   int targetHeight) {
-        // Use multi-step technique: start with original size, then
-        // scale down in multiple passes with drawImage()
-        // until the target size is reached
-        int iw = img.getWidth();
-        int ih = img.getHeight();
-
-        Object hint = RenderingHints.VALUE_INTERPOLATION_BILINEAR;
-        int type = (img.getTransparency() == Transparency.OPAQUE) ?
-                BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
-
-        // First get down to no more than 2x in W & H
-        while (iw > targetWidth * 2 || ih > targetHeight * 2) {
-            iw = (iw > targetWidth * 2) ? iw / 2 : iw;
-            ih = (ih > targetHeight * 2) ? ih / 2 : ih;
-            img = scaleImage(img, type, hint, iw, ih);
-        }
-
-        // If still too wide - do a horizontal trilinear blend
-        // of img and a half-width img
-        if (iw > targetWidth) {
-            int iw2 = iw / 2;
-            BufferedImage img2 = scaleImage(img, type, hint, iw2, ih);
-            if (iw2 < targetWidth) {
-                img = scaleImage(img, type, hint, targetWidth, ih);
-                img2 = scaleImage(img2, type, hint, targetWidth, ih);
-                interpolate(img2, img, iw - targetWidth, targetWidth - iw2);
-            }
-            img = img2;
-            iw = targetWidth;
-        }
-        // iw should now be targetWidth or smaller
-
-        // If still too tall - do a vertical trilinear blend
-        // of img and a half-height img
-        if (ih > targetHeight) {
-            int ih2 = ih / 2;
-            BufferedImage img2 = scaleImage(img, type, hint, iw, ih2);
-            if (ih2 < targetHeight) {
-                img = scaleImage(img, type, hint, iw, targetHeight);
-                img2 = scaleImage(img2, type, hint, iw, targetHeight);
-                interpolate(img2, img, ih - targetHeight, targetHeight - ih2);
-            }
-            img = img2;
-            ih = targetHeight;
-        }
-        // ih should now be targetHeight or smaller
-
-        // If we are too small, then it was probably because one of
-        // the dimensions was too small from the start.
-        if (iw < targetWidth && ih < targetHeight) {
-            img = scaleImage(img, type, hint, targetWidth, targetHeight);
-        }
-
-        return img;
-    }
-
-    /**
-     * Utility to interpolate the two imges.
-     */
-    private static void interpolate(BufferedImage img1,
-                                    BufferedImage img2,
-                                    int weight1,
-                                    int weight2) {
-        float alpha = weight1;
-        alpha /= (weight1 + weight2);
-        Graphics2D g2 = img1.createGraphics();
-        g2.setComposite(
-                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-        g2.drawImage(img2, 0, 0, null);
-        g2.dispose();
-    }
-
-    /**
-     * Utility to apply image scaling using the g2.drawImage() method.
-     */
-    private static BufferedImage scaleImage(BufferedImage orig,
-                                            int type,
-                                            Object hint,
-                                            int w, int h) {
-        BufferedImage tmp = new BufferedImage(w, h, type);
-        Graphics2D g2 = tmp.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
-        g2.drawImage(orig, 0, 0, w, h, null);
-        g2.dispose();
-        return tmp;
-    }
 }
