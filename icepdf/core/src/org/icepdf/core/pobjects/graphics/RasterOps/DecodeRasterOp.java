@@ -44,7 +44,6 @@ public class DecodeRasterOp implements RasterOp {
         return true;
     }
 
-    @Override
     public WritableRaster filter(Raster src, WritableRaster dest) {
 
         // check if we have none 0-1 decode, if so continue if not return
@@ -77,17 +76,14 @@ public class DecodeRasterOp implements RasterOp {
         return dest;
     }
 
-    @Override
     public Rectangle2D getBounds2D(Raster src) {
         return null;
     }
 
-    @Override
     public WritableRaster createCompatibleDestRaster(Raster src) {
         return src.createCompatibleWritableRaster();
     }
 
-    @Override
     public Point2D getPoint2D(Point2D srcPt, Point2D dstPt) {
         if (dstPt == null)
             dstPt = (Point2D) srcPt.clone();
@@ -96,7 +92,6 @@ public class DecodeRasterOp implements RasterOp {
         return dstPt;
     }
 
-    @Override
     public RenderingHints getRenderingHints() {
         return hints;
     }
