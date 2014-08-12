@@ -670,7 +670,13 @@ public class ImageStream extends Stream {
                     && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.makeGrayBufferedImage(wr);
             } else if (colourSpace instanceof Separation) {
-                tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
+                if (colourSpace instanceof Separation &&
+                        ((Separation) colourSpace).isNamedColor()) {
+                    tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
+//                    tmpImage = ImageUtility.makeGrayBufferedImage(wr);
+                } else {
+                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                }
             } else if (colourSpace instanceof Indexed) {
                 // still some issue here with Chevron.pdf
                 tmpImage = ImageUtility.applyIndexColourModel(wr, width, height, colourSpace, bitsPerComponent);
@@ -678,7 +684,6 @@ public class ImageStream extends Stream {
         } catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
         }
-
         return tmpImage;
     }
 
