@@ -141,13 +141,15 @@ public class Function_0 extends Function {
      * @return array of ouput value n.
      */
     public float[] calculate(float[] x) {
+
         // length of output array
         int n = range.length / 2;
         // ready output array
         float y[] = new float[n];
         // work throw all input data and store in y[]
         try {
-            for (int i = 0; i < x.length; i++) {
+            // sampled each input value xi for 0 & i < m
+            for (int i = 0; i < size.length; i++) {
                 // clip input value appropriately for the given domain
                 // xi' = min (max(xi, Domain2i), Domain2i+1)
                 x[i] = Math.min(Math.max(x[i], domain[2 * i]), domain[2 * i + 1]);
@@ -186,7 +188,7 @@ public class Function_0 extends Function {
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error calculating function 0 values", e);
+            logger.log(Level.FINER, "Error calculating function 0 values", e);
         }
         return y;
     }
