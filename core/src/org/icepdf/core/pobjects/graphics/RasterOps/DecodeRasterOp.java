@@ -37,7 +37,7 @@ public class DecodeRasterOp implements RasterOp {
     private static boolean isNormalDecode(float[] decode) {
         // normal decode is always [0,1,0,1....]
         for (int i = 0, max = decode.length; i < max; i += 2) {
-            if (decode[i] != 0.0f && decode[i + 1] != 1.0f) {
+            if (decode[i] != 0.0f || decode[i + 1] != 1.0f) {
                 return false;
             }
         }
@@ -58,15 +58,14 @@ public class DecodeRasterOp implements RasterOp {
 
         int[] values = new int[src.getNumBands()];
         byte[] dataValues = new byte[src.getNumBands()];
-        byte[] compColors;
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
 
-                compColors = (byte[]) src.getDataElements(x, y, dataValues);
+                src.getDataElements(x, y, dataValues);
                 // apply decode param.
                 normalizeComponents(
-                        compColors,
+                        dataValues,
                         decode,
                         values);
                 dest.setPixel(x, y, values);

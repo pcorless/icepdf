@@ -895,15 +895,15 @@ public class ImageUtility {
 
     public static BufferedImage convertGrayToRgb(Raster grayRaster,
                                                  float[] decode) {
+
+        // apply the decode filter
+        DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+        decodeRasterOp.filter(grayRaster, (WritableRaster) grayRaster);
         // convert from gray.
         GrayRasterOp grayRasterOp = new GrayRasterOp(decode, null);
         grayRasterOp.filter(grayRaster, (WritableRaster) grayRaster);
         return ImageUtility.makeGrayBufferedImage((WritableRaster) grayRaster);
     }
-
-
-    //
-
 
     /**
      * Utility method to convert an CMYK based raster to RGB.  The can be
