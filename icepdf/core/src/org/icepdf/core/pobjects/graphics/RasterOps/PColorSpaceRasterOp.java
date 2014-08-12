@@ -1,6 +1,5 @@
 package org.icepdf.core.pobjects.graphics.RasterOps;
 
-import org.icepdf.core.pobjects.graphics.DeviceRGB;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 
 import java.awt.*;
@@ -29,9 +28,6 @@ public class PColorSpaceRasterOp implements RasterOp {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
 
-        if (colorSpace instanceof DeviceRGB)
-            return dest;
-
         float[] values = new float[3];
         int[] rgbValues = new int[3];
         int width = src.getWidth();
@@ -39,14 +35,14 @@ public class PColorSpaceRasterOp implements RasterOp {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 src.getPixel(x, y, rgbValues);
-
-                PColorSpace.reverseInPlace(rgbValues);
                 colorSpace.normaliseComponentsToFloats(rgbValues, values, 255.0f);
+                // reverse after the normalization to avoid looking gray data as
+                // array is trimmed above.
+                PColorSpace.reverseInPlace(values);
                 Color c = colorSpace.getColor(values);
                 rgbValues[0] = c.getRed();
                 rgbValues[1] = c.getGreen();
                 rgbValues[2] = c.getBlue();
-
                 dest.setPixel(x, y, rgbValues);
             }
         }

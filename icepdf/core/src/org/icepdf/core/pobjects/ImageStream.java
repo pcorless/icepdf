@@ -632,15 +632,17 @@ public class ImageStream extends Stream {
                     new ByteArrayInputStream(data));
 
 
-            // get the reader
-            Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
-            ImageReader reader = iter.next();
-            reader.setInput(imageInputStream);
-            // read the raster data only, as we have our own logic to covert
-            // the raster data to RGB colours.
-            ImageReadParam param = reader.getDefaultReadParam();
+            // getting the raster for JPX seems to fail in most cases.
+//            Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
+//            ImageReader reader = iter.next();
+//            reader.setInput(imageInputStream);
+//            // read the raster data only, as we have our own logic to covert
+//            // the raster data to RGB colours.
+//            ImageReadParam param = reader.getDefaultReadParam();
+//            WritableRaster wr = (WritableRaster) reader.readRaster(0, param);
 
-            WritableRaster wr = (WritableRaster) reader.readRaster(0, param);
+            tmpImage = ImageIO.read(imageInputStream);
+            WritableRaster wr = tmpImage.getRaster();
 
             // special fallback scenario for ICCBased colours.
             if (colourSpace instanceof ICCBased) {
@@ -670,6 +672,7 @@ public class ImageStream extends Stream {
             } else if (colourSpace instanceof Separation) {
                 tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
             } else if (colourSpace instanceof Indexed) {
+                // still some issue here with Chevron.pdf
                 tmpImage = ImageUtility.applyIndexColourModel(wr, width, height, colourSpace, bitsPerComponent);
             }
         } catch (IOException e) {
