@@ -219,6 +219,13 @@ public class StandardSecurityHandler extends SecurityHandler {
                             getCryptFilter().getCryptFilterByName(filterName);
 
                 }
+            } else {
+                // corner case, some images treams also use the "decodeParams"
+                // dictionary, if it doesn't contain a filter name then we
+                // want to make sure we assign the standard one so the steam
+                // can be unencrypted.
+                cryptFilter = encryptionDictionary.getCryptFilter().getCryptFilterByName(
+                        encryptionDictionary.getStmF());
             }
         }
         // We default to the method specified in by StrmF in the security dictionary
