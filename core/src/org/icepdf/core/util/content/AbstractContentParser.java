@@ -46,11 +46,17 @@ public abstract class AbstractContentParser implements ContentParser {
             Logger.getLogger(AbstractContentParser.class.toString());
 
     private static boolean disableTransparencyGroups;
+    private static boolean enabledOverPrint;
 
     static {
         // decide if large images will be scaled
         disableTransparencyGroups =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableTransparencyGroup",
+                        false);
+
+        // decide if basic over print support will be enabled.
+        enabledOverPrint =
+                Defs.sysPropertyBoolean("org.icepdf.core.enabledOverPrint",
                         false);
     }
 
@@ -1706,12 +1712,17 @@ public abstract class AbstractContentParser implements ContentParser {
 
     /**
      * Utility method for fudging overprinting calculation for screen
-     * representation.
+     * representation.  This feature is optional an off by default.
+     *
+     * Can be enable with -Dorg.icepdf.core.enabledOverPrint=true
      *
      * @param alpha alph constant
      * @return tweaked over printing alpha
      */
     protected static float commonOverPrintAlpha(float alpha) {
+        if (!enabledOverPrint) {
+            return alpha;
+        }
         // if alpha is already present we reduce it and we minimize
         // it if it is already lower then our over paint.  This an approximation
         // only for improved screen representation.
