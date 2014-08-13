@@ -97,7 +97,9 @@ public class SmoothScaledImageReference extends CachedImageReference {
                 }
             }
             if (image != null) {
-                int width = this.width;
+                // update the width height encase it as scaled during masking.
+                int width = image.getWidth();
+                int height = image.getHeight();
 
                 // do image scaling on larger images.  This improves the softness
                 // of some images that contains black and white text.
@@ -121,7 +123,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
                                 (int) Math.ceil(height * imageScale));
                     }
                 }
-                // normal rgb scale as before, as the triliear scale causes excessive blurring.
+                // normal rgb scale as before, as the trilinear scale causes excessive blurring.
                 else {
                     if ((width >= 250 || height >= 250) && (width < 500 || height < 500)) {
                         imageScale = 0.90;
