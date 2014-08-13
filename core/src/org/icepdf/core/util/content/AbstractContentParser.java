@@ -57,7 +57,7 @@ public abstract class AbstractContentParser implements ContentParser {
         // decide if basic over print support will be enabled.
         enabledOverPrint =
                 Defs.sysPropertyBoolean("org.icepdf.core.enabledOverPrint",
-                        false);
+                        true);
     }
 
     public static final float OVERPAINT_ALPHA = 0.4f;
@@ -124,7 +124,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * stream.
      *
      * @return current graphics context of content stream.  May be null if
-     *         parse method has not been previously called.
+     * parse method has not been previously called.
      */
     public GraphicsState getGraphicsState() {
         return graphicState;
@@ -894,8 +894,8 @@ public abstract class AbstractContentParser implements ContentParser {
 
         AffineTransform tmp = applyTextScaling(graphicState);
         drawString(stringObject.getLiteralStringBuffer(
-                textState.font.getSubTypeFormat(),
-                textState.font.getFont()),
+                        textState.font.getSubTypeFormat(),
+                        textState.font.getFont()),
                 textMetrics, graphicState.getTextState(),
                 shapes, glyphOutlineClip, graphicState, oCGs);
         graphicState.set(tmp);
@@ -1346,8 +1346,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
                 drawString(stringObject.getLiteralStringBuffer(
-                        textState.font.getSubTypeFormat(),
-                        textState.font.getFont()),
+                                textState.font.getSubTypeFormat(),
+                                textState.font.getFont()),
                         textMetrics,
                         graphicState.getTextState(), shapes, glyphOutlineClip,
                         graphicState, oCGs);
@@ -1378,8 +1378,8 @@ public abstract class AbstractContentParser implements ContentParser {
             setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
             // draw string will take care of text pageText construction
             drawString(stringObject.getLiteralStringBuffer(
-                    textState.font.getSubTypeFormat(),
-                    textState.font.getFont()),
+                            textState.font.getSubTypeFormat(),
+                            textState.font.getFont()),
                     textMetrics,
                     graphicState.getTextState(),
                     shapes,
@@ -1646,7 +1646,8 @@ public abstract class AbstractContentParser implements ContentParser {
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintStroking()) {
             setAlpha(shapes, graphicState.getAlphaRule(),
-                    commonOverPrintAlpha(graphicState.getStrokeAlpha()));
+                    commonOverPrintAlpha(graphicState.getStrokeAlpha(),
+                            graphicState.getStrokeColorSpace()));
         }
         // The knockout effect can only be achieved by changing the alpha
         // composite to source.  I don't have a test case for this for stroke
@@ -1713,25 +1714,28 @@ public abstract class AbstractContentParser implements ContentParser {
     /**
      * Utility method for fudging overprinting calculation for screen
      * representation.  This feature is optional an off by default.
-     *
+     * <p/>
      * Can be enable with -Dorg.icepdf.core.enabledOverPrint=true
      *
      * @param alpha alph constant
      * @return tweaked over printing alpha
      */
-    protected static float commonOverPrintAlpha(float alpha) {
+    protected static float commonOverPrintAlpha(float alpha, PColorSpace colorSpace) {
         if (!enabledOverPrint) {
             return alpha;
         }
-        // if alpha is already present we reduce it and we minimize
-        // it if it is already lower then our over paint.  This an approximation
-        // only for improved screen representation.
-        if (alpha != 1.0f && alpha > OVERPAINT_ALPHA) {
-            alpha -= OVERPAINT_ALPHA;
-        } else if (alpha < OVERPAINT_ALPHA) {
-//            alpha = 0.1f;
-        } else {
-            alpha = OVERPAINT_ALPHA;
+        if (colorSpace instanceof DeviceN || colorSpace instanceof Separation) {
+            // if alpha is already present we reduce it and we minimize
+            // it if it is already lower then our over paint.  This an approximation
+            // only for improved screen representation.
+            if (alpha != 1.0f && alpha > OVERPAINT_ALPHA) {
+                alpha -= OVERPAINT_ALPHA;
+            } else if (alpha < OVERPAINT_ALPHA) {
+                //            alpha = 0.1f;
+            } else {
+                alpha = OVERPAINT_ALPHA;
+            }
+            return alpha;
         }
         return alpha;
     }
@@ -1749,7 +1753,8 @@ public abstract class AbstractContentParser implements ContentParser {
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintOther()) {
             setAlpha(shapes, graphicState.getAlphaRule(),
-                    commonOverPrintAlpha(graphicState.getFillAlpha()));
+                    commonOverPrintAlpha(graphicState.getFillAlpha(),
+                            graphicState.getFillColorSpace()));
         }
         // The knockout effect can only be achieved by changing the alpha
         // composite to source.
