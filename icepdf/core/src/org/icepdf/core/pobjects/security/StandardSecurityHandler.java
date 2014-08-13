@@ -219,7 +219,7 @@ public class StandardSecurityHandler extends SecurityHandler {
                             getCryptFilter().getCryptFilterByName(filterName);
 
                 }
-            } else {
+            } else if (encryptionDictionary.getCryptFilter() != null) {
                 // corner case, some images treams also use the "decodeParams"
                 // dictionary, if it doesn't contain a filter name then we
                 // want to make sure we assign the standard one so the steam
