@@ -115,7 +115,9 @@ public class ImageUtility {
         return imageUtility;
     }
 
-    protected static BufferedImage alterBufferedImage(BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
+    protected static BufferedImage alterBufferedImage(
+            BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage,
+            int[] maskMinRGB, int[] maskMaxRGB) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
         int smaskHeight = 0;
@@ -222,7 +224,6 @@ public class ImageUtility {
         }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                final BufferedImage bi = bufferedImage;
                 final JFrame f = new JFrame("Image - " + title);
                 f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 
@@ -232,13 +233,13 @@ public class ImageUtility {
                         super.paint(g_);
                         g_.setColor(Color.green);
                         g_.fillRect(0, 0, 800, 800);
-                        g_.drawImage(bi, 0, 0, f);
+                        g_.drawImage(bufferedImage, 0, 0, f);
                         g_.setColor(Color.red);
-                        g_.drawRect(0, 0, bi.getWidth() - 2, bi.getHeight() - 2);
+                        g_.drawRect(0, 0, bufferedImage.getWidth() - 2, bufferedImage.getHeight() - 2);
                     }
                 };
-                image.setPreferredSize(new Dimension(bi.getWidth(), bi.getHeight()));
-                image.setSize(new Dimension(bi.getWidth(), bi.getHeight()));
+                image.setPreferredSize(new Dimension(bufferedImage.getWidth(), bufferedImage.getHeight()));
+                image.setSize(new Dimension(bufferedImage.getWidth(), bufferedImage.getHeight()));
 
                 JPanel test = new JPanel();
                 test.setPreferredSize(new Dimension(1200, 1200));
@@ -519,11 +520,8 @@ public class ImageUtility {
     public static BufferedImage applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
         // check to see if we need to scale the mask to match the size of the
         // base image.
-        int baseWidth = baseImage.getWidth();
-        int baseHeight = baseImage.getHeight();
-
-        final int maskWidth = maskImage.getWidth();
-        final int maskHeight = maskImage.getHeight();
+        int baseWidth;
+        int baseHeight;
 
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, maskImage);
@@ -659,8 +657,8 @@ public class ImageUtility {
      * from the raw image decode.  This method is only called from JPEG2000
      * code for now but will be consolidate as we move to to 5.0
      */
-    protected static BufferedImage applyIndexColourModel(WritableRaster wr,
-                                                         int width, int height, PColorSpace colourSpace, int bitspercomponent) {
+    protected static BufferedImage applyIndexColourModel(
+            WritableRaster wr, PColorSpace colourSpace, int bitsPerComponent) {
         BufferedImage img;
         colourSpace.init();
         // build out the colour table.
@@ -668,18 +666,16 @@ public class ImageUtility {
         int colorsLength = (colors == null) ? 0 : colors.length;
         int[] cmap = new int[256];
         for (int i = 0; i < colorsLength; i++) {
-            if (colors != null) {
-                cmap[i] = colors[i].getRGB();
-            }
+            cmap[i] = colors[i].getRGB();
         }
         for (int i = colorsLength; i < cmap.length; i++) {
             cmap[i] = 0xFF000000;
         }
         // build a new buffer with indexed colour model.
         DataBuffer db = wr.getDataBuffer();
-        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+//        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
 //        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-        ColorModel cm = new IndexColorModel(bitspercomponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+        ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
         img = new BufferedImage(cm, wr, false, null);
         return img;
     }
@@ -688,7 +684,7 @@ public class ImageUtility {
                                                   HashMap decodeParms,
                                                   Stream globalsStream)
             throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, IOException, ClassNotFoundException, InstantiationException {
-        BufferedImage tmpImage = null;
+        BufferedImage tmpImage;
 
         // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
         // can comply with levigo's open source licence.
@@ -1109,26 +1105,24 @@ public class ImageUtility {
                 // convert image data to rgb, a little out of order maybe?
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
-                // todo consolidate masking
-                if (usingAlpha) {
-                    img = ImageUtility.alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
-                }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
-            if (false && bitsPerComponent == 8) {
+            if (bitsPerComponent == 8) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceCMYK_8");
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 int[] bandOffsets = new int[colorSpaceCompCount];
-                for (int i = 0; i < colorSpaceCompCount; i++)
+                for (int i = 0; i < colorSpaceCompCount; i++) {
                     bandOffsets[i] = i;
+                }
                 SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, colorSpaceCompCount, colorSpaceCompCount * width, bandOffsets);
                 WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
                 //WritableRaster wr = Raster.createInterleavedRaster( db, width, height, colorSpaceCompCount*width, colorSpaceCompCount, bandOffsets, new Point(0,0) );
                 ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
                 int[] bits = new int[colorSpaceCompCount];
-                for (int i = 0; i < colorSpaceCompCount; i++)
+                for (int i = 0; i < colorSpaceCompCount; i++) {
                     bits[i] = bitsPerComponent;
+                }
                 ColorModel cm = new ComponentColorModel(cs, bits, false, false, ColorModel.OPAQUE, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             }
@@ -1159,8 +1153,6 @@ public class ImageUtility {
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
                     ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                    // todo convert to alpha
-                    img = ImageUtility.alterBufferedImage(img, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
@@ -1204,7 +1196,6 @@ public class ImageUtility {
                     //SampleModel sm = new SinglePixelPackedSampleModel(
                     //    db.getDataType(), width, height, masks );
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, width, masks, new Point(0, 0));
-                    ImageUtility.alterRasterRGBA(wr, smaskImage, maskImage, maskMinRGB, maskMaxRGB);
                     ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
                     ColorModel cm = new DirectColorModel(cs, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000, false, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
