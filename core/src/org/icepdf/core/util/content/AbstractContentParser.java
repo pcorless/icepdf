@@ -1724,7 +1724,7 @@ public abstract class AbstractContentParser implements ContentParser {
         if (!enabledOverPrint) {
             return alpha;
         }
-        if (colorSpace instanceof DeviceN || colorSpace instanceof Separation) {
+        if (colorSpace instanceof DeviceN) {// || colorSpace instanceof Separation) {
             // if alpha is already present we reduce it and we minimize
             // it if it is already lower then our over paint.  This an approximation
             // only for improved screen representation.
