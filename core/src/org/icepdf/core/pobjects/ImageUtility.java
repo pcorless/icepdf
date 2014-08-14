@@ -115,34 +115,10 @@ public class ImageUtility {
         return imageUtility;
     }
 
-    protected static BufferedImage alterBufferedImage(
-            BufferedImage bi, BufferedImage smaskImage, BufferedImage maskImage,
-            int[] maskMinRGB, int[] maskMaxRGB) {
-        Raster smaskRaster = null;
-        int smaskWidth = 0;
-        int smaskHeight = 0;
-
+    protected static BufferedImage alterBufferedImageAlpha(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
         int width = bi.getWidth();
         int height = bi.getHeight();
 
-        if (smaskImage != null) {
-            BufferedImage[] images = scaleImagesToSameSize(bi, smaskImage);
-            bi = images[0];
-            smaskImage = images[1];
-            width = bi.getWidth();
-            height = bi.getHeight();
-        }
-
-        Raster maskRaster = null;
-        int maskWidth = 0;
-        int maskHeight = 0;
-        if (maskImage != null) {
-            BufferedImage[] images = scaleImagesToSameSize(bi, maskImage);
-            bi = images[0];
-            maskImage = images[1];
-            width = bi.getWidth();
-            height = bi.getHeight();
-        }
         int maskMinRed = 0xFF;
         int maskMinGreen = 0xFF;
         int maskMinBlue = 0xFF;
@@ -158,60 +134,25 @@ public class ImageUtility {
             maskMaxBlue = maskMaxRGB[2];
         }
 
-        if (smaskRaster == null && maskRaster == null &&
-                (maskMinRGB == null || maskMaxRGB == null)) {
-            return null;
-        }
-
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                boolean gotARBG = false;
-                int argb = 0;
                 int alpha = 0xFF;
-                if (y < smaskHeight && x < smaskWidth && smaskRaster != null) {
-                    // Alpha equals greyscale value of smask
-                    alpha = (smaskRaster.getSample(x, y, 0) & 0xFF);
-                } else if (y < maskHeight && x < maskWidth && maskRaster != null) {
-                    // When making an ImageMask, the alpha channnel is setup so that
-                    //  it both works correctly for the ImageMask being painted,
-                    //  and also for when it's used here, to determine the alpha
-                    //  of an image that it's masking
-                    alpha = (maskImage.getRGB(x, y) >>> 24) & 0xFF; // Extract Alpha from ARGB
-                } else {
-                    gotARBG = true;
-                    argb = bi.getRGB(x, y);
-                    int red = ((argb >> 16) & 0xFF);
-                    int green = ((argb >> 8) & 0xFF);
-                    int blue = (argb & 0xFF);
-                    if (blue >= maskMinBlue && blue <= maskMaxBlue &&
-                            green >= maskMinGreen && green <= maskMaxGreen &&
-                            red >= maskMinRed && red <= maskMaxRed) {
-                        alpha = 0x00;
-                    }
+                int argb = bi.getRGB(x, y);
+                int red = ((argb >> 16) & 0xFF);
+                int green = ((argb >> 8) & 0xFF);
+                int blue = (argb & 0xFF);
+                if (blue >= maskMinBlue && blue <= maskMaxBlue &&
+                        green >= maskMinGreen && green <= maskMaxGreen &&
+                        red >= maskMinRed && red <= maskMaxRed) {
+                    alpha = 0x00;
                 }
+
                 if (alpha != 0xFF) {
-                    if (!gotARBG)
-                        argb = bi.getRGB(x, y);
+                    argb = bi.getRGB(x, y);
                     argb &= 0x00FFFFFF;
                     argb |= ((alpha << 24) & 0xFF000000);
                     bi.setRGB(x, y, argb);
                 }
-            }
-        }
-        // apply the soft mask.
-        if (smaskImage != null) {
-            int[] srcBand = new int[width];
-            int[] sMaskBand = new int[width];
-            // iterate over each band to apply the mask
-            for (int i = 0; i < height; i++) {
-                bi.getRGB(0, i, width, 1, srcBand, 0, width);
-                smaskImage.getRGB(0, i, width, 1, sMaskBand, 0, width);
-                // apply the soft mask blending
-                for (int j = 0; j < width; j++) {
-                    sMaskBand[j] = ((sMaskBand[j] & 0xff) << 24)
-                            | (srcBand[j] & ~0xff000000);
-                }
-                bi.setRGB(0, i, width, 1, sMaskBand, 0, width);
             }
         }
         return bi;
@@ -1105,6 +1046,10 @@ public class ImageUtility {
                 // convert image data to rgb, a little out of order maybe?
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
+                // apply alpha data.
+                if (usingAlpha) {
+                    img = ImageUtility.alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
             if (bitsPerComponent == 8) {
@@ -1153,6 +1098,7 @@ public class ImageUtility {
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
                     ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
+                    img = ImageUtility.alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
