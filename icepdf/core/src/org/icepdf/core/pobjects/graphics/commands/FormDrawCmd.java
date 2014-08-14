@@ -46,7 +46,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // decide if large images will be scaled
         disableXObjectSMask =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableXObjectSMask",
-                        true);
+                        false);
 
     }
 
