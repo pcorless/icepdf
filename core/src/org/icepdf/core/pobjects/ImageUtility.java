@@ -1052,7 +1052,9 @@ public class ImageUtility {
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
-            if (bitsPerComponent == 8) {
+            // this is slow and doesn't do decode properly,  push off parseImage()
+            // as its quick and we can do the generic decode and masking.
+            if (false && bitsPerComponent == 8) {
                 if (Tagger.tagging)
                     Tagger.tagImage("HandledBy=RasterFromBytes_DeviceCMYK_8");
                 DataBuffer db = new DataBufferByte(data, dataLength);
