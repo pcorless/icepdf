@@ -380,10 +380,6 @@ public class ImageStream extends Stream {
                         maskMinIndex, maskMaxIndex,
                         data, dataLength);
 //                ImageUtility.displayImage(decodedImage, pObjectReference.toString());
-                // return as we've already handle the masking.
-                if (decodedImage != null) {
-                    return decodedImage;
-                }
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error building image raster.", e);
             }
@@ -679,7 +675,7 @@ public class ImageStream extends Stream {
                 }
             } else if (colourSpace instanceof Indexed) {
                 // still some issue here with Chevron.pdf
-                tmpImage = ImageUtility.applyIndexColourModel(wr, width, height, colourSpace, bitsPerComponent);
+                tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
             }
         } catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
