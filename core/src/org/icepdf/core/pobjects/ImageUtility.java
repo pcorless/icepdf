@@ -677,6 +677,14 @@ public class ImageUtility {
         Method read =
                 levigoJBIG2ImageReaderClass.getMethod("read", partypes);
         tmpImage = (BufferedImage) read.invoke(levigoJbig2Reader, arglist);
+        // call dispose on the reader
+        Method dispose =
+                levigoJBIG2ImageReaderClass.getMethod("dispose", null);
+        dispose.invoke(levigoJbig2Reader, null);
+        // dispose the stream
+        if (imageInputStream != null) {
+            imageInputStream.close();
+        }
         return tmpImage;
     }
 

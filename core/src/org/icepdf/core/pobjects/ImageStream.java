@@ -452,7 +452,8 @@ public class ImageStream extends Stream {
 
         int jpegEncoding;
         BufferedImage tmpImage = null;
-        ImageReader reader;
+        ImageReader reader = null;
+        ImageInputStream imageInputStream = null;
         try {
             // get the full image data.
             byte[] data = getDecodedStreamBytes(
@@ -467,7 +468,7 @@ public class ImageStream extends Stream {
             // check the encoding type for colour conversion.
             jpegEncoding = ImageUtility.getJPEGEncoding(data, dataRead);
 
-            ImageInputStream imageInputStream = ImageIO.createImageInputStream(
+            imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
 
             // get the reader
@@ -520,6 +521,13 @@ public class ImageStream extends Stream {
         } finally {
             try {
                 input.close();
+                // clean up the image reader and image stream
+                if (reader != null) {
+                    reader.dispose();
+                }
+                if (imageInputStream != null) {
+                    imageInputStream.close();
+                }
             } catch (IOException e) {
                 logger.log(Level.FINE, "Problem loading JPEG image via ImageIO: ", e);
             }
