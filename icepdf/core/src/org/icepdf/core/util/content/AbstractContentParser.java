@@ -1323,6 +1323,16 @@ public abstract class AbstractContentParser implements ContentParser {
                 shapes.add(new PaintDrawCmd(pattern.getPaint()));
                 shapes.add(new ShapeDrawCmd(graphicState.getClip()));
                 shapes.add(new FillDrawCmd());
+            } else {
+                // apply the current fill color along ith a little alpha
+                // to at least try to paint a colour for an unsupported mesh
+                // type pattern.
+                setAlpha(shapes,
+                        graphicState.getAlphaRule(),
+                        0.50f);
+                shapes.add(new PaintDrawCmd(graphicState.getFillColor()));
+                shapes.add(new ShapeDrawCmd(graphicState.getClip()));
+                shapes.add(new FillDrawCmd());
             }
         }
     }
