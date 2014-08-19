@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  * <p/>
  * org.icepdf.vi.views.buffersize.vertical
  */
+@SuppressWarnings("serial")
 public class PageThumbnailComponent extends JComponent implements MouseListener {
 
     private static final Logger logger =

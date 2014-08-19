@@ -33,6 +33,7 @@ import java.awt.*;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class AnnotationComponentFactory {
 
     private AnnotationComponentFactory() {

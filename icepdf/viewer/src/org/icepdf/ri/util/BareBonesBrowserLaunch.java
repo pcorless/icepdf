@@ -59,7 +59,7 @@ public class BareBonesBrowserLaunch {
             }
 
             if (isMac()) {
-                Class fileMgr = Class.forName("com.apple.eio.FileManager");
+                Class<?> fileMgr = Class.forName("com.apple.eio.FileManager");
                 Method openURL = fileMgr.getDeclaredMethod("openURL",
                         new Class[]{
                                 String.class});
@@ -103,18 +103,18 @@ public class BareBonesBrowserLaunch {
 
     public static boolean isWindows() {
         //windows
-        return (os.indexOf("win") >= 0);
+        return (os.contains("win"));
 
     }
 
     public static boolean isMac() {
         //Mac
-        return (os.indexOf("mac") >= 0);
+        return (os.contains("mac"));
     }
 
     public static boolean isUnix() {
         //linux or unix
-        return (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0);
+        return (os.contains("nix") || os.contains("nux"));
     }
 
 

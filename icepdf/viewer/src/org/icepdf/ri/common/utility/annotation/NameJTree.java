@@ -26,6 +26,7 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @since 4.0
  */
+@SuppressWarnings("serial")
 public class NameJTree extends JTree {
     public NameJTree() {
         getSelectionModel().setSelectionMode(

@@ -34,6 +34,7 @@ import java.awt.*;
  * @see org.icepdf.ri.common.utility.annotation.InkAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class InkAnnotationComponent extends MarkupAnnotationComponent {
 
 

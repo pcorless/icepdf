@@ -27,6 +27,7 @@ import java.util.ResourceBundle;
 /**
  * Name tree node.
  */
+@SuppressWarnings("serial")
 public class NameTreeNode extends DefaultMutableTreeNode {
 
     // we can either be a intermediate node

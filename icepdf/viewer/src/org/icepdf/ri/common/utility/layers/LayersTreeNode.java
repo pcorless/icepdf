@@ -29,6 +29,7 @@ import java.util.Enumeration;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class LayersTreeNode extends DefaultMutableTreeNode {
 
     /**

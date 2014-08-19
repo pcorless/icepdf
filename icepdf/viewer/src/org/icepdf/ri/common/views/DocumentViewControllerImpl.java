@@ -50,6 +50,7 @@ import java.util.logging.Logger;
  *
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class DocumentViewControllerImpl
         implements DocumentViewController, ComponentListener {
 

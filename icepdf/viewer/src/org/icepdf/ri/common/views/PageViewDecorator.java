@@ -43,6 +43,7 @@ import java.util.logging.Logger;
  *
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class PageViewDecorator extends JComponent {
 
     private static final Logger log =

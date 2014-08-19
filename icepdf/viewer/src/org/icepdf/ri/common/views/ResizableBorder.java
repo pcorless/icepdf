@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  *
  * @since 4.0
  */
+@SuppressWarnings("serial")
 public class ResizableBorder extends AbstractBorder {
 
     private static final Logger logger =

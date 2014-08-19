@@ -33,6 +33,7 @@ import java.awt.*;
  *
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class TwoPageView extends AbstractDocumentView {
 
     protected JScrollPane documentScrollpane;

@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  *
  * @author Icesoft Technologies.
  */
+@SuppressWarnings("serial")
 final class SplashWindow extends JWindow {
 
     private static final Logger logger =

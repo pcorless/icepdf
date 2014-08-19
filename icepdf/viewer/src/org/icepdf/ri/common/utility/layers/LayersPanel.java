@@ -37,6 +37,7 @@ import java.util.ResourceBundle;
  * content if present.  The panel should only be enabled if the the Document's
  * catalog contains a OCProperties entry.
  */
+@SuppressWarnings("serial")
 public class LayersPanel extends JPanel {
 
     protected DocumentViewController documentViewController;
@@ -101,6 +102,7 @@ public class LayersPanel extends JPanel {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void buildTree(List<Object> layersOrder, LayersTreeNode parent, boolean radioGroup) {
 
         LayersTreeNode tmp = null;
@@ -108,13 +110,13 @@ public class LayersPanel extends JPanel {
         // tod recursive build with parent checking.
         for (Object obj : layersOrder) {
             if (obj instanceof List) {
-                LayersTreeNode newParent = null;
+                LayersTreeNode newParent;
                 if (parent.getChildCount() > 0) {
                     newParent = (LayersTreeNode) parent.getLastChild();
                 } else {
                     newParent = parent;
                 }
-                buildTree((List) obj, newParent, radioGroup);
+                buildTree((List<Object>) obj, newParent, radioGroup);
             } else if (obj instanceof String) {
                 // sets the node as selected if children are all selected.
                 if (tmp != null && selected) {

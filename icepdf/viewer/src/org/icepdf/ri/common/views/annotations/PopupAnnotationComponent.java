@@ -57,6 +57,7 @@ import java.util.logging.Level;
  * @see org.icepdf.ri.common.utility.annotation.FreeTextAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class PopupAnnotationComponent extends AbstractAnnotationComponent
         implements TreeSelectionListener, ActionListener, DocumentListener {
 

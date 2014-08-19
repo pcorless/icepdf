@@ -37,6 +37,7 @@ import java.awt.geom.Rectangle2D;
  * @see org.icepdf.ri.common.utility.annotation.LinkAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class LinkAnnotationComponent extends MarkupAnnotationComponent {
 
     public LinkAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,

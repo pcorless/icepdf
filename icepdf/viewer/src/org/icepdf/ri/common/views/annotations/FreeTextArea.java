@@ -32,6 +32,7 @@ import java.awt.geom.AffineTransform;
  *
  * @since 5.0.2
  */
+@SuppressWarnings("serial")
 public class FreeTextArea extends JTextArea {
 
     public interface ZoomProvider {

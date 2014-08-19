@@ -29,6 +29,7 @@ import java.awt.*;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class LayersTree extends JTree {
 
     public LayersTree(TreeNode root) {
@@ -44,6 +45,7 @@ public class LayersTree extends JTree {
     }
 }
 
+@SuppressWarnings("serial")
 class CheckBoxRenderer extends JPanel implements TreeCellRenderer {
 
     protected JCheckBox checkBox;

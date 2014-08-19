@@ -31,6 +31,7 @@ import java.awt.*;
  *
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class OnePageView extends AbstractDocumentView {
 
     protected JScrollPane documentScrollpane;

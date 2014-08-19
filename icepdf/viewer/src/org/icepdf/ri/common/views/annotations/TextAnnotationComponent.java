@@ -34,6 +34,7 @@ import java.util.logging.Logger;
  * @see org.icepdf.ri.common.utility.annotation.TextAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class TextAnnotationComponent extends MarkupAnnotationComponent {
 
     private static final Logger logger =
