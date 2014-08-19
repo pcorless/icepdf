@@ -196,6 +196,7 @@ public class LineAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
+    @SuppressWarnings("unchecked")
     public void init() {
         super.init();
         // line points
@@ -234,7 +235,9 @@ public class LineAnnotation extends MarkupAnnotation {
             if (tmp instanceof List) {
                 rectangle = library.getRectangle(entries, RECTANGLE_KEY);
             }
-            setBBox(rectangle.getBounds());
+            if (rectangle != null) {
+                setBBox(rectangle.getBounds());
+            }
             resetAppearanceStream(new AffineTransform());
         }
     }
@@ -380,7 +383,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setEndArrow(Name endArrow) {
         this.endArrow = endArrow;
-        List endNameArray = new ArrayList(2);
+        List<Name> endNameArray = new ArrayList<Name>(2);
         endNameArray.add(startArrow);
         endNameArray.add(endArrow);
         entries.put(LE_KEY, endNameArray);
@@ -388,7 +391,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setStartArrow(Name startArrow) {
         this.startArrow = startArrow;
-        List endNameArray = new ArrayList(2);
+        List<Name> endNameArray = new ArrayList<Name>(2);
         endNameArray.add(startArrow);
         endNameArray.add(endArrow);
         entries.put(LE_KEY, endNameArray);
@@ -407,7 +410,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public void setEndOfLine(Point2D endOfLine) {
         this.endOfLine = endOfLine;
-        List pointArray = new ArrayList(4);
+        List<Number> pointArray = new ArrayList<Number>(4);
         pointArray.add((float) startOfLine.getX());
         pointArray.add((float) startOfLine.getY());
         pointArray.add((float) endOfLine.getX());

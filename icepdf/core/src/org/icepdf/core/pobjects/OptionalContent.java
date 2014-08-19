@@ -64,7 +64,7 @@ public class OptionalContent extends Dictionary {
      * shall indicate the set of all intents, including those not yet defined.
      * Default value: View. The value shall be View for the document’s default configuration.
      */
-    private List<Name> intent = Arrays.asList(new Name[]{VIEW_VALUE});
+    private List<Name> intent = Arrays.asList(VIEW_VALUE);
 
 
     /**
@@ -106,6 +106,7 @@ public class OptionalContent extends Dictionary {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void init() {
         if (inited) {
             return;
@@ -137,7 +138,7 @@ public class OptionalContent extends Dictionary {
 
             // apply the base state ON|OFF|Unchanged
             Object tmp = library.getName(configurationDictionary, BASE_STATE_KEY);
-            if (tmp != null && tmp instanceof Name) {
+            if (tmp != null) {
                 baseState = (Name) tmp;
             }
 
@@ -170,11 +171,7 @@ public class OptionalContent extends Dictionary {
             // check for an intent entry
             tmp = library.getName(configurationDictionary, INTENT_KEY);
             if (tmp != null) {
-                if (tmp instanceof Name) {
-                    intent = Arrays.asList(new Name[]{(Name) tmp});
-                } else if (tmp instanceof List) {
-                    intent = (List) tmp;
-                }
+                intent = Arrays.asList((Name) tmp);
             }
             // ignore AS for now.
             /**
@@ -212,6 +209,7 @@ public class OptionalContent extends Dictionary {
         inited = true;
     }
 
+    @SuppressWarnings("unchecked")
     private List<Object> parseOrderArray(List<Object> rawOrder, OptionalContentGroup parent) {
         List<Object> order = new ArrayList<Object>(5);
         OptionalContentGroup group = null;
@@ -262,8 +260,8 @@ public class OptionalContent extends Dictionary {
      *
      * @param object content to check visibility.
      * @return optional content groups currently visibility state, returns
-     *         true if no state can be found, better to show then to
-     *         hide by default.
+     * true if no state can be found, better to show then to
+     * hide by default.
      */
     public boolean isVisible(Object object) {
         if (object instanceof Reference) {

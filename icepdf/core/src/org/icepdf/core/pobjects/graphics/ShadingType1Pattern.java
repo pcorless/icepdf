@@ -68,6 +68,7 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
         super(library, entries);
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized void init() {
         if (inited) {
             return;

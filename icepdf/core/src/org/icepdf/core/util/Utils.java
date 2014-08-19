@@ -45,10 +45,10 @@ public class Utils {
      * @param offset into buffer which value is to be set
      */
     public static void setIntIntoByteArrayBE(int value, byte[] buffer, int offset) {
-        buffer[offset + 0] = (byte) ((value >>> 24) & 0xff);
+        buffer[offset] = (byte) ((value >>> 24) & 0xff);
         buffer[offset + 1] = (byte) ((value >>> 16) & 0xff);
         buffer[offset + 2] = (byte) ((value >>> 8) & 0xff);
-        buffer[offset + 3] = (byte) ((value >>> 0) & 0xff);
+        buffer[offset + 3] = (byte) ((value) & 0xff);
     }
 
     /**
@@ -60,8 +60,8 @@ public class Utils {
      * @param offset into buffer which value is to be set
      */
     public static void setShortIntoByteArrayBE(short value, byte[] buffer, int offset) {
-        buffer[offset + 0] = (byte) ((value >>> 8) & 0xff);
-        buffer[offset + 1] = (byte) ((value >>> 0) & 0xff);
+        buffer[offset] = (byte) ((value >>> 8) & 0xff);
+        buffer[offset + 1] = (byte) ((value) & 0xff);
     }
 
     /**
@@ -177,13 +177,13 @@ public class Utils {
      */
     public static boolean reflectGraphicsEnvironmentISHeadlessInstance(Object graphicsEnvironment, boolean defaultReturnIfNoMethod) {
         try {
-            Class clazz = graphicsEnvironment.getClass();
+            Class<?> clazz = graphicsEnvironment.getClass();
             Method isHeadlessInstanceMethod = clazz.getMethod("isHeadlessInstance", new Class[]{});
             if (isHeadlessInstanceMethod != null) {
                 Object ret = isHeadlessInstanceMethod.invoke(
-                        graphicsEnvironment, new Object[]{});
+                        graphicsEnvironment);
                 if (ret instanceof Boolean)
-                    return ((Boolean) ret).booleanValue();
+                    return (Boolean) ret;
             }
         } catch (Throwable t) {
             logger.log(Level.FINE,
@@ -361,8 +361,8 @@ public class Utils {
     public static String convertByteArrayToByteString(byte[] bytes) {
         final int max = bytes.length;
         StringBuilder sb = new StringBuilder(max);
-        for (int i = 0; i < max; i++) {
-            int b = ((int) bytes[i]) & 0xFF;
+        for (byte aByte : bytes) {
+            int b = ((int) aByte) & 0xFF;
             sb.append((char) b);
         }
         return sb.toString();
@@ -378,9 +378,8 @@ public class Utils {
      * @return converted string.
      */
     public static String convertStringObject(Library library, StringObject stringObject) {
-        StringObject outlineText = stringObject;
         String convertedStringObject = null;
-        String titleText = outlineText.getDecryptedLiteralString(library.securityManager);
+        String titleText = stringObject.getDecryptedLiteralString(library.securityManager);
         // If the title begins with 254 and 255 we are working with
         // Octal encoded strings. Check first to make sure that the
         // title string is not null, or is at least of length 2.

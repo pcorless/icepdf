@@ -84,6 +84,7 @@ public class Form extends Stream {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
         this.shapes = shapes;
         this.matrix = matrix;
@@ -192,10 +193,10 @@ public class Form extends Stream {
         return leafResources;
     }
 
+    @SuppressWarnings("unchecked")
     public void setResources(Resources resources) {
         entries.put(RESOURCES_KEY, resources.getEntries());
     }
-
 
     /**
      * Gets the shapes that where parsed from the content stream.
@@ -220,7 +221,7 @@ public class Form extends Stream {
      * system in xObject space to the parent coordinates space.
      *
      * @return affine transform representing the xObject's pdf to xObject space
-     *         transform.
+     * transform.
      */
     public AffineTransform getMatrix() {
         return matrix;

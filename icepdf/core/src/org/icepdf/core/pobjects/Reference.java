@@ -31,6 +31,7 @@ import java.io.Serializable;
  *
  * @since 1.0
  */
+@SuppressWarnings("serial")
 public class Reference implements Serializable {
     // object number
     int objf = 0;

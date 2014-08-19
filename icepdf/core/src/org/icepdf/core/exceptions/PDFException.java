@@ -20,6 +20,7 @@ package org.icepdf.core.exceptions;
  *
  * @since 1.0
  */
+@SuppressWarnings("serial")
 public class PDFException extends Exception {
     /**
      * Constructs an instance of PDFException with the specified detail message.

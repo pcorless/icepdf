@@ -497,7 +497,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             // else a stream, we won't support this for annotations.
         } else {
             // create a new xobject/form object
-            HashMap formEntries = new HashMap();
+            HashMap<Object, Object> formEntries = new HashMap<Object, Object>();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
@@ -513,7 +513,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(
                     PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            HashMap appearanceRefs = new HashMap();
+            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
 
@@ -525,7 +525,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             }
 
             // create the font
-            HashMap fontDictionary = new HashMap();
+            HashMap<Object, Object> fontDictionary = new HashMap<Object, Object>();
             fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.TYPE_KEY,
                     org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY);
             fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY,
@@ -546,10 +546,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                         library, fontDictionary);
                 newFont.setPObjectReference(stateManager.getNewReferencNumber());
                 // create font entry
-                HashMap fontResources = new HashMap();
+                HashMap<Object, Object> fontResources = new HashMap<Object, Object>();
                 fontResources.put(EMBEDDED_FONT_NAME, newFont.getPObjectReference());
                 // add the font resource entry.
-                HashMap resources = new HashMap();
+                HashMap<Object, Object> resources = new HashMap<Object, Object>();
                 resources.put(new Name("Font"), fontResources);
                 // and finally add it to the form.
                 form.getEntries().put(new Name("Resources"), resources);

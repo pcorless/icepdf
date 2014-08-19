@@ -230,7 +230,7 @@ public class Page extends Dictionary {
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
                     // prune any zero length streams,
-                    if (tmpStream != null && tmpStream.getRawBytes().length > 0) {
+                    if (tmpStream.getRawBytes().length > 0) {
                         tmpStream.setPObjectReference((Reference) conts.get(i));
                         contents.add(tmpStream);
                     }
@@ -393,7 +393,7 @@ public class Page extends Dictionary {
      * entry exists then null is returned.
      *
      * @return thumbnail object of this page, null if no thumbnail value is
-     *         encoded.
+     * encoded.
      */
     public Thumbnail getThumbnail() {
         Object thumb = library.getObject(entries, THUMB_KEY);
@@ -546,9 +546,10 @@ public class Page extends Dictionary {
         if (annotations != null && paintAnnotations) {
             float totalRotation = getTotalRotation(userRotation);
             int num = annotations.size();
+            Annotation annotation;
             for (int i = 0; i < num; i++) {
-                Annotation annot = annotations.get(i);
-                annot.render(g2, renderHintType, totalRotation, userZoom, false);
+                annotation = annotations.get(i);
+                annotation.render(g2, renderHintType, totalRotation, userZoom, false);
             }
         }
         // paint search highlight values
@@ -604,7 +605,7 @@ public class Page extends Dictionary {
      * @param userRotation Rotation factor, in degrees, to be applied to the rendered page
      * @param userZoom     Zoom factor to be applied to the rendered page
      * @return AffineTransform for translating from the rotated and zoomed PDF
-     *         coordinate system to the Java Graphics coordinate system
+     * coordinate system to the Java Graphics coordinate system
      */
     public AffineTransform getPageTransform(final int boundary,
                                             float userRotation,
@@ -623,6 +624,7 @@ public class Page extends Dictionary {
         PRectangle pageBoundary = getPageBoundary(boundary);
 
         if (totalRotation == 0) {
+            // do nothing
         } else if (totalRotation == 90) {
             at.translate(pageBoundary.height, 0);
         } else if (totalRotation == 180) {
@@ -673,7 +675,7 @@ public class Page extends Dictionary {
      * @param userRotation Rotation factor, in degrees, to be applied
      * @param userZoom     Zoom factor to be applied
      * @return Shape outline of the rotated and zoomed portion of this Page
-     *         corresponding to the specified boundary
+     * corresponding to the specified boundary
      */
     public Shape getPageShape(int boundary, float userRotation, float userZoom) {
         AffineTransform at = getPageTransform(boundary, userRotation, userZoom);
@@ -694,6 +696,7 @@ public class Page extends Dictionary {
      * @param newAnnotation annotation object to add
      * @return reference to annotaiton that was added.
      */
+    @SuppressWarnings("unchecked")
     public Annotation addAnnotation(Annotation newAnnotation) {
 
         // make sure the page annotations have been initialized.
@@ -707,31 +710,31 @@ public class Page extends Dictionary {
 
         StateManager stateManager = library.getStateManager();
 
-        List annots = library.getArray(entries, ANNOTS_KEY);
+        List<Reference> annotations = library.getArray(entries, ANNOTS_KEY);
         boolean isAnnotAReference = library.isReference(entries, ANNOTS_KEY);
 
         // does the page not already have an annotations or if the annots
         // dictionary is indirect.  If so we have to add the page to the state
         // manager
-        if (!isAnnotAReference && annots != null) {
+        if (!isAnnotAReference && annotations != null) {
             // get annots array from page
             // update annots dictionary with new annotations reference,
-            annots.add(newAnnotation.getPObjectReference());
+            annotations.add(newAnnotation.getPObjectReference());
             // add the page as state change
             stateManager.addChange(
                     new PObject(this, this.getPObjectReference()));
-        } else if (isAnnotAReference && annots != null) {
+        } else if (isAnnotAReference && annotations != null) {
             // get annots array from page
             // update annots dictionary with new annotations reference,
-            annots.add(newAnnotation.getPObjectReference());
+            annotations.add(newAnnotation.getPObjectReference());
             // add the annotations reference dictionary as state has changed
             stateManager.addChange(
-                    new PObject(annots, library.getObjectReference(
+                    new PObject(annotations, library.getObjectReference(
                             entries, ANNOTS_KEY)));
         }
         // we need to add the a new annots reference
         else {
-            List annotsVector = new ArrayList(4);
+            List<Reference> annotsVector = new ArrayList(4);
             annotsVector.add(newAnnotation.getPObjectReference());
 
             // create a new Dictionary of annotations using an external reference
@@ -748,7 +751,7 @@ public class Page extends Dictionary {
                     new PObject(this, this.getPObjectReference()));
             stateManager.addChange(annotsPObject);
 
-            annotations = new ArrayList<Annotation>();
+            this.annotations = new ArrayList<Annotation>();
         }
 
         // update parent page reference.
@@ -756,7 +759,7 @@ public class Page extends Dictionary {
                 this.getPObjectReference());
 
         // add the annotations to the parsed annotations list
-        annotations.add(newAnnotation);
+        this.annotations.add(newAnnotation);
 
         // add the new annotations to the library
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
@@ -853,6 +856,7 @@ public class Page extends Dictionary {
      * @param annotation annotation object that should be updated for this page.
      * @return true if the update was successful, false otherwise.
      */
+    @SuppressWarnings("unchecked")
     public boolean updateAnnotation(Annotation annotation) {
         // bail on null annotations
         if (annotation == null) {
@@ -870,12 +874,12 @@ public class Page extends Dictionary {
 
         StateManager stateManager = library.getStateManager();
         // if we are doing an update we have at least on annot
-        List<Reference> annots = (List)
+        List<Reference> annotations = (List)
                 library.getObject(entries, ANNOTS_KEY);
 
         // make sure annotations is in part of page.
         boolean found = false;
-        for (Reference ref : annots) {
+        for (Reference ref : annotations) {
             if (ref.equals(annotation.getPObjectReference())) {
                 found = true;
                 break;
@@ -900,7 +904,7 @@ public class Page extends Dictionary {
                     this.getPObjectReference());
 
             // add the annotations to the parsed annotations list
-            annotations.add(annotation);
+            this.annotations.add(annotation);
 
             // add the new annotations to the library
             library.addObject(annotation, annotation.getPObjectReference());
@@ -946,7 +950,7 @@ public class Page extends Dictionary {
      * @param userRotation Rotation factor specified by the user under which the
      *                     page will be rotated.
      * @return Dimension of width and height of the page represented in point
-     *         units.
+     * units.
      * @see #getSize(float, float)
      */
     public PDimension getSize(float userRotation) {
@@ -978,7 +982,7 @@ public class Page extends Dictionary {
      * @param userZoom     zoom factor specified by the user under which the page will
      *                     be rotated.
      * @return Dimension of width and height of the page represented in point units.
-     *         or null if the boundary box is not defined.
+     * or null if the boundary box is not defined.
      */
     public PDimension getSize(final int boundary, float userRotation, float userZoom) {
         float totalRotation = getTotalRotation(userRotation);
@@ -1030,7 +1034,7 @@ public class Page extends Dictionary {
      * @param userRotation Rotation factor specified by the user under which the
      *                     page will be rotated.
      * @return Dimension of width and height of the page represented in point
-     *         units.
+     * units.
      * @see #getSize(float, float)
      */
     public Rectangle2D.Double getBoundingBox(float userRotation) {
@@ -1150,7 +1154,7 @@ public class Page extends Dictionary {
      *
      * @param userRotation rotation factor to be applied to page
      * @return Total Rotation, representing pageRoation + user rotation
-     *         factor applied to the whole document.
+     * factor applied to the whole document.
      */
     public float getTotalRotation(float userRotation) {
         float totalRotation = getPageRotation() + userRotation;
@@ -1225,8 +1229,8 @@ public class Page extends Dictionary {
      * can have more then one content stream associated with it.
      *
      * @return An array of decoded content stream.  Each index in the array
-     *         represents one content stream.  Null return and null String array
-     *         values are possible.
+     * represents one content stream.  Null return and null String array
+     * values are possible.
      */
     public String[] getDecodedContentSteam() {
         // Some PDF's won't have any content for a given page.

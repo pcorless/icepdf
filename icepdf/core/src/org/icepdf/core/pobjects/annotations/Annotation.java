@@ -659,7 +659,7 @@ public abstract class Annotation extends Dictionary {
         // else build out a border style from the old B entry or create
         // a default invisible border.
         else {
-            HashMap borderMap = new HashMap();
+            HashMap<Name, Object> borderMap = new HashMap<Name, Object>();
             // get old school border
             Object borderObject = getObject(BORDER_KEY);
             if (borderObject != null && borderObject instanceof List) {
@@ -803,7 +803,7 @@ public abstract class Annotation extends Dictionary {
         if (userSpaceRectangle != null && rect != null) {
             userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
                     rect.width, rect.height);
-            getEntries().put(Annotation.RECTANGLE_KEY,
+            entries.put(Annotation.RECTANGLE_KEY,
                     PRectangle.getPRectangleVector(userSpaceRectangle));
         }
     }
@@ -820,7 +820,7 @@ public abstract class Annotation extends Dictionary {
         // create the new action object on the fly.  However it is also possible
         // that we are parsing an action that has no type specification and 
         // thus we can't use the parser to create the new action.
-        if (tmp != null && tmp instanceof HashMap) {
+        if (tmp != null) {
             Action action = Action.buildAction(library, (HashMap) tmp);
             // assign reference if applicable
             if (action != null &&
@@ -849,7 +849,7 @@ public abstract class Annotation extends Dictionary {
      *               be created using the the ActionFactory in order to correctly setup
      *               the Pobject reference.
      * @return action that was added to Annotation, null if it was not success
-     *         fully added.
+     * fully added.
      */
     public Action addAction(Action action) {
 
@@ -891,7 +891,7 @@ public abstract class Annotation extends Dictionary {
             }
         }
         // add the new action as per usual
-        getEntries().put(ACTION_KEY, action.getPObjectReference());
+        entries.put(ACTION_KEY, action.getPObjectReference());
         stateManager.addChange(new PObject(this, getPObjectReference()));
 
         // if this is a link annotation and there is a dest, we need to remove
@@ -965,7 +965,7 @@ public abstract class Annotation extends Dictionary {
                         currentAction.getPObjectReference()));
             }
             // add the action to the annotation
-            getEntries().put(ACTION_KEY, action.getPObjectReference());
+            entries.put(ACTION_KEY, action.getPObjectReference());
             stateManager.addChange(new PObject(action,
                     action.getPObjectReference()));
 
@@ -1005,6 +1005,7 @@ public abstract class Annotation extends Dictionary {
         return borderStyle;
     }
 
+    @SuppressWarnings("unchecked")
     public List<Number> getBorder() {
         return border;
     }
@@ -1039,7 +1040,7 @@ public abstract class Annotation extends Dictionary {
      * border width > 0.
      *
      * @return VISIBLE_RECTANGLE if the annotation has a visible borde, otherwise
-     *         INVISIBLE_RECTANGLE
+     * INVISIBLE_RECTANGLE
      */
     public int getBorderType() {
         // border style has W value for border with
@@ -1471,8 +1472,9 @@ public abstract class Annotation extends Dictionary {
     /**
      * Sets the Annotation colour and underlying
      *
-     * @param color
+     * @param color new colour value
      */
+
     public void setColor(Color color) {
         this.color = new Color(color.getRGB());
         // put colour back in to the dictionary
@@ -1511,11 +1513,7 @@ public abstract class Annotation extends Dictionary {
      */
     protected boolean allowScreenOrPrintRenderingOrInteraction() {
         // Based off of the annotation flags' Invisible and Hidden values
-        if (getFlagHidden())
-            return false;
-        if (getFlagInvisible() && isSupportedAnnotationType())
-            return false;
-        return true;
+        return !getFlagHidden() && !(getFlagInvisible() && isSupportedAnnotationType());
     }
 
     /**

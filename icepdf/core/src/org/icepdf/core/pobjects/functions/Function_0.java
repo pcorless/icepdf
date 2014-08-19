@@ -169,8 +169,8 @@ public class Function_0 extends Function {
                 // Calculate the final output values
                 for (int j = 0; j < n; j++) {
                     //  find nearest surrounding values in the sample table
-                    int b1 = ((int) bytes[(int) (e1 * n + j)]) & 255;
-                    int b2 = ((int) bytes[(int) (e2 * n + j)]) & 255;
+                    int b1 = ((int) bytes[(e1 * n + j)]) & 255;
+                    int b2 = ((int) bytes[(e2 * n + j)]) & 255;
                     // get the average
                     float r = ((float) b1 + (float) b2) / 2;
                     // interplate to get output values
