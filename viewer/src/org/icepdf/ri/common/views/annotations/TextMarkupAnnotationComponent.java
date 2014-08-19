@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 /**
  *
  */
+@SuppressWarnings("serial")
 public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
 
     private static final Logger logger =

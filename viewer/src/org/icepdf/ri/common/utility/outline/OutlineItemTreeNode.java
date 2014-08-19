@@ -36,6 +36,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * An OutlineItemTreeNode object represents the bookmarks or leaves which makes up
  * the actual Outline JTree.
  */
+@SuppressWarnings("serial")
 public class OutlineItemTreeNode extends DefaultMutableTreeNode {
     private OutlineItem item;
     private boolean loadedChildren;

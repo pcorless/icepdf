@@ -35,6 +35,7 @@ import java.awt.event.MouseEvent;
  * @see org.icepdf.ri.common.utility.annotation.CircleAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class CircleAnnotationComponent extends MarkupAnnotationComponent {
 
 

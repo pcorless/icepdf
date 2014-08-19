@@ -35,6 +35,7 @@ import java.awt.*;
  * @see org.icepdf.ri.common.utility.annotation.LineAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class LineAnnotationComponent extends MarkupAnnotationComponent {
 
 

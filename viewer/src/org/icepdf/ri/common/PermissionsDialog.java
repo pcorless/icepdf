@@ -33,6 +33,7 @@ import java.util.ResourceBundle;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial")
 public class PermissionsDialog extends JDialog {
 
     // layouts constraint

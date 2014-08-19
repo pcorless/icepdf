@@ -30,6 +30,7 @@ import java.awt.*;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class PolyLineAnnotationComponent extends MarkupAnnotationComponent {
 
     public PolyLineAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,

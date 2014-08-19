@@ -32,6 +32,7 @@ import javax.swing.tree.TreeSelectionModel;
  * @see org.icepdf.core.pobjects.OutlineItem
  * @since 2.0
  */
+@SuppressWarnings("serial")
 public class OutlinesTree extends JTree {
     public OutlinesTree() {
         getSelectionModel().setSelectionMode(

@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  *
  * @since 4.0
  */
+@SuppressWarnings("serial")
 public class ActionsPanel extends AnnotationPanelAdapter
         implements ListSelectionListener, ActionListener {
 

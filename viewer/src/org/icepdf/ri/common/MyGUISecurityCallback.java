@@ -68,6 +68,7 @@ public class MyGUISecurityCallback implements SecurityCallback {
     /**
      * Builds a new JDialog which displays a gui for entering a password.
      */
+    @SuppressWarnings("serial")
     class PasswordDialog extends JDialog implements WindowListener {
 
         // layouts constraint
@@ -182,7 +183,7 @@ public class MyGUISecurityCallback implements SecurityCallback {
          * by closing the window.
          *
          * @return true if the dialog was closed, true if the OK button was
-         *         pressed.
+         * pressed.
          */
         public boolean isCancelled() {
             return isCanceled;

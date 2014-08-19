@@ -35,6 +35,7 @@ import java.awt.event.ItemListener;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         ActionListener {
 

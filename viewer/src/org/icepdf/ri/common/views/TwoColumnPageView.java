@@ -33,6 +33,7 @@ import java.awt.event.MouseEvent;
  *
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class TwoColumnPageView extends AbstractDocumentView {
 
     protected JScrollPane documentScrollpane;

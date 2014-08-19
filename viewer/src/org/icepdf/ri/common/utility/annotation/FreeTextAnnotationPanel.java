@@ -36,6 +36,7 @@ import java.awt.event.ItemListener;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
         ActionListener {
 

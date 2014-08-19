@@ -38,6 +38,7 @@ import java.awt.event.AdjustmentListener;
  *
  * @since 4.3
  */
+@SuppressWarnings("serial")
 public class ThumbnailsPanel extends JPanel {
 
     protected DocumentViewController documentViewController;

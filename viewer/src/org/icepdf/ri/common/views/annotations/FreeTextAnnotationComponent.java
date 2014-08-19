@@ -61,6 +61,7 @@ import java.util.logging.Logger;
  * @see org.icepdf.ri.common.utility.annotation.FreeTextAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         implements PropertyChangeListener {
 

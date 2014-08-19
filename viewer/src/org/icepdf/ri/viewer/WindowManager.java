@@ -174,8 +174,7 @@ public class WindowManager implements WindowManagementCallback {
         getProperties().saveAndEnd();
 
         // make sure all the controllers have been disposed.
-        for (int i = 0; i < controllers.size(); i++) {
-            SwingController c = controllers.get(i);
+        for (SwingController c : controllers) {
             if (c == null)
                 continue;
             c.dispose();
@@ -185,8 +184,7 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     public void minimiseAllWindows() {
-        for (int i = 0; i < controllers.size(); i++) {
-            SwingController controller = controllers.get(i);
+        for (SwingController controller : controllers) {
             JFrame frame = controller.getViewerFrame();
             if (frame != null)
                 frame.setState(Frame.ICONIFIED);
@@ -195,8 +193,7 @@ public class WindowManager implements WindowManagementCallback {
 
     public void bringAllWindowsToFront(SwingController frontMost) {
         JFrame frontMostFrame = null;
-        for (int i = 0; i < controllers.size(); i++) {
-            SwingController controller = controllers.get(i);
+        for (SwingController controller : controllers) {
             JFrame frame = controller.getViewerFrame();
             if (frame != null) {
                 if (frontMost == controller) {
@@ -235,12 +232,12 @@ public class WindowManager implements WindowManagementCallback {
     public List getWindowDocumentOriginList(SwingController giveIndex) {
         Integer foundIndex = null;
         int count = controllers.size();
-        List list = new ArrayList(count + 1);
+        List<Object> list = new ArrayList<Object>(count + 1);
         for (int i = 0; i < count; i++) {
             Object toAdd = null;
             SwingController controller = controllers.get(i);
             if (giveIndex == controller)
-                foundIndex = new Integer(i);
+                foundIndex = i;
             Document document = controller.getDocument();
             if (document != null)
                 toAdd = document.getDocumentOrigin();
@@ -252,8 +249,7 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     void updateUI() {
-        for (int i = 0; i < controllers.size(); i++) {
-            SwingController controller = controllers.get(i);
+        for (SwingController controller : controllers) {
             JFrame frame = controller.getViewerFrame();
             if (frame != null)
                 SwingUtilities.updateComponentTreeUI(frame);

@@ -26,6 +26,7 @@ import java.awt.*;
 /**
  *
  */
+@SuppressWarnings("serial")
 public class WidgetAnnotationComponent extends AbstractAnnotationComponent {
 
 

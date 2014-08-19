@@ -26,7 +26,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
 import java.util.ResourceBundle;
 
-public final class AboutDialog extends JDialog implements ActionListener, WindowListener {
+@SuppressWarnings("serial")
+public class AboutDialog extends JDialog implements ActionListener, WindowListener {
+
+
     private JButton ok;
     private Timer timer;
     private int whichTimer;

@@ -32,6 +32,7 @@ import java.awt.event.KeyEvent;
  *
  * @since 4.2.2
  */
+@SuppressWarnings("serial")
 public class ComponentKeyBinding {
 
     /**

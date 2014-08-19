@@ -71,6 +71,7 @@ import java.util.logging.Logger;
  * viewport will be extended to define the buffer size.</p>
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class PageViewComponentImpl extends
         AbstractPageViewComponent
         implements PaintPageListener,

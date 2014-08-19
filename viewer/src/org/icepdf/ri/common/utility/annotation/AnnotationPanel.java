@@ -32,6 +32,7 @@ import java.awt.*;
  * URI.  It will be quite easy to add more properites in the future given the
  * factory nature of this class
  */
+@SuppressWarnings("serial")
 public class AnnotationPanel extends AnnotationPanelAdapter {
 
     // layouts constraint

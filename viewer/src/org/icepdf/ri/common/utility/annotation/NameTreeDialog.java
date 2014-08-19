@@ -34,6 +34,7 @@ import java.util.ResourceBundle;
  *
  * @since 4.0
  */
+@SuppressWarnings("serial")
 public class NameTreeDialog extends JDialog
         implements ActionListener, TreeSelectionListener {
 

@@ -45,6 +45,7 @@ import java.util.ResourceBundle;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial")
 public class SearchPanel extends JPanel implements ActionListener,
         TreeSelectionListener {
 
@@ -408,7 +409,7 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.insets = new Insets(10, 5, 1, 5);
         constraints.fill = GridBagConstraints.NONE;
         addGB(searchPanel, new JLabel(messageBundle.getString(
-                "viewer.utilityPane.search.results.label")),
+                        "viewer.utilityPane.search.results.label")),
                 0, 7, 2, 1);
 
         // add the lit to scroll pane
@@ -577,7 +578,7 @@ public class SearchPanel extends JPanel implements ActionListener,
      * Utility for getting the doucment title.
      *
      * @return document title, if non title then a simple search results
-     *         label is returned;
+     * label is returned;
      */
     private String getDocumentTitle() {
         String documentTitle = null;
@@ -796,6 +797,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     /**
      * An Entry objects represents the found pages
      */
+    @SuppressWarnings("serial")
     class FindEntry extends DefaultMutableTreeNode {
 
         // The text to be displayed on the screen for this item.

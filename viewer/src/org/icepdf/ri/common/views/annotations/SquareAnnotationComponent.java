@@ -35,6 +35,7 @@ import java.awt.event.MouseEvent;
  * @see org.icepdf.ri.common.utility.annotation.SquareAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class SquareAnnotationComponent extends MarkupAnnotationComponent {
 
 

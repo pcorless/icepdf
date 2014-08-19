@@ -19,6 +19,7 @@ import java.awt.event.ItemListener;
  *
  * @since 5.0.4
  */
+@SuppressWarnings("serial")
 public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
 
     private JComboBox readOnlyComboBox;

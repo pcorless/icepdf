@@ -51,6 +51,7 @@ import java.util.logging.Logger;
  * @see TextMarkupAnnotationComponent
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public abstract class MarkupAnnotationComponent extends AbstractAnnotationComponent {
 
     private static final Logger logger =
