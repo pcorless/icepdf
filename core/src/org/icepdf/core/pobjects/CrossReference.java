@@ -136,6 +136,7 @@ public class CrossReference {
      * @param xrefStreamHash Dictionary for XRef stream
      * @param streamInput    Decoded stream bytes for XRef stream
      */
+    @SuppressWarnings("unchecked")
     public void addXRefStreamEntries(Library library, HashMap xrefStreamHash, InputStream streamInput) {
         try {
             // number +1 represented the highest object number.

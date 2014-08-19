@@ -113,7 +113,7 @@ public class SecurityManager {
      * @param fileID               fileID of PDF document
      * @throws PDFSecurityException if the security provider could not be found
      */
-    public SecurityManager(Library library, HashMap encryptionDictionary,
+    public SecurityManager(Library library, HashMap<Object, Object> encryptionDictionary,
                            List fileID)
             throws PDFSecurityException {
 

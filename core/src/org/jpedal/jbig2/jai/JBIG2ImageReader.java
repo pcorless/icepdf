@@ -195,7 +195,7 @@ public class JBIG2ImageReader extends ImageReader {
 
             BufferedImage scaledImage = scaleImage(image.getRaster(), newWidth, newHeight, 1, 1);
 
-            Raster raster = null;
+            Raster raster;
 
             if (scaledImage != null) {
                 raster = scaledImage.getRaster();
@@ -220,7 +220,7 @@ public class JBIG2ImageReader extends ImageReader {
         return null;
     }
 
-    public Iterator getImageTypes(int imageIndex) throws IOException {
+    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
         readFile();
 
         checkIndex(imageIndex);
@@ -231,7 +231,7 @@ public class JBIG2ImageReader extends ImageReader {
         // to return an appropriate BufferedImage that contains the decoded
         // image, and is accessed by an application.
 
-        List l = new ArrayList();
+        List<ImageTypeSpecifier> l = new ArrayList<ImageTypeSpecifier>();
 
         // The JBIG2 reader only uses a single List entry. This entry describes
         // a
@@ -423,15 +423,15 @@ public class JBIG2ImageReader extends ImageReader {
                                 if (count > 0)
                                     // if(index==null)
                                     newData[jj + (x * comp) + (newW * y * comp)] = (byte) ((byteTotal) / count);
-                                    // else
-                                    // newData[x+(newW*y)]=(byte)(((index[1] &
-                                    // 255)*byteTotal)/count);
-                                else {
-                                    // if(index==null)
-                                    // newData[jj+x+(newW*y*comp)]=(byte) 255;
-                                    // else
-                                    // newData[x+(newW*y)]=index[0];
-                                }
+                                // else
+                                // newData[x+(newW*y)]=(byte)(((index[1] &
+                                // 255)*byteTotal)/count);
+//                                else {
+                                // if(index==null)
+                                // newData[jj+x+(newW*y*comp)]=(byte) 255;
+                                // else
+                                // newData[x+(newW*y)]=index[0];
+//                                }
                             }
                         }
                     }
@@ -496,7 +496,7 @@ public class JBIG2ImageReader extends ImageReader {
             if (size == -1) {
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 byte[] temp = new byte[8192];
-                for (int len = 0; (len = stream.read(temp)) > 0; ) {
+                for (int len; (len = stream.read(temp)) > 0; ) {
                     bos.write(temp, 0, len);
                 }
                 bos.close();

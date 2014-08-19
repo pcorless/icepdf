@@ -111,8 +111,9 @@ public class SoftMask extends Dictionary {
      * dictionary (see "Transparency Group XObjects").
      * Default value: the colour space's initial value, representing black.
      *
-     * @return
+     * @return componet colours
      */
+    @SuppressWarnings("unchecked")
     public List<Number> getBC() {
         Object BCKey = library.getObject(entries, BC_KEY);
         if (BCKey instanceof List) {

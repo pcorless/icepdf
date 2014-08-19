@@ -51,6 +51,7 @@ public class DeviceN extends PColorSpace {
 
     boolean foundCMYK;
 
+    @SuppressWarnings("unchecked")
     DeviceN(Library l, HashMap h, Object o1, Object o2, Object o3, Object o4) {
         super(l, h);
         names = (java.util.List) o1;

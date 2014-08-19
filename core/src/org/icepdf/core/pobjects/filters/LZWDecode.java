@@ -172,6 +172,7 @@ public class LZWDecode extends ChunkingInputStream {
             c = cc;
         }
 
+        @SuppressWarnings("unchecked")
         void getString(Stack s) {
             s.push(this);
             if (prefix != null)

@@ -46,7 +46,9 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class ImagePool {
+
     private static final Logger log =
             Logger.getLogger(ImagePool.class.toString());
 

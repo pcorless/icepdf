@@ -79,7 +79,7 @@ public class ContentParserFactory {
         if (foundPro) {
             // load each know file type reflectively.
             try {
-                Class contentParserClass = Class.forName(N_CONTENT_PARSER);
+                Class<?> contentParserClass = Class.forName(N_CONTENT_PARSER);
                 Class[] parserArgs = {Library.class, Resources.class};
                 Constructor fontClassConstructor =
                         contentParserClass.getDeclaredConstructor(parserArgs);

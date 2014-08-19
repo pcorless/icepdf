@@ -53,7 +53,7 @@ public class Dictionary {
     /**
      * Table of associative pairs of objects.
      */
-    protected HashMap entries;
+    protected HashMap<Object, Object> entries;
 
     /**
      * Indicates if Dictionary has been initiated.
@@ -79,6 +79,7 @@ public class Dictionary {
      * @param library document library.
      * @param entries dictionary entries.
      */
+    @SuppressWarnings("unchecked")
     public Dictionary(Library library, HashMap entries) {
         this.library = library;
         this.entries = entries;
@@ -126,7 +127,7 @@ public class Dictionary {
      *
      * @return a copy of the Dictionary's entries.
      */
-    public HashMap getEntries() {
+    public HashMap<Object, Object> getEntries() {
         return entries;
     }
 
@@ -154,7 +155,7 @@ public class Dictionary {
      *
      * @param key key to find in entries HashMap.
      * @return int value if a valid key,  else zero if the key does not point
-     *         to an int or is invalid.
+     * to an int or is invalid.
      */
     public int getInt(Name key) {
         return library.getInt(entries, key);
@@ -167,7 +168,7 @@ public class Dictionary {
      *
      * @param key key to find in entries HashMap.
      * @return float value if a valid key,  else zero if the key does not point
-     *         to a float or is invalid.
+     * to a float or is invalid.
      */
     public float getFloat(Name key) {
         return library.getFloat(entries, key);

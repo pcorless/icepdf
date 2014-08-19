@@ -118,7 +118,7 @@ public class FontFactory {
         if (foundFontEngine()) {
             // load each know file type reflectively.
             try {
-                Class fontClass = Class.forName(FONT_CLASS);
+                Class<?> fontClass = Class.forName(FONT_CLASS);
                 Class[] fontArgs = {Library.class, HashMap.class};
                 Constructor fontClassConstructor =
                         fontClass.getDeclaredConstructor(fontArgs);
@@ -139,7 +139,7 @@ public class FontFactory {
         FontFile fontFile = null;
         if (foundFontEngine()) {
             try {
-                Class fontClass = getNFontClass(fontType);
+                Class<?> fontClass = getNFontClass(fontType);
                 if (fontClass != null) {
                     // convert the stream to byte[]
                     Class[] bytArrayArg = {byte[].class};
@@ -199,7 +199,7 @@ public class FontFactory {
         FontFile fontFile = null;
         if (foundFontEngine()) {
             try {
-                Class fontClass = getNFontClass(fontType);
+                Class<?> fontClass = getNFontClass(fontType);
                 if (fontClass != null) {
                     // convert the stream to byte[]
                     Class[] urlArg = {URL.class};
@@ -236,11 +236,11 @@ public class FontFactory {
     }
 
     public void setAwtFontSubstitution(boolean awtFontSubstitution) {
-        this.awtFontSubstitution = awtFontSubstitution;
+        FontFactory.awtFontSubstitution = awtFontSubstitution;
     }
 
     public void toggleAwtFontSubstitution() {
-        awtFontSubstitution = !awtFontSubstitution;
+        FontFactory.awtFontSubstitution = !FontFactory.awtFontSubstitution;
     }
 
     private Class getNFontClass(int fontType) throws ClassNotFoundException {
@@ -288,6 +288,7 @@ public class FontFactory {
             Class.forName(NFONT_CLASS);
             foundNFont = true;
         } catch (ClassNotFoundException e) {
+            // keep quiet
         }
 
         return foundNFont && !awtFontSubstitution;

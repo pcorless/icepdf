@@ -59,6 +59,7 @@ public class InkAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
+    @SuppressWarnings("unchecked")
     public void init() {
         super.init();
         // look for an ink list
@@ -86,7 +87,9 @@ public class InkAnnotation extends MarkupAnnotation {
             if (tmp instanceof List) {
                 rectangle = library.getRectangle(entries, RECTANGLE_KEY);
             }
-            setBBox(rectangle.getBounds());
+            if (rectangle != null) {
+                setBBox(rectangle.getBounds());
+            }
             resetAppearanceStream(new AffineTransform());
         }
     }

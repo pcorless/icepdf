@@ -194,7 +194,7 @@ public class CircleAnnotation extends MarkupAnnotation {
             // else a stream, we won't support this for annotations.
         } else {
             // create a new xobject/form object
-            HashMap formEntries = new HashMap();
+            HashMap<Object, Object> formEntries = new HashMap<Object, Object>();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
@@ -210,7 +210,7 @@ public class CircleAnnotation extends MarkupAnnotation {
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(
                     PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            HashMap appearanceRefs = new HashMap();
+            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
 

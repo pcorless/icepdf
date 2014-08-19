@@ -81,8 +81,8 @@ public class Parser {
      *
      * @param library all found objects in the pdf document
      * @return the next object in the DataInputStream.  Null is returned
-     *         if there are no more objects left in the DataInputStream or
-     *         a I/O error is encountered.
+     * if there are no more objects left in the DataInputStream or
+     * a I/O error is encountered.
      * @throws PDFException error getting object from library
      */
     public Object getObject(Library library) throws PDFException {
@@ -371,7 +371,7 @@ public class Parser {
                                 "stream has likely been encountered.");
                         size = 0;
                     }
-                    List v = new ArrayList(size);
+                    List<Object> v = new ArrayList<Object>(size);
                     Object[] tmp = new Object[size];
                     if (searchPosition > 0) {
                         for (int i = size - 1; i >= 0; i--) {
@@ -397,7 +397,7 @@ public class Parser {
                     // check for extra >> which we want to ignore
                     if (!isTrailer && deepnessCount >= 0) {
                         if (!stack.isEmpty()) {
-                            HashMap hashMap = new HashMap();
+                            HashMap<Object, Object> hashMap = new HashMap<Object, Object>();
                             Object obj = stack.pop();
                             // put all of the dictionary definistion into the
                             // the hashTabl
@@ -453,7 +453,7 @@ public class Parser {
                         }
                     } else if (isTrailer && deepnessCount == 0) {
                         // we have an xref entry
-                        HashMap hashMap = new HashMap();
+                        HashMap<Object, Object> hashMap = new HashMap<Object, Object>();
                         Object obj = stack.pop();
                         // put all of the dictionary definition into the
                         // the new map.
@@ -509,8 +509,7 @@ public class Parser {
     }
 
     /**
-     * @return
-     * @throws java.io.IOException
+     *
      */
     public String peek2() throws IOException {
         reader.mark(2);
@@ -540,10 +539,8 @@ public class Parser {
                 break;
             if (state == STATE_PRE_E && c == 'E') {
                 state++;
-                continue;
             } else if (state == STATE_PRE_I && c == 'I') {
                 state++;
-                continue;
             } else if (state == STATE_PRE_WHITESPACE && isWhitespace((char) (0xFF & c))) {
                 // It's hard to tell if the EI + whitespace is part of the
                 //  image data or not, given that many PDFs are mis-encoded,
@@ -582,9 +579,7 @@ public class Parser {
         }
         // If the input ends right after the EI, but with no whitespace,
         //  then we're still done
-        if (state == STATE_PRE_WHITESPACE)
-            return true;
-        return false;
+        return state == STATE_PRE_WHITESPACE;
     }
 
     /**
@@ -688,7 +683,7 @@ public class Parser {
         Object o = getToken();
         if (o instanceof String) {
             if (o.equals("<<")) {
-                HashMap h = new HashMap();
+                HashMap<Object, Object> h = new HashMap<Object, Object>();
                 Object o1 = getStreamObject();
                 while (!o1.equals(">>")) {
                     h.put(o1, getStreamObject());
@@ -699,7 +694,7 @@ public class Parser {
             // arrays are only used for CID mappings, the hex decoding is delayed
             // as a result using the CID_STREAM flag
             else if (o.equals("[")) {
-                List v = new ArrayList();
+                List<Object> v = new ArrayList<Object>();
                 Object o1 = getStreamObject();
                 while (!o1.equals("]")) {
                     v.add(o1);
@@ -914,6 +909,7 @@ public class Parser {
                         // do nothing
                         else if (currentChar == '(' || currentChar == ')'
                                 || currentChar == '\\') {
+                            // do nothing
                         }
                         // capture the horizontal tab (HT), tab character is hard
                         // to find, only appears in files with font substitution and

@@ -57,6 +57,7 @@ public class SoftLRUCache<K, V> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void diposeStaleEntries() {
         KeyReference<K, V> ref;
         while ((ref = (KeyReference<K, V>) reqQueue.poll()) != null) {

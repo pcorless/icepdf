@@ -102,8 +102,8 @@ public class Catalog extends Dictionary {
         // malformed cornercase, just have a page object, instead of tree.
         else if (tmp instanceof Page) {
             Page tmpPage = (Page) tmp;
-            HashMap tmpPages = new HashMap();
-            List kids = new ArrayList();
+            HashMap<String, Object> tmpPages = new HashMap<String, Object>();
+            List<Reference> kids = new ArrayList<Reference>();
             kids.add(tmpPage.getPObjectReference());
             tmpPages.put("Kids", kids);
             tmpPages.put("Count", 1);
@@ -111,7 +111,9 @@ public class Catalog extends Dictionary {
         }
 
         // let any exception bubble up.
-        pageTree.init();
+        if (pageTree != null) {
+            pageTree.init();
+        }
 
     }
 
@@ -149,7 +151,7 @@ public class Catalog extends Dictionary {
      * rather than by object reference.
      *
      * @return name dictionary for document.  If no name dictionary exists null
-     *         is returned.
+     * is returned.
      */
     public NameTree getNameTree() {
         if (!namesTreeInited) {
@@ -172,6 +174,7 @@ public class Catalog extends Dictionary {
      *
      * @return A Dictionary of Destinations; if none, null is returned.
      */
+    @SuppressWarnings("unchecked")
     public Dictionary getDestinations() {
         if (!destsInited) {
             destsInited = true;

@@ -1,51 +1,51 @@
 /**
-* ===========================================
-* Java Pdf Extraction Decoding Access Library
-* ===========================================
+ * ===========================================
+ * Java Pdf Extraction Decoding Access Library
+ * ===========================================
  *
-* Project Info:  http://www.jpedal.org
-* (C) Copyright 1997-2008, IDRsolutions and Contributors.
-* Main Developer: Simon Barnett
+ * Project Info:  http://www.jpedal.org
+ * (C) Copyright 1997-2008, IDRsolutions and Contributors.
+ * Main Developer: Simon Barnett
  *
-* 	This file is part of JPedal
+ * 	This file is part of JPedal
  *
-* Copyright (c) 2008, IDRsolutions
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*     * Redistributions of source code must retain the above copyright
-*       notice, this list of conditions and the following disclaimer.
-*     * Redistributions in binary form must reproduce the above copyright
-*       notice, this list of conditions and the following disclaimer in the
-*       documentation and/or other materials provided with the distribution.
-*     * Neither the name of the IDRsolutions nor the
-*       names of its contributors may be used to endorse or promote products
-*       derived from this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY IDRsolutions ``AS IS'' AND ANY
-* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-* DISCLAIMED. IN NO EVENT SHALL IDRsolutions BE LIABLE FOR ANY
-* DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*
-* Other JBIG2 image decoding implementations include
-* jbig2dec (http://jbig2dec.sourceforge.net/)
-* xpdf (http://www.foolabs.com/xpdf/)
-* 
-* The final draft JBIG2 specification can be found at http://www.jpeg.org/public/fcd14492.pdf
-* 
-* All three of the above resources were used in the writing of this software, with methodologies,
-* processes and inspiration taken from all three.
-*
-* ---------------
-* TextRegionSegment.java
-* ---------------
+ * Copyright (c) 2008, IDRsolutions
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the IDRsolutions nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY IDRsolutions ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL IDRsolutions BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Other JBIG2 image decoding implementations include
+ * jbig2dec (http://jbig2dec.sourceforge.net/)
+ * xpdf (http://www.foolabs.com/xpdf/)
+ *
+ * The final draft JBIG2 specification can be found at http://www.jpeg.org/public/fcd14492.pdf
+ *
+ * All three of the above resources were used in the writing of this software, with methodologies,
+ * processes and inspiration taken from all three.
+ *
+ * ---------------
+ * TextRegionSegment.java
+ * ---------------
  */
 package org.jpedal.jbig2.segment.region.text;
 
@@ -62,7 +62,6 @@ import org.jpedal.jbig2.util.BinaryOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class TextRegionSegment extends RegionSegment {
@@ -101,8 +100,8 @@ public class TextRegionSegment extends RegionSegment {
         int noOfReferredToSegments = segmentHeader.getReferredToSegmentCount();
         int[] referredToSegments = segmentHeader.getReferredToSegments();
 
-        List codeTables = new ArrayList();
-        List segmentsReferenced = new ArrayList();
+        List<Segment> codeTables = new ArrayList<Segment>();
+        List<Segment> segmentsReferenced = new ArrayList<Segment>();
         int noOfSymbols = 0;
 
         if (JBIG2StreamDecoder.debug)
@@ -130,12 +129,11 @@ public class TextRegionSegment extends RegionSegment {
 
         int currentSymbol = 0;
         JBIG2Bitmap[] symbols = new JBIG2Bitmap[noOfSymbols];
-        for (Iterator it = segmentsReferenced.iterator(); it.hasNext(); ) {
-            Segment seg = (Segment) it.next();
+        for (Segment seg : segmentsReferenced) {
             if (seg.getSegmentHeader().getSegmentType() == Segment.SYMBOL_DICTIONARY) {
                 JBIG2Bitmap[] bitmaps = ((SymbolDictionarySegment) seg).getBitmaps();
-                for (int j = 0; j < bitmaps.length; j++) {
-                    symbols[currentSymbol] = bitmaps[j];
+                for (JBIG2Bitmap bitmap : bitmaps) {
+                    symbols[currentSymbol] = bitmap;
                     currentSymbol++;
                 }
             }
@@ -154,15 +152,13 @@ public class TextRegionSegment extends RegionSegment {
 
         boolean sbHuffman = textRegionFlags.getFlagValue(TextRegionFlags.SB_HUFF) != 0;
 
-        int i = 0;
+        int i;
         if (sbHuffman) {
             int sbHuffFS = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_FS);
             if (sbHuffFS == 0) {
                 huffmanFSTable = HuffmanDecoder.huffmanTableF;
             } else if (sbHuffFS == 1) {
                 huffmanFSTable = HuffmanDecoder.huffmanTableG;
-            } else {
-
             }
 
             int sbHuffDS = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_DS);
@@ -172,10 +168,7 @@ public class TextRegionSegment extends RegionSegment {
                 huffmanDSTable = HuffmanDecoder.huffmanTableI;
             } else if (sbHuffDS == 2) {
                 huffmanDSTable = HuffmanDecoder.huffmanTableJ;
-            } else {
-
             }
-
             int sbHuffDT = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_DT);
             if (sbHuffDT == 0) {
                 huffmanDTTable = HuffmanDecoder.huffmanTableK;
@@ -183,8 +176,6 @@ public class TextRegionSegment extends RegionSegment {
                 huffmanDTTable = HuffmanDecoder.huffmanTableL;
             } else if (sbHuffDT == 2) {
                 huffmanDTTable = HuffmanDecoder.huffmanTableM;
-            } else {
-
             }
 
             int sbHuffRDW = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_RDW);
@@ -192,8 +183,6 @@ public class TextRegionSegment extends RegionSegment {
                 huffmanRDWTable = HuffmanDecoder.huffmanTableN;
             } else if (sbHuffRDW == 1) {
                 huffmanRDWTable = HuffmanDecoder.huffmanTableO;
-            } else {
-
             }
 
             int sbHuffRDH = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_RDH);
@@ -201,8 +190,6 @@ public class TextRegionSegment extends RegionSegment {
                 huffmanRDHTable = HuffmanDecoder.huffmanTableN;
             } else if (sbHuffRDH == 1) {
                 huffmanRDHTable = HuffmanDecoder.huffmanTableO;
-            } else {
-
             }
 
             int sbHuffRDX = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_RDX);
@@ -210,24 +197,17 @@ public class TextRegionSegment extends RegionSegment {
                 huffmanRDXTable = HuffmanDecoder.huffmanTableN;
             } else if (sbHuffRDX == 1) {
                 huffmanRDXTable = HuffmanDecoder.huffmanTableO;
-            } else {
-
             }
-
             int sbHuffRDY = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_RDY);
             if (sbHuffRDY == 0) {
                 huffmanRDYTable = HuffmanDecoder.huffmanTableN;
             } else if (sbHuffRDY == 1) {
                 huffmanRDYTable = HuffmanDecoder.huffmanTableO;
-            } else {
-
             }
 
             int sbHuffRSize = textRegionHuffmanFlags.getFlagValue(TextRegionHuffmanFlags.SB_HUFF_RSIZE);
             if (sbHuffRSize == 0) {
                 huffmanRSizeTable = HuffmanDecoder.huffmanTableA;
-            } else {
-
             }
         }
 
@@ -249,7 +229,7 @@ public class TextRegionSegment extends RegionSegment {
 
             runLengthTable[35] = new int[]{0, 0, HuffmanDecoder.jbig2HuffmanEOT};
 
-            runLengthTable = huffmanDecoder.buildTable(runLengthTable, 35);
+            runLengthTable = HuffmanDecoder.buildTable(runLengthTable, 35);
 
             for (i = 0; i < noOfSymbols; i++) {
                 symbolCodeTable[i] = new int[]{i, 0, 0, 0};
@@ -274,7 +254,7 @@ public class TextRegionSegment extends RegionSegment {
 
             symbolCodeTable[noOfSymbols][1] = 0;
             symbolCodeTable[noOfSymbols][2] = HuffmanDecoder.jbig2HuffmanEOT;
-            symbolCodeTable = huffmanDecoder.buildTable(symbolCodeTable, noOfSymbols);
+            symbolCodeTable = HuffmanDecoder.buildTable(symbolCodeTable, noOfSymbols);
 
             decoder.consumeRemainingBits();
         } else {

@@ -71,6 +71,7 @@ public class ShadingType2Pattern extends ShadingPattern {
         super(library, entries);
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized void init() {
 
         if (inited) {
@@ -216,7 +217,7 @@ public class ShadingType2Pattern extends ShadingPattern {
      * @param t0             lower limit
      * @param t1             upper limit
      * @return array of floats the evenly divide t0 and t1, length is
-     *         numberOfPoints + 1
+     * numberOfPoints + 1
      */
     protected float[] calculateDomainEntries(int numberOfPoints, float t0, float t1) {
 

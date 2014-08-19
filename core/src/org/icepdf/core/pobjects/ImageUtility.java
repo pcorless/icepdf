@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.RasterOps.*;
-import org.icepdf.core.tag.Tagger;
 import org.icepdf.core.util.Defs;
 
 import javax.imageio.ImageIO;
@@ -44,6 +43,7 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class ImageUtility {
 
     private static final Logger logger =
@@ -629,9 +629,9 @@ public class ImageUtility {
 
         // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
         // can comply with levigo's open source licence.
-        Class levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-        Class jbig2ImageReaderSpiClass = Class.forName("com.levigo.jbig2.JBIG2ImageReaderSpi");
-        Class jbig2GlobalsClass = Class.forName("com.levigo.jbig2.JBIG2Globals");
+        Class<?> levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+        Class<?> jbig2ImageReaderSpiClass = Class.forName("com.levigo.jbig2.JBIG2ImageReaderSpi");
+        Class<?> jbig2GlobalsClass = Class.forName("com.levigo.jbig2.JBIG2Globals");
         Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
         Constructor levigoJbig2DecoderClassConstructor =
                 levigoJBIG2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);
@@ -679,8 +679,8 @@ public class ImageUtility {
         tmpImage = (BufferedImage) read.invoke(levigoJbig2Reader, arglist);
         // call dispose on the reader
         Method dispose =
-                levigoJBIG2ImageReaderClass.getMethod("dispose", null);
-        dispose.invoke(levigoJbig2Reader, null);
+                levigoJBIG2ImageReaderClass.getMethod("dispose", (Class<?>[]) null);
+        dispose.invoke(levigoJbig2Reader);
         // dispose the stream
         if (imageInputStream != null) {
             imageInputStream.close();
@@ -693,7 +693,7 @@ public class ImageUtility {
                                                Stream globalsStream) {
         BufferedImage tmpImage = null;
         try {
-            Class jbig2DecoderClass = Class.forName("org.jpedal.jbig2.JBIG2Decoder");
+            Class<?> jbig2DecoderClass = Class.forName("org.jpedal.jbig2.JBIG2Decoder");
             // create instance of decoder
             Constructor jbig2DecoderClassConstructor =
                     jbig2DecoderClass.getDeclaredConstructor();
@@ -716,7 +716,7 @@ public class ImageUtility {
             }
             // decode the data stream, decoder.decodeJBIG2(data);
 
-            Class argTypes[] = new Class[]{byte[].class};
+            Class<?> argTypes[] = new Class[]{byte[].class};
             Object arglist[] = new Object[]{data};
             Method decodeJBIG2 = jbig2DecoderClass.getMethod("decodeJBIG2", argTypes);
             decodeJBIG2.invoke(jbig2Decoder, arglist);
@@ -964,8 +964,6 @@ public class ImageUtility {
 
         if (colourSpace instanceof DeviceGray) {
             if (imageMask && bitsPerComponent == 1) {
-                if (Tagger.tagging)
-                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_1_ImageMask");
 
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
@@ -997,8 +995,6 @@ public class ImageUtility {
                         db.getDataType());      // the data type of the array used to represent pixel values. The data type must be either DataBuffer.TYPE_BYTE or DataBuffer.TYPE_USHORT
                 img = new BufferedImage(icm, wr, false, null);
             } else if (bitsPerComponent == 1 || bitsPerComponent == 2 || bitsPerComponent == 4) {
-                if (Tagger.tagging)
-                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_124");
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
@@ -1013,8 +1009,6 @@ public class ImageUtility {
                 ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             } else if (bitsPerComponent == 8) {
-                if (Tagger.tagging)
-                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceGray_8");
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(),
@@ -1043,11 +1037,7 @@ public class ImageUtility {
             }
         } else if (colourSpace instanceof DeviceRGB) {
             if (bitsPerComponent == 8) {
-                if (Tagger.tagging)
-                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceRGB_8");
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
-                if (Tagger.tagging)
-                    Tagger.tagImage("RasterFromBytes_DeviceRGB_8_alpha=" + usingAlpha);
                 int type = usingAlpha ? BufferedImage.TYPE_INT_ARGB :
                         BufferedImage.TYPE_INT_RGB;
                 img = new BufferedImage(width, height, type);
@@ -1063,8 +1053,6 @@ public class ImageUtility {
             // this is slow and doesn't do decode properly,  push off parseImage()
             // as its quick and we can do the generic decode and masking.
             if (false && bitsPerComponent == 8) {
-                if (Tagger.tagging)
-                    Tagger.tagImage("HandledBy=RasterFromBytes_DeviceCMYK_8");
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 int[] bandOffsets = new int[colorSpaceCompCount];
                 for (int i = 0; i < colorSpaceCompCount; i++) {
@@ -1083,8 +1071,6 @@ public class ImageUtility {
             }
         } else if (colourSpace instanceof Indexed) {
             if (bitsPerComponent == 1 || bitsPerComponent == 2 || bitsPerComponent == 4) {
-                if (Tagger.tagging)
-                    Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_124");
                 colourSpace.init();
                 Color[] colors = ((Indexed) colourSpace).accessColorTable();
                 int[] cmap = new int[(colors == null) ? 0 : colors.length];
@@ -1100,9 +1086,6 @@ public class ImageUtility {
                 boolean usingIndexedAlpha = maskMinIndex >= 0 && maskMaxIndex >= 0;
                 boolean usingAlpha = smaskImage != null || maskImage != null ||
                         ((maskMinRGB != null) && (maskMaxRGB != null));
-                if (Tagger.tagging)
-                    Tagger.tagImage("RasterFromBytes_Indexed_124_alpha=" +
-                            (usingIndexedAlpha ? "indexed" : (usingAlpha ? "alpha" : "false")));
                 if (usingAlpha) {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
@@ -1116,8 +1099,6 @@ public class ImageUtility {
                     img = new BufferedImage(cm, wr, false, null);
                 }
             } else if (bitsPerComponent == 8) {
-                if (Tagger.tagging)
-                    Tagger.tagImage("HandledBy=RasterFromBytes_Indexed_8");
                 colourSpace.init();
                 Color[] colors = ((Indexed) colourSpace).accessColorTable();
                 int colorsLength = (colors == null) ? 0 : colors.length;
@@ -1130,8 +1111,6 @@ public class ImageUtility {
                 }
                 boolean usingIndexedAlpha = maskMinIndex >= 0 && maskMaxIndex >= 0;
                 boolean usingAlpha = smaskImage != null || maskImage != null || ((maskMinRGB != null) && (maskMaxRGB != null));
-                if (Tagger.tagging)
-                    Tagger.tagImage("RasterFromBytes_Indexed_8_alpha=" + (usingIndexedAlpha ? "indexed" : (usingAlpha ? "alpha" : "false")));
                 if (usingIndexedAlpha) {
                     for (int i = maskMinIndex; i <= maskMaxIndex; i++) {
                         cmap[i] = 0x00000000;

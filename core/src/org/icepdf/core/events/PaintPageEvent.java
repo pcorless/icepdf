@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.Page;
  *
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class PaintPageEvent extends java.util.EventObject {
 
 

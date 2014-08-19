@@ -138,7 +138,7 @@ public class Library {
      *
      * @param reference reference to a PDF object in the document structure.
      * @return PDF object dictionary that the reference refers to.  Null if the
-     *         object reference can not be found.
+     * object reference can not be found.
      */
     public Object getObject(Reference reference) {
         Object ob;
@@ -214,7 +214,7 @@ public class Library {
      * @param dictionaryEntries dictionary to test
      * @param key               dictionary key
      * @return true if the key value exists and is a reference, false if the
-     *         dictionaryEntries are null or the key references an inline dictionary
+     * dictionaryEntries are null or the key references an inline dictionary
      */
     public boolean isReference(HashMap dictionaryEntries, Name key) {
         return dictionaryEntries != null &&
@@ -230,7 +230,7 @@ public class Library {
      * @param dictionaryEntries dictionary to search in.
      * @param key               key to search for in dictionary.
      * @return reference of the object that key points if any.  Null if the key
-     *         points to an inline dictionary and not a reference.
+     * points to an inline dictionary and not a reference.
      */
     public Reference getReference(HashMap dictionaryEntries, Name key) {
         Object ref = dictionaryEntries.get(key);
@@ -265,8 +265,8 @@ public class Library {
      *
      * @param referenceObject reference object.
      * @return PDF object that <code>referenceObject</code> references.  If
-     *         <code>referenceObject</code> is not an instance of a Reference, the
-     *         origional <code>referenceObject</code> is returned.
+     * <code>referenceObject</code> is not an instance of a Reference, the
+     * origional <code>referenceObject</code> is returned.
      */
     public Object getObject(Object referenceObject) {
         if (referenceObject instanceof Reference) {
@@ -313,7 +313,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return Number object if a valid key;  null, if the key does not point
-     *         to Number or is invalid.
+     * to Number or is invalid.
      */
     public Number getNumber(HashMap dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
@@ -330,7 +330,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return Number object if a valid key;  null, if the key does not point
-     *         to Number or is invalid.
+     * to Number or is invalid.
      */
     public Boolean getBoolean(HashMap dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
@@ -347,7 +347,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return float value if a valid key;  null, if the key does not point
-     *         to a float or is invalid.
+     * to a float or is invalid.
      */
     public float getFloat(HashMap dictionaryEntries, Name key) {
         Number n = getNumber(dictionaryEntries, key);
@@ -362,7 +362,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return int value if a valid key,  null if the key does not point
-     *         to an int or is invalid.
+     * to an int or is invalid.
      */
     public int getInt(HashMap dictionaryEntries, Name key) {
         Number n = getNumber(dictionaryEntries, key);
@@ -377,7 +377,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return float value if a valid key;  null, if the key does not point
-     *         to a float or is invalid.
+     * to a float or is invalid.
      */
     public long getLong(HashMap dictionaryEntries, Name key) {
         Number n = getNumber(dictionaryEntries, key);
@@ -392,7 +392,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return Name object if a valid key;  null, if the key does not point
-     *         to Name or is invalid.
+     * to Name or is invalid.
      */
     public Name getName(HashMap dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
@@ -412,7 +412,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return string object if a valid key;  null, if the key does not point
-     *         to Name or is invalid.
+     * to Name or is invalid.
      */
     public String getString(HashMap dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
@@ -436,8 +436,9 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return dictionary object if a valid key;  null, if the key does not point
-     *         to dictionary or is invalid.
+     * to dictionary or is invalid.
      */
+    @SuppressWarnings("unchecked")
     public HashMap getDictionary(HashMap dictionaryEntries, Name key) {
         Object o = getObject(dictionaryEntries, key);
         if (o instanceof HashMap) {
@@ -509,6 +510,7 @@ public class Library {
         return cs;
     }
 
+    @SuppressWarnings("unchecked")
     public Resources getResources(HashMap dictionaryEntries, Name key) {
         if (dictionaryEntries == null)
             return null;
@@ -555,7 +557,7 @@ public class Library {
     /**
      * Removes an object from from the library.
      *
-     * @param objetReference
+     * @param objetReference object reference to remove to library
      */
     public void removeObject(Reference objetReference) {
         if (objetReference != null) {
@@ -579,7 +581,7 @@ public class Library {
      * @param dictionaryEntries the dictionary entries to look up the key in.
      * @param key               string value representing the dictionary key.
      * @return the Reference specified by the PDF key.  If the key is invalid
-     *         or does not reference a Reference object, null is returned.
+     * or does not reference a Reference object, null is returned.
      * @see #getObject(java.util.HashMap, Name)
      */
     public Reference getObjectReference(HashMap dictionaryEntries,
@@ -611,7 +613,7 @@ public class Library {
      * Gets the document's security manger.
      *
      * @return document's security manager if the document is encrypted, null
-     *         otherwise.
+     * otherwise.
      */
     public SecurityManager getSecurityManager() {
         return securityManager;
