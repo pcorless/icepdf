@@ -45,24 +45,8 @@ public class ScaledImageReference extends CachedImageReference {
         super(imageStream, fillColor, resources);
 
         // get eh original image width.
-        int width = imageStream.getWidth();
-        int height = imageStream.getHeight();
-
-        // apply scaling factor
-        double scaleFactor = 1.0;
-        if (width > 1000 && width < 1500) {
-            scaleFactor = 0.75;
-        } else if (width > 1500) {
-            scaleFactor = 0.5;
-        }
-        // update image size for any scaling.
-        if (scaleFactor < 1.0) {
-            this.width = (int) Math.ceil(width * scaleFactor);
-            this.height = (int) Math.ceil(height * scaleFactor);
-        } else {
-            this.width = width;
-            this.height = height;
-        }
+        width = imageStream.getWidth();
+        height = imageStream.getHeight();
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
@@ -112,22 +96,34 @@ public class ScaledImageReference extends CachedImageReference {
                 image = imageStream.getImage(fillColor, resources);
             }
             if (image != null) {
-                int width = image.getWidth();
-                int height = image.getHeight();
-                // scale images if this.width/height were altered in the constructor
-                if (width != this.width || height != this.height) {
+                // get eh original image width.
+                int width = imageStream.getWidth();
+                int height = imageStream.getHeight();
+
+                // apply scaling factor
+                double scaleFactor = 1.0;
+                if (width > 1000 && width < 1500) {
+                    scaleFactor = 0.75;
+                } else if (width > 1500) {
+                    scaleFactor = 0.5;
+                }
+                // update image size for any scaling.
+                if (scaleFactor < 1.0) {
+                    width = (int) Math.ceil(width * scaleFactor);
+                    height = (int) Math.ceil(height * scaleFactor);
                     ColorModel colorModel = image.getColorModel();
                     BufferedImage scaled = new BufferedImage(
                             colorModel,
-                            colorModel.createCompatibleWritableRaster(this.width, this.height),
+                            colorModel.createCompatibleWritableRaster(width, height),
                             image.isAlphaPremultiplied(),
                             null
                     );
                     Graphics2D g = scaled.createGraphics();
                     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                     g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                    g.drawImage(image, 0, 0, this.width, this.height, null);
+                    g.drawImage(image, 0, 0, width, height, null);
                     g.dispose();
+                    image.flush();
                     image = scaled;
                 }
             }
