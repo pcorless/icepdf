@@ -415,10 +415,10 @@ public class PageViewComponentImpl extends
             // draw the clean buffer
             if (pageBufferImage != null && !isPageStateDirty()) {
                 // block, if copy area is being done in painter thread
-                synchronized (paintCopyAreaLock) {
+//                synchronized (paintCopyAreaLock) {
                     g.drawImage(pageBufferImage, bufferedPageImageBounds.x,
                             bufferedPageImageBounds.y, this);
-                }
+//                }
             }
             // experiment with a scaled buffer before repaint.
 //            else if (pageBufferImage != null && isPageStateDirty()) {
