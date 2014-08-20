@@ -120,7 +120,7 @@ public class Separation extends PColorSpace {
                 namedColor = new Color(colorVaue);
             }
             // quick check for auto color which we'll paint as black
-            if (colorName.compareToIgnoreCase("auto") >= 0) {
+            if (colorName.equalsIgnoreCase("auto")) {
                 namedColor = Color.BLACK;
             }
         }
