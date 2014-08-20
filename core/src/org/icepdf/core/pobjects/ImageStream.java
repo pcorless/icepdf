@@ -471,10 +471,23 @@ public class ImageStream extends Stream {
             imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
 
-            // get the reader
+            // get a reader that supports getting the raster.
             Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
-            reader = iter.next();
-            reader.setInput(imageInputStream);
+            while (iter.hasNext()) {
+                reader = iter.next();
+                if (reader.canReadRaster()) {
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer("DCTDecode Image reader: " + reader);
+                    }
+                    break;
+                }
+            }
+            // should never happen but bail on an empty reader.
+            if (reader == null) {
+                imageInputStream.close();
+                return null;
+            }
+            reader.setInput(imageInputStream, true, true);
             // read the raster data only, as we have our own logic to covert
             // the raster data to RGB colours.
             ImageReadParam param = reader.getDefaultReadParam();
@@ -637,15 +650,32 @@ public class ImageStream extends Stream {
 
 
             // getting the raster for JPX seems to fail in most cases.
-//            Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
-//            ImageReader reader = iter.next();
-//            reader.setInput(imageInputStream);
-//            // read the raster data only, as we have our own logic to covert
-//            // the raster data to RGB colours.
-//            ImageReadParam param = reader.getDefaultReadParam();
-//            WritableRaster wr = (WritableRaster) reader.readRaster(0, param);
+            Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
+            ImageReader reader = null;
+            while (iter.hasNext()) {
+                reader = iter.next();
+                if (reader.canReadRaster()) {
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer("JPXDecode Image reader: " + reader);
+                    }
+                    break;
+                }
+            }
 
-            tmpImage = ImageIO.read(imageInputStream);
+            // read the raster data only, as we have our own logic to covert
+            // the raster data to RGB colours.
+            if (reader == null) {
+                imageInputStream.close();
+                return null;
+            }
+            ImageReadParam param = reader.getDefaultReadParam();
+            reader.setInput(imageInputStream, true, true);
+            try {
+                tmpImage = reader.read(0, param);
+            } finally {
+                reader.dispose();
+                imageInputStream.close();
+            }
             WritableRaster wr = tmpImage.getRaster();
 
             // special fallback scenario for ICCBased colours.
