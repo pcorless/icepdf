@@ -116,6 +116,12 @@ public class ImageUtility {
     }
 
     protected static BufferedImage alterBufferedImageAlpha(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
+
+        // check for alpha, if not we need to create a copy
+        if (!ImageUtility.hasAlpha(bi)) {
+            bi = createBufferedImage(bi);
+        }
+
         int width = bi.getWidth();
         int height = bi.getHeight();
 
@@ -1089,7 +1095,7 @@ public class ImageUtility {
                 if (usingAlpha) {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
-                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                    ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
                     img = ImageUtility.alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
                 } else {
@@ -1185,7 +1191,7 @@ public class ImageUtility {
                 .getWidth(null), imageIn.getHeight(null), imageType);
         Graphics g = bufferedImageOut.getGraphics();
         g.drawImage(imageIn, 0, 0, null);
-
+        imageIn.flush();
         return bufferedImageOut;
     }
 
