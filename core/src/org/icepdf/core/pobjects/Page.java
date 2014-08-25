@@ -328,6 +328,11 @@ public class Page extends Dictionary {
                 return;
             }
 
+            // set the initiated flag, first as there are couple corner
+            // cases where the content parsing can call page.init() again
+            // from the same thread.
+            inited = true;
+
             // get pages resources
             initPageResources();
 
@@ -376,9 +381,6 @@ public class Page extends Dictionary {
             else {
                 shapes = new Shapes();
             }
-            // set the initiated flag
-            inited = true;
-
         } catch (InterruptedException e) {
             // keeps shapes vector so we can paint what we have but make init state as false
             // so we can try to re parse it later.
