@@ -141,8 +141,8 @@ public class Destination {
 
             boolean found = false;
             Catalog catalog = library.getCatalog();
-            if (catalog != null) {
-                NameTree nameTree = catalog.getNameTree();
+            if (catalog != null && catalog.getNames() != null) {
+                NameTree nameTree = catalog.getNames().getDestsNameTree();
                 if (nameTree != null) {
                     Object o = nameTree.searchName(s);
                     if (o != null) {
@@ -402,7 +402,7 @@ public class Destination {
      * this destination.
      *
      * @return the left offset from the top, left position  of the page.  If not
-     *         specified Float.NaN is returned.
+     * specified Float.NaN is returned.
      */
     public Float getLeft() {
         return left;
@@ -413,7 +413,7 @@ public class Destination {
      * this destination.
      *
      * @return the top offset from the top, left position of the page.  If not
-     *         specified Float.NaN is returned.
+     * specified Float.NaN is returned.
      */
     public Float getTop() {
         return top;
@@ -471,7 +471,7 @@ public class Destination {
      * Get the destination properties encoded in post script form.
      *
      * @return either a destination Name or a Vector representing the
-     *         destination
+     * destination
      */
     public Object getEncodedDestination() {
         // write out the destination name
