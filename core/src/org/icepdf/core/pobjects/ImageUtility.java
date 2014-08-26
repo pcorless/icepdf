@@ -1148,7 +1148,17 @@ public class ImageUtility {
                     img = new BufferedImage(cm, wr, false, null);
                 }
             }
+        } else if (colourSpace instanceof Separation) {
+            if (colourSpace instanceof Separation &&
+                    ((Separation) colourSpace).isNamedColor()) {
+                DataBuffer db = new DataBufferByte(data, dataLength);
+                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(),
+                        width, height, 1, width, new int[]{0});
+                WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
+                img = ImageUtility.convertGrayToRgb(wr, decode);
+            }
         }
+        // todo add further raw decode types to help speed up image decode
         return img;
     }
 
