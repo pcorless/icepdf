@@ -37,27 +37,35 @@ import java.util.ResourceBundle;
  * @since 1.0
  */
 public class WindowManager implements WindowManagementCallback {
+
+    private static WindowManager windowManager;
+
     private PropertiesManager properties;
 
     private ArrayList<SwingController> controllers;
 
-    private long newWindowInvokationCounter = 0;
+    private long newWindowInvocationCounter = 0;
 
     private ResourceBundle messageBundle = null;
 
-    public WindowManager(PropertiesManager properties) {
-        this(properties, null);
+    private WindowManager() {
+    }
+
+    public static WindowManager getInstance() {
+        return windowManager;
     }
 
     //window management functions
-    public WindowManager(PropertiesManager properties, ResourceBundle messageBundle) {
-        this.properties = properties;
-        controllers = new ArrayList<SwingController>();
+    public static WindowManager createInstance(PropertiesManager properties, ResourceBundle messageBundle) {
+
+        windowManager = new WindowManager();
+        windowManager.properties = properties;
+        windowManager.controllers = new ArrayList<SwingController>();
 
         if (messageBundle != null) {
-            this.messageBundle = messageBundle;
+            windowManager.messageBundle = messageBundle;
         } else {
-            this.messageBundle = ResourceBundle.getBundle(
+            windowManager.messageBundle = ResourceBundle.getBundle(
                     PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
 
@@ -66,6 +74,7 @@ public class WindowManager implements WindowManagementCallback {
             System.out.println("\nICEsoft ICEpdf Viewer " + Document.getLibraryVersion());
             System.out.println("Copyright ICEsoft Technologies, Inc.\n");
         }
+        return windowManager;
     }
 
     public PropertiesManager getProperties() {
@@ -73,13 +82,18 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     public long getNumberOfWindows() {
-        return newWindowInvokationCounter;
+        return newWindowInvocationCounter;
     }
 
 
     public void newWindow(final String location) {
         SwingController controller = commonWindowCreation();
         controller.openDocument(location);
+    }
+
+    public void newWindow(final Document document, final String fileName) {
+        SwingController controller = commonWindowCreation();
+        controller.openDocument(document, fileName);
     }
 
     public void newWindow(URL location) {
@@ -124,9 +138,9 @@ public class WindowManager implements WindowManagementCallback {
             int x = getProperties().getInt("application.x", 1);
             int y = getProperties().getInt("application.y", 1);
 
-            frame.setLocation((int) (x + (newWindowInvokationCounter * 10)),
-                    (int) (y + (newWindowInvokationCounter * 10)));
-            ++newWindowInvokationCounter;
+            frame.setLocation((int) (x + (newWindowInvocationCounter * 10)),
+                    (int) (y + (newWindowInvocationCounter * 10)));
+            ++newWindowInvocationCounter;
             frame.setVisible(true);
         }
 
@@ -144,7 +158,7 @@ public class WindowManager implements WindowManagementCallback {
         int index = controllers.indexOf(controller);
         if (index >= 0) {
             controllers.remove(index);
-            newWindowInvokationCounter--;
+            newWindowInvocationCounter--;
             if (viewer != null) {
                 viewer.setVisible(false);
                 viewer.dispose();
@@ -164,7 +178,13 @@ public class WindowManager implements WindowManagementCallback {
             if (properties != null) {
                 getProperties().set(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                         properties.getProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT));
-                getProperties().set("document.viewtype", properties.getProperty("document.viewtype"));
+                int viewType = Integer.parseInt(properties.getProperty("document.viewtype"));
+                // don't save the attachments view as it only applies to specific
+                // document types.
+                if (viewType != DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
+                    getProperties().set("document.viewtype",
+                            properties.getProperty("document.viewtype"));
+                }
             }
             getProperties().setDefaultFilePath(ViewModel.getDefaultFilePath());
             getProperties().setDefaultURL(ViewModel.getDefaultURL());

@@ -1043,9 +1043,10 @@ public class SwingController
      */
     private void reflectStateInComponents() {
         boolean opened = document != null;
-        if (!opened || getPageTree() == null) {
-            return;
-        }
+        boolean pdfCollection = opened ?
+                document.getCatalog().getNames() != null && document.getCatalog().getNames().getEmbeddedFilesNameTree() != null ? true : false :
+                false;
+
         int nPages = (getPageTree() != null) ? getPageTree().getNumberOfPages() : 0;
 
         // get security information for printing and text extraction
@@ -1058,15 +1059,15 @@ public class SwingController
         // menu items.
         setEnabled(closeMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
-        setEnabled(exportTextMenuItem, opened && canExtract);
+        setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         // Exporting to SVG creates output as if we printed,
         //   which is not the same as extracting text
-        setEnabled(exportSVGMenuItem, opened && canPrint);
+        setEnabled(exportSVGMenuItem, opened && canPrint && !pdfCollection);
         setEnabled(permissionsMenuItem, opened);
         setEnabled(informationMenuItem, opened);
         // Printer setup is global to all PDFs, so don't limit it by this one PDF
-        setEnabled(printSetupMenuItem, opened && canPrint);
-        setEnabled(printMenuItem, opened && canPrint);
+        setEnabled(printSetupMenuItem, opened && canPrint && !pdfCollection);
+        setEnabled(printMenuItem, opened && canPrint && !pdfCollection);
 
         // set initial sate for undo/redo edit, afterwards state is set by
         // valueChange events depending on tool selection.
@@ -1075,27 +1076,27 @@ public class SwingController
         setEnabled(copyMenuItem, false);
         setEnabled(deleteMenuItem, false);
 
-        setEnabled(selectAllMenuItem, opened && canExtract);
+        setEnabled(selectAllMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(deselectAllMenuItem, false);
 
 
-        setEnabled(fitActualSizeMenuItem, opened);
-        setEnabled(fitPageMenuItem, opened);
-        setEnabled(fitWidthMenuItem, opened);
+        setEnabled(fitActualSizeMenuItem, opened && !pdfCollection);
+        setEnabled(fitPageMenuItem, opened && !pdfCollection);
+        setEnabled(fitWidthMenuItem, opened && !pdfCollection);
 
-        setEnabled(zoomInMenuItem, opened);
-        setEnabled(zoomOutMenuItem, opened);
+        setEnabled(zoomInMenuItem, opened && !pdfCollection);
+        setEnabled(zoomOutMenuItem, opened && !pdfCollection);
 
-        setEnabled(rotateLeftMenuItem, opened);
-        setEnabled(rotateRightMenuItem, opened);
+        setEnabled(rotateLeftMenuItem, opened && !pdfCollection);
+        setEnabled(rotateRightMenuItem, opened && !pdfCollection);
 
 //        setEnabled(facingPageViewContinuousMenuItem , opened );
 //        setEnabled(singlePageViewContinuousMenuItem , opened );
 //        setEnabled(facingPageViewNonContinuousMenuItem , opened );
 //        setEnabled(singlePageViewNonContinuousMenuItem , opened );
 
-        setEnabled(fitPageMenuItem, opened);
-        setEnabled(fitWidthMenuItem, opened);
+        setEnabled(fitPageMenuItem, opened && !pdfCollection);
+        setEnabled(fitWidthMenuItem, opened && !pdfCollection);
         if (showHideToolBarMenuItem != null) {
             boolean vis = (completeToolBar != null) && completeToolBar.isVisible();
             showHideToolBarMenuItem.setText(
@@ -1110,15 +1111,15 @@ public class SwingController
                             messageBundle.getString("viewer.toolbar.hideUtilityPane.label") :
                             messageBundle.getString("viewer.toolbar.showUtilityPane.label"));
         }
-        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
-        setEnabled(searchMenuItem, opened && searchPanel != null);
-        setEnabled(goToPageMenuItem, opened && nPages > 1);
+        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null && !pdfCollection);
+        setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
+        setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
         setEnabled(saveAsFileButton, opened);
-        setEnabled(printButton, opened && canPrint);
-        setEnabled(searchButton, opened && searchPanel != null);
-        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
-        setEnabled(currentPageNumberTextField, opened && nPages > 1);
+        setEnabled(printButton, opened && canPrint && !pdfCollection);
+        setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
+        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null && !pdfCollection);
+        setEnabled(currentPageNumberTextField, opened && nPages > 1 && !pdfCollection);
         if (numberOfPagesLabel != null) {
 
             Object[] messageArguments = new Object[]{String.valueOf(nPages)};
@@ -1130,37 +1131,37 @@ public class SwingController
             numberOfPagesLabel.setText(
                     opened ? numberOfPages : "");
         }
-        setEnabled(zoomInButton, opened);
-        setEnabled(zoomOutButton, opened);
-        setEnabled(zoomComboBox, opened);
-        setEnabled(fitActualSizeButton, opened);
-        setEnabled(fitHeightButton, opened);
-        setEnabled(fitWidthButton, opened);
-        setEnabled(rotateLeftButton, opened);
-        setEnabled(rotateRightButton, opened);
-        setEnabled(panToolButton, opened);
-        setEnabled(zoomInToolButton, opened);
-        setEnabled(zoomDynamicToolButton, opened);
-        setEnabled(textSelectToolButton, opened && canExtract);
-        setEnabled(selectToolButton, opened && canModify);
-        setEnabled(linkAnnotationToolButton, opened && canModify);
-        setEnabled(highlightAnnotationToolButton, opened && canModify);
-        setEnabled(highlightAnnotationUtilityToolButton, opened && canModify);
-        setEnabled(strikeOutAnnotationToolButton, opened && canModify);
-        setEnabled(underlineAnnotationToolButton, opened && canModify);
-        setEnabled(lineAnnotationToolButton, opened && canModify);
-        setEnabled(lineArrowAnnotationToolButton, opened && canModify);
-        setEnabled(squareAnnotationToolButton, opened && canModify);
-        setEnabled(circleAnnotationToolButton, opened && canModify);
-        setEnabled(inkAnnotationToolButton, opened && canModify);
-        setEnabled(freeTextAnnotationToolButton, opened && canModify);
-        setEnabled(textAnnotationToolButton, opened && canModify);
-        setEnabled(textAnnotationUtilityToolButton, opened && canModify);
-        setEnabled(fontEngineButton, opened);
-        setEnabled(facingPageViewContinuousButton, opened);
-        setEnabled(singlePageViewContinuousButton, opened);
-        setEnabled(facingPageViewNonContinuousButton, opened);
-        setEnabled(singlePageViewNonContinuousButton, opened);
+        setEnabled(zoomInButton, opened && !pdfCollection);
+        setEnabled(zoomOutButton, opened && !pdfCollection);
+        setEnabled(zoomComboBox, opened && !pdfCollection);
+        setEnabled(fitActualSizeButton, opened && !pdfCollection);
+        setEnabled(fitHeightButton, opened && !pdfCollection);
+        setEnabled(fitWidthButton, opened && !pdfCollection);
+        setEnabled(rotateLeftButton, opened && !pdfCollection);
+        setEnabled(rotateRightButton, opened && !pdfCollection);
+        setEnabled(panToolButton, opened && !pdfCollection);
+        setEnabled(zoomInToolButton, opened && !pdfCollection);
+        setEnabled(zoomDynamicToolButton, opened && !pdfCollection);
+        setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
+        setEnabled(selectToolButton, opened && canModify && !pdfCollection);
+        setEnabled(linkAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(highlightAnnotationUtilityToolButton, opened && canModify && !pdfCollection);
+        setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(lineArrowAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(squareAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(circleAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(inkAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(freeTextAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(textAnnotationUtilityToolButton, opened && canModify && !pdfCollection);
+        setEnabled(fontEngineButton, opened && !pdfCollection);
+        setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
+        setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
+        setEnabled(facingPageViewNonContinuousButton, opened && !pdfCollection);
+        setEnabled(singlePageViewNonContinuousButton, opened && !pdfCollection);
 
         if (opened) {
             reflectZoomInZoomComboBox();
@@ -1595,6 +1596,9 @@ public class SwingController
         if (document == null) {
             return;
         }
+        if (isDocumentViewMode(DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW)) {
+            return;
+        }
         reflectSelectionInButton(
                 singlePageViewContinuousButton, isDocumentViewMode(
                 DocumentViewControllerImpl.ONE_COLUMN_VIEW));
@@ -1994,6 +1998,46 @@ public class SwingController
     }
 
     /**
+     * Load the specified file in a new Viewer RI window.
+     *
+     * @param embeddedDocument document to load in ne window
+     * @param fileName file name of the document in question
+     */
+    public void openDocument(Document embeddedDocument, String fileName) {
+        if (embeddedDocument != null) {
+            try {
+                // dispose a currently open document, if one.
+                if (document != null) {
+                    closeDocument();
+                }
+
+                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+
+                // load the document
+                document = embeddedDocument;
+                // create default security callback is user has not created one
+                if (documentViewController.getSecurityCallback() == null) {
+                    document.setSecurityCallback(
+                            new MyGUISecurityCallback(viewer, messageBundle));
+                }
+                commonNewDocumentHandling(fileName);
+            } catch (Exception e) {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.exception.title",
+                        "viewer.dialog.openDocument.exception.msg",
+                        fileName);
+                document = null;
+                logger.log(Level.FINE, "Error opening document.", e);
+            } finally {
+                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+            }
+        }
+    }
+
+    /**
      * Opens a Document via the specified byte array.
      *
      * @param data        Byte array containing a valid PDF document.
@@ -2097,6 +2141,17 @@ public class SwingController
                 viewType = DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW;
             }
             documentViewController.setViewType(viewType);
+        }
+        // make sure we don't keep Attachments view around from a previous load
+        // as we don't want to use it for a none attachments PDF file.
+        if (documentViewController.getViewMode() ==
+                DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
+            documentViewController.revertViewType();
+        }
+        // check to see if we have collection
+        if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
+                && catalog.getNames().getEmbeddedFilesNameTree().getRoot().getNamesAndValues() != null) {
+            documentViewController.setViewType(DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW);
         }
 
         if (utilityTabbedPane != null) {

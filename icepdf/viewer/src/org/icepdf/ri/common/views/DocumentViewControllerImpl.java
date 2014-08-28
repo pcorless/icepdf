@@ -85,6 +85,11 @@ public class DocumentViewControllerImpl
     public static final int TWO_COLUMN_RIGHT_VIEW = 6;
 
     /**
+     * Displays the pages in two columns, with even-numbered pages on the left.
+     */
+    public static final int USE_ATTACHMENTS_VIEW = 7;
+
+    /**
      * Zoom factor used when zooming in or out.
      */
     public static final float ZOOM_FACTOR = 1.2F;
@@ -505,6 +510,14 @@ public class DocumentViewControllerImpl
         setViewType();
     }
 
+    /**
+     * Revert to the previously set view type.
+     */
+    public void revertViewType() {
+        viewType = oldViewType;
+        setViewType(viewType);
+    }
+
     private void setViewType() {
 
         // check if there is current view, if so dispose it
@@ -545,6 +558,10 @@ public class DocumentViewControllerImpl
                     new TwoPageView(this, documentViewScrollPane,
                             documentViewModel,
                             DocumentView.RIGHT_VIEW);
+        } else if (viewType == USE_ATTACHMENTS_VIEW) {
+            documentView =
+                    new CollectionDocumentView(this, documentViewScrollPane,
+                            documentViewModel);
         } else {
             documentView =
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
@@ -827,7 +844,8 @@ public class DocumentViewControllerImpl
             // can ge assigned.
             if (changed) {
                 // notify the view of the tool change
-                documentView.setToolMode(viewToolMode);
+                if (documentView != null)
+                    documentView.setToolMode(viewToolMode);
 
                 // notify the page components of the tool change.
                 List<AbstractPageViewComponent> pageComponents =
