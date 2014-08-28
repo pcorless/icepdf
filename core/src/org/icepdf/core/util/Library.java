@@ -56,9 +56,9 @@ public class Library {
     static {
         try {
             commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 3);
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 10);
             if (commonPoolThreads < 1) {
-                commonPoolThreads = 3;
+                commonPoolThreads = 10;
             }
         } catch (NumberFormatException e) {
             log.warning("Error reading buffered scale factor");
