@@ -157,7 +157,6 @@ public class ImageStream extends Stream {
      * @param fill      color value of image
      * @param resources resouces containing image reference
      * @return new image object
-     *
      */
     // was synchronized, not think it is needed?
     @SuppressWarnings("unchecked")
@@ -300,7 +299,7 @@ public class ImageStream extends Stream {
      * @param height              heigth of image
      * @param colorSpaceCompCount colour space component count, 1, 3, 4 etc.
      * @param bitsPerComponent    number of bits that represent one component.
-     * @param isImageMask           boolean flag to use image mask or not.
+     * @param isImageMask         boolean flag to use image mask or not.
      * @param decode              decode array, 1,0 or 0,1 can effect colour interpretation.
      * @param sMaskImage          smaask image value, optional.
      * @param maskImage           buffered image image mask to apply to decoded image, optional.
@@ -359,8 +358,14 @@ public class ImageStream extends Stream {
                 } catch (Throwable e) {
                     // on a failure then fall back to JAI for a try. likely
                     // will not happen.
-                    decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
-                            this, library, entries, fill);
+                    try {
+                        decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
+                                this, library, entries, fill);
+                    } catch (Throwable e1) {
+                        // fall back on ccittfax code.
+                        data = ccittFaxDecode(data, width, height);
+                        dataLength = data.length;
+                    }
                     return decodedImage;
                 }
             }
