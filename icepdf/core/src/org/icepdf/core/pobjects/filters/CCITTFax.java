@@ -23,12 +23,17 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.image.renderable.ParameterBlock;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -589,7 +594,7 @@ public class CCITTFax {
     }
 
     public static BufferedImage attemptDeriveBufferedImageFromBytes(
-            ImageStream stream, Library library, HashMap streamDictionary, Color fill) {
+            ImageStream stream, Library library, HashMap streamDictionary, Color fill) throws InvocationTargetException, IllegalAccessException {
         if (!USE_JAI_IMAGE_LIBRARY)
             return null;
 
@@ -606,6 +611,20 @@ public class CCITTFax {
         boolean hasHeader;
 
         InputStream input = stream.getDecodedByteArrayInputStream();
+        if (logger.isLoggable(Level.FINER)) {
+            try {
+                ImageInputStream imageInputStream = ImageIO.createImageInputStream(stream.getDecodedByteArrayInputStream());
+                Iterator<ImageReader> iter = ImageIO.getImageReadersByFormatName("TIFF");
+                ImageReader reader = null;
+                while (iter.hasNext()) {
+                    reader = iter.next();
+                    logger.finer("CCITTFaxDecode Image reader: " + reader + " canReastRaster: " + reader.canReadRaster());
+                }
+                imageInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         if (input == null)
             return null;
         input = new ZeroPaddedInputStream(input);
@@ -766,7 +785,7 @@ public class CCITTFax {
      * @return RenderedImage if could derive one, else null
      */
     private static BufferedImage deriveBufferedImageFromTIFFBytes(
-            InputStream in, Library library, int compressedBytes, int width, int height) {
+            InputStream in, Library library, int compressedBytes, int width, int height) throws InvocationTargetException, IllegalAccessException {
         BufferedImage img = null;
         try {
             /*
@@ -816,10 +835,6 @@ public class CCITTFax {
                     img = (BufferedImage) roGetAsBufferedImage.invoke(javax_media_jai_RenderedOp_op);
                 }
             }
-        } catch (Throwable e) {
-            img = null;
-            logger.log(Level.FINE,
-                    "Could not derive image from data bytes via JAI.");
         } finally {
             try {
                 in.close();
