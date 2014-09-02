@@ -491,6 +491,16 @@ public class Parser {
                         ((String) nextToken).startsWith("%")) {
                     // Comment, ignored for now
                 }
+                // corner case for encoder error "endobjxref"
+                else if (nextToken instanceof String &&
+                        ((String) nextToken).startsWith("endobj")) {
+                    if (inObject) {
+                        // set flag to false, as we are done parsing an Object
+                        inObject = false;
+                        // return PObject,
+                        return addPObject(library, objectReference);
+                    }
+                }
                 // everything else gets pushed onto the stack
                 else {
                     stack.push(nextToken);
