@@ -91,6 +91,14 @@ public class ImagePool {
         }
     }
 
+    public boolean containsKey(Reference ref) {
+        if (enabled) {
+            return fCache.containsKey(ref);
+        } else {
+            return false;
+        }
+    }
+
     private static class MemoryImageCache extends LinkedHashMap<Reference, BufferedImage> {
         private final long maxCacheSize;
         private long currentCacheSize;
