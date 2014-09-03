@@ -1036,6 +1036,23 @@ public class SwingController
         return viewer;
     }
 
+    /**
+     * Tests to see if the PDF document is a collection and should be treaded as such.
+     *
+     * @return true if PDF collection otherwise false.
+     */
+    public boolean isPdfCollection() {
+        Catalog catalog = document.getCatalog();
+        if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
+                && catalog.getNames().getEmbeddedFilesNameTree().getRoot().getNamesAndValues() != null) {
+            // one final check as some docs will have meta data but will specify a page mode.
+            if (catalog.getObject(Catalog.PAGEMODE_KEY) == null ||
+                    ((Name) catalog.getObject(Catalog.PAGEMODE_KEY)).getName().equalsIgnoreCase("UseAttachments")) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Utility method to set the state of all the different GUI elements. Mainly
@@ -1043,9 +1060,7 @@ public class SwingController
      */
     private void reflectStateInComponents() {
         boolean opened = document != null;
-        boolean pdfCollection = opened ?
-                document.getCatalog().getNames() != null && document.getCatalog().getNames().getEmbeddedFilesNameTree() != null ? true : false :
-                false;
+        boolean pdfCollection = opened && isPdfCollection();
 
         int nPages = (getPageTree() != null) ? getPageTree().getNumberOfPages() : 0;
 
@@ -1344,7 +1359,7 @@ public class SwingController
      * Gets the current display tool value for the display panel.
      *
      * @return constant representing the state of the display tool for the
-     *         display panel.
+     * display panel.
      * @see #setDisplayTool
      */
     public int getDocumentViewToolMode() {
@@ -1601,16 +1616,16 @@ public class SwingController
         }
         reflectSelectionInButton(
                 singlePageViewContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.ONE_COLUMN_VIEW));
+                        DocumentViewControllerImpl.ONE_COLUMN_VIEW));
         reflectSelectionInButton(
                 facingPageViewNonContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW));
+                        DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW));
         reflectSelectionInButton(
                 facingPageViewContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.TWO_COLUMN_RIGHT_VIEW));
+                        DocumentViewControllerImpl.TWO_COLUMN_RIGHT_VIEW));
         reflectSelectionInButton(
                 singlePageViewNonContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.ONE_PAGE_VIEW));
+                        DocumentViewControllerImpl.ONE_PAGE_VIEW));
     }
 
     private void reflectSelectionInButton(AbstractButton btn, boolean selected) {
@@ -2001,7 +2016,7 @@ public class SwingController
      * Load the specified file in a new Viewer RI window.
      *
      * @param embeddedDocument document to load in ne window
-     * @param fileName file name of the document in question
+     * @param fileName         file name of the document in question
      */
     public void openDocument(Document embeddedDocument, String fileName) {
         if (embeddedDocument != null) {
@@ -2149,8 +2164,7 @@ public class SwingController
             documentViewController.revertViewType();
         }
         // check to see if we have collection
-        if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
-                && catalog.getNames().getEmbeddedFilesNameTree().getRoot().getNamesAndValues() != null) {
+        if (isPdfCollection()) {
             documentViewController.setViewType(DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW);
         }
 
