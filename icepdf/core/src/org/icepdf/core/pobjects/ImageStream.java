@@ -161,6 +161,12 @@ public class ImageStream extends Stream {
     // was synchronized, not think it is needed?
     @SuppressWarnings("unchecked")
     public synchronized BufferedImage getImage(Color fill, Resources resources) {
+        // check the pool encase we already parse this image.
+        if (pObjectReference != null &&
+                library.getImagePool().containsKey(pObjectReference)) {
+            return library.getImagePool().get(pObjectReference);
+        }
+
         // parse colour space, lock is to insure that getColorSpace()
         // will return only after colourSpace has been set.
         synchronized (colorSpaceAssignmentLock) {
@@ -279,13 +285,18 @@ public class ImageStream extends Stream {
             }
         }
 
-        return getImage(
+        BufferedImage image = getImage(
                 colourSpace, fill, width, height,
                 colorSpaceCompCount, bitsPerComponent,
                 isImageMask,
                 decode,
                 smaskImage, maskImage,
                 maskMinRGB, maskMaxRGB, maskMinIndex, maskMaxIndex);
+        // add the image to the pool, just encase it get painted again.
+        if (pObjectReference != null) {
+            library.getImagePool().put(pObjectReference, image);
+        }
+        return image;
     }
 
     /**
