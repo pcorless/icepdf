@@ -587,7 +587,8 @@ public class DocumentViewControllerImpl
 
     public boolean setFitMode(final int fitMode) {
 
-        if (documentViewModel == null) {
+        if (documentViewModel == null || viewType ==
+                DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
             return false;
         }
 
