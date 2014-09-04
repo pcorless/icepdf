@@ -3,9 +3,7 @@ package org.icepdf.core.pobjects.graphics.RasterOps;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.Raster;
-import java.awt.image.RasterOp;
-import java.awt.image.WritableRaster;
+import java.awt.image.*;
 
 /**
  * Raster operation that convers the YCbCr to a RGB colour space.
@@ -24,38 +22,39 @@ public class YCbCrRasterOp implements RasterOp {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
 
-        float[] values = new float[src.getNumBands()];
-        int width = src.getWidth();
-        int height = src.getHeight();
-        for (int y = 0; y < height; y++) {
+        // my have to add some instance of checks
+        byte[] srcPixels = ((DataBufferByte) src.getDataBuffer()).getData();
+        int[] destPixels = ((DataBufferInt) dest.getDataBuffer()).getData();
 
-            for (int x = 0; x < width; x++) {
+        int Y, Cb, Cr;
+        int lastY = -1, lastCb = -1, lastCr = -1;
+        int rVal = 0, gVal = 0, bVal = 0;
+        int bands = src.getNumBands();
+        for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
-                src.getPixel(x, y, values);
+            Y = srcPixels[pixel] & 0xff;
+            Cb = srcPixels[pixel + 1] & 0xff;
+            Cr = srcPixels[pixel + 2] & 0xff;
 
-                float Y = values[0];
-                float Cb = values[1];
-                float Cr = values[2];
-
-                float Cr_128 = Cr - 128;
-                float Cb_128 = Cb - 128;
-
-                float rVal = Y + (1370705 * Cr_128 / 1000000);
-                float gVal = Y - (337633 * Cb_128 / 1000000) - (698001 * Cr_128 / 1000000);
-                float bVal = Y + (1732446 * Cb_128 / 1000000);
-
-                byte rByte = (rVal < 0) ? (byte) 0 : (rVal > 255) ? (byte) 0xFF : (byte) rVal;
-                byte gByte = (gVal < 0) ? (byte) 0 : (gVal > 255) ? (byte) 0xFF : (byte) gVal;
-                byte bByte = (bVal < 0) ? (byte) 0 : (bVal > 255) ? (byte) 0xFF : (byte) bVal;
-
-                values[0] = rByte;
-                values[1] = gByte;
-                values[2] = bByte;
-
-                dest.setPixel(x, y, values);
+            // no point recalculating if we are doing a band of colours.
+            if (!(lastY == Y && lastCb == Cb && lastCr == Cr)) {
+                // The Intel IPP color conversion functions specific for the JPEG codec
+                rVal = clamp((int) (Y + 1.402 * Cr - 179.456));
+                gVal = clamp((int) (Y - 0.34414 * Cb - 0.71414 * Cr + 135.45984));
+                bVal = clamp((int) (Y + 1.772 * Cb - 226.816));
             }
+            lastY = Y;
+            lastCb = Cb;
+            lastCr = Cr;
+
+            destPixels[intPixels] = ((rVal & 0xff) << 16) | ((gVal & 0xff) << 8) | (bVal & 0xff);
         }
         return dest;
+    }
+
+    // clamp the input between 0 ... 255
+    private static int clamp(int x) {
+        return (x < 0) ? 0 : ((x > 255) ? 255 : x);
     }
 
     public Rectangle2D getBounds2D(Raster src) {
