@@ -460,15 +460,19 @@ public class PageViewComponentImpl extends
 
             // Lazy paint of highlight and select all text states.
             Page currentPage = getPage();
+            // paint any highlighted words
+            DocumentSearchController searchController =
+                    documentViewController.getParentController()
+                            .getDocumentSearchController();
             if (currentPage != null && currentPage.isInitiated() &&
-                    // make sure we don't accidently block the awt ui thread.
-                    documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION)) {
+                    // make sure we don't accidently block the awt ui thread, but we still
+                    // want to paint search text and text selection if text selection tool is selected.
+                    (searchController.isSearchHighlightRefreshNeeded(pageIndex, null) ||
+                            documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION))
+                    ) {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
                     // paint any highlighted words
-                    DocumentSearchController searchController =
-                            documentViewController.getParentController()
-                                    .getDocumentSearchController();
                     if (searchController.isSearchHighlightRefreshNeeded(pageIndex, pageText)) {
                         searchController.searchHighlightPage(pageIndex);
                     }
