@@ -62,6 +62,9 @@ public abstract class AbstractContentParser implements ContentParser {
 
     public static final float OVERPAINT_ALPHA = 0.4f;
 
+    private static ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private static NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
+
     protected GraphicsState graphicState;
     protected Library library;
     protected Resources resources;
@@ -435,7 +438,7 @@ public abstract class AbstractContentParser implements ContentParser {
         else {
             graphicState = new GraphicsState(shapes);
             graphicState.set(new AffineTransform());
-            shapes.add(new NoClipDrawCmd());
+            shapes.add(noClipDrawCmd);
         }
 
         return graphicState;
@@ -573,7 +576,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 } else {
                     shapes.add(new ShapeDrawCmd(formXObject.getBBox()));
                 }
-                shapes.add(new ClipDrawCmd());
+                shapes.add(clipDrawCmd);
                 // 4.) Paint the graphics objects in font stream.
                 setAlpha(shapes, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
@@ -1715,7 +1718,7 @@ public abstract class AbstractContentParser implements ContentParser {
             shapes.add(new ShapeDrawCmd(geometricPath));
             shapes.add(new DrawDrawCmd());
         }
-        // set alpha back to origional value.
+        // set alpha back to original value.
         if (graphicState.isOverprintStroking()) {
             setAlpha(shapes, AlphaComposite.SRC_OVER, graphicState.getFillAlpha());
         }
@@ -1890,11 +1893,16 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param alpha  - alpha value, opaque = 1.0f.
      */
     protected static void setAlpha(Shapes shapes, int rule, float alpha) {
-        // Build the alpha composite object and add it to the shapes
-        AlphaComposite alphaComposite =
-                AlphaComposite.getInstance(rule,
-                        alpha);
-        shapes.add(new AlphaDrawCmd(alphaComposite));
+        // Build the alpha composite object and add it to the shapes but only
+        // if it hash changed.
+        if (shapes.getAlpha() != alpha || shapes.getRule() != rule) {
+            AlphaComposite alphaComposite =
+                    AlphaComposite.getInstance(rule,
+                            alpha);
+            shapes.add(new AlphaDrawCmd(alphaComposite));
+            shapes.setAlpha(alpha);
+            shapes.setRule(rule);
+        }
     }
 
     public void setGlyph2UserSpaceScale(float scale) {

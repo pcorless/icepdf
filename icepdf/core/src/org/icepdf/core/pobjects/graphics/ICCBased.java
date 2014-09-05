@@ -24,6 +24,7 @@ import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,8 +44,8 @@ public class ICCBased extends PColorSpace {
     Stream stream;
     ColorSpace colorSpace;
 
-    private float[] lastInput;
-    private Color lastOutput;
+    // basic cache to speed up the lookup.
+    private static ConcurrentHashMap<String, Color> iccColorCache;
 
     // setting up an ICC colour look up is expensive, so if we get a failure
     // we just fallback to the alternative space to safe cpu time.
@@ -52,6 +53,7 @@ public class ICCBased extends PColorSpace {
 
     public ICCBased(Library l, Stream h) {
         super(l, h.getEntries());
+        iccColorCache = new ConcurrentHashMap<String, Color>();
         numcomp = h.getInt(N_KEY);
         switch (numcomp) {
             case 1:
@@ -74,7 +76,7 @@ public class ICCBased extends PColorSpace {
         if (inited) {
             return;
         }
-        inited = true;
+
         byte[] in;
         try {
             stream.init();
@@ -90,6 +92,7 @@ public class ICCBased extends PColorSpace {
         } catch (Exception e) {
             logger.log(Level.FINE, "Error Processing ICCBased Colour Profile", e);
         }
+        inited = true;
     }
 
     /**
@@ -107,23 +110,13 @@ public class ICCBased extends PColorSpace {
         init();
         if (colorSpace != null && !failed) {
             try {
-                synchronized (this) {
-                    // We cache the previous inputs and output, since images
-                    //   tend to have long runs of the same color
-                    if (lastOutput != null && lastInput != null &&
-                            f != null && lastInput.length == f.length) {
-                        boolean matches = true;
-                        int num = lastInput.length;
-                        for (int i = num - 1; i >= 0; i--) {
-                            if (f[i] != lastInput[i]) {
-                                matches = false;
-                                break;
-                            }
-                        }
-                        if (matches)
-                            return lastOutput;
-                    }
+                // cache the colour
+                String key = String.valueOf(f[0]) + f[1] + f[2];
+                if (f.length == 4) key += f[3];
 
+                if (iccColorCache.containsKey(key)) {
+                    return iccColorCache.get(key);
+                } else {
                     int n = colorSpace.getNumComponents();
                     // Get the reverse of f, and only take n values
                     // Might as well limit the bounds while we're at it
@@ -147,23 +140,9 @@ public class ICCBased extends PColorSpace {
                             ((((int) (frgbvalue[1] * 255)) & 0xFF) << 8) |
                             ((((int) (frgbvalue[2] * 255)) & 0xFF));
                     Color c = new Color(value);
-
-                    // Update the cache
-                    if (lastInput == null || lastInput.length != fLength) {
-                        lastInput = new float[fLength];
-                    }
-                    System.arraycopy(f, 0, lastInput, 0, fLength - 1 + 1);
-                    lastOutput = c;
-
+                    iccColorCache.put(key, c);
                     return c;
                 }
-                /*
-                Color c = new Color( colorSpace,reverse(f), 1 );
-                return new Color(
-                    ColorSpace_CS_sRGB,
-                    c.getRGBComponents(null),
-                    1);
-                */
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error getting ICCBased colour", e);
                 failed = true;

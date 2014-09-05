@@ -37,12 +37,12 @@ public class FillDrawCmd extends AbstractDrawCmd {
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible() && currentShape != null &&
-                currentShape.intersects(g.getClip().getBounds2D())) {
+                currentShape.intersects(g.getClip().getBounds())) {
             g.fill(currentShape);
             // Send a PaintPage Event to listeners
-            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
-                parentPage.notifyPaintPageListeners();
-            }
+//            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
+//                parentPage.notifyPaintPageListeners();
+//            }
         }
         return currentShape;
     }
