@@ -416,8 +416,8 @@ public class PageViewComponentImpl extends
             if (pageBufferImage != null && !isPageStateDirty()) {
                 // block, if copy area is being done in painter thread
 //                synchronized (paintCopyAreaLock) {
-                    g.drawImage(pageBufferImage, bufferedPageImageBounds.x,
-                            bufferedPageImageBounds.y, this);
+                g.drawImage(pageBufferImage, bufferedPageImageBounds.x,
+                        bufferedPageImageBounds.y, this);
 //                }
             }
             // experiment with a scaled buffer before repaint.
@@ -460,7 +460,9 @@ public class PageViewComponentImpl extends
 
             // Lazy paint of highlight and select all text states.
             Page currentPage = getPage();
-            if (currentPage != null && currentPage.isInitiated()) {
+            if (currentPage != null && currentPage.isInitiated() &&
+                    // make sure we don't accidently block the awt ui thread.
+                    documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION)) {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
                     // paint any highlighted words

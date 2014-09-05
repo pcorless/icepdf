@@ -216,8 +216,7 @@ public class DeviceCMYK extends PColorSpace {
         if (!disableICCCmykColorSpace && iccCmykColorSpace != null) {
             // very slow key generation but still quite a bit faster then doing
             // a blind lookup in the icc table
-            String key = new StringBuilder().append(f[0]).append(f[1]).append(f[2])
-                    .append(f[3]).toString();
+            String key = String.valueOf(f[0]) + f[1] + f[2] + f[3];
             if (iccCmykColorCache.containsKey(key)) {
                 return iccCmykColorCache.get(key);
             } else {

@@ -907,14 +907,6 @@ public class OContentParser extends AbstractContentParser {
                     consume_d(graphicState, stack, shapes);
                 }
 
-                // Sets the line dash pattern in the graphics state. A normal line
-                // is [] 0.  See Graphics State -> Line dash patter for more information
-                // in the PDF Reference.  Java 2d uses the same notation so there
-                // is not much work to be done other then parsing the data.
-                else if (nextToken.equals(PdfOps.d_TOKEN)) {
-                    consume_d(graphicState, stack, shapes);
-                }
-
                 // Set the line join style in the graphics state
                 else if (nextToken.equals(PdfOps.j_TOKEN)) {
                     consume_j(graphicState, stack, shapes);

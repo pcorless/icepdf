@@ -227,6 +227,9 @@ public class GraphicsState {
     // Current transformation matrix.
     private AffineTransform CTM = new AffineTransform();
 
+    private ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
+
     // Specifies the shape of the endpoint for any open path.
     private int lineCap = BasicStroke.CAP_BUTT;
 
@@ -402,7 +405,10 @@ public class GraphicsState {
      * @param af the AffineTranform object to set the CTM to.
      */
     public void set(AffineTransform af) {
-        CTM = new AffineTransform(af);
+        // appling a CTM can be expensive, so only do it if it's needed.
+        if (!CTM.equals(af)) {
+            CTM = new AffineTransform(af);
+        }
         shapes.add(new TransformDrawCmd(new AffineTransform(CTM)));
     }
 
@@ -531,10 +537,10 @@ public class GraphicsState {
                 if (parentGraphicState.clip != null) {
                     if (!parentGraphicState.clip.equals(clip)) {
                         parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
-                        parentGraphicState.shapes.add(new ClipDrawCmd());
+                        parentGraphicState.shapes.add(clipDrawCmd);
                     }
                 } else {
-                    parentGraphicState.shapes.add(new NoClipDrawCmd());
+                    parentGraphicState.shapes.add(noClipDrawCmd);
                 }
             }
             // Update the stack with the parentGraphicsState stack.
@@ -605,7 +611,7 @@ public class GraphicsState {
             if (clip == null || !clip.equals(area)) {
                 clip = new Area(area);
                 shapes.add(new ShapeDrawCmd(new Area(area)));
-                shapes.add(new ClipDrawCmd());
+                shapes.add(clipDrawCmd);
                 // mark that the clip has changed.
                 clipChange = true;
             } else {
@@ -614,7 +620,7 @@ public class GraphicsState {
         } else {
             // add a null clip for a null shape, should not normally happen
             clip = null;
-            shapes.add(new NoClipDrawCmd());
+            shapes.add(noClipDrawCmd);
         }
     }
 
