@@ -5,9 +5,7 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.Raster;
-import java.awt.image.RasterOp;
-import java.awt.image.WritableRaster;
+import java.awt.image.*;
 
 /**
  * Raster operation for converting a CMYK colour to RGB using an a rough
@@ -39,8 +37,9 @@ public class CMYKRasterOp implements RasterOp {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
 
-        int width = src.getWidth();
-        int height = src.getHeight();
+        // may have to add some instance of checks
+        byte[] srcPixels = ((DataBufferByte) src.getDataBuffer()).getData();
+        int[] destPixels = ((DataBufferInt) dest.getDataBuffer()).getData();
 
         // this convoluted cymk->rgba method is from DeviceCMYK class.
         float inCyan, inMagenta, inYellow, inBlack;
@@ -48,58 +47,51 @@ public class CMYKRasterOp implements RasterOp {
         double c, m, y2, aw, ac, am, ay, ar, ag, ab;
         float outRed, outGreen, outBlue;
         int rValue = 0, gValue = 0, bValue = 0, alpha = 0;
-        int[] values = new int[4];
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                src.getPixel(x, y, values);
+        int bands = src.getNumBands();
+        for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
-                inCyan = values[0] / 255.0f;
-                inMagenta = values[1] / 255.0f;
-                inYellow = values[2] / 255.0f;
-                // lessen the amount of black, standard 255 fraction is too dark
-                // increasing the denominator has the same affect of lighting up
-                // the image.
-                inBlack = values[3] / blackRatio;
+            inCyan = (srcPixels[pixel] & 0xff) / 255.0f;
+            inMagenta = (srcPixels[pixel + 1] & 0xff) / 255.0f;
+            inYellow = (srcPixels[pixel + 2] & 0xff) / 255.0f;
+            // lessen the amount of black, standard 255 fraction is too dark
+            // increasing the denominator has the same affect of lighting up
+            // the image.
+            inBlack = (srcPixels[pixel + 3] & 0xff) / blackRatio;
 
-                if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
-                        inYellow == lastYellow && inBlack == lastBlack)) {
+            if (!(inCyan == lastCyan && inMagenta == lastMagenta &&
+                    inYellow == lastYellow && inBlack == lastBlack)) {
 
-                    c = clip(0, 1, inCyan + inBlack);
-                    m = clip(0, 1, inMagenta + inBlack);
-                    y2 = clip(0, 1, inYellow + inBlack);
-                    aw = (1 - c) * (1 - m) * (1 - y2);
-                    ac = c * (1 - m) * (1 - y2);
-                    am = (1 - c) * m * (1 - y2);
-                    ay = (1 - c) * (1 - m) * y2;
-                    ar = (1 - c) * m * y2;
-                    ag = c * (1 - m) * y2;
-                    ab = c * m * (1 - y2);
+                c = clip(0, 1, inCyan + inBlack);
+                m = clip(0, 1, inMagenta + inBlack);
+                y2 = clip(0, 1, inYellow + inBlack);
+                aw = (1 - c) * (1 - m) * (1 - y2);
+                ac = c * (1 - m) * (1 - y2);
+                am = (1 - c) * m * (1 - y2);
+                ay = (1 - c) * (1 - m) * y2;
+                ar = (1 - c) * m * y2;
+                ag = c * (1 - m) * y2;
+                ab = c * m * (1 - y2);
 
-                    outRed = (float) clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
-                    outGreen = (float) clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
-                    outBlue = (float) clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
-                    rValue = (int) (outRed * 255);
-                    gValue = (int) (outGreen * 255);
-                    bValue = (int) (outBlue * 255);
-                    alpha = 0xFF;
-                }
-                lastCyan = inCyan;
-                lastMagenta = inMagenta;
-                lastYellow = inYellow;
-                lastBlack = inBlack;
-
-                values[0] = rValue;
-                values[1] = gValue;
-                values[2] = bValue;
-                values[3] = alpha;
-                dest.setPixel(x, y, values);
+                outRed = (float) clip(0, 1, aw + 0.9137 * am + 0.9961 * ay + 0.9882 * ar);
+                outGreen = (float) clip(0, 1, aw + 0.6196 * ac + ay + 0.5176 * ag);
+                outBlue = (float) clip(0, 1, aw + 0.7804 * ac + 0.5412 * am + 0.0667 * ar + 0.2118 * ag + 0.4863 * ab);
+                rValue = (int) (outRed * 255);
+                gValue = (int) (outGreen * 255);
+                bValue = (int) (outBlue * 255);
+                alpha = 0xFF;
             }
-        }
+            lastCyan = inCyan;
+            lastMagenta = inMagenta;
+            lastYellow = inYellow;
+            lastBlack = inBlack;
 
+            destPixels[intPixels] = ((alpha & 0xff) << 24) |
+                    ((rValue & 0xff) << 16) | ((gValue & 0xff) << 8) |
+                    (bValue & 0xff);
+        }
         return dest;
     }
-
 
     public Rectangle2D getBounds2D(Raster src) {
         return null;

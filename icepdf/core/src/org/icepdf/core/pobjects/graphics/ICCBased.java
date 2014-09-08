@@ -45,7 +45,7 @@ public class ICCBased extends PColorSpace {
     ColorSpace colorSpace;
 
     // basic cache to speed up the lookup.
-    private static ConcurrentHashMap<String, Color> iccColorCache;
+    private static ConcurrentHashMap<Integer, Color> iccColorCache;
 
     // setting up an ICC colour look up is expensive, so if we get a failure
     // we just fallback to the alternative space to safe cpu time.
@@ -53,7 +53,7 @@ public class ICCBased extends PColorSpace {
 
     public ICCBased(Library l, Stream h) {
         super(l, h.getEntries());
-        iccColorCache = new ConcurrentHashMap<String, Color>();
+        iccColorCache = new ConcurrentHashMap<Integer, Color>();
         numcomp = h.getInt(N_KEY);
         switch (numcomp) {
             case 1:
@@ -106,40 +106,25 @@ public class ICCBased extends PColorSpace {
         return alternate;
     }
 
+    private static int generateKey(float[] f) {
+        int key = (((int) (f[0] * 255) & 0xff) << 16) |
+                (((int) (f[1] * 255) & 0xff) << 8) |
+                (((int) (f[2] * 255) & 0xff) & 0xff);
+        if (f.length == 4) key |= (((int) (f[3] * 255) & 0xff) << 24);
+        return key;
+    }
+
     public Color getColor(float[] f, boolean fillAndStroke) {
         init();
         if (colorSpace != null && !failed) {
             try {
-                // cache the colour
-                String key = String.valueOf(f[0]) + f[1] + f[2];
-                if (f.length == 4) key += f[3];
+                // generate a key for the colour
+                int key = generateKey(f);
 
                 if (iccColorCache.containsKey(key)) {
                     return iccColorCache.get(key);
                 } else {
-                    int n = colorSpace.getNumComponents();
-                    // Get the reverse of f, and only take n values
-                    // Might as well limit the bounds while we're at it
-                    float[] fvalue = new float[n];
-                    int toCopy = n;
-                    int fLength = f.length;
-                    if (fLength < toCopy) {
-                        toCopy = fLength;
-                    }
-                    for (int i = 0; i < toCopy; i++) {
-                        float curr = f[fLength - 1 - i];
-                        if (curr < 0.0f)
-                            curr = 0.0f;
-                        else if (curr > 1.0f)
-                            curr = 1.0f;
-                        fvalue[i] = curr;
-                    }
-                    float[] frgbvalue = colorSpace.toRGB(fvalue);
-                    int value = (0xFF000000) |
-                            ((((int) (frgbvalue[0] * 255)) & 0xFF) << 16) |
-                            ((((int) (frgbvalue[1] * 255)) & 0xFF) << 8) |
-                            ((((int) (frgbvalue[2] * 255)) & 0xFF));
-                    Color c = new Color(value);
+                    Color c = new Color(calculateColor(f, colorSpace));
                     iccColorCache.put(key, c);
                     return c;
                 }
@@ -149,6 +134,32 @@ public class ICCBased extends PColorSpace {
             }
         }
         return alternate.getColor(f);
+    }
+
+    private static int calculateColor(float[] f, ColorSpace colorSpace) {
+        int n = colorSpace.getNumComponents();
+        // Get the reverse of f, and only take n values
+        // Might as well limit the bounds while we're at it
+        float[] fvalue = new float[n];
+        int toCopy = n;
+        int fLength = f.length;
+        if (fLength < toCopy) {
+            toCopy = fLength;
+        }
+        for (int i = 0; i < toCopy; i++) {
+            float curr = f[fLength - 1 - i];
+            if (curr < 0.0f) {
+                curr = 0.0f;
+            } else if (curr > 1.0f) {
+                curr = 1.0f;
+            }
+            fvalue[i] = curr;
+        }
+        float[] frgbvalue = colorSpace.toRGB(fvalue);
+        return (0xFF000000) |
+                ((((int) (frgbvalue[0] * 255)) & 0xFF) << 16) |
+                ((((int) (frgbvalue[1] * 255)) & 0xFF) << 8) |
+                ((((int) (frgbvalue[2] * 255)) & 0xFF));
     }
 
     public ColorSpace getColorSpace() {

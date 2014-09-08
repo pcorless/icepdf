@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.graphics.RasterOps;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
 import java.awt.image.RasterOp;
 import java.awt.image.WritableRaster;
@@ -18,6 +19,8 @@ import java.awt.image.WritableRaster;
  * @since 5.1
  */
 public class DecodeRasterOp implements RasterOp {
+
+    private static final float NORMAL_DECODE_CEIL = 1.0f / 255;
 
     private RenderingHints hints = null;
     private float[] decode;
@@ -37,7 +40,7 @@ public class DecodeRasterOp implements RasterOp {
     private static boolean isNormalDecode(float[] decode) {
         // normal decode is always [0,1,0,1....]
         for (int i = 0, max = decode.length; i < max; i += 2) {
-            if (decode[i] != 0.0f || decode[i + 1] != 1.0f) {
+            if (decode[i] != 0.0f || decode[i + 1] != NORMAL_DECODE_CEIL) {
                 return false;
             }
         }
@@ -53,24 +56,16 @@ public class DecodeRasterOp implements RasterOp {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
 
-        int width = src.getWidth();
-        int height = src.getHeight();
+        // may have to add some instance of checks
+        byte[] srcPixels = ((DataBufferByte) src.getDataBuffer()).getData();
+        byte[] destPixels = ((DataBufferByte) dest.getDataBuffer()).getData();
 
-        int[] values = new int[src.getNumBands()];
-        byte[] dataValues = new byte[src.getNumBands()];
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-
-                src.getDataElements(x, y, dataValues);
-                // apply decode param.
-                normalizeComponents(
-                        dataValues,
-                        decode,
-                        values);
-                dest.setPixel(x, y, values);
+        int bands = src.getNumBands();
+        for (int pixel = 0; pixel < srcPixels.length; pixel += bands) {
+            // apply decode param.
+            for (int i = 0; i < bands; i++) {
+                destPixels[pixel + i] = normalizeComponents(srcPixels[pixel + i], decode, i);
             }
-
         }
         return dest;
     }
@@ -101,16 +96,13 @@ public class DecodeRasterOp implements RasterOp {
      *
      * @param pixels colour to process by decode
      * @param decode decode array for colour space
-     * @param out    return value
-     *               always (2<sup>bitsPerComponent</sup> - 1).
+     * @return decoded value..
      */
-    private static void normalizeComponents(
-            byte[] pixels,
+    private static byte normalizeComponents(
+            byte pixels,
             float[] decode,
-            int[] out) {
+            int i) {
         // interpolate each colour component for the given decode domain.
-        for (int i = 0; i < pixels.length; i++) {
-            out[i] = (int) ((decode[i * 2] * 255) + (pixels[i] & 0xff) * (decode[(i * 2) + 1] * 255));
-        }
+        return (byte) ((decode[i * 2] * 255) + (pixels & 0xff) * (decode[(i * 2) + 1] * 255));
     }
 }
