@@ -46,10 +46,9 @@ public class ClipDrawCmd extends AbstractDrawCmd {
         // Set the transform to the base, which is fact where the page
         // lies in the viewport, very dynamic.
         g.setTransform(base);
-        // apply the clip, which is always the initial paper size,
-        if (!g.getClip().getBounds().equals(clip.getBounds())) {
+//        if (!g.getClip().getBounds().equals(clip.getBounds())) {// apply the clip, which is always the initial paper size,
             g.setClip(clip);
-        }
+//        }
         // apply the af, which places the clip in the correct location
         g.setTransform(af);
         if (currentShape != null && !disableClipping) {
@@ -60,9 +59,9 @@ public class ClipDrawCmd extends AbstractDrawCmd {
 //            g.setColor(tmp);
 //            g.setComposite(AlphaComposite.getInstance(rule, alpha));
             // apply the new clip
-            if (!g.getClip().getBounds().equals(currentShape.getBounds())) {
+//            if (!g.getClip().getBounds().equals(currentShape.getBounds())) {
                 g.clip(currentShape);
-            }
+//            }
         }
         return currentShape;
     }
