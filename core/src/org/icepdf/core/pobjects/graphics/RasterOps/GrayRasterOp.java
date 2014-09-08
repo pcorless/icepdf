@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.graphics.RasterOps;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
 import java.awt.image.RasterOp;
 import java.awt.image.WritableRaster;
@@ -26,21 +27,18 @@ public class GrayRasterOp implements RasterOp {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
 
-        int[] values = new int[1];
-        int width = src.getWidth();
-        int height = src.getHeight();
+        // may have to add some instance of checks
+        byte[] srcPixels = ((DataBufferByte) src.getDataBuffer()).getData();
+        byte[] destPixels = ((DataBufferByte) dest.getDataBuffer()).getData();
         boolean defaultDecode = 0.0f == decode[0];
 
         int Y;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                src.getPixel(x, y, values);
-                Y = values[0];
-                Y = defaultDecode ? 255 - Y : Y;
-                Y = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
-                values[0] = Y;
-                dest.setPixel(x, y, values);
-            }
+        int bands = src.getNumBands();
+        for (int pixel = 0; pixel < srcPixels.length; pixel += bands) {
+            Y = srcPixels[pixel] & 0xff;
+            Y = defaultDecode ? 255 - Y : Y;
+            Y = (Y < 0) ? (byte) 0 : (Y > 255) ? (byte) 0xFF : (byte) Y;
+            destPixels[pixel] = (byte) Y;
         }
         return dest;
     }

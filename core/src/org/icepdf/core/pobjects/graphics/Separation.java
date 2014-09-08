@@ -22,6 +22,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>Separation Color Space background:</p>
@@ -83,6 +84,8 @@ public class Separation extends PColorSpace {
     private boolean isNone;
     public static final String COLORANT_NONE = "none";
     private float tint = 1.0f;
+    // basic cache to speed up the lookup.
+    private ConcurrentHashMap<Integer, Color> colorTable;
 
     /**
      * Create a new Seperation colour space.  Separation is specified using
@@ -97,6 +100,7 @@ public class Separation extends PColorSpace {
     protected Separation(Library l, HashMap h, Object name, Object alternateSpace, Object tintTransform) {
         super(l, h);
         alternate = getColorSpace(l, alternateSpace);
+        colorTable = new ConcurrentHashMap<Integer, Color>(256);
 
         this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));
         // see if name can be converted to a known colour.
@@ -181,8 +185,20 @@ public class Separation extends PColorSpace {
             return alternate.getColor(alternateColour);
         }
         if (alternate != null && !isNone) {
-            float y[] = tintTransform.calculate(reverse(components));
-            return alternate.getColor(reverse(y));
+            // component is our key which we can use to avoid doing the tintTransform.
+            int key = 0;
+            for (int i = 0, bit = 0, max = components.length; i < max; i++, bit += 8) {
+                key |= (((int) (components[i] * 255) & 0xff) << bit);
+            }
+            Color color = colorTable.get(key);
+            if (color == null) {
+                float y[] = tintTransform.calculate(reverse(components));
+                color = alternate.getColor(reverse(y));
+                colorTable.put(key, color);
+                return color;
+            } else {
+                return color;
+            }
         }
         if (isNone) {
             return new Color(0, 0, 0, 0);

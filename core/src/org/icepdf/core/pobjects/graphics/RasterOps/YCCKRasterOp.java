@@ -3,6 +3,7 @@ package org.icepdf.core.pobjects.graphics.RasterOps;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.DataBufferByte;
 import java.awt.image.Raster;
 import java.awt.image.RasterOp;
 import java.awt.image.WritableRaster;
@@ -29,51 +30,44 @@ public class YCCKRasterOp implements RasterOp {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
 
-        float[] origValues = new float[src.getNumBands()];
-        double[] pixels = new double[4];
+        // may have to add some instance of checks
+        byte[] srcPixels = ((DataBufferByte) src.getDataBuffer()).getData();
+        byte[] destPixels = ((DataBufferByte) dest.getDataBuffer()).getData();
+
         double Y, Cb, Cr, K;
         double lastY = -1, lastCb = -1, lastCr = -1, lastK = -1;
-        double c = 0, m = 0, y2 = 0, k = 0;
+        int c = 0, m = 0, y2 = 0, k = 0;
 
-        int width = src.getWidth();
-        int height = src.getHeight();
+        int bands = src.getNumBands();
+        for (int pixel = 0; pixel < srcPixels.length; pixel += bands) {
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
+            Y = (srcPixels[pixel] & 0xff);
+            Cb = (srcPixels[pixel + 1] & 0xff);
+            Cr = (srcPixels[pixel + 2] & 0xff);
+            K = (srcPixels[pixel + 3] & 0xff);
 
-                src.getPixel(x, y, origValues);
+            if (!(lastY == Y && lastCb == Cb && lastCr == Cr && lastK == K)) {
 
-                Y = origValues[0];
-                Cb = origValues[1];
-                Cr = origValues[2];
-                K = origValues[3];
+                // intel codecs, http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
+                // Intel IPP conversion for JPEG codec.
+                c = 255 - (int) (Y + (1.402 * Cr) - 179.456);
+                m = 255 - (int) (Y - (0.34414 * Cb) - (0.71413636 * Cr) + 135.45984);
+                y2 = 255 - (int) (Y + (1.7718 * Cb) - 226.816);
+                k = (int) K;
 
-                if (!(lastY == y && lastCb == Cb && lastCr == Cr && lastK == K)) {
-
-                    // intel codecs, http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
-                    // Intel IPP conversion for JPEG codec.
-                    c = 255 - (Y + (1.402 * Cr) - 179.456);
-                    m = 255 - (Y - (0.34414 * Cb) - (0.71413636 * Cr) + 135.45984);
-                    y2 = 255 - (Y + (1.7718 * Cb) - 226.816);
-                    k = K;
-
-                    c = clip(0, 255, c);
-                    m = clip(0, 255, m);
-                    y2 = clip(0, 255, y2);
-                }
-
-                lastY = Y;
-                lastCb = Cb;
-                lastCr = Cr;
-                lastK = K;
-
-                pixels[0] = c;
-                pixels[1] = m;
-                pixels[2] = y2;
-                pixels[3] = k;
-
-                dest.setPixel(x, y, pixels);
+                c = clip(0, 255, c);
+                m = clip(0, 255, m);
+                y2 = clip(0, 255, y2);
             }
+
+            lastY = Y;
+            lastCb = Cb;
+            lastCr = Cr;
+            lastK = K;
+            destPixels[pixel] = (byte) (c & 0xff);
+            destPixels[pixel + 1] = (byte) (m & 0xff);
+            destPixels[pixel + 2] = (byte) (y2 & 0xff);
+            destPixels[pixel + 3] = (byte) (k & 0xff);
         }
         return dest;
     }
@@ -106,7 +100,7 @@ public class YCCKRasterOp implements RasterOp {
      * @param value   value to clip.
      * @return clipped value.
      */
-    private static double clip(double floor, double ceiling, double value) {
+    private static int clip(int floor, int ceiling, int value) {
         if (value < floor) {
             value = floor;
         }
