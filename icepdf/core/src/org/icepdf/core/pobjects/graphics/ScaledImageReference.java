@@ -16,12 +16,12 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
@@ -111,13 +111,13 @@ public class ScaledImageReference extends CachedImageReference {
                 if (scaleFactor < 1.0) {
                     width = (int) Math.ceil(width * scaleFactor);
                     height = (int) Math.ceil(height * scaleFactor);
-                    ColorModel colorModel = image.getColorModel();
-                    BufferedImage scaled = new BufferedImage(
-                            colorModel,
-                            colorModel.createCompatibleWritableRaster(width, height),
-                            image.isAlphaPremultiplied(),
-                            null
-                    );
+
+                    BufferedImage scaled;
+                    if (ImageUtility.hasAlpha(image)) {
+                        scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                    } else {
+                        scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+                    }
                     Graphics2D g = scaled.createGraphics();
                     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                     g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
