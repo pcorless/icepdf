@@ -522,7 +522,6 @@ public class ImageUtility {
      * @param baseImage base image in which the mask weill be applied to
      */
     public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
-        long start = System.currentTimeMillis();
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
         baseImage = images[0];
@@ -556,8 +555,6 @@ public class ImageUtility {
         }
         baseImage.flush();
         baseImage = argbImage;
-        long end = System.currentTimeMillis();
-        System.out.println("decode " + (end - start));
         return baseImage;
     }
 
