@@ -522,7 +522,7 @@ public class ImageUtility {
      * @param baseImage base image in which the mask weill be applied to
      */
     public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
-
+        long start = System.currentTimeMillis();
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
         baseImage = images[0];
@@ -556,7 +556,8 @@ public class ImageUtility {
         }
         baseImage.flush();
         baseImage = argbImage;
-
+        long end = System.currentTimeMillis();
+        System.out.println("decode " + (end - start));
         return baseImage;
     }
 
@@ -582,14 +583,18 @@ public class ImageUtility {
             imageMask = new BufferedImage(baseWidth,
                     baseHeight, BufferedImage.TYPE_INT_ARGB);
         }
-
-        // apply the mask by simply painting white to the base image where
-        // the mask specified no colour.
-        for (int y = 0; y < baseHeight; y++) {
-            for (int x = 0; x < baseWidth; x++) {
-                int maskPixel = baseImage.getRGB(x, y);
-                if (!(maskPixel == -1 || maskPixel == 0xffffff)) {
-                    imageMask.setRGB(x, y, fill.getRGB());
+        byte[] srcPixels = ((DataBufferByte) baseImage.getRaster().getDataBuffer()).getData();
+        int[] destPixels = ((DataBufferInt) imageMask.getRaster().getDataBuffer()).getData();
+        int fillColor = fill.getRGB();
+        for (int srcPixel = 0, destPixel = 0; srcPixel < srcPixels.length; srcPixel++, destPixel += 8) {
+            int maskByte = srcPixels[srcPixel] & 0xff;
+            // grab the bits and apply the mask.
+            for (int byteCount = 7, count = 0; byteCount >= 0; byteCount--, count++) {
+                int maskPixel = (maskByte >> byteCount) & 1;
+                if (maskPixel != 1) {
+                    destPixels[destPixel + count] = fillColor;
+                } else {
+                    destPixels[destPixel + count] = 0xff;
                 }
             }
         }
