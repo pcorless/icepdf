@@ -581,18 +581,40 @@ public class ImageUtility {
                     baseHeight, BufferedImage.TYPE_INT_ARGB);
         }
         byte[] srcPixels = ((DataBufferByte) baseImage.getRaster().getDataBuffer()).getData();
-        int[] destPixels = ((DataBufferInt) imageMask.getRaster().getDataBuffer()).getData();
-        int fillColor = fill.getRGB();
-        for (int srcPixel = 0, destPixel = 0; srcPixel < srcPixels.length; srcPixel++, destPixel += 8) {
-            int maskByte = srcPixels[srcPixel] & 0xff;
-            // grab the bits and apply the mask.
-            for (int byteCount = 7, count = 0; byteCount >= 0; byteCount--, count++) {
-                int maskPixel = (maskByte >> byteCount) & 1;
-                if (maskPixel != 1) {
-                    destPixels[destPixel + count] = fillColor;
-                } else {
-                    destPixels[destPixel + count] = 0xff;
+        // this is fast but only works on int[]
+        // todo revisit masking to try and just use the raw data.
+        if (imageMask.getRaster().getDataBuffer() instanceof DataBufferInt) {
+            int[] destPixels = ((DataBufferInt) imageMask.getRaster().getDataBuffer()).getData();
+            int fillColor = fill.getRGB();
+            for (int srcPixel = 0, destPixel = 0; srcPixel < srcPixels.length; srcPixel++, destPixel += 8) {
+                int maskByte = srcPixels[srcPixel] & 0xff;
+                // grab the bits and apply the mask.
+                for (int byteCount = 7, count = 0; byteCount >= 0; byteCount--, count++) {
+                    int maskPixel = (maskByte >> byteCount) & 1;
+                    if (maskPixel != 1) {
+                        destPixels[destPixel + count] = fillColor;
+                    } else {
+                        destPixels[destPixel + count] = 0xff;
+                    }
                 }
+            }
+        } else if (imageMask.getRaster().getDataBuffer() instanceof DataBufferByte) {
+            // apply the mask by simply painting white to the base image where
+            // the mask specified no colour.
+            int fillColor = fill.getRGB();
+            int[] srcBand = new int[baseWidth];
+            for (int i = 0; i < baseHeight; i++) {
+                baseImage.getRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
+                // apply the soft mask blending
+                for (int j = 0; j < baseWidth; j++) {
+                    int maskPixel = srcBand[j];
+                    if (!(maskPixel == -1 || maskPixel == 0xffffff)) {
+                        srcBand[j] = fillColor;
+                    } else {
+                        srcBand[j] = 0xff;
+                    }
+                }
+                imageMask.setRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
             }
         }
         // clean up the old image.
