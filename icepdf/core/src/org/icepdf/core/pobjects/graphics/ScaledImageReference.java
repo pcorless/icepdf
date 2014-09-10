@@ -92,9 +92,8 @@ public class ScaledImageReference extends CachedImageReference {
         BufferedImage image = null;
         try {
             // get the stream image if need, otherwise scale what you have.
-            if (image == null) {
-                image = imageStream.getImage(fillColor, resources);
-            }
+            image = imageStream.getImage(fillColor, resources);
+
             if (image != null) {
                 // get eh original image width.
                 int width = imageStream.getWidth();
