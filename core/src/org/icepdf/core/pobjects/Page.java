@@ -21,6 +21,7 @@ import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -188,6 +189,10 @@ public class Page extends Dictionary {
 
     // page has default rotation value
     private float pageRotation = 0;
+
+    private int pageIndex;
+
+    private WatermarkCallback watermarkCallback;
 
     /**
      * Create a new Page object.  A page object represents a PDF object that
@@ -413,6 +418,17 @@ public class Page extends Dictionary {
     }
 
     /**
+     * Sets a page watermark implementation to be painted on top of the page
+     * content.  Watermark can be specified for each page or once by calling
+     * document.setWatermark().
+     *
+     * @param watermarkCallback watermark implementation.
+     */
+    public void setWatermarkCallback(WatermarkCallback watermarkCallback) {
+        this.watermarkCallback = watermarkCallback;
+    }
+
+    /**
      * Paints the contents of this page to the graphics context using
      * the specified rotation, zoom, rendering hints and page boundary.
      *
@@ -465,6 +481,9 @@ public class Page extends Dictionary {
         AffineTransform at = getPageTransform(boundary, userRotation, userZoom);
         g2.transform(at);
 
+        // Store graphic context state before page content is painted
+        AffineTransform prePagePaintState = g2.getTransform();
+
         PRectangle pageBoundary = getPageBoundary(boundary);
         float x = 0 - pageBoundary.x;
         float y = 0 - (pageBoundary.y - pageBoundary.height);
@@ -499,6 +518,14 @@ public class Page extends Dictionary {
 
         // one last repaint, just to be sure
         notifyPaintPageListeners();
+
+        // apply old graphics context state, to more accurately paint water mark
+        g2.setTransform(prePagePaintState);
+        if (watermarkCallback != null) {
+            watermarkCallback.paintWatermark(g, this, renderHintType,
+                    boundary, userRotation, userZoom);
+        }
+
     }
 
     /**
@@ -1486,6 +1513,20 @@ public class Page extends Dictionary {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Gets the zero based page index of this page as define by the order
+     * in the page tree.  This does not correspond to a page's label name.
+     *
+     * @return zero base page index.
+     */
+    public int getPageIndex() {
+        return pageIndex;
+    }
+
+    protected void setPageIndex(int pageIndex) {
+        this.pageIndex = pageIndex;
     }
 
     /**
