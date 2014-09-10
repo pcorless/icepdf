@@ -20,6 +20,7 @@ import org.icepdf.core.application.ProductInfo;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
+import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;
@@ -89,6 +90,8 @@ public class Document {
         }
     }
 
+    // optional watermark callback
+    private WatermarkCallback watermarkCallback;
 
     // core catalog, root of the document hierarchy.
     private Catalog catalog;
@@ -134,6 +137,17 @@ public class Document {
      * one PDF document.
      */
     public Document() {
+    }
+
+    /**
+     * Sets a page watermark implementation to be painted on top of the page
+     * content.  Watermark can be specified for each page or once by calling
+     * document.setWatermark().
+     *
+     * @param watermarkCallback watermark implementation.
+     */
+    public void setWatermarkCallback(WatermarkCallback watermarkCallback) {
+        this.watermarkCallback = watermarkCallback;
     }
 
     /**
@@ -1208,7 +1222,11 @@ public class Document {
      */
     public PageTree getPageTree() {
         if (catalog != null) {
-            return catalog.getPageTree();
+            PageTree pageTree = catalog.getPageTree();
+            if (pageTree != null) {
+                pageTree.setWatermarkCallback(watermarkCallback);
+            }
+            return pageTree;
         } else {
             return null;
         }

@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.util.Library;
 
 import java.lang.ref.WeakReference;
@@ -66,6 +67,8 @@ public class PageTree extends Dictionary {
     // loaded resource flag, we can't use null check as some trees don't have
     // resources. 
     private boolean loadedResources;
+
+    private WatermarkCallback watermarkCallback;
 
     /**
      * Inheritable rotation factor by child pages.
@@ -217,7 +220,7 @@ public class PageTree extends Dictionary {
      *
      * @param r reference to a page in the page tree.
      * @return page number of the specified reference.  If no page is found, -1
-     *         is returned.
+     * is returned.
      */
     public int getPageNumber(Reference r) {
         Page pg = (Page) library.getObject(r);
@@ -331,6 +334,17 @@ public class PageTree extends Dictionary {
     }
 
     /**
+     * Sets a page watermark implementation to be painted on top of the page
+     * content.  Watermark can be specified for each page or once by calling
+     * document.setWatermark().
+     *
+     * @param watermarkCallback watermark implementation.
+     */
+    protected void setWatermarkCallback(WatermarkCallback watermarkCallback) {
+        this.watermarkCallback = watermarkCallback;
+    }
+
+    /**
      * In a PDF file there is a root Pages object, which contains
      * children Page objects, as well as children PageTree objects,
      * all arranged in a tree.
@@ -365,6 +379,12 @@ public class PageTree extends Dictionary {
     public Page getPage(int pageNumber) {
         if (pageNumber < 0)
             return null;
+        Page page = getPagePotentiallyNotInitedByRecursiveIndex(pageNumber);
+        // pass in the watermark, even null to wipe a previous watermark
+        if (page != null) {
+            page.setWatermarkCallback(watermarkCallback);
+            page.setPageIndex(pageNumber);
+        }
         return getPagePotentiallyNotInitedByRecursiveIndex(pageNumber);
     }
 
