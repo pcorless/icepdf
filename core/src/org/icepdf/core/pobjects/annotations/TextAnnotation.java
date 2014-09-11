@@ -260,7 +260,7 @@ public class TextAnnotation extends MarkupAnnotation {
         try {
             ContentParser cp = ContentParserFactory.getInstance()
                     .getContentParser(library, null);
-            shapes = cp.parse(new byte[][]{iconContentString.getBytes()}).getShapes();
+            shapes = cp.parse(new byte[][]{iconContentString.getBytes()}, null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
             logger.log(Level.FINE, "Error building named icon.", e);

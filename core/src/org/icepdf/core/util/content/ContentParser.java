@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.util.content;
 
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 
@@ -69,7 +70,8 @@ public interface ContentParser {
      * @throws InterruptedException thread was interrupted.
      * @throws IOException          io exception during the pars.
      */
-    ContentParser parse(byte[][] streamBytes) throws InterruptedException, IOException;
+    ContentParser parse(byte[][] streamBytes, Page page)
+            throws InterruptedException, IOException;
 
     /**
      * Optimized text parsing call which will ignore any instructions that

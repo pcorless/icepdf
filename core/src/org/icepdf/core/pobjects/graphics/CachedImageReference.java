@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 
 import java.awt.*;
@@ -34,8 +35,10 @@ public abstract class CachedImageReference extends ImageReference {
     private ImagePool imagePool;
     private boolean isNull;
 
-    protected CachedImageReference(ImageStream imageStream, Color fillColor, Resources resources) {
-        super(imageStream, fillColor, resources);
+    protected CachedImageReference(ImageStream imageStream, Color fillColor,
+                                   Resources resources, int imageIndex,
+                                   Page page) {
+        super(imageStream, fillColor, resources, imageIndex, page);
         imagePool = imageStream.getLibrary().getImagePool();
         this.reference = imageStream.getPObjectReference();
     }

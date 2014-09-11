@@ -157,6 +157,8 @@ public interface DocumentViewController {
 
     public Cursor getViewCursor(final int cursorType);
 
+    public int getViewCursor();
+
     public void setViewKeyListener(KeyListener l);
 
     public Adjustable getHorizontalScrollBar();

@@ -298,7 +298,7 @@ public class TilingPattern extends Stream implements Pattern {
                 .getContentParser(library, resources);
         cp.setGraphicsState(parentGraphicState);
         try {
-            shapes = cp.parse(new byte[][]{getDecodedStreamBytes()}).getShapes();
+            shapes = cp.parse(new byte[][]{getDecodedStreamBytes()}, null).getShapes();
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error processing tiling pattern.", e);
         }

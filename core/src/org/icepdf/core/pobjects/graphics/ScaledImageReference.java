@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
 import org.icepdf.core.pobjects.ImageUtility;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 
@@ -41,8 +42,9 @@ public class ScaledImageReference extends CachedImageReference {
     private int width;
     private int height;
 
-    protected ScaledImageReference(ImageStream imageStream, Color fillColor, Resources resources) {
-        super(imageStream, fillColor, resources);
+    protected ScaledImageReference(ImageStream imageStream, Color fillColor,
+                                   Resources resources, int imageIndex, Page page) {
+        super(imageStream, fillColor, resources, imageIndex, page);
 
         // get eh original image width.
         width = imageStream.getWidth();
@@ -59,8 +61,8 @@ public class ScaledImageReference extends CachedImageReference {
     }
 
     public ScaledImageReference(ImageReference imageReference, Color fillColor, Resources resources,
-                                int width, int height) {
-        super(imageReference.getImageStream(), fillColor, resources);
+                                int width, int height, int imageIndex, Page page) {
+        super(imageReference.getImageStream(), fillColor, resources, imageIndex, page);
 
         this.width = width;
         this.height = height;
@@ -90,6 +92,7 @@ public class ScaledImageReference extends CachedImageReference {
 
     public BufferedImage call() {
         BufferedImage image = null;
+        long start = System.nanoTime();
         try {
             // get the stream image if need, otherwise scale what you have.
             image = imageStream.getImage(fillColor, resources);
@@ -130,6 +133,8 @@ public class ScaledImageReference extends CachedImageReference {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString());
         }
+        long end = System.nanoTime();
+        notifyImagePageEvents((end - start));
         return image;
     }
 }
