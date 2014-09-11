@@ -730,7 +730,7 @@ public abstract class Annotation extends Dictionary {
                 try {
                     ContentParser cp = ContentParserFactory.getInstance()
                             .getContentParser(library, res);
-                    shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}).getShapes();
+                    shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}, null).getShapes();
                 } catch (Exception e) {
                     shapes = new Shapes();
                     logger.log(Level.FINE, "Error initializing annotation content stream.", e);

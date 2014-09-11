@@ -56,9 +56,9 @@ public class Library {
     static {
         try {
             commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 10);
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 5);
             if (commonPoolThreads < 1) {
-                commonPoolThreads = 10;
+                commonPoolThreads = 5;
             }
         } catch (NumberFormatException e) {
             log.warning("Error reading buffered scale factor");
@@ -66,9 +66,9 @@ public class Library {
 
         try {
             painterPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.painterThreadPoolSize", 1);
+                    Defs.intProperty("org.icepdf.core.library.painterThreadPoolSize", 2);
             if (painterPoolThreads < 1) {
-                painterPoolThreads = 1;
+                painterPoolThreads = 2;
             }
         } catch (NumberFormatException e) {
             log.warning("Error reading buffered scale factor");
@@ -76,9 +76,9 @@ public class Library {
 
         try {
             imagePoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.imageThreadPoolSize", 5);
+                    Defs.intProperty("org.icepdf.core.library.imageThreadPoolSize", 10);
             if (imagePoolThreads < 1) {
-                imagePoolThreads = 5;
+                imagePoolThreads = 10;
             }
         } catch (NumberFormatException e) {
             log.warning("Error reading buffered scale factor");

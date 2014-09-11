@@ -122,6 +122,7 @@ public class Shapes {
      */
     public void paint(Graphics2D g) {
         try {
+            interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());
             Shape clip = g.getClip();
 
@@ -144,11 +145,14 @@ public class Shapes {
         } catch (Exception e) {
             logger.log(Level.FINE, "Error painting shapes.", e);
         }
-        interrupted = false;
     }
 
     public void interruptPaint() {
         interrupted = true;
+    }
+
+    public boolean isInterrupted() {
+        return interrupted;
     }
 
     /**

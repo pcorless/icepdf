@@ -28,6 +28,8 @@ import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.common.views.listeners.DefaultPageViewLoadingListener;
+import org.icepdf.ri.common.views.listeners.PageViewLoadingListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -129,6 +131,9 @@ public class PageViewComponentImpl extends
     //    private final Object isDirtyLock = new Object();
     private boolean disposing = false;
 
+    // track loading events for wait icon
+    private PageViewLoadingListener pageLoadingListener;
+
     // current clip
     private Rectangle clipBounds;
     private Rectangle oldClipBounds;
@@ -196,6 +201,9 @@ public class PageViewComponentImpl extends
         addFocusListener(this);
 
         addComponentListener(this);
+
+        // page loading progress
+        pageLoadingListener = new DefaultPageViewLoadingListener(this, documentViewController);
 
         // needed to propagate mouse events.
         this.documentViewModel = documentViewModel;
@@ -337,6 +345,7 @@ public class PageViewComponentImpl extends
         Page page = pageTree.getPage(pageIndex);
         if (page != null) {
             page.addPaintPageListener(this);
+            page.addPageProcessingListener(pageLoadingListener);
         }
         return page;
     }
@@ -344,6 +353,7 @@ public class PageViewComponentImpl extends
     public void setDocumentViewCallback(DocumentView parentDocumentView) {
         this.parentDocumentView = parentDocumentView;
         documentViewController = this.parentDocumentView.getParentViewController();
+        pageLoadingListener.setDocumentViewController(documentViewController);
     }
 
     public int getPageIndex() {
@@ -961,6 +971,7 @@ public class PageViewComponentImpl extends
             Page currentPage = getPage();
             if (currentPage != null) {
                 currentPage.removePaintPageListener(this);
+                currentPage.removePageProcessingListener(pageLoadingListener);
             }
         }
 

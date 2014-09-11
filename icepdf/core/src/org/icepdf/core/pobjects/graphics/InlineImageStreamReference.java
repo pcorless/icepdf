@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 
@@ -36,8 +37,10 @@ public class InlineImageStreamReference extends ImageReference {
     private static final Logger logger =
             Logger.getLogger(InlineImageStreamReference.class.toString());
 
-    public InlineImageStreamReference(ImageStream imageStream, Color fillColor, Resources resources) {
-        super(imageStream, fillColor, resources);
+    public InlineImageStreamReference(ImageStream imageStream, Color fillColor,
+                                      Resources resources, int iamgeIndex,
+                                      Page page) {
+        super(imageStream, fillColor, resources, iamgeIndex, page);
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
@@ -71,12 +74,15 @@ public class InlineImageStreamReference extends ImageReference {
 
     public BufferedImage call() {
         BufferedImage image = null;
+        long start = System.nanoTime();
         try {
             image = imageStream.getImage(fillColor, resources);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString(), e);
         }
+        long end = System.nanoTime();
+        notifyImagePageEvents((end - start));
         return image;
     }
 }

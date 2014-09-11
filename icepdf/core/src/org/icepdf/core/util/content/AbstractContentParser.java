@@ -32,6 +32,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -88,6 +89,9 @@ public abstract class AbstractContentParser implements ContentParser {
     // when parsing a type3 font we need to keep track of the the scale factor
     // of the device space ctm.
     protected float glyph2UserSpaceScale = 1.0f;
+
+    // xObject image count;
+    protected AtomicInteger imageIndex = new AtomicInteger(1);
 
     // stack to help with the parse
     protected Stack<Object> stack = new Stack<Object>();
@@ -152,7 +156,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @throws InterruptedException if current parse thread is interrupted.
      * @throws java.io.IOException  unexpected end of content stream.
      */
-    public abstract ContentParser parse(byte[][] streamBytes)
+    public abstract ContentParser parse(byte[][] streamBytes, Page page)
             throws InterruptedException, IOException;
 
     /**
@@ -515,7 +519,8 @@ public abstract class AbstractContentParser implements ContentParser {
      */
     protected static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
                                               Shapes shapes, Resources resources,
-                                              boolean viewParse) {
+                                              boolean viewParse, // events
+                                              AtomicInteger imageIndex, Page page) {
         Name xobjectName = (Name) stack.pop();
         // Form XObject
         if (resources != null && resources.isForm(xobjectName)) {
@@ -641,7 +646,9 @@ public abstract class AbstractContentParser implements ContentParser {
 
                 // create an ImageReference for future decoding
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
-                        imageStream, resources, graphicState.getFillColor());
+                        imageStream, resources, graphicState.getFillColor(),
+                        imageIndex.get(), page);
+                imageIndex.incrementAndGet();
 
                 if (imageReference != null) {
                     AffineTransform af =

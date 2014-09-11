@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Defs;
 
@@ -88,16 +89,17 @@ public class ImageReferenceFactory {
      * @return newly create ImageReference.
      */
     public static org.icepdf.core.pobjects.graphics.ImageReference
-    getImageReference(ImageStream imageStream, Resources resources, Color fillColor) {
+    getImageReference(ImageStream imageStream, Resources resources, Color fillColor,
+                      Integer imageIndex, Page page) {
         switch (scaleType) {
             case SCALED:
-                return new ScaledImageReference(imageStream, fillColor, resources);
+                return new ScaledImageReference(imageStream, fillColor, resources, imageIndex, page);
             case SMOOTH_SCALED:
-                return new SmoothScaledImageReference(imageStream, fillColor, resources);
+                return new SmoothScaledImageReference(imageStream, fillColor, resources, imageIndex, page);
             case MIP_MAP:
-                return new MipMappedImageReference(imageStream, fillColor, resources);
+                return new MipMappedImageReference(imageStream, fillColor, resources, imageIndex, page);
             default:
-                return new ImageStreamReference(imageStream, fillColor, resources);
+                return new ImageStreamReference(imageStream, fillColor, resources, imageIndex, page);
         }
     }
 

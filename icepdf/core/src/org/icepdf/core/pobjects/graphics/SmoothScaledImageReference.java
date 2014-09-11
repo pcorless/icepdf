@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -61,8 +62,10 @@ public class SmoothScaledImageReference extends CachedImageReference {
     private int width;
     private int height;
 
-    protected SmoothScaledImageReference(ImageStream imageStream, Color fillColor, Resources resources) {
-        super(imageStream, fillColor, resources);
+    protected SmoothScaledImageReference(ImageStream imageStream, Color fillColor,
+                                         Resources resources, int imageIndex,
+                                         Page page) {
+        super(imageStream, fillColor, resources, imageIndex, page);
 
         // get eh original image width.
         width = imageStream.getWidth();
@@ -88,6 +91,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
 
     public BufferedImage call() {
         BufferedImage image = null;
+        long start = System.nanoTime();
         try {
             // get the stream image if need, otherwise scale what you have.
             if (image == null) {
@@ -154,6 +158,8 @@ public class SmoothScaledImageReference extends CachedImageReference {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString());
         }
+        long end = System.nanoTime();
+        notifyImagePageEvents((end - start));
         return image;
     }
 

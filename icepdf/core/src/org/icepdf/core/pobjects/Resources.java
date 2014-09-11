@@ -220,6 +220,27 @@ public class Resources extends Dictionary {
     }
 
     /**
+     * Gets a rough count of the images resources associated with this page. Does
+     * not include inline images.
+     *
+     * @return rough count of images resources.
+     */
+    public int getImageCount() {
+        int count = 0;
+        if (xobjects != null) {
+            for (Object tmp : xobjects.values()) {
+                if (tmp instanceof Reference) {
+                    tmp = library.getObject((Reference) tmp);
+                    if (tmp instanceof ImageStream) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    /**
      * @param s
      * @return
      */
@@ -249,7 +270,7 @@ public class Resources extends Dictionary {
      *
      * @param name of object to find.
      * @return tiling or shading type pattern object.  If not constructor is
-     *         found, then null is returned.
+     * found, then null is returned.
      */
     public Pattern getPattern(Name name) {
         if (patterns != null) {
@@ -300,7 +321,7 @@ public class Resources extends Dictionary {
      *
      * @param namedReference name of ExtGState object to try and find.
      * @return ExtGState which contains the named references ExtGState attrbutes,
-     *         if the namedReference could not be found null is returned.
+     * if the namedReference could not be found null is returned.
      */
     public ExtGState getExtGState(Name namedReference) {
         ExtGState gsState = null;

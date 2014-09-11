@@ -15,8 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.events.PaintPageEvent;
-import org.icepdf.core.events.PaintPageListener;
+import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
@@ -172,6 +171,8 @@ public class Page extends Dictionary {
 
     // the collection of objects listening for page paint events
     private final List<PaintPageListener> paintPageListeners = new ArrayList<PaintPageListener>(8);
+    // the collection of objects listening for page loading events
+    private final List<PageLoadingListener> pageLoadingListeners = new ArrayList<PageLoadingListener>();
 
     // Defines the boundaries of the physical medium on which the page is
     // intended to be displayed on.
@@ -191,6 +192,9 @@ public class Page extends Dictionary {
     private float pageRotation = 0;
 
     private int pageIndex;
+    private int imageCount;
+    private boolean pageInitialized;
+    private boolean pagePainted;
 
     private WatermarkCallback watermarkCallback;
 
@@ -332,7 +336,7 @@ public class Page extends Dictionary {
             if (inited) {
                 return;
             }
-
+            pageInitialized = false;
             // set the initiated flag, first as there are couple corner
             // cases where the content parsing can call page.init() again
             // from the same thread.
@@ -347,11 +351,16 @@ public class Page extends Dictionary {
             // Get the value of the page's content entry
             initPageContents();
 
+            // send out loading event.
+            imageCount = resources.getImageCount();
+            notifyPageLoadingStarted(contents.size(), resources.getImageCount());
+
             /**
              * Finally iterate through the contents vector and concat all of the
              * the resource streams together so that the content parser can
              * go to town and build all of the page's shapes.
              */
+            notifyPageInitializationStarted();
             if (contents != null) {
                 try {
                     ContentParser cp = ContentParserFactory.getInstance()
@@ -374,13 +383,14 @@ public class Page extends Dictionary {
 
                     // pass in option group references into parse.
                     if (streams.length > 0) {
-                        shapes = cp.parse(streams).getShapes();
+                        shapes = cp.parse(streams, this).getShapes();
                     }
 
                 } catch (Exception e) {
                     shapes = new Shapes();
                     logger.log(Level.FINE, "Error initializing Page.", e);
                 }
+
             }
             // empty page, nothing to do.
             else {
@@ -392,7 +402,7 @@ public class Page extends Dictionary {
             inited = false;
             logger.log(Level.SEVERE, "Page initializing thread interrupted.", e);
         }
-
+        notifyPageInitializationEnded(inited);
     }
 
     /**
@@ -558,9 +568,11 @@ public class Page extends Dictionary {
     }
 
     private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) {
+
         // draw page content
         if (shapes != null) {
-
+            pagePainted = false;
+            notifyPagePaintingStarted(shapes.getShapesCount());
             AffineTransform pageTransform = g2.getTransform();
             Shape pageClip = g2.getClip();
 
@@ -570,6 +582,8 @@ public class Page extends Dictionary {
 
             g2.setTransform(pageTransform);
             g2.setClip(pageClip);
+        } else {
+            notifyPagePaintingStarted(0);
         }
         // paint annotations if available and desired.
         if (annotations != null && paintAnnotations) {
@@ -615,8 +629,15 @@ public class Page extends Dictionary {
                 }
             }
         }
+        pagePainted = true;
+        // painting is complete interrupted or not.
+        notifyPagePaintingEnded(shapes.isInterrupted());
         // one last repaint, just to be sure
         notifyPaintPageListeners();
+        // check image count if no images we are done.
+        if (imageCount == 0 || (pageInitialized && pagePainted)) {
+            notifyPageLoadingEnded();
+        }
     }
 
     /**
@@ -1441,7 +1462,7 @@ public class Page extends Dictionary {
      *
      * @return list of text sprites for the given page.
      */
-    public synchronized PageText getViewText() {
+    public PageText getViewText() {
         if (!inited) {
             init();
         }
@@ -1525,6 +1546,38 @@ public class Page extends Dictionary {
         return pageIndex;
     }
 
+    /**
+     * Gets the xObject image cound for this page which does not include
+     * any inline images.
+     *
+     * @return xObject image count.
+     */
+    public int getImageCount() {
+        return imageCount;
+    }
+
+    /**
+     * Returns true if the page is initialized, this is different then init(),
+     * as it tracks if the page has started initialization and we don't want to
+     * do that again,  in this case the init() method has completely finished,
+     * minus any image loading threads.
+     *
+     * @return true if page has completed initialization otherwise false.
+     */
+    public boolean isPageInitialized() {
+        return pageInitialized;
+    }
+
+    /**
+     * Returns true if the page painting is complete regardless if it was
+     * interrupted.
+     *
+     * @return true if the page painting is complete.
+     */
+    public boolean isPagePainted() {
+        return pagePainted;
+    }
+
     protected void setPageIndex(int pageIndex) {
         this.pageIndex = pageIndex;
     }
@@ -1565,25 +1618,95 @@ public class Page extends Dictionary {
         }
     }
 
+    public List<PageLoadingListener> getPageLoadingListeners() {
+        return pageLoadingListeners;
+    }
+
+    public void addPageProcessingListener(PageLoadingListener listener) {
+        // add a listener if it is not already registered
+        synchronized (pageLoadingListeners) {
+            if (!pageLoadingListeners.contains(listener)) {
+                pageLoadingListeners.add(listener);
+            }
+        }
+    }
+
+    public void removePageProcessingListener(PageLoadingListener listener) {
+        // remove a listener if it is already registered
+        synchronized (pageLoadingListeners) {
+            if (pageLoadingListeners.contains(listener)) {
+                pageLoadingListeners.remove(listener);
+            }
+
+        }
+    }
+
+    private void notifyPageLoadingStarted(int contentCount, int imageCount) {
+        PageLoadingEvent pageLoadingEvent =
+                new PageLoadingEvent(this, contentCount, imageCount);
+        PageLoadingListener client;
+        for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+            client = pageLoadingListeners.get(i);
+            client.pageLoadingStarted(pageLoadingEvent);
+        }
+    }
+
+    private void notifyPageInitializationStarted() {
+        PageInitializingEvent pageLoadingEvent =
+                new PageInitializingEvent(this, false);
+        PageLoadingListener client;
+        for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+            client = pageLoadingListeners.get(i);
+            client.pageInitializationStarted(pageLoadingEvent);
+        }
+    }
+
+    private void notifyPagePaintingStarted(int shapesCount) {
+        PagePaintingEvent pageLoadingEvent =
+                new PagePaintingEvent(this, shapesCount);
+        PageLoadingListener client;
+        for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+            client = pageLoadingListeners.get(i);
+            client.pagePaintingStarted(pageLoadingEvent);
+        }
+    }
+
+    private void notifyPagePaintingEnded(boolean interrupted) {
+        pagePainted = true;
+        PagePaintingEvent pageLoadingEvent =
+                new PagePaintingEvent(this, interrupted);
+        PageLoadingListener client;
+        for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+            client = pageLoadingListeners.get(i);
+            client.pagePaintingEnded(pageLoadingEvent);
+        }
+    }
+
+    private void notifyPageInitializationEnded(boolean interrupted) {
+        pageInitialized = true;
+        PageInitializingEvent pageLoadingEvent =
+                new PageInitializingEvent(this, interrupted);
+        PageLoadingListener client;
+        for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+            client = pageLoadingListeners.get(i);
+            client.pageInitializationEnded(pageLoadingEvent);
+        }
+    }
+
+    protected void notifyPageLoadingEnded() {
+
+        PageLoadingEvent pageLoadingEvent =
+                new PageLoadingEvent(this, inited);
+        PageLoadingListener client;
+        for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+            client = pageLoadingListeners.get(i);
+            client.pageLoadingEnded(pageLoadingEvent);
+        }
+    }
+
     public void notifyPaintPageListeners() {
         // create the event object
         PaintPageEvent evt = new PaintPageEvent(this);
-
-        // make a copy of the listener object vector so that it cannot
-        // be changed while we are firing events
-        // NOTE: this is good practise, but most likely a little to heavy
-        //       for this event type
-//        Vector v;
-//        synchronized (this) {
-//            v = (Vector) paintPageListeners.clone();
-//        }
-//
-//        // fire the event to all listeners
-//        PaintPageListener client;
-//        for (int i = v.size() - 1; i >= 0; i--) {
-//            client = (PaintPageListener) v.elementAt(i);
-//            client.paintPage(evt);
-//        }
 
         // fire the event to all listeners
         PaintPageListener client;

@@ -175,7 +175,7 @@ public class Form extends Stream {
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("Parsing form " + getPObjectReference());
                 }
-                shapes = cp.parse(new byte[][]{in}).getShapes();
+                shapes = cp.parse(new byte[][]{in}, null).getShapes();
             } catch (Throwable e) {
                 // reset shapes vector, we don't want to mess up the paint stack
                 shapes = new Shapes();

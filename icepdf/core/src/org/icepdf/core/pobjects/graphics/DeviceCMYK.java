@@ -223,10 +223,14 @@ public class DeviceCMYK extends PColorSpace {
             if (color != null) {
                 return color;
             } else {
-                f = iccCmykColorSpace.toRGB(reverse(f));
-                color = new Color(f[0], f[1], f[2]);
-                iccCmykColorCache.put(key, color);
-                return color;
+                try {
+                    f = iccCmykColorSpace.toRGB(reverse(f));
+                    color = new Color(f[0], f[1], f[2]);
+                    iccCmykColorCache.put(key, color);
+                    return color;
+                } catch (Throwable e) {
+                    logger.warning("Error using iccCmykColorSpace in DeviceCMYK.");
+                }
             }
         }
 

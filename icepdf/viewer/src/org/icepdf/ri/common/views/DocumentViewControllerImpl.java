@@ -133,6 +133,8 @@ public class DocumentViewControllerImpl
 
     protected int viewportFitMode, oldViewportFitMode;
 
+    protected int cursorType;
+
     protected SwingController viewerController;
 
     protected AnnotationCallback annotationCallback;
@@ -872,13 +874,17 @@ public class DocumentViewControllerImpl
         return documentViewModel.getViewToolMode();
     }
 
-    public void setViewCursor(final int currsorType) {
-        Cursor cursor = getViewCursor(currsorType);
+    public void setViewCursor(final int cursorType) {
+        this.cursorType = cursorType;
+        Cursor cursor = getViewCursor(cursorType);
         if (documentViewScrollPane != null) {
-            //documentViewScrollPane.setViewCursor( cursor );
             if (documentViewScrollPane.getViewport() != null)
                 documentViewScrollPane.getViewport().setCursor(cursor);
         }
+    }
+
+    public int getViewCursor() {
+        return cursorType;
     }
 
     public Cursor getViewCursor(final int currsorType) {
