@@ -2939,13 +2939,14 @@ public class SwingController
         if (printHelper == null) {
             MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
             // create the new print help
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
-                    mediaSizeName,
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(), mediaSizeName,
                     PrintQuality.NORMAL);
         }
         // reuse previous print attributes if they exist. 
         else {
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(),
                     printHelper.getDocAttributeSet(),
                     printHelper.getPrintRequestAttributeSet());
         }
@@ -2967,7 +2968,9 @@ public class SwingController
      * @param mediaSize MediaSizeName constant of paper size to print to.
      */
     public void setPrintDefaultMediaSizeName(MediaSizeName mediaSize) {
-        PrintHelper printHelper = new PrintHelper(documentViewController, getPageTree(),
+        PrintHelper printHelper = new PrintHelper(
+                documentViewController.getViewContainer(), getPageTree(),
+                documentViewController.getRotation(),
                 mediaSize,
                 PrintQuality.NORMAL);
         viewModel.setPrintHelper(printHelper);
@@ -3019,11 +3022,12 @@ public class SwingController
         if (printHelper == null) {
             MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
             // create the new print help
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
-                    mediaSizeName,
-                    PrintQuality.NORMAL);
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(),
+                    mediaSizeName, PrintQuality.NORMAL);
         } else {
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(),
                     printHelper.getDocAttributeSet(),
                     printHelper.getPrintRequestAttributeSet());
         }
