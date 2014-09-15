@@ -1147,14 +1147,20 @@ public class ImageUtility {
                     img = new BufferedImage(cm, wr, false, null);
                 }
             }
-        } else if (colourSpace instanceof Separation) {
-            if (colourSpace instanceof Separation &&
-                    ((Separation) colourSpace).isNamedColor()) {
+        } else if (colourSpace instanceof Separation || colourSpace instanceof CalGray) {
+            if (colourSpace instanceof CalGray || ((Separation) colourSpace).isNamedColor()) {
                 DataBuffer db = new DataBufferByte(data, dataLength);
-                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(),
-                        width, height, 1, width, new int[]{0});
-                WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-                img = ImageUtility.convertGrayToRgb(wr, decode);
+                WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
+                int[] cmap = null;
+                if (bitsPerComponent == 1) {
+                    cmap = GRAY_1_BIT_INDEX_TO_RGB;
+                } else if (bitsPerComponent == 2) {
+                    cmap = GRAY_2_BIT_INDEX_TO_RGB;
+                } else if (bitsPerComponent == 4) {
+                    cmap = GRAY_4_BIT_INDEX_TO_RGB;
+                }
+                ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+                img = new BufferedImage(cm, wr, false, null);
             }
         }
         // todo add further raw decode types to help speed up image decode
