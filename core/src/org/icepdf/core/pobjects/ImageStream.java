@@ -528,7 +528,6 @@ public class ImageStream extends Stream {
                     if (colourSpace instanceof Separation &&
                             ((Separation) colourSpace).isNamedColor()) {
                         tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
-                        //ImageUtility.makeGrayBufferedImage(wr);
                     } else {
                         tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                     }
@@ -536,13 +535,14 @@ public class ImageStream extends Stream {
                     tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                 }
             } else {
-//                if (imageDecoder.getJPEGDecodeParam().getEncodedColorID() ==
-//                        com.sun.image.codec.jpeg.JPEGDecodeParam.COLOR_ID_YCbCrA) {
-//                    // YCbCrA, which is slightly different than YCCK
-//                    ImageUtility.alterRasterYCbCrA2RGBA(wr);
-//                    tmpImage = ImageUtility.makeRGBABufferedImage(wr);
-//                } else {
-                tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                // assume gray based jpeg.
+                if (wr.getNumBands() == 1) {
+                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                }
+                // otherwise assume YCbCr bands = 3.
+                else {
+                    tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                }
             }
 
         } catch (IOException e) {
