@@ -225,5 +225,6 @@ public class OperatorNames {
             OP_TRUNCATE = 41,
             OP_XOR = 42,
             OP_EXP_START = 43,
-            OP_EXP_END = 44;
+            OP_EXP_END = 44,
+            OP_PROC = 45;
 }
