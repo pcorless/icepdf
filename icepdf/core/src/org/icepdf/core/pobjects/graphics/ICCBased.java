@@ -44,8 +44,9 @@ public class ICCBased extends PColorSpace {
     Stream stream;
     ColorSpace colorSpace;
 
-    // basic cache to speed up the lookup.
-    private static ConcurrentHashMap<Integer, Color> iccColorCache;
+    // basic cache to speed up the lookup, can't be static as we handle
+    // 3 and 4 band colours.
+    private ConcurrentHashMap<Integer, Color> iccColorCache;
 
     // setting up an ICC colour look up is expensive, so if we get a failure
     // we just fallback to the alternative space to safe cpu time.
