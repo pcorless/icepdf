@@ -48,7 +48,7 @@ public class DeviceCMYK extends PColorSpace {
 
     // CMYK ICC color profile.
     private static ICC_ColorSpace iccCmykColorSpace;
-    // basic cache to speed up the lookup.
+    // basic cache to speed up the lookup. always 4 bands, can be static
     private static ConcurrentHashMap<Integer, Color> iccCmykColorCache;
 
     // disable icc color profile lookups as they can be slow. n
