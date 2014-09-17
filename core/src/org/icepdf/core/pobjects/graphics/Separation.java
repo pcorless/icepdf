@@ -85,9 +85,9 @@ public class Separation extends PColorSpace {
     public static final String COLORANT_NONE = "none";
     private float tint = 1.0f;
     // basic cache to speed up the lookup.
-    private static ConcurrentHashMap<Integer, Color> colorTable1B;
-    private static ConcurrentHashMap<Integer, Color> colorTable3B;
-    private static ConcurrentHashMap<Integer, Color> colorTable4B;
+    private ConcurrentHashMap<Integer, Color> colorTable1B;
+    private ConcurrentHashMap<Integer, Color> colorTable3B;
+    private ConcurrentHashMap<Integer, Color> colorTable4B;
 
     /**
      * Create a new Seperation colour space.  Separation is specified using
