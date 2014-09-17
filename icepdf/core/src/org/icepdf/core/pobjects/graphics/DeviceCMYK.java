@@ -63,21 +63,7 @@ public class DeviceCMYK extends PColorSpace {
         iccCmykColorCache = new ConcurrentHashMap<Integer, Color>();
 
         // check for a custom CMYK ICC colour profile specified using system properties.
-        String customCMYKProfilePath = null;
-        try {
-            Object profileStream;
-            customCMYKProfilePath = Defs.sysProperty("org.icepdf.core.pobjects.graphics.cmyk");
-            if (customCMYKProfilePath == null) {
-                customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/CoatedFOGRA27.icc";
-                profileStream = DeviceCMYK.class.getResourceAsStream(customCMYKProfilePath);
-            } else {
-                profileStream = new FileInputStream(customCMYKProfilePath);
-            }
-            ICC_Profile icc_profile = ICC_Profile.getInstance((InputStream) profileStream);
-            iccCmykColorSpace = new ICC_ColorSpace(icc_profile);
-        } catch (Exception exception) {
-            logger.warning("Error loading ICC color profile: " + customCMYKProfilePath);
-        }
+        iccCmykColorSpace = getIccCmykColorSpace();
     }
 
     public DeviceCMYK(Library l, HashMap h) {
@@ -290,7 +276,25 @@ public class DeviceCMYK extends PColorSpace {
      * @return associated ICC CMYK Color space.
      */
     public static ICC_ColorSpace getIccCmykColorSpace() {
-        return iccCmykColorSpace;
+        // would prefer to only have one instance but becuase of JDK-8033238
+        // we can run into decode issue if we share the profile across
+        String customCMYKProfilePath = null;
+        try {
+            Object profileStream;
+            customCMYKProfilePath = Defs.sysProperty("org.icepdf.core.pobjects.graphics.cmyk");
+            if (customCMYKProfilePath == null) {
+                customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/CoatedFOGRA27.icc";
+                profileStream = DeviceCMYK.class.getResourceAsStream(customCMYKProfilePath);
+            } else {
+                profileStream = new FileInputStream(customCMYKProfilePath);
+            }
+
+            ICC_Profile icc_profile = ICC_Profile.getInstance((InputStream) profileStream);
+            return new ICC_ColorSpace(icc_profile);
+        } catch (Exception exception) {
+            logger.warning("Error loading ICC color profile: " + customCMYKProfilePath);
+        }
+        return null;
     }
 
     /**
