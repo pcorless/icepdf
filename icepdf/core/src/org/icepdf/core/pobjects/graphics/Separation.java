@@ -85,7 +85,9 @@ public class Separation extends PColorSpace {
     public static final String COLORANT_NONE = "none";
     private float tint = 1.0f;
     // basic cache to speed up the lookup.
-    private ConcurrentHashMap<Integer, Color> colorTable;
+    private static ConcurrentHashMap<Integer, Color> colorTable1B;
+    private static ConcurrentHashMap<Integer, Color> colorTable3B;
+    private static ConcurrentHashMap<Integer, Color> colorTable4B;
 
     /**
      * Create a new Seperation colour space.  Separation is specified using
@@ -100,7 +102,9 @@ public class Separation extends PColorSpace {
     protected Separation(Library l, HashMap h, Object name, Object alternateSpace, Object tintTransform) {
         super(l, h);
         alternate = getColorSpace(l, alternateSpace);
-        colorTable = new ConcurrentHashMap<Integer, Color>(256);
+        colorTable1B = new ConcurrentHashMap<Integer, Color>(256);
+        colorTable3B = new ConcurrentHashMap<Integer, Color>(256);
+        colorTable4B = new ConcurrentHashMap<Integer, Color>(256);
 
         this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));
         // see if name can be converted to a known colour.
@@ -187,17 +191,16 @@ public class Separation extends PColorSpace {
         if (alternate != null && !isNone) {
             // component is our key which we can use to avoid doing the tintTransform.
             int key = 0;
-            for (int i = 0, bit = 0, max = components.length; i < max; i++, bit += 8) {
+            int bands = components.length;
+            for (int i = 0, bit = 0; i < bands; i++, bit += 8) {
                 key |= (((int) (components[i] * 255) & 0xff) << bit);
             }
-            Color color = colorTable.get(key);
-            if (color == null) {
-                float y[] = tintTransform.calculate(reverse(components));
-                color = alternate.getColor(reverse(y));
-                colorTable.put(key, color);
-                return color;
-            } else {
-                return color;
+            if (bands == 1) {
+                return addColorToCache(colorTable1B, key, alternate, tintTransform, components);
+            } else if (bands == 3) {
+                return addColorToCache(colorTable3B, key, alternate, tintTransform, components);
+            } else if (bands == 4) {
+                return addColorToCache(colorTable4B, key, alternate, tintTransform, components);
             }
         }
         if (isNone) {
@@ -208,6 +211,20 @@ public class Separation extends PColorSpace {
         // -- Only applies to subtractive devices, screens are additive but I'm
         // leaving this in encase something goes horribly wrong.
         return namedColor;
+    }
+
+    private static Color addColorToCache(
+            ConcurrentHashMap<Integer, Color> colorCache, int key,
+            PColorSpace alternate, Function tintTransform, float[] f) {
+        Color color = colorCache.get(key);
+        if (color == null) {
+            float y[] = tintTransform.calculate(reverse(f));
+            color = alternate.getColor(reverse(y));
+            colorCache.put(key, color);
+            return color;
+        } else {
+            return color;
+        }
     }
 
     public float getTint() {
