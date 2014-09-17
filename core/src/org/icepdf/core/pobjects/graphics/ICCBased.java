@@ -46,7 +46,8 @@ public class ICCBased extends PColorSpace {
 
     // basic cache to speed up the lookup, can't be static as we handle
     // 3 and 4 band colours.
-    private ConcurrentHashMap<Integer, Color> iccColorCache;
+    private static ConcurrentHashMap<Integer, Color> iccColorCache3B;
+    private static ConcurrentHashMap<Integer, Color> iccColorCache4B;
 
     // setting up an ICC colour look up is expensive, so if we get a failure
     // we just fallback to the alternative space to safe cpu time.
@@ -54,7 +55,8 @@ public class ICCBased extends PColorSpace {
 
     public ICCBased(Library l, Stream h) {
         super(l, h.getEntries());
-        iccColorCache = new ConcurrentHashMap<Integer, Color>();
+        iccColorCache3B = new ConcurrentHashMap<Integer, Color>();
+        iccColorCache4B = new ConcurrentHashMap<Integer, Color>();
         numcomp = h.getInt(N_KEY);
         switch (numcomp) {
             case 1:
@@ -115,19 +117,29 @@ public class ICCBased extends PColorSpace {
         return key;
     }
 
+    private static Color addColorToCache(
+            ConcurrentHashMap<Integer, Color> iccColorCache, int key,
+            ColorSpace colorSpace, float[] f) {
+        Color color = iccColorCache.get(key);
+        if (color != null) {
+            return color;
+        } else {
+            color = new Color(calculateColor(f, colorSpace));
+            iccColorCache.put(key, color);
+            return color;
+        }
+    }
+
     public Color getColor(float[] f, boolean fillAndStroke) {
         init();
         if (colorSpace != null && !failed) {
             try {
                 // generate a key for the colour
                 int key = generateKey(f);
-
-                if (iccColorCache.containsKey(key)) {
-                    return iccColorCache.get(key);
+                if (f.length <= 3) {
+                    return addColorToCache(iccColorCache3B, key, colorSpace, f);
                 } else {
-                    Color c = new Color(calculateColor(f, colorSpace));
-                    iccColorCache.put(key, c);
-                    return c;
+                    return addColorToCache(iccColorCache4B, key, colorSpace, f);
                 }
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error getting ICCBased colour", e);
