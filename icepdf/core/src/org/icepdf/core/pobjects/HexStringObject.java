@@ -333,7 +333,7 @@ public class HexStringObject implements StringObject {
 
             // convert string to bytes.
             byte[] textBytes =
-                    Utils.convertByteCharSequenceToByteArray(stringData);
+                    Utils.convertByteCharSequenceToByteArray(getLiteralString());
 
             // Decrypt String
             textBytes = securityManager.decrypt(reference,
