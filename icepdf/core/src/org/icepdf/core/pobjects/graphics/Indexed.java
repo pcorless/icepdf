@@ -113,7 +113,7 @@ public class Indexed extends PColorSpace {
                 b1[numCSComps - 1 - i] = 0xFF & ((int) colors[j * numCSComps + i]);
             }
             colorSpace.normaliseComponentsToFloats(b1, f1, 255.0f);
-            cols[j] = colorSpace.getColor(f1);
+            cols[j] = colorSpace.getColor(f1, true);
         }
         inited = true;
     }
