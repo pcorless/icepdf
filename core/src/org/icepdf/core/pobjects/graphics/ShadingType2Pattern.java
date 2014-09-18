@@ -269,10 +269,7 @@ public class ShadingType2Pattern extends ShadingPattern {
             }
 
             if (output != null) {
-                if (!(colorSpace instanceof DeviceN)) {
-                    output = PColorSpace.reverse(output);
-                }
-                return colorSpace.getColor(output);
+                return colorSpace.getColor(output, false);
             } else {
                 return null;
             }

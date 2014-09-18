@@ -424,7 +424,7 @@ public abstract class AbstractContentParser implements ContentParser {
             // shrink the array to the correct length
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
-            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, isTint));
+            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, true));
         }
     }
 
