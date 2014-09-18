@@ -116,29 +116,30 @@ public class DeviceN extends PColorSpace {
                 f2[3] = i < f.length ? f[i] : 0;
             }
         }
+        if (f.length != 4) {
+            f2 = reverse(f2);
+        }
         return f2;
     }
 
 
     public Color getColor(float[] f, boolean fillAndStroke) {
         // calculate cmyk color
-        if (foundCMYK) {
-            if (f.length <= 4) {
-                f = assignCMYK(f);
-                return new DeviceCMYK(null, null).getColor(reverse(f));
-            }
+        if (foundCMYK && (f.length == 4 || !fillAndStroke)) {
+            f = assignCMYK(f);
+            return new DeviceCMYK(null, null).getColor((f));
         }
         // check order, mainly look for length > 1 and black not at the end
         // assumption on a few corner cases is that we are looking for cmyk ordering
         // and thus black last.
-        if (f.length > 4 && names.size() > 4) {
-            String name = names.get(names.size() - 1).getName().toLowerCase();
-            if (!name.startsWith("b")) {
-                f = reverse(f);
-            }
-        }
+//        if (f.length > 4 && names.size() > 4) {
+//            String name = names.get(names.size() - 1).getName().toLowerCase();
+//            if (!name.startsWith("b")) {
+//                f = reverse(f);
+//            }
+//        }
         // otherwise use the alternative colour space.
-        float y[] = tintTransform.calculate((f));
+        float y[] = tintTransform.calculate(reverse(f));
         return alternate.getColor(reverse(y));
     }
 }
