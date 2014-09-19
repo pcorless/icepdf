@@ -478,7 +478,8 @@ public class PageViewComponentImpl extends
                     // make sure we don't accidently block the awt ui thread, but we still
                     // want to paint search text and text selection if text selection tool is selected.
                     (searchController.isSearchHighlightRefreshNeeded(pageIndex, null) ||
-                            documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION))
+                            documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) ||
+                            documentViewModel.isViewToolModeSelected(DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION))
                     ) {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
