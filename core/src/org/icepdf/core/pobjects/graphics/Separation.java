@@ -160,7 +160,7 @@ public class Separation extends PColorSpace {
         // there are couple notes in the spec that say that even know namedColor
         // is for subtractive color devices, if the named colour can be represented
         // in a additive device then it should be used over the alternate colour.
-        if (namedColor != null && !fillAndStroke) {
+        if (namedColor != null) {
             // apply tint
             tint = components[0];
             // apply tint as an alpha value.
