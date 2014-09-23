@@ -776,6 +776,9 @@ public abstract class AbstractContentParser implements ContentParser {
                 // get the first pages resources, no need to lock the page, already locked.
                 Page page = resources.getLibrary().getCatalog().getPageTree().getPage(0);
                 // make sure page resources are available.
+//                while(!page.isInitiated()){
+//                    Thread.currentThread().wait(100);
+//                }
                 page.init();
                 Resources res = page.getResources();
                 // try and get a font off the first page.
