@@ -108,11 +108,12 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      *
      * @return decoded/encoded BufferedImage for the respective ImageStream.
      */
-    protected BufferedImage createImage() {
+    protected synchronized BufferedImage createImage() {
         try {
             // block until thread comes back.
             if (futureTask != null) {
                 image = futureTask.get();
+                notifyAll();
             }
             if (image == null) {
                 image = call();
