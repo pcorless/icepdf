@@ -133,11 +133,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = null;
         if (viewerController != null) {
-            try {
-                pageText = viewerController.getDocument().getPageText(pageIndex);
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
-            }
+            // get access to currently open document instance.
+            pageText = viewerController.getDocument().getPageViewText(pageIndex);
         } else if (document != null) {
             pageText = document.getPageViewText(pageIndex);
         }
@@ -192,8 +189,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         else {
                             // found a potential hit, depends on the length
                             // of searchPhrase.
-                            if (wordString.indexOf(
-                                    term.getTerms().get(searchPhraseHitCount)) >= 0) {
+                            if (wordString.contains(term.getTerms().get(searchPhraseHitCount))) {
                                 // add word to potentials
                                 searchPhraseHits.add(word);
                                 searchPhraseHitCount++;
@@ -271,11 +267,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = null;
         if (viewerController != null) {
-            try {
-                pageText = viewerController.getDocument().getPageText(pageIndex);
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
-            }
+            // get access to currently open document.
+            pageText = viewerController.getDocument().getPageViewText(pageIndex);
         } else if (document != null) {
             pageText = document.getPageViewText(pageIndex);
         }
@@ -328,8 +321,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         else {
                             // found a potential hit, depends on the length
                             // of searchPhrase.
-                            if (wordString.indexOf(
-                                    term.getTerms().get(searchPhraseHitCount)) >= 0) {
+                            if (wordString.contains(term.getTerms().get(searchPhraseHitCount))) {
                                 // add word to potentials
                                 searchPhraseHits.add(word);
                                 searchPhraseHitCount++;
