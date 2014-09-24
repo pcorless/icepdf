@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
+import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
@@ -31,6 +32,7 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,98 +69,116 @@ public class NewAnnotationPrePageLoad {
         }
 
         // Get a file from the command line to open
-        String filePath = args[0];
+        final String filePath = args[0];
 
         // get search terms from command line
-        String[] terms = new String[args.length - 1];
+        final String[] terms = new String[args.length - 1];
         for (int i = 1, max = args.length; i < max; i++) {
             terms[i - 1] = args[i];
         }
 
-        /**
-         * Create a new instance so we can view the modified file.
-         */
-        SwingController controller = new SwingController();
-        SwingViewBuilder factory = new SwingViewBuilder(controller);
-        JPanel viewerComponentPanel = factory.buildViewerPanel();
-        JFrame applicationFrame = new JFrame();
-        applicationFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        applicationFrame.getContentPane().add(viewerComponentPanel);
+        try {
+            final SwingController controller = new SwingController();
 
-        // add interactive mouse link annotation support via callback
-        controller.getDocumentViewController().setAnnotationCallback(
-                new org.icepdf.ri.common.MyAnnotationCallback(
-                        controller.getDocumentViewController()));
+            // startup the viewer.
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
 
-        // Now that the GUI is all in place, we can try opening the PDF
-        controller.openDocument(filePath);
+                    /**
+                     * Create a new instance so we can view the modified file.
+                     */
+                    SwingViewBuilder factory = new SwingViewBuilder(controller);
+                    JPanel viewerComponentPanel = factory.buildViewerPanel();
+                    JFrame applicationFrame = new JFrame();
+                    applicationFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                    applicationFrame.getContentPane().add(viewerComponentPanel);
 
-        /**
-         * Start of a simple search for the loaded file and collect word
-         * data for annotation creation.
-         */
-        // get the search controller
-        DocumentSearchController searchController =
-                controller.getDocumentSearchController();
-        // add a specified search terms.
-        for (String term : terms) {
-            searchController.addSearchTerm(term, false, false);
-        }
+                    // add interactive mouse link annotation support via callback
+                    controller.getDocumentViewController().setAnnotationCallback(
+                            new org.icepdf.ri.common.MyAnnotationCallback(
+                                    controller.getDocumentViewController()));
 
-        // search the pages in the document or a subset
-        Document document = controller.getDocument();
-        // set the max number of pages to search and create annotations for.
-        int pageCount = 25;
-        if (pageCount > document.getNumberOfPages()) {
-            pageCount = document.getNumberOfPages();
-        }
+                    // Now that the GUI is all in place, we can try opening the PDF
+                    controller.openDocument(filePath);
 
-        /**
-         * Apply the search -> annotation results before the gui is build
-         */
+                    /**
+                     * Start of a simple search for the loaded file and collect word
+                     * data for annotation creation.
+                     */
+                    // get the search controller
+                    DocumentSearchController searchController =
+                            controller.getDocumentSearchController();
+                    // add a specified search terms.
+                    for (String term : terms) {
+                        searchController.addSearchTerm(term, false, false);
+                    }
 
-        // list of founds words to print out
-        ArrayList<WordText> foundWords;
-        for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-            // get the search results for this page
-            foundWords = searchController.searchPage(pageIndex);
-            if (foundWords != null) {
-                // get the current page lock and start adding the annotations
-                Page page = document.getPageTree().getPage(pageIndex);
+                    // search the pages in the document or a subset
+                    Document document = controller.getDocument();
+                    // set the max number of pages to search and create annotations for.
+                    int pageCount = 25;
+                    if (pageCount > document.getNumberOfPages()) {
+                        pageCount = document.getNumberOfPages();
+                    }
 
-                for (WordText wordText : foundWords) {
-                    // create a  new link annotation
-                    LinkAnnotation linkAnnotation = (LinkAnnotation)
-                            AnnotationFactory.buildAnnotation(
-                                    document.getPageTree().getLibrary(),
-                                    Annotation.SUBTYPE_LINK,
-                                    wordText.getBounds().getBounds());
-                    // create a new URI action
-                    org.icepdf.core.pobjects.actions.Action action =
-                            createURIAction(document.getPageTree().getLibrary(),
-                                    "http://www.icepdf.org");
-                    // or create a new goTo Annotation that links to the page
-                    // number represented by pageCount.  
-//                    org.icepdf.core.pobjects.actions.Action action =
-//                            createGoToAction(
-//                                    document.getPageTree().getLibrary(),
-//                                    document, document.getNumberOfPages() - 1);
-                    // add the action to the annotation
-                    linkAnnotation.addAction(action);
-                    // add it to the page.
-                    page.addAnnotation(linkAnnotation);
+                    /**
+                     * Apply the search -> annotation results before the gui is build
+                     */
+
+                    // list of founds words to print out
+                    ArrayList<WordText> foundWords;
+                    for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+                        // get the search results for this page
+                        foundWords = searchController.searchPage(pageIndex);
+                        if (foundWords != null) {
+                            // get the current page lock and start adding the annotations
+                            Page page = document.getPageTree().getPage(pageIndex);
+
+                            for (WordText wordText : foundWords) {
+                                // create a  new link annotation
+                                LinkAnnotation linkAnnotation = (LinkAnnotation)
+                                        AnnotationFactory.buildAnnotation(
+                                                document.getPageTree().getLibrary(),
+                                                Annotation.SUBTYPE_LINK,
+                                                wordText.getBounds().getBounds());
+
+                                BorderStyle borderStyle = new BorderStyle();
+                                borderStyle.setBorderStyle(BorderStyle.BORDER_STYLE_SOLID);
+                                borderStyle.setStrokeWidth(2.0f);
+                                linkAnnotation.setBorderStyle(borderStyle);
+                                linkAnnotation.setColor(Color.red);
+
+                                // create a new URI action
+                                org.icepdf.core.pobjects.actions.Action action =
+                                        createURIAction(document.getPageTree().getLibrary(),
+                                                "http://www.icepdf.org");
+                                // or create a new goTo Annotation that links to the page
+                                // number represented by pageCount.
+                                //                    org.icepdf.core.pobjects.actions.Action action =
+                                //                            createGoToAction(
+                                //                                    document.getPageTree().getLibrary(),
+                                //                                    document, document.getNumberOfPages() - 1);
+                                // add the action to the annotation
+                                linkAnnotation.addAction(action);
+                                // add it to the page.
+                                page.addAnnotation(linkAnnotation);
+                            }
+                        }
+                        // removed the search highlighting
+                        searchController.clearSearchHighlight(pageIndex);
+                    }
+
+                    // show the document and the new annotations.
+                    applicationFrame.pack();
+                    applicationFrame.setVisible(true);
+
+                    // The save button can be used in the UI to save a copy of the
+                    // document.
                 }
-            }
-            // removed the search highlighting
-            searchController.clearSearchHighlight(pageIndex);
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-
-        // show the document and the new annotations.
-        applicationFrame.pack();
-        applicationFrame.setVisible(true);
-
-        // The save button can be used in the UI to save a copy of the
-        // document.
     }
 
     /**
