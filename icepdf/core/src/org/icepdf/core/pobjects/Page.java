@@ -631,7 +631,11 @@ public class Page extends Dictionary {
         }
         pagePainted = true;
         // painting is complete interrupted or not.
-        notifyPagePaintingEnded(shapes.isInterrupted());
+        if (shapes != null) {
+            notifyPagePaintingEnded(shapes.isInterrupted());
+        } else {
+            notifyPagePaintingEnded(false);
+        }
         // one last repaint, just to be sure
         notifyPaintPageListeners();
         // check image count if no images we are done.
