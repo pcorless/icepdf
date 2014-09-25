@@ -155,16 +155,19 @@ public class ImageStream extends Stream {
      * perceived render quality on screen at low zoom levels.
      *
      * @param fill      color value of image
-     * @param resources resouces containing image reference
+     * @param resources resources containing image reference
      * @return new image object
      */
     // was synchronized, not think it is needed?
     @SuppressWarnings("unchecked")
     public synchronized BufferedImage getImage(Color fill, Resources resources) {
         // check the pool encase we already parse this image.
-        if (pObjectReference != null &&
-                library.getImagePool().containsKey(pObjectReference)) {
-            return library.getImagePool().get(pObjectReference);
+
+        if (pObjectReference != null) {
+            BufferedImage tmp = library.getImagePool().get(pObjectReference);
+            if (tmp != null) {
+                return tmp;
+            }
         }
 
         // parse colour space, lock is to insure that getColorSpace()

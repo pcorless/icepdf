@@ -19,10 +19,9 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Defs;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -55,37 +54,34 @@ public class ImagePool {
     // Image pool
     private final Map<Reference, BufferedImage> fCache;
 
-    private static int defaultSize;
 
     private static boolean enabled;
 
     static {
-        // Default size is 1/4 of heap size.
-        defaultSize = (int) ((Runtime.getRuntime().maxMemory() / 1024L / 1024L) / 4L);
-        defaultSize = Defs.intProperty("org.icepdf.core.views.imagePoolSize", defaultSize);
         // enable/disable the image pool all together.
         enabled = Defs.booleanProperty("org.icepdf.core.views.imagePoolEnabled", true);
     }
 
-    public ImagePool() {
-        this(defaultSize * 1024 * 1024);
-    }
 
-    public ImagePool(long maxCacheSize) {
-        fCache = Collections.synchronizedMap(new MemoryImageCache(maxCacheSize));
+    public ImagePool() {
+        fCache = Collections.synchronizedMap(new WeakHashMap<Reference, BufferedImage>(50));
     }
 
     public void put(Reference ref, BufferedImage image) {
         // create a new reference so we don't have a hard link to the page
         // which will likely keep a page from being GC'd.
         if (enabled) {
-            fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()), image);
+            synchronized (fCache) {
+                fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()), image);
+            }
         }
     }
 
     public BufferedImage get(Reference ref) {
         if (enabled) {
-            return fCache.get(ref);
+            synchronized (fCache) {
+                return fCache.get(ref);
+            }
         } else {
             return null;
         }
@@ -93,70 +89,11 @@ public class ImagePool {
 
     public boolean containsKey(Reference ref) {
         if (enabled) {
-            return fCache.containsKey(ref);
+            synchronized (fCache) {
+                return fCache.containsKey(ref);
+            }
         } else {
             return false;
-        }
-    }
-
-    private static class MemoryImageCache extends LinkedHashMap<Reference, BufferedImage> {
-        private final long maxCacheSize;
-        private long currentCacheSize;
-
-        public MemoryImageCache(long maxCacheSize) {
-            super(16, 0.75f, true);
-            this.maxCacheSize = maxCacheSize;
-        }
-
-        @Override
-        public BufferedImage put(Reference key, BufferedImage value) {
-            if (containsKey(key)) {
-                BufferedImage removed = remove(key);
-                currentCacheSize = currentCacheSize - sizeOf(removed) + sizeOf(value);
-                super.put(key, value);
-                return removed;
-            } else {
-                currentCacheSize += sizeOf(value);
-                return super.put(key, value);
-            }
-        }
-
-        private long sizeOf(BufferedImage image) {
-            if (image == null) {
-                return 0L;
-            }
-
-            DataBuffer dataBuffer = image.getRaster().getDataBuffer();
-            int dataTypeSize;
-            switch (dataBuffer.getDataType()) {
-                case DataBuffer.TYPE_BYTE:
-                    dataTypeSize = 1;
-                    break;
-                case DataBuffer.TYPE_SHORT:
-                case DataBuffer.TYPE_USHORT:
-                    dataTypeSize = 2;
-                    break;
-                case DataBuffer.TYPE_INT:
-                case DataBuffer.TYPE_FLOAT:
-                    dataTypeSize = 4;
-                    break;
-                case DataBuffer.TYPE_DOUBLE:
-                case DataBuffer.TYPE_UNDEFINED:
-                default:
-                    dataTypeSize = 8;
-                    break;
-            }
-            return dataBuffer.getSize() * dataTypeSize;
-        }
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<Reference, BufferedImage> eldest) {
-            boolean remove = currentCacheSize > maxCacheSize;
-            if (remove) {
-                long size = sizeOf(eldest.getValue());
-                currentCacheSize -= size;
-            }
-            return remove;
         }
     }
 }
