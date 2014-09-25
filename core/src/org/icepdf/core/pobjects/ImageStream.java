@@ -535,7 +535,11 @@ public class ImageStream extends Stream {
                         tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                     }
                 } else {
-                    tmpImage = ImageUtility.makeGrayBufferedImage(wr);
+                    if (wr.getNumBands() == 1) {
+                        tmpImage = ImageUtility.makeGrayBufferedImage(wr);
+                    } else {
+                        tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                    }
                 }
             } else {
                 // assume gray based jpeg.
