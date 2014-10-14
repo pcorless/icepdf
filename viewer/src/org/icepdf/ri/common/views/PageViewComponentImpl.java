@@ -364,6 +364,12 @@ public class PageViewComponentImpl extends
         return pageSize.getSize();
     }
 
+    public void validate() {
+        // calculate real size of page.
+        calculatePageSize(pageSize);
+        super.validate();
+    }
+
     public void invalidate() {
         calculateRoughPageSize(pageSize);
         if (pagePainter != null) {

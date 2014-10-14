@@ -117,9 +117,8 @@ public class OnePageView extends AbstractDocumentView {
                 // add component to layout
                 pagesPanel.add(new PageViewDecorator(
                         (AbstractPageViewComponent) pageViewComponent));
-                pageViewComponent.invalidate();
+                ((AbstractPageViewComponent) pageViewComponent).validate();
             }
-            documentScrollpane.revalidate();
 
             // make sure we have setup all pages with callback call.
             for (PageViewComponent pageViewCom : pageComponents) {

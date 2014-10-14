@@ -142,6 +142,7 @@ public class TwoPageView extends AbstractDocumentView {
                     // add component to layout
                     pagesPanel.add(new PageViewDecorator((JComponent) pageViewComponent));
                     pageViewComponent.invalidate();
+                    ((JComponent) pageViewComponent).validate();
                     count++;
                 }
             }
