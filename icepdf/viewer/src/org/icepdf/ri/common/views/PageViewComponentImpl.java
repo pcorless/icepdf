@@ -122,7 +122,7 @@ public class PageViewComponentImpl extends
     // the bounds of the buffered image.
     private Rectangle bufferedPageImageBounds = new Rectangle();
 
-    private static Timer isDirtyTimer;
+    private Timer isDirtyTimer;
     private DirtyTimerAction dirtyTimerAction;
     private boolean isActionListenerRegistered;
     private PageInitializer pageInitializer;
@@ -145,9 +145,6 @@ public class PageViewComponentImpl extends
     // horizontal  scale factor to extend buffer
     private static double horizontalScaleFactor;
 
-    // dirty refresh timer call interval
-    private static int dirtyTimerInterval = 5;
-
     private static int scrollInitThreshold = 250;
 
     // graphics configuration
@@ -166,13 +163,6 @@ public class PageViewComponentImpl extends
                             "1.25"));
         } catch (NumberFormatException e) {
             logger.warning("Error reading buffered scale factor");
-        }
-        try {
-            dirtyTimerInterval =
-                    Defs.intProperty("org.icepdf.core.views.dirtytimer.interval",
-                            dirtyTimerInterval);
-        } catch (NumberFormatException e) {
-            logger.log(Level.FINE, "Error reading dirty timer interval");
         }
         try {
             scrollInitThreshold =
@@ -201,6 +191,9 @@ public class PageViewComponentImpl extends
         addFocusListener(this);
 
         addComponentListener(this);
+
+        // get reference to the timer
+        isDirtyTimer = documentViewModel.getDirtyTimer();
 
         // page loading progress
         pageLoadingListener = new DefaultPageViewLoadingListener(this, documentViewController);
@@ -271,14 +264,9 @@ public class PageViewComponentImpl extends
 
         // timer will dictate when buffer repaints can take place
         dirtyTimerAction = new DirtyTimerAction();
-        if (isDirtyTimer == null) {
-            isDirtyTimer = new Timer(dirtyTimerInterval, dirtyTimerAction);
-            isDirtyTimer.setInitialDelay(0);
-            isDirtyTimer.start();
-        } else {
-            isDirtyTimer.addActionListener(dirtyTimerAction);
-            isDirtyTimer.setInitialDelay(0);
-        }
+        isDirtyTimer.addActionListener(dirtyTimerAction);
+        isDirtyTimer.setInitialDelay(0);
+
         isActionListenerRegistered = true;
 
         // PageInitializer and painter commands

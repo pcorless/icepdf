@@ -18,12 +18,15 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.UndoCaretaker;
 
+import javax.swing.*;
 import java.awt.*;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -43,6 +46,21 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     // document that model is associated.
     protected Document currentDocument;
+
+    // page dirty repaint timer
+    private Timer isDirtyTimer;
+    // dirty refresh timer call interval
+    private static int dirtyTimerInterval = 5;
+
+    static {
+        try {
+            dirtyTimerInterval =
+                    Defs.intProperty("org.icepdf.core.views.dirtytimer.interval",
+                            dirtyTimerInterval);
+        } catch (NumberFormatException e) {
+            log.log(Level.FINE, "Error reading dirty timer interval");
+        }
+    }
 
     // Pages that have selected text.
     private ArrayList<WeakReference<AbstractPageViewComponent>> selectedPageText;
@@ -74,6 +92,11 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.currentDocument = currentDocument;
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
+
+        // timer will dictate when buffer repaints can take place
+        isDirtyTimer = new Timer(dirtyTimerInterval, null);
+        isDirtyTimer.setInitialDelay(0);
+        isDirtyTimer.start();
     }
 
     public Document getDocument() {
@@ -276,6 +299,11 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
                 }
             }
             pageComponents.clear();
+
+            // stop the timer
+            if (isDirtyTimer != null && isDirtyTimer.isRunning()) {
+                isDirtyTimer.stop();
+            }
         }
     }
 
@@ -319,5 +347,9 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public void addMemento(Memento oldMementoState, Memento newMementoState) {
         undoCaretaker.addState(oldMementoState, newMementoState);
+    }
+
+    public Timer getDirtyTimer() {
+        return isDirtyTimer;
     }
 }
