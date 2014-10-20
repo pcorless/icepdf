@@ -18,6 +18,7 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 
+import javax.swing.*;
 import java.awt.*;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -292,4 +293,11 @@ public interface DocumentViewModel {
      */
     public void addMemento(Memento oldMementoState,
                            Memento newMementoState);
+
+    /**
+     * Get an instance of the dirty Timer use by all child PageComponents.
+     *
+     * @return instance of Swing Timer
+     */
+    public Timer getDirtyTimer();
 }
