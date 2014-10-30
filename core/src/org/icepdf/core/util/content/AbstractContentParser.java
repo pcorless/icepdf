@@ -768,8 +768,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 graphicState.getTextState().font.getFont() == null) {
             // turn on the old awt font engine, as we have a null font
             FontFactory fontFactory = FontFactory.getInstance();
-            boolean awtState = fontFactory.isAwtFontSubstitution();
-            fontFactory.setAwtFontSubstitution(true);
+//            boolean awtState = fontFactory.isAwtFontSubstitution();
+//            fontFactory.setAwtFontSubstitution(true);
             try {
                 // this should almost never happen but of course we have a few
                 // corner cases:
@@ -799,7 +799,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 logger.warning("Warning could not find font by named resource " + name2);
             }
             // return factory to original state.
-            fontFactory.setAwtFontSubstitution(awtState);
+//            fontFactory.setAwtFontSubstitution(awtState);
             // if no fonts found then we just bail and accept the null pointer
         }
         if (graphicState.getTextState().font != null) {
