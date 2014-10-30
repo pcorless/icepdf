@@ -125,8 +125,11 @@ public class DeviceN extends PColorSpace {
 
     public Color getColor(float[] f, boolean fillAndStroke) {
         // calculate cmyk color
-        if (foundCMYK && (f.length == 4 || !fillAndStroke)) {
+        if (foundCMYK && (f.length == 4 )) {
             f = assignCMYK(f);
+            return new DeviceCMYK(null, null).getColor((f));
+        }else if (foundCMYK && (f.length == 3)) {
+            f = assignCMYK(reverse(f));
             return new DeviceCMYK(null, null).getColor((f));
         }
         // check order, mainly look for length > 1 and black not at the end
