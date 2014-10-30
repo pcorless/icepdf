@@ -113,6 +113,7 @@ public class Separation extends PColorSpace {
             // check for additive colours we can work ith .
             if (!(colorName.equals("red") || colorName.equals("blue")
                     || colorName.equals("blue") || colorName.equals("black")
+                    || colorName.equals("cyan") || colorName.equals("brown")
                     || colorName.equals("auto"))) {
                 // sniff out All or Null
                 if (colorName.equals(COLORANT_ALL)) {
