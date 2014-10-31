@@ -140,8 +140,10 @@ public class Resources extends Dictionary {
                     font = FontFactory.getInstance().getFont(library, (HashMap) ob);
                 }
                 // cache the font for later use.
-                library.addObject(font, ref);
-                font.setPObjectReference(ref);
+                if (font != null) {
+                    library.addObject(font, ref);
+                    font.setPObjectReference(ref);
+                }
             }
             // if still null do a deeper search checking the base font name of
             // each font for a match to the needed font name.  We have a few
