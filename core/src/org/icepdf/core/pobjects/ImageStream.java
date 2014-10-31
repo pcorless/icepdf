@@ -947,7 +947,7 @@ public class ImageStream extends Stream {
                         }
                         // normal aRGB colour,  this could use some more
                         // work for optimizing.
-                        else if (colorSpaceCompCount == 4) {
+                        else if (colorSpaceCompCount == 4 || colorSpace instanceof DeviceN) {
                             for (int i = 0; i < colorSpaceCompCount; i++) {
                                 f[i] = in.getBits(bitsPerColour);
                                 // apply decode
