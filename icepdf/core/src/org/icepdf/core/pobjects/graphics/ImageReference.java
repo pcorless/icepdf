@@ -113,11 +113,11 @@ public abstract class ImageReference implements Callable<BufferedImage> {
             // block until thread comes back.
             if (futureTask != null) {
                 image = futureTask.get();
-                notifyAll();
             }
             if (image == null) {
                 image = call();
             }
+            notify();
         } catch (InterruptedException e) {
             logger.warning("Image loading interrupted");
         } catch (Exception e) {
