@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:ace="http://www.icefaces.org/icefaces/components"
+        >
+<h:head>
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=utf-8"/>
+    <title>ICEpdf Viewer - JSF Edition </title>
+    <h:outputStylesheet library="css" name="viewer_layout.css"/>
+    <link href="#{resource['images:favicon.ico']}" rel="shortcut icon"
+          type="image/x-icon"></link>
+    <link href="#{resource['images:favicon.ico']}" rel="icon"
+          type="image/x-icon"></link>
+</h:head>
+<h:body>
+    <ui:insert name="header">
+        <ui:include src="/WEB-INF/includes/content/header.xhtml"/>
+    </ui:insert>
+
+    <div class="body_container">
+
+        <div class="body_content">
+
+            <ace:submitMonitor id="connectStat" styleClass="navConnectionStatus"/>
+
+            <div class="commandBarContainer">
+                <ui:insert name="commandBar"/>
+            </div>
+
+            <h:panelGroup styleClass="clearer"/>
+
+            <div class="navigationContainer">
+                <ui:insert name="navigation">
+                    <ui:include
+                            src="/WEB-INF/includes/content/navigation.xhtml"/>
+                </ui:insert>
+            </div>
+
+            <div class="contentContainer">
+
+                <!--
+                   Main Component content;
+                   controls which content to display for the respective navigation
+                -->
+
+                <ui:insert name="page-content"/>
+
+                <h:panelGroup styleClass="clearer"/>
+
+            </div>
+
+            <h:panelGroup styleClass="clearer"/>
+
+            <div class="downloadContainer">
+                <ui:insert name="download-pdf">
+                    <ui:include src="/WEB-INF/includes/content/download.xhtml"/>
+                </ui:insert>
+            </div>
+        </div>
+
+    </div>
+</h:body>
+</html>

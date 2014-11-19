@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright 2006-2012 ICEsoft Technologies Inc.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the
+  ~ License. You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an "AS
+  ~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either * express or implied. See the License for the specific language
+  ~ governing permissions and limitations under the License.
+  -->
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/"
+        debug="false">
+
+    <appender name="guiConsoleAppender"
+              class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%-5p %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <appender name="guiFileAppender"
+              class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="log.txt"/>
+        <param name="Threshold" value="ERROR"/>
+        <param name="MaxFileSize" value="9048576"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d (%F:%L) %-5p %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <category name="org.icepdf.core">
+        <priority value="INFO"/>
+    </category>
+
+    <!-- Trace level to show content decoded content stream-->
+    <category name="org.icepdf.core.util.ContentParser">
+        <level value="INFO"/>
+    </category>
+
+    <!-- Debugto show font substitution-->
+    <category name="org.icepdf.core.pobjects.fonts.FontManager">
+        <level value="INFO"/>
+    </category>
+
+    <category name="org.icepdf.core.pobjects.fonts">
+        <level value="INFO"/>
+    </category>
+
+    <category name="org.icepdf.ri">
+        <priority value="INFO"/>
+    </category>
+
+    <root>
+        <priority value="INFO"/>
+        <appender-ref ref="guiConsoleAppender"/>
+    </root>
+
+</log4j:configuration>
+
