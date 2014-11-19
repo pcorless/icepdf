@@ -27,7 +27,11 @@
                     rendered="#{documentManager.currentDocumentState != null}"
                     width="#{documentManager.currentDocumentState.pageWidth}"
                     height="#{documentManager.currentDocumentState.pageHieght}"
-                    value="/pdfRenderer/?documentId=#{documentManager.currentDocumentState.documentId}"/>
+                    library="icepdf.core.png"
+                    name="#{documentManager.currentDocumentState.documentId}"/>
+
+                    <!--value="core/icepdf-capture.png&amp;documentId=#{documentManager.currentDocumentState.documentId}"/>-->
+            <!-- value="/pdfRenderer/?documentId=#{documentManager.currentDocumentState.documentId}" -->
             <h:messages/>
 
         </h:panelGroup>
@@ -52,7 +56,7 @@
                         <h:messages/>
                     </h:panelGroup>
 
-                    <h:panelGroup styleClass="floatRight">
+                    <h:panelGroup styleClass="floatRight" >
                         <h:commandButton
                                 onclick="ice.ace.instance('#{dialog.clientId}').hide();"
                                 value="OK"/>

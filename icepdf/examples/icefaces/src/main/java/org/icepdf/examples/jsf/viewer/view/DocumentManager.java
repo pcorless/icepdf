@@ -78,11 +78,6 @@ public class DocumentManager implements Serializable {
     private ArrayList<DocumentState> documentStateHistory =
             new ArrayList<DocumentState>(10);
 
-    // document cache, intended to lower memory consumption for files that
-    // are open more then one session such as the demo files are.  Other
-    // files are opened in a users session, so it best to clean when we can.
-    private DocumentCache documentDemoCache;
-
     /**
      * Opens the PDF document specified by the request param "documentPath".
      *
@@ -130,7 +125,7 @@ public class DocumentManager implements Serializable {
 
         // see if we can open the document.
         try {
-            currentDocumentState.openDocument(documentDemoCache);
+            currentDocumentState.openDocument();
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error loading file default file: ", e);
         }
@@ -246,7 +241,7 @@ public class DocumentManager implements Serializable {
         }
         // see if we can open the document.
         try {
-            documentState.openDocument(documentDemoCache);
+            documentState.openDocument();
             // assign the newly open document state.
             currentDocumentState = documentState;
 
@@ -428,6 +423,16 @@ public class DocumentManager implements Serializable {
         }
     }
 
+    public void goToPage2(ValueChangeEvent event) {
+        if (event.getPhaseId() != PhaseId.INVOKE_APPLICATION) {
+            event.setPhaseId(PhaseId.INVOKE_APPLICATION);
+            event.queue();
+        } else {
+            // refresh current page state.
+            goToPage(null);
+        }
+    }
+
     /**
      * Gets the image associated with the current document state.
      *
@@ -568,9 +573,5 @@ public class DocumentManager implements Serializable {
 
     public void setDemo(boolean demo) {
         isDemo = demo;
-    }
-
-    public void setDocumentDemoCache(DocumentCache documentDemoCache) {
-        this.documentDemoCache = documentDemoCache;
     }
 }

@@ -135,7 +135,7 @@ public class DocumentState implements Serializable {
      * assigned to this document it is closed before the current documentPath
      * is loaded.
      */
-    public void openDocument(DocumentCache test) throws PDFException, IOException, PDFSecurityException {
+    public void openDocument() throws PDFException, IOException, PDFSecurityException {
 
         // get reference to application scoped document cache.
         DocumentCache documentCache = (DocumentCache)
@@ -165,6 +165,7 @@ public class DocumentState implements Serializable {
             maxPages = document.getPageTree().getNumberOfPages();
             // page size
             calculatePageImageSize();
+            generateDocumentID();
 
             // build swing outlines.
             Outlines outlines = document.getCatalog().getOutlines();

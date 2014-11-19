@@ -48,6 +48,7 @@
                         styleClass="command previousCommand"
                         disabled="#{documentManager.currentDocumentState == null}"
                         actionListener="#{documentManager.previousPage}">
+                    <f:ajax render="@all" execute="@this"/>
                     <h:graphicImage
                             value="#{resource['images:spacer.gif']}"
                             alt="#{msgs['command.navigation.previous.label']}"
@@ -60,10 +61,12 @@
             <h:panelGroup styleClass="floatLeft"
                           style="padding-top:3px;padding-left:8px;padding-right:8px;">
                 <h:outputLabel class="currentPageLabel" value="#{msgs['command.page.entry.label']}"/>
-                <h:inputText maxlength="5" size="2" partialSubmit="true"
-                             actionListener="#{documentManager.goToPage}"
+                <h:inputText maxlength="5" size="2"
+                             valueChangeListener="#{documentManager.goToPage2}"
                              disabled="#{documentManager.currentDocumentState == null}"
-                             value="#{documentManager.currentDocumentState.pageCursor}"/>
+                             value="#{documentManager.currentDocumentState.pageCursor}">
+                    <f:ajax render="@all" execute="@this"/>
+                 </h:inputText>
                 <h:outputLabel class="currentPageLabel"
                                value="#{msgs['command.page.display.label']} #{documentManager.currentDocumentState.documentLength}"/>
             </h:panelGroup>
@@ -74,6 +77,7 @@
                         styleClass="command forwardCommand"
                         disabled="#{documentManager.currentDocumentState == null}"
                         actionListener="#{documentManager.nextPage}">
+                    <f:ajax render="@all" execute="@this"/>
                     <h:graphicImage value="#{resource['images:spacer.gif']}"
                                     alt="#{msgs['command.navigation.next.label']}"
                                     title="#{msgs['command.navigation.next.label']}"
@@ -107,6 +111,7 @@
                         styleClass="command leftCommand"
                         disabled="#{documentManager.currentDocumentState == null}"
                         actionListener="#{documentManager.rotateDocumentLeft}">
+                    <f:ajax render="@all" execute="@this"/>
                     <h:graphicImage
                             value="#{resource['images:spacer.gif']}"
                             alt="#{msgs['command.rotation.left.label']}"
@@ -120,6 +125,7 @@
                         styleClass="command rightCommand"
                         disabled="#{documentManager.currentDocumentState == null}"
                         actionListener="#{documentManager.rotateDocumentRight}">
+                    <f:ajax render="@all" execute="@this"/>
                     <h:graphicImage
                             value="#{resource['images:spacer.gif']}"
                             alt="#{msgs['command.rotation.right.label']}"
@@ -129,10 +135,11 @@
             </h:panelGroup>
 
             <!-- enable/disable font engine -->
-            <h:panelGroup styleClass="floatLeft" style="margin-left:165px;"
+            <h:panelGroup styleClass="floatLeft" style="margin-left:160px;"
                           rendered="#{documentManager.demo}">
                 <h:commandLink
                         actionListener="#{documentManager.toggleFontEngine}">
+                    <f:ajax render="@all" execute="@this"/>
                     <h:graphicImage
                             rendered="#{documentManager.fontEngine}"
                             value="#{resource['images:font-engine_true.gif']}"

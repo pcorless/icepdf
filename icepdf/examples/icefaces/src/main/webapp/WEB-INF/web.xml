@@ -21,12 +21,12 @@
         <servlet-class>javax.faces.webapp.FacesServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
-    <servlet>
-        <servlet-name>pdfRenderer</servlet-name>
-        <servlet-class>org.icepdf.examples.jsf.viewer.servlet.PdfRenderer
-        </servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
+    <!--<servlet>-->
+        <!--<servlet-name>pdfRenderer</servlet-name>-->
+        <!--<servlet-class>org.icepdf.examples.jsf.viewer.servlet.PdfRenderer-->
+        <!--</servlet-class>-->
+        <!--<load-on-startup>1</load-on-startup>-->
+    <!--</servlet>-->
     <servlet-mapping>
         <servlet-name>Faces Servlet</servlet-name>
         <url-pattern>/faces/*</url-pattern>
@@ -39,10 +39,10 @@
         <servlet-name>Faces Servlet</servlet-name>
         <url-pattern>/icefaces/*</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>pdfRenderer</servlet-name>
-        <url-pattern>/pdfRenderer/</url-pattern>
-    </servlet-mapping>
+    <!--<servlet-mapping>-->
+        <!--<servlet-name>pdfRenderer</servlet-name>-->
+        <!--<url-pattern>/pdfRenderer/</url-pattern>-->
+    <!--</servlet-mapping>-->
     <session-config>
         <session-timeout>
             30

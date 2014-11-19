@@ -21,6 +21,10 @@
               xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-facesconfig_2_0.xsd"
               version="2.0">
     <application>
+
+        <!-- handles the convesion of a PDF page to image and streams the bytes back.-->
+        <resource-handler>org.icepdf.examples.jsf.viewer.renderkit.PdfResourceHandler</resource-handler>
+
         <locale-config>
             <default-locale>en</default-locale>
         </locale-config>
@@ -49,12 +53,12 @@
         <!-- set default demo file to load,  file must be present in demo folder -->
         <managed-property>
             <property-name>documentDemoFile</property-name>
-            <value>DevelopersGuide.pdf</value>
+            <value>Open Source.pdf</value>
         </managed-property>
         <!-- demo version has configurable font engine -->
         <managed-property>
             <property-name>demo</property-name>
-            <value>true</value>
+            <value>false</value>
         </managed-property>
     </managed-bean>
 
