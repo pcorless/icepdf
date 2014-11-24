@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2004-2011 ICEsoft Technologies Canada Corp. (c)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions an
+  ~ limitations under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.icepdf.os</groupId>
+    <artifactId>icepdf</artifactId>
+    <packaging>war</packaging>
+    <name>ICEpdf-icefaces</name>
+    <url>http://www.servavip.com/</url>
+    <version>0.0.5</version>
+    <properties>
+        <icefaces.product.group>org.icefaces</icefaces.product.group>
+        <icefaces.product.name>ICEfaces</icefaces.product.name>
+        <icefaces.lib.name>icefaces</icefaces.lib.name>
+        <icefaces.version>4.0.0</icefaces.version>
+        <icepdf.version>5.1.1_P01</icepdf.version>
+        <!-- Versions of JSF implementations -->
+        <mojarra.version>2.2.4</mojarra.version>
+        <!-- Various library versions settable from one place -->
+        <annotation.version>1.0</annotation.version>
+        <el.version>2.2.1</el.version>
+        <el.compat.version>1.0</el.compat.version>
+        <servlet.api.version>3.0.1</servlet.api.version>
+    </properties>
+    <repositories>
+        <repository>
+            <id>java.net</id>
+            <url>http://download.java.net/maven/2</url>
+        </repository>
+        <repository>
+            <id>snapshots</id>
+            <url>http://anonsvn.icefaces.org/repo/maven2/releases/</url>
+        </repository>
+        <repository>
+            <id>jboss-3rd-party-releases</id>
+            <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/</url>
+        </repository>
+    </repositories>
+    <dependencies>
+
+        <dependency>
+            <groupId>org.icepdf.os</groupId>
+            <artifactId>icepdf-core</artifactId>
+            <version>${icepdf.version}</version>
+        </dependency>
+
+        <!-- icefaces dependencies-->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.faces</artifactId>
+            <version>${mojarra.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>${servlet.api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.el</groupId>
+            <artifactId>javax.el-api</artifactId>
+            <version>${el.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.el</groupId>
+            <artifactId>el-api</artifactId>
+            <version>${el.compat.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${icefaces.product.group}</groupId>
+            <artifactId>${icefaces.lib.name}</artifactId>
+            <version>${icefaces.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.glassfish</groupId>
+                    <artifactId>javax.faces</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>${icefaces.product.group}</groupId>
+            <artifactId>${icefaces.lib.name}-ace</artifactId>
+            <version>${icefaces.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>${icefaces.product.group}</groupId>
+            <artifactId>${icefaces.lib.name}-mobi</artifactId>
+            <version>${icefaces.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>jsr250-api</artifactId>
+            <version>${annotation.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+    <profiles>
+        <profile>
+            <id>tomcat7</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>glassfish3</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+        </profile>
+    </profiles>
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.0.2</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

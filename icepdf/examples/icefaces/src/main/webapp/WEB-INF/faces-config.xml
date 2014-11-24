@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+~ Copyright 2004-2013 ICEsoft Technologies Canada Corp.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the
+~ License. You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing,
+~ software distributed under the License is distributed on an "AS
+~ IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+~ express or implied. See the License for the specific language
+~ governing permissions and limitations under the License.
+-->
+
+<faces-config xmlns="http://java.sun.com/xml/ns/javaee"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-facesconfig_2_0.xsd"
+              version="2.0">
+    <application>
+
+        <!-- handles the convesion of a PDF page to image and streams the bytes back.-->
+        <resource-handler>org.icepdf.examples.jsf.viewer.renderkit.PdfResourceHandler</resource-handler>
+
+        <locale-config>
+            <default-locale>en</default-locale>
+        </locale-config>
+
+        <resource-bundle>
+            <base-name>messages
+            </base-name>
+            <var>msgs</var>
+        </resource-bundle>
+    </application>
+
+    <managed-bean>
+        <managed-bean-name>documentCache</managed-bean-name>
+        <managed-bean-class>
+            org.icepdf.examples.jsf.viewer.view.DocumentCache
+        </managed-bean-class>
+        <managed-bean-scope>application</managed-bean-scope>
+    </managed-bean>
+
+    <managed-bean>
+        <managed-bean-name>documentManager</managed-bean-name>
+        <managed-bean-class>
+            org.icepdf.examples.jsf.viewer.view.DocumentManager
+        </managed-bean-class>
+        <managed-bean-scope>session</managed-bean-scope>
+        <!-- set default demo file to load,  file must be present in demo folder -->
+        <managed-property>
+            <property-name>documentDemoFile</property-name>
+            <value>Open Source.pdf</value>
+        </managed-property>
+        <!-- demo version has configurable font engine -->
+        <managed-property>
+            <property-name>demo</property-name>
+            <value>false</value>
+        </managed-property>
+    </managed-bean>
+
+</faces-config>
