@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -56,11 +56,7 @@ import java.util.logging.Logger;
  */
 public class Destination {
 
-    private static final Logger logger =
-            Logger.getLogger(Destination.class.toString());
-
     public static final Name D_KEY = new Name("D");
-
     // Vector destination type formats.
     public static final Name TYPE_XYZ = new Name("XYZ");
     public static final Name TYPE_FIT = new Name("Fit");
@@ -70,7 +66,8 @@ public class Destination {
     public static final Name TYPE_FITB = new Name("FitB");
     public static final Name TYPE_FITBH = new Name("FitBH");
     public static final Name TYPE_FITBV = new Name("FitBV");
-
+    private static final Logger logger =
+            Logger.getLogger(Destination.class.toString());
     // library of all PDF document objects
     private Library library;
 
@@ -109,6 +106,83 @@ public class Destination {
     }
 
     /**
+     * Utility for creating a /Fit or FitB syntax vector.
+     *
+     * @param page destination page pointer.
+     * @param type type of destionation
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static List<Object> destinationSyntax(
+            Reference page, final Name type) {
+        List<Object> destSyntax = new ArrayList<Object>(2);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        return destSyntax;
+    }
+
+    /**
+     * Utility for creating a /FitH, /FitV, /FitBH or /FitBV syntax vector.
+     *
+     * @param page   destination page pointer.
+     * @param type   type of destionation
+     * @param offset offset coordinate value in page space for specified dest type.
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static List<Object> destinationSyntax(
+            Reference page, final Name type, Object offset) {
+        List<Object> destSyntax = new ArrayList<Object>(3);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        destSyntax.add(offset);
+        return destSyntax;
+    }
+
+    /**
+     * Utility for creating a /XYZ syntax vector.
+     *
+     * @param page destination page pointer.
+     * @param type type of destionation
+     * @param left offset coordinate value in page space for specified dest type.
+     * @param top  offset coordinate value in page space for specified dest type.
+     * @param zoom page zoom, 0 or null indicates no zoom.
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static List<Object> destinationSyntax(
+            Reference page, final Object type, Object left, Object top, Object zoom) {
+        List<Object> destSyntax = new ArrayList<Object>(5);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        destSyntax.add(left);
+        destSyntax.add(top);
+        destSyntax.add(zoom);
+        return destSyntax;
+    }
+
+    /**
+     * Utility for creating a /FitR syntax vector.
+     *
+     * @param page   destination page pointer.
+     * @param type   type of destionation
+     * @param left   offset coordinate value in page space for specified dest type.
+     * @param top    offset coordinate value in page space for specified dest type.
+     * @param bottom offset coordinate value in page space for specified dest type.
+     * @param right  offset coordinate value in page space for specified dest type.
+     * @return new instance of vector containing well formed destination syntax.
+     */
+    public static List<Object> destinationSyntax(
+            Reference page, final Object type, Object left, Object bottom,
+            Object right, Object top) {
+        List<Object> destSyntax = new ArrayList<Object>(6);
+        destSyntax.add(page);
+        destSyntax.add(type);
+        destSyntax.add(left);
+        destSyntax.add(bottom);
+        destSyntax.add(right);
+        destSyntax.add(top);
+        return destSyntax;
+    }
+
+    /**
      * Initiate the Destination. Retrieve any needed attributes.
      */
     private void init() {
@@ -141,8 +215,8 @@ public class Destination {
 
             boolean found = false;
             Catalog catalog = library.getCatalog();
-            if (catalog != null) {
-                NameTree nameTree = catalog.getNameTree();
+            if (catalog != null && catalog.getNames() != null) {
+                NameTree nameTree = catalog.getNames().getDestsNameTree();
                 if (nameTree != null) {
                     Object o = nameTree.searchName(s);
                     if (o != null) {
@@ -163,7 +237,12 @@ public class Destination {
                     Dictionary dests = catalog.getDestinations();
                     if (dests != null) {
                         Object ob = dests.getObject((Name) object);
-                        if (ob instanceof HashMap) {
+                        // list of destinations name->Dest pairs.
+                        if (ob instanceof List) {
+                            parse((List) ob);
+                        }
+                        // corner case for d attached list.
+                        else if (ob instanceof HashMap) {
                             parse((List) (((HashMap) ob).get(D_KEY)));
                         } else {
                             if (logger.isLoggable(Level.FINE)) {
@@ -307,83 +386,6 @@ public class Destination {
     }
 
     /**
-     * Utility for creating a /Fit or FitB syntax vector.
-     *
-     * @param page destination page pointer.
-     * @param type type of destionation
-     * @return new instance of vector containing well formed destination syntax.
-     */
-    public static List<Object> destinationSyntax(
-            Reference page, final Name type) {
-        List<Object> destSyntax = new ArrayList<Object>(2);
-        destSyntax.add(page);
-        destSyntax.add(type);
-        return destSyntax;
-    }
-
-    /**
-     * Utility for creating a /FitH, /FitV, /FitBH or /FitBV syntax vector.
-     *
-     * @param page   destination page pointer.
-     * @param type   type of destionation
-     * @param offset offset coordinate value in page space for specified dest type.
-     * @return new instance of vector containing well formed destination syntax.
-     */
-    public static List<Object> destinationSyntax(
-            Reference page, final Name type, Object offset) {
-        List<Object> destSyntax = new ArrayList<Object>(3);
-        destSyntax.add(page);
-        destSyntax.add(type);
-        destSyntax.add(offset);
-        return destSyntax;
-    }
-
-    /**
-     * Utility for creating a /XYZ syntax vector.
-     *
-     * @param page destination page pointer.
-     * @param type type of destionation
-     * @param left offset coordinate value in page space for specified dest type.
-     * @param top  offset coordinate value in page space for specified dest type.
-     * @param zoom page zoom, 0 or null indicates no zoom.
-     * @return new instance of vector containing well formed destination syntax.
-     */
-    public static List<Object> destinationSyntax(
-            Reference page, final Object type, Object left, Object top, Object zoom) {
-        List<Object> destSyntax = new ArrayList<Object>(5);
-        destSyntax.add(page);
-        destSyntax.add(type);
-        destSyntax.add(left);
-        destSyntax.add(top);
-        destSyntax.add(zoom);
-        return destSyntax;
-    }
-
-    /**
-     * Utility for creating a /FitR syntax vector.
-     *
-     * @param page   destination page pointer.
-     * @param type   type of destionation
-     * @param left   offset coordinate value in page space for specified dest type.
-     * @param top    offset coordinate value in page space for specified dest type.
-     * @param bottom offset coordinate value in page space for specified dest type.
-     * @param right  offset coordinate value in page space for specified dest type.
-     * @return new instance of vector containing well formed destination syntax.
-     */
-    public static List<Object> destinationSyntax(
-            Reference page, final Object type, Object left, Object bottom,
-            Object right, Object top) {
-        List<Object> destSyntax = new ArrayList<Object>(6);
-        destSyntax.add(page);
-        destSyntax.add(type);
-        destSyntax.add(left);
-        destSyntax.add(bottom);
-        destSyntax.add(right);
-        destSyntax.add(top);
-        return destSyntax;
-    }
-
-    /**
      * Gets the Page Reference specified by the destination.
      *
      * @return a Reference to the Page Object associated with this destination.
@@ -397,7 +399,7 @@ public class Destination {
      * this destination.
      *
      * @return the left offset from the top, left position  of the page.  If not
-     *         specified Float.NaN is returned.
+     * specified Float.NaN is returned.
      */
     public Float getLeft() {
         return left;
@@ -408,7 +410,7 @@ public class Destination {
      * this destination.
      *
      * @return the top offset from the top, left position of the page.  If not
-     *         specified Float.NaN is returned.
+     * specified Float.NaN is returned.
      */
     public Float getTop() {
         return top;
@@ -466,7 +468,7 @@ public class Destination {
      * Get the destination properties encoded in post script form.
      *
      * @return either a destination Name or a Vector representing the
-     *         destination
+     * destination
      */
     public Object getEncodedDestination() {
         // write out the destination name

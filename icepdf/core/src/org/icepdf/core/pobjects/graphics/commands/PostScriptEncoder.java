@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -87,6 +87,15 @@ public class PostScriptEncoder {
                             .append(af.getTranslateX()).append(SPACE)
                             .append(af.getTranslateY()).append(SPACE)
                             .append(PdfOps.cm_TOKEN).append(NEWLINE);
+                } else if (drawCmd instanceof TextTransformDrawCmd) {
+                    AffineTransform af = ((TransformDrawCmd) drawCmd).getAffineTransform();
+                    postScript.append(af.getScaleX()).append(SPACE)
+                            .append(af.getShearX()).append(SPACE)
+                            .append(af.getShearY()).append(SPACE)
+                            .append(af.getScaleY()).append(SPACE)
+                            .append(af.getTranslateX()).append(SPACE)
+                            .append(af.getTranslateY()).append(SPACE)
+                            .append(PdfOps.Tm_TOKEN).append(NEWLINE);
                 }
                 // reference the colour, we'll decide later if its fill or stroke.
                 else if (drawCmd instanceof ColorDrawCmd) {

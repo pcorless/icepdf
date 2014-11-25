@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -49,30 +49,23 @@ import java.util.logging.Logger;
  */
 public class InteractiveForm extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(InteractiveForm.class.toString());
-
-
     /**
      * (Required) An array of references to the document’s root fields(those with
      * no ancestors in the field hierarchy).
      */
     public static final Name FIELDS_KEY = new Name("Fields");
-
     /**
      * (Optional) A flag specifying whether to construct appearance streams and
      * appearance dictionaries for all widget annotations in the document (see
      * 12.7.3.3, “Variable Text”). Default value: false.
      */
     public static final Name NEEDS_APPEARANCES_KEY = new Name("NeedAppearances");
-
     /**
      * (Optional; PDF 1.3) A set of flags specifying various document-level
      * characteristics related to signature fields (see Table 219, and 12.7.4.5,
      * “Signature Fields”). Default value: 0.
      */
     public static final Name SIG_FLAGS_KEY = new Name("SigFlags");
-
     /**
      * (Required if any fields in the document have additional-actions
      * dictionaries containing a C entry; PDF 1.3) An array of indirect
@@ -81,7 +74,6 @@ public class InteractiveForm extends Dictionary {
      * value of any field changes (see 12.6.3, “Trigger Events”).
      */
     public static final Name CO_KEY = new Name("CO");
-
     /**
      * (Optional) A resource dictionary (see 7.8.3, “Resource Dictionaries”)
      * containing default resources (such as fonts, patterns, or colour spaces)
@@ -90,19 +82,16 @@ public class InteractiveForm extends Dictionary {
      * font dictionary of the default font for displaying text.
      */
     public static final Name DR_KEY = new Name("DR");
-
     /**
      * (Optional) A document-wide default value for the DA attribute of variable
      * text fields (see 12.7.3.3, “Variable Text”).
      */
     public static final Name DA_KEY = new Name("DA");
-
     /**
      * (Optional) A document-wide default value for the Q attribute of variable
      * text fields (see 12.7.3.3, “Variable Text”).
      */
     public static final Name Q_KEY = new Name("Q");
-
     /**
      * If set, the document contains at least one signature field. This flag
      * allows a conforming reader to enable user interface items (such as menu
@@ -110,7 +99,6 @@ public class InteractiveForm extends Dictionary {
      * scan the entire document for the presence of signature fields.
      */
     public static final int SIG_FLAGS_SIGNATURES_EXIST = 1;
-
     /**
      * If set, the document contains signatures that may be invalidated if the
      * file is saved (written) in a way that alters its previous contents, as
@@ -121,7 +109,8 @@ public class InteractiveForm extends Dictionary {
      * and require explicit confirmation before continuing with the operation.
      */
     public static final int SIG_FLAGS_APPEND_ONLY = 2;
-
+    private static final Logger logger =
+            Logger.getLogger(InteractiveForm.class.toString());
     // field list, we keep reference as we don't want these garbage collected.
     private ArrayList<AbstractWidgetAnnotation> fields;
     private boolean needAppearances;

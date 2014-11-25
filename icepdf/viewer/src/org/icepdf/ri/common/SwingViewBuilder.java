@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -310,17 +310,21 @@ import java.util.logging.Logger;
  */
 public class SwingViewBuilder {
 
-    private static final Logger logger =
-            Logger.getLogger(SwingViewBuilder.class.toString());
-
     public static final int TOOL_BAR_STYLE_FLOATING = 1;
     public static final int TOOL_BAR_STYLE_FIXED = 2;
-
     protected static final float[] DEFAULT_ZOOM_LEVELS = {
             0.05f, 0.10f, 0.25f, 0.50f, 0.75f,
             1.0f, 1.5f, 2.0f, 3.0f,
             4.0f, 8.0f, 16.0f, 24.0f, 32.0f, 64.0f};
-
+    private static final Logger logger =
+            Logger.getLogger(SwingViewBuilder.class.toString());
+    public static boolean isMacOs;
+    private static boolean isDemo;
+    static {
+        isMacOs = (Defs.sysProperty("mrj.version") != null);
+        // check for demo system property
+        isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
+    }
     protected SwingController viewerController;
     protected Font buttonFont;
     protected boolean showButtonText;
@@ -329,20 +333,8 @@ public class SwingViewBuilder {
     protected boolean haveMadeAToolBar;
     protected int documentViewType;
     protected int documentPageFitMode;
-
     protected ResourceBundle messageBundle;
-
     protected PropertiesManager propertiesManager;
-
-    public static boolean isMacOs;
-
-    private static boolean isDemo;
-
-    static {
-        isMacOs = (Defs.sysProperty("mrj.version") != null);
-        // check for demo system property
-        isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
-    }
 
     /**
      * Construct a SwingVewBuilder with all of the default settings
@@ -438,7 +430,7 @@ public class SwingViewBuilder {
      * behave as a fully functional PDF Viewer application.
      *
      * @return a JFrame containing the PDF document's current page visualization,
-     *         menu bar, accelerator buttons, and document outline if available.
+     * menu bar, accelerator buttons, and document outline if available.
      * @see #buildViewerPanel
      */
     public JFrame buildViewerFrame() {
@@ -462,7 +454,7 @@ public class SwingViewBuilder {
      * standalone JFrame
      *
      * @return JPanel containing the PDF document's current page visualization,
-     *         menu bar, accelerator buttons, and document outline if available.
+     * menu bar, accelerator buttons, and document outline if available.
      * @see #buildViewerFrame
      */
     public JPanel buildViewerPanel() {
@@ -724,7 +716,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.undo.label"),
                 null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_UNDO,
-                KeyEventConstants.MODIFIER_UNDO));
+                        KeyEventConstants.MODIFIER_UNDO));
         if (viewerController != null && mi != null)
             viewerController.setUndoMenuItem(mi);
         return mi;
@@ -734,7 +726,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.redo.label"),
                 null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_REDO,
-                KeyEventConstants.MODIFIER_REDO));
+                        KeyEventConstants.MODIFIER_REDO));
         if (viewerController != null && mi != null)
             viewerController.setReduMenuItem(mi);
         return mi;
@@ -744,7 +736,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.copy.label"),
                 null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_COPY,
-                KeyEventConstants.MODIFIER_COPY));
+                        KeyEventConstants.MODIFIER_COPY));
         if (viewerController != null && mi != null)
             viewerController.setCopyMenuItem(mi);
         return mi;
@@ -754,7 +746,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.delete.label"),
                 null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_DELETE,
-                KeyEventConstants.MODIFIER_DELETE));
+                        KeyEventConstants.MODIFIER_DELETE));
         if (viewerController != null && mi != null)
             viewerController.setDeleteMenuItem(mi);
         return mi;
@@ -764,7 +756,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.selectAll.label"),
                 null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_SELECT_ALL,
-                KeyEventConstants.MODIFIER_SELECT_ALL));
+                        KeyEventConstants.MODIFIER_SELECT_ALL));
         if (viewerController != null && mi != null)
             viewerController.setSelectAllMenuItem(mi);
         return mi;
@@ -774,7 +766,7 @@ public class SwingViewBuilder {
         JMenuItem mi = makeMenuItem(
                 messageBundle.getString("viewer.menu.edit.deselectAll.label"),
                 null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_DESELECT_ALL,
-                KeyEventConstants.MODIFIER_DESELECT_ALL));
+                        KeyEventConstants.MODIFIER_DESELECT_ALL));
         if (viewerController != null && mi != null)
             viewerController.setDselectAllMenuItem(mi);
         return mi;
@@ -995,6 +987,7 @@ public class SwingViewBuilder {
         return mi;
     }
 
+    @SuppressWarnings("unchecked")
     public void buildWindowListMenuItems(JMenu menu) {
         if (viewerController != null &&
                 viewerController.getWindowManagementCallback() != null) {
@@ -1766,7 +1759,7 @@ public class SwingViewBuilder {
      * for all properties is 'true'.
      *
      * @return status panel JPanel if visible, null if the proeprty
-     *         'application.statusbar=false' is set.
+     * 'application.statusbar=false' is set.
      */
     public JPanel buildStatusPanel() {
         // check to see if the status bars should be built.
@@ -1864,7 +1857,6 @@ public class SwingViewBuilder {
         JButton tmp = new JButton(showButtonText ? title : "");
         tmp.setFont(font);
         tmp.setToolTipText(toolTip);
-        ;
         tmp.setPreferredSize(new Dimension(32, 32));
         try {
             tmp.setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
@@ -1872,7 +1864,7 @@ public class SwingViewBuilder {
             tmp.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
             tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
         } catch (NullPointerException e) {
-
+            logger.warning("Failed to load toolbar button images: " + imageName + "_i" + imageSize + ".png");
         }
         tmp.setRolloverEnabled(true);
         tmp.setBorderPainted(false);
@@ -1907,7 +1899,7 @@ public class SwingViewBuilder {
             tmp.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
             tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
         } catch (NullPointerException e) {
-
+            logger.warning("Failed to load toolbar toggle button images: " + imageName + "_i" + imageSize + ".png");
         }
         //tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
@@ -1942,7 +1934,7 @@ public class SwingViewBuilder {
             tmp.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
             tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
         } catch (NullPointerException e) {
-
+            logger.warning("Failed to load toolbar toggle images: " + imageName + "_i" + imageSize + ".png");
         }
         //tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
@@ -1980,7 +1972,7 @@ public class SwingViewBuilder {
             tmp.setSelectedIcon(new ImageIcon(Images.get(imageName + "_n.png")));
             tmp.setDisabledIcon(new ImageIcon(Images.get(imageName + "_n.png")));
         } catch (NullPointerException e) {
-
+            logger.warning("Failed to load toobar toggle button images: " + imageName + ".png");
         }
         tmp.setBorderPainted(false);
         tmp.setBorder(BorderFactory.createEmptyBorder());
@@ -2016,12 +2008,11 @@ public class SwingViewBuilder {
         JMenuItem jmi = new JMenuItem(text);
         if (imageName != null) {
             try {
-                jmi.setIcon(new ImageIcon(Images.get(imageName + "_a." + imageSize + "png")));
+                jmi.setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
                 jmi.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-                jmi.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize +
-                        ".png")));
+                jmi.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
             } catch (NullPointerException e) {
-
+                logger.warning("Failed to load menu images: " + imageName + "_a" + imageSize + ".png");
             }
         } else {
             jmi.setIcon(new ImageIcon(Images.get("menu_spacer.gif")));

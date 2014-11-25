@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -14,7 +14,6 @@
  * governing permissions and limitations under the License.
  */
 
-import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.MyAnnotationCallback;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
@@ -67,7 +66,6 @@ public class ViewerApplet extends JApplet {
      */
     public void init() {
         logger.fine("Initializing ICEpdf Viewer Applet");
-        Library.initializeThreadPool();
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -153,7 +151,6 @@ public class ViewerApplet extends JApplet {
                     getContentPane().removeAll();
                 }
             });
-            Library.shutdownThreadPool();
         } catch (Exception e) {
             logger.log(Level.SEVERE,
                     "Destroying ICEpdf controller didn't successfully complete", e);

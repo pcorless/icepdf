@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -35,52 +35,55 @@ import java.awt.image.ColorModel;
  */
 final class RadialGradientPaintContext extends MultipleGradientPaintContext {
 
+    private static final int FIXED_POINT_IMPL = 1;
+    private static final int DEFAULT_IMPL = 2;
+    private static final int ANTI_ALIAS_IMPL = 3;
+    /**
+     * Amount for offset when clamping focus.
+     */
+    private static final float SCALEBACK = 0.999f;
+    /**
+     * Used to limit the size of the square root lookup table
+     */
+    private static final int MAX_PRECISION = 256;
     /**
      * True when (focus == center)
      */
     private boolean isSimpleFocus = false;
-
     /**
      * True when (cycleMethod == NO_CYCLE)
      */
     private boolean isNonCyclic = false;
-
     /**
      * Radius of the outermost circle defining the 100% gradient stop.
      */
     private float radius;
-
     /**
      * Variables representing center and focus points.
      */
     private float centerX, centerY, focusX, focusY;
-
     /**
      * Radius of the gradient circle squared.
      */
     private float radiusSq;
-
     /**
      * Constant part of X, Y user space coordinates.
      */
     private float constA, constB;
-
     /**
      * This value represents the solution when focusX == X.  It is called
      * trivial because it is easier to calculate than the general case.
      */
     private float trivial;
-
-    private static final int FIXED_POINT_IMPL = 1;
-    private static final int DEFAULT_IMPL = 2;
-    private static final int ANTI_ALIAS_IMPL = 3;
-
     private int fillMethod;
-
     /**
-     * Amount for offset when clamping focus.
+     * Length of a square distance intervale in the lookup table
      */
-    private static final float SCALEBACK = 0.999f;
+    private float invSqStepFloat;
+    /**
+     * Square root lookup table
+     */
+    private int[] sqrtLutFixed = new int[MAX_PRECISION];
 
     /**
      * Constructor for RadialGradientPaintContext.
@@ -335,21 +338,6 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
             indexer += adjust;
         }
     }
-
-    /**
-     * Length of a square distance intervale in the lookup table
-     */
-    private float invSqStepFloat;
-
-    /**
-     * Used to limit the size of the square root lookup table
-     */
-    private static final int MAX_PRECISION = 256;
-
-    /**
-     * Square root lookup table
-     */
-    private int[] sqrtLutFixed = new int[MAX_PRECISION];
 
     /**
      * Build square root lookup table

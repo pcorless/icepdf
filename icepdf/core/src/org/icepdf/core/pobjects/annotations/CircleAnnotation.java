@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -45,9 +45,6 @@ import java.util.logging.Logger;
  */
 public class CircleAnnotation extends MarkupAnnotation {
 
-    private static final Logger logger =
-            Logger.getLogger(CircleAnnotation.class.toString());
-
     /**
      * (Optional; PDF 1.4) An array of numbers in the range 0.0 to 1.0 specifying
      * the interior color that shall be used to fill the annotation’s line endings
@@ -59,7 +56,8 @@ public class CircleAnnotation extends MarkupAnnotation {
      * 4 - DeviceCMYK
      */
     public static final Name IC_KEY = new Name("IC");
-
+    private static final Logger logger =
+            Logger.getLogger(CircleAnnotation.class.toString());
     // state properties for generate the content stream and shapes representation.
     // of the annnotation state.
     private Color fillColor;
@@ -68,24 +66,6 @@ public class CircleAnnotation extends MarkupAnnotation {
 
     public CircleAnnotation(Library l, HashMap h) {
         super(l, h);
-    }
-
-    public void init() {
-        super.init();
-        // parse out interior colour, specific to link annotations.
-        fillColor = Color.WHITE; // we default to black but probably should be null
-        java.util.List C = (java.util.List) getObject(IC_KEY);
-        // parse thought rgb colour.
-        if (C != null && C.size() >= 3) {
-            float red = ((Number) C.get(0)).floatValue();
-            float green = ((Number) C.get(1)).floatValue();
-            float blue = ((Number) C.get(2)).floatValue();
-            red = Math.max(0.0f, Math.min(1.0f, red));
-            green = Math.max(0.0f, Math.min(1.0f, green));
-            blue = Math.max(0.0f, Math.min(1.0f, blue));
-            fillColor = new Color(red, green, blue);
-            isFillColor = true;
-        }
     }
 
     /**
@@ -126,6 +106,24 @@ public class CircleAnnotation extends MarkupAnnotation {
         circleAnnotation.setFlag(Annotation.FLAG_PRINT, true);
 
         return circleAnnotation;
+    }
+
+    public void init() {
+        super.init();
+        // parse out interior colour, specific to link annotations.
+        fillColor = Color.WHITE; // we default to black but probably should be null
+        java.util.List C = (java.util.List) getObject(IC_KEY);
+        // parse thought rgb colour.
+        if (C != null && C.size() >= 3) {
+            float red = ((Number) C.get(0)).floatValue();
+            float green = ((Number) C.get(1)).floatValue();
+            float blue = ((Number) C.get(2)).floatValue();
+            red = Math.max(0.0f, Math.min(1.0f, red));
+            green = Math.max(0.0f, Math.min(1.0f, green));
+            blue = Math.max(0.0f, Math.min(1.0f, blue));
+            fillColor = new Color(red, green, blue);
+            isFillColor = true;
+        }
     }
 
     /**
@@ -201,7 +199,7 @@ public class CircleAnnotation extends MarkupAnnotation {
             // else a stream, we won't support this for annotations.
         } else {
             // create a new xobject/form object
-            HashMap formEntries = new HashMap();
+            HashMap<Object, Object> formEntries = new HashMap<Object, Object>();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
             form = new Form(library, formEntries, null);
@@ -217,7 +215,7 @@ public class CircleAnnotation extends MarkupAnnotation {
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(
                     PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            HashMap appearanceRefs = new HashMap();
+            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
             entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
 

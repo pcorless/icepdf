@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,6 +32,7 @@ import java.awt.*;
  * URI.  It will be quite easy to add more properites in the future given the
  * factory nature of this class
  */
+@SuppressWarnings("serial")
 public class AnnotationPanel extends AnnotationPanelAdapter {
 
     // layouts constraint

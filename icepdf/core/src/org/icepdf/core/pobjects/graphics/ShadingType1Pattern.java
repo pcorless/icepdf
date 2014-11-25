@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -68,6 +68,7 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
         super(library, entries);
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized void init() {
         if (inited) {
             return;

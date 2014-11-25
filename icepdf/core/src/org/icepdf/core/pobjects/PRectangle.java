@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -43,6 +43,7 @@ import java.util.List;
  *
  * @since 2.0
  */
+@SuppressWarnings("serial")
 public class PRectangle extends Rectangle2D.Float {
 
     private float p1x;
@@ -113,6 +114,27 @@ public class PRectangle extends Rectangle2D.Float {
     }
 
     /**
+     * Converts a rectangle defined in user page in Java2D coordinates back
+     * to PDF space and in the vector for of the rectangle.
+     *
+     * @param rect user space rectangle in Java2D coordinates space.
+     * @return vector notation of rectangle in PDF space.
+     */
+    public static List getPRectangleVector(Rectangle2D rect) {
+
+        // convert the rectangle back to PDF space.
+        rect = new Rectangle2D.Double(rect.getX(),
+                rect.getY(),
+                rect.getWidth(), rect.getHeight());
+        ArrayList<Number> coords = new ArrayList<Number>(4);
+        coords.add(rect.getMinX());
+        coords.add(rect.getMinY());
+        coords.add(rect.getMaxX());
+        coords.add(rect.getMaxY());
+        return coords;
+    }
+
+    /**
      * Returns a new PRectangle object representing the intersection of this
      * PRectangle with the specified PRectangle using the Cartesian coordinate
      * system. If a Java2D coordinate system is used, then the rectangle should
@@ -162,27 +184,6 @@ public class PRectangle extends Rectangle2D.Float {
      */
     public Rectangle2D.Float toJava2dCoordinates() {
         return new Rectangle2D.Float(x, y - height, width, height);
-    }
-
-    /**
-     * Converts a rectangle defined in user page in Java2D coordinates back
-     * to PDF space and in the vector for of the rectangle.
-     *
-     * @param rect user space rectangle in Java2D coordinates space.
-     * @return vector notation of rectangle in PDF space.
-     */
-    public static List getPRectangleVector(Rectangle2D rect) {
-
-        // convert the rectangle back to PDF space.
-        rect = new Rectangle2D.Double(rect.getX(),
-                rect.getY(),
-                rect.getWidth(), rect.getHeight());
-        ArrayList coords = new ArrayList(4);
-        coords.add(rect.getMinX());
-        coords.add(rect.getMinY());
-        coords.add(rect.getMaxX());
-        coords.add(rect.getMaxY());
-        return coords;
     }
 
     /**

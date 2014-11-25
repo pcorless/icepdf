@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -46,8 +46,8 @@ public interface DrawCmd {
      * @param paintAlpha           enable/disable the alpha painting.
      * @param paintTimer           painTimer keeps track when a repaint should occur.
      * @return resulting shape if currentShape has been altered, otherwise
-     *         returns the currentShape.  Current Shape is generally altered
-     *         clip shape.
+     * returns the currentShape.  Current Shape is generally altered
+     * clip shape.
      */
     public Shape paintOperand(Graphics2D g,
                               Page parentPage,

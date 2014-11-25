@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -136,7 +136,7 @@ public class Launcher {
 
 
         // application instance
-        windowManager = new WindowManager(propertiesManager, messageBundle);
+        windowManager = WindowManager.createInstance(propertiesManager, messageBundle);
         if (contentFile != null && contentFile.length() > 0) {
             windowManager.newWindow(contentFile);
             ViewModel.setDefaultFilePath(contentFile);

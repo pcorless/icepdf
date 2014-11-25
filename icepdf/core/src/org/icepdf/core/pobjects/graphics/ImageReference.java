@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -15,14 +15,15 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.ImageStream;
-import org.icepdf.core.pobjects.ImageUtility;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.events.PageImageEvent;
+import org.icepdf.core.events.PageLoadingEvent;
+import org.icepdf.core.events.PageLoadingListener;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
@@ -55,10 +56,16 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     protected BufferedImage image;
     protected Reference reference;
 
-    protected ImageReference(ImageStream imageStream, Color fillColor, Resources resources) {
+    protected int imageIndex;
+    protected Page parentPage;
+
+    protected ImageReference(ImageStream imageStream, Color fillColor,
+                             Resources resources, int imageIndex, Page parentPage) {
         this.imageStream = imageStream;
         this.fillColor = fillColor;
         this.resources = resources;
+        this.imageIndex = imageIndex;
+        this.parentPage = parentPage;
     }
 
     public abstract int getWidth();
@@ -99,9 +106,9 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     /**
      * Creates a scaled image to match that of the instance vars width/height.
      *
-     * @return decoded/encoded BufferedImge for the respective ImageStream.
+     * @return decoded/encoded BufferedImage for the respective ImageStream.
      */
-    protected BufferedImage createImage() {
+    protected synchronized BufferedImage createImage() {
         try {
             // block until thread comes back.
             if (futureTask != null) {
@@ -110,6 +117,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
             if (image == null) {
                 image = call();
             }
+            notify();
         } catch (InterruptedException e) {
             logger.warning("Image loading interrupted");
         } catch (Exception e) {
@@ -124,5 +132,45 @@ public abstract class ImageReference implements Callable<BufferedImage> {
 
     public boolean isImage() {
         return image != null;
+    }
+
+    protected void notifyPageImageLoadedEvent(long duration, boolean interrupted) {
+        if (parentPage != null) {
+            PageImageEvent pageLoadingEvent =
+                    new PageImageEvent(parentPage, imageIndex,
+                            parentPage.getImageCount(), duration, interrupted);
+            PageLoadingListener client;
+            List<PageLoadingListener> pageLoadingListeners =
+                    parentPage.getPageLoadingListeners();
+            for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+                client = pageLoadingListeners.get(i);
+                client.pageImageLoaded(pageLoadingEvent);
+            }
+        }
+    }
+
+    protected void notifyImagePageEvents(long duration) {
+        // sound out image loading event.
+        notifyPageImageLoadedEvent(duration, image == null);
+        // check to see if we're done loading and all we were waiting on was
+        // the completion of this image load.
+        if (parentPage != null && imageIndex == parentPage.getImageCount() &&
+                parentPage.isPageInitialized() && parentPage.isPagePainted()) {
+            notifyPageLoadingEnded();
+        }
+    }
+
+    protected void notifyPageLoadingEnded() {
+        if (parentPage != null) {
+            PageLoadingEvent pageLoadingEvent =
+                    new PageLoadingEvent(parentPage, parentPage.isInitiated());
+            PageLoadingListener client;
+            List<PageLoadingListener> pageLoadingListeners =
+                    parentPage.getPageLoadingListeners();
+            for (int i = pageLoadingListeners.size() - 1; i >= 0; i--) {
+                client = pageLoadingListeners.get(i);
+                client.pageLoadingEnded(pageLoadingEvent);
+            }
+        }
     }
 }

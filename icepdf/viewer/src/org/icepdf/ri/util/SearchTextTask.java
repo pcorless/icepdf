@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -37,27 +37,23 @@ import java.util.ResourceBundle;
  */
 public class SearchTextTask {
 
+    // parent swing controller
+    SwingController controller;
     // total length of task (total page count), used for progress bar
     private int lengthOfTask;
-
     // current progress, used for the progress bar
     private int current = 0;
-
     // message displayed on progress bar
     private String dialogMessage;
-
     // canned internationalized messages.
     private MessageFormat searchingMessageForm;
     private MessageFormat searchResultMessageForm;
     private MessageFormat searchCompletionMessageForm;
-
     // flags for threading
     private boolean done = false;
     private boolean canceled = false;
-
     // keep track of total hits
     private int totalHitCount = 0;
-
     // String to search for and parameters from gui
     private String pattern = "";
     private boolean wholeWord;
@@ -65,10 +61,6 @@ public class SearchTextTask {
     private boolean cumulative;
     private boolean showPages;
     private boolean r2L;
-
-    // parent swing controller
-    SwingController controller;
-
     // append nodes for found text.
     private SearchPanel searchPanel;
 
@@ -186,6 +178,29 @@ public class SearchTextTask {
     }
 
     /**
+     * Gets the message that should be displayed when the task has completed.
+     *
+     * @return search completed or stoped final message.
+     */
+    public String getFinalMessage() {
+        setDialogMessage();
+        return dialogMessage;
+    }
+
+    /**
+     * Utility method for setting the dialog message.
+     */
+    private void setDialogMessage() {
+
+        // Build Internationalized plural phrase.
+
+        Object[] messageArguments = {String.valueOf((current + 1)),
+                (current + 1), totalHitCount};
+
+        dialogMessage = searchCompletionMessageForm.format(messageArguments);
+    }
+
+    /**
      * The actual long running task.  This runs in a SwingWorker thread.
      */
     class ActualTask {
@@ -274,28 +289,5 @@ public class SearchTextTask {
                 }
             });
         }
-    }
-
-    /**
-     * Gets the message that should be displayed when the task has completed.
-     *
-     * @return search completed or stoped final message.
-     */
-    public String getFinalMessage() {
-        setDialogMessage();
-        return dialogMessage;
-    }
-
-    /**
-     * Utility method for setting the dialog message.
-     */
-    private void setDialogMessage() {
-
-        // Build Internationalized plural phrase.
-
-        Object[] messageArguments = {String.valueOf((current + 1)),
-                (current + 1), totalHitCount};
-
-        dialogMessage = searchCompletionMessageForm.format(messageArguments);
     }
 }

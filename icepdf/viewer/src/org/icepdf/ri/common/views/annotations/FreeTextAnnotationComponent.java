@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -61,20 +61,17 @@ import java.util.logging.Logger;
  * @see org.icepdf.ri.common.utility.annotation.FreeTextAnnotationPanel
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         implements PropertyChangeListener {
 
     private static final Logger logger =
             Logger.getLogger(FreeTextAnnotation.class.toString());
-
-    private ScalableTextArea freeTextPane;
-
-    private boolean contentTextChange;
-
-    private FreeTextAnnotation freeTextAnnotation;
-
     // font file cache.
     protected Font fontFile;
+    private ScalableTextArea freeTextPane;
+    private boolean contentTextChange;
+    private FreeTextAnnotation freeTextAnnotation;
 
     public FreeTextAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                        final AbstractPageViewComponent pageViewComponent,

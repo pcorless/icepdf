@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -53,17 +53,8 @@ public class SecurityManager {
 
     private static final Logger logger =
             Logger.getLogger(SecurityManager.class.toString());
-
-    // Default Encryption dictionary, which also contians keys need for
-    // standard, crypt and public security handlers.
-    private EncryptionDictionary encryptDictionary = null;
-
-    // Pointer to class which implements the SecurityHandler interface
-    private SecurityHandler securityHandler = null;
-
     // flag for detecting JCE
     private static boolean foundJCE = false;
-
     // Add security provider of choice before Sun RSA provider (if any)
     static {
         // Load security handler from system property if possible
@@ -97,13 +88,11 @@ public class SecurityManager {
             logger.log(Level.SEVERE, "Sun JCE Support Not Found");
         }
     }
-
-    /**
-     * Disposes of the security handler instance.
-     */
-    public void dispose() {
-
-    }
+    // Default Encryption dictionary, which also contians keys need for
+    // standard, crypt and public security handlers.
+    private EncryptionDictionary encryptDictionary = null;
+    // Pointer to class which implements the SecurityHandler interface
+    private SecurityHandler securityHandler = null;
 
     /**
      * Creates new instance of SecurityManager object.
@@ -113,7 +102,7 @@ public class SecurityManager {
      * @param fileID               fileID of PDF document
      * @throws PDFSecurityException if the security provider could not be found
      */
-    public SecurityManager(Library library, HashMap encryptionDictionary,
+    public SecurityManager(Library library, HashMap<Object, Object> encryptionDictionary,
                            List fileID)
             throws PDFSecurityException {
 
@@ -137,6 +126,13 @@ public class SecurityManager {
         } else {
             throw new PDFSecurityException("Security Provider Not Found.");
         }
+    }
+
+    /**
+     * Disposes of the security handler instance.
+     */
+    public void dispose() {
+
     }
 
     /**

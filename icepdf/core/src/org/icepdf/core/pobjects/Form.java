@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -39,9 +39,6 @@ import java.util.logging.Logger;
  */
 public class Form extends Stream {
 
-    private static final Logger logger =
-            Logger.getLogger(Form.class.toString());
-
     public static final Name TYPE_VALUE = new Name("XObject");
     public static final Name SUB_TYPE_VALUE = new Name("Form");
     public static final Name GROUP_KEY = new Name("Group");
@@ -50,7 +47,8 @@ public class Form extends Stream {
     public static final Name MATRIX_KEY = new Name("Matrix");
     public static final Name BBOX_KEY = new Name("BBox");
     public static final Name RESOURCES_KEY = new Name("Resources");
-
+    private static final Logger logger =
+            Logger.getLogger(Form.class.toString());
     private AffineTransform matrix = new AffineTransform();
     private Rectangle2D bbox;
     private Shapes shapes;
@@ -84,12 +82,37 @@ public class Form extends Stream {
         }
     }
 
+    /**
+     * Utility method for parsing a vector of affinetranform values to an
+     * affine transform.
+     *
+     * @param v vectory containing affine transform values.
+     * @return affine tansform based on v
+     */
+    private static AffineTransform getAffineTransform(List v) {
+        float f[] = new float[6];
+        for (int i = 0; i < 6; i++) {
+            f[i] = ((Number) v.get(i)).floatValue();
+        }
+        return new AffineTransform(f);
+    }
+
+    @SuppressWarnings("unchecked")
     public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
         this.shapes = shapes;
         this.matrix = matrix;
         this.bbox = bbox;
         entries.put(Form.BBOX_KEY, PRectangle.getPRectangleVector(bbox));
         entries.put(Form.MATRIX_KEY, matrix);
+    }
+
+    /**
+     * Gets the associated graphic state instance for this form.
+     *
+     * @return external graphic state,  can be null.
+     */
+    public GraphicsState getGraphicsState() {
+        return graphicsState;
     }
 
     /**
@@ -104,21 +127,6 @@ public class Form extends Stream {
         if (graphicsState != null) {
             this.graphicsState = graphicsState;
         }
-    }
-
-    /**
-     * Utility method for parsing a vector of affinetranform values to an
-     * affine transform.
-     *
-     * @param v vectory containing affine transform values.
-     * @return affine tansform based on v
-     */
-    private static AffineTransform getAffineTransform(List v) {
-        float f[] = new float[6];
-        for (int i = 0; i < 6; i++) {
-            f[i] = ((Number) v.get(i)).floatValue();
-        }
-        return new AffineTransform(f);
     }
 
     /**
@@ -165,7 +173,7 @@ public class Form extends Stream {
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("Parsing form " + getPObjectReference());
                 }
-                shapes = cp.parse(new byte[][]{in}).getShapes();
+                shapes = cp.parse(new byte[][]{in}, null).getShapes();
             } catch (Throwable e) {
                 // reset shapes vector, we don't want to mess up the paint stack
                 shapes = new Shapes();
@@ -183,6 +191,7 @@ public class Form extends Stream {
         return leafResources;
     }
 
+    @SuppressWarnings("unchecked")
     public void setResources(Resources resources) {
         entries.put(RESOURCES_KEY, resources.getEntries());
     }
@@ -211,7 +220,7 @@ public class Form extends Stream {
      * system in xObject space to the parent coordinates space.
      *
      * @return affine transform representing the xObject's pdf to xObject space
-     *         transform.
+     * transform.
      */
     public AffineTransform getMatrix() {
         return matrix;

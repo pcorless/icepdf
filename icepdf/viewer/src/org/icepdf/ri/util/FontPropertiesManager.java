@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -48,18 +48,13 @@ public class FontPropertiesManager {
     private static final String DEFAULT_HOME_DIR = ".icesoft/icepdf_viewer";
     private static final String LOCK_FILE = "_syslock";
     private final static String USER_FILENAME = "pdfviewerfontcache.properties";
-
-    private FontManager fontManager;
-
     //the version name, used in about dialog and start-up message
     String versionName = Document.getLibraryVersion();
-
+    File userHome;
+    private FontManager fontManager;
     private Properties sysProps;
     private PropertiesManager props;
     private Properties fontProps;
-
-    File userHome;
-
     //the swingri home directory
     private File dataDir;
 

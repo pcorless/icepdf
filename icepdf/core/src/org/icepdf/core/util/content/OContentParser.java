@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -16,10 +16,7 @@
 package org.icepdf.core.util.content;
 
 import org.icepdf.core.io.ByteDoubleArrayInputStream;
-import org.icepdf.core.pobjects.ImageStream;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.OptionalContents;
-import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.GlyphOutlineDrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.ImageDrawCmd;
@@ -37,6 +34,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,7 +65,8 @@ public class OContentParser extends AbstractContentParser {
      * @throws InterruptedException if current parse thread is interrupted.
      * @throws IOException          unexpected end of content stream.
      */
-    public ContentParser parse(byte[][] streamBytes) throws InterruptedException, IOException {
+    public ContentParser parse(byte[][] streamBytes, Page page)
+            throws InterruptedException, IOException {
         if (shapes == null) {
             shapes = new Shapes();
             // Normal, clean content parse where graphics state is null
@@ -181,7 +180,6 @@ public class OContentParser extends AbstractContentParser {
                         } catch (Exception e) {
                             logger.log(Level.FINEST, "Error parsing text block", e);
                         }
-                        break;
                     }
 
                     // Fill the path, using the nonzero winding number rule to
@@ -278,7 +276,8 @@ public class OContentParser extends AbstractContentParser {
                     // the XObject's Subtype entry, which may be Image , Form, or PS
                     else if (tok.equals(PdfOps.Do_TOKEN)) {
 //                        collectTokenFrequency(PdfOps.Do_TOKEN);
-                        graphicState = consume_Do(graphicState, stack, shapes, resources, true);
+                        graphicState = consume_Do(graphicState, stack, shapes,
+                                resources, true, imageIndex, page);
                     }
 
                     // Fill the path, using the even-odd rule to determine the
@@ -307,7 +306,7 @@ public class OContentParser extends AbstractContentParser {
                     // Set the line width in the graphics state
                     else if (tok.equals(PdfOps.w_TOKEN) ||
                             tok.equals(PdfOps.LW_TOKEN)) {
-                        consume_w(graphicState, stack, shapes);
+                        consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
                     }
 
                     // Modify the current clipping path by intersecting it with the
@@ -694,7 +693,7 @@ public class OContentParser extends AbstractContentParser {
                     }
                     // pick up on xObject content streams.
                     else if (tok.equals(PdfOps.Do_TOKEN)) {
-                        consume_Do(graphicState, stack, shapes, resources, false);
+                        consume_Do(graphicState, stack, shapes, resources, false, new AtomicInteger(0), null);
                         stack.clear();
                     }
                 } else {
@@ -857,7 +856,7 @@ public class OContentParser extends AbstractContentParser {
                 // Set the line width in the graphics state
                 else if (nextToken.equals(PdfOps.w_TOKEN) ||
                         nextToken.equals(PdfOps.LW_TOKEN)) {
-                    consume_w(graphicState, stack, shapes);
+                    consume_w(graphicState, stack, shapes, glyph2UserSpaceScale);
                 }
 
                 // Fill Color with ColorSpace
@@ -898,14 +897,6 @@ public class OContentParser extends AbstractContentParser {
                 // Same as RG, but for nonstroking operations.
                 else if (nextToken.equals(PdfOps.rg_TOKEN)) { // Fill Color RGB
                     consume_rg(graphicState, stack, library);
-                }
-
-                // Sets the line dash pattern in the graphics state. A normal line
-                // is [] 0.  See Graphics State -> Line dash patter for more information
-                // in the PDF Reference.  Java 2d uses the same notation so there
-                // is not much work to be done other then parsing the data.
-                else if (nextToken.equals(PdfOps.d_TOKEN)) {
-                    consume_d(graphicState, stack, shapes);
                 }
 
                 // Sets the line dash pattern in the graphics state. A normal line
@@ -1117,7 +1108,8 @@ public class OContentParser extends AbstractContentParser {
             // create the image stream
             ImageStream st = new ImageStream(library, iih, data);
             ImageReference imageStreamReference =
-                    new InlineImageStreamReference(st, graphicState.getFillColor(), resources);
+                    new InlineImageStreamReference(st, graphicState.getFillColor(),
+                            resources, 0, null);
 //            ImageUtility.displayImage(imageStreamReference.getImage(), "BI");
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             graphicState.scale(1, -1);

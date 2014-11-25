@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -26,19 +26,17 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
 import java.util.ResourceBundle;
 
-public final class AboutDialog extends JDialog implements ActionListener, WindowListener {
+@SuppressWarnings("serial")
+public class AboutDialog extends JDialog implements ActionListener, WindowListener {
+    public static final int NO_BUTTONS = 0;
+    public static final int OK = 2;
+    public static final int NO_TIMER = 0;
+    public static final int DISAPPEAR = 4;
+    private static final int WAIT_TIME = 3000; //time to wait in milliseconds
+    private static final String IMAGE = "icelogo.png"; //image to include in the dialog
     private JButton ok;
     private Timer timer;
     private int whichTimer;
-
-    private static final int WAIT_TIME = 3000; //time to wait in milliseconds
-    private static final String IMAGE = "icelogo.png"; //image to include in the dialog
-
-    public static final int NO_BUTTONS = 0;
-    public static final int OK = 2;
-
-    public static final int NO_TIMER = 0;
-    public static final int DISAPPEAR = 4;
 
     public AboutDialog(Frame frame, ResourceBundle messageBundle, boolean isModal,
                        int buttons, int whichTimer) {

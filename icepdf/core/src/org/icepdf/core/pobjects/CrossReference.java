@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -34,19 +34,18 @@ import java.util.logging.Logger;
 
 public class CrossReference {
 
-    private static final Logger logger =
-            Logger.getLogger(CrossReference.class.toString());
-
     public static final Name SIZE_KEY = new Name("Size");
     public static final Name INDEX_KEY = new Name("Index");
     public static final Name W_KEY = new Name("W");
-
+    private static final Logger logger =
+            Logger.getLogger(CrossReference.class.toString());
+    // offset error for simple file error issue.
+    protected int offset;
     /**
      * Map of all the objects in reference by the CrossReference table.  Ojbects
      * are retrieved by object number.
      */
     private HashMap<Number, Entry> hObjectNumber2Entry;
-
     /**
      * In a Linearized PDF, we don't want to load all Trailers and their XRefs
      * upfront, but would rather load the first upfront, and then lazily load
@@ -60,14 +59,10 @@ public class CrossReference {
     private PTrailer pTrailer;
     private CrossReference xrefPrevious;
     private CrossReference xrefPeer;
-
     //
     private boolean bIsCrossReferenceTable;
     private boolean bHaveTriedLoadingPrevious;
     private boolean bHaveTriedLoadingPeer;
-
-    // offset error for simple file error issue.
-    protected int offset;
 
     public CrossReference() {
         hObjectNumber2Entry = new HashMap<Number, Entry>(4096);
@@ -136,6 +131,7 @@ public class CrossReference {
      * @param xrefStreamHash Dictionary for XRef stream
      * @param streamInput    Decoded stream bytes for XRef stream
      */
+    @SuppressWarnings("unchecked")
     public void addXRefStreamEntries(Library library, HashMap xrefStreamHash, InputStream streamInput) {
         try {
             // number +1 represented the highest object number.
@@ -262,6 +258,9 @@ public class CrossReference {
         hObjectNumber2Entry.put(objectNumber, entry);
     }
 
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
 
     public static class Entry {
         public static final int TYPE_FREE = 0;
@@ -304,29 +303,6 @@ public class CrossReference {
         }
     }
 
-    public class UsedEntry extends Entry {
-        private long filePositionOfObject;
-        private int generationNumber;
-
-        UsedEntry(int objectNumber, long filePositionOfObject, int generationNumber) {
-            super(TYPE_USED, objectNumber);
-            this.filePositionOfObject = filePositionOfObject;
-            this.generationNumber = generationNumber;
-        }
-
-        public long getFilePositionOfObject() {
-            return filePositionOfObject + offset;
-        }
-
-        public int getGenerationNumber() {
-            return generationNumber;
-        }
-
-        public void setFilePositionOfObject(long filePositionOfObject) {
-            this.filePositionOfObject = filePositionOfObject;
-        }
-    }
-
     public static class CompressedEntry extends Entry {
         private int objectNumberOfContainingObjectStream;
         private int indexWithinObjectStream;
@@ -346,7 +322,26 @@ public class CrossReference {
         }
     }
 
-    public void setOffset(int offset) {
-        this.offset = offset;
+    public class UsedEntry extends Entry {
+        private long filePositionOfObject;
+        private int generationNumber;
+
+        UsedEntry(int objectNumber, long filePositionOfObject, int generationNumber) {
+            super(TYPE_USED, objectNumber);
+            this.filePositionOfObject = filePositionOfObject;
+            this.generationNumber = generationNumber;
+        }
+
+        public long getFilePositionOfObject() {
+            return filePositionOfObject + offset;
+        }
+
+        public void setFilePositionOfObject(long filePositionOfObject) {
+            this.filePositionOfObject = filePositionOfObject;
+        }
+
+        public int getGenerationNumber() {
+            return generationNumber;
+        }
     }
 }

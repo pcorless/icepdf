@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -36,6 +36,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * An OutlineItemTreeNode object represents the bookmarks or leaves which makes up
  * the actual Outline JTree.
  */
+@SuppressWarnings("serial")
 public class OutlineItemTreeNode extends DefaultMutableTreeNode {
     private OutlineItem item;
     private boolean loadedChildren;

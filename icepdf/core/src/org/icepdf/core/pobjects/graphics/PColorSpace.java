@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -33,18 +33,6 @@ public abstract class PColorSpace extends Dictionary {
 
     private static final Logger logger =
             Logger.getLogger(PColorSpace.class.toString());
-
-    /**
-     * @return
-     */
-    public abstract int getNumComponents();
-
-
-    public String getDescription() {
-        String name = getClass().getName();
-        int index = name.lastIndexOf('.');
-        return name.substring(index + 1);
-    }
 
     /**
      * @param l
@@ -164,7 +152,7 @@ public abstract class PColorSpace extends Dictionary {
      *
      * @param obj object or Reference from color dictionary.
      * @return a dictionary or null if the object is not of type Reference or
-     *         HashMap.
+     * HashMap.
      */
     private static HashMap getHashMap(Library library, Object obj) {
         HashMap entries = null;
@@ -199,24 +187,6 @@ public abstract class PColorSpace extends Dictionary {
     }
 
     /**
-     * Gets the colour in RGB represented by the array of colour components
-     *
-     * @param components array of component colour data
-     * @return new RGB colour composed from the components array.
-     */
-    public Color getColor(float[] components) {
-        return getColor(components, false);
-    }
-
-    public abstract Color getColor(float[] components, boolean fillAndStroke);
-
-    public void normaliseComponentsToFloats(int[] in, float[] out, float maxval) {
-        int count = getNumComponents();
-        for (int i = 0; i < count; i++)
-            out[i] = (((float) in[i]) / maxval);
-    }
-
-    /**
      * @param f
      * @return
      */
@@ -247,5 +217,34 @@ public abstract class PColorSpace extends Dictionary {
             f[i] = f[f.length - 1 - i];
             f[f.length - 1 - i] = tmp;
         }
+    }
+
+    /**
+     * @return
+     */
+    public abstract int getNumComponents();
+
+    public String getDescription() {
+        String name = getClass().getName();
+        int index = name.lastIndexOf('.');
+        return name.substring(index + 1);
+    }
+
+    /**
+     * Gets the colour in RGB represented by the array of colour components
+     *
+     * @param components array of component colour data
+     * @return new RGB colour composed from the components array.
+     */
+    public Color getColor(float[] components) {
+        return getColor(components, false);
+    }
+
+    public abstract Color getColor(float[] components, boolean fillAndStroke);
+
+    public void normaliseComponentsToFloats(int[] in, float[] out, float maxval) {
+        int count = getNumComponents();
+        for (int i = 0; i < count; i++)
+            out[i] = (((float) in[i]) / maxval);
     }
 }

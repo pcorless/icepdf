@@ -60,14 +60,11 @@ import java.util.BitSet;
 
 public final class JBIG2Bitmap {
 
-    private int width, height, line;
-    private int bitmapNumber;
-    //private FastBitSet data;
-
-    private BitSet data;
-
     private static int counter = 0;
-
+    private int width, height, line;
+    //private FastBitSet data;
+    private int bitmapNumber;
+    private BitSet data;
     private ArithmeticDecoder arithmeticDecoder;
     private HuffmanDecoder huffmanDecoder;
     private MMRDecoder mmrDecoder;
@@ -684,7 +681,7 @@ public final class JBIG2Bitmap {
                     if (JBIG2StreamDecoder.debug)
                         System.out.println("Invalid symbol number in JBIG2 text region");
                 } else {
-                    symbolBitmap = null;
+                    // symbolBitmap = null;
 
                     int ri;
                     if (symbolRefine) {
@@ -736,26 +733,26 @@ public final class JBIG2Bitmap {
                                 combine(symbolBitmap, tt, s, combinationOperator);
                                 break;
                             case 2: // bottom right
-                                combine(symbolBitmap, (int) (tt - bitmapWidth), s, combinationOperator);
+                                combine(symbolBitmap, tt - bitmapWidth, s, combinationOperator);
                                 break;
                             case 3: // top right
-                                combine(symbolBitmap, (int) (tt - bitmapWidth), s, combinationOperator);
+                                combine(symbolBitmap, tt - bitmapWidth, s, combinationOperator);
                                 break;
                         }
                         s += bitmapHeight;
                     } else {
                         switch (referenceCorner) {
                             case 0: // bottom left
-                                combine(symbolBitmap, s, (int) (tt - bitmapHeight), combinationOperator);
+                                combine(symbolBitmap, s, tt - bitmapHeight, combinationOperator);
                                 break;
                             case 1: // top left
                                 combine(symbolBitmap, s, tt, combinationOperator);
                                 break;
                             case 2: // bottom right
-                                combine(symbolBitmap, s, (int) (tt - bitmapHeight), combinationOperator);
+                                combine(symbolBitmap, s, tt - bitmapHeight, combinationOperator);
                                 break;
                             case 3: // top right
-                                combine(symbolBitmap, s, (int) tt, combinationOperator);
+                                combine(symbolBitmap, s, tt, combinationOperator);
                                 break;
                         }
                         s += bitmapWidth;
@@ -1058,12 +1055,12 @@ public final class JBIG2Bitmap {
         this.data = newData;
     }
 
-    public void setBitmapNumber(int segmentNumber) {
-        this.bitmapNumber = segmentNumber;
-    }
-
     public int getBitmapNumber() {
         return bitmapNumber;
+    }
+
+    public void setBitmapNumber(int segmentNumber) {
+        this.bitmapNumber = segmentNumber;
     }
 
     public BufferedImage getBufferedImage() {
@@ -1185,7 +1182,7 @@ public final class JBIG2Bitmap {
 
 
             if (mod == 0)
-                bytes[row][offset] = (byte) bits;
+                bytes[row][offset] = bits;
             else {
 
                 byte left = (byte) (bits >> mod);
@@ -1226,8 +1223,8 @@ public final class JBIG2Bitmap {
         }
 
         public void reset(boolean set) {
-            for (int i = 0; i < bytes.length; i++)
-                Arrays.fill(bytes[i], set ? (byte) 0xFF : (byte) 0x00);
+            for (byte[] aByte : bytes)
+                Arrays.fill(aByte, set ? (byte) 0xFF : (byte) 0x00);
         }
     }
 }

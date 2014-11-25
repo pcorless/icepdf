@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -353,7 +353,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
 
         //calculate center point and radius based on bounding box coordinates.
         this((float) gradientBounds.getX() +
-                ((float) gradientBounds.getWidth() / 2),
+                        ((float) gradientBounds.getWidth() / 2),
 
                 (float) gradientBounds.getY() +
                         ((float) gradientBounds.getWidth() / 2),

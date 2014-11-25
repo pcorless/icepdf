@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,18 +32,16 @@ import java.util.ResourceBundle;
 public abstract class AnnotationPanelAdapter extends JPanel
         implements AnnotationProperties {
 
-    // action instance that is being edited
-    protected AnnotationComponent currentAnnotationComponent;
-    protected DocumentViewController documentViewController;
-
-    protected SwingController controller;
-    protected ResourceBundle messageBundle;
-
     // border styles types.
     protected static ValueLabelItem[] VISIBLE_TYPE_LIST;
     protected static ValueLabelItem[] LINE_THICKNESS_LIST;
     // line styles.
     protected static ValueLabelItem[] LINE_STYLE_LIST;
+    // action instance that is being edited
+    protected AnnotationComponent currentAnnotationComponent;
+    protected DocumentViewController documentViewController;
+    protected SwingController controller;
+    protected ResourceBundle messageBundle;
 
     protected AnnotationPanelAdapter(
             SwingController controller) {

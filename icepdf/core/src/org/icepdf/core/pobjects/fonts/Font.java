@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -71,57 +71,17 @@ public abstract class Font extends Dictionary {
     public static final Name ENCODING_KEY = new Name("Encoding");
     public static final Name FIRST_CHAR_KEY = new Name("FirstChar");
     public static final Name LAST_CHAR_KEY = new Name("LastChar");
-
-    // Object name always "Font"
-    protected Name name;
-
-    // The name of the object, Font
-    protected String basefont;
-
-    // The font subtype, type 0, 1, 2 etc.
-    protected Name subtype;
-
     /**
      * <p>Indicates that the font used to render this String object is in the
      * Simple Font family and thus each glyph is represented by one byte.</p>
      */
     public static final int SIMPLE_FORMAT = 1;
-
     /**
      * <p>Indicates that the font used to render this String object is in the
      * Composite Font family and thus each glyph is represented by at least
      * one byte.</p>
      */
     public static final int CID_FORMAT = 2;
-
-    // supType Format, either simple or CID.
-    protected int subTypeFormat = SIMPLE_FORMAT;
-
-    // The actual Java font that will be used to display the Glyphs
-    protected FontFile font;
-
-    // The first character code defined in the font's Widths array.
-    protected int firstchar = 32;
-    protected int lastchar = 255;
-
-    // Font Descriptor used
-    protected FontDescriptor fontDescriptor;
-
-    // initiated flag
-    protected boolean inited;
-
-    // AFM flag
-    protected boolean isAFMFont;
-
-    // vertical writing flag;
-    protected boolean isVerticalWriting;
-
-    // font substitution being used
-    protected boolean isFontSubstitution;
-
-    // parent resource, needed by some type3 fonts to access resources.
-    protected Resources parentResource;
-
     /**
      * Map named CMap to Unicode mapping.
      */
@@ -151,7 +111,6 @@ public abstract class Font extends Dictionary {
             {"UniKS-UCS2-H", "KSC-EUC-H"},
             {"UniKS-UCS2-V", "KSC-EUC-V"}
     };
-
     // core 14 AFM names
     protected static final String[] CORE14 = {
             "Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic",
@@ -160,7 +119,6 @@ public abstract class Font extends Dictionary {
             "Symbol",
             "ZapfDingbats"
     };
-
     // type1 font names.
     protected static final String[][] TYPE1_FONT_NAME = {
             {"Times-Roman", "Times New Roman", "TimesNewRoman", "TimesNewRomanPS", "TimesNewRomanPSMT"},
@@ -178,6 +136,31 @@ public abstract class Font extends Dictionary {
             {"Symbol"},
             {"ZapfDingbats", "Zapf-Dingbats", "Dingbats"}
     };
+    // Object name always "Font"
+    protected Name name;
+    // The name of the object, Font
+    protected String basefont;
+    // The font subtype, type 0, 1, 2 etc.
+    protected Name subtype;
+    // supType Format, either simple or CID.
+    protected int subTypeFormat = SIMPLE_FORMAT;
+    // The actual Java font that will be used to display the Glyphs
+    protected FontFile font;
+    // The first character code defined in the font's Widths array.
+    protected int firstchar = 32;
+    protected int lastchar = 255;
+    // Font Descriptor used
+    protected FontDescriptor fontDescriptor;
+    // initiated flag
+    protected boolean inited;
+    // AFM flag
+    protected boolean isAFMFont;
+    // vertical writing flag;
+    protected boolean isVerticalWriting;
+    // font substitution being used
+    protected boolean isFontSubstitution;
+    // parent resource, needed by some type3 fonts to access resources.
+    protected Resources parentResource;
 
     /**
      * Creates a new instance of a PDF Font.
@@ -196,7 +179,7 @@ public abstract class Font extends Dictionary {
 
         // figure out type
         if (subtype != null) {
-            subTypeFormat = (subtype.getName().toLowerCase().equals("type0") |
+            subTypeFormat = (subtype.getName().toLowerCase().equals("type0") ||
                     subtype.getName().toLowerCase().contains("cid")) ?
                     CID_FORMAT : SIMPLE_FORMAT;
         }
@@ -240,6 +223,15 @@ public abstract class Font extends Dictionary {
             }
         }
         return null;
+    }
+
+    /**
+     * Gets the fonts base name.
+     *
+     * @return fonts base name, "Serif" if none specified.
+     */
+    public String getBaseFont() {
+        return basefont;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -29,14 +29,13 @@ import org.icepdf.core.util.Utils;
  */
 public class LiteralStringObject implements StringObject {
 
-    // core data used to represent the literal string information
-    private StringBuilder stringData;
-
     private static char[] hexChar = {'0', '1', '2', '3', '4', '5', '6',
             '7', '8', '9', 'a', 'b', 'c', 'd',
             'e', 'f'};
     // Reference is need for standard encryption
     Reference reference;
+    // core data used to represent the literal string information
+    private StringBuilder stringData;
 
     /**
      * <p>Creates a new literal string object so that it represents the same
@@ -162,7 +161,7 @@ public class LiteralStringObject implements StringObject {
      * which is converted to hexadecimal form.</p>
      *
      * @return a StringBufffer representation of the object's data in hexadecimal
-     *         notation.
+     * notation.
      */
     public StringBuilder getHexStringBuffer() {
         return stringToHex(stringData);
@@ -200,7 +199,7 @@ public class LiteralStringObject implements StringObject {
      *                   Composite and Simple font types respectively
      * @param font       font used to render the the literal string data.
      * @return StringBuffer which contains all renderaable characters for the
-     *         given font.
+     * given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
@@ -256,19 +255,19 @@ public class LiteralStringObject implements StringObject {
     /**
      * Sets the parent PDF object's reference.
      *
-     * @param reference parent object reference.
+     * @return returns the reference used for encryption.
      */
-    public void setReference(Reference reference) {
-        this.reference = reference;
+    public Reference getReference() {
+        return reference;
     }
 
     /**
      * Sets the parent PDF object's reference.
      *
-     * @return returns the reference used for encryption.
+     * @param reference parent object reference.
      */
-    public Reference getReference() {
-        return reference;
+    public void setReference(Reference reference) {
+        this.reference = reference;
     }
 
     /**

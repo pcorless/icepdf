@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,12 +32,10 @@ import java.util.logging.Logger;
  */
 public class ObjectStream extends Stream {
 
-    private static final Logger logger =
-            Logger.getLogger(Form.class.toString());
-
     public static final Name N_KEY = new Name("N");
     public static final Name FIRST_KEY = new Name("First");
-
+    private static final Logger logger =
+            Logger.getLogger(Form.class.toString());
     private boolean init;
     private SeekableInput decodedStream;
     private int[] objectNumbers;

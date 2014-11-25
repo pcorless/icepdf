@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -70,7 +70,7 @@ public class CryptFilter extends Dictionary {
      *
      * @param cryptFilterName name of crypt filter to find.
      * @return crypt filter entry specified by the given name.  if not found
-     *         null is returned.
+     * null is returned.
      */
     public CryptFilterEntry getCryptFilterByName(Name cryptFilterName) {
         // check if need to initialize the dictionary

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2014 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
@@ -19,9 +19,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.icepdf</groupId>
+    <groupId>org.icepdf.os</groupId>
     <artifactId>icepdf-viewer</artifactId>
-    <version>5.0.0</version>
+    <version>5.0.1</version>
     <packaging>jar</packaging>
     <name>ICEpdf Viewer RI</name>
     <url>http://www.icefaces.org</url>
@@ -32,7 +32,7 @@
         <dependency>
             <groupId>org.icepdf</groupId>
             <artifactId>icepdf-core</artifactId>
-            <version>5.0.0</version>
+            <version>5.1.1</version>
         </dependency>
 
         <dependency>

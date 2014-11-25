@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -29,6 +29,7 @@ import java.util.Enumeration;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class LayersTreeNode extends DefaultMutableTreeNode {
 
     /**
@@ -63,16 +64,20 @@ public class LayersTreeNode extends DefaultMutableTreeNode {
         super(userObject, allowsChildren);
     }
 
-    public void setSelectionMode(int mode) {
-        selectionMode = mode;
-    }
-
     public int getSelectionMode() {
         return selectionMode;
     }
 
+    public void setSelectionMode(int mode) {
+        selectionMode = mode;
+    }
+
     public OptionalContentGroup getOptionalContentGroup() {
         return (OptionalContentGroup) getUserObject();
+    }
+
+    public boolean isSelected() {
+        return ((OptionalContentGroup) getUserObject()).isVisible();
     }
 
     public void setSelected(boolean isSelected) {
@@ -104,10 +109,6 @@ public class LayersTreeNode extends DefaultMutableTreeNode {
 
         }
 
-    }
-
-    public boolean isSelected() {
-        return ((OptionalContentGroup) getUserObject()).isVisible();
     }
 
     @Override

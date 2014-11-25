@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -157,7 +157,7 @@ public class AnnotationComponentFactory {
             Annotation annotation, DocumentViewController documentViewController,
             AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         try {
-            Class widgetFieldClass = Class.forName(widgetFieldClassName);
+            Class<?> widgetFieldClass = Class.forName(widgetFieldClassName);
             Class[] widgetArgs = {Annotation.class, DocumentViewController.class,
                     AbstractPageViewComponent.class, DocumentViewModel.class};
             Constructor widgetFieldClassConstructor =

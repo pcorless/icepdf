@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -290,8 +290,8 @@ public final class LinearGradientPaint extends MultipleGradientPaint {
      * Returns a copy of the start point of the gradient axis
      *
      * @return a {@link Point2D} object that is a copy of the point
-     *         that anchors the first color of this
-     *         <code>LinearGradientPaint</code>.
+     * that anchors the first color of this
+     * <code>LinearGradientPaint</code>.
      */
     public Point2D getStartPoint() {
         return new Point2D.Double(start.getX(), start.getY());
@@ -301,8 +301,8 @@ public final class LinearGradientPaint extends MultipleGradientPaint {
      * Returns a copy of the end point of the gradient axis
      *
      * @return a {@link Point2D} object that is a copy of the point
-     *         that anchors the last color of this
-     *         <code>LinearGradientPaint</code>.
+     * that anchors the last color of this
+     * <code>LinearGradientPaint</code>.
      */
     public Point2D getEndPoint() {
         return new Point2D.Double(end.getX(), end.getY());

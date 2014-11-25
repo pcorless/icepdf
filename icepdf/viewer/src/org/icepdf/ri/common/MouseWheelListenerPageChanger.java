@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -43,6 +43,14 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
     private boolean changingPage;
 
 
+    protected MouseWheelListenerPageChanger(SwingController c, JScrollPane s,
+                                            AbstractDocumentView documentView) {
+        controller = c;
+        scrollpane = s;
+        this.documentView = documentView;
+        changingPage = false;
+    }
+
     /**
      * Install a MouseWheelListenerPageChanger as a MouseWheelListener
      *
@@ -57,14 +65,6 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
             s.addMouseWheelListener(listener);
         }
         return listener;
-    }
-
-    protected MouseWheelListenerPageChanger(SwingController c, JScrollPane s,
-                                            AbstractDocumentView documentView) {
-        controller = c;
-        scrollpane = s;
-        this.documentView = documentView;
-        changingPage = false;
     }
 
     public static void uninstall(JScrollPane scrollpane, Object listener) {

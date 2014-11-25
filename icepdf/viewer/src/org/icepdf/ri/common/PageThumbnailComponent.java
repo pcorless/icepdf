@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  * <p/>
  * org.icepdf.vi.views.buffersize.vertical
  */
+@SuppressWarnings("serial")
 public class PageThumbnailComponent extends JComponent implements MouseListener {
 
     private static final Logger logger =
@@ -194,6 +195,27 @@ public class PageThumbnailComponent extends JComponent implements MouseListener 
 
     }
 
+    private void calculatePageSize(Rectangle pageSize) {
+
+        if (pageTree != null) {
+            Page currentPage = pageTree.getPage(pageIndex);
+            if (currentPage != null) {
+                // check for a thumb nail
+                if (currentPage.getThumbnail() != null) {
+                    pageSize.setSize(
+                            currentPage.getThumbnail().getDimension());
+                }
+                // calculate the page size for the particular zoom.
+                else {
+                    pageSize.setSize(currentPage.getSize(
+                            Page.BOUNDARY_CROPBOX,
+                            0,
+                            thumbNailZoom).toDimension());
+                }
+            }
+        }
+    }
+
     class PagePainter implements Runnable {
         public void run() {
             if (pageTree != null) {
@@ -221,27 +243,6 @@ public class PageThumbnailComponent extends JComponent implements MouseListener 
                         parentScrollPane.repaint();
                     }
                 });
-            }
-        }
-    }
-
-    private void calculatePageSize(Rectangle pageSize) {
-
-        if (pageTree != null) {
-            Page currentPage = pageTree.getPage(pageIndex);
-            if (currentPage != null) {
-                // check for a thumb nail
-                if (currentPage.getThumbnail() != null) {
-                    pageSize.setSize(
-                            currentPage.getThumbnail().getDimension());
-                }
-                // calculate the page size for the particular zoom.
-                else {
-                    pageSize.setSize(currentPage.getSize(
-                            Page.BOUNDARY_CROPBOX,
-                            0,
-                            thumbNailZoom).toDimension());
-                }
             }
         }
     }

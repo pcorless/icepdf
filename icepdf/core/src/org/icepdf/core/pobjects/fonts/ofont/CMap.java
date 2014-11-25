@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -482,6 +482,18 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         return toSelector(charMap);
     }
 
+    // convert to characters.
+    private char[] convertToString(CharSequence s) {
+        if (s == null && s.length() % 2 != 0) {
+            throw new IllegalArgumentException();
+        }
+        int len = s.length();
+        char[] dest = new char[len / 2];
+        for (int i = 0, j = 0; i < len; i += 2, j++)
+            dest[j] = (char) ((s.charAt(i) << 8) | s.charAt(i + 1));
+        return dest;
+    }
+
     /**
      * Help class to store data for a CMap bfrange value.  CMap bfranges come
      * in two flavours but there both share a start and end range value.
@@ -544,7 +556,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
          *
          * @param value value to check for containment
          * @return true if the cmap falls inside one of the bfranges, false
-         *         otherwise.
+         * otherwise.
          */
         public boolean inRange(int value) {
             return (value >= startRange && value <= endRange);
@@ -557,7 +569,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
          *
          * @param value value to find corresponding CMap for
          * @return the mapped CMap value for <code>value</code>, -1 if the
-         *         <code>value</code> can not be mapped.
+         * <code>value</code> can not be mapped.
          */
         public char[] getCMapValue(int value) {
 
@@ -573,17 +585,5 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
             }
         }
 
-    }
-
-    // convert to characters.
-    private char[] convertToString(CharSequence s) {
-        if (s == null && s.length() % 2 != 0) {
-            throw new IllegalArgumentException();
-        }
-        int len = s.length();
-        char[] dest = new char[len / 2];
-        for (int i = 0, j = 0; i < len; i += 2, j++)
-            dest[j] = (char) ((s.charAt(i) << 8) | s.charAt(i + 1));
-        return dest;
     }
 }

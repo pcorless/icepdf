@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -102,7 +102,7 @@ public class SeekableInputConstrainedWrapper extends InputStream {
         long remain = getBytesRemaining();
         if (remain <= 0)
             return -1;
-        n = (int) Math.min(Math.min(remain, (long) n), (long) Integer.MAX_VALUE);
+        n = (int) Math.min(Math.min(remain, n), (long) Integer.MAX_VALUE);
         return streamDataInput.skip(n);
     }
 

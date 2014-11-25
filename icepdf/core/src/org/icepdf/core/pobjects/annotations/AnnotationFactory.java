@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -46,7 +46,7 @@ public class AnnotationFactory {
      * @param subType type of annotation to create
      * @param rect    bounds of new annotation specified in user space.
      * @return new annotation object with the same properties as the one
-     *         specified in annotaiton state.
+     * specified in annotaiton state.
      */
     public static Annotation buildAnnotation(Library library,
                                              final Name subType,

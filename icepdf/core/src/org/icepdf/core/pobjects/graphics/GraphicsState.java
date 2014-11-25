@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
-import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Defs;
@@ -208,12 +207,10 @@ import java.util.logging.Logger;
  */
 public class GraphicsState {
 
-    private static final Logger logger =
-            Logger.getLogger(GraphicsState.class.toString());
-
     public static final Name CA_STROKING_KEY = new Name("CA");
     public static final Name CA_NON_STROKING_KEY = new Name("ca");
-
+    private static final Logger logger =
+            Logger.getLogger(GraphicsState.class.toString());
     // allow over paint support for fill and stroke.  Still experimental
     // enabled buy default but can be turned off if required.
     private static boolean enabledOverpaint;
@@ -227,6 +224,9 @@ public class GraphicsState {
 
     // Current transformation matrix.
     private AffineTransform CTM = new AffineTransform();
+
+    private ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     // Specifies the shape of the endpoint for any open path.
     private int lineCap = BasicStroke.CAP_BUTT;
@@ -403,7 +403,10 @@ public class GraphicsState {
      * @param af the AffineTranform object to set the CTM to.
      */
     public void set(AffineTransform af) {
-        CTM = new AffineTransform(af);
+        // appling a CTM can be expensive, so only do it if it's needed.
+        if (!CTM.equals(af)) {
+            CTM = new AffineTransform(af);
+        }
         shapes.add(new TransformDrawCmd(new AffineTransform(CTM)));
     }
 
@@ -485,26 +488,6 @@ public class GraphicsState {
         if (extGState.getSMask() != null) {
             SoftMask sMask = extGState.getSMask();
             setSoftMask(sMask);
-            Form form = sMask.getG();
-            Shapes shapes = form.getShapes();
-            List<Image> images = shapes.getImages();
-//            for (final Image image : images){
-//                final JFrame f = new JFrame("Test");
-//                f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-//                f.getContentPane().add(new JComponent() {
-//                    @Override
-//                    public void paint(Graphics g_) {
-//                        super.paint(g_);
-//                        g_.drawImage(image,0,0,null);
-//                    }
-//                });
-//                f.setSize(new Dimension(800, 800));
-//                f.setVisible(true);
-//            }
-//            System.out.println("BC " + sMask.getBC());
-//            System.out.println("Form " + form);
-//            System.out.println("Name " + sMask.getS());
-//            System.out.println();
         }
 
         // apply over print logic
@@ -525,10 +508,10 @@ public class GraphicsState {
             overprintOther = overprintStroking;
         }
         // PDF 1.2 and over
-        else if (OP != null) {
+//        else if (OP != null) {
 //            overprintStroking = OP.booleanValue();
 //            overprintOther = op.booleanValue();
-        }
+//        }
         // else default inits of false for each is fine.
     }
 
@@ -552,10 +535,10 @@ public class GraphicsState {
                 if (parentGraphicState.clip != null) {
                     if (!parentGraphicState.clip.equals(clip)) {
                         parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
-                        parentGraphicState.shapes.add(new ClipDrawCmd());
+                        parentGraphicState.shapes.add(clipDrawCmd);
                     }
                 } else {
-                    parentGraphicState.shapes.add(new NoClipDrawCmd());
+                    parentGraphicState.shapes.add(noClipDrawCmd);
                 }
             }
             // Update the stack with the parentGraphicsState stack.
@@ -607,6 +590,10 @@ public class GraphicsState {
         }
     }
 
+    public Area getClip() {
+        return clip;
+    }
+
     /**
      * Set the graphics state clipping area.  The new clipping area is
      * intersected with the current current clip to generate the new clipping
@@ -626,7 +613,7 @@ public class GraphicsState {
             if (clip == null || !clip.equals(area)) {
                 clip = new Area(area);
                 shapes.add(new ShapeDrawCmd(new Area(area)));
-                shapes.add(new ClipDrawCmd());
+                shapes.add(clipDrawCmd);
                 // mark that the clip has changed.
                 clipChange = true;
             } else {
@@ -635,12 +622,8 @@ public class GraphicsState {
         } else {
             // add a null clip for a null shape, should not normally happen
             clip = null;
-            shapes.add(new NoClipDrawCmd());
+            shapes.add(noClipDrawCmd);
         }
-    }
-
-    public Area getClip() {
-        return clip;
     }
 
     public AffineTransform getCTM() {
@@ -719,24 +702,24 @@ public class GraphicsState {
         return strokeColor;
     }
 
-    public void setStrokeAlpha(float alpha) {
-        strokeAlpha = alpha;
+    public void setStrokeColor(Color strokeColor) {
+        this.strokeColor = strokeColor;
     }
 
     public float getStrokeAlpha() {
         return strokeAlpha;
     }
 
-    public void setFillAlpha(float alpha) {
-        fillAlpha = alpha;
+    public void setStrokeAlpha(float alpha) {
+        strokeAlpha = alpha;
     }
 
     public float getFillAlpha() {
         return fillAlpha;
     }
 
-    public void setStrokeColor(Color strokeColor) {
-        this.strokeColor = strokeColor;
+    public void setFillAlpha(float alpha) {
+        fillAlpha = alpha;
     }
 
     public PColorSpace getFillColorSpace() {
@@ -767,20 +750,20 @@ public class GraphicsState {
         return overprintMode;
     }
 
-    public boolean isOverprintStroking() {
-        return overprintStroking;
-    }
-
-    public boolean isOverprintOther() {
-        return overprintOther;
-    }
-
     public void setOverprintMode(int overprintMode) {
         this.overprintMode = overprintMode;
     }
 
+    public boolean isOverprintStroking() {
+        return overprintStroking;
+    }
+
     public void setOverprintStroking(boolean overprintStroking) {
         this.overprintStroking = overprintStroking;
+    }
+
+    public boolean isOverprintOther() {
+        return overprintOther;
     }
 
     public void setOverprintOther(boolean overprintOther) {

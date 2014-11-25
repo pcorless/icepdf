@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,15 +32,11 @@ import java.util.logging.Logger;
  */
 public class BareBonesBrowserLaunch {
 
+    public static final String FILE_PREFIX = "file://";
     private static final Logger logger =
             Logger.getLogger(BareBonesBrowserLaunch.class.toString());
-
-
     private static final String errMsg =
             "Error attempting to launch web browser";
-
-    public static final String FILE_PREFIX = "file://";
-
     private static String os;
 
     static {
@@ -59,7 +55,7 @@ public class BareBonesBrowserLaunch {
             }
 
             if (isMac()) {
-                Class fileMgr = Class.forName("com.apple.eio.FileManager");
+                Class<?> fileMgr = Class.forName("com.apple.eio.FileManager");
                 Method openURL = fileMgr.getDeclaredMethod("openURL",
                         new Class[]{
                                 String.class});
@@ -103,18 +99,18 @@ public class BareBonesBrowserLaunch {
 
     public static boolean isWindows() {
         //windows
-        return (os.indexOf("win") >= 0);
+        return (os.contains("win"));
 
     }
 
     public static boolean isMac() {
         //Mac
-        return (os.indexOf("mac") >= 0);
+        return (os.contains("mac"));
     }
 
     public static boolean isUnix() {
         //linux or unix
-        return (os.indexOf("nix") >= 0 || os.indexOf("nux") >= 0);
+        return (os.contains("nix") || os.contains("nux"));
     }
 
 

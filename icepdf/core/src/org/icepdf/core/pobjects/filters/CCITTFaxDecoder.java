@@ -63,6 +63,7 @@
  * the design, construction, operation or maintenance of any nuclear facility.
  */
 
+
 package org.icepdf.core.pobjects.filters;
 
 
@@ -1281,8 +1282,16 @@ public class CCITTFaxDecoder {
         return align;
     }
 
+    public void setAlign(boolean align) {
+        this.align = align;
+    }
+
     public boolean isFillBits() {
         return fillBits;
+    }
+
+    public void setFillBits(boolean fillBits) {
+        this.fillBits = fillBits;
     }
 
     private int nextLesserThan8Bits(int bitsToGet) {
@@ -1515,14 +1524,6 @@ public class CCITTFaxDecoder {
 
         // EOL not found: return 'false'.
         return false;
-    }
-
-    public void setAlign(boolean align) {
-        this.align = align;
-    }
-
-    public void setFillBits(boolean fillBits) {
-        this.fillBits = fillBits;
     }
 
     private void setToBlack(byte[] buffer, int lineOffset, int bitOffset,

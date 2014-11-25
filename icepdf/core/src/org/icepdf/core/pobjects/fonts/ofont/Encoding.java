@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -79,14 +79,13 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
     static private char se[], mre[], wae[], pde[], sym[], zap[];
 
     // common symbol alaises,  displayable, followed by aliases
-    // More symbols should be added here as mappings are needed.  
+    // More symbols should be added here as mappings are needed.
     public static int[][] symbolAlaises = {{183, 61623, 8226}, // bullets
             {169, 61667, 61651, 63721, 63193}, // copy rights
             {174, 61650, 61666, 61614}, // registered
             {80, 8364}  // euro
     };
     public static int[] registeredAlaises = {182};
-
     static {
         h = new HashMap<String, Integer>(1046);
         h.put("A", 65);
@@ -2172,7 +2171,7 @@ public class Encoding implements org.icepdf.core.pobjects.fonts.Encoding {
         wae[255] = (char) h.get("ydieresis").intValue();
         pde[255] = (char) h.get("ydieresis").intValue();
 
-        // addition of white space mappings.        
+        // addition of white space mappings.
         // Line feed
         se[10] = (char) h.get("space").intValue();
         mre[10] = (char) h.get("space").intValue();

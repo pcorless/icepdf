@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.util.GraphicsRenderingHints;
-import org.icepdf.ri.common.views.DocumentViewController;
 
 import javax.print.*;
 import javax.print.attribute.HashDocAttributeSet;
@@ -27,9 +26,6 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.*;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
@@ -47,53 +43,47 @@ public class PrintHelper implements Printable {
 
     private static final Logger logger =
             Logger.getLogger(PrintHelper.class.toString());
-
-    private DocumentViewController viewController;
+    private static PrintService[] services;
     private PageTree pageTree;
+    private Container container;
     private float userRotation;
-
     private boolean printFitToMargin;
     private int printingCurrentPage;
     private int totalPagesToPrint;
     private boolean paintAnnotation = true;
     private boolean paintSearchHighlight = true;
-
-    private static PrintService[] services;
     private PrintService printService;
     private HashDocAttributeSet docAttributeSet;
     private HashPrintRequestAttributeSet printRequestAttributeSet;
-
-
-    private static String waterMark;
-    private static Rectangle2D waterMarkBounds;
-    private static BufferedImage waterMarkRaster;
 
     /**
      * Creates a new <code>PrintHelper</code> instance defaulting the
      * paper size to Letter and the print quality to Draft.
      *
-     * @param viewController document view controller
-     * @param pageTree       doucment page tree.
+     * @param container parent container used to center print dialogs.
+     * @param pageTree  document page tree.
      */
-    public PrintHelper(DocumentViewController viewController, PageTree pageTree) {
-        this(viewController, pageTree, MediaSizeName.NA_LETTER, PrintQuality.DRAFT);
+    public PrintHelper(Container container, PageTree pageTree, int rotation) {
+        this(container, pageTree, rotation, MediaSizeName.NA_LETTER, PrintQuality.DRAFT);
     }
 
     /**
      * Creates a new <code>PrintHelper</code> instance using the specified
      * media sized and print quality.
      *
-     * @param viewController document view controller
-     * @param pageTree       doucment page tree.
-     * @param paperSizeName  MediaSizeName constant of paper size to print to.
-     * @param printQuality   quality of the print job, draft, quality etc.
+     * @param container     parent container uses to center print dialog.
+     * @param pageTree      document page tree.
+     * @param rotation      rotation at witch to paint document.
+     * @param paperSizeName MediaSizeName constant of paper size to print to.
+     * @param printQuality  quality of the print job, draft, quality etc.
      */
-    public PrintHelper(DocumentViewController viewController, PageTree pageTree,
+    public PrintHelper(Container container, PageTree pageTree,
+                       final float rotation,
                        final MediaSizeName paperSizeName,
                        final PrintQuality printQuality) {
-        this.viewController = viewController;
+        this.container = container;
         this.pageTree = pageTree;
-        this.userRotation = this.viewController.getRotation();
+        this.userRotation = rotation;
 
         // find available printers
         services = lookForPrintServices();
@@ -137,17 +127,19 @@ public class PrintHelper implements Printable {
      * as it allows the attributes sets to be pre configured.  This method
      * should only be used by advanced users.
      *
-     * @param viewController           document view controller
-     * @param pageTree                 doucment page tree.
+     * @param container                parent container uses to center print dialog.
+     * @param pageTree                 document page tree.
+     * @param userRotation             rotation of view
      * @param docAttributeSet          MediaSizeName constant of paper size to print to.
      * @param printRequestAttributeSet quality of the print job, draft, quality etc.
      */
-    public PrintHelper(DocumentViewController viewController, PageTree pageTree,
+    public PrintHelper(Container container, PageTree pageTree,
+                       float userRotation,
                        HashDocAttributeSet docAttributeSet,
                        HashPrintRequestAttributeSet printRequestAttributeSet) {
-        this.viewController = viewController;
+        this.container = container;
         this.pageTree = pageTree;
-        this.userRotation = this.viewController.getRotation();
+        this.userRotation = userRotation;
         // blindly assign doc and print attribute sets.
         this.docAttributeSet = docAttributeSet;
         this.printRequestAttributeSet = printRequestAttributeSet;
@@ -169,7 +161,7 @@ public class PrintHelper implements Printable {
      *                              is initiated; false, otherwise.  This dialog will be shown after the
      *                              page dialog if it is visible.
      * @return true if print setup should continue, false if printing was cancelled
-     *         by user interaction with optional print dialog.
+     * by user interaction with optional print dialog.
      */
     public boolean setupPrintService(int startPage,
                                      int endPage,
@@ -240,15 +232,6 @@ public class PrintHelper implements Printable {
         printFitToMargin = shrinkToPrintableArea;
         this.printRequestAttributeSet = printRequestAttributeSet;
         this.printService = printService;
-    }
-
-    /**
-     * Creates a new <code>PrintHelper</code> instance.
-     *
-     * @param controller dcoument controller.
-     */
-    public PrintHelper(SwingController controller) {
-        this(controller.getDocumentViewController(), controller.getPageTree());
     }
 
     /**
@@ -516,57 +499,25 @@ public class PrintHelper implements Printable {
 
     }
 
-    private void createWatermark(Graphics printGraphics, Page currentPage) {
-        Rectangle2D bounds = currentPage.getBoundingBox(userRotation);
-
-        Graphics2D g2 = (Graphics2D) printGraphics;
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-
-        AffineTransform at2 = currentPage.getPageTransform(
-                Page.BOUNDARY_CROPBOX, userRotation, 1.0f);
-        g2.transform(at2);
-
-        g2.setColor(Color.BLACK);
-        g2.setStroke(new BasicStroke(2.0f));
-
-//        g2.drawImage(waterMarkRaster, (int)bounds.getMinX() + 20, (int)bounds.getMinY() + 20, null);
-//        g2.drawRect(
-//                (int)bounds.getMinX() + 20, (int)bounds.getMinY() + 20,
-//                (int)waterMarkBounds.getWidth(),
-//                (int)waterMarkBounds.getHeight());
-//        g2.drawImage(waterMarkRaster, (int) bounds.getMinX() + 20, (int) bounds.getMaxY() - 20, null);
-//        g2.drawImage(waterMarkRaster, (int) bounds.getMaxX() - 140, (int) bounds.getMaxY() - 20, null);
-//        g2.drawImage(waterMarkRaster, (int) bounds.getMaxX() - 140, (int) bounds.getMinY() + 20, null);
-
-
-        // old way which
-        g2.setFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 14));
-        g2.drawString(waterMark, (int) bounds.getMinX() + 20, (int) bounds.getMinY() + 20);
-        g2.drawString(waterMark, (int) bounds.getMinX() + 20, (int) bounds.getMaxY() - 20);
-        g2.drawString(waterMark, (int) bounds.getMaxX() - 140, (int) bounds.getMaxY() - 20);
-        g2.drawString(waterMark, (int) bounds.getMaxX() - 140, (int) bounds.getMinY() + 20);
-    }
-
-
     /**
      * Utility for creating a print setup dialog.
      *
      * @return print service selected by the user, or null if the user
-     *         cancelled the dialog.
+     * cancelled the dialog.
      */
     private PrintService getSetupDialog() {
         final int offset = 50;
         // find graphic configuration for the window the viewer is in.
         Window window = SwingUtilities.getWindowAncestor(
-                viewController.getViewContainer());
+                container);
         GraphicsConfiguration graphicsConfiguration =
                 window == null ? null : window.getGraphicsConfiguration();
         // try and trim the services list.
 //        services = new PrintService[]{services[0]};
 
         return ServiceUI.printDialog(graphicsConfiguration,
-                viewController.getViewContainer().getX() + offset,
-                viewController.getViewContainer().getY() + offset,
+                container.getX() + offset,
+                container.getY() + offset,
                 services, services[0],
                 DocFlavor.SERVICE_FORMATTED.PRINTABLE,
                 printRequestAttributeSet);

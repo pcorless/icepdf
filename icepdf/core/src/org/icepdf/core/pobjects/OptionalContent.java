@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -33,8 +33,6 @@ import java.util.*;
  */
 public class OptionalContent extends Dictionary {
 
-    private Map<Reference, OptionalContentGroup> groups;
-
     public static final Name OCGs_KEY = new Name("OCGs");
     public static final Name OC_KEY = new Name("OC");
     public static final Name D_KEY = new Name("D");
@@ -51,7 +49,7 @@ public class OptionalContent extends Dictionary {
     public static final Name VIEW_VALUE = new Name("View");
     public static final Name DESIGN_VALUE = new Name("Design");
     public static final Name NONE_OC_FLAG = new Name("marked");
-
+    private Map<Reference, OptionalContentGroup> groups;
     private Name baseState = ON_vALUE;
 
     /**
@@ -64,7 +62,7 @@ public class OptionalContent extends Dictionary {
      * shall indicate the set of all intents, including those not yet defined.
      * Default value: View. The value shall be View for the document’s default configuration.
      */
-    private List<Name> intent = Arrays.asList(new Name[]{VIEW_VALUE});
+    private List<Name> intent = Arrays.asList(VIEW_VALUE);
 
 
     /**
@@ -106,6 +104,7 @@ public class OptionalContent extends Dictionary {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void init() {
         if (inited) {
             return;
@@ -212,6 +211,7 @@ public class OptionalContent extends Dictionary {
         inited = true;
     }
 
+    @SuppressWarnings("unchecked")
     private List<Object> parseOrderArray(List<Object> rawOrder, OptionalContentGroup parent) {
         List<Object> order = new ArrayList<Object>(5);
         OptionalContentGroup group = null;
@@ -262,8 +262,8 @@ public class OptionalContent extends Dictionary {
      *
      * @param object content to check visibility.
      * @return optional content groups currently visibility state, returns
-     *         true if no state can be found, better to show then to
-     *         hide by default.
+     * true if no state can be found, better to show then to
+     * hide by default.
      */
     public boolean isVisible(Object object) {
         if (object instanceof Reference) {

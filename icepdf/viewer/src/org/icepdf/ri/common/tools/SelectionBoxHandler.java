@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -36,21 +36,17 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
             BasicStroke.CAP_BUTT,
             BasicStroke.JOIN_MITER,
             1.0f, dash1, 0.0f);
-
+    protected static Color selectionBoxColour = Color.lightGray;
     // selection rectangle used for glyph intersection aka text selection
     protected Rectangle currentRect = null;
     protected Rectangle rectToDraw = null;
     protected Rectangle previousRectDrawn = new Rectangle();
-
-    protected static Color selectionBoxColour = Color.lightGray;
 
     protected SelectionBoxHandler(DocumentViewController documentViewController,
                                   AbstractPageViewComponent pageViewComponent,
                                   DocumentViewModel documentViewModel) {
         super(documentViewController, pageViewComponent, documentViewModel);
     }
-
-    public abstract void setSelectionRectangle(Point cursorLocation, Rectangle selection);
 
     public static void paintSelectionBox(Graphics g, Rectangle rectToDraw) {
         Graphics2D gg = (Graphics2D) g;
@@ -69,6 +65,8 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
         gg.setColor(oldColor);
         gg.setStroke(oldStroke);
     }
+
+    public abstract void setSelectionRectangle(Point cursorLocation, Rectangle selection);
 
     public void resetRectangle(int x, int y) {
         currentRect = new Rectangle(x, y, 0, 0);

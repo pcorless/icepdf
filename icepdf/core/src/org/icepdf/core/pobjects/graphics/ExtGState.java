@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -223,9 +223,6 @@ import java.util.logging.Logger;
  */
 public class ExtGState extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(ExtGState.class.toString());
-
     public static final Name SMASK_KEY = new Name("SMask");
     public static final Name LW_KEY = new Name("LW");
     public static final Name LC_KEY = new Name("LC");
@@ -238,6 +235,8 @@ public class ExtGState extends Dictionary {
     public static final Name op_KEY = new Name("op");
     public static final Name OPM_KEY = new Name("OPM");
     public static final Name D_KEY = new Name("D");
+    private static final Logger logger =
+            Logger.getLogger(ExtGState.class.toString());
 
     /**
      * Creates a a new Graphics State object.
@@ -254,7 +253,7 @@ public class ExtGState extends Dictionary {
      * Gets the line width specified by the external graphics state.
      *
      * @return the line width with Number value.  If the line width was not
-     *         specified in the dictionary null is returned.
+     * specified in the dictionary null is returned.
      */
     Number getLineWidth() {
         return getNumber(LW_KEY);
@@ -264,7 +263,7 @@ public class ExtGState extends Dictionary {
      * Gets the line cap style specified by the external graphics state.
      *
      * @return the line cap style Number value.  If the cap style was not
-     *         specified in the dictionary null is returned.
+     * specified in the dictionary null is returned.
      */
     Number getLineCapStyle() {
         return getNumber(LC_KEY);
@@ -283,7 +282,7 @@ public class ExtGState extends Dictionary {
      * Gets the line join style specified by the external graphics state.
      *
      * @return the line join style Number value.  If the join style was not
-     *         specified in the dictionary null is returned.
+     * specified in the dictionary null is returned.
      */
     Number getLineJoinStyle() {
         return getNumber(LJ_KEY);
@@ -293,7 +292,7 @@ public class ExtGState extends Dictionary {
      * Gets the miter limit specified by the external graphics state.
      *
      * @return the miter limit Number value.  If the miter limit was not
-     *         specified in the dictionary null is returned.
+     * specified in the dictionary null is returned.
      */
     Number getMiterLimit() {
         return getNumber(ML_KEY);
@@ -303,7 +302,7 @@ public class ExtGState extends Dictionary {
      * Gets the line dash pattern specified by the external graphics state.
      *
      * @return the line dash array [dashArray dashPhase].  If the dash pattern
-     *         is not specified the dictionary null is returned.
+     * is not specified the dictionary null is returned.
      */
     List getLineDashPattern() {
         List<Object> dashPattern = null;
@@ -345,7 +344,7 @@ public class ExtGState extends Dictionary {
      * Gets the stroking alpha constant specified by the external graphics state.
      *
      * @return the stroking alpha constant value.  If the stroking alpha constant
-     *         was not specified in the dictionary null is returned.
+     * was not specified in the dictionary null is returned.
      */
     Number getStrokingAlphConstant() {
         return getNumber(CA_KEY);
@@ -355,7 +354,7 @@ public class ExtGState extends Dictionary {
      * Gets the non-stroking alpha constant specified by the external graphics state.
      *
      * @return the vstroking alpha constant value.  If the non-stroking alpha constant
-     *         was not specified in the dictionary null is returned.
+     * was not specified in the dictionary null is returned.
      */
     Number getNonStrokingAlphConstant() {
         return getNumber(ca_KEY);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -40,14 +40,12 @@ import java.util.logging.Logger;
  */
 public class Function_0 extends Function {
 
-    private static final Logger logger =
-            Logger.getLogger(Function_0.class.toString());
-
     public static final Name SIZE_KEY = new Name("Size");
     public static final Name BITSPERSAMPLE_KEY = new Name("BitsPerSample");
     public static final Name ENCODE_KEY = new Name("Encode");
     public static final Name DECODE_KEY = new Name("Decode");
-
+    private static final Logger logger =
+            Logger.getLogger(Function_0.class.toString());
     // An array of m positive integers specifying the number of samples in each
     // input dimension of the sample table.
     private int size[];
@@ -147,7 +145,8 @@ public class Function_0 extends Function {
         float y[] = new float[n];
         // work throw all input data and store in y[]
         try {
-            for (int i = 0; i < x.length; i++) {
+            // sampled each input value xi for 0 & i < m
+            for (int i = 0; i < size.length; i++) {
                 // clip input value appropriately for the given domain
                 // xi' = min (max(xi, Domain2i), Domain2i+1)
                 x[i] = Math.min(Math.max(x[i], domain[2 * i]), domain[2 * i + 1]);
@@ -167,8 +166,8 @@ public class Function_0 extends Function {
                 // Calculate the final output values
                 for (int j = 0; j < n; j++) {
                     //  find nearest surrounding values in the sample table
-                    int b1 = ((int) bytes[(int) (e1 * n + j)]) & 255;
-                    int b2 = ((int) bytes[(int) (e2 * n + j)]) & 255;
+                    int b1 = ((int) bytes[(e1 * n + j)]) & 255;
+                    int b2 = ((int) bytes[(e2 * n + j)]) & 255;
                     // get the average
                     float r = ((float) b1 + (float) b2) / 2;
                     // interplate to get output values
@@ -186,7 +185,7 @@ public class Function_0 extends Function {
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error calculating function 0 values", e);
+            logger.log(Level.FINER, "Error calculating function 0 values", e);
         }
         return y;
     }

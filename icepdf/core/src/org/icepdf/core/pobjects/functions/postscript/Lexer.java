@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -31,27 +31,37 @@ import java.util.Stack;
  */
 public class Lexer {
 
-    // stream reader pointers.
-    private Reader reader;
-    private char[] buf = new char[2056];
-    private int pos = 0, numRead = 0, startTokenPos = 0;
-    private int tokenType = 0;
-
-    // expression depth count used to properly differ if and elseif operands.
-    private int expressionDepth;
-
     // lexer states
     private static final int
             TOKEN_NUMBER = 1,
             TOKEN_OPERAND = 2,
             TOKEN_EXPRESSION = 3,
             TOKEN_BOOLEAN = 5;
-
-    // stack to hold operads.
-    private Stack<Object> stack;
+    // stream reader pointers.
+    private Reader reader;
+    private char[] buf = new char[2056];
+    private int pos = 0, numRead = 0, startTokenPos = 0;
+    private int tokenType = 0;
+    // expression depth count used to properly differ if and elseif operands.
+    private int expressionDepth;
+    // procedure isa any {expression...}
+    private Procedure procedures;
+    private Procedure currentProcedure;
 
     public Lexer() {
-        stack = new Stack<Object>();
+        procedures = new Procedure(null);
+    }
+
+    /**
+     * Utility for finding token delimiter in a type 4 function stream.
+     *
+     * @param c character to compare against known delimiters.
+     * @return true if c is a delimiter otherwise, false.
+     */
+    private static boolean isDelimiter(char c) {
+        return c == ' ' || c == '\t' ||
+                c == '\n' || c == '\r' ||
+                c == '{' || c == '}';
     }
 
     /**
@@ -80,9 +90,12 @@ public class Lexer {
             throw new IOException("Type 4 function, null input stream reader.");
         }
 
+        // set current procedure which is the root {}.
+        currentProcedure = procedures;
+
         // push input values on the stack
         for (Number num : input) {
-            stack.push(num);
+            currentProcedure.getProc().push(num);
         }
 
         tokenType = TOKEN_EXPRESSION;
@@ -125,10 +138,10 @@ public class Lexer {
      * function output.
      *
      * @return stack containing the output of the type 4 function.  If #parse()
-     *         was not called the stack will be empty
+     * was not called the stack will be empty
      */
     public Stack getStack() {
-        return stack;
+        return procedures.getProc();
     }
 
     /**
@@ -179,7 +192,13 @@ public class Lexer {
      */
     private void expressionStart() {
         while (pos < numRead) {
+            // need to revisit the logic here, seems overly complicated.
             if (!(buf[pos] == '{' || buf[pos] == '}')) {
+                break;
+            }
+            // corner case, no space between '}{' in  {exp}{exp}
+            if (pos + 1 < numRead && buf[pos] == '}' && buf[pos + 1] == '{') {
+                pos++;
                 break;
             }
             pos++;
@@ -190,13 +209,13 @@ public class Lexer {
             // found a start
             if (operand.getType() == OperatorNames.OP_EXP_START) {
                 expressionDepth++;
-            }
-            // if not the first '{' we defer execution by putting it on the stack.
-            if (expressionDepth > 1) {
-                stack.push(operand);
+                if (expressionDepth > 1) {
+                    currentProcedure = new Procedure(currentProcedure);
+                }
             }
             // found '}' so we decrement our depth count.
             if (operand.getType() == OperatorNames.OP_EXP_END) {
+                currentProcedure = currentProcedure.getPrevious();
                 expressionDepth--;
             }
         }
@@ -219,16 +238,10 @@ public class Lexer {
             Operator operand = OperatorFactory.getOperator(buf, startTokenPos, pos - startTokenPos);
             // execute differed execution by looking at expression depth.
             if (expressionDepth > 1) {
-                stack.push(operand);
+                currentProcedure.getProc().push(operand);
             } else {
                 // execute the operand
-                operand.eval(stack);
-                // check if we need to evaluate the top of the stack for a
-                // previously stored expression {operands... n}.
-                if (stack.peek() instanceof Operator) {
-                    operand = (Operator) stack.pop();
-                    operand.eval(stack);
-                }
+                operand.eval(currentProcedure.getProc());
             }
         }
         parseNextState();
@@ -247,7 +260,7 @@ public class Lexer {
         }
         if (pos < numRead) {
             // push the number
-            stack.push(Float.parseFloat(new String(buf, startTokenPos, pos - startTokenPos)));
+            currentProcedure.getProc().push(Float.parseFloat(new String(buf, startTokenPos, pos - startTokenPos)));
         }
         parseNextState();
     }
@@ -263,20 +276,8 @@ public class Lexer {
             pos++;
         }
         if (pos < numRead) {
-            stack.push(Boolean.valueOf(new String(buf, startTokenPos, pos - startTokenPos)));
+            currentProcedure.getProc().push(Boolean.valueOf(new String(buf, startTokenPos, pos - startTokenPos)));
         }
         parseNextState();
-    }
-
-    /**
-     * Utility for finding token delimiter in a type 4 function stream.
-     *
-     * @param c character to compare against known delimiters.
-     * @return true if c is a delimiter otherwise, false.
-     */
-    private static boolean isDelimiter(char c) {
-        return c == ' ' || c == '\t' ||
-                c == '\n' || c == '\r' ||
-                c == '{' || c == '}';
     }
 }

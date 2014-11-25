@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -50,13 +50,12 @@ import java.util.logging.Logger;
 public abstract class AbstractAnnotationComponent extends JComponent implements FocusListener,
         MouseInputListener, AnnotationComponent {
 
+    public static final int resizeBoxSize = 4;
     protected static final Logger logger =
             Logger.getLogger(AbstractAnnotationComponent.class.toString());
-
     protected static boolean isInteractiveAnnotationsEnabled;
     protected static Color annotationHighlightColor;
     protected static float annotationHighlightAlpha;
-
     static {
         // enables interactive annotation support.
         isInteractiveAnnotationsEnabled =
@@ -92,9 +91,6 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             annotationHighlightAlpha = 0.4f;
         }
     }
-
-    public static final int resizeBoxSize = 4;
-
     // reusable border
     protected static ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);

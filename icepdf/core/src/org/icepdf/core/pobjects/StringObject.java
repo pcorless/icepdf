@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -87,7 +87,7 @@ public interface StringObject {
      *                   Composite and Simple font types respectively
      * @param font       font used to render the literal string data.
      * @return StringBuffer which contains all renderaable characters for the
-     *         given font.
+     * given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
 
@@ -101,16 +101,16 @@ public interface StringObject {
     /**
      * Sets the parent PDF object's reference.
      *
-     * @param reference parent object reference.
+     * @return returns the reference used for encryption.
      */
-    public void setReference(Reference reference);
+    public Reference getReference();
 
     /**
      * Sets the parent PDF object's reference.
      *
-     * @return returns the reference used for encryption.
+     * @param reference parent object reference.
      */
-    public Reference getReference();
+    public void setReference(Reference reference);
 
     /**
      * Gets the decrypted literal string value of the data using the key provided by the

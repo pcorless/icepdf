@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -116,7 +116,7 @@ public abstract class AbstractText implements Text {
      * is highlighted.
      *
      * @return true if one or more root or parent elements are in a highlighted
-     *         state.
+     * state.
      */
     public boolean hasHighligh() {
         return hasHighlight;
@@ -127,7 +127,7 @@ public abstract class AbstractText implements Text {
      * is selected.
      *
      * @return true if one or more root or parent elements are in a highlighted
-     *         state.
+     * state.
      */
     public boolean hasSelected() {
         return hasSelected;

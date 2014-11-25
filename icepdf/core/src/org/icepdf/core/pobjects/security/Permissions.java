@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -111,6 +111,40 @@ package org.icepdf.core.pobjects.security;
  */
 public class Permissions {
 
+    /**
+     * Determine if printing of document is allowed.
+     */
+    public static final int PRINT_DOCUMENT = 0;
+    /**
+     * Determine the quality of printed allowed.
+     */
+    public static final int PRINT_DOCUMENT_QUALITY = 1;
+    /**
+     * Determine if changing the document is allowed.
+     */
+    public static final int MODIFY_DOCUMENT = 2;
+    /**
+     * Determine if content copying or extraction is allowed.
+     */
+    public static final int CONTENT_EXTRACTION = 3;
+    /**
+     * Determine if authoring comments and form fields is allowed.
+     */
+    public static final int AUTHORING_FORM_FIELDS = 4;
+    /**
+     * Determine if form field fill-in or signing is allowed.
+     */
+    public static final int FORM_FIELD_FILL_SIGNING = 5;
+    /**
+     * Determine if content accessibility is allowed.
+     */
+    public static final int CONTENT_ACCESSABILITY = 6;
+    /**
+     * Determine if document assembly is allowed.
+     */
+    public static final int DOCUMENT_ASSEMBLY = 7;
+
+    // Constants for retrieving permission values
     // constants for parsing bits from P value
     // bit 3, 11111111111111111111000011000100
     private static final int PRINT_DOCUMENT_BIT_3 = 0xFFFFF0C4;
@@ -128,62 +162,15 @@ public class Permissions {
     private static final int ASSEMBLE_DOCUMENT_BIT_11 = 0xFFFFF4C0;
     // bit 12 11111111111111111111100011000000
     private static final int PRINT_QUALITY_BIT_12 = 0xFFFFF8C0;
-
-    // Constants for retrieving permission values
-
-    /**
-     * Determine if printing of document is allowed.
-     */
-    public static final int PRINT_DOCUMENT = 0;
-
-    /**
-     * Determine the quality of printed allowed.
-     */
-    public static final int PRINT_DOCUMENT_QUALITY = 1;
-
-    /**
-     * Determine if changing the document is allowed.
-     */
-    public static final int MODIFY_DOCUMENT = 2;
-
-    /**
-     * Determine if content copying or extraction is allowed.
-     */
-    public static final int CONTENT_EXTRACTION = 3;
-
-    /**
-     * Determine if authoring comments and form fields is allowed.
-     */
-    public static final int AUTHORING_FORM_FIELDS = 4;
-
-    /**
-     * Determine if form field fill-in or signing is allowed.
-     */
-    public static final int FORM_FIELD_FILL_SIGNING = 5;
-
-    /**
-     * Determine if content accessibility is allowed.
-     */
-    public static final int CONTENT_ACCESSABILITY = 6;
-
-    /**
-     * Determine if document assembly is allowed.
-     */
-    public static final int DOCUMENT_ASSEMBLY = 7;
-
-
+    // Initiated flag
+    boolean isInit = false;
     // Permission values, indexes are mapped to constant values
     private boolean[] permissions = new boolean[10];
-
     // original permission integer from encrypt dictionary
     // not permission bits and revered bits. 11111111111111111111000011000000
     private int permissionFlags = 0xFFFFF0C0;
-
     // Revision of standard encryption algorithms
     private int revision = 2;
-
-    // Initiated flag
-    boolean isInit = false;
 
     /**
      * Creates a new object which can determine a document's user permissions.

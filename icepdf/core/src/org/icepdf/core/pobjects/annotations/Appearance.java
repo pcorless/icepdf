@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -37,6 +37,10 @@ public class Appearance {
 
     /**
      * Create a new instance of an Appearance stream.
+     *
+     * @param l                  library containing a hash of all document objects
+     * @param h                  HashMap of parameters specific to the Stream object.
+     * @param streamInputWrapper Accessor to stream byte data
      */
     public Appearance() {
         appearance = new HashMap<Name, AppearanceState>(2);

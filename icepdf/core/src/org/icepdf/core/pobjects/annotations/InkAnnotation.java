@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -41,9 +41,6 @@ import java.util.logging.Logger;
  */
 public class InkAnnotation extends MarkupAnnotation {
 
-    private static final Logger logger =
-            Logger.getLogger(InkAnnotation.class.toString());
-
     /**
      * (Required) An array of n arrays, each representing a stroked path. Each
      * array shall be a series of alternating horizontal and vertical coordinates
@@ -52,75 +49,13 @@ public class InkAnnotation extends MarkupAnnotation {
      * implementation-dependent way
      */
     public static final Name INK_LIST_KEY = new Name("InkList");
-
+    private static final Logger logger =
+            Logger.getLogger(InkAnnotation.class.toString());
     protected Shape inkPath;
 
     public InkAnnotation(Library l, HashMap h) {
         super(l, h);
     }
-
-    public void init() {
-        super.init();
-        // look for an ink list
-        List<List<Number>> inkLists = library.getArray(entries, INK_LIST_KEY);
-        GeneralPath inkPaths = new GeneralPath();
-        if (inkLists != null) {
-            inkPath = new GeneralPath();
-            for (List<Number> inkList : inkLists) {
-                GeneralPath inkPath = null;
-                for (int i = 0, max = inkList.size() - 1; i < max; i += 2) {
-                    if (inkPath == null) {
-                        inkPath = new GeneralPath();
-                        inkPath.moveTo(inkList.get(i).floatValue(), inkList.get(i + 1).floatValue());
-                    } else {
-                        inkPath.lineTo(inkList.get(i).floatValue(), inkList.get(i + 1).floatValue());
-                    }
-                }
-                inkPaths.append(inkPath, false);
-            }
-        }
-        this.inkPath = inkPaths;
-        if (!hasAppearanceStream() && inkPath != null) {
-            Object tmp = getObject(RECTANGLE_KEY);
-            Rectangle2D.Float rectangle = null;
-            if (tmp instanceof List) {
-                rectangle = library.getRectangle(entries, RECTANGLE_KEY);
-            }
-            setBBox(rectangle.getBounds());
-            resetAppearanceStream(new AffineTransform());
-        }
-    }
-
-    /**
-     * Converts the ink path back to an array of points.
-     *
-     * @param inkPath path to translate to an array
-     * @return an array of an array of points.
-     */
-    private List<List<Float>> convertPathToArray(Shape inkPath) {
-        List<List<Float>> inkLists = new ArrayList<List<Float>>();
-        List<Float> segment = null;
-        if (inkPath != null) {
-            PathIterator pathIterator = inkPath.getPathIterator(null);
-            float[] inkSegment = new float[6];
-            int segmentType;
-            while (!pathIterator.isDone()) {
-                segmentType = pathIterator.currentSegment(inkSegment);
-                if (segmentType == PathIterator.SEG_MOVETO) {
-                    segment = new ArrayList<Float>();
-                    segment.add(inkSegment[0]);
-                    segment.add(inkSegment[1]);
-                    inkLists.add(segment);
-                } else if (segmentType == PathIterator.SEG_LINETO) {
-                    segment.add(inkSegment[0]);
-                    segment.add(inkSegment[1]);
-                }
-                pathIterator.next();
-            }
-        }
-        return inkLists;
-    }
-
 
     /**
      * Gets an instance of a InkAnnotation that has valid Object Reference.
@@ -160,6 +95,71 @@ public class InkAnnotation extends MarkupAnnotation {
         inkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
 
         return inkAnnotation;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void init() {
+        super.init();
+        // look for an ink list
+        List<List<Number>> inkLists = library.getArray(entries, INK_LIST_KEY);
+        GeneralPath inkPaths = new GeneralPath();
+        if (inkLists != null) {
+            inkPath = new GeneralPath();
+            for (List<Number> inkList : inkLists) {
+                GeneralPath inkPath = null;
+                for (int i = 0, max = inkList.size() - 1; i < max; i += 2) {
+                    if (inkPath == null) {
+                        inkPath = new GeneralPath();
+                        inkPath.moveTo(inkList.get(i).floatValue(), inkList.get(i + 1).floatValue());
+                    } else {
+                        inkPath.lineTo(inkList.get(i).floatValue(), inkList.get(i + 1).floatValue());
+                    }
+                }
+                inkPaths.append(inkPath, false);
+            }
+        }
+        this.inkPath = inkPaths;
+        if (!hasAppearanceStream() && inkPath != null) {
+            Object tmp = getObject(RECTANGLE_KEY);
+            Rectangle2D.Float rectangle = null;
+            if (tmp instanceof List) {
+                rectangle = library.getRectangle(entries, RECTANGLE_KEY);
+            }
+            if (rectangle != null) {
+                setBBox(rectangle.getBounds());
+            }
+            resetAppearanceStream(new AffineTransform());
+        }
+    }
+
+    /**
+     * Converts the ink path back to an array of points.
+     *
+     * @param inkPath path to translate to an array
+     * @return an array of an array of points.
+     */
+    private List<List<Float>> convertPathToArray(Shape inkPath) {
+        List<List<Float>> inkLists = new ArrayList<List<Float>>();
+        List<Float> segment = null;
+        if (inkPath != null) {
+            PathIterator pathIterator = inkPath.getPathIterator(null);
+            float[] inkSegment = new float[6];
+            int segmentType;
+            while (!pathIterator.isDone()) {
+                segmentType = pathIterator.currentSegment(inkSegment);
+                if (segmentType == PathIterator.SEG_MOVETO) {
+                    segment = new ArrayList<Float>();
+                    segment.add(inkSegment[0]);
+                    segment.add(inkSegment[1]);
+                    inkLists.add(segment);
+                } else if (segmentType == PathIterator.SEG_LINETO) {
+                    segment.add(inkSegment[0]);
+                    segment.add(inkSegment[1]);
+                }
+                pathIterator.next();
+            }
+        }
+        return inkLists;
     }
 
     /**

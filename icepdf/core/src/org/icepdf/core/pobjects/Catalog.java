@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -43,9 +43,6 @@ import java.util.logging.Logger;
  */
 public class Catalog extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(Catalog.class.toString());
-
     public static final Name TYPE = new Name("Catalog");
     public static final Name DESTS_KEY = new Name("Dests");
     public static final Name VIEWERPREFERENCES_KEY = new Name("ViewerPreferences");
@@ -56,10 +53,11 @@ public class Catalog extends Dictionary {
     public static final Name PAGELAYOUT_KEY = new Name("PageLayout");
     public static final Name PAGEMODE_KEY = new Name("PageMode");
     public static final Name ACRO_FORM_KEY = new Name("AcroForm");
-
+    private static final Logger logger =
+            Logger.getLogger(Catalog.class.toString());
     private PageTree pageTree;
     private Outlines outlines;
-    private NameTree nameTree;
+    private Names names;
     private OptionalContent optionalContent;
     private Dictionary dests;
     private ViewerPreferences viewerPref;
@@ -104,8 +102,8 @@ public class Catalog extends Dictionary {
         // malformed cornercase, just have a page object, instead of tree.
         else if (tmp instanceof Page) {
             Page tmpPage = (Page) tmp;
-            HashMap tmpPages = new HashMap();
-            List kids = new ArrayList();
+            HashMap<String, Object> tmpPages = new HashMap<String, Object>();
+            List<Reference> kids = new ArrayList<Reference>();
             kids.add(tmpPage.getPObjectReference());
             tmpPages.put("Kids", kids);
             tmpPages.put("Count", 1);
@@ -113,7 +111,16 @@ public class Catalog extends Dictionary {
         }
 
         // let any exception bubble up.
-        pageTree.init();
+        if (pageTree != null) {
+            pageTree.init();
+        }
+
+        // check for the collections dictionary for the presence of a portable collection
+        tmp = library.getObject(entries, NAMES_KEY);
+        if (tmp != null) {
+            names = new Names(library, (HashMap) tmp);
+            names.init();
+        }
 
         // load the Acroform data.
         tmp = library.getObject(entries, ACRO_FORM_KEY);
@@ -153,28 +160,17 @@ public class Catalog extends Dictionary {
         return outlines;
     }
 
+
     /**
      * Gets the document's Names dictionary.  The Names dictionary contains
      * a category of objects in a PDF file which can be referred to by name
      * rather than by object reference.
      *
-     * @return name dictionary for document.  If no name dictionary exists null
-     *         is returned.
+     * @return names object entry.  If no names entries exists null
+     * is returned.
      */
-    public NameTree getNameTree() {
-        if (!namesTreeInited) {
-            namesTreeInited = true;
-            Object o = library.getObject(entries, NAMES_KEY);
-            if (o != null && o instanceof HashMap) {
-                HashMap dest = (HashMap) o;
-                Object names = library.getObject(dest, DESTS_KEY);
-                if (names != null && names instanceof HashMap) {
-                    nameTree = new NameTree(library, (HashMap) names);
-                    nameTree.init();
-                }
-            }
-        }
-        return nameTree;
+    public Names getNames() {
+        return names;
     }
 
     /**
@@ -182,6 +178,7 @@ public class Catalog extends Dictionary {
      *
      * @return A Dictionary of Destinations; if none, null is returned.
      */
+    @SuppressWarnings("unchecked")
     public Dictionary getDestinations() {
         if (!destsInited) {
             destsInited = true;

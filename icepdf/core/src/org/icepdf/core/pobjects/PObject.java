@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -58,7 +58,7 @@ public class PObject {
      * Gets the reference information for this PDF object.
      *
      * @return Reference object which contains the PDF objects
-     *         number and generation data
+     * number and generation data
      */
     public Reference getReference() {
         return objectReference;

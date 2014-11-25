@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2014 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
@@ -31,6 +31,7 @@
         <build.jar jar.file.name="${jar.file.name}">
             <add.jar.src.includes>
                 <include name="org/icepdf/core/pobjects/fonts/afm/"/>
+                <include name="org/icepdf/core/pobjects/graphics/res/"/>
             </add.jar.src.includes>
         </build.jar>
 
@@ -47,6 +48,7 @@
         <build.jar jar.file.name="icepdf-core.jar">
             <add.jar.src.includes>
                 <include name="org/icepdf/core/pobjects/fonts/afm/"/>
+                <include name="org/icepdf/core/pobjects/graphics/res/"/>
                 <exclude name="org/jpedal/"/>
             </add.jar.src.includes>
             <!-- exclude the jbig src -->
@@ -119,6 +121,7 @@
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/core/pobjects/fonts/afm/"/>
+                <exclude name="org/icepdf/core/pobjects/graphics/res/"/>
             </fileset>
             <doctitle><![CDATA[<h2>ICEpdf API</h2>]]></doctitle>
         </javadoc>

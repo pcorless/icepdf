@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -83,7 +83,7 @@ final class Parse {
      *
      * @param s string to be coverted to double if possible
      * @return a null if the string could not be converted to double, otherwise
-     *         return the Double value of the string.
+     * return the Double value of the string.
      */
     public static Double parseDouble(String s, ResourceBundle messageBundle) {
         s = s.trim();

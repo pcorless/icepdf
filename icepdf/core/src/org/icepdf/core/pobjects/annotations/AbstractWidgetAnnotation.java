@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,14 +32,12 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractWidgetAnnotation extends Annotation {
 
-    private static final Logger logger =
-            Logger.getLogger(AbstractWidgetAnnotation.class.toString());
-
     /**
      * Indicates that the annotation has no highlight effect.
      */
     public static final Name HIGHLIGHT_NONE = new Name("N");
-
+    private static final Logger logger =
+            Logger.getLogger(AbstractWidgetAnnotation.class.toString());
     protected FieldDictionary fieldDictionary;
 
     protected Name highlightMode;

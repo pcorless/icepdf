@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -104,7 +104,7 @@ public class GoToRAction extends Action {
      * it should be loaded in the current.
      *
      * @return true indicates a new windows should be launched for the remote
-     *         document; otherwise, false.
+     * document; otherwise, false.
      */
     public Boolean isNewWindow() {
         return isNewWindow;

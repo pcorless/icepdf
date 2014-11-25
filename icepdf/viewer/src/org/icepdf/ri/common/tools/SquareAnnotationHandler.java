@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -49,11 +49,9 @@ import java.util.logging.Logger;
  */
 public class SquareAnnotationHandler extends SelectionBoxHandler implements ToolHandler {
 
+    protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
     private static final Logger logger =
             Logger.getLogger(SquareAnnotationHandler.class.toString());
-
-    protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
-
     // need to make the stroke cap, thickness configurable. Or potentially
     // static from the AnnotationHandle so it would look like the last
     // settings where remembered.

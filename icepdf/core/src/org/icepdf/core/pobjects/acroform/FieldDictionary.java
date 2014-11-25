@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -46,9 +46,6 @@ import java.util.logging.Logger;
  */
 public class FieldDictionary extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(FieldDictionary.class.toString());
-
     /**
      * Required for terminal fields; inheritable) The type of field that this
      * dictionary describes:
@@ -68,27 +65,22 @@ public class FieldDictionary extends Dictionary {
      * fields of any type.
      */
     public static final Name FT_KEY = new Name("FT");
-
     /**
      * Button terminal field.
      */
     public static final Name FT_BUTTON_VALUE = new Name("Btn");
-
     /**
      * Text terminal field.
      */
     public static final Name FT_TEXT_VALUE = new Name("Tx");
-
     /**
      * Choice terminal field.
      */
     public static final Name FT_CHOICE_VALUE = new Name("Ch");
-
     /**
      * Signature terminal field.
      */
     public static final Name FT_SIGNATURE_VALUE = new Name("Sig");
-
     /**
      * (Sometimes required, as described below) An array of indirect references
      * to the immediate children of this field.
@@ -101,7 +93,6 @@ public class FieldDictionary extends Dictionary {
      * Kids shall be omitted.
      */
     public static final Name KIDS_KEY = new Name("Kids");
-
     /**
      * (Required if this field is the child of another in the field hierarchy;
      * absent otherwise) The field that is the immediate parent of this one (the
@@ -110,12 +101,10 @@ public class FieldDictionary extends Dictionary {
      * one other field.
      */
     public static final Name PARENT_KEY = new Name("Parent");
-
     /**
      * (Optional) The partial field name (see 12.7.3.2, “Field Names”).
      */
     public static final Name T_KEY = new Name("T");
-
     /**
      * (Optional; PDF 1.3) An alternate field name that shall be used in place
      * of the actual field name wherever the field shall be identified in the
@@ -125,33 +114,28 @@ public class FieldDictionary extends Dictionary {
      * (see 14.9.3, “Alternate Descriptions”).
      */
     public static final Name TU_KEY = new Name("TU");
-
     /**
      * (Optional; PDF 1.3) The mapping name that shall be used when exporting
      * interactive form field data from the document.
      */
     public static final Name TM_KEY = new Name("TM");
-
     /**
      * (Optional; inheritable) A set of flags specifying various characteristics
      * of the field (see Table 221). Default value: 0.
      */
     public static final Name Ff_KEY = new Name("Ff");
-
     /**
      * (Optional; inheritable) The field’s value, whose format varies depending
      * on the field type. See the descriptions of individual field types for
      * further information.
      */
     public static final Name V_KEY = new Name("V");
-
     /**
      * (Optional; inheritable) The default value to which the field reverts when
      * a reset-form action is executed (see 12.7.5.3, “Reset-Form Action”). The
      * format of this value is the same as that of V.
      */
     public static final Name DV_KEY = new Name("DV");
-
     /**
      * (Optional; PDF 1.2) An additional-actions dictionary defining the field’s
      * behaviour in response to various trigger events (see 12.6.3, “Trigger Events”).
@@ -159,9 +143,6 @@ public class FieldDictionary extends Dictionary {
      * dictionary (see 12.5.2, “Annotation Dictionaries”).
      */
     public static final Name AA_KEY = new Name("AA");
-
-    /** general field flags **/
-
     /**
      * If set, the user may not change the value of the field. Any associated
      * widget annotations will not interact with the user; that is, they will
@@ -171,37 +152,29 @@ public class FieldDictionary extends Dictionary {
      */
     public static final int READ_ONLY_BIT_FLAG = 0x1;
 
+    /** general field flags **/
     /**
      * If set, the field shall have a value at the time it is exported by a
      * submit-form action (see 12.7.5.2, “Submit-Form Action”).
      */
     public static final int REQUIRED_BIT_FLAG = 0x2;
-
     /**
      * If set, the field shall not be exported by a submit-form action (see 12.7.5.2, “Submit-Form Action”).
      */
     public static final int NO_EXPORT_BIT_FLAG = 0x4;
-
-    private org.icepdf.core.pobjects.security.SecurityManager securityManager;
-
+    private static final Logger logger =
+            Logger.getLogger(FieldDictionary.class.toString());
     protected Name fieldType;
-
     protected VariableText variableText;
-
     protected String partialFieldName;
-
     protected String alternativeFieldName;
-
     protected String exportMappingName;
-
     protected int flags;
-
     protected Object fieldValue;
     protected Object defaultFieldValue;
-
     protected WidgetAnnotation parentField;
-
     protected ArrayList<AbstractWidgetAnnotation> kids;
+    private org.icepdf.core.pobjects.security.SecurityManager securityManager;
 
 
     public FieldDictionary(Library library, HashMap entries) {

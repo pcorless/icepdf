@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -133,11 +133,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = null;
         if (viewerController != null) {
-            try {
-                pageText = viewerController.getDocument().getPageText(pageIndex);
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
-            }
+            // get access to currently open document instance.
+            pageText = viewerController.getDocument().getPageViewText(pageIndex);
         } else if (document != null) {
             pageText = document.getPageViewText(pageIndex);
         }
@@ -160,69 +157,70 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
             // start iteration over words.
             ArrayList<LineText> pageLines = pageText.getPageLines();
-            for (LineText pageLine : pageLines) {
-                ArrayList<WordText> lineWords = pageLine.getWords();
-                // compare words against search terms.
-                String wordString;
-                for (WordText word : lineWords) {
-                    // apply case sensitivity rule.
-                    wordString = term.isCaseSensitive() ? word.toString() :
-                            word.toString().toLowerCase();
-                    // word matches, we have to match full word hits
-                    if (term.isWholeWord()) {
-                        if (wordString.equals(
-                                term.getTerms().get(searchPhraseHitCount))) {
-                            // add word to potentials
-                            searchPhraseHits.add(word);
-                            searchPhraseHitCount++;
+            if (pageLines != null) {
+                for (LineText pageLine : pageLines) {
+                    java.util.List<WordText> lineWords = pageLine.getWords();
+                    // compare words against search terms.
+                    String wordString;
+                    for (WordText word : lineWords) {
+                        // apply case sensitivity rule.
+                        wordString = term.isCaseSensitive() ? word.toString() :
+                                word.toString().toLowerCase();
+                        // word matches, we have to match full word hits
+                        if (term.isWholeWord()) {
+                            if (wordString.equals(
+                                    term.getTerms().get(searchPhraseHitCount))) {
+                                // add word to potentials
+                                searchPhraseHits.add(word);
+                                searchPhraseHitCount++;
+                            }
+                            //                                else if (wordString.length() == 1 &&
+                            //                                        WordText.isPunctuation(wordString.charAt(0))){
+                            //                                    // ignore punctuation
+                            //                                    searchPhraseHitCount++;
+                            //                                }
+                            // reset the counters.
+                            else {
+                                searchPhraseHits.clear();
+                                searchPhraseHitCount = 0;
+                            }
                         }
-//                                else if (wordString.length() == 1 &&
-//                                        WordText.isPunctuation(wordString.charAt(0))){
-//                                    // ignore punctuation
-//                                    searchPhraseHitCount++;
-//                                }
-                        // reset the counters.
+                        // otherwise we look for an index of hits
                         else {
+                            // found a potential hit, depends on the length
+                            // of searchPhrase.
+                            if (wordString.contains(term.getTerms().get(searchPhraseHitCount))) {
+                                // add word to potentials
+                                searchPhraseHits.add(word);
+                                searchPhraseHitCount++;
+                            }
+                            //                                else if (wordString.length() == 1 &&
+                            //                                        WordText.isPunctuation(wordString.charAt(0))){
+                            //                                    // ignore punctuation
+                            //                                    searchPhraseHitCount++;
+                            //                                }
+                            // reset the counters.
+                            else {
+                                searchPhraseHits.clear();
+                                searchPhraseHitCount = 0;
+                            }
+
+                        }
+                        // check if we have found what we're looking for
+                        if (searchPhraseHitCount == searchPhraseFoundCount) {
+                            // iterate of found, highlighting words
+                            for (WordText wordHit : searchPhraseHits) {
+                                wordHit.setHighlighted(true);
+                                wordHit.setHasHighlight(true);
+                            }
+
+                            // rest counts and start over again.
+                            hitCount++;
                             searchPhraseHits.clear();
                             searchPhraseHitCount = 0;
                         }
-                    }
-                    // otherwise we look for an index of hits
-                    else {
-                        // found a potential hit, depends on the length
-                        // of searchPhrase.
-                        if (wordString.indexOf(
-                                term.getTerms().get(searchPhraseHitCount)) >= 0) {
-                            // add word to potentials
-                            searchPhraseHits.add(word);
-                            searchPhraseHitCount++;
-                        }
-//                                else if (wordString.length() == 1 &&
-//                                        WordText.isPunctuation(wordString.charAt(0))){
-//                                    // ignore punctuation
-//                                    searchPhraseHitCount++;
-//                                }
-                        // reset the counters.
-                        else {
-                            searchPhraseHits.clear();
-                            searchPhraseHitCount = 0;
-                        }
 
                     }
-                    // check if we have found what we're looking for
-                    if (searchPhraseHitCount == searchPhraseFoundCount) {
-                        // iterate of found, highlighting words
-                        for (WordText wordHit : searchPhraseHits) {
-                            wordHit.setHighlighted(true);
-                            wordHit.setHasHighlight(true);
-                        }
-
-                        // rest counts and start over again.
-                        hitCount++;
-                        searchPhraseHits.clear();
-                        searchPhraseHitCount = 0;
-                    }
-
                 }
             }
         }
@@ -257,7 +255,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param wordPadding word padding on either side of hit to give context
      *                    to found woords in the returned LineText
      * @return list of contectual hits for the give page.  If no hits an empty
-     *         list is returned.
+     * list is returned.
      */
     public ArrayList<LineText> searchHighlightPage(int pageIndex, int wordPadding) {
         // get search terms from model and search for each occurrence.
@@ -269,11 +267,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = null;
         if (viewerController != null) {
-            try {
-                pageText = viewerController.getDocument().getPageText(pageIndex);
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);
-            }
+            // get access to currently open document.
+            pageText = viewerController.getDocument().getPageViewText(pageIndex);
         } else if (document != null) {
             pageText = document.getPageViewText(pageIndex);
         }
@@ -296,84 +291,86 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
             // start iteration over words.
             ArrayList<LineText> pageLines = pageText.getPageLines();
-            for (LineText pageLine : pageLines) {
-                ArrayList<WordText> lineWords = pageLine.getWords();
-                // compare words against search terms.
-                String wordString;
-                WordText word;
-                for (int i = 0, max = lineWords.size(); i < max; i++) {
-                    word = lineWords.get(i);
+            if (pageLines != null) {
+                for (LineText pageLine : pageLines) {
+                    java.util.List<WordText> lineWords = pageLine.getWords();
+                    // compare words against search terms.
+                    String wordString;
+                    WordText word;
+                    for (int i = 0, max = lineWords.size(); i < max; i++) {
+                        word = lineWords.get(i);
 
-                    // apply case sensitivity rule.
-                    wordString = term.isCaseSensitive() ? word.toString() :
-                            word.toString().toLowerCase();
-                    // word matches, we have to match full word hits
-                    if (term.isWholeWord()) {
-                        if (wordString.equals(
-                                term.getTerms().get(searchPhraseHitCount))) {
-                            // add word to potentials
-                            searchPhraseHits.add(word);
-                            searchPhraseHitCount++;
+                        // apply case sensitivity rule.
+                        wordString = term.isCaseSensitive() ? word.toString() :
+                                word.toString().toLowerCase();
+                        // word matches, we have to match full word hits
+                        if (term.isWholeWord()) {
+                            if (wordString.equals(
+                                    term.getTerms().get(searchPhraseHitCount))) {
+                                // add word to potentials
+                                searchPhraseHits.add(word);
+                                searchPhraseHitCount++;
+                            }
+                            // reset the counters.
+                            else {
+                                searchPhraseHits.clear();
+                                searchPhraseHitCount = 0;
+                            }
                         }
-                        // reset the counters.
+                        // otherwise we look for an index of hits
                         else {
+                            // found a potential hit, depends on the length
+                            // of searchPhrase.
+                            if (wordString.contains(term.getTerms().get(searchPhraseHitCount))) {
+                                // add word to potentials
+                                searchPhraseHits.add(word);
+                                searchPhraseHitCount++;
+                            }
+                            // reset the counters.
+                            else {
+                                searchPhraseHits.clear();
+                                searchPhraseHitCount = 0;
+                            }
+
+                        }
+                        // check if we have found what we're looking for
+                        if (searchPhraseHitCount == searchPhraseFoundCount) {
+
+                            LineText lineText = new LineText();
+                            int lineWordsSize = lineWords.size();
+                            java.util.List<WordText> hitWords = lineText.getWords();
+                            // add pre padding
+                            int start = i - searchPhraseHitCount - wordPadding + 1;
+                            start = start < 0 ? 0 : start;
+                            int end = i - searchPhraseHitCount + 1;
+                            end = end < 0 ? 0 : end;
+                            for (int p = start; p < end; p++) {
+                                hitWords.add(lineWords.get(p));
+                            }
+
+                            // iterate of found, highlighting words
+                            for (WordText wordHit : searchPhraseHits) {
+                                wordHit.setHighlighted(true);
+                                wordHit.setHasHighlight(true);
+                            }
+                            hitWords.addAll(searchPhraseHits);
+
+                            // add word padding to front of line
+                            start = i + 1;
+                            start = start > lineWordsSize ? lineWordsSize : start;
+                            end = start + wordPadding;
+                            end = end > lineWordsSize ? lineWordsSize : end;
+                            for (int p = start; p < end; p++) {
+                                hitWords.add(lineWords.get(p));
+                            }
+
+                            // add the hits to our list.
+                            searchHits.add(lineText);
+
                             searchPhraseHits.clear();
                             searchPhraseHitCount = 0;
                         }
-                    }
-                    // otherwise we look for an index of hits
-                    else {
-                        // found a potential hit, depends on the length
-                        // of searchPhrase.
-                        if (wordString.indexOf(
-                                term.getTerms().get(searchPhraseHitCount)) >= 0) {
-                            // add word to potentials
-                            searchPhraseHits.add(word);
-                            searchPhraseHitCount++;
-                        }
-                        // reset the counters.
-                        else {
-                            searchPhraseHits.clear();
-                            searchPhraseHitCount = 0;
-                        }
 
-                    }
-                    // check if we have found what we're looking for
-                    if (searchPhraseHitCount == searchPhraseFoundCount) {
-
-                        LineText lineText = new LineText();
-                        int lineWordsSize = lineWords.size();
-                        ArrayList<WordText> hitWords = lineText.getWords();
-                        // add pre padding
-                        int start = i - searchPhraseHitCount - wordPadding + 1;
-                        start = start < 0 ? 0 : start;
-                        int end = i - searchPhraseHitCount + 1;
-                        end = end < 0 ? 0 : end;
-                        for (int p = start; p < end; p++) {
-                            hitWords.add(lineWords.get(p));
-                        }
-
-                        // iterate of found, highlighting words
-                        for (WordText wordHit : searchPhraseHits) {
-                            wordHit.setHighlighted(true);
-                            wordHit.setHasHighlight(true);
-                        }
-                        hitWords.addAll(searchPhraseHits);
-
-                        // add word padding to front of line
-                        start = i + 1;
-                        start = start > lineWordsSize ? lineWordsSize : start;
-                        end = start + wordPadding;
-                        end = end > lineWordsSize ? lineWordsSize : end;
-                        for (int p = start; p < end; p++) {
-                            hitWords.add(lineWords.get(p));
-                        }
-
-                        // add the hits to our list.
-                        searchHits.add(lineText);
-
-                        searchPhraseHits.clear();
-                        searchPhraseHitCount = 0;
                     }
 
                 }
@@ -408,11 +405,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             if (searchText != null) {
                 ArrayList<WordText> words = new ArrayList<WordText>(hits);
                 ArrayList<LineText> pageLines = searchText.getPageLines();
-                for (LineText pageLine : pageLines) {
-                    ArrayList<WordText> lineWords = pageLine.getWords();
-                    for (WordText word : lineWords) {
-                        if (word.isHighlighted()) {
-                            words.add(word);
+                if (pageLines != null) {
+                    for (LineText pageLine : pageLines) {
+                        java.util.List<WordText> lineWords = pageLine.getWords();
+                        if (lineWords != null) {
+                            for (WordText word : lineWords) {
+                                if (word.isHighlighted()) {
+                                    words.add(word);
+                                }
+                            }
                         }
                     }
                 }
@@ -519,10 +520,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // found words. 
         ArrayList<String> words = new ArrayList<String>();
         char c;
+        char prevC = 32;
         for (int start = 0, curs = 0, max = phrase.length(); curs < max; curs++) {
             c = phrase.charAt(curs);
-            if (WordText.isWhiteSpace(c) ||
-                    WordText.isPunctuation(c)) {
+            if (!WordText.isDigit(prevC) && (WordText.isWhiteSpace(c) ||
+                    WordText.isPunctuation(c))) {
                 // add word segment
                 if (start != curs) {
                     words.add(phrase.substring(start, curs));
@@ -534,6 +536,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             } else if (curs + 1 == max) {
                 words.add(phrase.substring(start, curs + 1));
             }
+            prevC = c;
         }
         return words;
     }

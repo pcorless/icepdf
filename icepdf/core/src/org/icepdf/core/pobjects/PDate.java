@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -126,6 +126,67 @@ public class PDate {
         if (date != null) {
             parseDate(date);
         }
+    }
+
+    /**
+     * Formats a date/time according to the PDF specification
+     * (D:YYYYMMDDHHmmSSOHH'mm').
+     *
+     * @param time date/time value to format
+     * @param tz   the time zone
+     * @return the requested String representation
+     */
+    public static String formatDateTime(Date time, TimeZone tz) {
+        Calendar cal = Calendar.getInstance(tz, Locale.ENGLISH);
+        cal.setTime(time);
+
+        int offset = cal.get(Calendar.ZONE_OFFSET);
+        offset += cal.get(Calendar.DST_OFFSET);
+
+        //DateFormat is operating on GMT so adjust for time zone offset
+        Date dt1 = new Date(time.getTime() + offset);
+        StringBuffer sb = new StringBuffer();
+        sb.append(DATE_FORMAT.format(dt1));
+
+        offset /= (1000 * 60); //Convert to minutes
+
+        if (offset == 0) {
+            sb.append('Z');
+        } else {
+            if (offset > 0) {
+                sb.append('+');
+            } else {
+                sb.append('-');
+            }
+            int offsetHour = Math.abs(offset / 60);
+            int offsetMinutes = Math.abs(offset % 60);
+            if (offsetHour < 10) {
+                sb.append('0');
+            }
+            sb.append(Integer.toString(offsetHour));
+            sb.append('\'');
+            if (offsetMinutes < 10) {
+                sb.append('0');
+            }
+            sb.append(Integer.toString(offsetMinutes));
+            sb.append('\'');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Formats a date/time according to the PDF specification.
+     * (D:YYYYMMDDHHmmSSOHH'mm').
+     *
+     * @param time date/time value to format
+     * @return the requested String representation
+     */
+    public static String formatDateTime(Date time) {
+        return formatDateTime(time, TimeZone.getDefault());
+    }
+
+    public static PDate createDate(Date date) {
+        return new PDate(null, formatDateTime(date));
     }
 
     /**
@@ -413,67 +474,6 @@ public class PDate {
         }
 
         return monthNames[monthIndex];
-    }
-
-    /**
-     * Formats a date/time according to the PDF specification
-     * (D:YYYYMMDDHHmmSSOHH'mm').
-     *
-     * @param time date/time value to format
-     * @param tz   the time zone
-     * @return the requested String representation
-     */
-    public static String formatDateTime(Date time, TimeZone tz) {
-        Calendar cal = Calendar.getInstance(tz, Locale.ENGLISH);
-        cal.setTime(time);
-
-        int offset = cal.get(Calendar.ZONE_OFFSET);
-        offset += cal.get(Calendar.DST_OFFSET);
-
-        //DateFormat is operating on GMT so adjust for time zone offset
-        Date dt1 = new Date(time.getTime() + offset);
-        StringBuffer sb = new StringBuffer();
-        sb.append(DATE_FORMAT.format(dt1));
-
-        offset /= (1000 * 60); //Convert to minutes
-
-        if (offset == 0) {
-            sb.append('Z');
-        } else {
-            if (offset > 0) {
-                sb.append('+');
-            } else {
-                sb.append('-');
-            }
-            int offsetHour = Math.abs(offset / 60);
-            int offsetMinutes = Math.abs(offset % 60);
-            if (offsetHour < 10) {
-                sb.append('0');
-            }
-            sb.append(Integer.toString(offsetHour));
-            sb.append('\'');
-            if (offsetMinutes < 10) {
-                sb.append('0');
-            }
-            sb.append(Integer.toString(offsetMinutes));
-            sb.append('\'');
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Formats a date/time according to the PDF specification.
-     * (D:YYYYMMDDHHmmSSOHH'mm').
-     *
-     * @param time date/time value to format
-     * @return the requested String representation
-     */
-    public static String formatDateTime(Date time) {
-        return formatDateTime(time, TimeZone.getDefault());
-    }
-
-    public static PDate createDate(Date date) {
-        return new PDate(null, formatDateTime(date));
     }
 
 }

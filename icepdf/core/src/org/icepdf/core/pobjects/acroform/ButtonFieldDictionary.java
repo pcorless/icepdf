@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -57,13 +57,9 @@ public class ButtonFieldDictionary extends FieldDictionary {
      * mutually exclusive (the same behavior as HTML radio buttons).
      */
     public static final int RADIO_IN_UNISON_BIT_FLAG = 0x1000000;
-
-    public enum ButtonFieldType {
-        PUSH_BUTTON, RADIO_BUTTON, CHECK_BUTTON
-    }
-
     protected ButtonFieldType buttonFieldType;
 
+    @SuppressWarnings("unchecked")
     public ButtonFieldDictionary(Library library, HashMap entries) {
         super(library, entries);
 
@@ -87,8 +83,8 @@ public class ButtonFieldDictionary extends FieldDictionary {
             kids = new ArrayList<AbstractWidgetAnnotation>(children.size());
             Reference child;
             AbstractWidgetAnnotation widgetAnnotation;
-            for (int i = 0, max = children.size(); i < max; i++) {
-                child = children.get(i);
+            for (Reference aChildren : children) {
+                child = aChildren;
                 widgetAnnotation = (AbstractWidgetAnnotation) library.getObject(child);
                 ButtonFieldDictionary fieldDictionary = (ButtonFieldDictionary)
                         widgetAnnotation.getFieldDictionary();
@@ -108,5 +104,9 @@ public class ButtonFieldDictionary extends FieldDictionary {
 
     public void setButtonFieldType(ButtonFieldType buttonFieldType) {
         this.buttonFieldType = buttonFieldType;
+    }
+
+    public enum ButtonFieldType {
+        PUSH_BUTTON, RADIO_BUTTON, CHECK_BUTTON
     }
 }

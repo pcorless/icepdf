@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -44,6 +44,9 @@ public class LexerText {
     public static final String TEST_3 =
             "{0 0 0 0 5 4 roll 0 index 3 -1 roll add 2 1 roll pop dup 1 gt {pop 1} if " +
                     "4 1 roll dup 1 gt {pop 1} if 4 1 roll dup 1 gt {pop 1} if 4 1 roll dup 1 gt {pop 1} if 4 1 roll}";
+
+    public static final String TEST_4 =
+            "{dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 0 index 1 exp 1 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 1 index 1 exp 0 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 2 index 1 exp 0 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 3 index 1 exp 0 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 5 4 roll pop }";
 
     public static void main(String[] args) {
 
@@ -170,14 +173,12 @@ public class LexerText {
 
     public void test8() throws IOException {
         String test =
-                "{3 copy pop 0 exch pop exch pop 4 1 roll 3 copy exch pop exch " +
-                        "pop 5 1 roll 3 copy pop 0 exch 2 copy lt {exch} if pop exch pop 6 1 roll " +
-                        "pop 0 exch pop exch 2 copy lt {exch} if pop 4 1 roll}";
+                "{dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 0 index 1 exp 1 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 1 index 1 exp 0 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 2 index 1 exp 0 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 3 index 1 exp 0 mul 0 add dup 0 lt {pop 0 }{dup 1 gt {pop 1 } if } ifelse 5 4 roll pop }";
 
         InputStream function_4 = new ByteArrayInputStream(test.getBytes());
         Lexer lex = new Lexer();
         lex.setInputStream(function_4);
-        lex.parse(new float[]{0.86f, 0.07999998f, 0.0f});
+        lex.parse(new float[]{1.0f});
 
         System.out.println("result: " + lex.getStack().toString());
 

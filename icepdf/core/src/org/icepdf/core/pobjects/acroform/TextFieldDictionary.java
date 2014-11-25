@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -117,13 +117,7 @@ public class TextFieldDictionary extends FieldDictionary {
      * of the field dictionary (Table 222) shall specify the rich text string.
      */
     public static final int RICH_TEXT_BIT_FLAG = 0x2000000;
-
-    public enum TextFieldType {
-        TEXT_INPUT, TEXT_AREA, TEXT_PASSWORD, FILE_SELECT
-    }
-
     protected TextFieldType textFieldType;
-
     protected int maxLength = 0;
 
     public TextFieldDictionary(Library library, HashMap entries) {
@@ -154,5 +148,9 @@ public class TextFieldDictionary extends FieldDictionary {
 
     public TextFieldType getTextFieldType() {
         return textFieldType;
+    }
+
+    public enum TextFieldType {
+        TEXT_INPUT, TEXT_AREA, TEXT_PASSWORD, FILE_SELECT
     }
 }

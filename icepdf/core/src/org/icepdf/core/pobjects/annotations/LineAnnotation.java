@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -38,9 +38,6 @@ import java.util.logging.Logger;
  */
 public class LineAnnotation extends MarkupAnnotation {
 
-    private static final Logger logger =
-            Logger.getLogger(LineAnnotation.class.toString());
-
     /**
      * (Required) An array of four numbers, [x1 y1 x2 y2], specifying the starting
      * and ending coordinates of the line in default user space.
@@ -49,7 +46,6 @@ public class LineAnnotation extends MarkupAnnotation {
      * the leader lines rather than the endpoints of the line itself; see Figure 60.
      */
     public static final Name L_KEY = new Name("L");
-
     /**
      * (Optional; PDF 1.4) An array of two names specifying the line ending styles
      * that shall be used in drawing the line. The first and second elements of
@@ -60,7 +56,6 @@ public class LineAnnotation extends MarkupAnnotation {
      * Default value: [/None /None].
      */
     public static final Name LE_KEY = new Name("LE");
-
     /**
      * (Required if LLE is present, otherwise optional; PDF 1.6) The length of
      * leader lines in default user space that extend from each endpoint of the
@@ -73,7 +68,6 @@ public class LineAnnotation extends MarkupAnnotation {
      * Default value: 0 (no leader lines).
      */
     public static final Name LL_KEY = new Name("LL");
-
     /**
      * (Optional; PDF 1.6) A non-negative number that shall represents the
      * length of leader line extensions that extend from the line proper 180
@@ -82,7 +76,6 @@ public class LineAnnotation extends MarkupAnnotation {
      * Default value: 0 (no leader line extensions).
      */
     public static final Name LLE_KEY = new Name("LLE");
-
     /**
      * (Optional; PDF 1.4) An array of numbers in the range 0.0 to 1.0 specifying
      * the interior color that shall be used to fill the annotation’s line endings
@@ -94,7 +87,6 @@ public class LineAnnotation extends MarkupAnnotation {
      * 4 - DeviceCMYK
      */
     public static final Name IC_KEY = new Name("IC");
-
     /**
      * (Optional; PDF 1.6) If true, the text specified by the Contents or RC
      * entries shall be replicated as a caption in the appearance of the line,
@@ -105,6 +97,12 @@ public class LineAnnotation extends MarkupAnnotation {
      * Default value: false.
      */
     public static final Name CAP_KEY = new Name("Cap");
+    /**
+     * (Optional; PDF 1.7) A non-negative number that shall represent the length
+     * of the leader line offset, which is the amount of empty space between the
+     * endpoints of the annotation and the beginning of the leader lines.
+     */
+    public static final Name LLO_KEY = new Name("LLO");
 
     /**
      * (Optional; PDF 1.6) A name describing the intent of the line annotation
@@ -113,15 +111,6 @@ public class LineAnnotation extends MarkupAnnotation {
      * which means that the annotation is intended to function as a dimension line.
      */
 //    public static final Name IT_KEY = new Name("IT");
-
-    /**
-     * (Optional; PDF 1.7) A non-negative number that shall represent the length
-     * of the leader line offset, which is the amount of empty space between the
-     * endpoints of the annotation and the beginning of the leader lines.
-     */
-    public static final Name LLO_KEY = new Name("LLO");
-
-
     /**
      * (Optional; meaningful only if Cap is true; PDF 1.7) A name describing the
      * annotation’s caption positioning. Valid values are Inline, meaning the
@@ -131,13 +120,11 @@ public class LineAnnotation extends MarkupAnnotation {
      * Default value: Inline
      */
     public static final Name CP_KEY = new Name("CP");
-
     /**
      * (Optional; PDF 1.7) A measure dictionary (see Table 261) that shall
      * specify the scale and units that apply to the line annotation.
      */
     public static final Name MEASURE_KEY = new Name("Measure");
-
     /**
      * (Optional; meaningful only if Cap is true; PDF 1.7) An array of two numbers
      * that shall specify the offset of the caption text from its normal position.
@@ -151,39 +138,34 @@ public class LineAnnotation extends MarkupAnnotation {
      * Default value: [0, 0] (no offset from normal positioning)
      */
     public static final Name CO_KEY = new Name("CO");
-
     /**
      * A square filled with the annotation’s interior color, if any
      */
     public static final Name LINE_END_NONE = new Name("None");
-
     /**
      * A circle filled with the annotation’s interior color, if any
      */
     public static final Name LINE_END_SQUARE = new Name("Square");
-
     /**
      * A diamond shape filled with the annotation’s interior color, if any
      */
     public static final Name LINE_END_CIRCLE = new Name("Circle");
-
     /**
      * Two short lines meeting in an acute angle to form an open arrowhead
      */
     public static final Name LINE_END_DIAMOND = new Name("Diamond");
-
     /**
      * Two short lines meeting in an acute angle as in the OpenArrow style and
      * connected by a third line to form a triangular closed arrowhead filled
      * with the annotation’s interior color, if any
      */
     public static final Name LINE_END_OPEN_ARROW = new Name("OpenArrow");
-
     /**
      * No line ending
      */
     public static final Name LINE_END_CLOSED_ARROW = new Name("ClosedArrow");
-
+    private static final Logger logger =
+            Logger.getLogger(LineAnnotation.class.toString());
     protected Point2D startOfLine;
     protected Point2D endOfLine;
     protected Color interiorColor;
@@ -194,49 +176,6 @@ public class LineAnnotation extends MarkupAnnotation {
 
     public LineAnnotation(Library l, HashMap h) {
         super(l, h);
-    }
-
-    public void init() {
-        super.init();
-        // line points
-        List<Number> value = library.getArray(entries, L_KEY);
-        if (value != null) {
-            startOfLine = new Point2D.Float(value.get(0).floatValue(), value.get(1).floatValue());
-            endOfLine = new Point2D.Float(value.get(2).floatValue(), value.get(3).floatValue());
-        }
-
-        // line ends.
-        List value2 = library.getArray(entries, LE_KEY);
-        if (value2 != null) {
-            startArrow = (Name) value2.get(0);
-            endArrow = (Name) value2.get(1);
-        }
-
-        // parse out interior colour, specific to link annotations.
-        interiorColor = null; // we default to black but probably should be null
-        List C = (List) getObject(IC_KEY);
-        // parse thought rgb colour.
-        if (C != null && C.size() >= 3) {
-            float red = ((Number) C.get(0)).floatValue();
-            float green = ((Number) C.get(1)).floatValue();
-            float blue = ((Number) C.get(2)).floatValue();
-            red = Math.max(0.0f, Math.min(1.0f, red));
-            green = Math.max(0.0f, Math.min(1.0f, green));
-            blue = Math.max(0.0f, Math.min(1.0f, blue));
-            interiorColor = new Color(red, green, blue);
-        }
-
-        // check if there is an AP entry, if no generate the shapes data
-        // from the other properties.
-        if (!hasAppearanceStream() && startOfLine != null && endOfLine != null) {
-            Object tmp = getObject(RECTANGLE_KEY);
-            Rectangle2D.Float rectangle = null;
-            if (tmp instanceof List) {
-                rectangle = library.getRectangle(entries, RECTANGLE_KEY);
-            }
-            setBBox(rectangle.getBounds());
-            resetAppearanceStream(new AffineTransform());
-        }
     }
 
     /**
@@ -273,154 +212,8 @@ public class LineAnnotation extends MarkupAnnotation {
         return lineAnnotation;
     }
 
-    /**
-     * Resets the annotations appearance stream.
-     */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
-
-        // adjust the line's start and end points for any potential move
-        AffineTransform af = new AffineTransform();
-        af.setToTranslation(dx * pageTransform.getScaleX(), -dy * pageTransform.getScaleY());
-        af.transform(startOfLine, startOfLine);
-        af.transform(endOfLine, endOfLine);
-        setStartOfLine(startOfLine);
-        setEndOfLine(endOfLine);
-
-        // setup the AP stream.
-        setModifiedDate(PDate.formatDateTime(new Date()));
-
-        Appearance appearance = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-
-        // reset transform and shapes.
-        appearanceState.setMatrix(new AffineTransform());
-        appearanceState.setShapes(new Shapes());
-
-        Rectangle2D bbox = appearanceState.getBbox();
-        AffineTransform matrix = appearanceState.getMatrix();
-        Shapes shapes = appearanceState.getShapes();
-
-        // setup the space for the AP content stream.
-        af = new AffineTransform();
-        if (userSpaceRectangle == null) {
-            userSpaceRectangle = getUserSpaceRectangle();
-        }
-        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
-
-        // draw the basic line.
-        Stroke stroke = getBorderStyleStroke();
-        GeneralPath line = new GeneralPath();
-        line.moveTo((float) startOfLine.getX(), (float) startOfLine.getY());
-        line.lineTo((float) endOfLine.getX(), (float) endOfLine.getY());
-        line.closePath();
-        shapes.add(new TransformDrawCmd(af));
-        shapes.add(new ShapeDrawCmd(line));
-        shapes.add(new StrokeDrawCmd(stroke));
-        shapes.add(new ColorDrawCmd(color));
-        shapes.add(new DrawDrawCmd());
-
-        // check for a ending end cap.
-        if (startArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
-            openArrowStartDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
-        } else if (startArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
-            closedArrowStartDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
-        } else if (startArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
-            circleDrawOps(
-                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
-        } else if (startArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
-            diamondDrawOps(
-                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
-        } else if (startArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
-            squareDrawOps(
-                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
-        }
-        // check for a starting end cap.
-        if (endArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
-            openArrowEndDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
-        } else if (endArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
-            closedArrowEndDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
-        } else if (endArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
-            circleDrawOps(
-                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
-        } else if (endArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
-            diamondDrawOps(
-                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
-        } else if (endArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
-            squareDrawOps(
-                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
-        }
-
-        // remove appearance stream if it exists on an existing edit.
-        entries.remove(APPEARANCE_STREAM_KEY);
-    }
-
     public static Logger getLogger() {
         return logger;
-    }
-
-    public Point2D getStartOfLine() {
-        return startOfLine;
-    }
-
-    public Point2D getEndOfLine() {
-        return endOfLine;
-    }
-
-    public Color getInteriorColor() {
-        return interiorColor;
-    }
-
-    public Name getStartArrow() {
-        return startArrow;
-    }
-
-    public Name getEndArrow() {
-        return endArrow;
-    }
-
-    public void setStartOfLine(Point2D startOfLine) {
-        this.startOfLine = startOfLine;
-    }
-
-    public void setEndArrow(Name endArrow) {
-        this.endArrow = endArrow;
-        List endNameArray = new ArrayList(2);
-        endNameArray.add(startArrow);
-        endNameArray.add(endArrow);
-        entries.put(LE_KEY, endNameArray);
-    }
-
-    public void setStartArrow(Name startArrow) {
-        this.startArrow = startArrow;
-        List endNameArray = new ArrayList(2);
-        endNameArray.add(startArrow);
-        endNameArray.add(endArrow);
-        entries.put(LE_KEY, endNameArray);
-    }
-
-    public void setInteriorColor(Color interiorColor) {
-        this.interiorColor = interiorColor;
-        float[] compArray = new float[3];
-        this.interiorColor.getColorComponents(compArray);
-        List<Float> colorValues = new ArrayList<Float>(compArray.length);
-        for (float comp : compArray) {
-            colorValues.add(comp);
-        }
-        entries.put(IC_KEY, colorValues);
-    }
-
-    public void setEndOfLine(Point2D endOfLine) {
-        this.endOfLine = endOfLine;
-        List pointArray = new ArrayList(4);
-        pointArray.add((float) startOfLine.getX());
-        pointArray.add((float) startOfLine.getY());
-        pointArray.add((float) endOfLine.getX());
-        pointArray.add((float) endOfLine.getY());
-        entries.put(L_KEY, pointArray);
     }
 
     public static void drawLineStart(Graphics2D g, Name lineEnding,
@@ -505,7 +298,6 @@ public class LineAnnotation extends MarkupAnnotation {
         shapes.add(new ShapeDrawCmd(createSquareEnd()));
         shapes.add(new FillDrawCmd());
     }
-
 
     private static void drawDiamond(Graphics2D g, Point2D point,
                                     Point2D startOfLine, Point2D endOfLine,
@@ -689,7 +481,6 @@ public class LineAnnotation extends MarkupAnnotation {
         shapes.add(new DrawDrawCmd());
     }
 
-
     private static Shape createClosedArrowEnd() {
         Polygon arrowHead = new Polygon();
         arrowHead.addPoint(0, 5);
@@ -726,5 +517,197 @@ public class LineAnnotation extends MarkupAnnotation {
         tx.translate(point.getX(), point.getY());
         tx.rotate(angle - (Math.PI / 2));
         return tx;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void init() {
+        super.init();
+        // line points
+        List<Number> value = library.getArray(entries, L_KEY);
+        if (value != null) {
+            startOfLine = new Point2D.Float(value.get(0).floatValue(), value.get(1).floatValue());
+            endOfLine = new Point2D.Float(value.get(2).floatValue(), value.get(3).floatValue());
+        }
+
+        // line ends.
+        List value2 = library.getArray(entries, LE_KEY);
+        if (value2 != null) {
+            startArrow = (Name) value2.get(0);
+            endArrow = (Name) value2.get(1);
+        }
+
+        // parse out interior colour, specific to link annotations.
+        interiorColor = null; // we default to black but probably should be null
+        List C = (List) getObject(IC_KEY);
+        // parse thought rgb colour.
+        if (C != null && C.size() >= 3) {
+            float red = ((Number) C.get(0)).floatValue();
+            float green = ((Number) C.get(1)).floatValue();
+            float blue = ((Number) C.get(2)).floatValue();
+            red = Math.max(0.0f, Math.min(1.0f, red));
+            green = Math.max(0.0f, Math.min(1.0f, green));
+            blue = Math.max(0.0f, Math.min(1.0f, blue));
+            interiorColor = new Color(red, green, blue);
+        }
+
+        // check if there is an AP entry, if no generate the shapes data
+        // from the other properties.
+        if (!hasAppearanceStream() && startOfLine != null && endOfLine != null) {
+            Object tmp = getObject(RECTANGLE_KEY);
+            Rectangle2D.Float rectangle = null;
+            if (tmp instanceof List) {
+                rectangle = library.getRectangle(entries, RECTANGLE_KEY);
+            }
+            if (rectangle != null) {
+                setBBox(rectangle.getBounds());
+            }
+            resetAppearanceStream(new AffineTransform());
+        }
+    }
+
+    /**
+     * Resets the annotations appearance stream.
+     */
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
+
+        // adjust the line's start and end points for any potential move
+        AffineTransform af = new AffineTransform();
+        af.setToTranslation(dx * pageTransform.getScaleX(), -dy * pageTransform.getScaleY());
+        af.transform(startOfLine, startOfLine);
+        af.transform(endOfLine, endOfLine);
+        setStartOfLine(startOfLine);
+        setEndOfLine(endOfLine);
+
+        // setup the AP stream.
+        setModifiedDate(PDate.formatDateTime(new Date()));
+
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+
+        // reset transform and shapes.
+        appearanceState.setMatrix(new AffineTransform());
+        appearanceState.setShapes(new Shapes());
+
+        Rectangle2D bbox = appearanceState.getBbox();
+        AffineTransform matrix = appearanceState.getMatrix();
+        Shapes shapes = appearanceState.getShapes();
+
+        // setup the space for the AP content stream.
+        af = new AffineTransform();
+        if (userSpaceRectangle == null) {
+            userSpaceRectangle = getUserSpaceRectangle();
+        }
+        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
+
+        // draw the basic line.
+        Stroke stroke = getBorderStyleStroke();
+        GeneralPath line = new GeneralPath();
+        line.moveTo((float) startOfLine.getX(), (float) startOfLine.getY());
+        line.lineTo((float) endOfLine.getX(), (float) endOfLine.getY());
+        line.closePath();
+        shapes.add(new TransformDrawCmd(af));
+        shapes.add(new ShapeDrawCmd(line));
+        shapes.add(new StrokeDrawCmd(stroke));
+        shapes.add(new ColorDrawCmd(color));
+        shapes.add(new DrawDrawCmd());
+
+        // check for a ending end cap.
+        if (startArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
+            openArrowStartDrawOps(
+                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+        } else if (startArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
+            closedArrowStartDrawOps(
+                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+        } else if (startArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
+            circleDrawOps(
+                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
+        } else if (startArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
+            diamondDrawOps(
+                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
+        } else if (startArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
+            squareDrawOps(
+                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
+        }
+        // check for a starting end cap.
+        if (endArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
+            openArrowEndDrawOps(
+                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+        } else if (endArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
+            closedArrowEndDrawOps(
+                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+        } else if (endArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
+            circleDrawOps(
+                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
+        } else if (endArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
+            diamondDrawOps(
+                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
+        } else if (endArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
+            squareDrawOps(
+                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
+        }
+
+        // remove appearance stream if it exists on an existing edit.
+        entries.remove(APPEARANCE_STREAM_KEY);
+    }
+
+    public Point2D getStartOfLine() {
+        return startOfLine;
+    }
+
+    public void setStartOfLine(Point2D startOfLine) {
+        this.startOfLine = startOfLine;
+    }
+
+    public Point2D getEndOfLine() {
+        return endOfLine;
+    }
+
+    public void setEndOfLine(Point2D endOfLine) {
+        this.endOfLine = endOfLine;
+        List<Number> pointArray = new ArrayList<Number>(4);
+        pointArray.add((float) startOfLine.getX());
+        pointArray.add((float) startOfLine.getY());
+        pointArray.add((float) endOfLine.getX());
+        pointArray.add((float) endOfLine.getY());
+        entries.put(L_KEY, pointArray);
+    }
+
+    public Color getInteriorColor() {
+        return interiorColor;
+    }
+
+    public void setInteriorColor(Color interiorColor) {
+        this.interiorColor = interiorColor;
+        float[] compArray = new float[3];
+        this.interiorColor.getColorComponents(compArray);
+        List<Float> colorValues = new ArrayList<Float>(compArray.length);
+        for (float comp : compArray) {
+            colorValues.add(comp);
+        }
+        entries.put(IC_KEY, colorValues);
+    }
+
+    public Name getStartArrow() {
+        return startArrow;
+    }
+
+    public void setStartArrow(Name startArrow) {
+        this.startArrow = startArrow;
+        List<Name> endNameArray = new ArrayList<Name>(2);
+        endNameArray.add(startArrow);
+        endNameArray.add(endArrow);
+        entries.put(LE_KEY, endNameArray);
+    }
+
+    public Name getEndArrow() {
+        return endArrow;
+    }
+
+    public void setEndArrow(Name endArrow) {
+        this.endArrow = endArrow;
+        List<Name> endNameArray = new ArrayList<Name>(2);
+        endNameArray.add(startArrow);
+        endNameArray.add(endArrow);
+        entries.put(LE_KEY, endNameArray);
     }
 }

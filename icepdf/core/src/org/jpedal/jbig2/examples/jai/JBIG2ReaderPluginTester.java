@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Iterator;
 
+@SuppressWarnings("serial")
 public class JBIG2ReaderPluginTester extends JFrame {
     final static String appTitle = "JBIG2 Reader Plug-in Tester";
 
@@ -221,6 +222,14 @@ public class JBIG2ReaderPluginTester extends JFrame {
 
     // Open the specified JBIG2 file and read the file's JBIG2 image.
 
+    public static void main(String[] args) {
+        // Create the application's GUI and start the application.
+
+        new JBIG2ReaderPluginTester(appTitle);
+    }
+
+    // Application entry point.
+
     boolean doOpen(File file) {
         if (!file.exists()) {
             JOptionPane.showMessageDialog(JBIG2ReaderPluginTester.this, "File does not exist!", appTitle, JOptionPane.ERROR_MESSAGE);
@@ -303,16 +312,9 @@ public class JBIG2ReaderPluginTester extends JFrame {
             return false;
         }
     }
-
-    // Application entry point.
-
-    public static void main(String[] args) {
-        // Create the application's GUI and start the application.
-
-        new JBIG2ReaderPluginTester(appTitle);
-    }
 }
 
+@SuppressWarnings("serial")
 class CfgDialog extends JDialog {
     private final static int MAX_DSTOFFX = 9999;
     private final static int MAX_DSTOFFY = 9999;
@@ -458,16 +460,16 @@ class CfgDialog extends JDialog {
                 else
                     CfgDialog.this.method = JBIG2ReaderPluginTester.SUFFIX;
 
-                CfgDialog.this.dstOffX = ((Integer) spnDstOffX.getValue()).intValue();
-                CfgDialog.this.dstOffY = ((Integer) spnDstOffY.getValue()).intValue();
+                CfgDialog.this.dstOffX = (Integer) spnDstOffX.getValue();
+                CfgDialog.this.dstOffY = (Integer) spnDstOffY.getValue();
 
-                CfgDialog.this.xSS = ((Integer) spnXSS.getValue()).intValue();
-                CfgDialog.this.ySS = ((Integer) spnYSS.getValue()).intValue();
+                CfgDialog.this.xSS = (Integer) spnXSS.getValue();
+                CfgDialog.this.ySS = (Integer) spnYSS.getValue();
 
-                CfgDialog.this.srcX = ((Integer) spnSrcX.getValue()).intValue();
-                CfgDialog.this.srcY = ((Integer) spnSrcY.getValue()).intValue();
-                CfgDialog.this.srcWidth = ((Integer) spnSrcWidth.getValue()).intValue();
-                CfgDialog.this.srcHeight = ((Integer) spnSrcHeight.getValue()).intValue();
+                CfgDialog.this.srcX = (Integer) spnSrcX.getValue();
+                CfgDialog.this.srcY = (Integer) spnSrcY.getValue();
+                CfgDialog.this.srcWidth = (Integer) spnSrcWidth.getValue();
+                CfgDialog.this.srcHeight = (Integer) spnSrcHeight.getValue();
 
                 dispose();
             }
@@ -536,6 +538,7 @@ class CfgDialog extends JDialog {
     }
 }
 
+@SuppressWarnings("serial")
 class PicPanel extends JPanel {
     // Dimensions of picture panel's preferred size.
 

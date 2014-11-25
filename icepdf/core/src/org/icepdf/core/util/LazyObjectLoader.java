@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -29,13 +29,12 @@ public class LazyObjectLoader {
 
     private static final Logger logger =
             Logger.getLogger(LazyObjectLoader.class.toString());
-
+    private final Object leastRectlyUsedLock = new Object();
+    private final Object streamLock = new Object();
+    protected SoftLRUCache<Reference, ObjectStream> leastRecentlyUsed;
     private Library library;
     private SeekableInput seekableInput;
     private CrossReference crossReference;
-    protected SoftLRUCache<Reference, ObjectStream> leastRecentlyUsed;
-    private final Object leastRectlyUsedLock = new Object();
-    private final Object streamLock = new Object();
 
     public LazyObjectLoader(Library lib, SeekableInput seekableInput, CrossReference xref) {
         library = lib;

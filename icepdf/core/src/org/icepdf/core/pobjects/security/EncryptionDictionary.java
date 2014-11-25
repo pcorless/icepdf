@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -314,7 +314,7 @@ public class EncryptionDictionary extends Dictionary {
      * @param fileID               Vector containing the two file ID values originally
      *                             parsed from the Trailer reference.
      */
-    public EncryptionDictionary(Library lib, HashMap encryptionDictionary, List fileID) {
+    public EncryptionDictionary(Library lib, HashMap<Object, Object> encryptionDictionary, List fileID) {
         super(lib, encryptionDictionary);
         this.entries = encryptionDictionary;
         this.fileID = fileID;
@@ -617,15 +617,6 @@ public class EncryptionDictionary extends Dictionary {
      */
     public Object getValue(Object key) {
         return entries.get(key);
-    }
-
-    /**
-     * Gets all the dictionary properties.
-     *
-     * @return named based hash of all encryption properties.
-     */
-    public HashMap getEntries() {
-        return entries;
     }
 
     public String toString() {

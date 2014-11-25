@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,28 +32,34 @@ import javax.swing.*;
 public abstract class SwingWorker {
     private Object value;  // see getValue(), setValue()
     private Integer threadPriority;
+    private ThreadVar threadVar;
 
     /**
-     * Class to maintain reference to current worker thread
-     * under separate synchronization control.
+     * Start a thread that will call the <code>construct</code> method
+     * and then exit.
      */
-    private static class ThreadVar {
-        private Thread thread;
+    public SwingWorker() {
+        final Runnable doFinished = new Runnable() {
+            public void run() {
+                finished();
+            }
+        };
 
-        ThreadVar(Thread t) {
-            thread = t;
-        }
+        Runnable doConstruct = new Runnable() {
+            public void run() {
+                try {
+                    setValue(construct());
+                } finally {
+                    threadVar.clear();
+                }
 
-        synchronized Thread get() {
-            return thread;
-        }
+                SwingUtilities.invokeLater(doFinished);
+            }
+        };
 
-        synchronized void clear() {
-            thread = null;
-        }
+        Thread t = new Thread(doConstruct);
+        threadVar = new ThreadVar(t);
     }
-
-    private ThreadVar threadVar;
 
     /**
      * Get the value produced by the worker thread, or null if it
@@ -116,34 +122,6 @@ public abstract class SwingWorker {
         }
     }
 
-
-    /**
-     * Start a thread that will call the <code>construct</code> method
-     * and then exit.
-     */
-    public SwingWorker() {
-        final Runnable doFinished = new Runnable() {
-            public void run() {
-                finished();
-            }
-        };
-
-        Runnable doConstruct = new Runnable() {
-            public void run() {
-                try {
-                    setValue(construct());
-                } finally {
-                    threadVar.clear();
-                }
-
-                SwingUtilities.invokeLater(doFinished);
-            }
-        };
-
-        Thread t = new Thread(doConstruct);
-        threadVar = new ThreadVar(t);
-    }
-
     /**
      * Start the worker thread.
      */
@@ -158,5 +136,25 @@ public abstract class SwingWorker {
 
     public void setThreadPriority(int priority) {
         threadPriority = priority;
+    }
+
+    /**
+     * Class to maintain reference to current worker thread
+     * under separate synchronization control.
+     */
+    private static class ThreadVar {
+        private Thread thread;
+
+        ThreadVar(Thread t) {
+            thread = t;
+        }
+
+        synchronized Thread get() {
+            return thread;
+        }
+
+        synchronized void clear() {
+            thread = null;
+        }
     }
 }

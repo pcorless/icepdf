@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -55,19 +55,6 @@ public class FontManager {
 
     private static final Logger logger =
             Logger.getLogger(FontManager.class.toString());
-
-    // stores all font data
-    private static List<Object[]> fontList;
-
-    // stores fonts loaded from jar, these won't be cached
-    private static List<Object[]> fontJarList;
-
-    // flags for detecting font decorations
-    private static int PLAIN = 0xF0000001;
-    private static int BOLD = 0xF0000010;
-    private static int ITALIC = 0xF0000100;
-    private static int BOLD_ITALIC = 0xF0001000;
-
     // Differences for type1 fonts which match adobe core14 metrics
     private static final String TYPE1_FONT_DIFFS[][] =
             {{"Bookman-Demi", "URWBookmanL-DemiBold", "Arial"},
@@ -114,30 +101,34 @@ public class FontManager {
                     {"ZapfChancery-MediumItalic", "URWChanceryL-MediItal", "Arial"},
                     {"ZapfDingbats", "Dingbats", "Zapf-Dingbats"}
             };
-
     private static final String[] JAPANESE_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "MS PMincho", "MS Mincho", "Kochi Mincho", "Hiragino Mincho Pro",
             "KozMinPro Regular Acro", "HeiseiMin W3 Acro", "Adobe Ming Std Acro"
     };
-
     private static final String[] CHINESE_SIMPLIFIED_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "SimSun", "NSimSun", "Kochi Mincho", "STFangsong", "STSong Light Acro",
             "Adobe Song Std Acro"
     };
-
     private static final String[] CHINESE_TRADITIONAL_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "SimSun", "NSimSun", "Kochi Mincho", "BiauKai", "MSungStd Light Acro",
             "Adobe Song Std Acro"
     };
-
     private static final String[] KOREAN_FONT_NAMES = {
             "Arial Unicode MS", "Gulim", "Batang",
             "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro"
     };
-
+    // stores all font data
+    private static List<Object[]> fontList;
+    // stores fonts loaded from jar, these won't be cached
+    private static List<Object[]> fontJarList;
+    // flags for detecting font decorations
+    private static int PLAIN = 0xF0000001;
+    private static int BOLD = 0xF0000010;
+    private static int ITALIC = 0xF0000100;
+    private static int BOLD_ITALIC = 0xF0001000;
     private static String JAVA_FONT_PATHS = Defs.sysProperty("java.home") + "/lib/fonts";
 
     // Default system directories to scan for font programs. This variable can
@@ -146,16 +137,14 @@ public class FontManager {
     private static String[] SYSTEM_FONT_PATHS =
             new String[]{
                     // windows
-                    "c:\\windows\\fonts\\",
-                    "d:\\windows\\fonts\\",
-                    "e:\\windows\\fonts\\",
-                    "f:\\windows\\fonts\\",
-                    "c:\\winnt\\Fonts\\",
-                    "d:\\winnt\\Fonts\\",
+                    // windir works for winNT and older 9X system, same as "systemroot"
+                    System.getenv("WINDIR") + "\\Fonts",
                     "c:\\cygwin\\usr\\share\\ghostscript\\fonts\\",
                     "d:\\cygwin\\usr\\share\\ghostscript\\fonts\\",
 
                     // Mac
+                    Defs.sysProperty("user.home") + "/Library/Fonts/",
+                    "/Library/Fonts/",
                     "/Network/Library/Fonts/",
                     "/System/Library/Fonts/",
                     "/System Folder/Fonts",
@@ -265,6 +254,60 @@ public class FontManager {
     }
 
     /**
+     * <p>Utility method for guessing a font family name from its base name.</p>
+     *
+     * @param name base name of font.
+     * @return guess of the base fonts name.
+     */
+    public static String guessFamily(String name) {
+        String fam = name;
+        int inx;
+        // Family name usually precedes a common, ie. "Arial,BoldItalic"
+        if ((inx = fam.indexOf(',')) > 0)
+            fam = fam.substring(0, inx);
+        // Family name usually precedes a dash, example "Times-Bold",
+        if ((inx = fam.lastIndexOf('-')) > 0)
+            fam = fam.substring(0, inx);
+        return fam;
+    }
+
+    /**
+     * Utility method which maps know style strings to an integer value which
+     * is used later for efficient font searching.
+     * todo: move out to FontUtil and use awt constants
+     *
+     * @param name base name of font.
+     * @return integer representing dffs
+     */
+    private static int guessFontStyle(String name) {
+        name = name.toLowerCase();
+        int decorations = 0;
+        if ((name.indexOf("boldital") > 0) || (name.indexOf("demiital") > 0)) {
+            decorations |= BOLD_ITALIC;
+        } else if (name.indexOf("bold") > 0 || name.indexOf("black") > 0
+                || name.indexOf("demi") > 0) {
+            decorations |= BOLD;
+        } else if (name.indexOf("ital") > 0 || name.indexOf("obli") > 0) {
+            decorations |= ITALIC;
+        } else {
+            decorations |= PLAIN;
+        }
+        return decorations;
+    }
+
+    /**
+     * Sorts the fontList of system fonts by font name or the first element
+     * int the object[] store.
+     */
+    private static void sortFontListByName() {
+        Collections.sort(fontList, new Comparator<Object[]>() {
+            public int compare(Object[] o1, Object[] o2) {
+                return ((String) o2[0]).compareTo((String) o1[0]);
+            }
+        });
+    }
+
+    /**
      * <p>Gets a Properties object containing font information for the operating
      * system which the FontManager is running on.  This Properties object
      * can be saved to disk and read at a later time using the {@see #setFontProperties}
@@ -342,7 +385,6 @@ public class FontManager {
         }
     }
 
-
     /**
      * Clears internal font list of items. Used to clean list while constructing
      * a new list.
@@ -397,7 +439,7 @@ public class FontManager {
         // Iterate through SYSTEM_FONT_PATHS and load all readable fonts
         for (int i = fontDirectories.length - 1; i >= 0; i--) {
             path = fontDirectories[i];
-            // if the path is valid start reading fonts. 
+            // if the path is valid start reading fonts.
             if (path != null) {
                 loadSystemFont(new File(path));
             }
@@ -439,25 +481,6 @@ public class FontManager {
                 }
             }
         }
-    }
-
-
-    /**
-     * <p>Utility method for guessing a font family name from its base name.</p>
-     *
-     * @param name base name of font.
-     * @return guess of the base fonts name.
-     */
-    public static String guessFamily(String name) {
-        String fam = name;
-        int inx;
-        // Family name usually precedes a common, ie. "Arial,BoldItalic"
-        if ((inx = fam.indexOf(',')) > 0)
-            fam = fam.substring(0, inx);
-        // Family name usually precedes a dash, example "Times-Bold",
-        if ((inx = fam.lastIndexOf('-')) > 0)
-            fam = fam.substring(0, inx);
-        return fam;
     }
 
     /**
@@ -633,7 +656,7 @@ public class FontManager {
      * @param name  base name of font.
      * @param flags flags used to describe font.
      * @return a new instance of NFont which best approximates the font described
-     *         by the name and flags attribute.
+     * by the name and flags attribute.
      */
     public FontFile getInstance(String name, int flags) {
 
@@ -769,6 +792,7 @@ public class FontManager {
                     logger.finest(baseName + " : " + familyName + "  : " + name);
                 }
                 if (name.contains(familyName) ||
+//                        familyName.contains(name) ||
                         fontName.toLowerCase().contains(baseName)) {
                     style = (Integer) fontData[2];
                     boolean found = false;
@@ -797,7 +821,7 @@ public class FontManager {
                         found = true;
                     }
                     // symbol type fonts don't have an associated style, so
-                    // no point trying to match  them based on style. 
+                    // no point trying to match  them based on style.
                     else if (baseName.contains("wingdings") ||
                             baseName.contains("zapfdingbats") ||
                             baseName.contains("dingbats") ||
@@ -1135,30 +1159,6 @@ public class FontManager {
     }
 
     /**
-     * Utility method which maps know style strings to an integer value which
-     * is used later for efficient font searching.
-     * todo: move out to FontUtil and use awt constants
-     *
-     * @param name base name of font.
-     * @return integer representing dffs
-     */
-    private static int guessFontStyle(String name) {
-        name = name.toLowerCase();
-        int decorations = 0;
-        if ((name.indexOf("boldital") > 0) || (name.indexOf("demiital") > 0)) {
-            decorations |= BOLD_ITALIC;
-        } else if (name.indexOf("bold") > 0 || name.indexOf("black") > 0
-                || name.indexOf("demi") > 0) {
-            decorations |= BOLD;
-        } else if (name.indexOf("ital") > 0 || name.indexOf("obli") > 0) {
-            decorations |= ITALIC;
-        } else {
-            decorations |= PLAIN;
-        }
-        return decorations;
-    }
-
-    /**
      * Returns the string representation of a font style specified by the
      * decoration and flags integers.
      *
@@ -1179,17 +1179,5 @@ public class FontManager {
             style += " Plain";
         }
         return style;
-    }
-
-    /**
-     * Sorts the fontList of system fonts by font name or the first element
-     * int the object[] store.
-     */
-    private static void sortFontListByName() {
-        Collections.sort(fontList, new Comparator<Object[]>() {
-            public int compare(Object[] o1, Object[] o2) {
-                return ((String) o2[0]).compareTo((String) o1[0]);
-            }
-        });
     }
 }

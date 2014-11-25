@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,13 +32,9 @@ public class ContentParserFactory {
 
     private static final Logger logger =
             Logger.getLogger(ContentParserFactory.class.toString());
-
-    private static ContentParserFactory contentParserFactory;
-
     private static final String N_CONTENT_PARSER =
             "org.icepdf.core.util.content.NContentParser";
-
-
+    private static ContentParserFactory contentParserFactory;
     private static boolean foundPro;
 
     static {
@@ -79,7 +75,7 @@ public class ContentParserFactory {
         if (foundPro) {
             // load each know file type reflectively.
             try {
-                Class contentParserClass = Class.forName(N_CONTENT_PARSER);
+                Class<?> contentParserClass = Class.forName(N_CONTENT_PARSER);
                 Class[] parserArgs = {Library.class, Resources.class};
                 Constructor fontClassConstructor =
                         contentParserClass.getDeclaredConstructor(parserArgs);

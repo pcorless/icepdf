@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -37,9 +37,9 @@ public class NameNode extends Dictionary {
     private static Object NOT_FOUND_IS_GREATER = new Object();
 
     private boolean namesAreDecrypted;
-    private List namesAndValues;
+    private List<String> namesAndValues;
     private List kidsReferences;
-    private Vector kidsNodes;
+    private Vector<NameNode> kidsNodes;
     private String lowerLimit;
     private String upperLimit;
 
@@ -47,6 +47,7 @@ public class NameNode extends Dictionary {
      * @param l
      * @param h
      */
+    @SuppressWarnings("unchecked")
     public NameNode(Library l, HashMap h) {
         super(l, h);
         Object o = library.getObject(entries, KIDS_KEY);
@@ -54,7 +55,7 @@ public class NameNode extends Dictionary {
             kidsReferences = (List) o;
             int sz = kidsReferences.size();
             if (sz > 0) {
-                kidsNodes = new Vector(sz);
+                kidsNodes = new Vector<NameNode>(sz);
                 kidsNodes.setSize(sz);
             }
         }
@@ -118,8 +119,8 @@ public class NameNode extends Dictionary {
      * which is used to find names in the name tree. We only do this once
      * for the notes names vector.
      *
-     * @param tmp
-     * @return
+     * @param tmp object to decrypt.
+     * @return decrypted string.
      */
     private String decryptIfText(Object tmp) {
         if (tmp instanceof StringObject) {
@@ -132,8 +133,10 @@ public class NameNode extends Dictionary {
     }
 
     /**
-     * @param name
-     * @return
+     * Search for the given name in the name tree.
+     *
+     * @param name name to search for
+     * @return retrieved object if any otherwise, null.
      */
     Object searchName(String name) {
         Object ret = search(name);
@@ -149,7 +152,7 @@ public class NameNode extends Dictionary {
         if (kidsReferences != null) {
 //System.out.print("search()  kids ... ");
             if (lowerLimit != null) {
-                int cmp = lowerLimit.toString().compareTo(name);
+                int cmp = lowerLimit.compareTo(name);
                 if (cmp > 0) {
 //System.out.println("skLESSER");
                     return NOT_FOUND_IS_LESSER;
@@ -157,7 +160,7 @@ public class NameNode extends Dictionary {
                     return getNode(0).search(name);
             }
             if (upperLimit != null) {
-                int cmp = upperLimit.toString().compareTo(name);
+                int cmp = upperLimit.compareTo(name);
                 if (cmp < 0) {
 //System.out.println("skGREATER");
                     return NOT_FOUND_IS_GREATER;
@@ -172,13 +175,13 @@ public class NameNode extends Dictionary {
             int numNamesAndValues = namesAndValues.size();
 
             if (lowerLimit != null) {
-                int cmp = lowerLimit.toString().compareTo(name);
+                int cmp = lowerLimit.compareTo(name);
                 if (cmp > 0) {
 //System.out.println("snLESSER");
                     return NOT_FOUND_IS_LESSER;
                 } else if (cmp == 0) {
                     ensureNamesDecrypted();
-                    if (namesAndValues.get(0).toString().equals(name)) {
+                    if (namesAndValues.get(0).equals(name)) {
                         Object ob = namesAndValues.get(1);
                         if (ob instanceof Reference)
                             ob = library.getObject((Reference) ob);
@@ -187,13 +190,13 @@ public class NameNode extends Dictionary {
                 }
             }
             if (upperLimit != null) {
-                int cmp = upperLimit.toString().compareTo(name);
+                int cmp = upperLimit.compareTo(name);
                 if (cmp < 0) {
 //System.out.println("snGREATER");
                     return NOT_FOUND_IS_GREATER;
                 } else if (cmp == 0) {
                     ensureNamesDecrypted();
-                    if (namesAndValues.get(numNamesAndValues - 2).toString().equals(name)) {
+                    if (namesAndValues.get(numNamesAndValues - 2).equals(name)) {
                         Object ob = namesAndValues.get(numNamesAndValues - 1);
                         if (ob instanceof Reference)
                             ob = library.getObject((Reference) ob);
@@ -246,7 +249,7 @@ public class NameNode extends Dictionary {
         int pivot = firstIndex + ((lastIndex - firstIndex) / 2);
         pivot &= 0xFFFFFFFE; // Clear LSB to ensure even index
 //System.out.print("binarySearchNames  [ " + firstIndex + ", " + lastIndex + " ]  pivot: " + pivot + "  size: " + namesAndValues.size() + "  compare  " + name + " to " + namesAndValues.get(pivot).toString() + " ... ");
-        int cmp = namesAndValues.get(pivot).toString().compareTo(name);
+        int cmp = namesAndValues.get(pivot).compareTo(name);
         if (cmp == 0) {
 //System.out.println("nEQUAL");
             Object ob = namesAndValues.get(pivot + 1);
@@ -264,7 +267,7 @@ public class NameNode extends Dictionary {
     }
 
     public NameNode getNode(int index) {
-        NameNode n = (NameNode) kidsNodes.get(index);
+        NameNode n = kidsNodes.get(index);
         if (n == null) {
             Reference r = (Reference) kidsReferences.get(index);
             HashMap nh = (HashMap) library.getObject(r);

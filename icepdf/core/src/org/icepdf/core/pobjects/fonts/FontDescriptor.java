@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,47 +32,24 @@ import java.util.logging.Logger;
  */
 public class FontDescriptor extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(FontDescriptor.class.toString());
-
-    private FontFile font;
-
     public static final Name TYPE = new Name("FontDescriptor");
-
     public static final Name FONT_NAME = new Name("FontName");
-
     public static final Name FONT_FAMILY = new Name("FontFamily");
-
     public static final Name MISSING_Stretch = new Name("FontStretch");
-
     public static final Name FONT_WEIGHT = new Name("FontWeight");
-
     public static final Name FLAGS = new Name("Flags");
-
     public static final Name FONT_BBOX = new Name("FontBBox");
-
     public static final Name ITALIC_ANGLE = new Name("ItalicAngle");
-
     public static final Name ASCENT = new Name("Ascent");
-
     public static final Name DESCENT = new Name("Descent");
-
     public static final Name LEADING = new Name("Leading");
-
     public static final Name CAP_HEIGHT = new Name("CapHeight");
-
     public static final Name X_HEIGHT = new Name("XHeight");
-
     public static final Name STEM_V = new Name("StemV");
-
     public static final Name STEM_H = new Name("StemH");
-
     public static final Name AVG_WIDTH = new Name("AvgWidth");
-
     public static final Name MAX_WIDTH = new Name("MaxWidth");
-
     public static final Name MISSING_WIDTH = new Name("MissingWidth");
-
     public static final Name FONT_FILE = new Name("FontFile");
     public static final Name FONT_FILE_2 = new Name("FontFile2");
     public static final Name FONT_FILE_3 = new Name("FontFile3");
@@ -81,6 +58,9 @@ public class FontDescriptor extends Dictionary {
     public static final Name FONT_FILE_3_CID_FONT_TYPE_2 = new Name("CIDFontType2");
     public static final Name FONT_FILE_3_CID_FONT_TYPE_0C = new Name("CIDFontType0C");
     public static final Name FONT_FILE_3_OPEN_TYPE = new Name("OpenType");
+    private static final Logger logger =
+            Logger.getLogger(FontDescriptor.class.toString());
+    private FontFile font;
 
     /**
      * Creates a new instance of a FontDescriptor.
@@ -250,7 +230,7 @@ public class FontDescriptor extends Dictionary {
      * that describe the font.
      *
      * @return int value representing the flags; bits must be looked at to get
-     *         attribute values.
+     * attribute values.
      */
     public int getFlags() {
         Object value = library.getObject(entries, FLAGS);
@@ -264,7 +244,11 @@ public class FontDescriptor extends Dictionary {
      * Initiate the Font Descriptor object. Reads embedded font programs
      * or CMap streams.
      */
-    public void init() {
+    public synchronized void init() {
+
+        if (inited) {
+            return;
+        }
 
         /**
          * FontFile1 = A stream containing a Type 1 font program
@@ -319,6 +303,7 @@ public class FontDescriptor extends Dictionary {
             logger.log(Level.FINE, "Error Reading Embedded Font ", e);
         }
 
+        inited = true;
     }
 
     /**

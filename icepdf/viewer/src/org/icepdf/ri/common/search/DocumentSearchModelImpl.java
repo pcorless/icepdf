@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -141,7 +141,7 @@ public class DocumentSearchModelImpl {
      * @param pageText  current Page objects PageText object we want to check
      *                  against whats in the cache.
      * @return false if the search for this page should be done again, otherwise
-     *         true then we should be ok and don't need to refresht the text state.
+     * true then we should be ok and don't need to refresht the text state.
      */
     public boolean isPageTextMatch(int pageIndex, PageText pageText) {
         WeakReference<PageText> ref = searchResultCache.get(pageIndex);

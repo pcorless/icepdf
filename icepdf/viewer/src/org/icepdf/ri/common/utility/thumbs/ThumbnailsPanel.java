@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -22,6 +22,7 @@ import org.icepdf.ri.common.PageThumbnailComponent;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.ModifiedFlowLayout;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -38,20 +39,15 @@ import java.awt.event.AdjustmentListener;
  *
  * @since 4.3
  */
+@SuppressWarnings("serial")
 public class ThumbnailsPanel extends JPanel {
 
-    protected DocumentViewController documentViewController;
-
-    protected Document currentDocument;
-
-    protected PropertiesManager propertiesManager;
-
-    protected DocumentViewModel documentViewModel;
-
-    protected float thumbNailZoom = 0.1f; // default zoom is 10%
-
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
-
+    protected DocumentViewController documentViewController;
+    protected Document currentDocument;
+    protected PropertiesManager propertiesManager;
+    protected DocumentViewModel documentViewModel;
+    protected float thumbNailZoom = 0.1f; // default zoom is 10%
     private SwingController controller;
 
     public ThumbnailsPanel(SwingController controller,
@@ -146,57 +142,5 @@ public class ThumbnailsPanel extends JPanel {
         pageThumbsPanel.revalidate();
         scrollPane.validate();
 
-    }
-
-
-    class ModifiedFlowLayout extends FlowLayout {
-
-        public ModifiedFlowLayout() {
-            super();
-        }
-
-        public Dimension computeSize(int w, Container target) {
-            synchronized (target.getTreeLock()) {
-                int hgap = getHgap();
-                int vgap = getVgap();
-
-                if (w == 0)
-                    w = Integer.MAX_VALUE;
-
-                Insets insets = target.getInsets();
-                if (insets == null)
-                    insets = new Insets(0, 0, 0, 0);
-                int reqdWidth = 0;
-
-                int maxwidth = w - (insets.left + insets.right + hgap * 2);
-                int n = target.getComponentCount();
-                int x = 0;
-                int y = insets.top + vgap;
-                int rowHeight = 0;
-
-                for (int i = 0; i < n; i++) {
-                    Component c = target.getComponent(i);
-                    if (c.isVisible()) {
-                        Dimension d = c.getPreferredSize();
-                        if ((x == 0) || ((x + d.width) <= maxwidth)) {
-                            // fits in current row.
-                            if (x > 0) {
-                                x += hgap;
-                            }
-                            x += d.width;
-                            rowHeight = Math.max(rowHeight, d.height);
-                        } else {
-                            x = d.width;
-                            y += vgap + rowHeight;
-                            rowHeight = d.height;
-                        }
-                        reqdWidth = Math.max(reqdWidth, x);
-                    }
-                }
-                y += rowHeight;
-                y += insets.bottom;
-                return new Dimension(reqdWidth + insets.left + insets.right, y);
-            }
-        }
     }
 }

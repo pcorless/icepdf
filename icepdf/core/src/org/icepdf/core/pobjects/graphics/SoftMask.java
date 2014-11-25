@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -51,16 +51,13 @@ import java.util.logging.Logger;
  */
 public class SoftMask extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(SoftMask.class.toString());
-
     public static final Name S_KEY = new Name("S");
     public static final Name G_KEY = new Name("G");
     public static final Name BC_KEY = new Name("BC");
-
     public static final String SOFT_MASK_TYPE_ALPHA = "Alpha";
-
     public static final String SOFT_MASK_TYPE_LUMINOSITY = "Luminosity";
+    private static final Logger logger =
+            Logger.getLogger(SoftMask.class.toString());
 
     public SoftMask(Library library, HashMap dictionary) {
         super(library, dictionary);
@@ -111,8 +108,9 @@ public class SoftMask extends Dictionary {
      * dictionary (see "Transparency Group XObjects").
      * Default value: the colour space's initial value, representing black.
      *
-     * @return
+     * @return componet colours
      */
+    @SuppressWarnings("unchecked")
     public List<Number> getBC() {
         Object BCKey = library.getObject(entries, BC_KEY);
         if (BCKey instanceof List) {

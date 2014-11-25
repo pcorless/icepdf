@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -40,7 +40,7 @@ public class NoClipDrawCmd extends AbstractDrawCmd {
         AffineTransform af = new AffineTransform(g.getTransform());
 
         g.setTransform(base);
-//        if (!g.getClip().equals(clip)){
+//        if (!g.getClip().getBounds().equals(clip.getBounds())) {
         g.setClip(clip);
 //        }
         g.setTransform(af);

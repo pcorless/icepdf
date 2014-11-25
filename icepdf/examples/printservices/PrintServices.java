@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -19,9 +19,6 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.PrintHelper;
-import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 
 import javax.print.*;
 import javax.print.attribute.standard.MediaSizeName;
@@ -174,14 +171,11 @@ public class PrintServices {
                 throw new FileNotFoundException("Specify a PDF document.");
             }
             pdf.setFile(filePath);
-            SwingController sc = new SwingController();
-            DocumentViewController vc = new DocumentViewControllerImpl(sc);
-            vc.setDocument(pdf);
 
             // create a new print helper with a specified paper size and print
             // quality
-            PrintHelper printHelper = new PrintHelper(vc, pdf.getPageTree(),
-                    MediaSizeName.NA_LEGAL, PrintQuality.DRAFT);
+            PrintHelper printHelper = new PrintHelper(null, pdf.getPageTree(),
+                    0f, MediaSizeName.NA_LEGAL, PrintQuality.DRAFT);
             // try and print pages 1 - 10, 1 copy, scale to fit paper.
             printHelper.setupPrintService(selectedService, 0, 0, 1, true);
             // print the document

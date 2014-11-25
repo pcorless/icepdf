@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -64,7 +64,7 @@ public class AppearanceState extends Dictionary {
             try {
                 ContentParser cp = ContentParserFactory.getInstance()
                         .getContentParser(library, res);
-                shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}).getShapes();
+                shapes = cp.parse(new byte[][]{stream.getDecodedStreamBytes()}, null).getShapes();
             } catch (Exception e) {
                 shapes = new Shapes();
                 logger.log(Level.FINE, "Error initializing Page.", e);

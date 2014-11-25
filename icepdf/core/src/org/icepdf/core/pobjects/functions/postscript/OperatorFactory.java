@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -111,7 +111,7 @@ public class OperatorFactory {
                     public void eval(Stack stack) {
                         float den = (Float) stack.pop();
                         float num = (Float) stack.pop();
-                        stack.push(Math.toDegrees(Math.atan(num / den)));
+                        stack.push(((Number) Math.toDegrees(Math.atan(num / den))).floatValue());
                     }
                 };
                 break;
@@ -139,7 +139,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_CEILING) {
                     public void eval(Stack stack) {
                         float num1 = (Float) stack.pop();
-                        stack.push(Math.ceil(num1));
+                        stack.push(((Number) Math.ceil(num1)).floatValue());
                     }
                 };
                 break;
@@ -152,7 +152,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_COS) {
                     public void eval(Stack stack) {
                         float aAngle = (Float) stack.pop();
-                        stack.push(Math.cos(aAngle));
+                        stack.push(((Number) Math.cos(aAngle)).floatValue());
                     }
                 };
                 break;
@@ -278,7 +278,7 @@ public class OperatorFactory {
                     public void eval(Stack stack) {
                         float exponent = (Float) stack.pop();
                         float base = (Float) stack.pop();
-                        stack.push(Math.pow(base, exponent));
+                        stack.push(((Number) Math.pow(base, exponent)).floatValue());
                     }
                 };
                 break;
@@ -292,7 +292,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_FLOOR) {
                     public void eval(Stack stack) {
                         float num1 = (Float) stack.pop();
-                        stack.push(Math.floor(num1));
+                        stack.push(((Number) Math.floor(num1)).floatValue());
                     }
                 };
                 break;
@@ -360,24 +360,15 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_IF) {
                     public void eval(Stack stack) {
                         // pop off the express so we can get at the bool
-                        Stack expressionStack = new Stack();
                         // if we don't have an Expression we can't continue.
-                        if (stack.pop() instanceof Expression) {
-                            // copy the expression ops off the stack
-                            while (!(stack.peek() instanceof Expression)) {
-                                expressionStack.push(stack.pop());
-                            }
-                            // pop of starting expression
-                            stack.pop();
-                            boolean bool = (Boolean) stack.pop();
-                            // process expression if bool = true
-                            if (bool) {
-                                // push everything back on stack for further
-                                // processing.
-                                while (!expressionStack.isEmpty()) {
-                                    stack.push(expressionStack.pop());
-                                }
-                            }
+                        Procedure proc1 = null;
+                        if (stack.peek() instanceof Procedure) {
+                            proc1 = (Procedure) stack.pop();
+                        }
+                        boolean bool = (Boolean) stack.pop();
+                        // process expression 'if' expression is true
+                        if (bool) {
+                            proc1.eval(stack);
                         }
                     }
                 };
@@ -392,41 +383,20 @@ public class OperatorFactory {
             case OperatorNames.OP_IFELSE:
                 operator = new Operator(OperatorNames.OP_IFELSE) {
                     public void eval(Stack stack) {
-                        // pop off the proc2 so we can get at the operands
-//                        Stack proc2Stack = new Stack();
                         // if we don't have an Expression we can't continue.
-                        if ((Expression) stack.pop() instanceof Expression) {
-                            // copy the expression ops off the stack
-                            while (!(stack.peek() instanceof Expression)) {
-//                                proc2Stack.push(stack.pop());
-                                stack.pop();
-                            }
-                            // pop of starting expression
-                            stack.pop();
+                        Procedure proc2 = null, proc1 = null;
+                        if (stack.peek() instanceof Procedure) {
+                            proc2 = (Procedure) stack.pop();
                         }
-                        Stack proc1Stack = new Stack();
-                        if ((Expression) stack.pop() instanceof Expression) {
-                            // copy the expression ops off the stack
-                            while (!(stack.peek() instanceof Expression)) {
-                                proc1Stack.push(stack.pop());
-                            }
-                            // pop of starting expression
-                            stack.pop();
+                        if (stack.peek() instanceof Procedure) {
+                            proc1 = (Procedure) stack.pop();
                         }
                         boolean bool = (Boolean) stack.pop();
-                        // process expression if bool = true
+                        // process ifelse clause
                         if (bool) {
-                            // push everything back on stack for further
-                            // processing.
-                            while (!proc1Stack.isEmpty()) {
-                                stack.push(proc1Stack.pop());
-                            }
+                            proc1.eval(stack);
                         } else {
-                            // push everything back on stack for further
-                            // processing.
-                            while (!proc1Stack.isEmpty()) {
-                                stack.push(proc1Stack.pop());
-                            }
+                            proc2.eval(stack);
                         }
                     }
                 };
@@ -473,7 +443,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_LN) {
                     public void eval(Stack stack) {
                         float num = (Float) stack.pop();
-                        stack.push(Math.log(num));
+                        stack.push(((Number) Math.log(num)).floatValue());
                     }
                 };
                 break;
@@ -485,7 +455,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_LOG) {
                     public void eval(Stack stack) {
                         float num = (Float) stack.pop();
-                        stack.push(Math.log10(num));
+                        stack.push(((Number) Math.log10(num)).floatValue());
                     }
                 };
                 break;
@@ -643,7 +613,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_ROUND) {
                     public void eval(Stack stack) {
                         float num1 = (Float) stack.pop();
-                        stack.push(Math.round(num1));
+                        stack.push(((Number) Math.round(num1)).floatValue());
                     }
                 };
                 break;
@@ -655,7 +625,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_SIN) {
                     public void eval(Stack stack) {
                         float aAngle = (Float) stack.pop();
-                        stack.push(Math.sin(aAngle));
+                        stack.push(((Number) Math.sin(aAngle)).floatValue());
                     }
                 };
                 break;
@@ -667,7 +637,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_SQRT) {
                     public void eval(Stack stack) {
                         float num = (Float) stack.pop();
-                        stack.push(Math.sqrt(num));
+                        stack.push(((Number) Math.sqrt(num)).floatValue());
                     }
                 };
                 break;
@@ -692,7 +662,7 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_TRUNCATE) {
                     public void eval(Stack stack) {
                         float num1 = (Float) stack.pop();
-                        stack.push(Math.floor(num1));
+                        stack.push(((Number) Math.floor(num1)).floatValue());
                     }
                 };
                 break;

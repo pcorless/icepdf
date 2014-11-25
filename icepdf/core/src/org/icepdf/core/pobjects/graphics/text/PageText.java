@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics.text;
 
 import org.icepdf.core.pobjects.OptionalContents;
+import org.icepdf.core.util.Defs;
 
 import java.awt.geom.AffineTransform;
 import java.util.*;
@@ -42,15 +43,27 @@ import java.util.*;
  */
 public class PageText implements TextSelect {
 
+    private static boolean checkForDuplicates;
+    private static boolean preserveColumns;
+
+    static {
+        checkForDuplicates = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.trim.duplicates", false);
+
+        preserveColumns = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.preserveColumns", true);
+    }
+
     // pointer to current line during document parse, no other use.
     private LineText currentLine;
 
     private ArrayList<LineText> pageLines;
+    private ArrayList<LineText> sortedPageLines;
 
     private LinkedHashMap<OptionalContents, PageText> optionalPageLines;
 
     public PageText() {
-        pageLines = new ArrayList<LineText>(50);
+        pageLines = new ArrayList<LineText>(64);
     }
 
     public void newLine(LinkedList<OptionalContents> oCGs) {
@@ -68,12 +81,10 @@ public class PageText implements TextSelect {
             } else {
                 pageText.newLine();
             }
-        } else {
-            newLine();
         }
     }
 
-    protected void newLine() {
+    public void newLine() {
         // make sure we don't insert a new line if the previous has no words. 
         if (currentLine != null &&
                 currentLine.getWords().size() == 0) {
@@ -91,24 +102,76 @@ public class PageText implements TextSelect {
     }
 
     /**
-     * Creates a copy of the pageLines array and appends any optional content
-     * text that is marked as visible.
+     * Creates a copy of the pageLines array and sorts that text both
+     * vertically and horizontally to aid in the proper ordering during text
+     * extraction.  The value is cached so any changes to optional content
+     * visibility should require that the cache is refreshed with a call to
+     * {@see sortAndFormatText}.
+     * <p/>
+     * During the extraction process extra space will automatically be added
+     * between words.  However depending on how the PDF is encoded can result
+     * in too many extra spaces.  So as a result this feature can be turned off
+     * with the system property org.icepdf.core.views.page.text.autoSpace which
+     * is set to True by default.
      *
      * @return list of page lines that are in the main content stream and any
-     *         visible layers.
+     * visible layers.
      */
     public ArrayList<LineText> getPageLines() {
+        if (sortedPageLines == null) {
+            sortAndFormatText();
+        }
+        return sortedPageLines;
+    }
+
+    /**
+     * Gets all visible lines, checking the page text for any text that is
+     * in an optional content group and that that group is flagged as visible.
+     *
+     * @return list of all visible lineText.
+     */
+    private ArrayList<LineText> getVisiblePageLines() {
         ArrayList<LineText> visiblePageLines = new ArrayList<LineText>(pageLines);
         // add optional content text that is visible.
         // check optional content.
         if (optionalPageLines != null) {
             // iterate over optional content keys and extract text from visible groups
             Set<OptionalContents> keys = optionalPageLines.keySet();
+            LineText currentLine = new LineText();
+            visiblePageLines.add(currentLine);
             for (OptionalContents key : keys) {
                 if (key != null && key.isVisible()) {
-                    visiblePageLines.addAll(optionalPageLines.get(key).getPageLines());
+                    ArrayList<LineText> pageLines = optionalPageLines.get(key).getVisiblePageLines();
+                    for (LineText lineText : pageLines) {
+                        currentLine.addAll(lineText.getWords());
+                    }
                 }
             }
+            // recalculate the bounds.
+            currentLine.getBounds();
+        }
+        return visiblePageLines;
+    }
+
+    private ArrayList<LineText> getAllPageLines() {
+        ArrayList<LineText> visiblePageLines = new ArrayList<LineText>(pageLines);
+        // add optional content text that is visible.
+        // check optional content.
+        if (optionalPageLines != null) {
+            // iterate over optional content keys and extract text from visible groups
+            Set<OptionalContents> keys = optionalPageLines.keySet();
+            LineText currentLine = new LineText();
+            visiblePageLines.add(currentLine);
+            for (OptionalContents key : keys) {
+                if (key != null) {
+                    ArrayList<LineText> pageLines = optionalPageLines.get(key).getVisiblePageLines();
+                    for (LineText lineText : pageLines) {
+                        currentLine.addAll(lineText.getWords());
+                    }
+                }
+            }
+            // recalculate the bounds.
+            currentLine.getBounds();
         }
         return visiblePageLines;
     }
@@ -170,8 +233,15 @@ public class PageText implements TextSelect {
     }
 
     public void clearSelected() {
-        for (LineText lineText : pageLines) {
-            lineText.clearSelected();
+        if (pageLines != null) {
+            for (LineText lineText : pageLines) {
+                lineText.clearSelected();
+            }
+        }
+        if (sortedPageLines != null) {
+            for (LineText lineText : sortedPageLines) {
+                lineText.clearSelected();
+            }
         }
         // check optional content.
         if (optionalPageLines != null) {
@@ -179,10 +249,12 @@ public class PageText implements TextSelect {
             Set<OptionalContents> keys = optionalPageLines.keySet();
             ArrayList<LineText> optionalLines;
             for (OptionalContents key : keys) {
-                if (key != null && key.isVisible()) {
-                    optionalLines = optionalPageLines.get(key).getPageLines();
-                    for (LineText lineText : optionalLines) {
-                        lineText.clearSelected();
+                if (key != null) {
+                    optionalLines = optionalPageLines.get(key).getAllPageLines();
+                    if (optionalLines != null) {
+                        for (LineText lineText : optionalLines) {
+                            lineText.clearSelected();
+                        }
                     }
                 }
             }
@@ -193,6 +265,9 @@ public class PageText implements TextSelect {
         for (LineText lineText : pageLines) {
             lineText.clearHighlighted();
         }
+        for (LineText lineText : sortedPageLines) {
+            lineText.clearHighlighted();
+        }
         // check optional content.
         if (optionalPageLines != null) {
             // iterate over optional content keys and extract text from visible groups
@@ -200,7 +275,7 @@ public class PageText implements TextSelect {
             ArrayList<LineText> optionalLines;
             for (OptionalContents key : keys) {
                 if (key != null && key.isVisible()) {
-                    optionalLines = optionalPageLines.get(key).getPageLines();
+                    optionalLines = optionalPageLines.get(key).getAllPageLines();
                     for (LineText lineText : optionalLines) {
                         lineText.clearHighlighted();
                     }
@@ -211,43 +286,20 @@ public class PageText implements TextSelect {
 
     public StringBuilder getSelected() {
         StringBuilder selectedText = new StringBuilder();
-        Collections.sort(pageLines, new TextPositionComparator());
-        for (LineText lineText : pageLines) {
-            selectedText.append(lineText.getSelected());
-        }
-        // check optional content.
-        if (optionalPageLines != null) {
-            // iterate over optional content keys and extract text from visible groups
-            Set<OptionalContents> keys = optionalPageLines.keySet();
-            ArrayList<LineText> optionalLines;
-            for (OptionalContents key : keys) {
-                if (key != null && key.isVisible()) {
-                    optionalLines = optionalPageLines.get(key).getPageLines();
-                    for (LineText lineText : optionalLines) {
-                        selectedText.append(lineText.getSelected());
-                    }
-                }
+        ArrayList<LineText> pageLines = getPageLines();
+        if (pageLines != null) {
+            for (LineText lineText : pageLines) {
+                selectedText.append(lineText.getSelected());
             }
         }
         return selectedText;
     }
 
     public void selectAll() {
-        for (LineText lineText : pageLines) {
-            lineText.selectAll();
-        }
-        // check optional content.
-        if (optionalPageLines != null) {
-            // iterate over optional content keys and extract text from visible groups
-            Set<OptionalContents> keys = optionalPageLines.keySet();
-            ArrayList<LineText> optionalLines;
-            for (OptionalContents key : keys) {
-                if (key != null && key.isVisible()) {
-                    optionalLines = optionalPageLines.get(key).getPageLines();
-                    for (LineText lineText : optionalLines) {
-                        lineText.selectAll();
-                    }
-                }
+        ArrayList<LineText> pageLines = getPageLines();
+        if (pageLines != null) {
+            for (LineText lineText : pageLines) {
+                lineText.selectAll();
             }
         }
     }
@@ -269,5 +321,93 @@ public class PageText implements TextSelect {
         }
         return extractedText.toString();
     }
+
+    /**
+     * Takes the raw page lines represented as one continuous line and sorts the
+     * text by the y access of the word bounds.  The words are then sliced into
+     * separate lines base on y changes.  And finally each newly sorted line is
+     * sorted once more by each words x coordinate.
+     */
+    public void sortAndFormatText() {
+        ArrayList<LineText> visiblePageLines = getVisiblePageLines();
+        if (visiblePageLines != null && visiblePageLines.size() > 0 &&
+                visiblePageLines.get(0) != null) {
+            // create new array for storing the sorted lines
+            ArrayList<LineText> sortedPageLines = new ArrayList<LineText>(64);
+            // move over all
+            for (LineText pageLine : visiblePageLines) {
+                // all page words will be on one line
+                java.util.List<WordText> words = pageLine.getWords();
+                if (words != null && words.size() > 0) {
+                    if (!preserveColumns) {
+                        Collections.sort(words, new LinePositionComparator());
+                    }
+                    // break the words into lines on every change of y
+                    double lastY = words.get(0).getBounds().y;
+                    int start = 0, end = 0;
+                    double currentY;
+                    for (WordText word : words) {
+                        currentY = Math.round(word.getBounds().getY());
+                        if (currentY != lastY) {
+                            LineText lineText = new LineText();
+                            lineText.addAll(words.subList(start, end));
+                            sortedPageLines.add(lineText);
+                            start = end;
+                        }
+                        end++;
+                        lastY = currentY;
+                    }
+                    if (start < end) {
+                        LineText lineText = new LineText();
+                        lineText.addAll(words.subList(start, end));
+                        sortedPageLines.add(lineText);
+                    }
+                }
+            }
+
+            // do a rough check for duplicate strings that are sometimes generated
+            // by Chrystal Reports.  Enable with
+            // -Dorg.icepdf.core.views.page.text.trim.duplicates=true
+            if (checkForDuplicates) {
+                for (int k = 0, maxLines = sortedPageLines.size(); k < maxLines; k++) {
+                    final LineText lineText = sortedPageLines.get(k);
+                    final List<WordText> words = lineText.getWords();
+                    if (words.size() > 0) {
+                        final List<WordText> trimmedWords = new ArrayList<WordText>();
+                        final Set<String> refs = new HashSet<String>();
+                        for (final WordText wordText : words) {
+                            final String key = wordText.getText() + wordText.getBounds();
+                            if (refs.add(key)) {
+                                trimmedWords.add(wordText);
+                            }
+                        }
+                        lineText.setWords(trimmedWords);
+                    }
+
+                }
+
+            }
+
+
+            // sort each line by x coordinate.
+            if (sortedPageLines.size() > 0) {
+                for (LineText lineText : sortedPageLines) {
+                    Collections.sort(lineText.getWords(),
+                            new WordPositionComparator());
+                }
+            }
+
+            // recalculate the line bounds.
+            if (sortedPageLines.size() > 0) {
+                for (LineText lineText : sortedPageLines) {
+                    lineText.getBounds();
+                }
+            }
+            // assign back the sorted lines.
+            this.sortedPageLines = sortedPageLines;
+        }
+
+    }
+
 
 }

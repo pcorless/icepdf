@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -27,6 +27,26 @@ import java.net.UnknownHostException;
  * @since 1.3
  */
 public class URLAccess {
+    /**
+     * The given URL string given to doURLAccess().
+     */
+    public String urlLocation;
+    /**
+     * The resolved URL, if urlLocation was valid.
+     */
+    public URL url;
+    /**
+     * Access to the data at the URL, if the URL was valid.
+     */
+    public InputStream inputStream;
+    /**
+     * The reason why the URL was invalid.
+     */
+    public String errorMessage;
+
+    private URLAccess() {
+    }
+
     /**
      * Simple utility method to check if a URL is valid.
      * If it is invalid, then urlAccess.errorMessage will say why.
@@ -61,30 +81,6 @@ public class URLAccess {
             res.errorMessage = "IO exception";
         }
         return res;
-    }
-
-
-    /**
-     * The given URL string given to doURLAccess().
-     */
-    public String urlLocation;
-
-    /**
-     * The resolved URL, if urlLocation was valid.
-     */
-    public URL url;
-
-    /**
-     * Access to the data at the URL, if the URL was valid.
-     */
-    public InputStream inputStream;
-
-    /**
-     * The reason why the URL was invalid.
-     */
-    public String errorMessage;
-
-    private URLAccess() {
     }
 
     /**

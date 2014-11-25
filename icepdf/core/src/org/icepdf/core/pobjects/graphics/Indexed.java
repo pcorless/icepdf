@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -113,7 +113,7 @@ public class Indexed extends PColorSpace {
                 b1[numCSComps - 1 - i] = 0xFF & ((int) colors[j * numCSComps + i]);
             }
             colorSpace.normaliseComponentsToFloats(b1, f1, 255.0f);
-            cols[j] = colorSpace.getColor(f1);
+            cols[j] = colorSpace.getColor(f1, true);
         }
         inited = true;
     }

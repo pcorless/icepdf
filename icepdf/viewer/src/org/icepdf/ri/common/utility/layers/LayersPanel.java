@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -37,21 +37,17 @@ import java.util.ResourceBundle;
  * content if present.  The panel should only be enabled if the the Document's
  * catalog contains a OCProperties entry.
  */
+@SuppressWarnings("serial")
 public class LayersPanel extends JPanel {
 
     protected DocumentViewController documentViewController;
 
     protected Document currentDocument;
-
-    private SwingController controller;
-
     protected LayersTreeNode nodes;
-
-
     protected DocumentViewModel documentViewModel;
-
     // message bundle for internationalization
     ResourceBundle messageBundle;
+    private SwingController controller;
 
     public LayersPanel(SwingController controller) {
         super(true);
@@ -101,6 +97,7 @@ public class LayersPanel extends JPanel {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void buildTree(List<Object> layersOrder, LayersTreeNode parent, boolean radioGroup) {
 
         LayersTreeNode tmp = null;
@@ -108,13 +105,13 @@ public class LayersPanel extends JPanel {
         // tod recursive build with parent checking.
         for (Object obj : layersOrder) {
             if (obj instanceof List) {
-                LayersTreeNode newParent = null;
+                LayersTreeNode newParent;
                 if (parent.getChildCount() > 0) {
                     newParent = (LayersTreeNode) parent.getLastChild();
                 } else {
                     newParent = parent;
                 }
-                buildTree((List) obj, newParent, radioGroup);
+                buildTree((List<Object>) obj, newParent, radioGroup);
             } else if (obj instanceof String) {
                 // sets the node as selected if children are all selected.
                 if (tmp != null && selected) {
@@ -166,6 +163,13 @@ public class LayersPanel extends JPanel {
                 List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
                 AbstractPageViewComponent page = pages.get(documentViewModel.getViewCurrentPageIndex());
                 page.invalidatePageBuffer();
+                // resort page text as layer visibility will have changed.
+                try {
+                    page.getPage().getText().sortAndFormatText();
+                } catch (InterruptedException e1) {
+                    // silent running for now.
+                }
+                // repaint the page.
                 page.repaint();
                 // repaint the tree so the checkbox states are show correctly.
                 tree.repaint();

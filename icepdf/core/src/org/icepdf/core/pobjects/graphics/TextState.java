@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -72,40 +72,30 @@ public class TextState {
      * Add text to path for clipping
      */
     public static final int MODE_ADD = 7;
-
-    // type3 font text states for d1 token.
-    protected PRectangle type3BBox;
-    // type 3 font text state for d0 token.
-    protected Point2D.Float type3HorizontalDisplacement;
-
     /**
      * Set the character spacing, Tc, to charSpace, which is a number expressed
      * in unscaled text space units. Character spacing is used by the Tj, TJ,
      * and ' operators. Initial value: 0.
      */
     public float cspace = 0;
-
     /**
      * Set the word spacing, Tw, to wordSpace, which is a number expressed in
      * unscaled text space units. Word spacing is used by the Tj, TJ, and '
      * operators. Initial value: 0.
      */
     public float wspace = 0;
-
     /**
      * Set the horizontal scaling, Th, to (scale div 100). scale is a number
      * specifying the percentage of the normal width. Initial value: 100
      * (normal width).
      */
     public float hScalling = 1;
-
     /**
      * Set the text leading, Tl, to leading, which is a number expressed in
      * unscaled text space units. Text leading is used only by the T*, ',
      * and " operators. Initial value: 0.
      */
     public float leading = 0;
-
     /**
      * Text Font size
      */
@@ -120,22 +110,23 @@ public class TextState {
      * unscaled text space units. Initial value: 0.
      */
     public float trise = 0;
-
     /**
      * Transformation matrix defined by the Tm tag
      */
     public AffineTransform tmatrix = new AffineTransform();
     public AffineTransform tlmatrix = new AffineTransform();
-
     /**
      * Text Font - Associated ICEpdf font object
      */
     public Font font;
-
     /**
      * Text Font - Associated awt font object for display purposes
      */
     public FontFile currentfont;
+    // type3 font text states for d1 token.
+    protected PRectangle type3BBox;
+    // type 3 font text state for d0 token.
+    protected Point2D.Float type3HorizontalDisplacement;
 
     /**
      * Create a new Instance of TextState

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -51,6 +51,7 @@ import java.util.logging.Logger;
  * @see TextMarkupAnnotationComponent
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public abstract class MarkupAnnotationComponent extends AbstractAnnotationComponent {
 
     private static final Logger logger =

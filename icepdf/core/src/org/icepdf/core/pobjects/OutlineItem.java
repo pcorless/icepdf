@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -290,7 +290,7 @@ public class OutlineItem extends Dictionary {
             OutlineItem outLineItem;
             HashMap dictionary;
             Object tmp;
-            // iterate through children and see if then have children.
+            // iterate through children and see if then have children. 
             while (nextReference != null) {
                 // result the outline dictionary
                 tmp = library.getObject(nextReference);

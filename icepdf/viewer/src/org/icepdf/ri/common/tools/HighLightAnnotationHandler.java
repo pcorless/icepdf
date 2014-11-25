@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -183,31 +183,37 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                         documentViewModel.getViewZoom());
                 // paint the sprites
                 GeneralPath textPath;
-                for (LineText lineText : pageText.getPageLines()) {
-                    for (WordText wordText : lineText.getWords()) {
-                        // paint whole word
-                        if (wordText.isSelected() || wordText.isHighlighted()) {
-                            textPath = new GeneralPath(wordText.getBounds());
-                            textPath.transform(pageTransform);
-                            // paint highlight over any selected
-                            if (wordText.isSelected()) {
-                                if (highlightBounds == null) {
-                                    highlightBounds = new ArrayList<Shape>();
-                                }
-                                highlightBounds.add(textPath.getBounds2D());
-                            }
-
-                        }
-                        // check children
-                        else {
-                            for (GlyphText glyph : wordText.getGlyphs()) {
-                                if (glyph.isSelected()) {
-                                    textPath = new GeneralPath(glyph.getBounds());
+                ArrayList<LineText> pageLines = pageText.getPageLines();
+                if (pageLines != null) {
+                    for (LineText lineText : pageLines) {
+                        java.util.List<WordText> words = lineText.getWords();
+                        if (words != null) {
+                            for (WordText wordText : words) {
+                                // paint whole word
+                                if (wordText.isSelected() || wordText.isHighlighted()) {
+                                    textPath = new GeneralPath(wordText.getBounds());
                                     textPath.transform(pageTransform);
-                                    if (highlightBounds == null) {
-                                        highlightBounds = new ArrayList<Shape>();
+                                    // paint highlight over any selected
+                                    if (wordText.isSelected()) {
+                                        if (highlightBounds == null) {
+                                            highlightBounds = new ArrayList<Shape>();
+                                        }
+                                        highlightBounds.add(textPath.getBounds2D());
                                     }
-                                    highlightBounds.add(textPath.getBounds2D());
+
+                                }
+                                // check children
+                                else {
+                                    for (GlyphText glyph : wordText.getGlyphs()) {
+                                        if (glyph.isSelected()) {
+                                            textPath = new GeneralPath(glyph.getBounds());
+                                            textPath.transform(pageTransform);
+                                            if (highlightBounds == null) {
+                                                highlightBounds = new ArrayList<Shape>();
+                                            }
+                                            highlightBounds.add(textPath.getBounds2D());
+                                        }
+                                    }
                                 }
                             }
                         }

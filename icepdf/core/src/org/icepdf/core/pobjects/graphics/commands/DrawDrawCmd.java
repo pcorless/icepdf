@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -37,16 +37,16 @@ public class DrawDrawCmd extends AbstractDrawCmd {
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
         if (g.getClip() != null && optionalContentState.isVisible() &&
-                currentShape.intersects(g.getClip().getBounds2D()) ||
-                (currentShape.getBounds2D().getWidth() < 1.0 ||
-                        currentShape.getBounds2D().getHeight() < 1.0)) {
+                currentShape.intersects(g.getClip().getBounds()) ||
+                (currentShape.getBounds().getWidth() < 1.0 ||
+                        currentShape.getBounds().getHeight() < 1.0)) {
             g.draw(currentShape);
             // Send a PaintPage Event to listeners
             if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
                 parentPage.notifyPaintPageListeners();
             }
         }
-        // coupld corner cases where we want to paint the shape when we don't have a clip.
+        // couple corner cases where we want to paint the shape when we don't have a clip.
         else if (g.getClip() == null) {
             g.draw(currentShape);
             // Send a PaintPage Event to listeners

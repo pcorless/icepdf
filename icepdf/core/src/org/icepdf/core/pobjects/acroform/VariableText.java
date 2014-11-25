@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -66,17 +66,9 @@ public class VariableText extends Dictionary {
      * A rich text string, as described in 12.7.3.4, “Rich Text Strings.”
      */
     public static final Name RV_KEY = new Name("RV");
-
-    public static enum QUADING {
-        LEFT_JUSTIFIED, CENTERED, RIGHT_JUSTIFIED
-    }
-
     protected QUADING quading = QUADING.LEFT_JUSTIFIED;
-
     protected int size = 12;
-
     protected String fontName = "Helvetic";
-
     protected Color color = Color.BLACK;
 
     public VariableText(Library library, HashMap entries) {
@@ -84,22 +76,20 @@ public class VariableText extends Dictionary {
 
         // parse out quading
         Number value = library.getInt(entries, Q_KEY);
-        if (value != null) {
-            int quad = value.intValue();
-            switch (quad) {
-                case 0:
-                    quading = QUADING.LEFT_JUSTIFIED;
-                    break;
-                case 1:
-                    quading = QUADING.CENTERED;
-                    break;
-                case 2:
-                    quading = QUADING.RIGHT_JUSTIFIED;
-                    break;
-                default:
-                    quading = QUADING.LEFT_JUSTIFIED;
-                    break;
-            }
+        int quad = value.intValue();
+        switch (quad) {
+            case 0:
+                quading = QUADING.LEFT_JUSTIFIED;
+                break;
+            case 1:
+                quading = QUADING.CENTERED;
+                break;
+            case 2:
+                quading = QUADING.RIGHT_JUSTIFIED;
+                break;
+            default:
+                quading = QUADING.LEFT_JUSTIFIED;
+                break;
         }
         // parse out fontName, size and color.
         // /ZaDb 12 Tf 0 g
@@ -119,7 +109,7 @@ public class VariableText extends Dictionary {
                     } else if (tmp instanceof String) {
                         // we have the Tj, try to get the color
                         tmp = parser.getToken();
-                        Stack stack = new Stack();
+                        Stack<Object> stack = new Stack<Object>();
                         while (tmp instanceof Number) {
                             stack.push(tmp);
                             tmp = parser.getToken();
@@ -169,5 +159,9 @@ public class VariableText extends Dictionary {
 
     public Color getColor() {
         return color;
+    }
+
+    public static enum QUADING {
+        LEFT_JUSTIFIED, CENTERED, RIGHT_JUSTIFIED
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -40,17 +40,10 @@ public class Resources extends Dictionary {
     public static final Name SHADING_KEY = new Name("Shading");
     public static final Name EXTGSTATE_KEY = new Name("ExtGState");
     public static final Name PROPERTIES_KEY = new Name("Properties");
-
-    // shared resource counter. 
-    private static int uniqueCounter = 0;
-
-    private static synchronized int getUniqueId() {
-        return uniqueCounter++;
-    }
-
     private static final Logger logger =
             Logger.getLogger(Resources.class.toString());
-
+    // shared resource counter.
+    private static int uniqueCounter = 0;
     HashMap fonts;
     HashMap xobjects;
     HashMap colorspaces;
@@ -58,7 +51,6 @@ public class Resources extends Dictionary {
     HashMap shading;
     HashMap extGStates;
     HashMap properties;
-
     /**
      * @param l
      * @param h
@@ -74,6 +66,9 @@ public class Resources extends Dictionary {
         properties = library.getDictionary(entries, PROPERTIES_KEY);
     }
 
+    private static synchronized int getUniqueId() {
+        return uniqueCounter++;
+    }
 
     /**
      * @param o
@@ -140,8 +135,35 @@ public class Resources extends Dictionary {
                     font = FontFactory.getInstance().getFont(library, (HashMap) ob);
                 }
                 // cache the font for later use.
-                library.addObject(font, ref);
-                font.setPObjectReference(ref);
+                if (font != null) {
+                    library.addObject(font, ref);
+                    font.setPObjectReference(ref);
+                }
+            }
+            // if still null do a deeper search checking the base font name of
+            // each font for a match to the needed font name.  We have a few
+            // malformed documents that don't refer to a font by the base name
+            // and not the font name found in the resource table.
+            if (font == null) {
+                for (Object tmp : fonts.values()) {
+                    if (tmp instanceof Reference) {
+                        ob = library.getObject((Reference) tmp);
+                        if (ob instanceof PObject) {
+                            ob = ((PObject) ob).getObject();
+                        }
+                        if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
+                            font = (org.icepdf.core.pobjects.fonts.Font) ob;
+                            if (s.getName().equals(font.getBaseFont())) {
+                                // cache the font for later use.
+                                library.addObject(font, (Reference) tmp);
+                                font.setPObjectReference((Reference) tmp);
+                                break;
+                            } else {
+                                font = null;
+                            }
+                        }
+                    }
+                }
             }
         }
         if (font != null) {
@@ -152,7 +174,7 @@ public class Resources extends Dictionary {
                 if (logger.isLoggable(Level.WARNING)) {
                     logger.log(Level.WARNING, "Error initializing font, falling back to font substitution.");
                 } else {
-                    logger.log(Level.FINER, "Error initializing font, falling back to font substitution. " + font, e);
+                    logger.log(Level.FINER, "Error initializing font, falling back to font substitution. " + font);
                 }
             }
         }
@@ -195,6 +217,27 @@ public class Resources extends Dictionary {
     }
 
     /**
+     * Gets a rough count of the images resources associated with this page. Does
+     * not include inline images.
+     *
+     * @return rough count of images resources.
+     */
+    public int getImageCount() {
+        int count = 0;
+        if (xobjects != null) {
+            for (Object tmp : xobjects.values()) {
+                if (tmp instanceof Reference) {
+                    tmp = library.getObject((Reference) tmp);
+                    if (tmp instanceof ImageStream) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    /**
      * @param s
      * @return
      */
@@ -224,7 +267,7 @@ public class Resources extends Dictionary {
      *
      * @param name of object to find.
      * @return tiling or shading type pattern object.  If not constructor is
-     *         found, then null is returned.
+     * found, then null is returned.
      */
     public Pattern getPattern(Name name) {
         if (patterns != null) {
@@ -275,7 +318,7 @@ public class Resources extends Dictionary {
      *
      * @param namedReference name of ExtGState object to try and find.
      * @return ExtGState which contains the named references ExtGState attrbutes,
-     *         if the namedReference could not be found null is returned.
+     * if the namedReference could not be found null is returned.
      */
     public ExtGState getExtGState(Name namedReference) {
         ExtGState gsState = null;
@@ -305,5 +348,14 @@ public class Resources extends Dictionary {
             return (OptionalContents) library.getObject(properties.get(key));
         }
         return null;
+    }
+
+    /**
+     * Checks to see if the Shading key has value in this resource dictionary.
+     *
+     * @return true if there are shading values,  false otherwise.
+     */
+    public boolean isShading() {
+        return shading != null;
     }
 }

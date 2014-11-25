@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -20,6 +20,7 @@ import org.icepdf.core.application.ProductInfo;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
+import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;
@@ -62,23 +63,9 @@ public class Document {
 
     private static final Logger logger =
             Logger.getLogger(Document.class.toString());
-
-    /**
-     * Gets the version number of ICEpdf rendering core.  This is not the version
-     * number of the PDF format used to encode this document.
-     *
-     * @return version number of ICEpdf's rendering core.
-     */
-    public static String getLibraryVersion() {
-        return ProductInfo.PRIMARY + "." + ProductInfo.SECONDARY + "." +
-                ProductInfo.TERTIARY + " " + ProductInfo.RELEASE_TYPE;
-    }
-
     private static final String INCREMENTAL_UPDATER =
             "org.icepdf.core.util.IncrementalUpdater";
-
     public static boolean foundIncrementalUpdater;
-
     static {
         // check class bath for NFont library, and declare results.
         try {
@@ -88,7 +75,10 @@ public class Document {
             logger.log(Level.WARNING, "PDF write support was not found on the class path");
         }
     }
-
+    // disable/enable file caching, overrides fileCachingSize.
+    private static boolean isCachingEnabled;
+    // optional watermark callback
+    private WatermarkCallback watermarkCallback;
 
     // core catalog, root of the document hierarchy.
     private Catalog catalog;
@@ -113,15 +103,9 @@ public class Document {
 
     // callback for password dialogs, or command line access.
     private SecurityCallback securityCallback;
-
-    // disable/enable file caching, overrides fileCachingSize.
-    private static boolean isCachingEnabled;
-
     // repository of all PDF object associated with this document.
     private Library library = null;
-
     private SeekableInput documentSeekableInput;
-
     static {
         // sets if file caching is enabled or disabled.
         isCachingEnabled =
@@ -137,19 +121,46 @@ public class Document {
     }
 
     /**
-     * Utility method for setting the origin (filepath or URL) of this Document
+     * Gets the version number of ICEpdf rendering core.  This is not the version
+     * number of the PDF format used to encode this document.
      *
-     * @param o new origin value
-     * @see #getDocumentOrigin()
+     * @return version number of ICEpdf's rendering core.
      */
-    private void setDocumentOrigin(String o) {
-        origin = o;
-        if (logger.isLoggable(Level.CONFIG)) {
-            logger.config(
-                    "MEMFREE: " + Runtime.getRuntime().freeMemory() + " of " +
-                            Runtime.getRuntime().totalMemory());
-            logger.config("LOADING: " + o);
-        }
+    public static String getLibraryVersion() {
+        return ProductInfo.PRIMARY + "." + ProductInfo.SECONDARY + "." +
+                ProductInfo.TERTIARY + " " + ProductInfo.RELEASE_TYPE;
+    }
+
+    /**
+     * Sets the caching mode when handling file loaded by an URI.  If enabled
+     * URI streams will be cached to disk, otherwise they will be stored in
+     * memory. This method must be set before a call to setByteArray() or
+     * setInputStream() is called.
+     *
+     * @param cachingEnabled true to enable, otherwise false.
+     */
+    public static void setCachingEnabled(boolean cachingEnabled) {
+        isCachingEnabled = cachingEnabled;
+    }
+
+    /**
+     * Sets a page watermark implementation to be painted on top of the page
+     * content.  Watermark can be specified for each page or once by calling
+     * document.setWatermark().
+     *
+     * @param watermarkCallback watermark implementation.
+     */
+    public void setWatermarkCallback(WatermarkCallback watermarkCallback) {
+        this.watermarkCallback = watermarkCallback;
+    }
+
+    /**
+     * Returns the cached file path in the case of opening a file from a URL.
+     *
+     * @return file path
+     */
+    private String getDocumentCachedFilePath() {
+        return cachedFilePath;
     }
 
     /**
@@ -160,15 +171,6 @@ public class Document {
      */
     private void setDocumentCachedFilePath(String o) {
         cachedFilePath = o;
-    }
-
-    /**
-     * Returns the cached file path in the case of opening a file from a URL.
-     *
-     * @return file path
-     */
-    private String getDocumentCachedFilePath() {
-        return cachedFilePath;
     }
 
     /**
@@ -738,6 +740,7 @@ public class Document {
             try {
                 in.reset();
             } catch (IOException e2) {
+                // forget about it.
             }
         }
         return 0;
@@ -749,7 +752,7 @@ public class Document {
      *
      * @param in input stream to parse.
      * @return 0 if file header is well formed, otherwise the offset to where
-     *         the document header starts.
+     * the document header starts.
      */
     private int skipPastAnyPrefixJunk(SeekableInput in) {
         if (!in.markSupported())
@@ -778,6 +781,7 @@ public class Document {
             try {
                 in.reset();
             } catch (IOException e2) {
+                // forget about it.
             }
         }
         return 0;
@@ -800,7 +804,7 @@ public class Document {
          *      2.  The trailer object must have an ID entry
          */
         boolean madeSecurityManager = false;
-        HashMap encryptDictionary = documentTrailer.getEncrypt();
+        HashMap<Object, Object> encryptDictionary = documentTrailer.getEncrypt();
         List fileID = documentTrailer.getID();
         if (encryptDictionary != null && fileID != null) {
             // create new security manager
@@ -890,8 +894,8 @@ public class Document {
      */
     public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom) {
         Page page = catalog.getPageTree().getPage(pageNumber);
-        page.init();
         if (page != null) {
+            page.init();
             return page.getSize(userRotation, userZoom);
         } else {
             return new PDimension(0, 0);
@@ -909,6 +913,22 @@ public class Document {
      */
     public String getDocumentOrigin() {
         return origin;
+    }
+
+    /**
+     * Utility method for setting the origin (filepath or URL) of this Document
+     *
+     * @param o new origin value
+     * @see #getDocumentOrigin()
+     */
+    private void setDocumentOrigin(String o) {
+        origin = o;
+        if (logger.isLoggable(Level.CONFIG)) {
+            logger.config(
+                    "MEMFREE: " + Runtime.getRuntime().freeMemory() + " of " +
+                            Runtime.getRuntime().totalMemory());
+            logger.config("LOADING: " + o);
+        }
     }
 
     /**
@@ -1031,6 +1051,7 @@ public class Document {
             try {
                 wrapper.close();
             } catch (IOException e) {
+                // forget about it.
             }
         }
         return documentLength;
@@ -1049,7 +1070,7 @@ public class Document {
         long documentLength = writeToOutputStream(out);
         if (foundIncrementalUpdater) {
             try {
-                Class incrementalUpdaterClass = Class.forName(INCREMENTAL_UPDATER);
+                Class<?> incrementalUpdaterClass = Class.forName(INCREMENTAL_UPDATER);
                 Object[] argValues = {this, out, documentLength};
                 Method method = incrementalUpdaterClass.getDeclaredMethod(
                         "appendIncrementalUpdate",
@@ -1200,10 +1221,19 @@ public class Document {
      * hierarchy.  The PageTree can be used to obtain detailed information about
      * the Page object which makes up the document.
      *
-     * @return PageTree specified by the document hierarchy.
+     * @return PageTree specified by the document hierarchy. Null if the document
+     * has not yet loaded or the catalog can not be found.
      */
     public PageTree getPageTree() {
-        return catalog.getPageTree();
+        if (catalog != null) {
+            PageTree pageTree = catalog.getPageTree();
+            if (pageTree != null) {
+                pageTree.setWatermarkCallback(watermarkCallback);
+            }
+            return pageTree;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -1214,17 +1244,5 @@ public class Document {
      */
     public Catalog getCatalog() {
         return catalog;
-    }
-
-    /**
-     * Sets the caching mode when handling file loaded by an URI.  If enabled
-     * URI streams will be cached to disk, otherwise they will be stored in
-     * memory. This method must be set before a call to setByteArray() or
-     * setInputStream() is called.
-     *
-     * @param cachingEnabled
-     */
-    public static void setCachingEnabled(boolean cachingEnabled) {
-        isCachingEnabled = cachingEnabled;
     }
 }

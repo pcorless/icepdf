@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -40,6 +40,14 @@ public class KeyListenerPageChanger extends KeyAdapter {
     private boolean changingPage;
 
 
+    protected KeyListenerPageChanger(SwingController c, JScrollPane s,
+                                     AbstractDocumentView documentView) {
+        controller = c;
+        scroll = s;
+        this.documentView = documentView;
+        changingPage = false;
+    }
+
     /**
      * Install a KeyListenerPageChanger as a KeyListener
      *
@@ -60,14 +68,6 @@ public class KeyListenerPageChanger extends KeyAdapter {
         if (scroll != null) {
             scroll.removeKeyListener(this);
         }
-    }
-
-    protected KeyListenerPageChanger(SwingController c, JScrollPane s,
-                                     AbstractDocumentView documentView) {
-        controller = c;
-        scroll = s;
-        this.documentView = documentView;
-        changingPage = false;
     }
 
     public void keyPressed(java.awt.event.KeyEvent e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -89,25 +89,18 @@ public class SwingController
         TreeSelectionListener, WindowListener, DropTargetListener,
         KeyListener, PropertyChangeListener {
 
+    public static final int CURSOR_OPEN_HAND = 1;
+    public static final int CURSOR_CLOSE_HAND = 2;
+    public static final int CURSOR_ZOOM_IN = 3;
+    public static final int CURSOR_ZOOM_OUT = 4;
+    public static final int CURSOR_WAIT = 6;
+    public static final int CURSOR_SELECT = 7;
+    public static final int CURSOR_DEFAULT = 8;
     private static final Logger logger =
             Logger.getLogger(SwingController.class.toString());
-
-    public static final int CURSOR_OPEN_HAND = 1;
-
-    public static final int CURSOR_CLOSE_HAND = 2;
-
-    public static final int CURSOR_ZOOM_IN = 3;
-
-    public static final int CURSOR_ZOOM_OUT = 4;
-
-    public static final int CURSOR_WAIT = 6;
-
-    public static final int CURSOR_SELECT = 7;
-
-    public static final int CURSOR_DEFAULT = 8;
-
     private static final int MAX_SELECT_ALL_PAGE_COUNT = 250;
-
+    // internationalization messages, loads message for default JVM locale.
+    private static ResourceBundle messageBundle = null;
     private JMenuItem openFileMenuItem;
     private JMenuItem openURLMenuItem;
     private JMenuItem closeMenuItem;
@@ -119,16 +112,12 @@ public class SwingController
     private JMenuItem printSetupMenuItem;
     private JMenuItem printMenuItem;
     private JMenuItem exitMenuItem;
-
     private JMenuItem undoMenuItem;
     private JMenuItem redoMenuItem;
-
     private JMenuItem copyMenuItem;
     private JMenuItem deleteMenuItem;
-
     private JMenuItem selectAllMenuItem;
     private JMenuItem deselectAllMenuItem;
-
     private JMenuItem fitActualSizeMenuItem;
     private JMenuItem fitPageMenuItem;
     private JMenuItem fitWidthMenuItem;
@@ -138,60 +127,47 @@ public class SwingController
     private JMenuItem rotateRightMenuItem;
     private JMenuItem showHideToolBarMenuItem;
     private JMenuItem showHideUtilityPaneMenuItem;
-
     private JMenuItem firstPageMenuItem;
     private JMenuItem previousPageMenuItem;
     private JMenuItem nextPageMenuItem;
     private JMenuItem lastPageMenuItem;
     private JMenuItem searchMenuItem;
     private JMenuItem goToPageMenuItem;
-
     private JMenuItem minimiseAllMenuItem;
     private JMenuItem bringAllToFrontMenuItem;
     private List windowListMenuItems;
-
     private JMenuItem aboutMenuItem;
-
     private JButton openFileButton;
     private JButton saveAsFileButton;
     private JButton printButton;
     private JButton searchButton;
     private JToggleButton showHideUtilityPaneButton;
-
     private JButton firstPageButton;
     private JButton previousPageButton;
     private JButton nextPageButton;
     private JButton lastPageButton;
     private JTextField currentPageNumberTextField;
     private JLabel numberOfPagesLabel;
-
     private JButton zoomInButton;
     private JButton zoomOutButton;
     private JComboBox zoomComboBox;
-
     private JToggleButton fitActualSizeButton;
     private JToggleButton fitHeightButton;
     private JToggleButton fitWidthButton;
-
     private JToggleButton fontEngineButton;
-
     private JToggleButton facingPageViewContinuousButton;
     private JToggleButton singlePageViewContinuousButton;
     private JToggleButton facingPageViewNonContinuousButton;
     private JToggleButton singlePageViewNonContinuousButton;
-
     private JButton rotateLeftButton;
     private JButton rotateRightButton;
-
     private JToggleButton panToolButton;
     private JToggleButton textSelectToolButton;
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomDynamicToolButton;
-
     private JToggleButton selectToolButton;
     private JToggleButton highlightAnnotationToolButton;
     private JToggleButton textAnnotationToolButton;
-
     private JToggleButton linkAnnotationToolButton;
     private JToggleButton highlightAnnotationUtilityToolButton;
     private JToggleButton strikeOutAnnotationToolButton;
@@ -203,13 +179,10 @@ public class SwingController
     private JToggleButton inkAnnotationToolButton;
     private JToggleButton freeTextAnnotationToolButton;
     private JToggleButton textAnnotationUtilityToolButton;
-
     private JToolBar completeToolBar;
-
     // Printing in background thread monitors
     private ProgressMonitor printProgressMonitor;
     private Timer printActivityMonitor;
-
     private JTree outlinesTree;
     private JScrollPane outlinesScrollPane;
     private SearchPanel searchPanel;
@@ -217,36 +190,23 @@ public class SwingController
     private LayersPanel layersPanel;
     private AnnotationPanel annotationPanel;
     private JTabbedPane utilityTabbedPane;
-
     private JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
-
     private JLabel statusLabel;
-
     private JFrame viewer;
-
-
     private WindowManagementCallback windowManagementCallback;
     // simple model for swing controller, mainly printer and  file loading state.
     private ViewModel viewModel;
-
     // subcontroller for document view or document page views.
     private DocumentViewControllerImpl documentViewController;
 
+    // todo subcontroller for document annotations creation.
     // subcontroller for document text searching.
     private DocumentSearchController documentSearchController;
-
-    // todo subcontroller for document annotations creation.
-
-
     private Document document;
-
     private boolean disposed;
-
-    // internationalization messages, loads message for default JVM locale.
-    private static ResourceBundle messageBundle = null;
-
     private PropertiesManager propertiesManager;
+    private boolean reflectingZoomInZoomComboBox = false;
 
     /**
      * Create a SwingController object, and its associated ViewerModel
@@ -308,22 +268,22 @@ public class SwingController
      * The WindowManagementCallback is used for creating new Document windows,
      * and quitting the application
      *
-     * @param wm The new WindowManagementCallback
-     * @see #getWindowManagementCallback
+     * @return The current WindowManagementCallback
+     * @see #setWindowManagementCallback
      */
-    public void setWindowManagementCallback(WindowManagementCallback wm) {
-        windowManagementCallback = wm;
+    public WindowManagementCallback getWindowManagementCallback() {
+        return windowManagementCallback;
     }
 
     /**
      * The WindowManagementCallback is used for creating new Document windows,
      * and quitting the application
      *
-     * @return The current WindowManagementCallback
-     * @see #setWindowManagementCallback
+     * @param wm The new WindowManagementCallback
+     * @see #getWindowManagementCallback
      */
-    public WindowManagementCallback getWindowManagementCallback() {
-        return windowManagementCallback;
+    public void setWindowManagementCallback(WindowManagementCallback wm) {
+        windowManagementCallback = wm;
     }
 
     /**
@@ -625,7 +585,6 @@ public class SwingController
         mi.addActionListener(this);
     }
 
-
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
@@ -925,7 +884,6 @@ public class SwingController
         btn.addItemListener(this);
     }
 
-
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
@@ -940,7 +898,6 @@ public class SwingController
     public void setCompleteToolBar(JToolBar toolbar) {
         completeToolBar = toolbar;
     }
-
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
@@ -1016,6 +973,14 @@ public class SwingController
     }
 
     /**
+     * Not all uses of SwingController would result in there existing a Viewer Frame,
+     * so this may well return null.
+     */
+    public JFrame getViewerFrame() {
+        return viewer;
+    }
+
+    /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
     public void setViewerFrame(JFrame v) {
@@ -1029,13 +994,22 @@ public class SwingController
     }
 
     /**
-     * Not all uses of SwingController would result in there existing a Viewer Frame,
-     * so this may well return null.
+     * Tests to see if the PDF document is a collection and should be treaded as such.
+     *
+     * @return true if PDF collection otherwise false.
      */
-    public JFrame getViewerFrame() {
-        return viewer;
+    public boolean isPdfCollection() {
+        Catalog catalog = document.getCatalog();
+        if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
+                && catalog.getNames().getEmbeddedFilesNameTree().getRoot().getNamesAndValues() != null) {
+            // one final check as some docs will have meta data but will specify a page mode.
+            if (catalog.getObject(Catalog.PAGEMODE_KEY) == null ||
+                    ((Name) catalog.getObject(Catalog.PAGEMODE_KEY)).getName().equalsIgnoreCase("UseAttachments")) {
+                return true;
+            }
+        }
+        return false;
     }
-
 
     /**
      * Utility method to set the state of all the different GUI elements. Mainly
@@ -1043,6 +1017,8 @@ public class SwingController
      */
     private void reflectStateInComponents() {
         boolean opened = document != null;
+        boolean pdfCollection = opened && isPdfCollection();
+
         int nPages = (getPageTree() != null) ? getPageTree().getNumberOfPages() : 0;
 
         // get security information for printing and text extraction
@@ -1055,15 +1031,15 @@ public class SwingController
         // menu items.
         setEnabled(closeMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
-        setEnabled(exportTextMenuItem, opened && canExtract);
+        setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         // Exporting to SVG creates output as if we printed,
         //   which is not the same as extracting text
-        setEnabled(exportSVGMenuItem, opened && canPrint);
+        setEnabled(exportSVGMenuItem, opened && canPrint && !pdfCollection);
         setEnabled(permissionsMenuItem, opened);
         setEnabled(informationMenuItem, opened);
         // Printer setup is global to all PDFs, so don't limit it by this one PDF
-        setEnabled(printSetupMenuItem, opened && canPrint);
-        setEnabled(printMenuItem, opened && canPrint);
+        setEnabled(printSetupMenuItem, opened && canPrint && !pdfCollection);
+        setEnabled(printMenuItem, opened && canPrint && !pdfCollection);
 
         // set initial sate for undo/redo edit, afterwards state is set by
         // valueChange events depending on tool selection.
@@ -1072,27 +1048,27 @@ public class SwingController
         setEnabled(copyMenuItem, false);
         setEnabled(deleteMenuItem, false);
 
-        setEnabled(selectAllMenuItem, opened && canExtract);
+        setEnabled(selectAllMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(deselectAllMenuItem, false);
 
 
-        setEnabled(fitActualSizeMenuItem, opened);
-        setEnabled(fitPageMenuItem, opened);
-        setEnabled(fitWidthMenuItem, opened);
+        setEnabled(fitActualSizeMenuItem, opened && !pdfCollection);
+        setEnabled(fitPageMenuItem, opened && !pdfCollection);
+        setEnabled(fitWidthMenuItem, opened && !pdfCollection);
 
-        setEnabled(zoomInMenuItem, opened);
-        setEnabled(zoomOutMenuItem, opened);
+        setEnabled(zoomInMenuItem, opened && !pdfCollection);
+        setEnabled(zoomOutMenuItem, opened && !pdfCollection);
 
-        setEnabled(rotateLeftMenuItem, opened);
-        setEnabled(rotateRightMenuItem, opened);
+        setEnabled(rotateLeftMenuItem, opened && !pdfCollection);
+        setEnabled(rotateRightMenuItem, opened && !pdfCollection);
 
 //        setEnabled(facingPageViewContinuousMenuItem , opened );
 //        setEnabled(singlePageViewContinuousMenuItem , opened );
 //        setEnabled(facingPageViewNonContinuousMenuItem , opened );
 //        setEnabled(singlePageViewNonContinuousMenuItem , opened );
 
-        setEnabled(fitPageMenuItem, opened);
-        setEnabled(fitWidthMenuItem, opened);
+        setEnabled(fitPageMenuItem, opened && !pdfCollection);
+        setEnabled(fitWidthMenuItem, opened && !pdfCollection);
         if (showHideToolBarMenuItem != null) {
             boolean vis = (completeToolBar != null) && completeToolBar.isVisible();
             showHideToolBarMenuItem.setText(
@@ -1107,15 +1083,15 @@ public class SwingController
                             messageBundle.getString("viewer.toolbar.hideUtilityPane.label") :
                             messageBundle.getString("viewer.toolbar.showUtilityPane.label"));
         }
-        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
-        setEnabled(searchMenuItem, opened && searchPanel != null);
-        setEnabled(goToPageMenuItem, opened && nPages > 1);
+        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null && !pdfCollection);
+        setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
+        setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
         setEnabled(saveAsFileButton, opened);
-        setEnabled(printButton, opened && canPrint);
-        setEnabled(searchButton, opened && searchPanel != null);
-        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
-        setEnabled(currentPageNumberTextField, opened && nPages > 1);
+        setEnabled(printButton, opened && canPrint && !pdfCollection);
+        setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
+        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null && !pdfCollection);
+        setEnabled(currentPageNumberTextField, opened && nPages > 1 && !pdfCollection);
         if (numberOfPagesLabel != null) {
 
             Object[] messageArguments = new Object[]{String.valueOf(nPages)};
@@ -1127,37 +1103,37 @@ public class SwingController
             numberOfPagesLabel.setText(
                     opened ? numberOfPages : "");
         }
-        setEnabled(zoomInButton, opened);
-        setEnabled(zoomOutButton, opened);
-        setEnabled(zoomComboBox, opened);
-        setEnabled(fitActualSizeButton, opened);
-        setEnabled(fitHeightButton, opened);
-        setEnabled(fitWidthButton, opened);
-        setEnabled(rotateLeftButton, opened);
-        setEnabled(rotateRightButton, opened);
-        setEnabled(panToolButton, opened);
-        setEnabled(zoomInToolButton, opened);
-        setEnabled(zoomDynamicToolButton, opened);
-        setEnabled(textSelectToolButton, opened && canExtract);
-        setEnabled(selectToolButton, opened && canModify);
-        setEnabled(linkAnnotationToolButton, opened && canModify);
-        setEnabled(highlightAnnotationToolButton, opened && canModify);
-        setEnabled(highlightAnnotationUtilityToolButton, opened && canModify);
-        setEnabled(strikeOutAnnotationToolButton, opened && canModify);
-        setEnabled(underlineAnnotationToolButton, opened && canModify);
-        setEnabled(lineAnnotationToolButton, opened && canModify);
-        setEnabled(lineArrowAnnotationToolButton, opened && canModify);
-        setEnabled(squareAnnotationToolButton, opened && canModify);
-        setEnabled(circleAnnotationToolButton, opened && canModify);
-        setEnabled(inkAnnotationToolButton, opened && canModify);
-        setEnabled(freeTextAnnotationToolButton, opened && canModify);
-        setEnabled(textAnnotationToolButton, opened && canModify);
-        setEnabled(textAnnotationUtilityToolButton, opened && canModify);
-        setEnabled(fontEngineButton, opened);
-        setEnabled(facingPageViewContinuousButton, opened);
-        setEnabled(singlePageViewContinuousButton, opened);
-        setEnabled(facingPageViewNonContinuousButton, opened);
-        setEnabled(singlePageViewNonContinuousButton, opened);
+        setEnabled(zoomInButton, opened && !pdfCollection);
+        setEnabled(zoomOutButton, opened && !pdfCollection);
+        setEnabled(zoomComboBox, opened && !pdfCollection);
+        setEnabled(fitActualSizeButton, opened && !pdfCollection);
+        setEnabled(fitHeightButton, opened && !pdfCollection);
+        setEnabled(fitWidthButton, opened && !pdfCollection);
+        setEnabled(rotateLeftButton, opened && !pdfCollection);
+        setEnabled(rotateRightButton, opened && !pdfCollection);
+        setEnabled(panToolButton, opened && !pdfCollection);
+        setEnabled(zoomInToolButton, opened && !pdfCollection);
+        setEnabled(zoomDynamicToolButton, opened && !pdfCollection);
+        setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
+        setEnabled(selectToolButton, opened && canModify && !pdfCollection);
+        setEnabled(linkAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(highlightAnnotationUtilityToolButton, opened && canModify && !pdfCollection);
+        setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(lineArrowAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(squareAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(circleAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(inkAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(freeTextAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(textAnnotationUtilityToolButton, opened && canModify && !pdfCollection);
+        setEnabled(fontEngineButton, opened && !pdfCollection);
+        setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
+        setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
+        setEnabled(facingPageViewNonContinuousButton, opened && !pdfCollection);
+        setEnabled(singlePageViewNonContinuousButton, opened && !pdfCollection);
 
         if (opened) {
             reflectZoomInZoomComboBox();
@@ -1333,14 +1309,11 @@ public class SwingController
         }
     }
 
-    private boolean reflectingZoomInZoomComboBox = false;
-
-
     /**
      * Gets the current display tool value for the display panel.
      *
      * @return constant representing the state of the display tool for the
-     *         display panel.
+     * display panel.
      * @see #setDisplayTool
      */
     public int getDocumentViewToolMode() {
@@ -1470,6 +1443,7 @@ public class SwingController
             // repaint the page views.
             documentViewController.getViewContainer().repaint();
         } catch (java.awt.HeadlessException e) {
+            e.printStackTrace();
             logger.log(Level.FINE, "Headless exception during tool selection", e);
         }
     }
@@ -1591,18 +1565,21 @@ public class SwingController
         if (document == null) {
             return;
         }
+        if (isDocumentViewMode(DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW)) {
+            return;
+        }
         reflectSelectionInButton(
                 singlePageViewContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.ONE_COLUMN_VIEW));
+                        DocumentViewControllerImpl.ONE_COLUMN_VIEW));
         reflectSelectionInButton(
                 facingPageViewNonContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW));
+                        DocumentViewControllerImpl.TWO_PAGE_RIGHT_VIEW));
         reflectSelectionInButton(
                 facingPageViewContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.TWO_COLUMN_RIGHT_VIEW));
+                        DocumentViewControllerImpl.TWO_COLUMN_RIGHT_VIEW));
         reflectSelectionInButton(
                 singlePageViewNonContinuousButton, isDocumentViewMode(
-                DocumentViewControllerImpl.ONE_PAGE_VIEW));
+                        DocumentViewControllerImpl.ONE_PAGE_VIEW));
     }
 
     private void reflectSelectionInButton(AbstractButton btn, boolean selected) {
@@ -1990,6 +1967,46 @@ public class SwingController
     }
 
     /**
+     * Load the specified file in a new Viewer RI window.
+     *
+     * @param embeddedDocument document to load in ne window
+     * @param fileName         file name of the document in question
+     */
+    public void openDocument(Document embeddedDocument, String fileName) {
+        if (embeddedDocument != null) {
+            try {
+                // dispose a currently open document, if one.
+                if (document != null) {
+                    closeDocument();
+                }
+
+                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+
+                // load the document
+                document = embeddedDocument;
+                // create default security callback is user has not created one
+                if (documentViewController.getSecurityCallback() == null) {
+                    document.setSecurityCallback(
+                            new MyGUISecurityCallback(viewer, messageBundle));
+                }
+                commonNewDocumentHandling(fileName);
+            } catch (Exception e) {
+                org.icepdf.ri.util.Resources.showMessageDialog(
+                        viewer,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        messageBundle,
+                        "viewer.dialog.openDocument.exception.title",
+                        "viewer.dialog.openDocument.exception.msg",
+                        fileName);
+                document = null;
+                logger.log(Level.FINE, "Error opening document.", e);
+            } finally {
+                setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
+            }
+        }
+    }
+
+    /**
      * Opens a Document via the specified byte array.
      *
      * @param data        Byte array containing a valid PDF document.
@@ -2094,6 +2111,16 @@ public class SwingController
             }
             documentViewController.setViewType(viewType);
         }
+        // make sure we don't keep Attachments view around from a previous load
+        // as we don't want to use it for a none attachments PDF file.
+        if (documentViewController.getViewMode() ==
+                DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
+            documentViewController.revertViewType();
+        }
+        // check to see if we have collection
+        if (isPdfCollection()) {
+            documentViewController.setViewType(DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW);
+        }
 
         if (utilityTabbedPane != null) {
             // Page mode by default is UseNone, where other options are, UseOutlines,
@@ -2167,11 +2194,22 @@ public class SwingController
                 safelySelectUtilityPanel(annotationPanel);
             }
         }
-        setUtilityPaneVisible(showUtilityPane);
+
+        // showUtilityPane will be true the document has an outline, but the
+        // visibility can be over-ridden with the property application.utilitypane.show
+        boolean hideUtilityPane = PropertiesManager.checkAndStoreBooleanProperty(
+                propertiesManager,
+                PropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
+        // hide utility pane
+        if (hideUtilityPane) {
+            setUtilityPaneVisible(false);
+        } else {
+            setUtilityPaneVisible(showUtilityPane);
+        }
 
         // check if there are layers and enable/disable the tab as needed
         OptionalContent optionalContent = document.getCatalog().getOptionalContent();
-        if (layersPanel != null) {
+        if (layersPanel != null && utilityTabbedPane != null) {
             if (optionalContent == null || optionalContent.getOrder() == null) {
                 utilityTabbedPane.setEnabledAt(
                         utilityTabbedPane.indexOfComponent(layersPanel),
@@ -2855,13 +2893,14 @@ public class SwingController
         if (printHelper == null) {
             MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
             // create the new print help
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
-                    mediaSizeName,
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(), mediaSizeName,
                     PrintQuality.NORMAL);
         }
         // reuse previous print attributes if they exist. 
         else {
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(),
                     printHelper.getDocAttributeSet(),
                     printHelper.getPrintRequestAttributeSet());
         }
@@ -2883,7 +2922,9 @@ public class SwingController
      * @param mediaSize MediaSizeName constant of paper size to print to.
      */
     public void setPrintDefaultMediaSizeName(MediaSizeName mediaSize) {
-        PrintHelper printHelper = new PrintHelper(documentViewController, getPageTree(),
+        PrintHelper printHelper = new PrintHelper(
+                documentViewController.getViewContainer(), getPageTree(),
+                documentViewController.getRotation(),
                 mediaSize,
                 PrintQuality.NORMAL);
         viewModel.setPrintHelper(printHelper);
@@ -2935,11 +2976,12 @@ public class SwingController
         if (printHelper == null) {
             MediaSizeName mediaSizeName = loadDefaultPrinterProperties();
             // create the new print help
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
-                    mediaSizeName,
-                    PrintQuality.NORMAL);
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(),
+                    mediaSizeName, PrintQuality.NORMAL);
         } else {
-            printHelper = new PrintHelper(documentViewController, getPageTree(),
+            printHelper = new PrintHelper(documentViewController.getViewContainer(),
+                    getPageTree(), documentViewController.getRotation(),
                     printHelper.getDocAttributeSet(),
                     printHelper.getPrintRequestAttributeSet());
         }
@@ -3510,8 +3552,8 @@ public class SwingController
             if (selectedAnnotation != null) {
                 annotationPanel.setEnabled(true);
                 annotationPanel.setAnnotationComponent(selectedAnnotation);
-                setUtilityPaneVisible(true);
             }
+            setUtilityPaneVisible(true);
 
             // select the annotationPanel tab
             if (utilityTabbedPane.getSelectedComponent() != annotationPanel) {
@@ -4018,6 +4060,7 @@ public class SwingController
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
+                    showAnnotationPanel(null);
                 }
             } else if (source == linkAnnotationToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {

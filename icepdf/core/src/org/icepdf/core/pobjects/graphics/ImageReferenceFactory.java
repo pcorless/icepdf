@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Defs;
 
@@ -44,12 +45,7 @@ public class ImageReferenceFactory {
 
     // allow scaling of large images to improve clarity on screen
 
-    public enum ImageReference {
-        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED // FLOYD_STEINBERG
-    }
-
     private static ImageReference scaleType;
-
     static {
         // decide if large images will be scaled
         String imageReferencetype =
@@ -88,17 +84,22 @@ public class ImageReferenceFactory {
      * @return newly create ImageReference.
      */
     public static org.icepdf.core.pobjects.graphics.ImageReference
-    getImageReference(ImageStream imageStream, Resources resources, Color fillColor) {
+    getImageReference(ImageStream imageStream, Resources resources, Color fillColor,
+                      Integer imageIndex, Page page) {
         switch (scaleType) {
             case SCALED:
-                return new ScaledImageReference(imageStream, fillColor, resources);
+                return new ScaledImageReference(imageStream, fillColor, resources, imageIndex, page);
             case SMOOTH_SCALED:
-                return new SmoothScaledImageReference(imageStream, fillColor, resources);
+                return new SmoothScaledImageReference(imageStream, fillColor, resources, imageIndex, page);
             case MIP_MAP:
-                return new MipMappedImageReference(imageStream, fillColor, resources);
+                return new MipMappedImageReference(imageStream, fillColor, resources, imageIndex, page);
             default:
-                return new ImageStreamReference(imageStream, fillColor, resources);
+                return new ImageStreamReference(imageStream, fillColor, resources, imageIndex, page);
         }
+    }
+
+    public enum ImageReference {
+        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED // FLOYD_STEINBERG
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -219,6 +219,13 @@ public class StandardSecurityHandler extends SecurityHandler {
                             getCryptFilter().getCryptFilterByName(filterName);
 
                 }
+            } else if (encryptionDictionary.getCryptFilter() != null) {
+                // corner case, some images treams also use the "decodeParams"
+                // dictionary, if it doesn't contain a filter name then we
+                // want to make sure we assign the standard one so the steam
+                // can be unencrypted.
+                cryptFilter = encryptionDictionary.getCryptFilter().getCryptFilterByName(
+                        encryptionDictionary.getStmF());
             }
         }
         // We default to the method specified in by StrmF in the security dictionary

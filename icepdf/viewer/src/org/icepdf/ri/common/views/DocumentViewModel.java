@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -18,6 +18,7 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 
+import javax.swing.*;
 import java.awt.*;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -257,18 +258,18 @@ public interface DocumentViewModel {
     public void dispose();
 
     /**
-     * Sets the page boundtry used to paint a page.
-     *
-     * @param pageBoundary page bounds
-     */
-    public void setPageBoundary(final int pageBoundary);
-
-    /**
      * Gets the page boundry used to paint document pages.
      *
      * @return page boundary type as defined in the class Page.
      */
     public int getPageBoundary();
+
+    /**
+     * Sets the page boundtry used to paint a page.
+     *
+     * @param pageBoundary page bounds
+     */
+    public void setPageBoundary(final int pageBoundary);
 
     /**
      * Gets the currently selected annotation
@@ -292,4 +293,11 @@ public interface DocumentViewModel {
      */
     public void addMemento(Memento oldMementoState,
                            Memento newMementoState);
+
+    /**
+     * Get an instance of the dirty Timer use by all child PageComponents.
+     *
+     * @return instance of Swing Timer
+     */
+    public Timer getDirtyTimer();
 }

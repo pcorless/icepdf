@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -36,13 +36,13 @@ public class FillDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
-        if (optionalContentState.isVisible() &&
-                currentShape.intersects(g.getClip().getBounds2D())) {
+        if (optionalContentState.isVisible() && currentShape != null &&
+                currentShape.intersects(g.getClip().getBounds())) {
             g.fill(currentShape);
             // Send a PaintPage Event to listeners
-            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
-                parentPage.notifyPaintPageListeners();
-            }
+//            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
+//                parentPage.notifyPaintPageListeners();
+//            }
         }
         return currentShape;
     }

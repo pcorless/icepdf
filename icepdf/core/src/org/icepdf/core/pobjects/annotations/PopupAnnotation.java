@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -45,9 +45,6 @@ import java.util.logging.Logger;
  */
 public class PopupAnnotation extends Annotation {
 
-    private static final Logger logger =
-            Logger.getLogger(PopupAnnotation.class.toString());
-
     /**
      * (Optional; shall be an indirect reference) The parent annotation with
      * which this pop-up annotation shall be associated.
@@ -57,24 +54,19 @@ public class PopupAnnotation extends Annotation {
      * itself.
      */
     public static final Name PARENT_KEY = new Name("Parent");
-
     /**
      * (Optional) A flag specifying whether the pop-up annotation shall
      * initially be displayed open. Default value: false (closed).
      */
     public static final Name OPEN_KEY = new Name("Open");
-
+    private static final Logger logger =
+            Logger.getLogger(PopupAnnotation.class.toString());
     protected boolean open;
 
     protected MarkupAnnotation parent;
 
     public PopupAnnotation(Library l, HashMap h) {
         super(l, h);
-    }
-
-    public void init() {
-        super.init();
-        open = library.getBoolean(entries, OPEN_KEY);
     }
 
     /**
@@ -115,6 +107,11 @@ public class PopupAnnotation extends Annotation {
         popupAnnotation.setFlag(Annotation.FLAG_PRINT, false);
 
         return popupAnnotation;
+    }
+
+    public void init() {
+        super.init();
+        open = library.getBoolean(entries, OPEN_KEY);
     }
 
     @Override

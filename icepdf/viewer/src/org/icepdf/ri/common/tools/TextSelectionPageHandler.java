@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -51,38 +51,16 @@ import java.util.logging.Logger;
 public class TextSelectionPageHandler extends SelectionBoxHandler
         implements ToolHandler {
 
-    protected static final Logger logger =
-            Logger.getLogger(TextSelectionPageHandler.class.toString());
-
     /**
      * Transparency value used to simulate text highlighting.
      */
     public static final float selectionAlpha = 0.3f;
-
+    protected static final Logger logger =
+            Logger.getLogger(TextSelectionPageHandler.class.toString());
     // text selection colour
     public static Color selectionColor;
-
-    public int selectedCount;
-
-    static {
-        // sets the shadow colour of the decorator.
-        try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.selectionColor", "#0077FF");
-            int colorValue = ColorUtil.convertColor(color);
-            selectionColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("0077FF", 16));
-        } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading text selection colour");
-            }
-        }
-    }
-
     // text highlight colour
     public static Color highlightColor;
-
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -95,6 +73,22 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text highlight colour");
+            }
+        }
+    }
+    public int selectedCount;
+    static {
+        // sets the shadow colour of the decorator.
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.text.selectionColor", "#0077FF");
+            int colorValue = ColorUtil.convertColor(color);
+            selectionColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("0077FF", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text selection colour");
             }
         }
     }
@@ -113,6 +107,83 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     }
 
     /**
+     * Utility for painting the highlight and selected
+     *
+     * @param g graphics to paint to.
+     */
+    public static void paintSelectedText(Graphics g,
+                                         AbstractPageViewComponent pageViewComponent,
+                                         DocumentViewModel documentViewModel) {
+        // ready outline paint
+        Graphics2D gg = (Graphics2D) g;
+        AffineTransform prePaintTransform = gg.getTransform();
+        Color oldColor = gg.getColor();
+        Stroke oldStroke = gg.getStroke();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                selectionAlpha));
+        gg.setColor(selectionColor);
+        gg.setStroke(new BasicStroke(1.0f));
+
+        Page currentPage = pageViewComponent.getPage();
+        if (currentPage != null && currentPage.isInitiated()) {
+            PageText pageText = currentPage.getViewText();
+            if (pageText != null) {
+                // get page transformation
+                AffineTransform pageTransform = currentPage.getPageTransform(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom());
+                // paint the sprites
+                GeneralPath textPath;
+                ArrayList<LineText> visiblePageLines = pageText.getPageLines();
+                if (visiblePageLines != null) {
+                    for (LineText lineText : visiblePageLines) {
+                        for (WordText wordText : lineText.getWords()) {
+                            // paint whole word
+                            if (wordText.isSelected() || wordText.isHighlighted()) {
+                                textPath = new GeneralPath(wordText.getBounds());
+                                textPath.transform(pageTransform);
+                                // paint highlight over any selected
+                                if (wordText.isSelected()) {
+                                    gg.setColor(selectionColor);
+                                    gg.fill(textPath);
+                                }
+                                if (wordText.isHighlighted()) {
+                                    gg.setColor(highlightColor);
+                                    gg.fill(textPath);
+                                }
+                            }
+                            // check children
+                            else {
+                                for (GlyphText glyph : wordText.getGlyphs()) {
+                                    if (glyph.isSelected()) {
+                                        textPath = new GeneralPath(glyph.getBounds());
+                                        textPath.transform(pageTransform);
+                                        gg.setColor(selectionColor);
+                                        gg.fill(textPath);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                1.0f));
+
+        // restore graphics state to where we left it.
+        gg.setTransform(prePaintTransform);
+        gg.setStroke(oldStroke);
+        gg.setColor(oldColor);
+
+        // paint words for bounds test.
+//        paintTextBounds(g);
+
+    }
+
+    /**
      * When mouse is double clicked we select the word the mouse if over.  When
      * the mouse is triple clicked we select the line of text that the mouse
      * is over.
@@ -125,7 +196,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             Point mouseLocation = (Point) e.getPoint().clone();
             lineSelectHandler(currentPage, mouseLocation);
         }
-        // single click we select word that was clicked. 
+        // single click we select word that was clicked.
         else if (e.getClickCount() == 2) {
             Page currentPage = pageViewComponent.getPage();
             // handle text selection mouse coordinates
@@ -136,7 +207,9 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         if (logger.isLoggable(Level.FINE)) {
             Page currentPage = pageViewComponent.getPage();
             // handle text selection mouse coordinates
-            logger.fine(currentPage.getViewText().getSelected().toString());
+            if (currentPage.getViewText() != null) {
+                logger.fine(currentPage.getViewText().getSelected().toString());
+            }
         }
 
         documentViewController.clearSelectedAnnotations();
@@ -174,7 +247,9 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         if (logger.isLoggable(Level.FINE)) {
             Page currentPage = pageViewComponent.getPage();
             // handle text selection mouse coordinates
-            logger.fine(currentPage.getViewText().getSelected().toString());
+            if (currentPage.getViewText() != null) {
+                logger.fine(currentPage.getViewText().getSelected().toString());
+            }
         }
 
         if (selectedCount > 0) {
@@ -267,21 +342,23 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                         documentViewModel.getViewZoom());
 
                 ArrayList<LineText> pageLines = pageText.getPageLines();
-                boolean found = false;
-                Point2D.Float pageMouseLocation =
-                        convertMouseToPageSpace(mouseLocation, pageTransform);
-                for (LineText pageLine : pageLines) {
-                    // check for containment, if so break into words.
-                    if (pageLine.getBounds().contains(pageMouseLocation)) {
-                        found = true;
-                        documentViewController.setViewCursor(
-                                DocumentViewController.CURSOR_TEXT_SELECTION);
-                        break;
+                if (pageLines != null) {
+                    boolean found = false;
+                    Point2D.Float pageMouseLocation =
+                            convertMouseToPageSpace(mouseLocation, pageTransform);
+                    for (LineText pageLine : pageLines) {
+                        // check for containment, if so break into words.
+                        if (pageLine.getBounds().contains(pageMouseLocation)) {
+                            found = true;
+                            documentViewController.setViewCursor(
+                                    DocumentViewController.CURSOR_TEXT_SELECTION);
+                            break;
+                        }
                     }
-                }
-                if (!found) {
-                    documentViewController.setViewCursor(
-                            DocumentViewController.CURSOR_SELECT);
+                    if (!found) {
+                        documentViewController.setViewCursor(
+                                DocumentViewController.CURSOR_SELECT);
+                    }
                 }
             }
         }
@@ -351,7 +428,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             if (pageText != null) {
 
                 // clear the currently selected state, ignore highlighted.
-                currentPage.getViewText().clearSelected();
+                pageText.clearSelected();
 
                 // get page transform, same for all calculations
                 AffineTransform pageTransform = currentPage.getPageTransform(
@@ -364,39 +441,41 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 Rectangle2D pageRectToDraw =
                         convertRectangleToPageSpace(rectToDraw, pageTransform);
                 ArrayList<LineText> pageLines = pageText.getPageLines();
-                for (LineText pageLine : pageLines) {
-                    // check for containment, if so break into words.
-                    if (pageLine.intersects(pageRectToDraw)) {
-                        pageLine.setHasSelected(true);
-                        selectedCount++;
-                        if (firstPageLine == null) {
-                            firstPageLine = pageLine;
-                        }
-                        if (pageLine.getBounds().contains(pageMouseLocation)) {
-                            ArrayList<WordText> lineWords = pageLine.getWords();
-                            for (WordText word : lineWords) {
-                                if (word.intersects(pageRectToDraw)) {
-                                    word.setHasHighlight(true);
-                                    selectedCount++;
-                                    ArrayList<GlyphText> glyphs = word.getGlyphs();
-                                    for (GlyphText glyph : glyphs) {
-                                        if (glyph.intersects(pageRectToDraw)) {
-                                            glyph.setSelected(true);
-                                            selectedCount++;
-                                            pageViewComponent.repaint();
+                if (pageLines != null) {
+                    for (LineText pageLine : pageLines) {
+                        // check for containment, if so break into words.
+                        if (pageLine.intersects(pageRectToDraw)) {
+                            pageLine.setHasSelected(true);
+                            selectedCount++;
+                            if (firstPageLine == null) {
+                                firstPageLine = pageLine;
+                            }
+                            if (pageLine.getBounds().contains(pageMouseLocation)) {
+                                java.util.List<WordText> lineWords = pageLine.getWords();
+                                for (WordText word : lineWords) {
+                                    if (word.intersects(pageRectToDraw)) {
+                                        word.setHasHighlight(true);
+                                        selectedCount++;
+                                        ArrayList<GlyphText> glyphs = word.getGlyphs();
+                                        for (GlyphText glyph : glyphs) {
+                                            if (glyph.intersects(pageRectToDraw)) {
+                                                glyph.setSelected(true);
+                                                selectedCount++;
+                                                pageViewComponent.repaint();
+                                            }
                                         }
                                     }
                                 }
+                            } else if (firstPageLine == pageLine) {
+                                // left to right selection
+                                //                            if (currentRect.width > 0 ){
+                                selectLeftToRight(pageLine, pageTransform);
+                                //                            }else{
+                                //                                selectRightToLeft(pageLine, pageTransform););
+                                //                            }
+                            } else {
+                                pageLine.selectAll();
                             }
-                        } else if (firstPageLine == pageLine) {
-                            // left to right selection
-//                            if (currentRect.width > 0 ){
-                            selectLeftToRight(pageLine, pageTransform);
-//                            }else{
-//                                selectRightToLeft(pageLine, pageTransform););
-//                            }
-                        } else {
-                            pageLine.selectAll();
                         }
                     }
                 }
@@ -430,7 +509,6 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
 //        }
     }
 
-
     /**
      * Simple left to right, top down type selection model, not perfect.
      *
@@ -442,7 +520,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         GlyphText fistGlyph = null;
         Rectangle2D pageRectToDraw =
                 convertRectangleToPageSpace(rectToDraw, pageTransform);
-        ArrayList<WordText> lineWords = pageLine.getWords();
+        java.util.List<WordText> lineWords = pageLine.getWords();
         for (WordText word : lineWords) {
             if (word.intersects(pageRectToDraw)) {
                 word.setHasHighlight(true);
@@ -485,7 +563,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             if (pageText != null) {
 
                 // clear the currently selected state, ignore highlighted.
-                currentPage.getViewText().clearSelected();
+                pageText.clearSelected();
 
                 // get page transform, same for all calculations
                 AffineTransform pageTransform = currentPage.getPageTransform(
@@ -497,19 +575,21 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                         convertRectangleToPageSpace(rectToDraw, pageTransform);
 
                 ArrayList<LineText> pageLines = pageText.getPageLines();
-                for (LineText pageLine : pageLines) {
-                    // check for containment, if so break into words.
-                    if (pageLine.intersects(pageRectToDraw)) {
-                        pageLine.setHasSelected(true);
-                        ArrayList<WordText> lineWords = pageLine.getWords();
-                        for (WordText word : lineWords) {
-                            if (word.intersects(pageRectToDraw)) {
-                                word.setHasHighlight(true);
-                                ArrayList<GlyphText> glyphs = word.getGlyphs();
-                                for (GlyphText glyph : glyphs) {
-                                    if (glyph.intersects(pageRectToDraw)) {
-                                        glyph.setSelected(true);
-                                        pageViewComponent.repaint();
+                if (pageLines != null) {
+                    for (LineText pageLine : pageLines) {
+                        // check for containment, if so break into words.
+                        if (pageLine.intersects(pageRectToDraw)) {
+                            pageLine.setHasSelected(true);
+                            java.util.List<WordText> lineWords = pageLine.getWords();
+                            for (WordText word : lineWords) {
+                                if (word.intersects(pageRectToDraw)) {
+                                    word.setHasHighlight(true);
+                                    ArrayList<GlyphText> glyphs = word.getGlyphs();
+                                    for (GlyphText glyph : glyphs) {
+                                        if (glyph.intersects(pageRectToDraw)) {
+                                            glyph.setSelected(true);
+                                            pageViewComponent.repaint();
+                                        }
                                     }
                                 }
                             }
@@ -539,7 +619,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             if (pageText != null) {
 
                 // clear the currently selected state, ignore highlighted.
-                currentPage.getViewText().clearSelected();
+                pageText.clearSelected();
 
                 // get page transform, same for all calculations
                 AffineTransform pageTransform = currentPage.getPageTransform(
@@ -550,23 +630,25 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 Point2D.Float pageMouseLocation =
                         convertMouseToPageSpace(mouseLocation, pageTransform);
                 ArrayList<LineText> pageLines = pageText.getPageLines();
-                for (LineText pageLine : pageLines) {
-                    // check for containment, if so break into words.
-                    if (pageLine.getBounds().contains(pageMouseLocation)) {
-                        pageLine.setHasSelected(true);
-                        ArrayList<WordText> lineWords = pageLine.getWords();
-                        for (WordText word : lineWords) {
-//                            if (word.contains(pageTransform, mouseLocation)) {
-                            if (word.getBounds().contains(pageMouseLocation)) {
-                                word.selectAll();
+                if (pageLines != null) {
+                    for (LineText pageLine : pageLines) {
+                        // check for containment, if so break into words.
+                        if (pageLine.getBounds().contains(pageMouseLocation)) {
+                            pageLine.setHasSelected(true);
+                            java.util.List<WordText> lineWords = pageLine.getWords();
+                            for (WordText word : lineWords) {
+                                //                            if (word.contains(pageTransform, mouseLocation)) {
+                                if (word.getBounds().contains(pageMouseLocation)) {
+                                    word.selectAll();
 
-                                // let the ri know we have selected text.
-                                documentViewModel.addSelectedPageText(pageViewComponent);
-                                documentViewController.firePropertyChange(
-                                        PropertyConstants.TEXT_SELECTED,
-                                        null, null);
-                                pageViewComponent.repaint();
-                                break;
+                                    // let the ri know we have selected text.
+                                    documentViewModel.addSelectedPageText(pageViewComponent);
+                                    documentViewController.firePropertyChange(
+                                            PropertyConstants.TEXT_SELECTED,
+                                            null, null);
+                                    pageViewComponent.repaint();
+                                    break;
+                                }
                             }
                         }
                     }
@@ -590,7 +672,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             if (pageText != null) {
 
                 // clear the currently selected state, ignore highlighted.
-                currentPage.getViewText().clearSelected();
+                pageText.clearSelected();
 
                 // get page transform, same for all calculations
                 AffineTransform pageTransform = currentPage.getPageTransform(
@@ -601,97 +683,25 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 Point2D.Float pageMouseLocation =
                         convertMouseToPageSpace(mouseLocation, pageTransform);
                 ArrayList<LineText> pageLines = pageText.getPageLines();
-                for (LineText pageLine : pageLines) {
-                    // check for containment, if so break into words.
-                    if (pageLine.getBounds().contains(pageMouseLocation)) {
-                        pageLine.selectAll();
+                if (pageLines != null) {
+                    for (LineText pageLine : pageLines) {
+                        // check for containment, if so break into words.
+                        if (pageLine.getBounds().contains(pageMouseLocation)) {
+                            pageLine.selectAll();
 
-                        // let the ri know we have selected text.
-                        documentViewModel.addSelectedPageText(pageViewComponent);
-                        documentViewController.firePropertyChange(
-                                PropertyConstants.TEXT_SELECTED,
-                                null, null);
+                            // let the ri know we have selected text.
+                            documentViewModel.addSelectedPageText(pageViewComponent);
+                            documentViewController.firePropertyChange(
+                                    PropertyConstants.TEXT_SELECTED,
+                                    null, null);
 
-                        pageViewComponent.repaint();
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Utility for painting the highlight and selected
-     *
-     * @param g graphics to paint to.
-     */
-    public static void paintSelectedText(Graphics g,
-                                         AbstractPageViewComponent pageViewComponent,
-                                         DocumentViewModel documentViewModel) {
-        // ready outline paint
-        Graphics2D gg = (Graphics2D) g;
-        AffineTransform prePaintTransform = gg.getTransform();
-        Color oldColor = gg.getColor();
-        Stroke oldStroke = gg.getStroke();
-        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                selectionAlpha));
-        gg.setColor(selectionColor);
-        gg.setStroke(new BasicStroke(1.0f));
-
-        Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null && currentPage.isInitiated()) {
-            PageText pageText = currentPage.getViewText();
-            if (pageText != null) {
-                // get page transformation
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        documentViewModel.getPageBoundary(),
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
-                // paint the sprites
-                GeneralPath textPath;
-                for (LineText lineText : pageText.getPageLines()) {
-                    for (WordText wordText : lineText.getWords()) {
-                        // paint whole word
-                        if (wordText.isSelected() || wordText.isHighlighted()) {
-                            textPath = new GeneralPath(wordText.getBounds());
-                            textPath.transform(pageTransform);
-                            // paint highlight over any selected
-                            if (wordText.isSelected()) {
-                                gg.setColor(selectionColor);
-                                gg.fill(textPath);
-                            }
-                            if (wordText.isHighlighted()) {
-                                gg.setColor(highlightColor);
-                                gg.fill(textPath);
-                            }
-                        }
-                        // check children
-                        else {
-                            for (GlyphText glyph : wordText.getGlyphs()) {
-                                if (glyph.isSelected()) {
-                                    textPath = new GeneralPath(glyph.getBounds());
-                                    textPath.transform(pageTransform);
-                                    gg.setColor(selectionColor);
-                                    gg.fill(textPath);
-                                }
-                            }
+                            pageViewComponent.repaint();
+                            break;
                         }
                     }
                 }
             }
         }
-
-        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                1.0f));
-
-        // restore graphics state to where we left it. 
-        gg.setTransform(prePaintTransform);
-        gg.setStroke(oldStroke);
-        gg.setColor(oldColor);
-
-        // paint words for bounds test.
-//        paintTextBounds(g);
-
     }
 
     public void installTool() {
@@ -719,31 +729,35 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         g.setColor(Color.red);
 
         PageText pageText = currentPage.getViewText();
-        ArrayList<LineText> pageLines = pageText.getPageLines();
-        for (LineText lineText : pageLines) {
+        if (pageText != null) {
+            ArrayList<LineText> pageLines = pageText.getPageLines();
+            if (pageLines != null) {
+                for (LineText lineText : pageLines) {
 
-            for (WordText wordText : lineText.getWords()) {
-                for (GlyphText glyph : wordText.getGlyphs()) {
-                    g.setColor(Color.black);
+                    for (WordText wordText : lineText.getWords()) {
+                        for (GlyphText glyph : wordText.getGlyphs()) {
+                            g.setColor(Color.black);
+                            GeneralPath glyphSpritePath =
+                                    new GeneralPath(glyph.getBounds());
+                            glyphSpritePath.transform(pageTransform);
+                            gg.draw(glyphSpritePath);
+                        }
+
+                        //                if (!wordText.isWhiteSpace()) {
+                        //                    g.setColor(Color.blue);
+                        //                    GeneralPath glyphSpritePath =
+                        //                            new GeneralPath(wordText.getBounds());
+                        //                    glyphSpritePath.transform(pageTransform);
+                        //                    gg.draw(glyphSpritePath);
+                        //                }
+                    }
+                    g.setColor(Color.red);
                     GeneralPath glyphSpritePath =
-                            new GeneralPath(glyph.getBounds());
+                            new GeneralPath(lineText.getBounds());
                     glyphSpritePath.transform(pageTransform);
                     gg.draw(glyphSpritePath);
                 }
-
-//                if (!wordText.isWhiteSpace()) {
-//                    g.setColor(Color.blue);
-//                    GeneralPath glyphSpritePath =
-//                            new GeneralPath(wordText.getBounds());
-//                    glyphSpritePath.transform(pageTransform);
-//                    gg.draw(glyphSpritePath);
-//                }
             }
-            g.setColor(Color.red);
-            GeneralPath glyphSpritePath =
-                    new GeneralPath(lineText.getBounds());
-            glyphSpritePath.transform(pageTransform);
-            gg.draw(glyphSpritePath);
         }
         g.setColor(oldColor);
     }

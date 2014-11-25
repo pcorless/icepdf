@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -24,6 +24,8 @@ import java.awt.*;
  */
 public class ScalableJScrollPane extends JScrollPane implements ScalableField {
 
+
+    private static final long serialVersionUID = -7748761572295520052L;
     private boolean active;
 
     public ScalableJScrollPane(Component view) {

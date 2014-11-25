@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -31,6 +31,7 @@ import java.util.ResourceBundle;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial")
 public class DocumentInformationDialog extends JDialog {
 
     // layouts constraint
@@ -108,28 +109,28 @@ public class DocumentInformationDialog extends JDialog {
 
         // add labels
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.title.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.title.label")),
                 0, 0, 1, 1);
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.subject.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.subject.label")),
                 0, 1, 1, 1);
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.author.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.author.label")),
                 0, 2, 1, 1);
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.keywords.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.keywords.label")),
                 0, 3, 1, 1);
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.creator.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.creator.label")),
                 0, 4, 1, 1);
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.producer.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.producer.label")),
                 0, 5, 1, 1);
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.created.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.created.label")),
                 0, 6, 1, 1);
         addGB(permissionsPanel, new JLabel(
-                messageBundle.getString("viewer.dialog.documentInformation.modified.label")),
+                        messageBundle.getString("viewer.dialog.documentInformation.modified.label")),
                 0, 7, 1, 1);
         constraints.insets = new Insets(15, 5, 5, 5);
         constraints.anchor = GridBagConstraints.CENTER;

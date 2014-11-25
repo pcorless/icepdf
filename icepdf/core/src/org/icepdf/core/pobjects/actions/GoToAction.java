@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -49,6 +49,15 @@ public class GoToAction extends Action {
     }
 
     /**
+     * Gets the Destination object which the "GoTo" action should jump to.
+     *
+     * @return Destination object specified in the action.
+     */
+    public Destination getDestination() {
+        return destination;
+    }
+
+    /**
      * Set the destination and adds the new data to the action's dictionary
      *
      * @param destination new destionat, replace old values.
@@ -56,15 +65,6 @@ public class GoToAction extends Action {
     public void setDestination(Destination destination) {
         entries.put(DESTINATION_KEY, destination.getObject());
         this.destination = destination;
-    }
-
-    /**
-     * Gets the Destination object which the "GoTo" action should jump to.
-     *
-     * @return Destination object specified in the action.
-     */
-    public Destination getDestination() {
-        return destination;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -109,18 +109,12 @@ public class ChoiceFieldDictionary extends FieldDictionary {
      * value is not committed until the user exits the field.
      */
     public static final int COMMIT_ON_SEL_CHANGE_BIT_FLAG = 0x4000000;
-
-    public enum ChoiceFieldType {
-        CHOICE_COMBO, CHOICE_EDITABLE_COMBO,
-        CHOICE_LIST_SINGLE_SELECT, CHOICE_LIST_MULTIPLE_SELECT
-    }
-
     protected ChoiceFieldType choiceFieldType;
-
     protected ArrayList<ChoiceOption> options;
     protected int topIndex;
     protected int[] indexes;
 
+    @SuppressWarnings("unchecked")
     public ChoiceFieldDictionary(Library library, HashMap entries) {
         super(library, entries);
 
@@ -191,8 +185,16 @@ public class ChoiceFieldDictionary extends FieldDictionary {
         return topIndex;
     }
 
+    public void setTopIndex(int topIndex) {
+        this.topIndex = topIndex;
+    }
+
     public int[] getIndexes() {
         return indexes;
+    }
+
+    public void setIndexes(int[] indexes) {
+        this.indexes = indexes;
     }
 
     public ChoiceFieldType getChoiceFieldType() {
@@ -203,12 +205,9 @@ public class ChoiceFieldDictionary extends FieldDictionary {
         return options;
     }
 
-    public void setIndexes(int[] indexes) {
-        this.indexes = indexes;
-    }
-
-    public void setTopIndex(int topIndex) {
-        this.topIndex = topIndex;
+    public enum ChoiceFieldType {
+        CHOICE_COMBO, CHOICE_EDITABLE_COMBO,
+        CHOICE_LIST_SINGLE_SELECT, CHOICE_LIST_MULTIPLE_SELECT
     }
 
     public class ChoiceOption {

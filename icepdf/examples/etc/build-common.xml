@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2006-2013 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2014 ICEsoft Technologies Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
@@ -93,9 +93,9 @@
 
             <javac destdir="${build.classes.dir}" sourcepath="" encoding="UTF-8"
                    source="${compile.source}" target="${compile.target}"
+                   includeantruntime="false"
                    debug="${compile.debug}" failonerror="@{failonerror}">
-                <compilerarg value="-Xlint:unchecked"/>
-                <compilerarg line="-XDignore.symbol.file" compiler="modern"/>
+                <compilerarg value="-Xlint"/>
                 <src location="${src.dir}"/>
                 <include name="**/*.java"/>
                 <exclude name="@{src.javac.excludes}"/>
@@ -127,7 +127,7 @@
                         <attribute name="Implementation-Title"
                                    value="${product}"/>
                         <attribute name="Implementation-Version"
-                                   value="${release.type} ${version.primary}.${version.secondary}.${version.tertiary}_${build.number} (${buildtime})"/>
+                                   value="${release.type} ${version.primary}.${version.secondary}.${version.tertiary}_${build.number}"/>
                         <attribute name="Implementation-Vendor"
                                    value="${company}"/>
                     </section>

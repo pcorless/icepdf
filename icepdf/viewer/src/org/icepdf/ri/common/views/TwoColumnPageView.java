@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -33,6 +33,7 @@ import java.awt.event.MouseEvent;
  *
  * @since 2.5
  */
+@SuppressWarnings("serial")
 public class TwoColumnPageView extends AbstractDocumentView {
 
     protected JScrollPane documentScrollpane;

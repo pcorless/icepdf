@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -114,7 +114,7 @@ public class PTrailer extends Dictionary {
      * not be an indirect reference)
      *
      * @return byte offset from beginning of the file to the beginning of the
-     *         previous cross-reference section
+     * previous cross-reference section
      */
     public long getPrev() {
         return library.getLong(entries, PREV_KEY);
@@ -168,6 +168,7 @@ public class PTrailer extends Dictionary {
      *
      * @return Catalog entry.
      */
+    @SuppressWarnings("unchecked")
     public Catalog getRootCatalog() {
         Object tmp = library.getObject(entries, ROOT_KEY);
         // specification states the the root entry must be a indirect
@@ -177,7 +178,7 @@ public class PTrailer extends Dictionary {
         // there are however a few instances where the dictionary is specified
         // directly
         else if (tmp instanceof HashMap) {
-            return new Catalog(library, (HashMap) tmp);
+            return new Catalog(library, (HashMap<Object, Object>) tmp);
         }
         // if no root was found we return so that the use will be notified
         // of the problem which is the PDF can not be loaded.
@@ -193,7 +194,8 @@ public class PTrailer extends Dictionary {
      *
      * @return encryption dictionary
      */
-    public HashMap getEncrypt() {
+    @SuppressWarnings("unchecked")
+    public HashMap<Object, Object> getEncrypt() {
         Object encryptParams = library.getObject(entries, ENCRYPT_KEY);
         if (encryptParams instanceof HashMap) {
             return (HashMap) encryptParams;
@@ -249,6 +251,7 @@ public class PTrailer extends Dictionary {
      *
      * @param nextTrailer document trailer object
      */
+    @SuppressWarnings("unchecked")
     protected void addNextTrailer(PTrailer nextTrailer) {
         nextTrailer.getPrimaryCrossReference().addToEndOfChainOfPreviousXRefs(getPrimaryCrossReference());
 
@@ -264,6 +267,7 @@ public class PTrailer extends Dictionary {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected void addPreviousTrailer(PTrailer previousTrailer) {
 //System.out.println("PTrailer.addPreviousTrailer()");
         getPrimaryCrossReference().addToEndOfChainOfPreviousXRefs(previousTrailer.getPrimaryCrossReference());

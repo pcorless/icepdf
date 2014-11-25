@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -51,6 +51,7 @@ public class DeviceN extends PColorSpace {
 
     boolean foundCMYK;
 
+    @SuppressWarnings("unchecked")
     DeviceN(Library l, HashMap h, Object o1, Object o2, Object o3, Object o4) {
         super(l, h);
         names = (java.util.List) o1;
@@ -115,29 +116,33 @@ public class DeviceN extends PColorSpace {
                 f2[3] = i < f.length ? f[i] : 0;
             }
         }
+        if (f.length != 4) {
+            f2 = reverse(f2);
+        }
         return f2;
     }
 
 
     public Color getColor(float[] f, boolean fillAndStroke) {
         // calculate cmyk color
-        if (foundCMYK) {
-            if (f.length <= 4) {
-                f = assignCMYK(f);
-                return new DeviceCMYK(null, null).getColor(reverse(f));
-            }
+        if (foundCMYK && (f.length == 4)) {
+            f = assignCMYK(f);
+            return new DeviceCMYK(null, null).getColor((f));
+        } else if (foundCMYK && (f.length == 3)) {
+            f = assignCMYK(reverse(f));
+            return new DeviceCMYK(null, null).getColor((f));
         }
         // check order, mainly look for length > 1 and black not at the end
         // assumption on a few corner cases is that we are looking for cmyk ordering
         // and thus black last.
-        if (f.length > 4 && names.size() > 4) {
-            String name = names.get(names.size() - 1).getName().toLowerCase();
-            if (!name.startsWith("b")) {
-                f = reverse(f);
-            }
-        }
+//        if (f.length > 4 && names.size() > 4) {
+//            String name = names.get(names.size() - 1).getName().toLowerCase();
+//            if (!name.startsWith("b")) {
+//                f = reverse(f);
+//            }
+//        }
         // otherwise use the alternative colour space.
-        float y[] = tintTransform.calculate((f));
+        float y[] = tintTransform.calculate(reverse(f));
         return alternate.getColor(reverse(y));
     }
 }

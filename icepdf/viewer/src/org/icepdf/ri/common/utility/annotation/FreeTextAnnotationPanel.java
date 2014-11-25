@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -36,17 +36,17 @@ import java.awt.event.ItemListener;
  *
  * @since 5.0
  */
+@SuppressWarnings("serial")
 public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
         ActionListener {
-
-    // default list values.
-    private static final int DEFAULT_FONT_SIZE = 5;
-    private static final int DEFAULT_FONT_FAMILY = 0;
-    private static final Color DEFAULT_FONT_COLOR = Color.DARK_GRAY;
 
     public static final int DEFAULT_STROKE_THICKNESS_STYLE = 0;
     public static final int DEFAULT_STROKE_STYLE = 0;
     public static final int DEFAULT_FILL_STYLE = 0;
+    // default list values.
+    private static final int DEFAULT_FONT_SIZE = 5;
+    private static final int DEFAULT_FONT_FAMILY = 0;
+    private static final Color DEFAULT_FONT_COLOR = Color.DARK_GRAY;
     private static final Color DEFAULT_BORDER_COLOR = Color.LIGHT_GRAY;
     private static final Color DEFAULT_STROKE_COLOR = new Color(1, 1, 1);
 

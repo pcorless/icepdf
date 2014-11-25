@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -184,7 +184,7 @@ public class ColorUtil {
      *
      * @param name know colour name to be converted
      * @return name of converted string, the same name is returned if their was
-     *         a conversion failure.
+     * a conversion failure.
      */
     public static final String convertColorNameToRGB(String name) {
         int c = convertNamedColor(name.toLowerCase());
@@ -207,7 +207,7 @@ public class ColorUtil {
      *
      * @param color know colour to be converted
      * @return name of converted string, the same name is returned if their was
-     *         a conversion failure.
+     * a conversion failure.
      */
     public static final String convertColorToRGB(Color color) {
         int c = color.getRGB();
@@ -241,7 +241,7 @@ public class ColorUtil {
      *
      * @param name name of colour to convert.
      * @return integer >= 0 if named colour was converted successfully, -1
-     *         otherwise.
+     * otherwise.
      */
     public static final int convertNamedColor(String name) {
         int index = getDefaultColorIndex(name);

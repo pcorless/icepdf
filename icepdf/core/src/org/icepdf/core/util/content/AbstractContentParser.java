@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -32,6 +32,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,20 +43,24 @@ import java.util.logging.Logger;
  * @since 5.0
  */
 public abstract class AbstractContentParser implements ContentParser {
+    public static final float OVERPAINT_ALPHA = 0.4f;
     private static final Logger logger =
             Logger.getLogger(AbstractContentParser.class.toString());
-
     private static boolean disableTransparencyGroups;
-
+    private static boolean enabledOverPrint;
     static {
         // decide if large images will be scaled
         disableTransparencyGroups =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableTransparencyGroup",
                         false);
 
+        // decide if basic over print support will be enabled.
+        enabledOverPrint =
+                Defs.sysPropertyBoolean("org.icepdf.core.enabledOverPrint",
+                        true);
     }
-
-    public static final float OVERPAINT_ALPHA = 0.4f;
+    private static ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private static NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     protected GraphicsState graphicState;
     protected Library library;
@@ -77,6 +82,13 @@ public abstract class AbstractContentParser implements ContentParser {
     // the text base affine transform must be accessible outside the parsTtext method
     protected AffineTransform textBlockBase;
 
+    // when parsing a type3 font we need to keep track of the the scale factor
+    // of the device space ctm.
+    protected float glyph2UserSpaceScale = 1.0f;
+
+    // xObject image count;
+    protected AtomicInteger imageIndex = new AtomicInteger(1);
+
     // stack to help with the parse
     protected Stack<Object> stack = new Stack<Object>();
 
@@ -88,68 +100,6 @@ public abstract class AbstractContentParser implements ContentParser {
         library = l;
         resources = r;
     }
-
-    /**
-     * Returns the Shapes that have accumulated turing multiple calls to
-     * parse().
-     *
-     * @return resultant shapes object of all processed content streams.
-     */
-    public Shapes getShapes() {
-        shapes.contract();
-        return shapes;
-    }
-
-    /**
-     * Returns the stack of object used to parse content streams. If parse
-     * was successful the stack should be empty.
-     *
-     * @return stack of objects accumulated during a cotent stream parse.
-     */
-    public Stack<Object> getStack() {
-        return stack;
-    }
-
-    /**
-     * Returns the current graphics state object being used by this content
-     * stream.
-     *
-     * @return current graphics context of content stream.  May be null if
-     *         parse method has not been previously called.
-     */
-    public GraphicsState getGraphicsState() {
-        return graphicState;
-    }
-
-    /**
-     * Sets the graphics state object which will be used for the current content
-     * parsing.  This method must be called before the parse method is called
-     * otherwise it will not have an effect on the state of the draw operands.
-     *
-     * @param graphicState graphics state of this content stream
-     */
-    public void setGraphicsState(GraphicsState graphicState) {
-        this.graphicState = graphicState;
-    }
-
-    /**
-     * Parse a pages content stream.
-     *
-     * @param streamBytes byte stream containing page content
-     * @return a Shapes Object containing all the pages text and images shapes.
-     * @throws InterruptedException if current parse thread is interrupted.
-     * @throws java.io.IOException  unexpected end of content stream.
-     */
-    public abstract ContentParser parse(byte[][] streamBytes)
-            throws InterruptedException, IOException;
-
-    /**
-     * Specialized method for extracting text from documents.
-     *
-     * @param source content stream source.
-     * @return vector where each entry is the text extracted from a text block.
-     */
-    public abstract Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException;
 
     protected static void consume_G(GraphicsState graphicState, Stack stack,
                                     Library library) {
@@ -326,7 +276,6 @@ public abstract class AbstractContentParser implements ContentParser {
         }
     }
 
-
     protected static void consume_sc(GraphicsState graphicState, Stack stack,
                                      Library library, Resources resources, boolean isTint) {
         Object o = null;
@@ -388,7 +337,9 @@ public abstract class AbstractContentParser implements ContentParser {
             // peek and then pop until a none Float is found
             int nCount = 0;
             // set colour to max of 4 which is cymk,
-            int compLength = 4;
+            // we have a corner case where 5 components are defined and once
+            // pushed throw the function produce a valid color.
+            int compLength = 5;
             float colour[] = new float[compLength];
             // peek and pop all of the colour floats
             while (!stack.isEmpty() && stack.peek() instanceof Number &&
@@ -406,28 +357,12 @@ public abstract class AbstractContentParser implements ContentParser {
             // shrink the array to the correct length
             float[] f = new float[nCount];
             System.arraycopy(colour, 0, f, 0, nCount);
-            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, isTint));
+            graphicState.setFillColor(graphicState.getFillColorSpace().getColor(f, true));
         }
     }
 
     protected static GraphicsState consume_q(GraphicsState graphicState) {
         return graphicState.save();
-    }
-
-    protected GraphicsState consume_Q(GraphicsState graphicState, Shapes shapes) {
-        GraphicsState gs1 = graphicState.restore();
-        // point returned stack
-        if (gs1 != null) {
-            graphicState = gs1;
-        }
-        // otherwise start a new stack
-        else {
-            graphicState = new GraphicsState(shapes);
-            graphicState.set(new AffineTransform());
-            shapes.add(new NoClipDrawCmd());
-        }
-
-        return graphicState;
     }
 
     protected static void consume_cm(GraphicsState graphicState, Stack stack,
@@ -501,7 +436,8 @@ public abstract class AbstractContentParser implements ContentParser {
      */
     protected static GraphicsState consume_Do(GraphicsState graphicState, Stack stack,
                                               Shapes shapes, Resources resources,
-                                              boolean viewParse) {
+                                              boolean viewParse, // events
+                                              AtomicInteger imageIndex, Page page) {
         Name xobjectName = (Name) stack.pop();
         // Form XObject
         if (resources != null && resources.isForm(xobjectName)) {
@@ -562,7 +498,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 } else {
                     shapes.add(new ShapeDrawCmd(formXObject.getBBox()));
                 }
-                shapes.add(new ClipDrawCmd());
+                shapes.add(clipDrawCmd);
                 // 4.) Paint the graphics objects in font stream.
                 setAlpha(shapes, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
@@ -570,9 +506,12 @@ public abstract class AbstractContentParser implements ContentParser {
                 // slightly different then a regular xObject as we
                 // need to capture the alpha which is only possible
                 // by paint the xObject to an image.
-                if (!disableTransparencyGroups &&
+                if ((!disableTransparencyGroups ||
+                        (formXObject.getGraphicsState() != null &&
+                                formXObject.getGraphicsState().getSoftMask() != null)) &&
                         formXObject.isTransparencyGroup() &&
-                        graphicState.getFillAlpha() < 1.0f &&
+//                        graphicState.getFillAlpha() < 1.0f &&
+                        // limit size, as buffer is needed
                         (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
                                 formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
                     // add the hold form for further processing.
@@ -593,8 +532,11 @@ public abstract class AbstractContentParser implements ContentParser {
                             .applyXObjectTransform(graphicState.getCTM());
                     // add the text to the current shapes for extraction and
                     // selection purposes.
-                    shapes.getPageText().addPageLines(
-                            formXObject.getShapes().getPageText().getPageLines());
+                    PageText pageText = formXObject.getShapes().getPageText();
+                    if (pageText != null && pageText.getPageLines() != null) {
+                        shapes.getPageText().addPageLines(
+                                pageText.getPageLines());
+                    }
                 }
                 shapes.add(new NoClipDrawCmd());
             }
@@ -621,7 +563,9 @@ public abstract class AbstractContentParser implements ContentParser {
 
                 // create an ImageReference for future decoding
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
-                        imageStream, resources, graphicState.getFillColor());
+                        imageStream, resources, graphicState.getFillColor(),
+                        imageIndex.get(), page);
+                imageIndex.incrementAndGet();
 
                 if (imageReference != null) {
                     AffineTransform af =
@@ -703,9 +647,14 @@ public abstract class AbstractContentParser implements ContentParser {
         setStroke(shapes, graphicState);
     }
 
-    protected static void consume_w(GraphicsState graphicState, Stack stack, Shapes shapes) {
-        graphicState.setLineWidth(((Number) stack.pop()).floatValue());
-        setStroke(shapes, graphicState);
+    protected static void consume_w(GraphicsState graphicState, Stack stack,
+                                    Shapes shapes, float glyph2UserSpaceScale) {
+        // apply any type3 font scalling which is set via the glyph2User space affine transform.
+        if (!stack.isEmpty()) {
+            float scale = ((Number) stack.pop()).floatValue() * glyph2UserSpaceScale;
+            graphicState.setLineWidth(scale);
+            setStroke(shapes, graphicState);
+        }
     }
 
     protected static void consume_M(GraphicsState graphicState, Stack stack, Shapes shapes) {
@@ -737,28 +686,44 @@ public abstract class AbstractContentParser implements ContentParser {
                 graphicState.getTextState().font.getFont() == null) {
             // turn on the old awt font engine, as we have a null font
             FontFactory fontFactory = FontFactory.getInstance();
-            boolean awtState = fontFactory.isAwtFontSubstitution();
-            fontFactory.setAwtFontSubstitution(true);
-            // get the first pages resources, no need to lock the page, already locked.
-            Resources res = resources.getLibrary().getCatalog().getPageTree()
-                    .getPage(0).getResources();
-            // try and get a font off the first page.
-            Object pageFonts = res.getEntries().get(Resources.FONT_KEY);
-            if (pageFonts instanceof HashMap) {
-                // get first font
-                Reference fontRef = (Reference) ((HashMap) pageFonts).get(name2);
-                graphicState.getTextState().font =
-                        (org.icepdf.core.pobjects.fonts.Font) resources.getLibrary()
-                                .getObject(fontRef);
-                // might get a null pointer but we'll get on on deriveFont too
-                graphicState.getTextState().font.init();
+//            boolean awtState = fontFactory.isAwtFontSubstitution();
+//            fontFactory.setAwtFontSubstitution(true);
+            try {
+                // this should almost never happen but of course we have a few
+                // corner cases:
+                // get the first pages resources, no need to lock the page, already locked.
+                Page page = resources.getLibrary().getCatalog().getPageTree().getPage(0);
+                // make sure page resources are available.
+//                while(!page.isInitiated()){
+//                    Thread.currentThread().wait(100);
+//                }
+                page.init();
+                Resources res = page.getResources();
+                // try and get a font off the first page.
+                Object pageFonts = res.getEntries().get(Resources.FONT_KEY);
+                if (pageFonts instanceof HashMap) {
+                    // get first font
+                    Reference fontRef = (Reference) ((HashMap) pageFonts).get(name2);
+                    if (fontRef != null) {
+                        graphicState.getTextState().font =
+                                (org.icepdf.core.pobjects.fonts.Font) resources.getLibrary()
+                                        .getObject(fontRef);
+                        graphicState.getTextState().font.init();
+                    }
+                }
+            } catch (Throwable throwable) {
+                // keep block protected as we don't want to accidentally turn off
+                // the font engine.
+                logger.warning("Warning could not find font by named resource " + name2);
             }
             // return factory to original state.
-            fontFactory.setAwtFontSubstitution(awtState);
+//            fontFactory.setAwtFontSubstitution(awtState);
             // if no fonts found then we just bail and accept the null pointer
         }
-        graphicState.getTextState().currentfont =
-                graphicState.getTextState().font.getFont().deriveFont(size);
+        if (graphicState.getTextState().font != null) {
+            graphicState.getTextState().currentfont =
+                    graphicState.getTextState().font.getFont().deriveFont(size);
+        }
     }
 
     protected static void consume_Tc(GraphicsState graphicState, Stack stack) {
@@ -804,19 +769,6 @@ public abstract class AbstractContentParser implements ContentParser {
         if (textMetrics.isYstart()) {
             textMetrics.setyBTStart(tm[5]);
             textMetrics.setYstart(false);
-            if (previousBTStart != textMetrics.getyBTStart()) {
-                pageText.newLine(oCGs);
-            }
-        }
-        double newTransY = graphicState.getCTM().getTranslateY();
-        double newScaleY = graphicState.getCTM().getScaleY();
-        // f5 and f6 will dictate a horizontal or vertical shift
-        // this information could be used to detect new lines
-
-        if (Math.round(oldTransY) != Math.round(newTransY)) {
-            pageText.newLine(oCGs);
-        } else if (Math.abs(oldScaleY) != Math.abs(newScaleY)) {
-            pageText.newLine(oCGs);
         }
 
     }
@@ -851,11 +803,6 @@ public abstract class AbstractContentParser implements ContentParser {
             textMetrics.setyBTStart(y);
             textMetrics.setYstart(false);
         }
-        // ty will dictate the vertical shift, many pdf will use
-        // ty=0 do just do a horizontal shift for layout.
-        if (y != 0f) {
-            pageText.newLine(oCGs);
-        }
     }
 
     protected static void consume_double_quote(GraphicsState graphicState, Stack stack,
@@ -878,8 +825,8 @@ public abstract class AbstractContentParser implements ContentParser {
 
         AffineTransform tmp = applyTextScaling(graphicState);
         drawString(stringObject.getLiteralStringBuffer(
-                textState.font.getSubTypeFormat(),
-                textState.font.getFont()),
+                        textState.font.getSubTypeFormat(),
+                        textState.font.getFont()),
                 textMetrics, graphicState.getTextState(),
                 shapes, glyphOutlineClip, graphicState, oCGs);
         graphicState.set(tmp);
@@ -919,15 +866,6 @@ public abstract class AbstractContentParser implements ContentParser {
         if (textMetrics.isYstart()) {
             textMetrics.setyBTStart(newY);
             textMetrics.setYstart(false);
-            if (previousBTStart != textMetrics.getyBTStart()) {
-                pageText.newLine(oCGs);
-            }
-        }
-
-        // ty will dictate the vertical shift, many pdf will use
-        // ty=0 do just do a horizontal shift for layout.
-        if (y != 0 && Math.round(newY) != Math.round(oldY)) {
-            pageText.newLine(oCGs);
         }
     }
 
@@ -980,16 +918,18 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static GeneralPath consume_c(Stack stack,
                                            GeneralPath geometricPath) {
-        float y3 = ((Number) stack.pop()).floatValue();
-        float x3 = ((Number) stack.pop()).floatValue();
-        float y2 = ((Number) stack.pop()).floatValue();
-        float x2 = ((Number) stack.pop()).floatValue();
-        float y1 = ((Number) stack.pop()).floatValue();
-        float x1 = ((Number) stack.pop()).floatValue();
-        if (geometricPath == null) {
-            geometricPath = new GeneralPath();
+        if (!stack.isEmpty()) {
+            float y3 = ((Number) stack.pop()).floatValue();
+            float x3 = ((Number) stack.pop()).floatValue();
+            float y2 = ((Number) stack.pop()).floatValue();
+            float x2 = ((Number) stack.pop()).floatValue();
+            float y1 = ((Number) stack.pop()).floatValue();
+            float x1 = ((Number) stack.pop()).floatValue();
+            if (geometricPath == null) {
+                geometricPath = new GeneralPath();
+            }
+            geometricPath.curveTo(x1, y1, x2, y2, x3, y3);
         }
-        geometricPath.curveTo(x1, y1, x2, y2, x3, y3);
         return geometricPath;
     }
 
@@ -1314,6 +1254,16 @@ public abstract class AbstractContentParser implements ContentParser {
                 shapes.add(new PaintDrawCmd(pattern.getPaint()));
                 shapes.add(new ShapeDrawCmd(graphicState.getClip()));
                 shapes.add(new FillDrawCmd());
+            } else {
+                // apply the current fill color along ith a little alpha
+                // to at least try to paint a colour for an unsupported mesh
+                // type pattern.
+                setAlpha(shapes,
+                        graphicState.getAlphaRule(),
+                        0.50f);
+                shapes.add(new PaintDrawCmd(graphicState.getFillColor()));
+                shapes.add(new ShapeDrawCmd(graphicState.getClip()));
+                shapes.add(new FillDrawCmd());
             }
         }
     }
@@ -1337,16 +1287,15 @@ public abstract class AbstractContentParser implements ContentParser {
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
                 drawString(stringObject.getLiteralStringBuffer(
-                        textState.font.getSubTypeFormat(),
-                        textState.font.getFont()),
+                                textState.font.getSubTypeFormat(),
+                                textState.font.getFont()),
                         textMetrics,
                         graphicState.getTextState(), shapes, glyphOutlineClip,
                         graphicState, oCGs);
             } else if (currentObject instanceof Number) {
                 f = (Number) currentObject;
-                textMetrics.getAdvance().x -=
-                        f.floatValue() * graphicState.getTextState().currentfont.getSize()
-                                / 1000.0;
+                textMetrics.getAdvance().x -= (f.floatValue() / 1000f) *
+                        graphicState.getTextState().currentfont.getSize();
             }
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
@@ -1370,8 +1319,8 @@ public abstract class AbstractContentParser implements ContentParser {
             setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
             // draw string will take care of text pageText construction
             drawString(stringObject.getLiteralStringBuffer(
-                    textState.font.getSubTypeFormat(),
-                    textState.font.getFont()),
+                            textState.font.getSubTypeFormat(),
+                            textState.font.getFont()),
                     textMetrics,
                     graphicState.getTextState(),
                     shapes,
@@ -1436,7 +1385,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
         // font metrics data
         float textRise = textState.trise;
-        float charcterSpace = textState.cspace * textState.hScalling;
+        float characterSpace = textState.cspace * textState.hScalling;
         float whiteSpace = textState.wspace * textState.hScalling;
         int textLength = displayText.length();
 
@@ -1463,9 +1412,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 currentX = advanceX + lastx;
                 currentY = lasty - textRise;
                 lastx += newAdvanceX;
-                // add the space between chars value
-                lastx += charcterSpace;
-                // lastly add space widths,
+                // store the pre Tc and Tw dimension.
+                textMetrics.setPreviousAdvance(lastx);
+                lastx += characterSpace;
+                // lastly add space widths, no funny corner case yet for this one.
                 if (displayText.charAt(i) == 32) { // currently to unreliable currentFont.getSpaceEchar()
                     lastx += whiteSpace;
                 }
@@ -1638,7 +1588,8 @@ public abstract class AbstractContentParser implements ContentParser {
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintStroking()) {
             setAlpha(shapes, graphicState.getAlphaRule(),
-                    commonOverPrintAlpha(graphicState.getStrokeAlpha()));
+                    commonOverPrintAlpha(graphicState.getStrokeAlpha(),
+                            graphicState.getStrokeColorSpace()));
         }
         // The knockout effect can only be achieved by changing the alpha
         // composite to source.  I don't have a test case for this for stroke
@@ -1696,7 +1647,7 @@ public abstract class AbstractContentParser implements ContentParser {
             shapes.add(new ShapeDrawCmd(geometricPath));
             shapes.add(new DrawDrawCmd());
         }
-        // set alpha back to origional value.
+        // set alpha back to original value.
         if (graphicState.isOverprintStroking()) {
             setAlpha(shapes, AlphaComposite.SRC_OVER, graphicState.getFillAlpha());
         }
@@ -1704,21 +1655,29 @@ public abstract class AbstractContentParser implements ContentParser {
 
     /**
      * Utility method for fudging overprinting calculation for screen
-     * representation.
+     * representation.  This feature is optional an off by default.
+     * <p/>
+     * Can be enable with -Dorg.icepdf.core.enabledOverPrint=true
      *
      * @param alpha alph constant
      * @return tweaked over printing alpha
      */
-    protected static float commonOverPrintAlpha(float alpha) {
-        // if alpha is already present we reduce it and we minimize
-        // it if it is already lower then our over paint.  This an approximation
-        // only for improved screen representation.
-        if (alpha != 1.0f && alpha > OVERPAINT_ALPHA) {
-            alpha -= OVERPAINT_ALPHA;
-        } else if (alpha < OVERPAINT_ALPHA) {
-//            alpha = 0.1f;
-        } else {
-            alpha = OVERPAINT_ALPHA;
+    protected static float commonOverPrintAlpha(float alpha, PColorSpace colorSpace) {
+        if (!enabledOverPrint) {
+            return alpha;
+        }
+        if (colorSpace instanceof DeviceN) {// || colorSpace instanceof Separation) {
+            // if alpha is already present we reduce it and we minimize
+            // it if it is already lower then our over paint.  This an approximation
+            // only for improved screen representation.
+            if (alpha != 1.0f && alpha > OVERPAINT_ALPHA) {
+                alpha -= OVERPAINT_ALPHA;
+            } else if (alpha < OVERPAINT_ALPHA) {
+                //            alpha = 0.1f;
+            } else {
+                alpha = OVERPAINT_ALPHA;
+            }
+            return alpha;
         }
         return alpha;
     }
@@ -1736,7 +1695,8 @@ public abstract class AbstractContentParser implements ContentParser {
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintOther()) {
             setAlpha(shapes, graphicState.getAlphaRule(),
-                    commonOverPrintAlpha(graphicState.getFillAlpha()));
+                    commonOverPrintAlpha(graphicState.getFillAlpha(),
+                            graphicState.getFillColorSpace()));
         }
         // The knockout effect can only be achieved by changing the alpha
         // composite to source.
@@ -1862,11 +1822,99 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param alpha  - alpha value, opaque = 1.0f.
      */
     protected static void setAlpha(Shapes shapes, int rule, float alpha) {
-        // Build the alpha composite object and add it to the shapes
-        AlphaComposite alphaComposite =
-                AlphaComposite.getInstance(rule,
-                        alpha);
-        shapes.add(new AlphaDrawCmd(alphaComposite));
+        // Build the alpha composite object and add it to the shapes but only
+        // if it hash changed.
+        if (shapes.getAlpha() != alpha || shapes.getRule() != rule) {
+            AlphaComposite alphaComposite =
+                    AlphaComposite.getInstance(rule,
+                            alpha);
+            shapes.add(new AlphaDrawCmd(alphaComposite));
+            shapes.setAlpha(alpha);
+            shapes.setRule(rule);
+        }
     }
+
+    /**
+     * Returns the Shapes that have accumulated turing multiple calls to
+     * parse().
+     *
+     * @return resultant shapes object of all processed content streams.
+     */
+    public Shapes getShapes() {
+        shapes.contract();
+        return shapes;
+    }
+
+    /**
+     * Returns the stack of object used to parse content streams. If parse
+     * was successful the stack should be empty.
+     *
+     * @return stack of objects accumulated during a cotent stream parse.
+     */
+    public Stack<Object> getStack() {
+        return stack;
+    }
+
+    /**
+     * Returns the current graphics state object being used by this content
+     * stream.
+     *
+     * @return current graphics context of content stream.  May be null if
+     * parse method has not been previously called.
+     */
+    public GraphicsState getGraphicsState() {
+        return graphicState;
+    }
+
+    /**
+     * Sets the graphics state object which will be used for the current content
+     * parsing.  This method must be called before the parse method is called
+     * otherwise it will not have an effect on the state of the draw operands.
+     *
+     * @param graphicState graphics state of this content stream
+     */
+    public void setGraphicsState(GraphicsState graphicState) {
+        this.graphicState = graphicState;
+    }
+
+    /**
+     * Parse a pages content stream.
+     *
+     * @param streamBytes byte stream containing page content
+     * @return a Shapes Object containing all the pages text and images shapes.
+     * @throws InterruptedException if current parse thread is interrupted.
+     * @throws java.io.IOException  unexpected end of content stream.
+     */
+    public abstract ContentParser parse(byte[][] streamBytes, Page page)
+            throws InterruptedException, IOException;
+
+    /**
+     * Specialized method for extracting text from documents.
+     *
+     * @param source content stream source.
+     * @return vector where each entry is the text extracted from a text block.
+     */
+    public abstract Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException;
+
+    protected GraphicsState consume_Q(GraphicsState graphicState, Shapes shapes) {
+        GraphicsState gs1 = graphicState.restore();
+        // point returned stack
+        if (gs1 != null) {
+            graphicState = gs1;
+        }
+        // otherwise start a new stack
+        else {
+            graphicState = new GraphicsState(shapes);
+            graphicState.set(new AffineTransform());
+            shapes.add(noClipDrawCmd);
+        }
+
+        return graphicState;
+    }
+
+    public void setGlyph2UserSpaceScale(float scale) {
+        glyph2UserSpaceScale = scale;
+    }
+
 }
 

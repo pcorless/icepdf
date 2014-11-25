@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -326,20 +326,15 @@ import java.util.logging.Logger;
 
 public abstract class Annotation extends Dictionary {
 
-    private static final Logger logger =
-            Logger.getLogger(Annotation.class.toString());
-
     public static final Name TYPE = new Name("Annot");
     public static final Name RESOURCES_VALUE = new Name("Resources");
     public static final Name BBOX_VALUE = new Name("BBox");
     public static final Name PARENT_KEY = new Name("Parent");
-
     /**
      * Dictionary constants for Annotations.
      */
 
     public static final Name TYPE_VALUE = new Name("Annot");
-
     /**
      * Annotation subtype and types.
      */
@@ -355,7 +350,6 @@ public abstract class Annotation extends Dictionary {
     public static final Name SUBTYPE_INK = new Name("Ink");
     public static final Name SUBTYPE_FREE_TEXT = new Name("FreeText");
     public static final Name SUBTYPE_TEXT = new Name("Text");
-
     /**
      * If set, do not display the annotation if it does not belong to one of the
      * standard annotation types and no annotation handler is available. If clear,
@@ -363,20 +357,17 @@ public abstract class Annotation extends Dictionary {
      * by its appearance dictionary, if any
      */
     public static final int FLAG_INVISIBLE = 0x0001;
-
     /**
      * If set, do not display or print the annotation or allow it to interact
      * with the user, regardless of its annotation type or whether an annotation
      * handler is available.
      */
     public static final int FLAG_HIDDEN = 0x0002;
-
     /**
      * If set, print the annotation when the page is printed. If clear, never
      * print the annotation, regardless of whether it is displayed on the screen.
      */
     public static final int FLAG_PRINT = 0x0004;
-
     /**
      * If set, do not scale the annotation’s appearance to match the magnification
      * of the page. The location of the annotation on the page (defined by the
@@ -385,7 +376,6 @@ public abstract class Annotation extends Dictionary {
      * this Table.
      */
     public static final int FLAG_NO_ZOOM = 0x0008;
-
     /**
      * If set, do not rotate the annotation’s appearance to match the rotation
      * of the page. The upper-left corner of the annotation rectangle shall
@@ -393,7 +383,6 @@ public abstract class Annotation extends Dictionary {
      * See further discussion following this Table.
      */
     public static final int FLAG_NO_ROTATE = 0x0010;
-
     /**
      * If set, do not display the annotation on the screen or allow it to interact
      * with the user. The annotation may be printed (depending on the setting of
@@ -401,7 +390,6 @@ public abstract class Annotation extends Dictionary {
      * display and user interaction.
      */
     public static final int FLAG_NO_VIEW = 0x0020;
-
     /**
      * If set, do not allow the annotation to interact with the user. The
      * annotation may be displayed or printed (depending on the settings of the
@@ -412,7 +400,6 @@ public abstract class Annotation extends Dictionary {
      * subsumed by the ReadOnly flag of the associated form field.
      */
     public static final int FLAG_READ_ONLY = 0x0040;
-
     /**
      * If set, do not allow the annotation to be deleted or its properties
      * (including position and size) to be modified by the user. However, this
@@ -420,84 +407,68 @@ public abstract class Annotation extends Dictionary {
      * value of a form field.
      */
     public static final int FLAG_LOCKED = 0x0080;
-
     /**
      * If set, invert the interpretation of the NoView flag for certain events.
      */
     public static final int FLAG_TOGGLE_NO_VIEW = 0x0100;
-
     /**
      * If set, do not allow the contents of the annotation to be modified by the
      * user. This flag does not restrict deletion of the annotation or changes
      * to other annotation properties, such as position and size.
      */
     public static final int FLAG_LOCKED_CONTENTS = 0x0200;
-
     /**
      * Border style
      */
     public static final Name BORDER_STYLE_KEY = new Name("BS");
-
     /**
      * The annotation location on the page in user space units.
      */
     public static final Name RECTANGLE_KEY = new Name("Rect");
-
     /**
      * The action to be performed whenteh annotation is activated.
      */
     public static final Name ACTION_KEY = new Name("A");
-
     /**
      * Page that this annotation is associated with.
      */
     public static final Name PARENT_PAGE_KEY = new Name("P");
-
     /**
      * Annotation border characteristics.
      */
     public static final Name BORDER_KEY = new Name("Border");
-
     /**
      * Annotation border characteristics.
      */
     public static final Name FLAG_KEY = new Name("F");
-
     /**
      * RGB colour value for background, titlebars and link annotation borders
      */
     public static final Name COLOR_KEY = new Name("C");
-
-
     /**
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page.
      */
     public static final Name APPEARANCE_STREAM_KEY = new Name("AP");
-
     /**
      * Appearance state selecting default from multiple AP's.
      */
     public static final Name APPEARANCE_STATE_KEY = new Name("AS");
-
     /**
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for normal display.
      */
     public static final Name APPEARANCE_STREAM_NORMAL_KEY = new Name("N");
-
     /**
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for rollover display.
      */
     public static final Name APPEARANCE_STREAM_ROLLOVER_KEY = new Name("R");
-
     /**
      * Appearance dictionary specifying how the annotation is presented
      * visually on the page for down display.
      */
     public static final Name APPEARANCE_STREAM_DOWN_KEY = new Name("D");
-
     /**
      * (Optional) Text that shall be displayed for the annotation or, if this
      * type of annotation does not display text, an alternate description of the
@@ -508,26 +479,17 @@ public abstract class Annotation extends Dictionary {
      * on the meaning of this entry for each annotation type.
      */
     public static final Name CONTENTS_KEY = new Name("Contents");
-
     /**
      * The date and time when the annotation was most recently modified. The
      * format should be a date string as described in 7.9.4, “Dates,” but
      * conforming readers shall accept and display a string in any format.
      */
     public static final Name M_KEY = new Name("M");
-
     /**
      * (Optional; PDF 1.4) The annotation name, a text string uniquely
      * identifying it among all the annotations on its page.
      */
     public static final Name NM_KEY = new Name("NM");
-
-    /**
-     * Debug flag to turn off appearance stream compression for easier
-     * human file reading.
-     */
-    protected static boolean compressAppearanceStream = true;
-
     /**
      * Border property indexes for the border vector,  only applicable
      * if the border style has not been set.
@@ -536,13 +498,18 @@ public abstract class Annotation extends Dictionary {
     public static final int BORDER_VERTICAL_CORNER_RADIUS = 1;
     public static final int BORDER_WIDTH = 2;
     public static final int BORDER_DASH = 3;
-
     /**
      * Annotion may or may not have a visible rectangle border
      */
     public static final int VISIBLE_RECTANGLE = 1;
     public static final int INVISIBLE_RECTANGLE = 0;
-
+    private static final Logger logger =
+            Logger.getLogger(Annotation.class.toString());
+    /**
+     * Debug flag to turn off appearance stream compression for easier
+     * human file reading.
+     */
+    protected static boolean compressAppearanceStream = true;
     protected HashMap<Name, Appearance> appearances = new HashMap<Name, Appearance>(3);
     protected Name currentAppearance;
 
@@ -569,6 +536,16 @@ public abstract class Annotation extends Dictionary {
     protected boolean canDrawBorder;
 
     /**
+     * Creates a new instance of an Annotation.
+     *
+     * @param l document library.
+     * @param h dictionary entries.
+     */
+    public Annotation(Library l, HashMap h) {
+        super(l, h);
+    }
+
+    /**
      * Should only be called from Parser,  Use AnnotationFactory if you
      * creating a new annotation.
      *
@@ -576,6 +553,7 @@ public abstract class Annotation extends Dictionary {
      * @param hashMap annotation properties.
      * @return annotation instance.
      */
+    @SuppressWarnings("unchecked")
     public static Annotation buildAnnotation(Library library, HashMap hashMap) {
         Annotation annot = null;
         Name subType = (Name) hashMap.get(SUBTYPE_KEY);
@@ -636,16 +614,11 @@ public abstract class Annotation extends Dictionary {
         return annot;
     }
 
-    /**
-     * Creates a new instance of an Annotation.
-     *
-     * @param l document library.
-     * @param h dictionary entries.
-     */
-    public Annotation(Library l, HashMap h) {
-        super(l, h);
+    public static void setCompressAppearanceStream(boolean compressAppearanceStream) {
+        Annotation.compressAppearanceStream = compressAppearanceStream;
     }
 
+    @SuppressWarnings("unchecked")
     public void init() {
         super.init();
         // type of Annotation
@@ -677,7 +650,7 @@ public abstract class Annotation extends Dictionary {
         // else build out a border style from the old B entry or create
         // a default invisible border.
         else {
-            HashMap borderMap = new HashMap();
+            HashMap<Name, Object> borderMap = new HashMap<Name, Object>();
             // get old school border
             Object borderObject = getObject(BORDER_KEY);
             if (borderObject != null && borderObject instanceof List) {
@@ -815,7 +788,6 @@ public abstract class Annotation extends Dictionary {
         this.subtype = subtype;
     }
 
-
     /**
      * Gets the annotation rectangle, and defines the location of the annotation on
      * the page in default user space units.
@@ -831,6 +803,18 @@ public abstract class Annotation extends Dictionary {
             }
         }
         return userSpaceRectangle;
+    }
+
+    /**
+     * Sets the users page rectangle for this annotation action instance
+     */
+    public void setUserSpaceRectangle(Rectangle2D.Float rect) {
+        if (userSpaceRectangle != null && rect != null) {
+            userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
+                    rect.width, rect.height);
+            entries.put(Annotation.RECTANGLE_KEY,
+                    PRectangle.getPRectangleVector(userSpaceRectangle));
+        }
     }
 
     public void setBBox(Rectangle bbox) {
@@ -868,19 +852,6 @@ public abstract class Annotation extends Dictionary {
         }
     }
 
-
-    /**
-     * Sets the users page rectangle for this annotation action instance
-     */
-    public void setUserSpaceRectangle(Rectangle2D.Float rect) {
-        if (userSpaceRectangle != null && rect != null) {
-            userSpaceRectangle = new Rectangle2D.Float(rect.x, rect.y,
-                    rect.width, rect.height);
-            getEntries().put(Annotation.RECTANGLE_KEY,
-                    PRectangle.getPRectangleVector(userSpaceRectangle));
-        }
-    }
-
     /**
      * Gets the action to be performed when the annotation is activated.
      * For compatibility with the old org.icepdf.core.pobjects.Annotation.getAction()
@@ -891,7 +862,7 @@ public abstract class Annotation extends Dictionary {
         Object tmp = library.getDictionary(entries, ACTION_KEY);
         // initial parse will likely have the action as a dictionary, so we
         // create the new action object on the fly.  However it is also possible
-        // that we are parsing an action that has no type specification and 
+        // that we are parsing an action that has no type specification and
         // thus we can't use the parser to create the new action.
         if (tmp != null && tmp instanceof HashMap) {
             Action action = Action.buildAction(library, (HashMap) tmp);
@@ -916,13 +887,13 @@ public abstract class Annotation extends Dictionary {
      * Adds the specified action to this annotation instance.  If the annotation
      * instance already has an action then this action replaces it.
      * <p/>
-     * todo: future enhancment add support of next/muliple action chains.
+     * todo: future enhancement add support of next/muliple action chains.
      *
      * @param action action to add to this annotation.  This action must
      *               be created using the the ActionFactory in order to correctly setup
      *               the Pobject reference.
      * @return action that was added to Annotation, null if it was not success
-     *         fully added.
+     * fully added.
      */
     public Action addAction(Action action) {
 
@@ -979,7 +950,7 @@ public abstract class Annotation extends Dictionary {
         // add the new action to the state manager.
         action.setNew(true);
         stateManager.addChange(new PObject(action, action.getPObjectReference()));
-        // add it to the library so we can get it again. 
+        // add it to the library so we can get it again.
         library.addObject(action, action.getPObjectReference());
 
         return action;
@@ -1008,7 +979,7 @@ public abstract class Annotation extends Dictionary {
                 // mark the action as changed.
                 stateManager.addChange(new PObject(currentAction,
                         currentAction.getPObjectReference()));
-                // mark the action as change.d 
+                // mark the action as change.d
                 stateManager.addChange(new PObject(this, getPObjectReference()));
                 return true;
             }
@@ -1069,15 +1040,16 @@ public abstract class Annotation extends Dictionary {
         return !getFlagLocked();
     }
 
+    public BorderStyle getBorderStyle() {
+        return borderStyle;
+    }
+
     public void setBorderStyle(BorderStyle borderStyle) {
         this.borderStyle = borderStyle;
         entries.put(Annotation.BORDER_STYLE_KEY, this.borderStyle);
     }
 
-    public BorderStyle getBorderStyle() {
-        return borderStyle;
-    }
-
+    @SuppressWarnings("unchecked")
     public List<Number> getBorder() {
         return border;
     }
@@ -1112,7 +1084,7 @@ public abstract class Annotation extends Dictionary {
      * border width > 0.
      *
      * @return VISIBLE_RECTANGLE if the annotation has a visible borde, otherwise
-     *         INVISIBLE_RECTANGLE
+     * INVISIBLE_RECTANGLE
      */
     public int getBorderType() {
         // border style has W value for border with
@@ -1546,7 +1518,7 @@ public abstract class Annotation extends Dictionary {
     /**
      * Sets the Annotation colour and underlying
      *
-     * @param color
+     * @param color new colour value
      */
     public void setColor(Color color) {
         this.color = new Color(color.getRGB());
@@ -1588,9 +1560,7 @@ public abstract class Annotation extends Dictionary {
         // Based off of the annotation flags' Invisible and Hidden values
         if (getFlagHidden())
             return false;
-        if (getFlagInvisible() && isSupportedAnnotationType())
-            return false;
-        return true;
+        return !(getFlagInvisible() && isSupportedAnnotationType());
     }
 
     /**
@@ -1760,9 +1730,5 @@ public abstract class Annotation extends Dictionary {
 
     public HashMap<Name, Appearance> getAppearances() {
         return appearances;
-    }
-
-    public static void setCompressAppearanceStream(boolean compressAppearanceStream) {
-        Annotation.compressAppearanceStream = compressAppearanceStream;
     }
 }

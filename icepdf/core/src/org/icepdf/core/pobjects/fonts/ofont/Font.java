@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2013 ICEsoft Technologies Inc.
+ * Copyright 2006-2014 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -36,9 +36,6 @@ import java.util.logging.Logger;
  */
 public class Font extends org.icepdf.core.pobjects.fonts.Font {
 
-    private static final Logger logger =
-            Logger.getLogger(Font.class.toString());
-
     public static final Name BASE_ENCODING_KEY = new Name("BaseEncoding");
     public static final Name ENCODING_KEY = new Name("Encoding");
     public static final Name TOUNICODE_KEY = new Name("ToUnicode");
@@ -53,43 +50,6 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
     public static final Name MACROMAN_ENCODING_KEY = new Name("MacRomanEncoding");
     public static final Name WINANSI_ENCODING_KEY = new Name("WinAnsiEncoding");
     public static final Name PDF_DOC_ENCODING_KEY = new Name("PDFDocEncoding");
-
-    // A specification of the font's character encoding, if different from its
-    // built-in encoding. The value of Encoding may be either the name of a predefined
-    // encoding (MacRomanEncoding, MacExpertEncoding, or WinAnsi- Encoding, as
-    // described in Appendix D) or an encoding dictionary that specifies
-    // differences from the font's built-in encoding or from a specified predefined
-    // encoding
-    private Encoding encoding;
-    // encoding name for debugging reasons;
-    private Name encodingName;
-
-    // An array of (LastChar ? FirstChar + 1) widths, each element being the
-    // glyph width for the character code that equals FirstChar plus the array index.
-    // For character codes outside the range FirstChar to LastChar, the value
-    // of MissingWidth from the FontDescriptor entry for this font is used.
-    private List widths;
-
-    // widths for cid fonts, substitution specific, font files actually have
-    // correct glyph widths.
-    private HashMap<Integer, Float> cidWidths;
-
-    // Base character mapping of 256 chars
-    private char[] cMap;
-
-    // ToUnicode CMap object stores any mapping information
-    private CMap toUnicodeCMap;
-
-    // Base 14 AFM fonts
-    protected AFM afm;
-
-    // awt font style reference, ITALIC or BOLD|ITALIC
-    protected int style;
-
-    // get list of all available fonts.
-    private static final java.awt.Font[] fonts =
-            GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-
     // Array of type1 font differences based on family names.
     static final String type1Diff[][] =
             {{"Bookman-Demi", "URWBookmanL-DemiBold", "Arial"}, {
@@ -180,6 +140,36 @@ public class Font extends org.icepdf.core.pobjects.fonts.Font {
                     "ZapfChancery-MediumItalic", "URWChanceryL-MediItal", "Arial"}, {
                     "ZapfDingbats", "Dingbats", "Dingbats"}
             };
+    private static final Logger logger =
+            Logger.getLogger(Font.class.toString());
+    // get list of all available fonts.
+    private static final java.awt.Font[] fonts =
+            GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+    // Base 14 AFM fonts
+    protected AFM afm;
+    // awt font style reference, ITALIC or BOLD|ITALIC
+    protected int style;
+    // A specification of the font's character encoding, if different from its
+    // built-in encoding. The value of Encoding may be either the name of a predefined
+    // encoding (MacRomanEncoding, MacExpertEncoding, or WinAnsi- Encoding, as
+    // described in Appendix D) or an encoding dictionary that specifies
+    // differences from the font's built-in encoding or from a specified predefined
+    // encoding
+    private Encoding encoding;
+    // encoding name for debugging reasons;
+    private Name encodingName;
+    // An array of (LastChar ? FirstChar + 1) widths, each element being the
+    // glyph width for the character code that equals FirstChar plus the array index.
+    // For character codes outside the range FirstChar to LastChar, the value
+    // of MissingWidth from the FontDescriptor entry for this font is used.
+    private List widths;
+    // widths for cid fonts, substitution specific, font files actually have
+    // correct glyph widths.
+    private HashMap<Integer, Float> cidWidths;
+    // Base character mapping of 256 chars
+    private char[] cMap;
+    // ToUnicode CMap object stores any mapping information
+    private CMap toUnicodeCMap;
 
     public Font(Library library, HashMap entries) {
         super(library, entries);
