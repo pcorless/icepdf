@@ -42,7 +42,7 @@ public class ScalablePasswordField extends JPasswordField implements ScalableFie
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
         LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
-
+            private static final long serialVersionUID = 1155416379916442519L;
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {

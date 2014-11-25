@@ -47,6 +47,7 @@ public class ScalableTextArea extends JTextArea implements ScalableField {
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
         LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+            private static final long serialVersionUID = 1155416379916342539L;
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {

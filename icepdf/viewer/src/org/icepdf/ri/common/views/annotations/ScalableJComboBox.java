@@ -42,6 +42,7 @@ public class ScalableJComboBox extends JComboBox implements ScalableField {
         // enable more precise painting of glyphs.
         putClientProperty("i18n", Boolean.TRUE.toString());
         LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+            private static final long serialVersionUID = 1152416379916442539L;
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {

@@ -133,6 +133,7 @@ public class AnnotationComponentFactory {
             } else {
                 return new AbstractAnnotationComponent(annotation, documentViewController,
                         pageViewComponent, documentViewModel) {
+                    private static final long serialVersionUID = 409696785049691125L;
                     @Override
                     public void resetAppearanceShapes() {
 

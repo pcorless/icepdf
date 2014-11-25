@@ -43,6 +43,7 @@ public class ScalableTextField extends JTextField implements ScalableField {
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
         LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+            private static final long serialVersionUID = 1155416372916442539L;
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {
