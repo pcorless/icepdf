@@ -49,7 +49,8 @@ public class DeviceCMYK extends PColorSpace {
     // CMYK ICC color profile.
     private static ICC_ColorSpace iccCmykColorSpace;
     // basic cache to speed up the lookup. always 4 bands, can be static
-    private static ConcurrentHashMap<Integer, Color> iccCmykColorCache;
+    private ConcurrentHashMap<Integer, Color> iccCmykColorCache =
+            new ConcurrentHashMap<Integer, Color>();
 
     // disable icc color profile lookups as they can be slow. n
     private static boolean disableICCCmykColorSpace;
@@ -59,8 +60,6 @@ public class DeviceCMYK extends PColorSpace {
         blackRatio = (float) Defs.doubleProperty("org.icepdf.core.cmyk.colorant.black", 1.0);
 
         disableICCCmykColorSpace = Defs.booleanProperty("org.icepdf.core.cmyk.disableICCProfile", false);
-
-        iccCmykColorCache = new ConcurrentHashMap<Integer, Color>();
 
         // check for a custom CMYK ICC colour profile specified using system properties.
         iccCmykColorSpace = getIccCmykColorSpace();
@@ -84,7 +83,7 @@ public class DeviceCMYK extends PColorSpace {
      * @return valid rgb colour object.
      */
     public Color getColor(float[] f, boolean fillAndStroke) {
-        return alternative2(f);
+        return alternative2(f, iccCmykColorCache);
     }
 
     /**
@@ -192,7 +191,8 @@ public class DeviceCMYK extends PColorSpace {
      *          0.0 and 1.0
      * @return valid rgb colour object.
      */
-    private static Color alternative2(float[] f) {
+    private static Color alternative2(float[] f,
+                                      ConcurrentHashMap<Integer, Color> iccCmykColorCache) {
         float inCyan = f[3];
         float inMagenta = f[2];
         float inYellow = f[1];
