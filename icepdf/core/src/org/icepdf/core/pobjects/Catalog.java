@@ -43,6 +43,9 @@ import java.util.logging.Logger;
  */
 public class Catalog extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(Catalog.class.toString());
+
     public static final Name TYPE = new Name("Catalog");
     public static final Name DESTS_KEY = new Name("Dests");
     public static final Name VIEWERPREFERENCES_KEY = new Name("ViewerPreferences");
@@ -53,8 +56,9 @@ public class Catalog extends Dictionary {
     public static final Name PAGELAYOUT_KEY = new Name("PageLayout");
     public static final Name PAGEMODE_KEY = new Name("PageMode");
     public static final Name ACRO_FORM_KEY = new Name("AcroForm");
-    private static final Logger logger =
-            Logger.getLogger(Catalog.class.toString());
+    public static final Name COLLECTION_KEY = new Name("Collection");
+    public static final Name METADATA_KEY = new Name("Metadata");
+
     private PageTree pageTree;
     private Outlines outlines;
     private Names names;
@@ -160,7 +164,6 @@ public class Catalog extends Dictionary {
         return outlines;
     }
 
-
     /**
      * Gets the document's Names dictionary.  The Names dictionary contains
      * a category of objects in a PDF file which can be referred to by name
@@ -228,6 +231,20 @@ public class Catalog extends Dictionary {
             }
         }
         return optionalContent;
+    }
+
+    /**
+     * A metadata stream that shall contain metadata for the document.  To
+     * access the metadata stream data make a call to getMetData().getDecodedStreamBytes()
+     * which can be used to create a String or open an InputStream.
+     * @return metadata stream if define,  otherwise null.
+     */
+    public Stream getMetaData(){
+        Object o = library.getObject(entries, METADATA_KEY);
+        if (o != null && o instanceof Stream){
+            return (Stream)o;
+        }
+        return null;
     }
 
     /**
