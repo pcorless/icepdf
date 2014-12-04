@@ -36,10 +36,11 @@ public class DrawDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
+        Rectangle currentShapeBounds = currentShape.getBounds();
         if (g.getClip() != null && optionalContentState.isVisible() &&
                 currentShape.intersects(g.getClip().getBounds()) ||
-                (currentShape.getBounds().getWidth() < 1.0 ||
-                        currentShape.getBounds().getHeight() < 1.0)) {
+                (currentShapeBounds.getWidth() < 1.0 ||
+                        currentShapeBounds.getHeight() < 1.0)) {
             g.draw(currentShape);
             // Send a PaintPage Event to listeners
             if (parentPage != null && paintTimer.shouldTriggerRepaint()) {

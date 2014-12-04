@@ -22,6 +22,7 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -534,8 +535,10 @@ public class GraphicsState {
             parentGraphicState.set(parentGraphicState.CTM);
             // Add the parents clip to the stack
             if (parentGraphicState.clipChange || clipChange) {
-                if (parentGraphicState.clip != null) {
-                    if (!parentGraphicState.clip.equals(clip)) {
+                if (parentGraphicState.clip != null && clip != null) {
+                    // if a rectangle then we do bounds compare instead of area
+                    Rectangle rect = parentGraphicState.clip.getBounds();
+                    if (rect != null && !rect.equals(clip.getBounds())) {
                         parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
                         parentGraphicState.shapes.add(clipDrawCmd);
                     }
