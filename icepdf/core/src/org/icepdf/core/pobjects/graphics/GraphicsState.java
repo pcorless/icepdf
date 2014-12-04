@@ -22,7 +22,6 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.geom.GeneralPath;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -218,10 +217,15 @@ public class GraphicsState {
     // enabled buy default but can be turned off if required.
     private static boolean enabledOverpaint;
 
+    private static boolean enableQuickClip;
+
     static {
         enabledOverpaint =
                 Defs.sysPropertyBoolean("org.icepdf.core.overpaint",
                         true);
+        enableQuickClip =
+                Defs.sysPropertyBoolean("org.icepdf.core.quickclip",
+                        false);
     }
 
 
@@ -535,15 +539,27 @@ public class GraphicsState {
             parentGraphicState.set(parentGraphicState.CTM);
             // Add the parents clip to the stack
             if (parentGraphicState.clipChange || clipChange) {
-                if (parentGraphicState.clip != null && clip != null) {
-                    // if a rectangle then we do bounds compare instead of area
-                    Rectangle rect = parentGraphicState.clip.getBounds();
-                    if (rect != null && !rect.equals(clip.getBounds())) {
-                        parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
-                        parentGraphicState.shapes.add(clipDrawCmd);
+                if (enableQuickClip) {
+                    if (parentGraphicState.clip != null && clip != null) {
+                        // quick version but will drop potentially complex clips
+                        Rectangle rect = parentGraphicState.clip.getBounds();
+                        if (rect != null && !rect.equals(clip.getBounds())) {
+                            parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
+                            parentGraphicState.shapes.add(clipDrawCmd);
+                        }
+                    } else {
+                        parentGraphicState.shapes.add(noClipDrawCmd);
                     }
-                } else {
-                    parentGraphicState.shapes.add(noClipDrawCmd);
+                }else{
+                    if (parentGraphicState.clip != null && clip != null) {
+                        // slower but more accurate clip calculation
+                        if (parentGraphicState.clip.equals(clip)) {
+                            parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
+                            parentGraphicState.shapes.add(clipDrawCmd);
+                        }
+                    } else {
+                        parentGraphicState.shapes.add(noClipDrawCmd);
+                    }
                 }
             }
             // Update the stack with the parentGraphicsState stack.
