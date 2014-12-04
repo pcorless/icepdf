@@ -551,9 +551,8 @@ public class GraphicsState {
                         parentGraphicState.shapes.add(noClipDrawCmd);
                     }
                 }else{
-                    if (parentGraphicState.clip != null && clip != null) {
-                        // slower but more accurate clip calculation
-                        if (parentGraphicState.clip.equals(clip)) {
+                    if (parentGraphicState.clip != null) {
+                        if (!parentGraphicState.clip.equals(clip)) {
                             parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
                             parentGraphicState.shapes.add(clipDrawCmd);
                         }
