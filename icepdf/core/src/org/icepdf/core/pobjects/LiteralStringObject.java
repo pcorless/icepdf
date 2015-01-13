@@ -214,7 +214,7 @@ public class LiteralStringObject implements StringObject {
             for (int i = 0; i < length; i += charOffset) {
                 charValue = getUnsignedInt(i - lastIndex, lastIndex + charOffset);
                 // it is possible to have some cid's that are zero
-                if (charValue > 0 && font.canDisplayEchar((char) charValue)) {
+                if (charValue >= 0 && font.canDisplayEchar((char) charValue)) {
                     tmp.append((char) charValue);
                     lastIndex = 0;
                 } else {
