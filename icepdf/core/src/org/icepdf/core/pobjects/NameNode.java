@@ -52,7 +52,20 @@ public class NameNode extends Dictionary {
         super(l, h);
         Object o = library.getObject(entries, KIDS_KEY);
         if (o != null && o instanceof List) {
-            kidsReferences = (List) o;
+            // we have a corner case were the name tree doesn't start of with list
+            // which is the tree structure but rather a single list with a reference
+            // to the name tree list structure.
+            List tmpList = (List) o;
+            if (tmpList.size() == 1) {
+                // check if first element is a reference
+                if (tmpList.get(0) instanceof Reference) {
+                    o = library.getObject((Reference) tmpList.get(0));
+                    if (o instanceof HashMap) {
+                        entries = (HashMap) library.getObject((Reference) tmpList.get(0));
+                    }
+                }
+            }
+            kidsReferences = tmpList;
             int sz = kidsReferences.size();
             if (sz > 0) {
                 kidsNodes = new Vector<NameNode>(sz);
