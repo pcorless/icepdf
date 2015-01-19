@@ -586,7 +586,12 @@ public class EncryptionDictionary extends Dictionary {
      * @return true if document-level metadata is encrypted
      */
     public boolean isEncryptMetaData() {
-        return library.getBoolean(entries, ENCRYPT_METADATA_KEY);
+        if (entries.containsKey(ENCRYPT_METADATA_KEY)) {
+            return library.getBoolean(entries, ENCRYPT_METADATA_KEY);
+        }else{
+            // default value if not specified.
+            return true;
+        }
     }
 
     protected boolean isAuthenticatedUserPassword() {

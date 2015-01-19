@@ -24,10 +24,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -593,44 +590,50 @@ class StandardEncryption {
             String firstFileID =
                     ((StringObject) encryptionDictionary.getFileID().get(0)).getLiteralString();
             byte[] fileID = Utils.convertByteCharSequenceToByteArray(firstFileID);
-            paddedPassword = md5.digest(fileID);
+            md5.update(fileID);
 
             // Step 6: If document metadata is not being encrypted, pass 4 bytes with
-            // the value of 0xFFFFFFFF to the MD5 hash, Only used when R=3 and
-            // encrypting.
+            // the value of 0xFFFFFFFF to the MD5 hash, Security handlers of revision 4 or greater)
+            if (encryptionDictionary.getRevisionNumber() >= 4 &&
+                    !encryptionDictionary.isEncryptMetaData()) {
+                for (int i = 0; i < 4; ++i) {
+                    md5.update((byte) 0xFF);
+                }
+            }
 
             // Step 7: Finish Hash.
+            paddedPassword = md5.digest();
+
+            // key length
+            int keySize = encryptionDictionary.getRevisionNumber() == 2 ? 5 : keyLength / 8;
+            if (keySize > paddedPassword.length) {
+                keySize = paddedPassword.length;
+            }
+            byte[] out = new byte[keySize];
 
             // Step 8: Do the following 50 times: take the output from the previous
-            // MD5 hash and pass it as ainput into a new MD5 hash;
+            // MD5 hash and pass it as a input into a new MD5 hash;
             // only for R >= 3
-            if (encryptionDictionary.getRevisionNumber() >= 3) {
-                for (int i = 0; i < 50; i++) {
-                    paddedPassword = md5.digest(paddedPassword);
+            try {
+                if (encryptionDictionary.getRevisionNumber() >= 3 ) {
+                    for (int i = 0; i < 50; i++) {
+                        md5.update(paddedPassword, 0, keySize);
+                        md5.digest(paddedPassword, 0, paddedPassword.length);
+                    }
                 }
+            }catch (DigestException e){
+                logger.log(Level.WARNING, "Error creating MD5 digest.", e);
             }
 
             // Step 9: Set the encryption key to the first n bytes of the output from
             // the MD5 hash
-            byte[] out = null;
-            int n = 5;
-            // n = 5 when R = 2
-            if (encryptionDictionary.getRevisionNumber() == 2) {
-                out = new byte[n];
-            } else if (encryptionDictionary.getRevisionNumber() >= 3) {
-                n = keyLength / 8;
-                out = new byte[n];
-            }
-            if (n > paddedPassword.length) {
-                n = paddedPassword.length;
-            }
 
             // truncate out to the appropriate value
             System.arraycopy(paddedPassword,
                     0,
                     out,
                     0,
-                    n);
+                    keySize);
             // assign instance
             encryptionKey = out;
 
