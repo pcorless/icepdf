@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects.security;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Utils;
-import org.mortbay.log.Log;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -521,13 +520,13 @@ class StandardEncryption {
             // MD5 hash and pass it as a input into a new MD5 hash;
             // only for R >= 3
             try {
-                if (encryptionDictionary.getRevisionNumber() >= 3 ) {
+                if (encryptionDictionary.getRevisionNumber() >= 3) {
                     for (int i = 0; i < 50; i++) {
                         md5.update(paddedPassword, 0, keySize);
                         md5.digest(paddedPassword, 0, paddedPassword.length);
                     }
                 }
-            }catch (DigestException e){
+            } catch (DigestException e) {
                 logger.log(Level.WARNING, "Error creating MD5 digest.", e);
             }
 
