@@ -589,11 +589,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 // slightly different then a regular xObject as we
                 // need to capture the alpha which is only possible
                 // by paint the xObject to an image.
-                if ((!disableTransparencyGroups ||
-                        (formXObject.getGraphicsState() != null &&
-                                formXObject.getGraphicsState().getSoftMask() != null)) &&
-                        formXObject.isTransparencyGroup() &&
-//                        graphicState.getFillAlpha() < 1.0f &&
+                if (!disableTransparencyGroups &&
+                        ((formXObject.getGraphicsState() != null &&
+                                formXObject.getGraphicsState().getSoftMask() != null) ||
+                                (formXObject.isTransparencyGroup())) &&
                         // limit size, as buffer is needed
                         (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
                                 formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
