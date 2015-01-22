@@ -304,10 +304,10 @@ public class TilingPattern extends Stream implements Pattern {
         }
 
         // some encoders set the step to 2^15
-        if (xStep == Short.MAX_VALUE) {
+        if (xStep >= Short.MAX_VALUE) {
             xStep = (float) bBox.getWidth();
         }
-        if (yStep == Short.MAX_VALUE) {
+        if (yStep >= Short.MAX_VALUE) {
             yStep = (float) bBox.getHeight();
         }
         // adjust the bBox so that xStep and yStep can be applied
