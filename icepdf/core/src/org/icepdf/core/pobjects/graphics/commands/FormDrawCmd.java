@@ -135,6 +135,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
         BufferedImage bi = new BufferedImage(width, height,
                 BufferedImage.TYPE_INT_ARGB);
         Graphics2D canvas = bi.createGraphics();
+        if (graphicsState.getFillAlpha() < 1.0f && !xForm.getResources().isShading()) {
+            AlphaComposite alphaComposite =
+                    AlphaComposite.getInstance(graphicsState.getAlphaRule(),
+                            graphicsState.getFillAlpha());
+            canvas.setComposite(alphaComposite);
+        }
         // copy over the rendering hints
         canvas.setRenderingHints(renderingHints);
         // get shapes and paint them.
@@ -143,12 +149,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
             xFormShapes.setPageParent(parentPage);
             // translate the coordinate system as we'll paint the g
             // graphic at the correctly location later.
-            if (!xForm.getResources().isShading()) {
+//            if (!xForm.getResources().isShading()) {
                 canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
                 canvas.setClip(bBox);
                 xFormShapes.paint(canvas);
                 xFormShapes.setPageParent(null);
-            }
+//            }
             // gradient define smask, this still needs some work to get the
             // coord system correct, but basically smask defines pattern but
             // doesn't actually paint/fill a shape, it's assumed that its done
