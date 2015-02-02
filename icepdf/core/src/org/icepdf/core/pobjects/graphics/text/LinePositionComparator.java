@@ -43,6 +43,6 @@ public class LinePositionComparator implements
      *         if lt1.y is numerically greater than lt2.y.
      */
     public int compare(AbstractText lt1, AbstractText lt2) {
-        return Float.compare(lt2.getBounds().y, lt1.getBounds().y);
+        return Float.compare(lt2.getTextExtractionBounds().y, lt1.getTextExtractionBounds().y);
     }
 }

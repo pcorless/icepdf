@@ -95,8 +95,8 @@ public class WordText extends AbstractText implements TextSelect {
     protected boolean detectSpace(GlyphText sprite) {
         if (currentGlyph != null) {
             // last added glyph
-            Rectangle2D.Float bounds1 = currentGlyph.getBounds();
-            float spriteXCoord = sprite.getBounds().x;
+            Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
+            float spriteXCoord = sprite.getTextExtractionBounds().x;
             // spaces can be negative if we have a LTR layout.
             float space = Math.abs(spriteXCoord - (bounds1.x + bounds1.width));
             // half previous glyph width will be used to determine a space
@@ -156,8 +156,8 @@ public class WordText extends AbstractText implements TextSelect {
     protected WordText buildSpaceWord(GlyphText sprite) {
 
         // because we are in a normalized user space we can work with ints
-        Rectangle2D.Float bounds1 = currentGlyph.getBounds();
-        Rectangle.Float bounds2 = sprite.getBounds();
+        Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
+        Rectangle.Float bounds2 = sprite.getTextExtractionBounds();
         float space = bounds2.x - (bounds1.x + bounds1.width);
 
 
@@ -242,6 +242,12 @@ public class WordText extends AbstractText implements TextSelect {
         } else {
             bounds.add(sprite.getBounds());
         }
+        if (textExtractionBounds == null) {
+            Rectangle2D.Float rect = sprite.getTextExtractionBounds();
+            textExtractionBounds = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
+        } else {
+            textExtractionBounds.add(sprite.getTextExtractionBounds());
+        }
 
         // append the text that maps up the sprite
         String unicode = sprite.getUnicode();
@@ -259,6 +265,12 @@ public class WordText extends AbstractText implements TextSelect {
                     bounds.setRect(glyph.getBounds());
                 } else {
                     bounds.add(glyph.getBounds());
+                }
+                if (textExtractionBounds == null) {
+                    Rectangle2D.Float rect = glyph.getTextExtractionBounds();
+                    textExtractionBounds = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
+                } else {
+                    textExtractionBounds.add(glyph.getTextExtractionBounds());
                 }
             }
         }

@@ -836,8 +836,8 @@ public abstract class AbstractContentParser implements ContentParser {
         AffineTransform af = new AffineTransform(textBlockBase);
 
         // grab old values.
-        double oldTransY = graphicState.getCTM().getTranslateY();
-        double oldScaleY = graphicState.getCTM().getScaleY();
+//        double oldTransY = graphicState.getCTM().getTranslateY();
+//        double oldScaleY = graphicState.getCTM().getScaleY();
 
         // apply the transform
         graphicState.getTextState().tmatrix = new AffineTransform(tm);
@@ -1474,7 +1474,8 @@ public abstract class AbstractContentParser implements ContentParser {
         TextSprite textSprites =
                 new TextSprite(currentFont,
                         textLength,
-                        new AffineTransform(graphicState.getCTM()));
+                        new AffineTransform(graphicState.getCTM()),
+                        new AffineTransform(textState.tmatrix));
 
         // glyph placement params
         float currentX, currentY;

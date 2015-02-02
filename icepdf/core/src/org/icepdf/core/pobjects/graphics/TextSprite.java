@@ -52,6 +52,7 @@ public class TextSprite {
 
     // space reference for where glyph
     private AffineTransform graphicStateTransform;
+    private AffineTransform tmTransform;
 
     // stroke color
     private Color strokeColor;
@@ -69,10 +70,11 @@ public class TextSprite {
      * @param font font used when painting glyphs.
      * @param size size of the font in user space
      */
-    public TextSprite(FontFile font, int size, AffineTransform graphicStateTransform) {
+    public TextSprite(FontFile font, int size, AffineTransform graphicStateTransform, AffineTransform tmTransform) {
         glyphTexts = new ArrayList<GlyphText>(size);
         // all glyphs in text share this ctm
         this.graphicStateTransform = graphicStateTransform;
+        this.tmTransform = tmTransform;
         this.font = font;
         bounds = new Rectangle2D.Float();
     }
@@ -119,7 +121,7 @@ public class TextSprite {
         // create glyph and normalize bounds.
         GlyphText glyphText =
                 new GlyphText(x, y, glyphBounds, cid, unicode);
-        glyphText.normalizeToUserSpace(graphicStateTransform);
+        glyphText.normalizeToUserSpace(graphicStateTransform, tmTransform);
         glyphTexts.add(glyphText);
         return glyphText;
     }
@@ -138,7 +140,7 @@ public class TextSprite {
     }
 
     /**
-     * Set the graphic state transorm on all child sprites, This is used for
+     * Set the graphic state transform on all child sprites, This is used for
      * xForm object parsing and text selection.  There is no need to do this
      * outside of the context parser.
      *
@@ -147,7 +149,7 @@ public class TextSprite {
     public void setGraphicStateTransform(AffineTransform graphicStateTransform) {
         this.graphicStateTransform = graphicStateTransform;
         for (GlyphText sprite : glyphTexts) {
-            sprite.normalizeToUserSpace(this.graphicStateTransform);
+            sprite.normalizeToUserSpace(this.graphicStateTransform, tmTransform);
         }
     }
 
