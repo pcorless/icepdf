@@ -407,7 +407,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         content.length(),
-                        new AffineTransform(new AffineTransform()));
+                        new AffineTransform(), null);
         textSprites.setRMode(TextState.MODE_FILL);
         textSprites.setStrokeColor(fontColor);
         textSprites.setFontName(EMBEDDED_FONT_NAME.toString());

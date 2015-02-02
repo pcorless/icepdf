@@ -108,7 +108,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         contents.length(),
-                        new AffineTransform(new AffineTransform()));
+                        new AffineTransform(),null);
         textSprites.setRMode(TextState.MODE_FILL);
         textSprites.setStrokeColor(variableText.getColor());
         textSprites.setFontName(variableText.getFontName());

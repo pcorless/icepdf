@@ -115,7 +115,7 @@ public class PageText implements TextSelect {
      * is set to True by default.
      *
      * @return list of page lines that are in the main content stream and any
-     * visible layers.
+     *         visible layers.
      */
     public ArrayList<LineText> getPageLines() {
         if (sortedPageLines == null) {
@@ -226,7 +226,7 @@ public class PageText implements TextSelect {
             for (WordText wordText : lineText.getWords()) {
                 wordText.clearBounds();
                 for (GlyphText glyph : wordText.getGlyphs()) {
-                    glyph.normalizeToUserSpace(transform);
+                    glyph.normalizeToUserSpace(transform, null);
                 }
             }
         }
@@ -343,11 +343,11 @@ public class PageText implements TextSelect {
                         Collections.sort(words, new LinePositionComparator());
                     }
                     // break the words into lines on every change of y
-                    double lastY = words.get(0).getBounds().y;
+                    double lastY = Math.round(words.get(0).getTextExtractionBounds().y);
                     int start = 0, end = 0;
                     double currentY;
                     for (WordText word : words) {
-                        currentY = Math.round(word.getBounds().getY());
+                        currentY = Math.round(word.getTextExtractionBounds().getY());
                         if (currentY != lastY) {
                             LineText lineText = new LineText();
                             lineText.addAll(words.subList(start, end));

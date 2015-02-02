@@ -31,8 +31,14 @@ import java.awt.geom.Rectangle2D;
  */
 public abstract class AbstractText implements Text {
 
-    // white space sentences etc.
+    // Bounds of text converted to page space.
     protected Rectangle2D.Float bounds;
+
+    // original bounds as plotted by the PDF,  can be used for space and
+    // line break detection.  Once normalized to page space (bounds instance var)
+    // it may not be possible to make the formatting detection.  However normalized
+    // bounds are used for text selection.
+    protected Rectangle2D.Float textExtractionBounds;
 
     // selected states
     protected boolean selected;
@@ -45,7 +51,8 @@ public abstract class AbstractText implements Text {
     protected boolean hasHighlight;
 
     /**
-     * Gets the bounds of the respective text object.
+     * Gets the bounds of the respective text object normalized to page
+     * space.  This is mainly used for text selection calculations.
      *
      * @return bounds of text object.
      */
@@ -58,7 +65,7 @@ public abstract class AbstractText implements Text {
     /**
      * Creates a new instance of GeneralPath for this AbstractText object and
      * applies the current pageTransformation to it.  The containment
-     * calculation is then applied the newly tranformed path for the given
+     * calculation is then applied the newly transformed path for the given
      * rectangle.
      * <p/>
      * This method is usually used for text selection via a selection box.
@@ -116,7 +123,7 @@ public abstract class AbstractText implements Text {
      * is highlighted.
      *
      * @return true if one or more root or parent elements are in a highlighted
-     * state.
+     *         state.
      */
     public boolean hasHighligh() {
         return hasHighlight;
@@ -127,7 +134,7 @@ public abstract class AbstractText implements Text {
      * is selected.
      *
      * @return true if one or more root or parent elements are in a highlighted
-     * state.
+     *         state.
      */
     public boolean hasSelected() {
         return hasSelected;
@@ -151,5 +158,17 @@ public abstract class AbstractText implements Text {
      */
     public void setHasSelected(boolean hasSelected) {
         this.hasSelected = hasSelected;
+    }
+
+    /**
+     * Gets the original bounds of the text unit, this value is not normalized
+     * to page space and represents the raw layout coordinates of the text as
+     * defined in the Post Script notation. This is primarily used for text
+     * extraction line and word break calculations.
+     *
+     * @return text bounds.
+     */
+    public Rectangle2D.Float getTextExtractionBounds() {
+        return textExtractionBounds;
     }
 }

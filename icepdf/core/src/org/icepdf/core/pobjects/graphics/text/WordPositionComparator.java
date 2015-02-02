@@ -43,7 +43,7 @@ public class WordPositionComparator implements
      * if lt1.x is numerically greater than lt2.x.
      */
     public int compare(AbstractText lt1, AbstractText lt2) {
-        return Float.compare(lt1.getBounds().x,
-                lt2.getBounds().x);
+        return Float.compare(lt1.getTextExtractionBounds().x,
+                lt2.getTextExtractionBounds().x);
     }
 }

@@ -16,6 +16,8 @@
 package org.icepdf.ri.util;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.ri.common.SwingWorker;
 
 import java.io.BufferedWriter;
@@ -25,6 +27,7 @@ import java.io.OutputStreamWriter;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -188,9 +191,16 @@ public class TextExtractionTask {
                     fileOutputStream.write(pageNumber);
                     fileOutputStream.write(10); // line break
 
-                    String pageText = document.getPageText(i).toString();
-
-                    fileOutputStream.write(pageText);
+                    List<LineText> pageLines = document.getPageText(i).getPageLines();
+                    StringBuilder extractedText;
+                    for (LineText lineText : pageLines) {
+                        extractedText = new StringBuilder();
+                        for (WordText wordText : lineText.getWords()) {
+                            extractedText.append(wordText.getText());
+                        }
+                        extractedText.append('\n');
+                        fileOutputStream.write(extractedText.toString());
+                    }
 
                     Thread.yield();
 

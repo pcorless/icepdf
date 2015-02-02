@@ -47,6 +47,7 @@ public class GlyphText extends AbstractText {
         this.x = x;
         this.y = y;
         this.bounds = bounds;
+        this.textExtractionBounds = new Rectangle2D.Float(bounds.x, bounds.y, bounds.width, bounds.height);
         this.cid = cid;
         this.unicode = unicode;
     }
@@ -54,13 +55,29 @@ public class GlyphText extends AbstractText {
     /**
      * Maps the glyph bounds to user space
      *
-     * @param af tranform from glyph space to user space
+     * @param af transform from glyph space to user space
+     * @param af1 transform from glyph space, if shear is detected the
+     *            extracted bounds are rotated back to the portrait layout.
      */
-    public void normalizeToUserSpace(AffineTransform af) {
+    public void normalizeToUserSpace(AffineTransform af, AffineTransform af1) {
         // map the coordinates from glyph space to user space.
         GeneralPath generalPath = new GeneralPath(bounds);
         generalPath.transform(af);
         bounds = (Rectangle2D.Float) generalPath.getBounds2D();
+        // we have some portrait type layouts where the text is actually
+        // running on the y-axis.  The reason for this is Tm that specifies
+        // a -1 shear which is basically a 90 degree rotation.  Which breaks
+        // our left to right top down text extraction logic (PDF-854).
+        if (af1 != null && af1.getShearX() < 0 ){
+            // adjust of the rotation, move the text back to a normal layout.
+            generalPath = new GeneralPath(bounds);
+            generalPath.transform(new AffineTransform(0,-1,1,0,0,0));
+            textExtractionBounds = (Rectangle2D.Float) generalPath.getBounds2D();
+        }else{
+            // 99% of the time we just use the bounds.
+            textExtractionBounds =  bounds;
+        }
+
     }
 
     public String getCid() {

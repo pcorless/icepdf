@@ -39,10 +39,10 @@ public class LinePositionComparator implements
      * @param lt1 word text object to compare
      * @param lt2 word text object to compare
      * @return the value 0 if lt1.y is numerically equal to lt2.y; a value less
-     * than 0 if lt1.y is numerically less than lt2.y; and a value greater than 0
-     * if lt1.y is numerically greater than lt2.y.
+     *         than 0 if lt1.y is numerically less than lt2.y; and a value greater than 0
+     *         if lt1.y is numerically greater than lt2.y.
      */
     public int compare(AbstractText lt1, AbstractText lt2) {
-        return Float.compare(lt2.getBounds().y, lt1.getBounds().y);
+        return Float.compare(lt2.getTextExtractionBounds().y, lt1.getTextExtractionBounds().y);
     }
 }
