@@ -1044,7 +1044,7 @@ public class SwingController
     public boolean isPdfCollection() {
         Catalog catalog = document.getCatalog();
         if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
-                && catalog.getNames().getEmbeddedFilesNameTree().getRoot().getNamesAndValues() != null) {
+                && catalog.getNames().getEmbeddedFilesNameTree().getRoot() != null) {
             // one final check as some docs will have meta data but will specify a page mode.
             if (catalog.getObject(Catalog.PAGEMODE_KEY) == null ||
                     ((Name) catalog.getObject(Catalog.PAGEMODE_KEY)).getName().equalsIgnoreCase("UseAttachments")) {

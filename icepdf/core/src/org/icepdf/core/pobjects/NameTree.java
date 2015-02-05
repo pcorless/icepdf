@@ -17,7 +17,9 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * <p>The <code>NameTree</code> class is similar to the <code>Dictionary</code> class in that
@@ -55,6 +57,53 @@ public class NameTree extends Dictionary {
         }
         root = new NameNode(library, entries);
         inited = true;
+    }
+
+    /**
+     * Depth fist traversal of the the tree returning a list of the name and
+     * reference values of the leafs in the tree.
+     *
+     * @return list of all name and corresponding references.
+     */
+    public List getNamesAndValues() {
+        if (root != null) {
+            ArrayList namesAndValues = new ArrayList();
+            // single root, just return the list.
+            if (root.getNamesAndValues() != null) {
+                namesAndValues.addAll(root.getNamesAndValues());
+                return namesAndValues;
+            }
+            // depth first traversal to get the names leaves off the kits.
+            else if (root.getKidsNodes() != null) {
+                for (NameNode node : root.getKidsNodes()) {
+                    namesAndValues.addAll(getNamesAndValues(node));
+                }
+                return namesAndValues;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Helper method to do the recursive dive to get all the names and values
+     * from the tree.
+     *
+     * @param nameNode Name node to check for names and nodes.
+     * @return found names and values for the given node.
+     */
+    private List getNamesAndValues(NameNode nameNode) {
+        // leaf node.
+        if (nameNode.getNamesAndValues() != null) {
+            return nameNode.getNamesAndValues();
+        }
+        // intermediary node.
+        else {
+            ArrayList namesAndValues = new ArrayList();
+            for (NameNode node : nameNode.getKidsNodes()) {
+                namesAndValues.addAll(getNamesAndValues(node));
+            }
+            return namesAndValues;
+        }
     }
 
     /**

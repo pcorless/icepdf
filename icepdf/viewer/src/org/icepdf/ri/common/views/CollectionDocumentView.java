@@ -84,7 +84,7 @@ public class CollectionDocumentView extends AbstractDocumentView {
         DocumentViewComponent documentViewComponent;
         Library library = currentDocument.getCatalog().getLibrary();
         NameTree embeddedFilesNameTree = currentDocument.getCatalog().getNames().getEmbeddedFilesNameTree();
-        java.util.List filePairs = embeddedFilesNameTree.getRoot().getNamesAndValues();
+        java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
 
         // add components for every page in the document
         for (int i = 0, max = filePairs.size(); i < max; i += 2) {
