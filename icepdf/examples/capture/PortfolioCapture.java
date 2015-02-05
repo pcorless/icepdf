@@ -68,7 +68,7 @@ public class PortfolioCapture {
                 NameTree embeddedFilesNameTree = document.getCatalog().getNames().getEmbeddedFilesNameTree();
                 if (embeddedFilesNameTree.getRoot() != null) {
                     Library library = document.getCatalog().getLibrary();
-                    List filePairs = embeddedFilesNameTree.getRoot().getNamesAndValues();
+                    List filePairs = embeddedFilesNameTree.getNamesAndValues();
                     List<Callable<Void>> callables =
                             new ArrayList<Callable<Void>>(filePairs.size() / 2);
                     // queue up the embedded documents
