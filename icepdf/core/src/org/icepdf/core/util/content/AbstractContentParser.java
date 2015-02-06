@@ -1377,6 +1377,9 @@ public abstract class AbstractContentParser implements ContentParser {
                 f = (Number) currentObject;
                 textMetrics.getAdvance().x -= (f.floatValue() / 1000f) *
                         graphicState.getTextState().currentfont.getSize();
+                if (textMetrics.getAdvance().x < textMetrics.getPreviousAdvance()) {
+                    textMetrics.getAdvance().x = textMetrics.getPreviousAdvance();
+                }
             }
             textMetrics.setPreviousAdvance(textMetrics.getAdvance().x);
         }
