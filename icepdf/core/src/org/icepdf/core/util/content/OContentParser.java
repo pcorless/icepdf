@@ -119,7 +119,7 @@ public class OContentParser extends AbstractContentParser {
             Object tok;
             while (true) {
 
-                if (Thread.interrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("ContentParser thread interrupted");
                 }
 

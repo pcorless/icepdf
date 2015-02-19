@@ -133,8 +133,9 @@ public class Shapes {
             // for loops actually faster in this case.
             for (int i = 0, max = shapes.size(); i < max; i++) {
 
-                if (interrupted) {
+                if (interrupted || Thread.currentThread().isInterrupted()) {
                     interrupted = false;
+                    logger.log(Level.FINE, "Page painting interrupted");
                     break;
                 }
 
