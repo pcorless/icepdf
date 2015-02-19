@@ -215,7 +215,7 @@ public class Page extends Dictionary {
             contents = new ArrayList<Stream>(Math.max(sz, 1));
             // pull all of the page content references from the library
             for (int i = 0; i < sz; i++) {
-                if (Thread.interrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
                 Object tmp = library.getObject((Reference) conts.get(i));
@@ -237,7 +237,7 @@ public class Page extends Dictionary {
         if (res == null) {
             pageTree = getParent();
             while (pageTree != null) {
-                if (Thread.interrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page Resource initialization thread interrupted");
                 }
                 Resources parentResources = pageTree.getResources();
@@ -262,7 +262,7 @@ public class Page extends Dictionary {
             org.icepdf.core.pobjects.annotations.Annotation a = null;
             for (int i = 0; i < v.size(); i++) {
 
-                if (Thread.interrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException(
                             "Page Annotation initialization thread interrupted");
                 }
@@ -846,7 +846,9 @@ public class Page extends Dictionary {
                 // only remove our font instance, if we remove another font we would have
                 // to check the document to see if it was used anywhere else.
                 Dictionary font = resources.getFont(FreeTextAnnotation.EMBEDDED_FONT_NAME);
-                font.setDeleted(true);
+                if (font != null) {
+                    font.setDeleted(true);
+                }
             }
         }
 
