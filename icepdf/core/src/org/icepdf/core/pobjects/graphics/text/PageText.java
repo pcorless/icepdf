@@ -345,10 +345,15 @@ public class PageText implements TextSelect {
                     // break the words into lines on every change of y
                     double lastY = Math.round(words.get(0).getTextExtractionBounds().y);
                     int start = 0, end = 0;
-                    double currentY;
+                    double currentY, diff;
                     for (WordText word : words) {
                         currentY = Math.round(word.getTextExtractionBounds().getY());
-                        if (currentY != lastY) {
+                        // little bit of tolerance for detecting a line,  basically anything that is
+                        // >  then half the current word height / 2 will be marked as a break.
+                        // this works well enough sub and super script and inconsistencies
+                        // on table base text.
+                        diff = Math.abs(currentY - lastY);
+                        if (diff != 0 && diff > word.getTextExtractionBounds().getHeight() / 2) {
                             LineText lineText = new LineText();
                             lineText.addAll(words.subList(start, end));
                             sortedPageLines.add(lineText);
