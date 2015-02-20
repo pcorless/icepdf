@@ -915,21 +915,23 @@ public class FontManager {
         // san sarif or a monospace font, there is more data we can pull if needed too.
         boolean isFixedPitch = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_FIXED_PITCH) != 0;
         boolean isSerif = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_SERIF) != 0;
+//        boolean isSymbolic = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_SYMBOLIC) != 0;
+//        boolean isNotSymbolic = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_NON_SYMBOLIC) != 0;
         // If no name are found then match against the core java font names
         // "Serif", java equivalent is  "Lucida Bright"
-        if (isSerif || ((fontName.contains("timesnewroman") ||
+        if (fontName.contains("timesnewroman") ||
                 fontName.contains("bodoni") ||
                 fontName.contains("garamond") ||
                 fontName.contains("minionweb") ||
                 fontName.contains("stoneserif") ||
                 fontName.contains("georgia") ||
-                fontName.contains("bitstreamcyberbit")))) {
+                fontName.contains("bitstreamcyberbit")) {
             // important, add style information
             font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
         }
         // see if we working with a monospaced font, we sub "Sans Serif",
         // java equivalent is "Lucida Sans"
-        else if (!isSerif || (fontName.contains("helvetica") ||
+        else if (fontName.contains("helvetica") ||
                 fontName.contains("arial") ||
                 fontName.contains("trebuchet") ||
                 fontName.contains("avantgardegothic") ||
@@ -940,26 +942,30 @@ public class FontManager {
                 fontName.contains("gillsans") ||
                 fontName.contains("akzidenz") ||
                 fontName.contains("frutiger") ||
-                fontName.contains("grotesk"))) {
+                fontName.contains("grotesk")) {
             // important, add style information
             font = findFont(fontList, baseFontName + "-" + getFontStyle(decorations, flags), 0);
         }
         // see if we working with a mono spaced font "Mono Spaced"
         // java equivalent is "Lucida Sans Typewriter"
-        else if (isFixedPitch || (fontName.contains("courier") ||
+        else if (fontName.contains("courier") ||
                 fontName.contains("couriernew") ||
                 fontName.contains("prestige") ||
-                fontName.contains("eversonmono"))) {
+                fontName.contains("eversonmono")) {
             // important, add style information
             font = findFont(fontList, baseFontName + "typewriter-" + getFontStyle(decorations, flags), 0);
         }
         // first try get the first match based on the style type and finally on failure
         // failure go with the serif as it is the most common font family
         else {
-//            System.out.println("Decorations " + decorations);
-//            System.out.println("flags " + flags);
-//            System.out.println("sytel " + getFontStyle(decorations, flags));
-            font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
+            if (isSerif) {
+                font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
+            } else if (isFixedPitch) {
+                font = findFont(fontList, "lucidatypewriter-" + getFontStyle(decorations, flags), 0);
+            } else {
+                // sans serif
+                font = findFont(fontList, "lucidasans-" + getFontStyle(decorations, flags), 0);
+            }
         }
 
         return font;
@@ -1151,7 +1157,7 @@ public class FontManager {
         int decorations = 0;
         if ((name.indexOf("boldital") > 0) || (name.indexOf("demiital") > 0)) {
             decorations |= BOLD_ITALIC;
-        } else if (name.indexOf("bold") > 0 || name.indexOf("black") > 0
+        } else if (name.indexOf("bold") > 0 || name.indexOf("black") > 0 || name.endsWith("bt")
                 || name.indexOf("demi") > 0) {
             decorations |= BOLD;
         } else if (name.indexOf("ital") > 0 || name.indexOf("obli") > 0) {
@@ -1175,9 +1181,11 @@ public class FontManager {
         String style = "";
         if ((sytle & BOLD_ITALIC) == BOLD_ITALIC) {
             style += " BoldItalic";
-        } else if ((sytle & BOLD) == BOLD) {
+        } else if ((sytle & BOLD) == BOLD ||
+                (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_FORCE_BOLD) != 0) {
             style += " Bold";
-        } else if ((sytle & ITALIC) == ITALIC) {
+        } else if ((sytle & ITALIC) == ITALIC ||
+                (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_FORCE_BOLD) != 0) {
             style += " Italic";
         } else if ((sytle & PLAIN) == PLAIN) {
             style += " Plain";
