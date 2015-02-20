@@ -72,6 +72,56 @@ public abstract class Font extends Dictionary {
     public static final Name FIRST_CHAR_KEY = new Name("FirstChar");
     public static final Name LAST_CHAR_KEY = new Name("LastChar");
 
+    /**
+     * All glyphs have the same width (as opposed to proportional or
+     * variable-pitch fonts, which have different widths).
+     */
+    public static final int FONT_FLAG_FIXED_PITCH = 0x1;  // bit 1
+
+    /**
+     * Glyphs have serifs, which are short strokes drawn at an angle on the top
+     * and bottom of glyph stems. (Sans serif fonts do not have serifs.)
+     */
+    public static final int FONT_FLAG_SERIF = 0x2;  // bit 2
+
+    /**
+     * Font contains glyphs outside the Adobe standard Latin character set.
+     * This flag and the Nonsymbolic flag shall not both be set or both be clear.
+     */
+    public static final int FONT_FLAG_SYMBOLIC = 0x4; // bit 3
+
+    /**
+     * Glyphs resemble cursive handwriting.
+     */
+    public static final int FONT_FLAG_SCRIPT = 0x8;  // bit 4
+
+    /**
+     * Font uses the Adobe standard Latin character set or a subset of it.
+     */
+    public static final int FONT_FLAG_NON_SYMBOLIC = 0x20;   // bit 6
+
+    /**
+     * Glyphs have dominant vertical strokes that are slanted.
+     */
+    public static final int FONT_FLAG_ITALIC = 0x40;  // bit 7
+
+    /**
+     * Font contains no lowercase letters; typically used for display purposes,
+     * such as for titles or headlines.
+     */
+    public static final int FONT_FLAG_ALL_CAP = 0x10000;   // bit 17
+
+    /**
+     * Glyphs have dominant vertical strokes that are slanted.
+     */
+    public static final int FONT_FLAG_SMALL_CAP = 0x20000;   // bit 18
+
+    /**
+     * Font contains no lowercase letters; typically used for display purposes,
+     * such as for titles or headlines.
+     */
+    public static final int FONT_FLAG_FORCE_BOLD = 0x40000;   // bit 19
+
     // Object name always "Font"
     protected Name name;
 

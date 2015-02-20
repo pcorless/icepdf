@@ -910,21 +910,26 @@ public class FontManager {
         int decorations = guessFontStyle(fontName);
         fontName = FontUtil.normalizeString(fontName);
         FontFile font;
+
+        // read font flags as it can sometimes give us hints as to serif
+        // san sarif or a monospace font, there is more data we can pull if needed too.
+        boolean isFixedPitch = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_FIXED_PITCH) != 0;
+        boolean isSerif = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_SERIF) != 0;
         // If no name are found then match against the core java font names
         // "Serif", java equivalent is  "Lucida Bright"
-        if ((fontName.contains("timesnewroman") ||
+        if (isSerif || ((fontName.contains("timesnewroman") ||
                 fontName.contains("bodoni") ||
                 fontName.contains("garamond") ||
                 fontName.contains("minionweb") ||
                 fontName.contains("stoneserif") ||
                 fontName.contains("georgia") ||
-                fontName.contains("bitstreamcyberbit"))) {
+                fontName.contains("bitstreamcyberbit")))) {
             // important, add style information
             font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
         }
         // see if we working with a monospaced font, we sub "Sans Serif",
         // java equivalent is "Lucida Sans"
-        else if ((fontName.contains("helvetica") ||
+        else if (!isSerif || (fontName.contains("helvetica") ||
                 fontName.contains("arial") ||
                 fontName.contains("trebuchet") ||
                 fontName.contains("avantgardegothic") ||
@@ -941,7 +946,7 @@ public class FontManager {
         }
         // see if we working with a mono spaced font "Mono Spaced"
         // java equivalent is "Lucida Sans Typewriter"
-        else if ((fontName.contains("courier") ||
+        else if (isFixedPitch || (fontName.contains("courier") ||
                 fontName.contains("couriernew") ||
                 fontName.contains("prestige") ||
                 fontName.contains("eversonmono"))) {
