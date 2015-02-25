@@ -135,18 +135,18 @@ public class FontFactory {
         return fontDictionary;
     }
 
-    public FontFile createFontFile(Stream fontStream, int fontType) {
+    public FontFile createFontFile(Stream fontStream, int fontType, String fontSubType) {
         FontFile fontFile = null;
         if (foundFontEngine()) {
             try {
                 Class<?> fontClass = getNFontClass(fontType);
                 if (fontClass != null) {
                     // convert the stream to byte[]
-                    Class[] bytArrayArg = {byte[].class};
+                    Class[] bytArrayArg = {byte[].class, String.class};
                     Constructor fontClassConstructor =
                             fontClass.getDeclaredConstructor(bytArrayArg);
                     byte[] data = fontStream.getDecodedStreamBytes(0);
-                    Object[] fontStreamBytes = {data};
+                    Object[] fontStreamBytes = {data, fontSubType};
                     if (data.length > 0) {
                         fontFile = (FontFile) fontClassConstructor
                                 .newInstance(fontStreamBytes);
@@ -186,26 +186,26 @@ public class FontFactory {
         return fontFile;
     }
 
-    public FontFile createFontFile(File file, int fontType) {
+    public FontFile createFontFile(File file, int fontType, String fontSubType) {
         try {
-            return createFontFile(file.toURI().toURL(), fontType);
+            return createFontFile(file.toURI().toURL(), fontType, fontSubType);
         } catch (Throwable e) {
             logger.log(Level.FINE, "Could not create instance oof font file " + fontType, e);
         }
         return null;
     }
 
-    public FontFile createFontFile(URL url, int fontType) {
+    public FontFile createFontFile(URL url, int fontType, String fontSubType) {
         FontFile fontFile = null;
         if (foundFontEngine()) {
             try {
                 Class<?> fontClass = getNFontClass(fontType);
                 if (fontClass != null) {
                     // convert the stream to byte[]
-                    Class[] urlArg = {URL.class};
+                    Class[] urlArg = {URL.class, String.class};
                     Constructor fontClassConstructor =
                             fontClass.getDeclaredConstructor(urlArg);
-                    Object[] fontUrl = {url};
+                    Object[] fontUrl = {url, fontSubType};
                     fontFile = (FontFile) fontClassConstructor.newInstance(fontUrl);
                 }
             } catch (Throwable e) {
