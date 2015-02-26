@@ -178,7 +178,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static void consume_g(GraphicsState graphicState, Stack stack,
                                     Library library) {
-        float gray = ((Number) stack.pop()).floatValue();
+        float gray = Math.abs(((Number) stack.pop()).floatValue());
         // Fill Color Gray
         graphicState.setFillColorSpace(
                 PColorSpace.getColorSpace(library, DeviceGray.DEVICEGRAY_KEY));
