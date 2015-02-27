@@ -369,14 +369,12 @@ public class Page extends Dictionary {
                 try {
                     ContentParser cp = ContentParserFactory.getInstance()
                             .getContentParser(library, resources);
-                    byte[][] streams = new byte[contents.size() * 2][];
+                    byte[][] streams = new byte[contents.size()][];
                     byte[] stream;
-                    for (int i = 0, j = 0, max = contents.size(); i < max; i++, j += 2) {
+                    for (int i = 0, max = contents.size(); i < max; i++) {
                         stream = contents.get(i).getDecodedStreamBytes();
                         if (stream != null) {
-                            streams[j] = stream;
-                            // add space between streams.
-                            streams[j + 1] = new byte[]{32};
+                            streams[i] = stream;
                         }
                     }
                     // get any optional groups from the catalog, which control

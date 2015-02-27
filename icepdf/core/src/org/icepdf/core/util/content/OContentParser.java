@@ -16,6 +16,7 @@
 package org.icepdf.core.util.content;
 
 import org.icepdf.core.io.ByteDoubleArrayInputStream;
+import org.icepdf.core.io.SequenceInputStream;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.GlyphOutlineDrawCmd;
@@ -28,9 +29,8 @@ import org.icepdf.core.util.PdfOps;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -107,7 +107,11 @@ public class OContentParser extends AbstractContentParser {
         Parser parser;
 
         // test case for progress bar
-        parser = new Parser(new ByteDoubleArrayInputStream(streamBytes));
+        java.util.List<InputStream> in = new ArrayList<InputStream>();
+        for (int i = 0; i < streamBytes.length; i++) {
+            in.add(new ByteArrayInputStream(streamBytes[i]));
+        }
+        parser = new Parser(new SequenceInputStream(in, ' '));
 
         // text block y offset.
         float yBTstart = 0;
