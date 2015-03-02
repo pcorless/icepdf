@@ -110,6 +110,9 @@ public class ICCBased extends PColorSpace {
     }
 
     private static int generateKey(float[] f) {
+        if (f.length == 1) {
+            return (int) f[0] & 0xff;
+        }
         int key = (((int) (f[0] * 255) & 0xff) << 16) |
                 (((int) (f[1] * 255) & 0xff) << 8) |
                 (((int) (f[2] * 255) & 0xff) & 0xff);
