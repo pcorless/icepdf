@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2014 ICEsoft Technologies Inc.
+ * Copyright 2006-2015 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -197,13 +197,18 @@ public abstract class AbstractPageViewComponent
                                 AnnotationComponentFactory.buildAnnotationComponent(
                                         annotation, documentViewController,
                                         this, documentViewModel);
-                        // add for painting
-                        annotationComponents.add(comp);
-                        // add to layout
-                        if (comp instanceof PopupAnnotationComponent) {
-                            this.add(comp, JLayeredPane.POPUP_LAYER);
-                        } else {
-                            this.add(comp, JLayeredPane.DEFAULT_LAYER);
+                        if (comp != null) {
+                            // add for painting
+                            annotationComponents.add(comp);
+                            // add to layout
+                            if (comp instanceof PopupAnnotationComponent) {
+                                this.add(comp, JLayeredPane.POPUP_LAYER);
+                            } else {
+                                this.add(comp, JLayeredPane.DEFAULT_LAYER);
+                            }
+                        }else{
+                            // have test file with null value here.
+                            System.out.println();
                         }
                     }
                 }
