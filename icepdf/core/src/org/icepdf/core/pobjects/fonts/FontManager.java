@@ -986,7 +986,9 @@ public class FontManager {
             if (isSerif) {
                 font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
             } else if (isFixedPitch) {
-                font = findFont(fontList, "lucidatypewriter-" + getFontStyle(decorations, flags), 0);
+                // lucidatypewriter, seems to make the font engine barf, converting to other
+                // common fixed pitch font courier-new.
+                font = findFont(fontList, "couriernew-" + getFontStyle(decorations, flags), 0);
             } else {
                 // sans serif
                 font = findFont(fontList, "lucidasans-" + getFontStyle(decorations, flags), 0);
