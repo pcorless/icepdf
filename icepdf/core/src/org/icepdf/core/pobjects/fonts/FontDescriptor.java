@@ -230,7 +230,7 @@ public class FontDescriptor extends Dictionary {
      * that describe the font.
      *
      * @return int value representing the flags; bits must be looked at to get
-     * attribute values.
+     *         attribute values.
      */
     public int getFlags() {
         Object value = library.getObject(entries, FLAGS);
@@ -266,7 +266,7 @@ public class FontDescriptor extends Dictionary {
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE);
                 if (fontStream != null) {
                     font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_TYPE_1);
+                            fontStream, FontFactory.FONT_TYPE_1, null);
                 }
             }
 
@@ -274,7 +274,7 @@ public class FontDescriptor extends Dictionary {
                 Stream fontStream = (Stream) library.getObject(entries, FONT_FILE_2);
                 if (fontStream != null) {
                     font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_TRUE_TYPE);
+                            fontStream, FontFactory.FONT_TRUE_TYPE, null);
                 }
             }
 
@@ -288,12 +288,12 @@ public class FontDescriptor extends Dictionary {
                                 subType.equals(FONT_FILE_3_CID_FONT_TYPE_0C))
                         ) {
                     font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_TYPE_1);
+                            fontStream, FontFactory.FONT_TYPE_1, subType.getName());
                 }
                 if (subType != null && subType.equals(FONT_FILE_3_OPEN_TYPE)) {
 //                        font = new NFontOpenType(fontStreamBytes);
                     font = fontFactory.createFontFile(
-                            fontStream, FontFactory.FONT_OPEN_TYPE);
+                            fontStream, FontFactory.FONT_OPEN_TYPE, subType.getName());
                 }
             }
         }
