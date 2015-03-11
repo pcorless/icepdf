@@ -21,8 +21,8 @@
     <artifactId>icepdf</artifactId>
     <packaging>war</packaging>
     <name>ICEpdf-icefaces</name>
-    <url>http://www.servavip.com/</url>
-    <version>0.0.5</version>
+    <url>http://www.icepdf.orgm/</url>
+    <version>1.0.0</version>
     <properties>
         <icefaces.product.group>org.icefaces</icefaces.product.group>
         <icefaces.product.name>ICEfaces</icefaces.product.name>
