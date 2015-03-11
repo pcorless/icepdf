@@ -21,7 +21,7 @@
     <artifactId>icepdf</artifactId>
     <packaging>war</packaging>
     <name>ICEpdf-icefaces</name>
-    <url>http://www.icepdf.orgm/</url>
+    <url>http://www.icepdf.org/</url>
     <version>1.0.0</version>
     <properties>
         <icefaces.product.group>org.icefaces</icefaces.product.group>
