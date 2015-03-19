@@ -213,11 +213,19 @@ public class LiteralStringObject implements StringObject {
             StringBuilder tmp = new StringBuilder(length);
             // try to detect for mulibyte encoded characters.
             for (int i = 0; i < length; i += charOffset) {
-                //String first = stringData.substring(i,i+1);
-                // check range for possible 2 byte char.
-                charValue = getUnsignedInt(i, 1);
-                if (charValue < 128 && font.getSource() != null) {
-                    tmp.append((char) charValue);
+                if (stringData.charAt(0) != 0) {
+                    //String first = stringData.substring(i,i+1);
+                    // check range for possible 2 byte char.
+                    charValue = getUnsignedInt(i, 1);
+                    if (charValue < 128 && font.getSource() != null) {
+                        tmp.append((char) charValue);
+                    } else {
+                        int charValue2 = getUnsignedInt(i, 2);
+                        if (font.canDisplayEchar((char) charValue2)) {
+                            tmp.append((char) charValue2);
+                            i += 1;
+                        }
+                    }
                 } else {
                     int charValue2 = getUnsignedInt(i, 2);
                     if (font.canDisplayEchar((char) charValue2)) {
