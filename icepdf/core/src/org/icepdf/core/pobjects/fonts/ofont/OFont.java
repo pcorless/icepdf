@@ -29,6 +29,7 @@ import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -420,5 +421,9 @@ public class OFont implements FontFile {
         }
 
         return glyphVector.getOutline();
+    }
+
+    public URL getSource() {
+        return null;
     }
 }

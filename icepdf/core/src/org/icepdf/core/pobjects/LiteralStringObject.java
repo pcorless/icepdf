@@ -207,19 +207,23 @@ public class LiteralStringObject implements StringObject {
         if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding()) {
             return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
-            int charOffset = 2;
+            int charOffset = 1;
             int length = getLength();
-            StringBuilder tmp = new StringBuilder(length);
-            int lastIndex = 0;
             int charValue;
+            StringBuilder tmp = new StringBuilder(length);
+            // try to detect for mulibyte encoded characters.
             for (int i = 0; i < length; i += charOffset) {
-                charValue = getUnsignedInt(i - lastIndex, lastIndex + charOffset);
-                // it is possible to have some cid's that are zero
-                if (charValue >= 0 && font.canDisplayEchar((char) charValue)) {
+                //String first = stringData.substring(i,i+1);
+                // check range for possible 2 byte char.
+                charValue = getUnsignedInt(i, 1);
+                if (charValue < 128 && font.getSource() != null) {
                     tmp.append((char) charValue);
-                    lastIndex = 0;
                 } else {
-                    lastIndex += charOffset;
+                    int charValue2 = getUnsignedInt(i, 2);
+                    if (font.canDisplayEchar((char) charValue2)) {
+                        tmp.append((char) charValue2);
+                        i += 1;
+                    }
                 }
             }
             return tmp;

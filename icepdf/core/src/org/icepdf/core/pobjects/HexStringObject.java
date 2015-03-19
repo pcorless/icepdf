@@ -99,6 +99,18 @@ public class HexStringObject implements StringObject {
         return unsignedInt;
     }
 
+    public int getUnsignedInt(String data) {
+        int unsignedInt = 0;
+        try {
+            unsignedInt = Integer.parseInt(data, 16);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer("Number Format Exception " + unsignedInt);
+            }
+        }
+        return unsignedInt;
+    }
+
     /**
      * <p>Returns a string representation of the object.
      * The hex data is converted to an equivalent string representation</p>
@@ -188,14 +200,31 @@ public class HexStringObject implements StringObject {
             return tmp;
         } else if (fontFormat == Font.CID_FORMAT) {
             stringData = new StringBuilder(normalizeHex(stringData, 4).toString());
-            int charOffset = 4;
+            int charOffset = 2;
             int length = getLength();
             int charValue;
             StringBuilder tmp = new StringBuilder(length);
+            // attempt to detect mulibyte encoded strings.
             for (int i = 0; i < length; i += charOffset) {
-                charValue = getUnsignedInt(i, charOffset);
-                if (font.canDisplayEchar((char) charValue)) {
-                    tmp.append((char) charValue);
+                String first = stringData.substring(i, i + 2);
+                if (first.charAt(0) != '0') {
+                    // check range for possible 2 byte char ie mixed mode.
+                    charValue = getUnsignedInt(first);
+                    if (charValue < 128 && font.getSource() != null) {
+                        tmp.append((char) charValue);
+                    } else {
+                        charValue = getUnsignedInt(i, 4);
+                        if (font.canDisplayEchar((char) charValue)) {
+                            tmp.append((char) charValue);
+                            i += 2;
+                        }
+                    }
+                } else {
+                    charValue = getUnsignedInt(i, 4);
+                    if (font.canDisplayEchar((char) charValue)) {
+                        tmp.append((char) charValue);
+                        i += 2;
+                    }
                 }
             }
             return tmp;

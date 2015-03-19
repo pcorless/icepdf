@@ -19,6 +19,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.net.URL;
 import java.util.Map;
 
 /**
@@ -138,5 +139,11 @@ public interface FontFile {
 
     public boolean isOneByteEncoding();
 
-
+    /**
+     * Gets the source url of the underlying file if any.  Embedded fonts will
+     * not have a source.
+     *
+     * @return null if the font is embedded, otherwise the font system path.
+     */
+    public URL getSource();
 }
