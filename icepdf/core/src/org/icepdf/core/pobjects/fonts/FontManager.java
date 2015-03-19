@@ -780,6 +780,8 @@ public class FontManager {
                             || baseName.equals("new")
                             // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
                             || baseName.equals("timesnewromanps")
+                            // doesn't seem to the correct cid mapping otf version anyways.
+                            || baseName.equals("kozminpro-regular")
                             ) {
                         //found = false;
                     } else if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
