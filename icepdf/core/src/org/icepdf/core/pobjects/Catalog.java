@@ -61,7 +61,7 @@ public class Catalog extends Dictionary {
     private Outlines outlines;
     private Names names;
     private OptionalContent optionalContent;
-    private Dictionary dests;
+    private NamedDestinations dests;
     private ViewerPreferences viewerPref;
 
     private boolean outlinesInited = false;
@@ -171,13 +171,12 @@ public class Catalog extends Dictionary {
      * @return A Dictionary of Destinations; if none, null is returned.
      */
     @SuppressWarnings("unchecked")
-    public Dictionary getDestinations() {
+    public NamedDestinations getDestinations() {
         if (!destsInited) {
             destsInited = true;
             Object o = library.getObject(entries, DESTS_KEY);
             if (o != null) {
-                dests = new Dictionary(library, (HashMap<Object, Object>) o);
-                dests.init();
+                dests = new NamedDestinations(library, (HashMap<Object, Object>) o);
             }
         }
         return dests;

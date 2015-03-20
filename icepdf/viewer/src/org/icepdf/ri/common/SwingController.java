@@ -3231,6 +3231,11 @@ public class SwingController
                 HashMap entries = action.getEntries();
                 dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
             }
+        } else if (dest.getNamedDestination() != null) {
+            NamedDestinations namedDestinations = document.getCatalog().getDestinations();
+            if (namedDestinations != null) {
+                dest = namedDestinations.getDestination(dest.getNamedDestination());
+            }
         }
 
         // Process the destination information
