@@ -179,7 +179,7 @@ public class TilingPattern extends Stream implements Pattern {
     private Shapes shapes;
 
     // Fill colour
-    public Color fillColour = null;
+    public Color fillColour;
 
     //  initiated flag
     private boolean inited;
@@ -314,8 +314,8 @@ public class TilingPattern extends Stream implements Pattern {
         // for tile spacing.
         bBoxMod = new Rectangle2D.Double(
                 bBox.getX(), bBox.getY(),
-                bBox.getWidth() == xStep ? bBox.getWidth() : xStep,
-                bBox.getHeight() == yStep ? bBox.getHeight() : yStep);
+                bBox.getWidth() == xStep ? bBox.getWidth() : Math.round(xStep),
+                bBox.getHeight() == yStep ? bBox.getHeight() : Math.round(yStep));
     }
 
     /**
