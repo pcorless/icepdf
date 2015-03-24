@@ -126,11 +126,13 @@ public class Indexed extends PColorSpace {
      */
     public Color getColor(float[] f, boolean fillAndStroke) {
         init();
-        int index = (int) (f[0] * (cols.length - 1));
-        if (index < cols.length) {
+        int index = (int) f[0];//(int) (f[0] * (cols.length - 1));
+        if (index >= 0 && index <= hival) {
             return cols[index];
+        } else if (index > hival) {
+            return cols[hival];
         } else {
-            return cols[(int) f[0]];
+            return cols[0];
         }
 
     }
