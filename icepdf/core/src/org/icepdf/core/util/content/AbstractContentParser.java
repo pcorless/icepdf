@@ -673,12 +673,16 @@ public abstract class AbstractContentParser implements ContentParser {
             java.util.List dashVector = (java.util.List) stack.pop();
             // if the dash vector size is zero we have a default none dashed
             // line and thus we skip out
-            if (dashVector.size() > 0) {
+            if (!dashVector.isEmpty() && dashVector.get(0) != null) {
                 // convert dash vector to a array of floats
                 final int sz = dashVector.size();
                 dashArray = new float[sz];
+                Object tmp;
                 for (int i = 0; i < sz; i++) {
-                    dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
+                    tmp = dashVector.get(i);
+                    if (tmp != null && tmp instanceof Number) {
+                        dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
+                    }
                 }
                 // corner case check to see if the dash array contains a first element
                 // that is very different then second which is likely the result of
