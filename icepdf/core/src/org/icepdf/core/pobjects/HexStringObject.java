@@ -176,7 +176,7 @@ public class HexStringObject implements StringObject {
      *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding()) {
+        if (fontFormat == Font.SIMPLE_FORMAT) {
             stringData = new StringBuilder(normalizeHex(stringData, 2).toString());
             int charOffset = 2;
             int length = getLength();
@@ -210,7 +210,8 @@ public class HexStringObject implements StringObject {
                 if (first.charAt(0) != '0') {
                     // check range for possible 2 byte char ie mixed mode.
                     charValue = getUnsignedInt(first);
-                    if (charValue < 128 && font.getSource() != null) {
+                    if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
+                            font.canDisplayEchar((char) charValue) && font.getSource() != null) {
                         tmp.append((char) charValue);
                     } else {
                         charValue = getUnsignedInt(i, 4);

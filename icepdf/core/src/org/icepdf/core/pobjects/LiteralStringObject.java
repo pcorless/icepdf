@@ -204,20 +204,21 @@ public class LiteralStringObject implements StringObject {
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
-        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding()) {
+        if (fontFormat == Font.SIMPLE_FORMAT
+                && (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE
+                || font.getByteEncoding() == null)
+                ) {
             return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
-            int charOffset = 1;
             int length = getLength();
             int charValue;
             StringBuilder tmp = new StringBuilder(length);
-            // try to detect for mulibyte encoded characters.
-            for (int i = 0; i < length; i += charOffset) {
-                if (stringData.charAt(0) != 0) {
-                    //String first = stringData.substring(i,i+1);
+            if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE) {
+                int charOffset = 1;
+                for (int i = 0; i < length; i += charOffset) {
                     // check range for possible 2 byte char.
                     charValue = getUnsignedInt(i, 1);
-                    if (charValue < 128 && font.getSource() != null) {
+                    if (font.canDisplayEchar((char) charValue)) {
                         tmp.append((char) charValue);
                     } else {
                         int charValue2 = getUnsignedInt(i, 2);
@@ -226,11 +227,14 @@ public class LiteralStringObject implements StringObject {
                             i += 1;
                         }
                     }
-                } else {
+                }
+            } else {
+                // we have default 2bytes.
+                int charOffset = 2;
+                for (int i = 0; i < length; i += charOffset) {
                     int charValue2 = getUnsignedInt(i, 2);
                     if (font.canDisplayEchar((char) charValue2)) {
                         tmp.append((char) charValue2);
-                        i += 1;
                     }
                 }
             }
