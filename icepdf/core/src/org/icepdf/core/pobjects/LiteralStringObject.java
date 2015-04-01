@@ -205,9 +205,7 @@ public class LiteralStringObject implements StringObject {
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
         if (fontFormat == Font.SIMPLE_FORMAT
-                && (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE
-                || font.getByteEncoding() == null)
-                ) {
+                || font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE) {
             return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
             int length = getLength();
