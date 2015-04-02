@@ -32,6 +32,25 @@ import java.awt.geom.AffineTransform;
  */
 public class ImageDrawCmd extends AbstractDrawCmd {
 
+    // enable disable scaled paint.
+    private static boolean isScaledPaint;
+
+    // narrow image scaling max dimension size to kick of the use of the lookup
+    // table
+    public static int MIN_DIMENSION;
+
+    static {
+        isScaledPaint = Defs.booleanProperty("org.icepdf.core.imageDrawCmd.scale.enabled", false);
+        MIN_DIMENSION = Defs.intProperty("org.icepdf.core.imageDrawCmd.maxDimension", 5);
+    }
+
+    private ImageReference image;
+    // paint scale factor of original image.
+    private int xScale = 1;
+    private int yScale = 1;
+    private boolean xIsScale = false;
+    private boolean yIsScale = false;
+
     // narrow image scaling lookup table for 1xh or wx1 images.  Soft values
     // but keeps the images from not painting a low zoom levels.
     // first column is the zoom level and the second is the total number of
@@ -45,22 +64,6 @@ public class ImageDrawCmd extends AbstractDrawCmd {
             {0.10, 10},
             {0.05, 12}
     };
-    // narrow image scaling max dimension size to kick of the use of the lookup
-    // table
-    public static int MIN_DIMENSION;
-
-    static {
-        isScaledPaint = Defs.booleanProperty("org.icepdf.core.imageDrawCmd.scale.enabled", false);
-        MIN_DIMENSION = Defs.intProperty("org.icepdf.core.imageDrawCmd.maxDimension", 5);
-    }
-    // enable disable scaled paint.
-    private static boolean isScaledPaint;
-    private ImageReference image;
-    // paint scale factor of original image.
-    private int xScale = 1;
-    private int yScale = 1;
-    private boolean xIsScale = false;
-    private boolean yIsScale = false;
 
     public ImageDrawCmd(ImageReference image) {
         this.image = image;

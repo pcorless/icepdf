@@ -28,6 +28,7 @@ import org.icepdf.core.util.*;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.listeners.DefaultPageViewLoadingListener;
 import org.icepdf.ri.common.views.listeners.PageViewLoadingListener;
@@ -104,6 +105,43 @@ public class PageViewComponentImpl extends
     // turn off page image buffer proxy loading.
     private static boolean enablePageLoadingProxy =
             Defs.booleanProperty("org.icepdf.core.views.page.proxy", true);
+
+    private PageTree pageTree;
+    private JScrollPane parentScrollPane;
+    private int previousScrollValue;
+    private int pageIndex;
+
+    private Rectangle pageSize = new Rectangle();
+    // cached page size, we call this a lot.
+    private Rectangle defaultPageSize = new Rectangle();
+
+    private boolean isPageSizeCalculated = false;
+    private float currentZoom;
+    private float currentRotation;
+
+    // the buffered image which will be painted to
+    private SoftReference<Image> bufferedPageImageReference;
+    // the bounds of the buffered image.
+    private Rectangle bufferedPageImageBounds = new Rectangle();
+
+    private Timer isDirtyTimer;
+    private DirtyTimerAction dirtyTimerAction;
+    private boolean isActionListenerRegistered;
+    private PageInitializer pageInitializer;
+    private PagePainter pagePainter;
+    private final Object paintCopyAreaLock = new Object();
+    //    private final Object isDirtyLock = new Object();
+    private boolean disposing = false;
+
+    // track loading events for wait icon
+    private PageViewLoadingListener pageLoadingListener;
+
+    // current clip
+    private Rectangle clipBounds;
+    private Rectangle oldClipBounds;
+
+    private boolean inited;
+
     // vertical scale factor to extend buffer
     private static double verticalScaleFactor;
     // horizontal  scale factor to extend buffer
@@ -133,34 +171,6 @@ public class PageViewComponentImpl extends
             logger.log(Level.FINE, "Error reading init threshold timer interval");
         }
     }
-    private final Object paintCopyAreaLock = new Object();
-    private PageTree pageTree;
-    private JScrollPane parentScrollPane;
-    private int previousScrollValue;
-    private int pageIndex;
-    private Rectangle pageSize = new Rectangle();
-    // cached page size, we call this a lot.
-    private Rectangle defaultPageSize = new Rectangle();
-    private boolean isPageSizeCalculated = false;
-    private float currentZoom;
-    private float currentRotation;
-    // the buffered image which will be painted to
-    private SoftReference<Image> bufferedPageImageReference;
-    // the bounds of the buffered image.
-    private Rectangle bufferedPageImageBounds = new Rectangle();
-    private Timer isDirtyTimer;
-    private DirtyTimerAction dirtyTimerAction;
-    private boolean isActionListenerRegistered;
-    private PageInitializer pageInitializer;
-    private PagePainter pagePainter;
-    //    private final Object isDirtyLock = new Object();
-    private boolean disposing = false;
-    // track loading events for wait icon
-    private PageViewLoadingListener pageLoadingListener;
-    // current clip
-    private Rectangle clipBounds;
-    private Rectangle oldClipBounds;
-    private boolean inited;
 
 
     public PageViewComponentImpl(DocumentViewModel documentViewModel,
@@ -998,12 +1008,14 @@ public class PageViewComponentImpl extends
 
     public class PagePainter implements Runnable {
 
-        private final Object isRunningLock = new Object();
         private boolean isRunning;
         private boolean isLastPaintDirty;
         private boolean isBufferyDirty;
         private boolean isStopRequested;
         private Page page;
+
+        private final Object isRunningLock = new Object();
+
         private boolean hasBeenQueued;
 
         public synchronized boolean isLastPaintDirty() {
@@ -1121,8 +1133,9 @@ public class PageViewComponentImpl extends
 
     private class PageInitializer implements Runnable {
 
-        private final Object isRunningLock = new Object();
         private boolean isRunning;
+        private final Object isRunningLock = new Object();
+
         private boolean hasBeenQueued;
 
         private Page page;

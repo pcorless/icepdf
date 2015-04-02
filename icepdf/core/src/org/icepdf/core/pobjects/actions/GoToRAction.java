@@ -104,7 +104,7 @@ public class GoToRAction extends Action {
      * it should be loaded in the current.
      *
      * @return true indicates a new windows should be launched for the remote
-     * document; otherwise, false.
+     *         document; otherwise, false.
      */
     public Boolean isNewWindow() {
         return isNewWindow;

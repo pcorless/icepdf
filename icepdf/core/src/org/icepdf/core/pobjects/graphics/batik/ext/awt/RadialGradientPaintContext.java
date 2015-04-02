@@ -35,17 +35,6 @@ import java.awt.image.ColorModel;
  */
 final class RadialGradientPaintContext extends MultipleGradientPaintContext {
 
-    private static final int FIXED_POINT_IMPL = 1;
-    private static final int DEFAULT_IMPL = 2;
-    private static final int ANTI_ALIAS_IMPL = 3;
-    /**
-     * Amount for offset when clamping focus.
-     */
-    private static final float SCALEBACK = 0.999f;
-    /**
-     * Used to limit the size of the square root lookup table
-     */
-    private static final int MAX_PRECISION = 256;
     /**
      * True when (focus == center)
      */
@@ -75,15 +64,16 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
      * trivial because it is easier to calculate than the general case.
      */
     private float trivial;
+
+    private static final int FIXED_POINT_IMPL = 1;
+    private static final int DEFAULT_IMPL = 2;
+    private static final int ANTI_ALIAS_IMPL = 3;
+
     private int fillMethod;
     /**
-     * Length of a square distance intervale in the lookup table
+     * Amount for offset when clamping focus.
      */
-    private float invSqStepFloat;
-    /**
-     * Square root lookup table
-     */
-    private int[] sqrtLutFixed = new int[MAX_PRECISION];
+    private static final float SCALEBACK = 0.999f;
 
     /**
      * Constructor for RadialGradientPaintContext.
@@ -338,6 +328,21 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
             indexer += adjust;
         }
     }
+
+    /**
+     * Length of a square distance intervale in the lookup table
+     */
+    private float invSqStepFloat;
+
+    /**
+     * Used to limit the size of the square root lookup table
+     */
+    private static final int MAX_PRECISION = 256;
+
+    /**
+     * Square root lookup table
+     */
+    private int[] sqrtLutFixed = new int[MAX_PRECISION];
 
     /**
      * Build square root lookup table

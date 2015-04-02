@@ -35,7 +35,6 @@ public class Utils {
 
     private static final Logger logger =
             Logger.getLogger(Utils.class.toString());
-    private static long lastMemUsed = 0;
 
     /**
      * Sets the value into the buffer, at the designated offset, using big-endian rules
@@ -318,6 +317,8 @@ public class Utils {
         System.out.println("MEM  " + str + "    used: " + (used / 1024) + " KB    delta: " + ((used - lastMemUsed) / 1024) + " KB");
         lastMemUsed = used;
     }
+
+    private static long lastMemUsed = 0;
 
     public static int numBytesToHoldBits(int numBits) {
         int numBytes = (numBits / 8);

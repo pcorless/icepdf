@@ -87,6 +87,191 @@ public class JBIG2ImageReader extends ImageReader {
         super(originatingProvider);
     }
 
+    public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetadata) {
+        super.setInput(input, seekForwardOnly, ignoreMetadata);
+
+        if (input == null) {
+            this.stream = null;
+            return;
+        }
+
+        // The input source must be an ImageInputStream because the originating
+        // provider -- the JBIG2ImageReaderSpi class -- passes
+        // STANDARD_INPUT_TYPE
+        // -- an array consisting only of ImageInputStream -- to its superclass
+        // in its constructor call.
+
+        if (input instanceof ImageInputStream)
+            this.stream = (ImageInputStream) input;
+        else
+            throw new IllegalArgumentException("ImageInputStream expected!");
+    }
+
+    public BufferedImage read(int imageIndex, ImageReadParam param) throws IOException {
+
+        BufferedImage dst = null;
+        try {
+            // Calculate and return a Rectangle that identifies the region of
+            // the
+            // source image that should be read:
+            //
+            // 1. If param is null, the upper-left corner of the region is (0,
+            // 0),
+            // and the width and height are specified by the width and height
+            // arguments. In other words, the entire image is read.
+            //
+            // 2. If param is not null
+            //
+            // 2.1 If param.getSourceRegion() returns a non-null Rectangle, the
+            // region is calculated as the intersection of param's Rectangle
+            // and the earlier (0, 0, width, height Rectangle).
+            //
+            // 2.2 param.getSubsamplingXOffset() is added to the region's x
+            // coordinate and subtracted from its width.
+            //
+            // 2.3 param.getSubsamplingYOffset() is added to the region's y
+            // coordinate and subtracted from its height.
+
+            int width = getWidth(imageIndex);
+            int height = getHeight(imageIndex);
+
+            Rectangle sourceRegion = getSourceRegion(param, width, height);
+
+            // Source subsampling is used to return a scaled-down source image.
+            // Default 1 values for X and Y subsampling indicate that a
+            // non-scaled
+            // source image will be returned.
+
+            int sourceXSubsampling = 1;
+            int sourceYSubsampling = 1;
+
+            // The destination offset determines the starting location in the
+            // destination where decoded pixels are placed. Default (0, 0)
+            // values indicate the upper-left corner.
+
+            Point destinationOffset = new Point(0, 0);
+
+            // If param is not null, override the source subsampling, and
+            // destination offset defaults.
+
+            if (param != null) {
+                sourceXSubsampling = param.getSourceXSubsampling();
+                sourceYSubsampling = param.getSourceYSubsampling();
+                destinationOffset = param.getDestinationOffset();
+            }
+
+            // Obtain a BufferedImage into which decoded pixels will be placed.
+            // This destination will be returned to the application.
+            //
+            // 1. If param is not null
+            //
+            // 1.1 If param.getDestination() returns a BufferedImage
+            //
+            // 1.1.1 Return this BufferedImage
+            //
+            // Else
+            //
+            // 1.1.2 Invoke param.getDestinationType ().
+            //
+            // 1.1.3 If the returned ImageTypeSpecifier equals
+            // getImageTypes (0) (see below), return its BufferedImage.
+            //
+            // 2. If param is null or a BufferedImage has not been obtained
+            //
+            // 2.1 Return getImageTypes (0)'s BufferedImage.
+
+            dst = getDestination(param, getImageTypes(0), width, height);
+
+            // Create a WritableRaster for the destination.
+
+            WritableRaster wrDst = dst.getRaster();
+
+            JBIG2Bitmap bitmap = decoder.getPageAsJBIG2Bitmap(imageIndex).getSlice(sourceRegion.x, sourceRegion.y, sourceRegion.width, sourceRegion.height);
+
+            BufferedImage image = bitmap.getBufferedImage();
+
+            int newWidth = (int) (image.getWidth() * (1 / (double) sourceXSubsampling));
+            int newHeight = (int) (image.getHeight() * (1 / (double) sourceYSubsampling));
+
+            BufferedImage scaledImage = scaleImage(image.getRaster(), newWidth, newHeight, 1, 1);
+
+            Raster raster;
+
+            if (scaledImage != null) {
+                raster = scaledImage.getRaster();
+            } else
+                raster = image.getRaster();
+
+            wrDst.setRect(destinationOffset.x, destinationOffset.y, raster);
+
+        } catch (RuntimeException e) {
+            logger.log(Level.FINE, "Error reading JBIG2 image data", e);
+        }
+
+        return dst;
+
+    }
+
+    public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
+        return null;
+    }
+
+    public IIOMetadata getStreamMetadata() throws IOException {
+        return null;
+    }
+
+    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
+        readFile();
+
+        checkIndex(imageIndex);
+
+        // Create a List of ImageTypeSpecifiers that identify the possible image
+        // types to which the single JBIG2 image can be decoded. An
+        // ImageTypeSpecifier is used with ImageReader's getDestination() method
+        // to return an appropriate BufferedImage that contains the decoded
+        // image, and is accessed by an application.
+
+        List<ImageTypeSpecifier> l = new ArrayList<ImageTypeSpecifier>();
+
+        // The JBIG2 reader only uses a single List entry. This entry describes
+        // a
+        // BufferedImage of TYPE_INT_RGB, which is a commonly used image type.
+
+        l.add(ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_BYTE_BINARY));
+
+        // Return an iterator that retrieves elements from the list.
+
+        return l.iterator();
+    }
+
+    public int getNumImages(boolean allowSearch) throws IOException {
+        readFile();
+
+        return decoder.getNumberOfPages();
+    }
+
+    public int getHeight(int imageIndex) throws IOException {
+        readFile();
+
+        checkIndex(imageIndex);
+
+        return decoder.getPageAsJBIG2Bitmap(imageIndex).getHeight();
+    }
+
+    public int getWidth(int imageIndex) throws IOException {
+        readFile();
+
+        checkIndex(imageIndex);
+
+        return decoder.getPageAsJBIG2Bitmap(imageIndex).getWidth();
+    }
+
+    private void checkIndex(int imageIndex) {
+        int noOfPages = decoder.getNumberOfPages();
+        if (imageIndex < 0 || imageIndex > noOfPages)
+            throw new IndexOutOfBoundsException("Bad index!");
+    }
+
     private static BufferedImage scaleImage(Raster ras, int pX, int pY, int comp, int d) {
 
         int w = ras.getWidth();
@@ -288,191 +473,6 @@ public class JBIG2ImageReader extends ImageReader {
         } else {
             return null;
         }
-    }
-
-    public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetadata) {
-        super.setInput(input, seekForwardOnly, ignoreMetadata);
-
-        if (input == null) {
-            this.stream = null;
-            return;
-        }
-
-        // The input source must be an ImageInputStream because the originating
-        // provider -- the JBIG2ImageReaderSpi class -- passes
-        // STANDARD_INPUT_TYPE
-        // -- an array consisting only of ImageInputStream -- to its superclass
-        // in its constructor call.
-
-        if (input instanceof ImageInputStream)
-            this.stream = (ImageInputStream) input;
-        else
-            throw new IllegalArgumentException("ImageInputStream expected!");
-    }
-
-    public BufferedImage read(int imageIndex, ImageReadParam param) throws IOException {
-
-        BufferedImage dst = null;
-        try {
-            // Calculate and return a Rectangle that identifies the region of
-            // the
-            // source image that should be read:
-            //
-            // 1. If param is null, the upper-left corner of the region is (0,
-            // 0),
-            // and the width and height are specified by the width and height
-            // arguments. In other words, the entire image is read.
-            //
-            // 2. If param is not null
-            //
-            // 2.1 If param.getSourceRegion() returns a non-null Rectangle, the
-            // region is calculated as the intersection of param's Rectangle
-            // and the earlier (0, 0, width, height Rectangle).
-            //
-            // 2.2 param.getSubsamplingXOffset() is added to the region's x
-            // coordinate and subtracted from its width.
-            //
-            // 2.3 param.getSubsamplingYOffset() is added to the region's y
-            // coordinate and subtracted from its height.
-
-            int width = getWidth(imageIndex);
-            int height = getHeight(imageIndex);
-
-            Rectangle sourceRegion = getSourceRegion(param, width, height);
-
-            // Source subsampling is used to return a scaled-down source image.
-            // Default 1 values for X and Y subsampling indicate that a
-            // non-scaled
-            // source image will be returned.
-
-            int sourceXSubsampling = 1;
-            int sourceYSubsampling = 1;
-
-            // The destination offset determines the starting location in the
-            // destination where decoded pixels are placed. Default (0, 0)
-            // values indicate the upper-left corner.
-
-            Point destinationOffset = new Point(0, 0);
-
-            // If param is not null, override the source subsampling, and
-            // destination offset defaults.
-
-            if (param != null) {
-                sourceXSubsampling = param.getSourceXSubsampling();
-                sourceYSubsampling = param.getSourceYSubsampling();
-                destinationOffset = param.getDestinationOffset();
-            }
-
-            // Obtain a BufferedImage into which decoded pixels will be placed.
-            // This destination will be returned to the application.
-            //
-            // 1. If param is not null
-            //
-            // 1.1 If param.getDestination() returns a BufferedImage
-            //
-            // 1.1.1 Return this BufferedImage
-            //
-            // Else
-            //
-            // 1.1.2 Invoke param.getDestinationType ().
-            //
-            // 1.1.3 If the returned ImageTypeSpecifier equals
-            // getImageTypes (0) (see below), return its BufferedImage.
-            //
-            // 2. If param is null or a BufferedImage has not been obtained
-            //
-            // 2.1 Return getImageTypes (0)'s BufferedImage.
-
-            dst = getDestination(param, getImageTypes(0), width, height);
-
-            // Create a WritableRaster for the destination.
-
-            WritableRaster wrDst = dst.getRaster();
-
-            JBIG2Bitmap bitmap = decoder.getPageAsJBIG2Bitmap(imageIndex).getSlice(sourceRegion.x, sourceRegion.y, sourceRegion.width, sourceRegion.height);
-
-            BufferedImage image = bitmap.getBufferedImage();
-
-            int newWidth = (int) (image.getWidth() * (1 / (double) sourceXSubsampling));
-            int newHeight = (int) (image.getHeight() * (1 / (double) sourceYSubsampling));
-
-            BufferedImage scaledImage = scaleImage(image.getRaster(), newWidth, newHeight, 1, 1);
-
-            Raster raster;
-
-            if (scaledImage != null) {
-                raster = scaledImage.getRaster();
-            } else
-                raster = image.getRaster();
-
-            wrDst.setRect(destinationOffset.x, destinationOffset.y, raster);
-
-        } catch (RuntimeException e) {
-            logger.log(Level.FINE, "Error reading JBIG2 image data", e);
-        }
-
-        return dst;
-
-    }
-
-    public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
-        return null;
-    }
-
-    public IIOMetadata getStreamMetadata() throws IOException {
-        return null;
-    }
-
-    public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
-        readFile();
-
-        checkIndex(imageIndex);
-
-        // Create a List of ImageTypeSpecifiers that identify the possible image
-        // types to which the single JBIG2 image can be decoded. An
-        // ImageTypeSpecifier is used with ImageReader's getDestination() method
-        // to return an appropriate BufferedImage that contains the decoded
-        // image, and is accessed by an application.
-
-        List<ImageTypeSpecifier> l = new ArrayList<ImageTypeSpecifier>();
-
-        // The JBIG2 reader only uses a single List entry. This entry describes
-        // a
-        // BufferedImage of TYPE_INT_RGB, which is a commonly used image type.
-
-        l.add(ImageTypeSpecifier.createFromBufferedImageType(BufferedImage.TYPE_BYTE_BINARY));
-
-        // Return an iterator that retrieves elements from the list.
-
-        return l.iterator();
-    }
-
-    public int getNumImages(boolean allowSearch) throws IOException {
-        readFile();
-
-        return decoder.getNumberOfPages();
-    }
-
-    public int getHeight(int imageIndex) throws IOException {
-        readFile();
-
-        checkIndex(imageIndex);
-
-        return decoder.getPageAsJBIG2Bitmap(imageIndex).getHeight();
-    }
-
-    public int getWidth(int imageIndex) throws IOException {
-        readFile();
-
-        checkIndex(imageIndex);
-
-        return decoder.getPageAsJBIG2Bitmap(imageIndex).getWidth();
-    }
-
-    private void checkIndex(int imageIndex) {
-        int noOfPages = decoder.getNumberOfPages();
-        if (imageIndex < 0 || imageIndex > noOfPages)
-            throw new IndexOutOfBoundsException("Bad index!");
     }
 
     private void readFile() {

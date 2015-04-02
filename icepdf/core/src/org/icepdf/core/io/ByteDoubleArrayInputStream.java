@@ -111,7 +111,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * cannot block.
      *
      * @return the next byte of data, or <code>-1</code> if the end of the
-     * stream has been reached.
+     *         stream has been reached.
      */
     public synchronized int read() {
         float posOffset = bufOffset[posIndex] + pos;
@@ -150,8 +150,8 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * @param off the start offset of the data.
      * @param len the maximum number of bytes read.
      * @return the total number of bytes read into the buffer, or
-     * <code>-1</code> if there is no more data because the end of
-     * the stream has been reached.
+     *         <code>-1</code> if there is no more data because the end of
+     *         the stream has been reached.
      */
     public synchronized int read(byte b[], int off, int len) {
         if (b == null) {
@@ -247,7 +247,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * which is the number of bytes remaining to be read from the input buffer.
      *
      * @return the number of bytes that can be read from the input stream
-     * without blocking.
+     *         without blocking.
      */
     public synchronized int available() {
         return count - (bufOffset[posIndex] + pos);

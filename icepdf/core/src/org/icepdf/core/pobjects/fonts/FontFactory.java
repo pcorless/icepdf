@@ -34,13 +34,33 @@ import java.util.logging.Logger;
  */
 public class FontFactory {
 
+    private static final Logger logger =
+            Logger.getLogger(FontFactory.class.toString());
+
+    // allow scaling of large images to improve clarity on screen
+    private static boolean awtFontLoading;
+
+    // dynamic property to switch between font engine and awt font substitution. 
+    private static boolean awtFontSubstitution;
+
+    static {
+        // turn on font file loading using awt, can cause the jvm to crash
+        // if the font file is corrupt.
+        awtFontLoading =
+                Defs.sysPropertyBoolean("org.icepdf.core.awtFontLoading",
+                        false);
+
+    }
+
     public static final int FONT_OPEN_TYPE = 5;
     public static final int FONT_TRUE_TYPE = java.awt.Font.TRUETYPE_FONT;
     public static final int FONT_TYPE_0 = 6;
     public static final int FONT_TYPE_1 = java.awt.Font.TYPE1_FONT;
     public static final int FONT_TYPE_3 = 7;
-    private static final Logger logger =
-            Logger.getLogger(FontFactory.class.toString());
+
+    // Singleton instance of class
+    private static FontFactory fontFactory;
+
     // NFont class path
     private static final String FONT_CLASS =
             "org.icepdf.core.pobjects.fonts.nfont.Font";
@@ -64,25 +84,9 @@ public class FontFactory {
             logger.log(Level.FINE, "NFont font library was not found on the class path");
         }
     }
-    // allow scaling of large images to improve clarity on screen
-    private static boolean awtFontLoading;
-    // dynamic property to switch between font engine and awt font substitution.
-    private static boolean awtFontSubstitution;
-    static {
-        // turn on font file loading using awt, can cause the jvm to crash
-        // if the font file is corrupt.
-        awtFontLoading =
-                Defs.sysPropertyBoolean("org.icepdf.core.awtFontLoading",
-                        false);
 
-    }
-    // Singleton instance of class
-    private static FontFactory fontFactory;
     private static boolean foundNFont;
 
-
-    private FontFactory() {
-    }
 
     /**
      * <p>Returns a static instance of the FontManager class.</p>
@@ -95,6 +99,10 @@ public class FontFactory {
             fontFactory = new FontFactory();
         }
         return fontFactory;
+    }
+
+
+    private FontFactory() {
     }
 
     public Font getFont(Library library, HashMap entries) {

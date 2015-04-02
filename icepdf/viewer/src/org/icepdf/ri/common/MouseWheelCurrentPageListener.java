@@ -34,13 +34,6 @@ public class MouseWheelCurrentPageListener implements MouseWheelListener {
     private boolean calculatingCurrentPage;
 
 
-    protected MouseWheelCurrentPageListener(JScrollPane scrollpane,
-                                            CurrentPageChanger currentPageChanger) {
-        this.scrollpane = scrollpane;
-        this.currentPageChanger = currentPageChanger;
-        calculatingCurrentPage = false;
-    }
-
     /**
      * Install a MouseWheelCurrentPageListener as a MouseWheelListener
      */
@@ -60,6 +53,13 @@ public class MouseWheelCurrentPageListener implements MouseWheelListener {
                 listener instanceof MouseWheelCurrentPageListener) {
             scrollpane.removeMouseWheelListener((MouseWheelCurrentPageListener) listener);
         }
+    }
+
+    protected MouseWheelCurrentPageListener(JScrollPane scrollpane,
+                                            CurrentPageChanger currentPageChanger) {
+        this.scrollpane = scrollpane;
+        this.currentPageChanger = currentPageChanger;
+        calculatingCurrentPage = false;
     }
 
     public void mouseWheelMoved(MouseWheelEvent e) {

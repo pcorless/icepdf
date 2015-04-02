@@ -32,9 +32,12 @@ public class ContentParserFactory {
 
     private static final Logger logger =
             Logger.getLogger(ContentParserFactory.class.toString());
+
+    private static ContentParserFactory contentParserFactory;
+
     private static final String N_CONTENT_PARSER =
             "org.icepdf.core.util.content.NContentParser";
-    private static ContentParserFactory contentParserFactory;
+
     private static boolean foundPro;
 
     static {

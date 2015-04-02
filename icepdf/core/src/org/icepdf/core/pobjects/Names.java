@@ -17,6 +17,9 @@ import java.util.logging.Logger;
  */
 public class Names extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(Names.class.toString());
+
     /**
      * A name tree mapping name strings to destinations.
      */
@@ -57,8 +60,7 @@ public class Names extends Dictionary {
      * rendition objects.
      */
     public static final Name RENDITIONS_KEY = new Name("Renditions");
-    private static final Logger logger =
-            Logger.getLogger(Names.class.toString());
+
     private NameTree destsNameTree;
     private NameTree javaScriptNameTree;
     private NameTree pagesNameTree;

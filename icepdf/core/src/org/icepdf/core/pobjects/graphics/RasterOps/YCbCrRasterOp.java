@@ -18,11 +18,6 @@ public class YCbCrRasterOp implements RasterOp {
         this.hints = hints;
     }
 
-    // clamp the input between 0 ... 255
-    private static int clamp(int x) {
-        return (x < 0) ? 0 : ((x > 255) ? 255 : x);
-    }
-
     public WritableRaster filter(Raster src, WritableRaster dest) {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
@@ -55,6 +50,11 @@ public class YCbCrRasterOp implements RasterOp {
             destPixels[intPixels] = ((rVal & 0xff) << 16) | ((gVal & 0xff) << 8) | (bVal & 0xff);
         }
         return dest;
+    }
+
+    // clamp the input between 0 ... 255
+    private static int clamp(int x) {
+        return (x < 0) ? 0 : ((x > 255) ? 255 : x);
     }
 
     public Rectangle2D getBounds2D(Raster src) {

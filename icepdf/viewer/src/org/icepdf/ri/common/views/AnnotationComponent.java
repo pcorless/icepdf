@@ -88,13 +88,13 @@ public interface AnnotationComponent {
 
     public boolean isSelected();
 
-    public void setSelected(boolean selected);
-
     public Document getDocument();
 
     public int getPageIndex();
 
     public PageViewComponent getParentPageView();
+
+    public void setSelected(boolean selected);
 
     public void repaint();
 

@@ -40,16 +40,18 @@ import java.util.logging.Logger;
  */
 public class Parser {
 
-    public static final int PARSE_MODE_NORMAL = 0;
-    public static final int PARSE_MODE_OBJECT_STREAM = 1;
     private static final Logger logger =
             Logger.getLogger(Parser.class.toString());
+
+    public static final int PARSE_MODE_NORMAL = 0;
+    public static final int PARSE_MODE_OBJECT_STREAM = 1;
 
     // InputStream has to support mark(), reset(), and markSupported()
     // DO NOT close this, since we have two cases: read everything up front, and progressive reads
 //    private BufferedMarkedInputStream reader;
-    boolean lastTokenHString = false;
+
     private InputStream reader;
+    boolean lastTokenHString = false;
     private Stack<Object> stack = new Stack<Object>();
     private int parseMode;
     private boolean isTrailer;
@@ -72,80 +74,6 @@ public class Parser {
     public Parser(InputStream r, int pm) {
         reader = new BufferedMarkedInputStream(r);
         parseMode = pm;
-    }
-
-    /**
-     * We want to be conservative in deciding that we're still in the inline
-     * image, since we haven't found any of these cases before now.
-     */
-    private static boolean isStillInlineImageData(
-            InputStream reader, int numBytesToCheck)
-            throws IOException {
-        boolean imageDataFound = false;
-        boolean onlyWhitespaceSoFar = true;
-        reader.mark(numBytesToCheck);
-        byte[] toCheck = new byte[numBytesToCheck];
-        int numReadToCheck = reader.read(toCheck);
-        for (int i = 0; i < numReadToCheck; i++) {
-            char charToCheck = (char) (((int) toCheck[i]) & 0xFF);
-
-            // If the very first thing we read is a Q or S token
-            boolean typicalTextTokenInContentStream =
-                    (charToCheck == 'Q' || charToCheck == 'q' ||
-                            charToCheck == 'S' || charToCheck == 's');
-            if (onlyWhitespaceSoFar &&
-                    typicalTextTokenInContentStream &&
-                    (i + 1 < numReadToCheck) &&
-                    isWhitespace((char) (((int) toCheck[i + 1]) & 0xFF))) {
-                break;
-            }
-            if (!isWhitespace(charToCheck))
-                onlyWhitespaceSoFar = false;
-
-            // If we find some binary image data
-            if (!isExpectedInContentStream(charToCheck)) {
-                imageDataFound = true;
-                break;
-            }
-        }
-        reader.reset();
-        return imageDataFound;
-    }
-
-    /**
-     * This is not necessarily an exhaustive list of characters one would
-     * expect in a Content Stream, it's a heuristic for whether the data
-     * might still be part of an inline image, or the lattercontent stream
-     */
-    private static boolean isExpectedInContentStream(char c) {
-        return ((c >= 'a' && c <= 'Z') ||
-                (c >= 'A' && c <= 'Z') ||
-                (c >= '0' && c <= '9') ||
-                isWhitespace(c) ||
-                isDelimiter(c) ||
-                (c == '\\') ||
-                (c == '\'') ||
-                (c == '\"') ||
-                (c == '*') ||
-                (c == '.'));
-    }
-
-    /**
-     * White space characters defined by ' ', '\t', '\r', '\n', '\f'
-     *
-     * @param c true if character is white space
-     */
-    public static boolean isWhitespace(char c) {
-        return ((c == ' ') || (c == '\t') || (c == '\r') ||
-                (c == '\n') || (c == '\f'));
-    }
-
-    private static boolean isDelimiter(char c) {
-        return ((c == '[') || (c == ']') ||
-                (c == '(') || (c == ')') ||
-                (c == '<') || (c == '>') ||
-                (c == '{') || (c == '}') ||
-                (c == '/') || (c == '%'));
     }
 
     /**
@@ -663,6 +591,63 @@ public class Parser {
         //  then we're still done
         return state == STATE_PRE_WHITESPACE;
     }
+
+    /**
+     * We want to be conservative in deciding that we're still in the inline
+     * image, since we haven't found any of these cases before now.
+     */
+    private static boolean isStillInlineImageData(
+            InputStream reader, int numBytesToCheck)
+            throws IOException {
+        boolean imageDataFound = false;
+        boolean onlyWhitespaceSoFar = true;
+        reader.mark(numBytesToCheck);
+        byte[] toCheck = new byte[numBytesToCheck];
+        int numReadToCheck = reader.read(toCheck);
+        for (int i = 0; i < numReadToCheck; i++) {
+            char charToCheck = (char) (((int) toCheck[i]) & 0xFF);
+
+            // If the very first thing we read is a Q or S token
+            boolean typicalTextTokenInContentStream =
+                    (charToCheck == 'Q' || charToCheck == 'q' ||
+                            charToCheck == 'S' || charToCheck == 's');
+            if (onlyWhitespaceSoFar &&
+                    typicalTextTokenInContentStream &&
+                    (i + 1 < numReadToCheck) &&
+                    isWhitespace((char) (((int) toCheck[i + 1]) & 0xFF))) {
+                break;
+            }
+            if (!isWhitespace(charToCheck))
+                onlyWhitespaceSoFar = false;
+
+            // If we find some binary image data
+            if (!isExpectedInContentStream(charToCheck)) {
+                imageDataFound = true;
+                break;
+            }
+        }
+        reader.reset();
+        return imageDataFound;
+    }
+
+    /**
+     * This is not necessarily an exhaustive list of characters one would
+     * expect in a Content Stream, it's a heuristic for whether the data
+     * might still be part of an inline image, or the lattercontent stream
+     */
+    private static boolean isExpectedInContentStream(char c) {
+        return ((c >= 'a' && c <= 'Z') ||
+                (c >= 'A' && c <= 'Z') ||
+                (c >= '0' && c <= '9') ||
+                isWhitespace(c) ||
+                isDelimiter(c) ||
+                (c == '\\') ||
+                (c == '\'') ||
+                (c == '\"') ||
+                (c == '*') ||
+                (c == '.'));
+    }
+
 
     /**
      * Utility Method for getting a PObject from the stack and adding it to the
@@ -1216,6 +1201,25 @@ public class Parser {
             logger.log(Level.FINE, "Error detecting char.", e);
         }
         return alpha;
+    }
+
+
+    /**
+     * White space characters defined by ' ', '\t', '\r', '\n', '\f'
+     *
+     * @param c true if character is white space
+     */
+    public static boolean isWhitespace(char c) {
+        return ((c == ' ') || (c == '\t') || (c == '\r') ||
+                (c == '\n') || (c == '\f'));
+    }
+
+    private static boolean isDelimiter(char c) {
+        return ((c == '[') || (c == ']') ||
+                (c == '(') || (c == ')') ||
+                (c == '<') || (c == '>') ||
+                (c == '{') || (c == '}') ||
+                (c == '/') || (c == '%'));
     }
 
     private long captureStreamData(OutputStream out) throws IOException {

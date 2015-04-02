@@ -43,14 +43,6 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
     private boolean changingPage;
 
 
-    protected MouseWheelListenerPageChanger(SwingController c, JScrollPane s,
-                                            AbstractDocumentView documentView) {
-        controller = c;
-        scrollpane = s;
-        this.documentView = documentView;
-        changingPage = false;
-    }
-
     /**
      * Install a MouseWheelListenerPageChanger as a MouseWheelListener
      *
@@ -65,6 +57,14 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
             s.addMouseWheelListener(listener);
         }
         return listener;
+    }
+
+    protected MouseWheelListenerPageChanger(SwingController c, JScrollPane s,
+                                            AbstractDocumentView documentView) {
+        controller = c;
+        scrollpane = s;
+        this.documentView = documentView;
+        changingPage = false;
     }
 
     public static void uninstall(JScrollPane scrollpane, Object listener) {

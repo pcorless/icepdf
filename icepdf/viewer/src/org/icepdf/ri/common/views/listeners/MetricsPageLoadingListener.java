@@ -31,10 +31,11 @@ import java.util.logging.Logger;
  */
 public class MetricsPageLoadingListener implements PageLoadingListener {
 
-    public static final DecimalFormat formatter = new DecimalFormat("#.###");
-    public static final DecimalFormat percentFormatter = new DecimalFormat("#");
     private static final Logger logger =
             Logger.getLogger(MetricsPageLoadingListener.class.toString());
+
+    public static final DecimalFormat formatter = new DecimalFormat("#.###");
+    public static final DecimalFormat percentFormatter = new DecimalFormat("#");
     private int pageIndex;
     private int pageCount;
 

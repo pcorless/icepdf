@@ -32,6 +32,11 @@ import java.util.logging.Logger;
  */
 public class FontDescriptor extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(FontDescriptor.class.toString());
+
+    private FontFile font;
+
     public static final Name TYPE = new Name("FontDescriptor");
     public static final Name FONT_NAME = new Name("FontName");
     public static final Name FONT_FAMILY = new Name("FontFamily");
@@ -58,9 +63,6 @@ public class FontDescriptor extends Dictionary {
     public static final Name FONT_FILE_3_CID_FONT_TYPE_2 = new Name("CIDFontType2");
     public static final Name FONT_FILE_3_CID_FONT_TYPE_0C = new Name("CIDFontType0C");
     public static final Name FONT_FILE_3_OPEN_TYPE = new Name("OpenType");
-    private static final Logger logger =
-            Logger.getLogger(FontDescriptor.class.toString());
-    private FontFile font;
 
     /**
      * Creates a new instance of a FontDescriptor.

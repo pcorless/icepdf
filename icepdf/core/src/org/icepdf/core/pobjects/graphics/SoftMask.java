@@ -51,13 +51,14 @@ import java.util.logging.Logger;
  */
 public class SoftMask extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(SoftMask.class.toString());
+
     public static final Name S_KEY = new Name("S");
     public static final Name G_KEY = new Name("G");
     public static final Name BC_KEY = new Name("BC");
     public static final String SOFT_MASK_TYPE_ALPHA = "Alpha";
     public static final String SOFT_MASK_TYPE_LUMINOSITY = "Luminosity";
-    private static final Logger logger =
-            Logger.getLogger(SoftMask.class.toString());
 
     public SoftMask(Library library, HashMap dictionary) {
         super(library, dictionary);

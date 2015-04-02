@@ -32,34 +32,28 @@ import javax.swing.*;
 public abstract class SwingWorker {
     private Object value;  // see getValue(), setValue()
     private Integer threadPriority;
-    private ThreadVar threadVar;
 
     /**
-     * Start a thread that will call the <code>construct</code> method
-     * and then exit.
+     * Class to maintain reference to current worker thread
+     * under separate synchronization control.
      */
-    public SwingWorker() {
-        final Runnable doFinished = new Runnable() {
-            public void run() {
-                finished();
-            }
-        };
+    private static class ThreadVar {
+        private Thread thread;
 
-        Runnable doConstruct = new Runnable() {
-            public void run() {
-                try {
-                    setValue(construct());
-                } finally {
-                    threadVar.clear();
-                }
+        ThreadVar(Thread t) {
+            thread = t;
+        }
 
-                SwingUtilities.invokeLater(doFinished);
-            }
-        };
+        synchronized Thread get() {
+            return thread;
+        }
 
-        Thread t = new Thread(doConstruct);
-        threadVar = new ThreadVar(t);
+        synchronized void clear() {
+            thread = null;
+        }
     }
+
+    private ThreadVar threadVar;
 
     /**
      * Get the value produced by the worker thread, or null if it
@@ -122,6 +116,34 @@ public abstract class SwingWorker {
         }
     }
 
+
+    /**
+     * Start a thread that will call the <code>construct</code> method
+     * and then exit.
+     */
+    public SwingWorker() {
+        final Runnable doFinished = new Runnable() {
+            public void run() {
+                finished();
+            }
+        };
+
+        Runnable doConstruct = new Runnable() {
+            public void run() {
+                try {
+                    setValue(construct());
+                } finally {
+                    threadVar.clear();
+                }
+
+                SwingUtilities.invokeLater(doFinished);
+            }
+        };
+
+        Thread t = new Thread(doConstruct);
+        threadVar = new ThreadVar(t);
+    }
+
     /**
      * Start the worker thread.
      */
@@ -136,25 +158,5 @@ public abstract class SwingWorker {
 
     public void setThreadPriority(int priority) {
         threadPriority = priority;
-    }
-
-    /**
-     * Class to maintain reference to current worker thread
-     * under separate synchronization control.
-     */
-    private static class ThreadVar {
-        private Thread thread;
-
-        ThreadVar(Thread t) {
-            thread = t;
-        }
-
-        synchronized Thread get() {
-            return thread;
-        }
-
-        synchronized void clear() {
-            thread = null;
-        }
     }
 }

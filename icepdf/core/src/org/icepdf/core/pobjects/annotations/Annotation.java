@@ -326,6 +326,9 @@ import java.util.logging.Logger;
 
 public abstract class Annotation extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(Annotation.class.toString());
+
     public static final Name TYPE = new Name("Annot");
     public static final Name RESOURCES_VALUE = new Name("Resources");
     public static final Name BBOX_VALUE = new Name("BBox");
@@ -503,8 +506,7 @@ public abstract class Annotation extends Dictionary {
      */
     public static final int VISIBLE_RECTANGLE = 1;
     public static final int INVISIBLE_RECTANGLE = 0;
-    private static final Logger logger =
-            Logger.getLogger(Annotation.class.toString());
+
     /**
      * Debug flag to turn off appearance stream compression for easier
      * human file reading.

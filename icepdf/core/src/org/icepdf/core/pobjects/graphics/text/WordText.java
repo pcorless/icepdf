@@ -84,6 +84,29 @@ public class WordText extends AbstractText implements TextSelect {
         glyphs = new ArrayList<GlyphText>(4);
     }
 
+    public boolean isWhiteSpace() {
+        return isWhiteSpace;
+    }
+
+    public void setWhiteSpace(boolean whiteSpace) {
+        isWhiteSpace = whiteSpace;
+    }
+
+    protected boolean detectSpace(GlyphText sprite) {
+        if (currentGlyph != null) {
+            // last added glyph
+            Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
+            float spriteXCoord = sprite.getTextExtractionBounds().x;
+            // spaces can be negative if we have a LTR layout.
+            float space = Math.abs(spriteXCoord - (bounds1.x + bounds1.width));
+            // half previous glyph width will be used to determine a space
+            float tolerance = bounds1.width / spaceFraction;
+            return space > tolerance;
+        } else {
+            return false;
+        }
+    }
+
     protected static boolean detectPunctuation(GlyphText sprite, WordText currentWord) {
         String glyphText = sprite.getUnicode();
         // make sure we don't have a decimal, we want to keep double numbers
@@ -128,29 +151,6 @@ public class WordText extends AbstractText implements TextSelect {
 
     public static boolean isDigit(char c) {
         return c >= 48 && c <= 57;
-    }
-
-    public boolean isWhiteSpace() {
-        return isWhiteSpace;
-    }
-
-    public void setWhiteSpace(boolean whiteSpace) {
-        isWhiteSpace = whiteSpace;
-    }
-
-    protected boolean detectSpace(GlyphText sprite) {
-        if (currentGlyph != null) {
-            // last added glyph
-            Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
-            float spriteXCoord = sprite.getTextExtractionBounds().x;
-            // spaces can be negative if we have a LTR layout.
-            float space = Math.abs(spriteXCoord - (bounds1.x + bounds1.width));
-            // half previous glyph width will be used to determine a space
-            float tolerance = bounds1.width / spaceFraction;
-            return space > tolerance;
-        } else {
-            return false;
-        }
     }
 
     protected WordText buildSpaceWord(GlyphText sprite) {
@@ -241,10 +241,10 @@ public class WordText extends AbstractText implements TextSelect {
         } else {
             bounds.add(sprite.getBounds());
         }
-        if (textExtractionBounds == null){
+        if (textExtractionBounds == null) {
             Rectangle2D.Float rect = sprite.getTextExtractionBounds();
             textExtractionBounds = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
-        }else{
+        } else {
             textExtractionBounds.add(sprite.getTextExtractionBounds());
         }
 
@@ -265,10 +265,10 @@ public class WordText extends AbstractText implements TextSelect {
                 } else {
                     bounds.add(glyph.getBounds());
                 }
-                if (textExtractionBounds == null){
+                if (textExtractionBounds == null) {
                     Rectangle2D.Float rect = glyph.getTextExtractionBounds();
                     textExtractionBounds = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
-                }else{
+                } else {
                     textExtractionBounds.add(glyph.getTextExtractionBounds());
                 }
             }

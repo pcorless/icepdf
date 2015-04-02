@@ -46,14 +46,18 @@ public class ViewModel {
         return defaultFile;
     }
 
-    static void setDefaultFile(File f) {
-        defaultFile = f;
-    }
-
     public static String getDefaultFilePath() {
         if (defaultFile == null)
             return null;
         return defaultFile.getAbsolutePath();
+    }
+
+    public static String getDefaultURL() {
+        return defaultURL;
+    }
+
+    static void setDefaultFile(File f) {
+        defaultFile = f;
     }
 
     public static void setDefaultFilePath(String defFilePath) {
@@ -61,10 +65,6 @@ public class ViewModel {
             defaultFile = null;
         else
             defaultFile = new File(defFilePath);
-    }
-
-    public static String getDefaultURL() {
-        return defaultURL;
     }
 
     public static void setDefaultURL(String defURL) {
@@ -87,7 +87,7 @@ public class ViewModel {
      * property.
      *
      * @return true, to enable shrink to fit printable area;
-     * false, otherwise.
+     *         false, otherwise.
      */
     public boolean isShrinkToPrintableArea() {
         return isShrinkToPrintableArea;

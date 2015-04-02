@@ -111,94 +111,6 @@ public class Library {
     private ImagePool imagePool;
 
     /**
-     * Creates a new instance of a Library.
-     */
-    public Library() {
-        // set Catalog memory Manager and cache manager.
-        imagePool = new ImagePool();
-    }
-
-    public static void initializeThreadPool() {
-
-        log.fine("Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
-        commonThreadPool = new ThreadPoolExecutor(
-                commonPoolThreads, commonPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        commonThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-thread-pool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
-
-        imageThreadPool = new ThreadPoolExecutor(
-                imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        imageThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-thread-image-pool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
-
-        painterThreadPool = new ThreadPoolExecutor(
-                painterPoolThreads, painterPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        painterThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-thread-painter-pool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
-    }
-
-    public static void shutdownThreadPool() {
-        // do a little clean up.
-        commonThreadPool.purge();
-        commonThreadPool.shutdownNow();
-        painterThreadPool.purge();
-        painterThreadPool.shutdownNow();
-        imageThreadPool.purge();
-        imageThreadPool.shutdownNow();
-    }
-
-    public static void execute(Runnable runnable) {
-        try {
-            commonThreadPool.execute(runnable);
-        } catch (RejectedExecutionException e) {
-            log.severe("ICEpdf Common Thread Pool was shutdown!");
-        }
-    }
-
-    public static void executeImage(FutureTask callable) {
-        try {
-            imageThreadPool.execute(callable);
-        } catch (RejectedExecutionException e) {
-            log.severe("ICEpdf Common Thread Pool was shutdown!");
-        }
-    }
-
-    public static void executePainter(Runnable runnable) {
-        try {
-            painterThreadPool.execute(runnable);
-        } catch (RejectedExecutionException e) {
-            log.severe("ICEpdf Common Thread Pool was shutdown!");
-        }
-    }
-
-    /**
      * Sets a document loader for the library.
      *
      * @param lol loader object.
@@ -652,6 +564,15 @@ public class Library {
     }
 
     /**
+     * Creates a new instance of a Library.
+     */
+    public Library() {
+        // set Catalog memory Manager and cache manager.
+        imagePool = new ImagePool();
+    }
+
+
+    /**
      * Gets the PDF object specified by the <code>key</code> in the dictionary
      * entries.  If the key value is a reference it is returned.
      *
@@ -687,15 +608,6 @@ public class Library {
     }
 
     /**
-     * Set the document is encrypted flag.
-     *
-     * @param flag true, if the document is encrypted; false, otherwize.
-     */
-    public void setEncrypted(boolean flag) {
-        isEncrypted = flag;
-    }
-
-    /**
      * Gets the document's security manger.
      *
      * @return document's security manager if the document is encrypted, null
@@ -703,6 +615,15 @@ public class Library {
      */
     public SecurityManager getSecurityManager() {
         return securityManager;
+    }
+
+    /**
+     * Set the document is encrypted flag.
+     *
+     * @param flag true, if the document is encrypted; false, otherwize.
+     */
+    public void setEncrypted(boolean flag) {
+        isEncrypted = flag;
     }
 
     /**
@@ -762,5 +683,85 @@ public class Library {
 
     public ImagePool getImagePool() {
         return imagePool;
+    }
+
+    public static void initializeThreadPool() {
+
+        log.fine("Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
+        commonThreadPool = new ThreadPoolExecutor(
+                commonPoolThreads, commonPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        // set a lower thread priority
+        commonThreadPool.setThreadFactory(new ThreadFactory() {
+            public Thread newThread(java.lang.Runnable command) {
+                Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-thread-pool");
+                newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
+                return newThread;
+            }
+        });
+
+        imageThreadPool = new ThreadPoolExecutor(
+                imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        // set a lower thread priority
+        imageThreadPool.setThreadFactory(new ThreadFactory() {
+            public Thread newThread(java.lang.Runnable command) {
+                Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-thread-image-pool");
+                newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
+                return newThread;
+            }
+        });
+
+        painterThreadPool = new ThreadPoolExecutor(
+                painterPoolThreads, painterPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        // set a lower thread priority
+        painterThreadPool.setThreadFactory(new ThreadFactory() {
+            public Thread newThread(java.lang.Runnable command) {
+                Thread newThread = new Thread(command);
+                newThread.setName("ICEpdf-thread-painter-pool");
+                newThread.setPriority(Thread.NORM_PRIORITY);
+                newThread.setDaemon(true);
+                return newThread;
+            }
+        });
+    }
+
+    public static void shutdownThreadPool() {
+        // do a little clean up.
+        commonThreadPool.purge();
+        commonThreadPool.shutdownNow();
+        painterThreadPool.purge();
+        painterThreadPool.shutdownNow();
+        imageThreadPool.purge();
+        imageThreadPool.shutdownNow();
+    }
+
+    public static void execute(Runnable runnable) {
+        try {
+            commonThreadPool.execute(runnable);
+        } catch (RejectedExecutionException e) {
+            log.severe("ICEpdf Common Thread Pool was shutdown!");
+        }
+    }
+
+    public static void executeImage(FutureTask callable) {
+        try {
+            imageThreadPool.execute(callable);
+        } catch (RejectedExecutionException e) {
+            log.severe("ICEpdf Common Thread Pool was shutdown!");
+        }
+    }
+
+    public static void executePainter(Runnable runnable) {
+        try {
+            painterThreadPool.execute(runnable);
+        } catch (RejectedExecutionException e) {
+            log.severe("ICEpdf Common Thread Pool was shutdown!");
+        }
     }
 }

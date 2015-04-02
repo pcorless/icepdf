@@ -39,8 +39,8 @@ public class WordPositionComparator implements
      * @param lt1 word text object to compare
      * @param lt2 word text object to compare
      * @return the value 0 if lt1.x is numerically equal to lt2.x; a value less
-     * than 0 if lt1.x is numerically less than lt2.x; and a value greater than 0
-     * if lt1.x is numerically greater than lt2.x.
+     *         than 0 if lt1.x is numerically less than lt2.x; and a value greater than 0
+     *         if lt1.x is numerically greater than lt2.x.
      */
     public int compare(AbstractText lt1, AbstractText lt2) {
         return Float.compare(lt1.getTextExtractionBounds().x,

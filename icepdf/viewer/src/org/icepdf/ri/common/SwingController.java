@@ -89,6 +89,9 @@ public class SwingController
         TreeSelectionListener, WindowListener, DropTargetListener,
         KeyListener, PropertyChangeListener {
 
+    private static final Logger logger =
+            Logger.getLogger(SwingController.class.toString());
+
     public static final int CURSOR_OPEN_HAND = 1;
     public static final int CURSOR_CLOSE_HAND = 2;
     public static final int CURSOR_ZOOM_IN = 3;
@@ -96,11 +99,9 @@ public class SwingController
     public static final int CURSOR_WAIT = 6;
     public static final int CURSOR_SELECT = 7;
     public static final int CURSOR_DEFAULT = 8;
-    private static final Logger logger =
-            Logger.getLogger(SwingController.class.toString());
+
     private static final int MAX_SELECT_ALL_PAGE_COUNT = 250;
-    // internationalization messages, loads message for default JVM locale.
-    private static ResourceBundle messageBundle = null;
+
     private JMenuItem openFileMenuItem;
     private JMenuItem openURLMenuItem;
     private JMenuItem closeMenuItem;
@@ -200,13 +201,19 @@ public class SwingController
     // subcontroller for document view or document page views.
     private DocumentViewControllerImpl documentViewController;
 
-    // todo subcontroller for document annotations creation.
     // subcontroller for document text searching.
     private DocumentSearchController documentSearchController;
+
+    // todo subcontroller for document annotations creation.
+
+
     private Document document;
     private boolean disposed;
+
+    // internationalization messages, loads message for default JVM locale.
+    private static ResourceBundle messageBundle = null;
+
     private PropertiesManager propertiesManager;
-    private boolean reflectingZoomInZoomComboBox = false;
 
     /**
      * Create a SwingController object, and its associated ViewerModel
@@ -268,22 +275,22 @@ public class SwingController
      * The WindowManagementCallback is used for creating new Document windows,
      * and quitting the application
      *
-     * @return The current WindowManagementCallback
-     * @see #setWindowManagementCallback
+     * @param wm The new WindowManagementCallback
+     * @see #getWindowManagementCallback
      */
-    public WindowManagementCallback getWindowManagementCallback() {
-        return windowManagementCallback;
+    public void setWindowManagementCallback(WindowManagementCallback wm) {
+        windowManagementCallback = wm;
     }
 
     /**
      * The WindowManagementCallback is used for creating new Document windows,
      * and quitting the application
      *
-     * @param wm The new WindowManagementCallback
-     * @see #getWindowManagementCallback
+     * @return The current WindowManagementCallback
+     * @see #setWindowManagementCallback
      */
-    public void setWindowManagementCallback(WindowManagementCallback wm) {
-        windowManagementCallback = wm;
+    public WindowManagementCallback getWindowManagementCallback() {
+        return windowManagementCallback;
     }
 
     /**
@@ -973,14 +980,6 @@ public class SwingController
     }
 
     /**
-     * Not all uses of SwingController would result in there existing a Viewer Frame,
-     * so this may well return null.
-     */
-    public JFrame getViewerFrame() {
-        return viewer;
-    }
-
-    /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
     public void setViewerFrame(JFrame v) {
@@ -991,6 +990,14 @@ public class SwingController
                 DnDConstants.ACTION_COPY_OR_MOVE, // actions
                 this); // DropTargetListener
         reflectStateInComponents();
+    }
+
+    /**
+     * Not all uses of SwingController would result in there existing a Viewer Frame,
+     * so this may well return null.
+     */
+    public JFrame getViewerFrame() {
+        return viewer;
     }
 
     /**
@@ -1308,6 +1315,9 @@ public class SwingController
             reflectingZoomInZoomComboBox = false;
         }
     }
+
+    private boolean reflectingZoomInZoomComboBox = false;
+
 
     /**
      * Gets the current display tool value for the display panel.
@@ -3184,6 +3194,11 @@ public class SwingController
                 Library library = action.getLibrary();
                 HashMap entries = action.getEntries();
                 dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
+            }
+        } else if (dest.getNamedDestination() != null) {
+            NamedDestinations namedDestinations = document.getCatalog().getDestinations();
+            if (namedDestinations != null) {
+                dest = namedDestinations.getDestination(dest.getNamedDestination());
             }
         }
 

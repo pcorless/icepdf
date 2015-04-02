@@ -31,56 +31,79 @@ import java.awt.geom.AffineTransform;
 public abstract class MultipleGradientPaint implements Paint {
 
     /**
+     * Transparency.
+     */
+    protected int transparency;
+
+    /**
+     * Gradient keyframe values in the range 0 to 1.
+     */
+    protected float[] fractions;
+
+    /**
+     * Gradient colors.
+     */
+    protected Color[] colors;
+
+    /**
+     * Transform to apply to gradient.
+     */
+    protected AffineTransform gradientTransform;
+
+    /**
+     * The method to use when painting out of the gradient bounds.
+     */
+    protected CycleMethodEnum cycleMethod;
+
+    /**
+     * The colorSpace in which to perform the interpolation.
+     */
+    protected ColorSpaceEnum colorSpace;
+
+    /**
+     * Inner class to allow for typesafe enumerated ColorSpace values.
+     */
+    public static class ColorSpaceEnum {
+    }
+
+    /**
+     * Inner class to allow for typesafe enumerated CycleMethod values.
+     */
+    public static class CycleMethodEnum {
+    }
+
+    /**
      * Indicates (if the gradient starts or ends inside the target region)
      * to use the terminal colors to fill the remaining area. (default)
      */
     public static final CycleMethodEnum NO_CYCLE = new CycleMethodEnum();
+
     /**
      * Indicates (if the gradient starts or ends inside the target region),
      * to cycle the gradient colors start-to-end, end-to-start to fill the
      * remaining area.
      */
     public static final CycleMethodEnum REFLECT = new CycleMethodEnum();
+
     /**
      * Indicates (if the gradient starts or ends inside the target region),
      * to cycle the gradient colors start-to-end, start-to-end to fill the
      * remaining area.
      */
     public static final CycleMethodEnum REPEAT = new CycleMethodEnum();
+
     /**
      * Indicates that the color interpolation should occur in sRGB space.
      * (default)
      */
     public static final ColorSpaceEnum SRGB = new ColorSpaceEnum();
+
     /**
      * Indicates that the color interpolation should occur in linearized
      * RGB space.
      */
     public static final ColorSpaceEnum LINEAR_RGB = new ColorSpaceEnum();
-    /**
-     * Transparency.
-     */
-    protected int transparency;
-    /**
-     * Gradient keyframe values in the range 0 to 1.
-     */
-    protected float[] fractions;
-    /**
-     * Gradient colors.
-     */
-    protected Color[] colors;
-    /**
-     * Transform to apply to gradient.
-     */
-    protected AffineTransform gradientTransform;
-    /**
-     * The method to use when painting out of the gradient bounds.
-     */
-    protected CycleMethodEnum cycleMethod;
-    /**
-     * The colorSpace in which to perform the interpolation.
-     */
-    protected ColorSpaceEnum colorSpace;
+
 
     /**
      * Superclass constructor, typical user should never have to call this.
@@ -183,7 +206,7 @@ public abstract class MultipleGradientPaint implements Paint {
      * to calculate color distribution.
      *
      * @return a copy of the array of floats used by this gradient to
-     * calculate color distribution
+     *         calculate color distribution
      */
     public float[] getFractions() {
         float[] fractions = new float[this.fractions.length];
@@ -195,7 +218,7 @@ public abstract class MultipleGradientPaint implements Paint {
      * Returns the transparency mode for this LinearGradientPaint.
      *
      * @return an integer value representing this LinearGradientPaint object's
-     * transparency mode.
+     *         transparency mode.
      */
     public int getTransparency() {
         return transparency;
@@ -215,7 +238,7 @@ public abstract class MultipleGradientPaint implements Paint {
      * interpolation.
      *
      * @return the enumerated type which specifies color space for
-     * interpolation
+     *         interpolation
      */
     public ColorSpaceEnum getColorSpace() {
         return colorSpace;
@@ -228,17 +251,5 @@ public abstract class MultipleGradientPaint implements Paint {
      */
     public AffineTransform getTransform() {
         return (AffineTransform) gradientTransform.clone();
-    }
-
-    /**
-     * Inner class to allow for typesafe enumerated ColorSpace values.
-     */
-    public static class ColorSpaceEnum {
-    }
-
-    /**
-     * Inner class to allow for typesafe enumerated CycleMethod values.
-     */
-    public static class CycleMethodEnum {
     }
 }

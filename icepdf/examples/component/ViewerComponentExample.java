@@ -46,7 +46,7 @@ public class ViewerComponentExample {
                         System.getProperties(),
                         ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
 
-                properties.set(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, "1.75");
+                properties.set(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, "1.25");
 
                 SwingViewBuilder factory = new SwingViewBuilder(controller, properties);
 

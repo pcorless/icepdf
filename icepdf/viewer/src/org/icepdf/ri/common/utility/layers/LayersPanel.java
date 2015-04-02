@@ -43,11 +43,13 @@ public class LayersPanel extends JPanel {
     protected DocumentViewController documentViewController;
 
     protected Document currentDocument;
+
+    private SwingController controller;
+
     protected LayersTreeNode nodes;
     protected DocumentViewModel documentViewModel;
     // message bundle for internationalization
     ResourceBundle messageBundle;
-    private SwingController controller;
 
     public LayersPanel(SwingController controller) {
         super(true);

@@ -40,69 +40,7 @@ import java.lang.ref.WeakReference;
 abstract class MultipleGradientPaintContext implements PaintContext {
 
     protected static final boolean DEBUG = false;
-    /**
-     * Constant number of max colors between any 2 arbitrary colors.
-     * Used for creating and indexing gradients arrays.
-     */
-    protected static final int GRADIENT_SIZE = 256;
-    protected static final int GRADIENT_SIZE_INDEX = GRADIENT_SIZE - 1;
-    /**
-     * Colorspace conversion lookup tables
-     */
-    private static final int[] SRGBtoLinearRGB = new int[256];
-    private static final int[] LinearRGBtoSRGB = new int[256];
-    //build the tables
-    static {
-        for (int k = 0; k < 256; k++) {
-            SRGBtoLinearRGB[k] = convertSRGBtoLinearRGB(k);
-            LinearRGBtoSRGB[k] = convertLinearRGBtoSRGB(k);
-        }
-    }
-    /**
-     * Maximum length of the fast single-array.  If the estimated array size
-     * is greater than this, switch over to the slow lookup method.
-     * No particular reason for choosing this number, but it seems to provide
-     * satisfactory performance for the common case (fast lookup).
-     */
-    private static final int MAX_GRADIENT_ARRAY_SIZE = 5000;
-    /**
-     * The cached colorModel
-     */
-    protected static ColorModel cachedModel;
-    /**
-     * The cached raster, which is reusable among instances
-     */
-    protected static WeakReference<WritableRaster> cached;
-    /**
-     * Color model used if gradient colors are all opaque
-     */
-    private static ColorModel lrgbmodel_NA = new DirectColorModel
-            (ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB),
-                    24, 0xff0000, 0xFF00, 0xFF, 0x0,
-                    false, DataBuffer.TYPE_INT);
-    private static ColorModel srgbmodel_NA = new DirectColorModel
-            (ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                    24, 0xff0000, 0xFF00, 0xFF, 0x0,
-                    false, DataBuffer.TYPE_INT);
-    private static ColorModel graybmodel_NA =
-            new ComponentColorModel(ColorSpace.getInstance(
-                    ColorSpace.CS_GRAY), new int[]{1}, false, false,
-                    ColorModel.OPAQUE, DataBuffer.TYPE_INT);
-    /**
-     * Color model used if some gradient colors are transparent
-     */
-    private static ColorModel lrgbmodel_A = new DirectColorModel
-            (ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB),
-                    32, 0xff0000, 0xFF00, 0xFF, 0xFF000000,
-                    false, DataBuffer.TYPE_INT);
-    private static ColorModel srgbmodel_A = new DirectColorModel
-            (ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                    32, 0xff0000, 0xFF00, 0xFF, 0xFF000000,
-                    false, DataBuffer.TYPE_INT);
-    private static ColorModel graybmodel_A =
-            new ComponentColorModel(ColorSpace.getInstance(
-                    ColorSpace.CS_GRAY), new int[]{1, 1}, true, false,
-                    ColorModel.TRANSLUCENT, DataBuffer.TYPE_INT);
+
     /**
      * The color model data is generated in (always un premult).
      */
@@ -113,22 +51,73 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      * output ColorModel.
      */
     protected ColorModel model;
+
+    /**
+     * Color model used if gradient colors are all opaque
+     */
+    private static ColorModel lrgbmodel_NA = new DirectColorModel
+            (ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB),
+                    24, 0xff0000, 0xFF00, 0xFF, 0x0,
+                    false, DataBuffer.TYPE_INT);
+
+    private static ColorModel srgbmodel_NA = new DirectColorModel
+            (ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                    24, 0xff0000, 0xFF00, 0xFF, 0x0,
+                    false, DataBuffer.TYPE_INT);
+
+    private static ColorModel graybmodel_NA =
+            new ComponentColorModel(ColorSpace.getInstance(
+                    ColorSpace.CS_GRAY), new int[]{1}, false, false,
+                    ColorModel.OPAQUE, DataBuffer.TYPE_INT);
+
+    /**
+     * Color model used if some gradient colors are transparent
+     */
+    private static ColorModel lrgbmodel_A = new DirectColorModel
+            (ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB),
+                    32, 0xff0000, 0xFF00, 0xFF, 0xFF000000,
+                    false, DataBuffer.TYPE_INT);
+
+    private static ColorModel srgbmodel_A = new DirectColorModel
+            (ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                    32, 0xff0000, 0xFF00, 0xFF, 0xFF000000,
+                    false, DataBuffer.TYPE_INT);
+
+    private static ColorModel graybmodel_A =
+            new ComponentColorModel(ColorSpace.getInstance(
+                    ColorSpace.CS_GRAY), new int[]{1, 1}, true, false,
+                    ColorModel.TRANSLUCENT, DataBuffer.TYPE_INT);
+
+    /**
+     * The cached colorModel
+     */
+    protected static ColorModel cachedModel;
+
+    /**
+     * The cached raster, which is reusable among instances
+     */
+    protected static WeakReference<WritableRaster> cached;
+
     /**
      * Raster is reused whenever possible
      */
     protected WritableRaster saved;
+
     /**
      * The method to use when painting out of the gradient bounds.
      */
     protected MultipleGradientPaint.CycleMethodEnum cycleMethod;
+
     /**
      * The colorSpace in which to perform the interpolation
      */
     protected MultipleGradientPaint.ColorSpaceEnum colorSpace;
+
     /**
      * Elements of the inverse transform matrix.
      */
     protected float a00, a01, a10, a11, a02, a12;
+
     /**
      * This boolean specifies wether we are in simple lookup mode, where an
      * input value between 0 and 1 may be used to directly index into a single
@@ -137,60 +126,100 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      * we fall into, then determine the index into that array.
      */
     protected boolean isSimpleLookup = true;
+
     /**
      * This boolean indicates if the gradient appears to have sudden
      * discontinuities in it, this may be because of multiple stops
      * at the same location or use of the REPEATE mode.
      */
     protected boolean hasDiscontinuity = false;
+
     /**
      * Size of gradients array for scaling the 0-1 index when looking up
      * colors the fast way.
      */
     protected int fastGradientArraySize;
+
     /**
      * Array which contains the interpolated color values for each interval,
      * used by calculateSingleArrayGradient().  It is protected for possible
      * direct access by subclasses.
      */
     protected int[] gradient;
+
     /**
      * Array of gradient arrays, one array for each interval.  Used by
      * calculateMultipleArrayGradient().
      */
     protected int[][] gradients;
+
     /**
      * This holds the blend of all colors in the gradient.
      * we use this at extreamly low resolutions to ensure we
      * get a decent blend of the colors.
      */
     protected int gradientAverage;
+
     /**
      * This holds the color to use when we are off the bottom of the
      * gradient
      */
     protected int gradientUnderflow;
+
     /**
      * This holds the color to use when we are off the top of the
      * gradient
      */
     protected int gradientOverflow;
+
     /**
      * Length of the 2D slow lookup gradients array.
      */
     protected int gradientsLength;
+
     /**
      * Normalized intervals array
      */
     protected float[] normalizedIntervals;
+
     /**
      * fractions array
      */
     protected float[] fractions;
+
     /**
      * Used to determine if gradient colors are all opaque
      */
     private int transparencyTest;
+
+    /**
+     * Colorspace conversion lookup tables
+     */
+    private static final int[] SRGBtoLinearRGB = new int[256];
+    private static final int[] LinearRGBtoSRGB = new int[256];
+
+    //build the tables
+    static {
+        for (int k = 0; k < 256; k++) {
+            SRGBtoLinearRGB[k] = convertSRGBtoLinearRGB(k);
+            LinearRGBtoSRGB[k] = convertLinearRGBtoSRGB(k);
+        }
+    }
+
+    /**
+     * Constant number of max colors between any 2 arbitrary colors.
+     * Used for creating and indexing gradients arrays.
+     */
+    protected static final int GRADIENT_SIZE = 256;
+    protected static final int GRADIENT_SIZE_INDEX = GRADIENT_SIZE - 1;
+
+    /**
+     * Maximum length of the fast single-array.  If the estimated array size
+     * is greater than this, switch over to the slow lookup method.
+     * No particular reason for choosing this number, but it seems to provide
+     * satisfactory performance for the common case (fast lookup).
+     */
+    private static final int MAX_GRADIENT_ARRAY_SIZE = 5000;
 
     /**
      * Constructor for superclass. Does some initialization, but leaves most
@@ -311,165 +340,6 @@ abstract class MultipleGradientPaintContext implements PaintContext {
                 cm.isAlphaPremultiplied());
     }
 
-    /**
-     * We assume, that we always generate valid colors. When this is valid, we can compose the
-     * color-value by ourselves and use the faster Color-ctor, which does not check the incoming values.
-     *
-     * @param workTbl typically SRGBtoLinearRGB
-     * @param inColor the color to interpolate
-     * @return the interpolated color
-     */
-    private static Color interpolateColor(int[] workTbl, Color inColor) {
-
-        int oldColor = inColor.getRGB();
-
-        int newColorValue =
-                ((workTbl[(oldColor >> 24) & 0xff] & 0xff) << 24) |
-                        ((workTbl[(oldColor >> 16) & 0xff] & 0xff) << 16) |
-                        ((workTbl[(oldColor >> 8) & 0xff] & 0xff) << 8) |
-                        ((workTbl[(oldColor) & 0xff] & 0xff));
-
-        return new Color(newColorValue, true);
-    }
-
-    /**
-     * Yet another helper function.  This one extracts the color components
-     * of an integer RGB triple, converts them from LinearRGB to SRGB, then
-     * recompacts them into an int.
-     */
-    private static int convertEntireColorLinearRGBtoSRGB(int rgb) {
-
-        //extract red, green, blue components
-        int a1 = (rgb >> 24) & 0xff;
-        int r1 = (rgb >> 16) & 0xff;
-        int g1 = (rgb >> 8) & 0xff;
-        int b1 = rgb & 0xff;
-
-        //use the lookup table
-        int[] workTbl = LinearRGBtoSRGB; // local is cheaper
-        r1 = workTbl[r1];
-        g1 = workTbl[g1];
-        b1 = workTbl[b1];
-
-        //re-compact the components
-        return ((a1 << 24) |
-                (r1 << 16) |
-                (g1 << 8) |
-                b1);
-    }
-
-    /**
-     * Yet another helper function.  This one extracts the color components
-     * of an integer RGB triple, converts them from LinearRGB to SRGB, then
-     * recompacts them into an int.
-     */
-    private static int convertEntireColorSRGBtoLinearRGB(int rgb) {
-
-        //extract red, green, blue components
-        int a1 = (rgb >> 24) & 0xff;
-        int r1 = (rgb >> 16) & 0xff;
-        int g1 = (rgb >> 8) & 0xff;
-        int b1 = rgb & 0xff;
-
-        //use the lookup table
-        int[] workTbl = SRGBtoLinearRGB; // local is cheaper
-        r1 = workTbl[r1];
-        g1 = workTbl[g1];
-        b1 = workTbl[b1];
-
-        //re-compact the components
-        return ((a1 << 24) |
-                (r1 << 16) |
-                (g1 << 8) |
-                b1);
-    }
-
-    /**
-     * Helper function to convert a color component in sRGB space to linear
-     * RGB space.  Used to build a static lookup table.
-     */
-    private static int convertSRGBtoLinearRGB(int color) {
-
-        // use of float and double arithmetic gives exactly same results
-        float output;
-
-        float input = color / 255.0f;
-        if (input <= 0.04045f) {
-            output = input / 12.92f;
-        } else {
-            output = (float) Math.pow((input + 0.055) / 1.055, 2.4);
-        }
-        return Math.round(output * 255.0f);
-    }
-
-    /**
-     * Helper function to convert a color component in linear RGB space to
-     * SRGB space. Used to build a static lookup table.
-     */
-    private static int convertLinearRGBtoSRGB(int color) {
-
-        // use of float and double arithmetic gives exactly same results
-        float output;
-
-        float input = color / 255.0f;
-
-        if (input <= 0.0031308f) {
-            output = input * 12.92f;
-        } else {
-            output = (1.055f * ((float) Math.pow(input, (1.0 / 2.4)))) - 0.055f;
-        }
-        return Math.round(output * 255.0f);
-    }
-
-    /**
-     * Took this cacheRaster code from GradientPaint. It appears to recycle
-     * rasters for use by any other instance, as long as they are sufficiently
-     * large.
-     */
-    protected static synchronized WritableRaster getCachedRaster
-    (ColorModel cm, int w, int h) {
-        if (cm == cachedModel) {
-            if (cached != null) {
-                WritableRaster ras = cached.get();
-                if (ras != null &&
-                        ras.getWidth() >= w &&
-                        ras.getHeight() >= h) {
-                    cached = null;
-                    return ras;
-                }
-            }
-        }
-        // Don't create rediculously small rasters...
-        if (w < 32) w = 32;
-        if (h < 32) h = 32;
-        return cm.createCompatibleWritableRaster(w, h);
-    }
-
-    /**
-     * Took this cacheRaster code from GradientPaint. It appears to recycle
-     * rasters for use by any other instance, as long as they are sufficiently
-     * large.
-     */
-    protected static synchronized void putCachedRaster(ColorModel cm,
-                                                       WritableRaster ras) {
-        if (cached != null) {
-            WritableRaster cras = cached.get();
-            if (cras != null) {
-                int cw = cras.getWidth();
-                int ch = cras.getHeight();
-                int iw = ras.getWidth();
-                int ih = ras.getHeight();
-                if (cw >= iw && ch >= ih) {
-                    return;
-                }
-                if (cw * ch >= iw * ih) {
-                    return;
-                }
-            }
-        }
-        cachedModel = cm;
-        cached = new WeakReference<WritableRaster>(ras);
-    }
 
     /**
      * This function is the meat of this class.  It calculates an array of
@@ -562,6 +432,27 @@ abstract class MultipleGradientPaintContext implements PaintContext {
                 dataModel = graybmodel_NA;
             model = dataModel;
         }
+    }
+
+    /**
+     * We assume, that we always generate valid colors. When this is valid, we can compose the
+     * color-value by ourselves and use the faster Color-ctor, which does not check the incoming values.
+     *
+     * @param workTbl typically SRGBtoLinearRGB
+     * @param inColor the color to interpolate
+     * @return the interpolated color
+     */
+    private static Color interpolateColor(int[] workTbl, Color inColor) {
+
+        int oldColor = inColor.getRGB();
+
+        int newColorValue =
+                ((workTbl[(oldColor >> 24) & 0xff] & 0xff) << 24) |
+                        ((workTbl[(oldColor >> 16) & 0xff] & 0xff) << 16) |
+                        ((workTbl[(oldColor >> 8) & 0xff] & 0xff) << 8) |
+                        ((workTbl[(oldColor) & 0xff] & 0xff));
+
+        return new Color(newColorValue, true);
     }
 
     /**
@@ -670,6 +561,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
         fastGradientArraySize = gradient.length - 1;
     }
+
 
     /**
      * SLOW LOOKUP METHOD
@@ -833,6 +725,60 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
     }
 
+
+    /**
+     * Yet another helper function.  This one extracts the color components
+     * of an integer RGB triple, converts them from LinearRGB to SRGB, then
+     * recompacts them into an int.
+     */
+    private static int convertEntireColorLinearRGBtoSRGB(int rgb) {
+
+        //extract red, green, blue components
+        int a1 = (rgb >> 24) & 0xff;
+        int r1 = (rgb >> 16) & 0xff;
+        int g1 = (rgb >> 8) & 0xff;
+        int b1 = rgb & 0xff;
+
+        //use the lookup table
+        int[] workTbl = LinearRGBtoSRGB; // local is cheaper
+        r1 = workTbl[r1];
+        g1 = workTbl[g1];
+        b1 = workTbl[b1];
+
+        //re-compact the components
+        return ((a1 << 24) |
+                (r1 << 16) |
+                (g1 << 8) |
+                b1);
+    }
+
+    /**
+     * Yet another helper function.  This one extracts the color components
+     * of an integer RGB triple, converts them from LinearRGB to SRGB, then
+     * recompacts them into an int.
+     */
+    private static int convertEntireColorSRGBtoLinearRGB(int rgb) {
+
+        //extract red, green, blue components
+        int a1 = (rgb >> 24) & 0xff;
+        int r1 = (rgb >> 16) & 0xff;
+        int g1 = (rgb >> 8) & 0xff;
+        int b1 = rgb & 0xff;
+
+        //use the lookup table
+        int[] workTbl = SRGBtoLinearRGB; // local is cheaper
+        r1 = workTbl[r1];
+        g1 = workTbl[g1];
+        b1 = workTbl[b1];
+
+        //re-compact the components
+        return ((a1 << 24) |
+                (r1 << 16) |
+                (g1 << 8) |
+                b1);
+    }
+
+
     /**
      * Helper function to index into the gradients array.  This is necessary
      * because each interval has an array of colors with uniform size 255.
@@ -956,6 +902,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
         return gradientOverflow;
     }
+
 
     /**
      * Helper function to index into the gradients array.  This is necessary
@@ -1122,6 +1069,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
         return getAntiAlias(p1, p1_up, p2, p2_up, sz, weight);
     }
+
 
     private int getAntiAlias(float p1, boolean p1_up,
                              float p2, boolean p2_up,
@@ -1399,6 +1347,45 @@ abstract class MultipleGradientPaintContext implements PaintContext {
         return ((ach << 24) | (rch << 16) | (gch << 8) | bch);
     }
 
+
+    /**
+     * Helper function to convert a color component in sRGB space to linear
+     * RGB space.  Used to build a static lookup table.
+     */
+    private static int convertSRGBtoLinearRGB(int color) {
+
+        // use of float and double arithmetic gives exactly same results
+        float output;
+
+        float input = color / 255.0f;
+        if (input <= 0.04045f) {
+            output = input / 12.92f;
+        } else {
+            output = (float) Math.pow((input + 0.055) / 1.055, 2.4);
+        }
+        return Math.round(output * 255.0f);
+    }
+
+    /**
+     * Helper function to convert a color component in linear RGB space to
+     * SRGB space. Used to build a static lookup table.
+     */
+    private static int convertLinearRGBtoSRGB(int color) {
+
+        // use of float and double arithmetic gives exactly same results
+        float output;
+
+        float input = color / 255.0f;
+
+        if (input <= 0.0031308f) {
+            output = input * 12.92f;
+        } else {
+            output = (1.055f * ((float) Math.pow(input, (1.0 / 2.4)))) - 0.055f;
+        }
+        return Math.round(output * 255.0f);
+    }
+
+
     /**
      * Superclass getRaster...
      */
@@ -1449,6 +1436,57 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      */
     protected abstract void fillRaster(int[] pixels, int off, int adjust,
                                        int x, int y, int w, int h);
+
+
+    /**
+     * Took this cacheRaster code from GradientPaint. It appears to recycle
+     * rasters for use by any other instance, as long as they are sufficiently
+     * large.
+     */
+    protected static synchronized WritableRaster getCachedRaster
+    (ColorModel cm, int w, int h) {
+        if (cm == cachedModel) {
+            if (cached != null) {
+                WritableRaster ras = cached.get();
+                if (ras != null &&
+                        ras.getWidth() >= w &&
+                        ras.getHeight() >= h) {
+                    cached = null;
+                    return ras;
+                }
+            }
+        }
+        // Don't create rediculously small rasters...
+        if (w < 32) w = 32;
+        if (h < 32) h = 32;
+        return cm.createCompatibleWritableRaster(w, h);
+    }
+
+    /**
+     * Took this cacheRaster code from GradientPaint. It appears to recycle
+     * rasters for use by any other instance, as long as they are sufficiently
+     * large.
+     */
+    protected static synchronized void putCachedRaster(ColorModel cm,
+                                                       WritableRaster ras) {
+        if (cached != null) {
+            WritableRaster cras = cached.get();
+            if (cras != null) {
+                int cw = cras.getWidth();
+                int ch = cras.getHeight();
+                int iw = ras.getWidth();
+                int ih = ras.getHeight();
+                if (cw >= iw && ch >= ih) {
+                    return;
+                }
+                if (cw * ch >= iw * ih) {
+                    return;
+                }
+            }
+        }
+        cachedModel = cm;
+        cached = new WeakReference<WritableRaster>(ras);
+    }
 
     /**
      * Release the resources allocated for the operation.

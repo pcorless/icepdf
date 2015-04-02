@@ -140,7 +140,7 @@ public class Function_3 extends Function {
      * @param function function to be applied can be of any type.
      * @param i        i th subdomain, selected subdomain.
      * @return n length array of calculated values.  n length is defined by the
-     * colour space component count.
+     *         colour space component count.
      */
     private float[] encode(float[] x, Function function, int i) {
         int k = functions.length;

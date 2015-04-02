@@ -64,8 +64,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Separation extends PColorSpace {
 
     public static final Name SEPARATION_KEY = new Name("Separation");
-    public static final String COLORANT_ALL = "all";
-    public static final String COLORANT_NONE = "none";
+
     // named colour reference if valid conversion took place
     protected Color namedColor;
     // alternative colour space, named colour can not be resolved.
@@ -78,10 +77,12 @@ public class Separation extends PColorSpace {
     // colour space, painting operators shall apply tint values to all available
     // colorants at once.
     private boolean isAll;
+    public static final String COLORANT_ALL = "all";
     // The special colorant name None shall not produce any visible output.
     // Painting operations in a Separationspace with this colorant name shall
     // have no effect on the current page.
     private boolean isNone;
+    public static final String COLORANT_NONE = "none";
     private float tint = 1.0f;
     // basic cache to speed up the lookup.
     private ConcurrentHashMap<Integer, Color> colorTable1B;
@@ -131,20 +132,6 @@ public class Separation extends PColorSpace {
             if (colorName.equalsIgnoreCase("auto")) {
                 namedColor = Color.BLACK;
             }
-        }
-    }
-
-    private static Color addColorToCache(
-            ConcurrentHashMap<Integer, Color> colorCache, int key,
-            PColorSpace alternate, Function tintTransform, float[] f) {
-        Color color = colorCache.get(key);
-        if (color == null) {
-            float y[] = tintTransform.calculate(reverse(f));
-            color = alternate.getColor(reverse(y));
-            colorCache.put(key, color);
-            return color;
-        } else {
-            return color;
         }
     }
 
@@ -225,6 +212,20 @@ public class Separation extends PColorSpace {
         // -- Only applies to subtractive devices, screens are additive but I'm
         // leaving this in encase something goes horribly wrong.
         return namedColor;
+    }
+
+    private static Color addColorToCache(
+            ConcurrentHashMap<Integer, Color> colorCache, int key,
+            PColorSpace alternate, Function tintTransform, float[] f) {
+        Color color = colorCache.get(key);
+        if (color == null) {
+            float y[] = tintTransform.calculate(reverse(f));
+            color = alternate.getColor(reverse(y));
+            colorCache.put(key, color);
+            return color;
+        } else {
+            return color;
+        }
     }
 
     public float getTint() {

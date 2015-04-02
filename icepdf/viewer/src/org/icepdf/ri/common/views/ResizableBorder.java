@@ -38,6 +38,10 @@ public class ResizableBorder extends AbstractBorder {
     private static final Logger logger =
             Logger.getLogger(ResizableBorder.class.toString());
 
+    private static Color selectColor;
+    private static Color outlineColor;
+    private static Color outlineResizeColor;
+
     public static final int INSETS = 5;
     static {
 
@@ -84,9 +88,7 @@ public class ResizableBorder extends AbstractBorder {
             new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{2, 1}, 0);
     private static final Stroke solidBorder =
             new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);
-    private static Color selectColor;
-    private static Color outlineColor;
-    private static Color outlineResizeColor;
+
     protected int resizeWidgetDim;
     protected int originalResizeWidgetDim;
     protected int inset;

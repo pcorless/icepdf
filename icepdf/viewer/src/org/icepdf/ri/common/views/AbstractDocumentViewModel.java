@@ -41,11 +41,14 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
-    // 10 pages doesn't take to long to look at, any more and people will notice
-    // the rest of the page sizes will be figured out later.
-    protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
     private static final Logger log =
             Logger.getLogger(AbstractDocumentViewModel.class.toString());
+
+    // document that model is associated.
+    protected Document currentDocument;
+
+    // page dirty repaint timer
+    private Timer isDirtyTimer;
     // dirty refresh timer call interval
     private static int dirtyTimerInterval = 5;
     static {
@@ -57,8 +60,11 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             log.log(Level.FINE, "Error reading dirty timer interval");
         }
     }
-    // document that model is associated.
-    protected Document currentDocument;
+
+    // Pages that have selected text.
+    private ArrayList<WeakReference<AbstractPageViewComponent>> selectedPageText;
+    // select all state flag, optimization for painting select all state lazily
+    private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
     // annotation memento caretaker
     protected UndoCaretaker undoCaretaker;
@@ -71,12 +77,10 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     protected int pageBoundary = Page.BOUNDARY_CROPBOX;
     // page tool settings
     protected int userToolModeFlag, oldUserToolModeFlag;
-    // page dirty repaint timer
-    private Timer isDirtyTimer;
-    // Pages that have selected text.
-    private ArrayList<WeakReference<AbstractPageViewComponent>> selectedPageText;
-    // select all state flag, optimization for painting select all state lazily
-    private boolean selectAll;
+
+    // 10 pages doesn't take to long to look at, any more and people will notice
+    // the rest of the page sizes will be figured out later.
+    protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
     public AbstractDocumentViewModel(Document currentDocument) {
         this.currentDocument = currentDocument;
@@ -248,10 +252,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         return userToolModeFlag == viewToolMode;
     }
 
-    public int getPageBoundary() {
-        return pageBoundary;
-    }
-
     /**
      * Sets the page boundtry used to paint a page.
      *
@@ -259,6 +259,10 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      */
     public void setPageBoundary(int pageBoundary) {
         this.pageBoundary = pageBoundary;
+    }
+
+    public int getPageBoundary() {
+        return pageBoundary;
     }
 
     public Rectangle getPageBounds(int pageIndex) {

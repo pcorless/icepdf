@@ -93,7 +93,7 @@ public class Name {
      *
      * @param obj name object that this Name object is compared against
      * @return true, if this object is the same as the obj argument;
-     * false, otherwise.
+     *         false, otherwise.
      */
     public boolean equals(Object obj) {
         if (obj instanceof Name) {
@@ -108,7 +108,7 @@ public class Name {
      *
      * @param obj name object that this Name object is compared against
      * @return true, if this object is the same as the obj argument;
-     * false, otherwise.
+     *         false, otherwise.
      */
     public boolean equals(Name obj) {
         return obj != null && name.equals(obj.getName());
@@ -119,7 +119,7 @@ public class Name {
      *
      * @param obj string object that this Name object is compared against
      * @return true, if this object is the same as the obj argument;
-     * false, otherwise.
+     *         false, otherwise.
      */
     public boolean equals(String obj) {
         return obj != null && name.equals(obj);

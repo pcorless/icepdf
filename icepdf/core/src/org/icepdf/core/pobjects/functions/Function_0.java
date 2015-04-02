@@ -40,12 +40,14 @@ import java.util.logging.Logger;
  */
 public class Function_0 extends Function {
 
+    private static final Logger logger =
+            Logger.getLogger(Function_0.class.toString());
+
     public static final Name SIZE_KEY = new Name("Size");
     public static final Name BITSPERSAMPLE_KEY = new Name("BitsPerSample");
     public static final Name ENCODE_KEY = new Name("Encode");
     public static final Name DECODE_KEY = new Name("Decode");
-    private static final Logger logger =
-            Logger.getLogger(Function_0.class.toString());
+
     // An array of m positive integers specifying the number of samples in each
     // input dimension of the sample table.
     private int size[];

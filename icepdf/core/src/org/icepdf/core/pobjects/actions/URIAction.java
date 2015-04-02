@@ -54,6 +54,19 @@ public class URIAction extends Action {
     }
 
     /**
+     * Sets the URI string associated witht this action.
+     *
+     * @param URI an string value except null.
+     */
+    public void setURI(String URI) {
+        StringObject tmp = new LiteralStringObject(
+                URI, getPObjectReference(), library.securityManager);
+        // StringObject detection should allow writer to pick on encryption.
+        entries.put(URIAction.URI_KEY, tmp);
+        this.URI = tmp;
+    }
+
+    /**
      * Gets the Uniform resource identifier to resolve, encoded in 7-bit ASCII.
      *
      * @return uniform resouce.
@@ -66,19 +79,6 @@ public class URIAction extends Action {
             URI = (StringObject) actionURI;
         }
         return URI.getDecryptedLiteralString(library.securityManager);
-    }
-
-    /**
-     * Sets the URI string associated witht this action.
-     *
-     * @param URI an string value except null.
-     */
-    public void setURI(String URI) {
-        StringObject tmp = new LiteralStringObject(
-                URI, getPObjectReference(), library.securityManager);
-        // StringObject detection should allow writer to pick on encryption.
-        entries.put(URIAction.URI_KEY, tmp);
-        this.URI = tmp;
     }
 
     /**

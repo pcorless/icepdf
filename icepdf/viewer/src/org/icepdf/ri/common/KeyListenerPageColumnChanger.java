@@ -38,16 +38,6 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
     private boolean changingPage;
 
 
-    protected KeyListenerPageColumnChanger(SwingController c, JScrollPane s,
-                                           AbstractDocumentView documentView,
-                                           CurrentPageChanger currentPageChanger) {
-        controller = c;
-        scroll = s;
-        this.documentView = documentView;
-        changingPage = false;
-        this.currentPageChanger = currentPageChanger;
-    }
-
     /**
      * Install a KeyListenerPageChanger as a KeyListener
      *
@@ -69,6 +59,16 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
         if (scroll != null) {
             scroll.removeKeyListener(this);
         }
+    }
+
+    protected KeyListenerPageColumnChanger(SwingController c, JScrollPane s,
+                                           AbstractDocumentView documentView,
+                                           CurrentPageChanger currentPageChanger) {
+        controller = c;
+        scroll = s;
+        this.documentView = documentView;
+        changingPage = false;
+        this.currentPageChanger = currentPageChanger;
     }
 
     public void keyPressed(java.awt.event.KeyEvent e) {

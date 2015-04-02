@@ -38,6 +38,9 @@ import java.util.logging.Logger;
  */
 public class LineAnnotation extends MarkupAnnotation {
 
+    private static final Logger logger =
+            Logger.getLogger(LineAnnotation.class.toString());
+
     /**
      * (Required) An array of four numbers, [x1 y1 x2 y2], specifying the starting
      * and ending coordinates of the line in default user space.
@@ -164,8 +167,7 @@ public class LineAnnotation extends MarkupAnnotation {
      * No line ending
      */
     public static final Name LINE_END_CLOSED_ARROW = new Name("ClosedArrow");
-    private static final Logger logger =
-            Logger.getLogger(LineAnnotation.class.toString());
+
     protected Point2D startOfLine;
     protected Point2D endOfLine;
     protected Color interiorColor;

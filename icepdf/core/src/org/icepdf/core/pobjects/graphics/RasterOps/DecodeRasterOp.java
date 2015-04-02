@@ -47,22 +47,6 @@ public class DecodeRasterOp implements RasterOp {
         return true;
     }
 
-    /**
-     * Apply the Decode Array domain for each colour component. Assumes output
-     * range is 0-255 for each value in out.
-     *
-     * @param pixels colour to process by decode
-     * @param decode decode array for colour space
-     * @return decoded value..
-     */
-    private static byte normalizeComponents(
-            byte pixels,
-            float[] decode,
-            int i) {
-        // interpolate each colour component for the given decode domain.
-        return (byte) ((decode[i * 2] * 255) + (pixels & 0xff) * (decode[(i * 2) + 1] * 255));
-    }
-
     public WritableRaster filter(Raster src, WritableRaster dest) {
 
         // check if we have none 0-1 decode, if so continue if not return
@@ -104,5 +88,21 @@ public class DecodeRasterOp implements RasterOp {
 
     public RenderingHints getRenderingHints() {
         return hints;
+    }
+
+    /**
+     * Apply the Decode Array domain for each colour component. Assumes output
+     * range is 0-255 for each value in out.
+     *
+     * @param pixels colour to process by decode
+     * @param decode decode array for colour space
+     * @return decoded value..
+     */
+    private static byte normalizeComponents(
+            byte pixels,
+            float[] decode,
+            int i) {
+        // interpolate each colour component for the given decode domain.
+        return (byte) ((decode[i * 2] * 255) + (pixels & 0xff) * (decode[(i * 2) + 1] * 255));
     }
 }

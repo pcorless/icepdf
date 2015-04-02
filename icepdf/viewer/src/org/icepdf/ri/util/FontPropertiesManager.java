@@ -48,13 +48,18 @@ public class FontPropertiesManager {
     private static final String DEFAULT_HOME_DIR = ".icesoft/icepdf_viewer";
     private static final String LOCK_FILE = "_syslock";
     private final static String USER_FILENAME = "pdfviewerfontcache.properties";
+
+    private FontManager fontManager;
+
     //the version name, used in about dialog and start-up message
     String versionName = Document.getLibraryVersion();
-    File userHome;
-    private FontManager fontManager;
+
     private Properties sysProps;
     private PropertiesManager props;
     private Properties fontProps;
+
+    File userHome;
+
     //the swingri home directory
     private File dataDir;
 

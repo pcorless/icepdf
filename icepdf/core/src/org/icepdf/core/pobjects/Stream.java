@@ -42,6 +42,9 @@ import java.util.logging.Logger;
  */
 public class Stream extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(Stream.class.toString());
+
     public static final Name WIDTH_KEY = new Name("Width");
     public static final Name W_KEY = new Name("W");
     public static final Name HEIGHT_KEY = new Name("Height");
@@ -55,8 +58,7 @@ public class Stream extends Dictionary {
     public static final Name F_KEY = new Name("F");
     public static final Name INDEXED_KEY = new Name("Indexed");
     public static final Name I_KEY = new Name("I");
-    private static final Logger logger =
-            Logger.getLogger(Stream.class.toString());
+
     // original byte stream that has not been decoded
     protected byte[] rawBytes;
 
@@ -87,6 +89,14 @@ public class Stream extends Dictionary {
         this.rawBytes = rawBytes;
     }
 
+    /**
+     * Sets the PObject referece for this stream.  The reference number and
+     * generation is need by the encryption algorithm.
+     */
+    public void setPObjectReference(Reference reference) {
+        pObjectReference = reference;
+    }
+
     public byte[] getRawBytes() {
         return rawBytes;
     }
@@ -108,14 +118,6 @@ public class Stream extends Dictionary {
      */
     public Reference getPObjectReference() {
         return pObjectReference;
-    }
-
-    /**
-     * Sets the PObject referece for this stream.  The reference number and
-     * generation is need by the encryption algorithm.
-     */
-    public void setPObjectReference(Reference reference) {
-        pObjectReference = reference;
     }
 
     protected boolean isImageSubtype() {

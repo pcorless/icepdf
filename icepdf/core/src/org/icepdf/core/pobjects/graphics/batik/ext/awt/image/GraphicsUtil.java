@@ -32,6 +32,8 @@ import java.awt.image.*;
  */
 public class GraphicsUtil {
 
+    public static AffineTransform IDENTITY = new AffineTransform();
+
     /**
      * Standard prebuilt Linear_sRGB color model with no alpha
      */
@@ -86,7 +88,6 @@ public class GraphicsUtil {
                     0x00FF0000, 0x0000FF00,
                     0x000000FF, 0xFF000000, false,
                     DataBuffer.TYPE_INT);
-    public static AffineTransform IDENTITY = new AffineTransform();
 
     /**
      * Method that returns either Linear_sRGB_Pre or Linear_sRGB_UnPre
@@ -94,8 +95,8 @@ public class GraphicsUtil {
      *
      * @param premult True if the ColorModel should have premultiplied alpha.
      * @return a ColorMdoel with Linear sRGB colorSpace and
-     * the alpha channel set in accordance with
-     * <tt>premult</tt>
+     *         the alpha channel set in accordance with
+     *         <tt>premult</tt>
      */
     public static ColorModel makeLinear_sRGBCM(boolean premult) {
 
@@ -342,7 +343,7 @@ public class GraphicsUtil {
      *
      * @param ras The raster to make writable.
      * @return A Writable version of ras (shares DataBuffer with
-     * <tt>ras</tt>).
+     *         <tt>ras</tt>).
      */
     public static WritableRaster makeRasterWritable(Raster ras) {
         return makeRasterWritable(ras, ras.getMinX(), ras.getMinY());
@@ -369,8 +370,8 @@ public class GraphicsUtil {
      * @param minY The y location for the upper left corner of the
      *             returned WritableRaster.
      * @return A Writable version of <tT>ras</tt> with it's upper left
-     * hand coordinate set to minX, minY (shares it's DataBuffer
-     * with <tt>ras</tt>).
+     *         hand coordinate set to minX, minY (shares it's DataBuffer
+     *         with <tt>ras</tt>).
      */
     public static WritableRaster makeRasterWritable(Raster ras,
                                                     int minX, int minY) {
@@ -393,7 +394,7 @@ public class GraphicsUtil {
      * @param cm              The ColorModel to change the alpha premult state of.
      * @param newAlphaPreMult The new state of alpha premult.
      * @return A new colorModel that has isAlphaPremultiplied()
-     * equal to newAlphaPreMult.
+     *         equal to newAlphaPreMult.
      */
     public static ColorModel
     coerceColorModel(ColorModel cm, boolean newAlphaPreMult) {

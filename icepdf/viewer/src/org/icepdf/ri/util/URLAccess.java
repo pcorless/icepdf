@@ -28,26 +28,6 @@ import java.net.UnknownHostException;
  */
 public class URLAccess {
     /**
-     * The given URL string given to doURLAccess().
-     */
-    public String urlLocation;
-    /**
-     * The resolved URL, if urlLocation was valid.
-     */
-    public URL url;
-    /**
-     * Access to the data at the URL, if the URL was valid.
-     */
-    public InputStream inputStream;
-    /**
-     * The reason why the URL was invalid.
-     */
-    public String errorMessage;
-
-    private URLAccess() {
-    }
-
-    /**
      * Simple utility method to check if a URL is valid.
      * If it is invalid, then urlAccess.errorMessage will say why.
      * If it is valid, then urlAccess.url will be a valid URL object,
@@ -81,6 +61,30 @@ public class URLAccess {
             res.errorMessage = "IO exception";
         }
         return res;
+    }
+
+
+    /**
+     * The given URL string given to doURLAccess().
+     */
+    public String urlLocation;
+
+    /**
+     * The resolved URL, if urlLocation was valid.
+     */
+    public URL url;
+
+    /**
+     * Access to the data at the URL, if the URL was valid.
+     */
+    public InputStream inputStream;
+
+    /**
+     * The reason why the URL was invalid.
+     */
+    public String errorMessage;
+
+    private URLAccess() {
     }
 
     /**

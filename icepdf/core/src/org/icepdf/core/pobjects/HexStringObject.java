@@ -34,10 +34,12 @@ public class HexStringObject implements StringObject {
 
     private static Logger logger =
             Logger.getLogger(HexStringObject.class.toString());
-    // Reference is need for standard encryption
-    Reference reference;
+
     // core data used to represent the literal string information
     private StringBuilder stringData;
+
+    // Reference is need for standard encryption
+    Reference reference;
 
     /**
      * <p>Creates a new hexadecimal string object so that it represents the same
@@ -75,52 +77,6 @@ public class HexStringObject implements StringObject {
     }
 
     /**
-     * Utility method to removed all none hex character from the string and
-     * ensure that the length is an even length.
-     *
-     * @param hex  hex data to normalize
-     * @param step 2 or 4 character codes.
-     * @return normalized pure hex StringBuffer
-     */
-    private static StringBuilder normalizeHex(StringBuilder hex, int step) {
-        // strip and white space
-        int length = hex.length();
-        for (int i = 0; i < length; i++) {
-            if (isNoneHexChar(hex.charAt(i))) {
-                hex.deleteCharAt(i);
-                length--;
-                i--;
-            }
-        }
-        length = hex.length();
-        if (step == 2) {
-            // add 0's to uneven length
-            if (length % 2 != 0) {
-                hex.append('0');
-            }
-        }
-        if (step == 4) {
-            if (length % 4 != 0) {
-                hex.append("00");
-            }
-        }
-        return hex;
-    }
-
-    /**
-     * Utility method to test if the char is a none hexadecimal char.
-     *
-     * @param c charact to text
-     * @return true if the character is a none hexadecimal character
-     */
-    private static boolean isNoneHexChar(char c) {
-        // make sure the char is the following
-        return !(((c >= 48) && (c <= 57)) || // 0-9
-                ((c >= 65) && (c <= 70)) ||  // A-F
-                ((c >= 97) && (c <= 102)));  // a-f
-    }
-
-    /**
      * Gets the integer value of the hexidecimal data specified by the start and
      * offset parameters.
      *
@@ -135,6 +91,18 @@ public class HexStringObject implements StringObject {
         try {
             unsignedInt = Integer.parseInt(
                     stringData.substring(start, start + offset), 16);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer("Number Format Exception " + unsignedInt);
+            }
+        }
+        return unsignedInt;
+    }
+
+    public int getUnsignedInt(String data) {
+        int unsignedInt = 0;
+        try {
+            unsignedInt = Integer.parseInt(data, 16);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Number Format Exception " + unsignedInt);
@@ -205,10 +173,10 @@ public class HexStringObject implements StringObject {
      *                   Composite and Simple font types respectively
      * @param font       font used to render the literal string data.
      * @return StringBuffer which contains all renderaable characters for the
-     * given font.
+     *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding()) {
+        if (fontFormat == Font.SIMPLE_FORMAT) {
             stringData = new StringBuilder(normalizeHex(stringData, 2).toString());
             int charOffset = 2;
             int length = getLength();
@@ -232,14 +200,32 @@ public class HexStringObject implements StringObject {
             return tmp;
         } else if (fontFormat == Font.CID_FORMAT) {
             stringData = new StringBuilder(normalizeHex(stringData, 4).toString());
-            int charOffset = 4;
+            int charOffset = 2;
             int length = getLength();
             int charValue;
             StringBuilder tmp = new StringBuilder(length);
+            // attempt to detect mulibyte encoded strings.
             for (int i = 0; i < length; i += charOffset) {
-                charValue = getUnsignedInt(i, charOffset);
-                if (font.canDisplayEchar((char) charValue)) {
-                    tmp.append((char) charValue);
+                String first = stringData.substring(i, i + 2);
+                if (first.charAt(0) != '0') {
+                    // check range for possible 2 byte char ie mixed mode.
+                    charValue = getUnsignedInt(first);
+                    if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
+                            font.canDisplayEchar((char) charValue) && font.getSource() != null) {
+                        tmp.append((char) charValue);
+                    } else {
+                        charValue = getUnsignedInt(i, 4);
+                        if (font.canDisplayEchar((char) charValue)) {
+                            tmp.append((char) charValue);
+                            i += 2;
+                        }
+                    }
+                } else {
+                    charValue = getUnsignedInt(i, 4);
+                    if (font.canDisplayEchar((char) charValue)) {
+                        tmp.append((char) charValue);
+                        i += 2;
+                    }
                 }
             }
             return tmp;
@@ -254,6 +240,52 @@ public class HexStringObject implements StringObject {
      */
     public int getLength() {
         return stringData.length();
+    }
+
+    /**
+     * Utility method to removed all none hex character from the string and
+     * ensure that the length is an even length.
+     *
+     * @param hex  hex data to normalize
+     * @param step 2 or 4 character codes.
+     * @return normalized pure hex StringBuffer
+     */
+    private static StringBuilder normalizeHex(StringBuilder hex, int step) {
+        // strip and white space
+        int length = hex.length();
+        for (int i = 0; i < length; i++) {
+            if (isNoneHexChar(hex.charAt(i))) {
+                hex.deleteCharAt(i);
+                length--;
+                i--;
+            }
+        }
+        length = hex.length();
+        if (step == 2) {
+            // add 0's to uneven length
+            if (length % 2 != 0) {
+                hex.append('0');
+            }
+        }
+        if (step == 4) {
+            if (length % 4 != 0) {
+                hex.append("00");
+            }
+        }
+        return hex;
+    }
+
+    /**
+     * Utility method to test if the char is a none hexadecimal char.
+     *
+     * @param c charact to text
+     * @return true if the character is a none hexadecimal character
+     */
+    private static boolean isNoneHexChar(char c) {
+        // make sure the char is the following
+        return !(((c >= 48) && (c <= 57)) || // 0-9
+                ((c >= 65) && (c <= 70)) ||  // A-F
+                ((c >= 97) && (c <= 102)));  // a-f
     }
 
     /**
@@ -302,19 +334,19 @@ public class HexStringObject implements StringObject {
     /**
      * Sets the parent PDF object's reference.
      *
-     * @return returns the reference used for encryption.
+     * @param reference parent object reference.
      */
-    public Reference getReference() {
-        return reference;
+    public void setReference(Reference reference) {
+        this.reference = reference;
     }
 
     /**
      * Sets the parent PDF object's reference.
      *
-     * @param reference parent object reference.
+     * @return returns the reference used for encryption.
      */
-    public void setReference(Reference reference) {
-        this.reference = reference;
+    public Reference getReference() {
+        return reference;
     }
 
     /**

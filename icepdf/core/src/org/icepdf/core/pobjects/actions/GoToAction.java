@@ -49,15 +49,6 @@ public class GoToAction extends Action {
     }
 
     /**
-     * Gets the Destination object which the "GoTo" action should jump to.
-     *
-     * @return Destination object specified in the action.
-     */
-    public Destination getDestination() {
-        return destination;
-    }
-
-    /**
      * Set the destination and adds the new data to the action's dictionary
      *
      * @param destination new destionat, replace old values.
@@ -65,6 +56,15 @@ public class GoToAction extends Action {
     public void setDestination(Destination destination) {
         entries.put(DESTINATION_KEY, destination.getObject());
         this.destination = destination;
+    }
+
+    /**
+     * Gets the Destination object which the "GoTo" action should jump to.
+     *
+     * @return Destination object specified in the action.
+     */
+    public Destination getDestination() {
+        return destination;
     }
 
 }

@@ -42,11 +42,14 @@ public class TextSprite {
     // ability to turn off optimized drawing for text.
     private final static boolean OPTIMIZED_DRAWING_ENABLED =
             Defs.booleanProperty("org.icepdf.core.text.optimized", true);
+
+    // child GlyphText objects
+    private ArrayList<GlyphText> glyphTexts;
+
     // text bounds, including all child Glyph sprites, in glyph space
     // this bound is used during painting to respect painting clip.
     Rectangle2D.Float bounds;
-    // child GlyphText objects
-    private ArrayList<GlyphText> glyphTexts;
+
     // space reference for where glyph
     private AffineTransform graphicStateTransform;
     private AffineTransform tmTransform;
@@ -322,7 +325,7 @@ public class TextSprite {
      *
      * @param shape shape to calculate intersection against
      * @return true, if <code>TextSprite</code> bounds intersects <code>shape</code>;
-     * otherwise; false.
+     *         otherwise; false.
      */
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());

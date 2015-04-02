@@ -72,6 +72,12 @@ public class TextState {
      * Add text to path for clipping
      */
     public static final int MODE_ADD = 7;
+
+    // type3 font text states for d1 token.
+    protected PRectangle type3BBox;
+    // type 3 font text state for d0 token.
+    protected Point2D.Float type3HorizontalDisplacement;
+
     /**
      * Set the character spacing, Tc, to charSpace, which is a number expressed
      * in unscaled text space units. Character spacing is used by the Tj, TJ,
@@ -123,10 +129,6 @@ public class TextState {
      * Text Font - Associated awt font object for display purposes
      */
     public FontFile currentfont;
-    // type3 font text states for d1 token.
-    protected PRectangle type3BBox;
-    // type 3 font text state for d0 token.
-    protected Point2D.Float type3HorizontalDisplacement;
 
     /**
      * Create a new Instance of TextState

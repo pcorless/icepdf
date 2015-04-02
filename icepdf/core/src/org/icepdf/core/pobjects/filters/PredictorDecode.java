@@ -115,32 +115,6 @@ public class PredictorDecode extends ChunkingInputStream {
         setInputStream(input);
     }
 
-    private static int applyLeftPredictor(byte[] buffer, int bytesPerPixel, int i) {
-        return (((int) buffer[(i - bytesPerPixel)]) & 0xFF);
-    }
-
-    private static int applyAbovePredictor(byte[] aboveBuffer, int i) {
-        return (((int) aboveBuffer[i]) & 0xFF);
-    }
-
-    private static int applyAboveLeftPredictor(byte[] aboveBuffer, int bytesPerPixel, int i) {
-        return (((int) aboveBuffer[i - bytesPerPixel]) & 0xFF);
-    }
-
-    public static boolean isPredictor(Library library, HashMap entries) {
-        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODE_PARMS_VALUE);
-        if (decodeParmsDictionary == null) {
-            return false;
-        }
-        int predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
-        if (predictor != PREDICTOR_PNG_NONE && predictor != PREDICTOR_PNG_SUB &&
-                predictor != PREDICTOR_PNG_UP && predictor != PREDICTOR_PNG_AVG &&
-                predictor != PREDICTOR_PNG_PAETH && predictor != PREDICTOR_PNG_OPTIMUM) {
-            return false;
-        }
-        return true;
-    }
-
     @Override
     protected int fillInternalBuffer() throws IOException {
         byte[] temp = aboveBuffer;
@@ -244,6 +218,32 @@ public class PredictorDecode extends ChunkingInputStream {
                 buffer[i] += ((byte) (paeth & 0xFF));
             }
         }
+    }
+
+    private static int applyLeftPredictor(byte[] buffer, int bytesPerPixel, int i) {
+        return (((int) buffer[(i - bytesPerPixel)]) & 0xFF);
+    }
+
+    private static int applyAbovePredictor(byte[] aboveBuffer, int i) {
+        return (((int) aboveBuffer[i]) & 0xFF);
+    }
+
+    private static int applyAboveLeftPredictor(byte[] aboveBuffer, int bytesPerPixel, int i) {
+        return (((int) aboveBuffer[i - bytesPerPixel]) & 0xFF);
+    }
+
+    public static boolean isPredictor(Library library, HashMap entries) {
+        HashMap decodeParmsDictionary = library.getDictionary(entries, DECODE_PARMS_VALUE);
+        if (decodeParmsDictionary == null) {
+            return false;
+        }
+        int predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
+        if (predictor != PREDICTOR_PNG_NONE && predictor != PREDICTOR_PNG_SUB &&
+                predictor != PREDICTOR_PNG_UP && predictor != PREDICTOR_PNG_AVG &&
+                predictor != PREDICTOR_PNG_PAETH && predictor != PREDICTOR_PNG_OPTIMUM) {
+            return false;
+        }
+        return true;
     }
 
 }

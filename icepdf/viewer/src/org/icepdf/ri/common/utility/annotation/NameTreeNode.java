@@ -106,16 +106,16 @@ public class NameTreeNode extends DefaultMutableTreeNode {
         return rootNode;
     }
 
-    public void setRootNode(boolean rootNode) {
-        this.rootNode = rootNode;
-    }
-
     public boolean isIntermidiatNode() {
         return intermidiatNode;
     }
 
     public boolean isLeaf() {
         return leaf;
+    }
+
+    public void setRootNode(boolean rootNode) {
+        this.rootNode = rootNode;
     }
 
     public int getChildCount() {

@@ -43,15 +43,6 @@ public abstract class AbstractPageViewComponent
     // annotations component for this pageViewComp.
     protected ArrayList<AnnotationComponent> annotationComponents;
 
-    public static boolean isAnnotationTool(final int displayTool) {
-        return displayTool == DocumentViewModel.DISPLAY_TOOL_SELECTION ||
-                displayTool == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION ||
-                displayTool == DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION ||
-                displayTool == DocumentViewModel.DISPLAY_TOOL_SQUIGGLY_ANNOTATION ||
-                displayTool == DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION ||
-                displayTool == DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION;
-    }
-
     public abstract Page getPage();
 
     /**
@@ -208,7 +199,7 @@ public abstract class AbstractPageViewComponent
                             }
                         }else{
                             // have test file with null value here.
-                            System.out.println();
+                            // System.out.println();
                         }
                     }
                 }
@@ -218,6 +209,15 @@ public abstract class AbstractPageViewComponent
 
     public ArrayList<AnnotationComponent> getAnnotationComponents() {
         return annotationComponents;
+    }
+
+    public static boolean isAnnotationTool(final int displayTool) {
+        return displayTool == DocumentViewModel.DISPLAY_TOOL_SELECTION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_SQUIGGLY_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_STRIKEOUT_ANNOTATION ||
+                displayTool == DocumentViewModel.DISPLAY_TOOL_UNDERLINE_ANNOTATION;
     }
 
 }

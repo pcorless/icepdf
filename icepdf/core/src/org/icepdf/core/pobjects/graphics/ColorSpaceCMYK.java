@@ -25,7 +25,6 @@ import java.awt.color.ColorSpace;
 public class ColorSpaceCMYK extends ColorSpace {
     private static final String[] NAMES = new String[]{"Cyan", "Magenta", "Yellow", "Black"};
     private static final ColorSpace COLOR_SPACE_sRGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
-    private float[] _rgbValues = new float[4];
 
     public ColorSpaceCMYK() {
         super(TYPE_CMYK, 4);
@@ -120,6 +119,8 @@ public class ColorSpaceCMYK extends ColorSpace {
         rgbValues[2] = y;
         return rgbValues;
     }
+
+    private float[] _rgbValues = new float[4];
 
     public float[] fromCIEXYZ(float[] colorvalue) {
         return fromRGB(COLOR_SPACE_sRGB.fromCIEXYZ(colorvalue));

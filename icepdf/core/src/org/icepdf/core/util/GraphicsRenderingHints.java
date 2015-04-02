@@ -41,123 +41,6 @@ public class GraphicsRenderingHints {
      * Constant used to specify rendering hint specific to print rendering.
      */
     public static final int PRINT = 2;
-    // singleton value of this object.
-    private static GraphicsRenderingHints singleton;
-    /**
-     * This hint controls how partially-transparent
-     * drawing operations are composited.  The default value is
-     * VALUE_ALPHA_INTERPOLATION_QUALITY
-     */
-    Object printAlphaInterpolocation = RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY;
-    /**
-     * This hint controls if text and images will be drawn using anitialiasing.
-     * The default value is VALUE_ANTIALIAS_ON
-     */
-    Object printAntiAliasing = RenderingHints.VALUE_ANTIALIAS_ON;
-    /**
-     * This hint controls if text will be drawn using anitialiasing.  This property
-     * can not set to ON unless printAntiAliasing is set to ON
-     * The default value is VALUE_ANTIALIAS_ON
-     */
-    Object printTextAntiAliasing = RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
-    /**
-     * This hint controls colour rendering quality.
-     * The default value is VALUE_COLOR_RENDER_QUALITY
-     */
-    Object printColorRendering = RenderingHints.VALUE_COLOR_RENDER_QUALITY;
-    /**
-     * This hint controls dithering of an image.
-     * The default value is VALUE_DITHER_ENABLE
-     */
-    Object printDithering = RenderingHints.VALUE_DITHER_ENABLE;
-    /**
-     * This hint controls fractional Metrics calculations for drawing text.
-     * The default value is VALUE_FRACTIONALMETRICS_ON
-     */
-    Object printFractionalMetrics = RenderingHints.VALUE_FRACTIONALMETRICS_ON;
-    /**
-     * This hint controls image interpolation.
-     * The default value is VALUE_INTERPOLATION_BILINEAR
-     */
-    Object printInterPolation = RenderingHints.VALUE_INTERPOLATION_BILINEAR;
-    /**
-     * This hint controls rendering quality.
-     * The default value is VALUE_RENDER_QUALITY
-     */
-    Object printRendering = RenderingHints.VALUE_RENDER_QUALITY;
-    /**
-     * This hint controls stroke quality.
-     * The default value is VALUE_STROKE_NORMALIZE
-     */
-    Object printStrokeControl = RenderingHints.VALUE_STROKE_NORMALIZE;
-    /**
-     * This hints controls if the Page will paint a white background before drawing itself.
-     * The default value is Color.white
-     */
-    Color printBackground = Color.white;
-    /**
-     * This hint controls how partially-transparent drawing operations are
-     * composited.  The default value is
-     * VALUE_ALPHA_INTERPOLATION_SPEED
-     */
-    Object screenAlphaInterpolocation = RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED;
-    /**
-     * This hint controls if text and images will be drawn using anitialiasing.
-     * The default value is VALUE_ANTIALIAS_ON
-     */
-    Object screenAntiAliasing = RenderingHints.VALUE_ANTIALIAS_ON;
-    /**
-     * This hint controls if text will be drawn using anitialiasing.  This property
-     * can not set to ON unless printAntiAliasing is set to ON
-     * The default value is VALUE_ANTIALIAS_ON
-     */
-    Object screenTextAntiAliasing = RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
-    /**
-     * This hint controls colour rendering quality.
-     * The default value is VALUE_COLOR_RENDER_SPEED
-     */
-    Object screenColorRendering = RenderingHints.VALUE_COLOR_RENDER_SPEED;
-    /**
-     * This hint controls dithering of an image.
-     * The default value is VALUE_DITHER_ENABLE
-     */
-    Object screenDithering = RenderingHints.VALUE_DITHER_DEFAULT;
-    /**
-     * This hint controls fractional Metrics calculations for drawing text.
-     * The default value is VALUE_FRACTIONALMETRICS_ON
-     */
-    Object screenFractionalMetrics = RenderingHints.VALUE_FRACTIONALMETRICS_ON;
-
-    // take care of Screen mode default values. The general ideal is to lower
-    // qality where possible to encresase drawing speed.
-    /**
-     * This hint controls image interpolation.
-     * The default value is VALUE_INTERPOLATION_BICUBIC
-     */
-    Object screenInterPolation = RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
-    /**
-     * This hint controls rendering quality.
-     * The default value is VALUE_RENDER_QUALITY
-     */
-    Object screenRendering = RenderingHints.VALUE_RENDER_SPEED;
-    /**
-     * This hint controls stroke quality.
-     * The default value is VALUE_STROKE_NORMALIZE
-     */
-    Object screenStrokeControl = RenderingHints.VALUE_STROKE_PURE;
-    /**
-     * This hints controls if the Page will paint a white background before drawing itself.
-     * The default value is Color.white
-     */
-    Color screenBackground = Color.white;
-    private RenderingHints screenHints;
-    private RenderingHints printHints;
-    /**
-     * Load values from the system properties if any and assign defaults.
-     */
-    private GraphicsRenderingHints() {
-        setFromProperties();
-    }
 
     /**
      * Gets the singleton representation of this object.
@@ -169,6 +52,16 @@ public class GraphicsRenderingHints {
             singleton = new GraphicsRenderingHints();
         }
         return singleton;
+    }
+
+    // singleton value of this object.
+    private static GraphicsRenderingHints singleton;
+
+    /**
+     * Load values from the system properties if any and assign defaults.
+     */
+    private GraphicsRenderingHints() {
+        setFromProperties();
     }
 
     /**
@@ -427,4 +320,117 @@ public class GraphicsRenderingHints {
         printHints.put(RenderingHints.KEY_RENDERING, printRendering);
         printHints.put(RenderingHints.KEY_STROKE_CONTROL, printStrokeControl);
     }
+
+
+    /**
+     * This hint controls how partially-transparent
+     * drawing operations are composited.  The default value is
+     * VALUE_ALPHA_INTERPOLATION_QUALITY
+     */
+    Object printAlphaInterpolocation = RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY;
+    /**
+     * This hint controls if text and images will be drawn using anitialiasing.
+     * The default value is VALUE_ANTIALIAS_ON
+     */
+    Object printAntiAliasing = RenderingHints.VALUE_ANTIALIAS_ON;
+    /**
+     * This hint controls if text will be drawn using anitialiasing.  This property
+     * can not set to ON unless printAntiAliasing is set to ON
+     * The default value is VALUE_ANTIALIAS_ON
+     */
+    Object printTextAntiAliasing = RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
+    /**
+     * This hint controls colour rendering quality.
+     * The default value is VALUE_COLOR_RENDER_QUALITY
+     */
+    Object printColorRendering = RenderingHints.VALUE_COLOR_RENDER_QUALITY;
+    /**
+     * This hint controls dithering of an image.
+     * The default value is VALUE_DITHER_ENABLE
+     */
+    Object printDithering = RenderingHints.VALUE_DITHER_ENABLE;
+    /**
+     * This hint controls fractional Metrics calculations for drawing text.
+     * The default value is VALUE_FRACTIONALMETRICS_ON
+     */
+    Object printFractionalMetrics = RenderingHints.VALUE_FRACTIONALMETRICS_ON;
+    /**
+     * This hint controls image interpolation.
+     * The default value is VALUE_INTERPOLATION_BILINEAR
+     */
+    Object printInterPolation = RenderingHints.VALUE_INTERPOLATION_BILINEAR;
+    /**
+     * This hint controls rendering quality.
+     * The default value is VALUE_RENDER_QUALITY
+     */
+    Object printRendering = RenderingHints.VALUE_RENDER_QUALITY;
+    /**
+     * This hint controls stroke quality.
+     * The default value is VALUE_STROKE_NORMALIZE
+     */
+    Object printStrokeControl = RenderingHints.VALUE_STROKE_NORMALIZE;
+    /**
+     * This hints controls if the Page will paint a white background before drawing itself.
+     * The default value is Color.white
+     */
+    Color printBackground = Color.white;
+
+    // take care of Screen mode default values. The general ideal is to lower
+    // qality where possible to encresase drawing speed.
+
+    /**
+     * This hint controls how partially-transparent drawing operations are
+     * composited.  The default value is
+     * VALUE_ALPHA_INTERPOLATION_SPEED
+     */
+    Object screenAlphaInterpolocation = RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED;
+    /**
+     * This hint controls if text and images will be drawn using anitialiasing.
+     * The default value is VALUE_ANTIALIAS_ON
+     */
+    Object screenAntiAliasing = RenderingHints.VALUE_ANTIALIAS_ON;
+    /**
+     * This hint controls if text will be drawn using anitialiasing.  This property
+     * can not set to ON unless printAntiAliasing is set to ON
+     * The default value is VALUE_ANTIALIAS_ON
+     */
+    Object screenTextAntiAliasing = RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
+    /**
+     * This hint controls colour rendering quality.
+     * The default value is VALUE_COLOR_RENDER_SPEED
+     */
+    Object screenColorRendering = RenderingHints.VALUE_COLOR_RENDER_SPEED;
+    /**
+     * This hint controls dithering of an image.
+     * The default value is VALUE_DITHER_ENABLE
+     */
+    Object screenDithering = RenderingHints.VALUE_DITHER_DEFAULT;
+    /**
+     * This hint controls fractional Metrics calculations for drawing text.
+     * The default value is VALUE_FRACTIONALMETRICS_ON
+     */
+    Object screenFractionalMetrics = RenderingHints.VALUE_FRACTIONALMETRICS_ON;
+    /**
+     * This hint controls image interpolation.
+     * The default value is VALUE_INTERPOLATION_BICUBIC
+     */
+    Object screenInterPolation = RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
+    /**
+     * This hint controls rendering quality.
+     * The default value is VALUE_RENDER_QUALITY
+     */
+    Object screenRendering = RenderingHints.VALUE_RENDER_SPEED;
+    /**
+     * This hint controls stroke quality.
+     * The default value is VALUE_STROKE_NORMALIZE
+     */
+    Object screenStrokeControl = RenderingHints.VALUE_STROKE_PURE;
+    /**
+     * This hints controls if the Page will paint a white background before drawing itself.
+     * The default value is Color.white
+     */
+    Color screenBackground = Color.white;
+
+    private RenderingHints screenHints;
+    private RenderingHints printHints;
 }

@@ -111,6 +111,26 @@ package org.icepdf.core.pobjects.security;
  */
 public class Permissions {
 
+    // constants for parsing bits from P value
+    // bit 3, 11111111111111111111000011000100
+    private static final int PRINT_DOCUMENT_BIT_3 = 0xFFFFF0C4;
+    // bit 4, 11111111111111111111000011001000
+    private static final int MODIFY_DOCUMENT_BIT_4 = 0xFFFFF0C8;
+    // bit 5, 11111111111111111111000011010000
+    private static final int DATA_EXTRACTION_BIT_5 = 0xFFFFF0D0;
+    // bit 6, 11111111111111111111000011100000
+    private static final int MODIFY_TEXT_BIT_6 = 0xFFFFF0E0;
+    // bit 9, 11111111111111111111000111000000
+    private static final int MODIFY_FORMS_BIT_9 = 0xFFFFF1C0;
+    // bit 10, 11111111111111111111001011000000
+    private static final int ACCESSIBILITY_BIT_10 = 0xFFFFF2C0;
+    // bit 11, 11111111111111111111010011000000
+    private static final int ASSEMBLE_DOCUMENT_BIT_11 = 0xFFFFF4C0;
+    // bit 12 11111111111111111111100011000000
+    private static final int PRINT_QUALITY_BIT_12 = 0xFFFFF8C0;
+
+    // Constants for retrieving permission values
+
     /**
      * Determine if printing of document is allowed.
      */
@@ -144,26 +164,7 @@ public class Permissions {
      */
     public static final int DOCUMENT_ASSEMBLY = 7;
 
-    // Constants for retrieving permission values
-    // constants for parsing bits from P value
-    // bit 3, 11111111111111111111000011000100
-    private static final int PRINT_DOCUMENT_BIT_3 = 0xFFFFF0C4;
-    // bit 4, 11111111111111111111000011001000
-    private static final int MODIFY_DOCUMENT_BIT_4 = 0xFFFFF0C8;
-    // bit 5, 11111111111111111111000011010000
-    private static final int DATA_EXTRACTION_BIT_5 = 0xFFFFF0D0;
-    // bit 6, 11111111111111111111000011100000
-    private static final int MODIFY_TEXT_BIT_6 = 0xFFFFF0E0;
-    // bit 9, 11111111111111111111000111000000
-    private static final int MODIFY_FORMS_BIT_9 = 0xFFFFF1C0;
-    // bit 10, 11111111111111111111001011000000
-    private static final int ACCESSIBILITY_BIT_10 = 0xFFFFF2C0;
-    // bit 11, 11111111111111111111010011000000
-    private static final int ASSEMBLE_DOCUMENT_BIT_11 = 0xFFFFF4C0;
-    // bit 12 11111111111111111111100011000000
-    private static final int PRINT_QUALITY_BIT_12 = 0xFFFFF8C0;
-    // Initiated flag
-    boolean isInit = false;
+
     // Permission values, indexes are mapped to constant values
     private boolean[] permissions = new boolean[10];
     // original permission integer from encrypt dictionary
@@ -171,6 +172,9 @@ public class Permissions {
     private int permissionFlags = 0xFFFFF0C0;
     // Revision of standard encryption algorithms
     private int revision = 2;
+
+    // Initiated flag
+    boolean isInit = false;
 
     /**
      * Creates a new object which can determine a document's user permissions.

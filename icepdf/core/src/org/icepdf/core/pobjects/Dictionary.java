@@ -89,18 +89,6 @@ public class Dictionary {
     }
 
     /**
-     * <p>Gets the reference used to identify this Dictionary in the PDF
-     * document.  The reference number and generation number of this reference
-     * is needed by the encryption algorithm to correctly decrypt this object.</p>
-     *
-     * @return Reference used to identify this Dictionary in a PDF document.
-     * @see #setPObjectReference(org.icepdf.core.pobjects.Reference)
-     */
-    public Reference getPObjectReference() {
-        return pObjectReference;
-    }
-
-    /**
      * <p>Sets the reference used to identify this Dictionary in the PDF document.
      * The reference number and generation number of this reference is needed by
      * the encryption algorithm to correctly decrypt this object.</p>
@@ -114,6 +102,18 @@ public class Dictionary {
      */
     public void setPObjectReference(Reference reference) {
         pObjectReference = reference;
+    }
+
+    /**
+     * <p>Gets the reference used to identify this Dictionary in the PDF
+     * document.  The reference number and generation number of this reference
+     * is needed by the encryption algorithm to correctly decrypt this object.</p>
+     *
+     * @return Reference used to identify this Dictionary in a PDF document.
+     * @see #setPObjectReference(org.icepdf.core.pobjects.Reference)
+     */
+    public Reference getPObjectReference() {
+        return pObjectReference;
     }
 
     /**

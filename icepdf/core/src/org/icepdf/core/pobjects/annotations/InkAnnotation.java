@@ -41,6 +41,9 @@ import java.util.logging.Logger;
  */
 public class InkAnnotation extends MarkupAnnotation {
 
+    private static final Logger logger =
+            Logger.getLogger(InkAnnotation.class.toString());
+
     /**
      * (Required) An array of n arrays, each representing a stroked path. Each
      * array shall be a series of alternating horizontal and vertical coordinates
@@ -49,52 +52,11 @@ public class InkAnnotation extends MarkupAnnotation {
      * implementation-dependent way
      */
     public static final Name INK_LIST_KEY = new Name("InkList");
-    private static final Logger logger =
-            Logger.getLogger(InkAnnotation.class.toString());
+
     protected Shape inkPath;
 
     public InkAnnotation(Library l, HashMap h) {
         super(l, h);
-    }
-
-    /**
-     * Gets an instance of a InkAnnotation that has valid Object Reference.
-     *
-     * @param library document library
-     * @param rect    bounding rectangle in user space
-     * @return new InkAnnotation Instance.
-     */
-    public static InkAnnotation getInstance(Library library,
-                                            Rectangle rect) {
-        // state manager
-        StateManager stateManager = library.getStateManager();
-
-        // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
-        // set default link annotation values.
-        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
-        entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_INK);
-        // coordinates
-        if (rect != null) {
-            entries.put(Annotation.RECTANGLE_KEY,
-                    PRectangle.getPRectangleVector(rect));
-        } else {
-            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
-        }
-
-        // create the new instance
-        InkAnnotation inkAnnotation = new InkAnnotation(library, entries);
-        inkAnnotation.init();
-        inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        inkAnnotation.setNew(true);
-
-        // set default flags.
-        inkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        inkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
-        inkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-        inkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
-
-        return inkAnnotation;
     }
 
     @SuppressWarnings("unchecked")
@@ -160,6 +122,48 @@ public class InkAnnotation extends MarkupAnnotation {
             }
         }
         return inkLists;
+    }
+
+
+    /**
+     * Gets an instance of a InkAnnotation that has valid Object Reference.
+     *
+     * @param library document library
+     * @param rect    bounding rectangle in user space
+     * @return new InkAnnotation Instance.
+     */
+    public static InkAnnotation getInstance(Library library,
+                                            Rectangle rect) {
+        // state manager
+        StateManager stateManager = library.getStateManager();
+
+        // create a new entries to hold the annotation properties
+        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        // set default link annotation values.
+        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
+        entries.put(Dictionary.SUBTYPE_KEY, Annotation.SUBTYPE_INK);
+        // coordinates
+        if (rect != null) {
+            entries.put(Annotation.RECTANGLE_KEY,
+                    PRectangle.getPRectangleVector(rect));
+        } else {
+            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
+        }
+
+        // create the new instance
+        InkAnnotation inkAnnotation = new InkAnnotation(library, entries);
+        inkAnnotation.init();
+        inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+        inkAnnotation.setNew(true);
+
+        // set default flags.
+        inkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+        inkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+        inkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+        inkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+
+
+        return inkAnnotation;
     }
 
     /**

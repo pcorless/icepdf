@@ -47,7 +47,7 @@ public class ClipDrawCmd extends AbstractDrawCmd {
         // lies in the viewport, very dynamic.
         g.setTransform(base);
 //        if (!g.getClip().getBounds().equals(clip.getBounds())) {// apply the clip, which is always the initial paper size,
-        g.setClip(clip);
+            g.setClip(clip);
 //        }
         // apply the af, which places the clip in the correct location
         g.setTransform(af);
@@ -60,7 +60,7 @@ public class ClipDrawCmd extends AbstractDrawCmd {
 //            g.setComposite(AlphaComposite.getInstance(rule, alpha));
             // apply the new clip
 //            if (!g.getClip().getBounds().equals(currentShape.getBounds())) {
-            g.clip(currentShape);
+                g.clip(currentShape);
 //            }
         }
         return currentShape;

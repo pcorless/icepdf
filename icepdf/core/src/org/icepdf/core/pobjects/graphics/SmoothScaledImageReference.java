@@ -81,6 +81,88 @@ public class SmoothScaledImageReference extends CachedImageReference {
         }
     }
 
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public BufferedImage call() {
+        BufferedImage image = null;
+        long start = System.nanoTime();
+        try {
+            // get the stream image if need, otherwise scale what you have.
+            if (image == null) {
+                image = imageStream.getImage(fillColor, resources);
+                if (width > maxImageWidth || height > maxImageHeight) {
+                    return image;
+                }
+            }
+            if (image != null) {
+                // update the width height encase it as scaled during masking.
+                int width = image.getWidth();
+                int height = image.getHeight();
+
+                // do image scaling on larger images.  This improves the softness
+                // of some images that contains black and white text.
+                double imageScale = 1.0;
+
+                // for device gray colour spaces use the trilinear scaling method
+                // to basically blur the image so it more easily read and less jagged.
+                if (imageStream.getColourSpace() != null &&
+                        imageStream.getColourSpace() instanceof DeviceGray) {
+                    // catch type 3 fonts.
+                    if ((width < 50 || height < 50)) {
+                        imageScale = 0.90;
+                    }
+                    // smooth out everything else.
+                    else {
+                        imageScale = 0.99;
+                    }
+                    if (imageScale != 1.0) {
+                        image = (BufferedImage) getTrilinearScaledInstance(image,
+                                (int) Math.ceil(width * imageScale),
+                                (int) Math.ceil(height * imageScale));
+                    }
+                }
+                // normal rgb scale as before, as the trilinear scale causes excessive blurring.
+                else {
+                    if ((width >= 250 || height >= 250) && (width < 500 || height < 500)) {
+                        imageScale = 0.90;
+                    } else if ((width >= 500 || height >= 500) && (width < 1000 || height < 1000)) {
+                        imageScale = 0.80;
+                    } else if ((width >= 1000 || height >= 1000) && (width < 1500 || height < 1500)) {
+                        imageScale = 0.70;
+                    } else if ((width >= 1500 || height >= 1500) && (width < 2000 || height < 2000)) {
+                        imageScale = 0.60;
+                    } else if ((width >= 2000 || height >= 2000) && (width < 2500 || height < 2500)) {
+                        imageScale = 0.50;
+                    } else if ((width >= 2500 || height >= 2500) && (width < 3000 || height < 3000)) {
+                        imageScale = 0.40;
+                    } else if ((width >= 3000 || height >= 3000)) {
+                        imageScale = 0.30;
+                    }
+                    if (imageScale != 1.0) {
+                        AffineTransform tx = new AffineTransform();
+                        tx.scale(imageScale, imageScale);
+                        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BICUBIC);
+                        BufferedImage sbim = op.filter(image, null);
+                        image.flush();
+                        image = sbim;
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            logger.warning("Error loading image: " + imageStream.getPObjectReference() +
+                    " " + imageStream.toString());
+        }
+        long end = System.nanoTime();
+        notifyImagePageEvents((end - start));
+        return image;
+    }
+
     /**
      * Applies an iterative scaling method to provide a smooth end result, once complete
      * apply a trilinear blend based on the desired width and height.   Technique
@@ -179,88 +261,6 @@ public class SmoothScaledImageReference extends CachedImageReference {
         g2.drawImage(orig, 0, 0, w, h, null);
         g2.dispose();
         return tmp;
-    }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
-
-    public BufferedImage call() {
-        BufferedImage image = null;
-        long start = System.nanoTime();
-        try {
-            // get the stream image if need, otherwise scale what you have.
-            if (image == null) {
-                image = imageStream.getImage(fillColor, resources);
-                if (width > maxImageWidth || height > maxImageHeight) {
-                    return image;
-                }
-            }
-            if (image != null) {
-                // update the width height encase it as scaled during masking.
-                int width = image.getWidth();
-                int height = image.getHeight();
-
-                // do image scaling on larger images.  This improves the softness
-                // of some images that contains black and white text.
-                double imageScale = 1.0;
-
-                // for device gray colour spaces use the trilinear scaling method
-                // to basically blur the image so it more easily read and less jagged.
-                if (imageStream.getColourSpace() != null &&
-                        imageStream.getColourSpace() instanceof DeviceGray) {
-                    // catch type 3 fonts.
-                    if ((width < 50 || height < 50)) {
-                        imageScale = 0.90;
-                    }
-                    // smooth out everything else.
-                    else {
-                        imageScale = 0.99;
-                    }
-                    if (imageScale != 1.0) {
-                        image = (BufferedImage) getTrilinearScaledInstance(image,
-                                (int) Math.ceil(width * imageScale),
-                                (int) Math.ceil(height * imageScale));
-                    }
-                }
-                // normal rgb scale as before, as the trilinear scale causes excessive blurring.
-                else {
-                    if ((width >= 250 || height >= 250) && (width < 500 || height < 500)) {
-                        imageScale = 0.90;
-                    } else if ((width >= 500 || height >= 500) && (width < 1000 || height < 1000)) {
-                        imageScale = 0.80;
-                    } else if ((width >= 1000 || height >= 1000) && (width < 1500 || height < 1500)) {
-                        imageScale = 0.70;
-                    } else if ((width >= 1500 || height >= 1500) && (width < 2000 || height < 2000)) {
-                        imageScale = 0.60;
-                    } else if ((width >= 2000 || height >= 2000) && (width < 2500 || height < 2500)) {
-                        imageScale = 0.50;
-                    } else if ((width >= 2500 || height >= 2500) && (width < 3000 || height < 3000)) {
-                        imageScale = 0.40;
-                    } else if ((width >= 3000 || height >= 3000)) {
-                        imageScale = 0.30;
-                    }
-                    if (imageScale != 1.0) {
-                        AffineTransform tx = new AffineTransform();
-                        tx.scale(imageScale, imageScale);
-                        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BICUBIC);
-                        BufferedImage sbim = op.filter(image, null);
-                        image.flush();
-                        image = sbim;
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            logger.warning("Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString());
-        }
-        long end = System.nanoTime();
-        notifyImagePageEvents((end - start));
-        return image;
     }
 
 }

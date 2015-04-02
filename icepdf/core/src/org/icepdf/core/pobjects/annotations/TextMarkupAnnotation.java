@@ -45,34 +45,14 @@ import java.util.logging.Logger;
  */
 public class TextMarkupAnnotation extends MarkupAnnotation {
 
+    private static final Logger logger =
+            Logger.getLogger(TextMarkupAnnotation.class.toString());
+
     public static final Name SUBTYPE_HIGHLIGHT = new Name("Highlight");
     public static final Name SUBTYPE_UNDERLINE = new Name("Underline");
     public static final Name SUBTYPE_SQUIGGLY = new Name("Squiggly");
     public static final Name SUBTYPE_STRIKE_OUT = new Name("StrikeOut");
-    /**
-     * (Required) An array of 8 × n numbers specifying the coordinates of
-     * n quadrilaterals in default user space. Each quadrilateral shall encompasses
-     * a word or group of contiguous words in the text underlying the annotation.
-     * The coordinates for each quadrilateral shall be given in the order
-     * x1 y1 x2 y2 x3 y3 x4 y4
-     * specifying the quadrilateral’s four vertices in counterclockwise order
-     * (see Figure 64). The text shall be oriented with respect to the edge
-     * connecting points (x1, y1) and (x2, y2).
-     * <p/>
-     * The annotation dictionary’s AP entry, if present, shall take precedence
-     * over QuadPoints; see Table 168 and 12.5.5, “Appearance Streams.”
-     */
-    public static final Name KEY_QUAD_POINTS = new Name("QuadPoints");
-    /**
-     * Named graphics state name used to store highlight transparency values.
-     */
-    public static final Name EXTGSTATE_NAME = new Name("ip1");
-    /**
-     * Highlight transparency default
-     */
-    public static final float HIGHLIGHT_ALPHA = 0.3f;
-    private static final Logger logger =
-            Logger.getLogger(TextMarkupAnnotation.class.toString());
+
     private static Color highlightColor;
     private static Color strikeOutColor;
     private static Color underlineColor;
@@ -118,6 +98,33 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             }
         }
     }
+
+    /**
+     * (Required) An array of 8 × n numbers specifying the coordinates of
+     * n quadrilaterals in default user space. Each quadrilateral shall encompasses
+     * a word or group of contiguous words in the text underlying the annotation.
+     * The coordinates for each quadrilateral shall be given in the order
+     * x1 y1 x2 y2 x3 y3 x4 y4
+     * specifying the quadrilateral’s four vertices in counterclockwise order
+     * (see Figure 64). The text shall be oriented with respect to the edge
+     * connecting points (x1, y1) and (x2, y2).
+     * <p/>
+     * The annotation dictionary’s AP entry, if present, shall take precedence
+     * over QuadPoints; see Table 168 and 12.5.5, “Appearance Streams.”
+     */
+    public static final Name KEY_QUAD_POINTS = new Name("QuadPoints");
+
+    /**
+     * Named graphics state name used to store highlight transparency values.
+     */
+    public static final Name EXTGSTATE_NAME = new Name("ip1");
+
+    /**
+     * Highlight transparency default
+     */
+    public static final float HIGHLIGHT_ALPHA = 0.3f;
+
+
     /**
      * Converted Quad points.
      */
@@ -136,51 +143,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      */
     public TextMarkupAnnotation(Library l, HashMap h) {
         super(l, h);
-    }
-
-    /**
-     * Gets an instance of a TextMarkupAnnotation that has valid Object Reference.
-     *
-     * @param library document library
-     * @param rect    bounding rectangle in user space
-     * @return new TextMarkupAnnotation Instance.
-     */
-    public static TextMarkupAnnotation getInstance(Library library,
-                                                   Rectangle rect,
-                                                   final Name subType) {
-        // state manager
-        StateManager stateManager = library.getStateManager();
-
-        // create a new entries to hold the annotation properties
-        HashMap<Name, Object> entries = new HashMap<Name, Object>();
-        // set default link annotation values.
-        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
-        entries.put(Dictionary.SUBTYPE_KEY, subType);
-        entries.put(Annotation.FLAG_KEY, 4);
-        // coordinates
-        if (rect != null) {
-            entries.put(Annotation.RECTANGLE_KEY,
-                    PRectangle.getPRectangleVector(rect));
-        } else {
-            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
-        }
-
-        TextMarkupAnnotation textMarkupAnnotation =
-                new TextMarkupAnnotation(library, entries);
-        textMarkupAnnotation.init();
-        entries.put(NM_KEY,
-                new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
-        textMarkupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        textMarkupAnnotation.setNew(true);
-        textMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
-        return textMarkupAnnotation;
-    }
-
-    public static boolean isTextMarkupAnnotation(Name subType) {
-        return SUBTYPE_HIGHLIGHT.equals(subType) ||
-                SUBTYPE_UNDERLINE.equals(subType) ||
-                SUBTYPE_SQUIGGLY.equals(subType) ||
-                SUBTYPE_STRIKE_OUT.equals(subType);
     }
 
     @SuppressWarnings("unchecked")
@@ -233,6 +195,52 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
         }
 
+    }
+
+    /**
+     * Gets an instance of a TextMarkupAnnotation that has valid Object Reference.
+     *
+     * @param library document library
+     * @param rect    bounding rectangle in user space
+     * @return new TextMarkupAnnotation Instance.
+     */
+    public static TextMarkupAnnotation getInstance(Library library,
+                                                   Rectangle rect,
+                                                   final Name subType) {
+        // state manager
+        StateManager stateManager = library.getStateManager();
+
+        // create a new entries to hold the annotation properties
+        HashMap<Name, Object> entries = new HashMap<Name, Object>();
+        // set default link annotation values.
+        entries.put(Dictionary.TYPE_KEY, Annotation.TYPE_VALUE);
+        entries.put(Dictionary.SUBTYPE_KEY, subType);
+        entries.put(Annotation.FLAG_KEY, 4);
+        // coordinates
+        if (rect != null) {
+            entries.put(Annotation.RECTANGLE_KEY,
+                    PRectangle.getPRectangleVector(rect));
+        } else {
+            entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
+        }
+
+        TextMarkupAnnotation textMarkupAnnotation =
+                new TextMarkupAnnotation(library, entries);
+        textMarkupAnnotation.init();
+        entries.put(NM_KEY,
+                new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
+        textMarkupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+        textMarkupAnnotation.setNew(true);
+        textMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+        return textMarkupAnnotation;
+    }
+
+
+    public static boolean isTextMarkupAnnotation(Name subType) {
+        return SUBTYPE_HIGHLIGHT.equals(subType) ||
+                SUBTYPE_UNDERLINE.equals(subType) ||
+                SUBTYPE_SQUIGGLY.equals(subType) ||
+                SUBTYPE_STRIKE_OUT.equals(subType);
     }
 
     /**

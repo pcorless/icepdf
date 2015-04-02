@@ -42,12 +42,14 @@ import java.awt.event.AdjustmentListener;
 @SuppressWarnings("serial")
 public class ThumbnailsPanel extends JPanel {
 
-    protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
     protected DocumentViewController documentViewController;
     protected Document currentDocument;
     protected PropertiesManager propertiesManager;
     protected DocumentViewModel documentViewModel;
     protected float thumbNailZoom = 0.1f; // default zoom is 10%
+
+    protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
+
     private SwingController controller;
 
     public ThumbnailsPanel(SwingController controller,

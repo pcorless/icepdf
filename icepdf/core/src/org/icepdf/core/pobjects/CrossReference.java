@@ -34,13 +34,13 @@ import java.util.logging.Logger;
 
 public class CrossReference {
 
+    private static final Logger logger =
+            Logger.getLogger(CrossReference.class.toString());
+
     public static final Name SIZE_KEY = new Name("Size");
     public static final Name INDEX_KEY = new Name("Index");
     public static final Name W_KEY = new Name("W");
-    private static final Logger logger =
-            Logger.getLogger(CrossReference.class.toString());
-    // offset error for simple file error issue.
-    protected int offset;
+
     /**
      * Map of all the objects in reference by the CrossReference table.  Ojbects
      * are retrieved by object number.
@@ -63,6 +63,9 @@ public class CrossReference {
     private boolean bIsCrossReferenceTable;
     private boolean bHaveTriedLoadingPrevious;
     private boolean bHaveTriedLoadingPeer;
+
+    // offset error for simple file error issue.
+    protected int offset;
 
     public CrossReference() {
         hObjectNumber2Entry = new HashMap<Number, Entry>(4096);
@@ -258,9 +261,6 @@ public class CrossReference {
         hObjectNumber2Entry.put(objectNumber, entry);
     }
 
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
 
     public static class Entry {
         public static final int TYPE_FREE = 0;
@@ -303,6 +303,29 @@ public class CrossReference {
         }
     }
 
+    public class UsedEntry extends Entry {
+        private long filePositionOfObject;
+        private int generationNumber;
+
+        UsedEntry(int objectNumber, long filePositionOfObject, int generationNumber) {
+            super(TYPE_USED, objectNumber);
+            this.filePositionOfObject = filePositionOfObject;
+            this.generationNumber = generationNumber;
+        }
+
+        public long getFilePositionOfObject() {
+            return filePositionOfObject + offset;
+        }
+
+        public int getGenerationNumber() {
+            return generationNumber;
+        }
+
+        public void setFilePositionOfObject(long filePositionOfObject) {
+            this.filePositionOfObject = filePositionOfObject;
+        }
+    }
+
     public static class CompressedEntry extends Entry {
         private int objectNumberOfContainingObjectStream;
         private int indexWithinObjectStream;
@@ -322,26 +345,7 @@ public class CrossReference {
         }
     }
 
-    public class UsedEntry extends Entry {
-        private long filePositionOfObject;
-        private int generationNumber;
-
-        UsedEntry(int objectNumber, long filePositionOfObject, int generationNumber) {
-            super(TYPE_USED, objectNumber);
-            this.filePositionOfObject = filePositionOfObject;
-            this.generationNumber = generationNumber;
-        }
-
-        public long getFilePositionOfObject() {
-            return filePositionOfObject + offset;
-        }
-
-        public void setFilePositionOfObject(long filePositionOfObject) {
-            this.filePositionOfObject = filePositionOfObject;
-        }
-
-        public int getGenerationNumber() {
-            return generationNumber;
-        }
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 }

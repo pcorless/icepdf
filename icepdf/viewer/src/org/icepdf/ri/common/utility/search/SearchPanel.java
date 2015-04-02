@@ -54,22 +54,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     private static final String HTML_TAG_END = "</html>";
     private static final String BOLD_TAG_START = "<b>";
     private static final String BOLD_TAG_END = "</b>";
-    // refresh rate of gui elements
-    private static final int ONE_SECOND = 1000;
-    // show progress of search
-    protected JProgressBar progressBar;
-    // task to complete in separate thread
-    protected SearchTextTask searchTextTask;
-    // status label for search
-    protected JLabel findMessage;
 
-    // tree view of the groups and panels
-    //private ResultsTree resultsTree;
-    // time class to manage gui updates
-    protected Timer timer;
-    // message bundle for internationalization
-    ResourceBundle messageBundle;
-    MessageFormat searchResultMessageForm;
     // layouts constraint
     private GridBagConstraints constraints;
     // input for a search pattern
@@ -77,6 +62,10 @@ public class SearchPanel extends JPanel implements ActionListener,
     // pointer to document which will be searched
     private Document document;
     private SwingController controller;
+
+    // tree view of the groups and panels
+    //private ResultsTree resultsTree;
+
     // list box to hold search results
     private JTree tree;
     private DefaultMutableTreeNode rootTreeNode;
@@ -92,8 +81,28 @@ public class SearchPanel extends JPanel implements ActionListener,
     private JCheckBox showPagesCheckbox;
     // page index of the last added node.
     private int lastNodePageIndex;
+
+    // show progress of search
+    protected JProgressBar progressBar;
+
+    // task to complete in separate thread
+    protected SearchTextTask searchTextTask;
+
+    // status label for search
+    protected JLabel findMessage;
+
+    // time class to manage gui updates
+    protected Timer timer;
+
+    // refresh rate of gui elements
+    private static final int ONE_SECOND = 1000;
+
     // flag indicating if search is under way.
     private boolean isSearching = false;
+
+    // message bundle for internationalization
+    ResourceBundle messageBundle;
+    MessageFormat searchResultMessageForm;
 
     /**
      * Create a new instance of SearchPanel.
@@ -108,28 +117,6 @@ public class SearchPanel extends JPanel implements ActionListener,
         searchResultMessageForm = setupSearchResultMessageForm();
         setGui();
         setDocument(controller.getDocument());
-    }
-
-    /**
-     * Generate the results preview label where the hit word is bolded using
-     * html markup.
-     *
-     * @param allText text to unravel into a string.
-     * @return styled html text.
-     */
-    private static String generateResultPreview(List<WordText> allText) {
-        StringBuilder toReturn = new StringBuilder(HTML_TAG_START);
-        for (WordText currentText : allText) {
-            if (currentText.isHighlighted()) {
-                toReturn.append(BOLD_TAG_START);
-                toReturn.append(currentText.getText());
-                toReturn.append(BOLD_TAG_END);
-            } else {
-                toReturn.append(currentText.getText());
-            }
-        }
-        toReturn.append(HTML_TAG_END);
-        return toReturn.toString();
     }
 
     public void setDocument(Document doc) {
@@ -255,9 +242,9 @@ public class SearchPanel extends JPanel implements ActionListener,
                     if (((JCheckBox) event.getSource()).isSelected()) {
                         if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
                             DefaultMutableTreeNode currentChild; // the current node we're handling
-                            DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to
+                            DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to 
                             int newPageNumber; // page number of the current result node
-                            int storedPageNumber = -1; // the page number of the node we're adding to
+                            int storedPageNumber = -1; // the page number of the node we're adding to                                  
                             int storedResultCount = 0; // the count of results that are on the storedPageNumber
                             Object[] messageArguments; // arguments used for formatting the labels
 
@@ -546,6 +533,28 @@ public class SearchPanel extends JPanel implements ActionListener,
         if (shouldBeVisible) {
             tree.scrollPathToVisible(new TreePath(childNode.getPath()));
         }
+    }
+
+    /**
+     * Generate the results preview label where the hit word is bolded using
+     * html markup.
+     *
+     * @param allText text to unravel into a string.
+     * @return styled html text.
+     */
+    private static String generateResultPreview(List<WordText> allText) {
+        StringBuilder toReturn = new StringBuilder(HTML_TAG_START);
+        for (WordText currentText : allText) {
+            if (currentText.isHighlighted()) {
+                toReturn.append(BOLD_TAG_START);
+                toReturn.append(currentText.getText());
+                toReturn.append(BOLD_TAG_END);
+            } else {
+                toReturn.append(currentText.getText());
+            }
+        }
+        toReturn.append(HTML_TAG_END);
+        return toReturn.toString();
     }
 
     /**

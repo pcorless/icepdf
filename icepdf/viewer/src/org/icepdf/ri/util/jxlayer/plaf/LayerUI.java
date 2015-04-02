@@ -166,8 +166,8 @@ public abstract class LayerUI<V extends Component>
      * registered on this component.
      *
      * @return all of this ui's <code>PropertyChangeListener</code>s
-     * or an empty array if no property change
-     * listeners are currently registered
+     *         or an empty array if no property change
+     *         listeners are currently registered
      * @see #addPropertyChangeListener
      * @see #removePropertyChangeListener
      * @see #getPropertyChangeListeners(String)
@@ -219,9 +219,9 @@ public abstract class LayerUI<V extends Component>
      * with the named property.
      *
      * @return all of the <code>PropertyChangeListener</code>s associated with
-     * the named property; if no such listeners have been added or
-     * if <code>propertyName</code> is <code>null</code>, an empty
-     * array is returned
+     *         the named property; if no such listeners have been added or
+     *         if <code>propertyName</code> is <code>null</code>, an empty
+     *         array is returned
      * @see #addPropertyChangeListener(String, PropertyChangeListener)
      * @see #removePropertyChangeListener(String, PropertyChangeListener)
      * @see #getPropertyChangeListeners
@@ -335,7 +335,7 @@ public abstract class LayerUI<V extends Component>
      * each time the user requests a unit scroll.
      *
      * @return The "unit" increment for scrolling in the specified direction.
-     * This value should always be positive.
+     *         This value should always be positive.
      * @see Scrollable#getScrollableUnitIncrement(Rectangle, int, int)
      */
     public int getScrollableUnitIncrement(JXLayer<? extends V> l,

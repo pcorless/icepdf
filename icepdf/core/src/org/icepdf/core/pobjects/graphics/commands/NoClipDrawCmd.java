@@ -41,7 +41,7 @@ public class NoClipDrawCmd extends AbstractDrawCmd {
 
         g.setTransform(base);
 //        if (!g.getClip().getBounds().equals(clip.getBounds())) {
-        g.setClip(clip);
+            g.setClip(clip);
 //        }
         g.setTransform(af);
         return currentShape;

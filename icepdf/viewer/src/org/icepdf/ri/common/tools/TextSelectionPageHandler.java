@@ -51,32 +51,19 @@ import java.util.logging.Logger;
 public class TextSelectionPageHandler extends SelectionBoxHandler
         implements ToolHandler {
 
+    protected static final Logger logger =
+            Logger.getLogger(TextSelectionPageHandler.class.toString());
+
     /**
      * Transparency value used to simulate text highlighting.
      */
     public static final float selectionAlpha = 0.3f;
-    protected static final Logger logger =
-            Logger.getLogger(TextSelectionPageHandler.class.toString());
+
     // text selection colour
     public static Color selectionColor;
-    // text highlight colour
-    public static Color highlightColor;
-    static {
-        // sets the shadow colour of the decorator.
-        try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");
-            int colorValue = ColorUtil.convertColor(color);
-            highlightColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("FFF600", 16));
-        } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading text highlight colour");
-            }
-        }
-    }
+
     public int selectedCount;
+
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -89,6 +76,25 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text selection colour");
+            }
+        }
+    }
+
+    // text highlight colour
+    public static Color highlightColor;
+
+    static {
+        // sets the shadow colour of the decorator.
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");
+            int colorValue = ColorUtil.convertColor(color);
+            highlightColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("FFF600", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text highlight colour");
             }
         }
     }
@@ -107,83 +113,6 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
     }
 
     /**
-     * Utility for painting the highlight and selected
-     *
-     * @param g graphics to paint to.
-     */
-    public static void paintSelectedText(Graphics g,
-                                         AbstractPageViewComponent pageViewComponent,
-                                         DocumentViewModel documentViewModel) {
-        // ready outline paint
-        Graphics2D gg = (Graphics2D) g;
-        AffineTransform prePaintTransform = gg.getTransform();
-        Color oldColor = gg.getColor();
-        Stroke oldStroke = gg.getStroke();
-        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                selectionAlpha));
-        gg.setColor(selectionColor);
-        gg.setStroke(new BasicStroke(1.0f));
-
-        Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null && currentPage.isInitiated()) {
-            PageText pageText = currentPage.getViewText();
-            if (pageText != null) {
-                // get page transformation
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        documentViewModel.getPageBoundary(),
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
-                // paint the sprites
-                GeneralPath textPath;
-                ArrayList<LineText> visiblePageLines = pageText.getPageLines();
-                if (visiblePageLines != null) {
-                    for (LineText lineText : visiblePageLines) {
-                        for (WordText wordText : lineText.getWords()) {
-                            // paint whole word
-                            if (wordText.isSelected() || wordText.isHighlighted()) {
-                                textPath = new GeneralPath(wordText.getBounds());
-                                textPath.transform(pageTransform);
-                                // paint highlight over any selected
-                                if (wordText.isSelected()) {
-                                    gg.setColor(selectionColor);
-                                    gg.fill(textPath);
-                                }
-                                if (wordText.isHighlighted()) {
-                                    gg.setColor(highlightColor);
-                                    gg.fill(textPath);
-                                }
-                            }
-                            // check children
-                            else {
-                                for (GlyphText glyph : wordText.getGlyphs()) {
-                                    if (glyph.isSelected()) {
-                                        textPath = new GeneralPath(glyph.getBounds());
-                                        textPath.transform(pageTransform);
-                                        gg.setColor(selectionColor);
-                                        gg.fill(textPath);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-                1.0f));
-
-        // restore graphics state to where we left it.
-        gg.setTransform(prePaintTransform);
-        gg.setStroke(oldStroke);
-        gg.setColor(oldColor);
-
-        // paint words for bounds test.
-//        paintTextBounds(g);
-
-    }
-
-    /**
      * When mouse is double clicked we select the word the mouse if over.  When
      * the mouse is triple clicked we select the line of text that the mouse
      * is over.
@@ -196,7 +125,7 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
             Point mouseLocation = (Point) e.getPoint().clone();
             lineSelectHandler(currentPage, mouseLocation);
         }
-        // single click we select word that was clicked.
+        // single click we select word that was clicked. 
         else if (e.getClickCount() == 2) {
             Page currentPage = pageViewComponent.getPage();
             // handle text selection mouse coordinates
@@ -702,6 +631,83 @@ public class TextSelectionPageHandler extends SelectionBoxHandler
                 }
             }
         }
+    }
+
+    /**
+     * Utility for painting the highlight and selected
+     *
+     * @param g graphics to paint to.
+     */
+    public static void paintSelectedText(Graphics g,
+                                         AbstractPageViewComponent pageViewComponent,
+                                         DocumentViewModel documentViewModel) {
+        // ready outline paint
+        Graphics2D gg = (Graphics2D) g;
+        AffineTransform prePaintTransform = gg.getTransform();
+        Color oldColor = gg.getColor();
+        Stroke oldStroke = gg.getStroke();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                selectionAlpha));
+        gg.setColor(selectionColor);
+        gg.setStroke(new BasicStroke(1.0f));
+
+        Page currentPage = pageViewComponent.getPage();
+        if (currentPage != null && currentPage.isInitiated()) {
+            PageText pageText = currentPage.getViewText();
+            if (pageText != null) {
+                // get page transformation
+                AffineTransform pageTransform = currentPage.getPageTransform(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom());
+                // paint the sprites
+                GeneralPath textPath;
+                ArrayList<LineText> visiblePageLines = pageText.getPageLines();
+                if (visiblePageLines != null) {
+                    for (LineText lineText : visiblePageLines) {
+                        for (WordText wordText : lineText.getWords()) {
+                            // paint whole word
+                            if (wordText.isSelected() || wordText.isHighlighted()) {
+                                textPath = new GeneralPath(wordText.getBounds());
+                                textPath.transform(pageTransform);
+                                // paint highlight over any selected
+                                if (wordText.isSelected()) {
+                                    gg.setColor(selectionColor);
+                                    gg.fill(textPath);
+                                }
+                                if (wordText.isHighlighted()) {
+                                    gg.setColor(highlightColor);
+                                    gg.fill(textPath);
+                                }
+                            }
+                            // check children
+                            else {
+                                for (GlyphText glyph : wordText.getGlyphs()) {
+                                    if (glyph.isSelected()) {
+                                        textPath = new GeneralPath(glyph.getBounds());
+                                        textPath.transform(pageTransform);
+                                        gg.setColor(selectionColor);
+                                        gg.fill(textPath);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                1.0f));
+
+        // restore graphics state to where we left it. 
+        gg.setTransform(prePaintTransform);
+        gg.setStroke(oldStroke);
+        gg.setColor(oldColor);
+
+        // paint words for bounds test.
+//        paintTextBounds(g);
+
     }
 
     public void installTool() {

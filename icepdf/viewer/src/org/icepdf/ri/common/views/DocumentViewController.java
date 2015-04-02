@@ -83,9 +83,9 @@ public interface DocumentViewController {
 
     public static final int CURSOR_MAGNIFY = 12;
 
-    public Document getDocument();
-
     public void setDocument(Document document);
+
+    public Document getDocument();
 
     public void closeDocument();
 
@@ -117,9 +117,9 @@ public interface DocumentViewController {
 
     public int getCurrentPageDisplayValue();
 
-    public float[] getZoomLevels();
-
     public void setZoomLevels(float[] zoomLevels);
+
+    public float[] getZoomLevels();
 
     public boolean setZoom(float userZoom);
 
@@ -153,11 +153,11 @@ public interface DocumentViewController {
 
     public void requestViewFocusInWindow();
 
+    public void setViewCursor(final int cursorType);
+
     public Cursor getViewCursor(final int cursorType);
 
     public int getViewCursor();
-
-    public void setViewCursor(final int cursorType);
 
     public void setViewKeyListener(KeyListener l);
 
@@ -166,6 +166,10 @@ public interface DocumentViewController {
     public Adjustable getVerticalScrollBar();
 
     public JViewport getViewPort();
+
+    public void setAnnotationCallback(AnnotationCallback annotationCallback);
+
+    public void setSecurityCallback(SecurityCallback securityCallback);
 
     public void deleteCurrentAnnotation();
 
@@ -177,11 +181,7 @@ public interface DocumentViewController {
 
     public AnnotationCallback getAnnotationCallback();
 
-    public void setAnnotationCallback(AnnotationCallback annotationCallback);
-
     public SecurityCallback getSecurityCallback();
-
-    public void setSecurityCallback(SecurityCallback securityCallback);
 
     public DocumentViewModel getDocumentViewModel();
 

@@ -38,14 +38,18 @@ import java.lang.ref.SoftReference;
  */
 public class DocumentViewComponent extends JComponent implements MouseListener, Runnable {
 
-    public static final String PDF_EXTENSION = ".pdf";
     private static final long serialVersionUID = -8881023489246309889L;
-    private static int minimumThumbHeight = 110;
-    private static int minimumThumbWidth = 85;
+   
     private Library parentLibrary;
     private Reference fileReference;
     private String fileName;
     private boolean isPdfDocument;
+
+    public static final String PDF_EXTENSION = ".pdf";
+
+    private static int minimumThumbHeight = 110;
+    private static int minimumThumbWidth = 85;
+
     private Dimension pageSize = new Dimension(minimumThumbWidth, minimumThumbHeight);
     private SoftReference<BufferedImage> documentThumbNail =
             new SoftReference<BufferedImage>(null);

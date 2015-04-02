@@ -51,6 +51,9 @@ import java.util.logging.Logger;
  */
 public class ImageStream extends Stream {
 
+    private static final Logger logger =
+            Logger.getLogger(ImageStream.class.toString());
+
     public static final Name TYPE_VALUE = new Name("Image");
     public static final Name BITSPERCOMPONENT_KEY = new Name("BitsPerComponent");
     public static final Name BPC_KEY = new Name("BPC");
@@ -71,13 +74,16 @@ public class ImageStream extends Stream {
     protected static final String[] DCT_DECODE_FILTERS = new String[]{"DCTDecode", "/DCT", "DCT"};
     protected static final String[] JBIG2_DECODE_FILTERS = new String[]{"JBIG2Decode"};
     protected static final String[] JPX_DECODE_FILTERS = new String[]{"JPXDecode"};
-    private static final Logger logger =
-            Logger.getLogger(ImageStream.class.toString());
+
     // paper size for rare corner case when ccittfax is missing a dimension.
     private static double pageRatio;
 
     // flag the forces jai to be use over our fax decode class.
     private static boolean forceJaiccittfax;
+
+    private PColorSpace colourSpace;
+    private final Object colorSpaceAssignmentLock = new Object();
+
     private static boolean isLevigoJBIG2ImageReaderClass;
     static {
         // define alternate page size ration w/h, default Legal.
@@ -96,8 +102,7 @@ public class ImageStream extends Stream {
             logger.info("Levigo JBIG2 image library was not found on classpath");
         }
     }
-    private final Object colorSpaceAssignmentLock = new Object();
-    private PColorSpace colourSpace;
+
     private int width;
     private int height;
 
@@ -116,17 +121,6 @@ public class ImageStream extends Stream {
     public ImageStream(Library l, HashMap h, byte[] rawBytes) {
         super(l, h, rawBytes);
         init();
-    }
-
-    /**
-     * Used to enable/disable the loading of CCITTFax images using JAI library.
-     * This method can be used in place of the system property
-     * org.icepdf.core.ccittfax.jai .
-     *
-     * @param enable eanb
-     */
-    public static void forceJaiCcittFax(boolean enable) {
-        forceJaiccittfax = enable;
     }
 
     public void init() {
@@ -1048,6 +1042,17 @@ public class ImageStream extends Stream {
 
     private boolean shouldUseJPXDecode() {
         return containsFilter(JPX_DECODE_FILTERS);
+    }
+
+    /**
+     * Used to enable/disable the loading of CCITTFax images using JAI library.
+     * This method can be used in place of the system property
+     * org.icepdf.core.ccittfax.jai .
+     *
+     * @param enable eanb
+     */
+    public static void forceJaiCcittFax(boolean enable) {
+        forceJaiccittfax = enable;
     }
 
     public PColorSpace getColourSpace() {

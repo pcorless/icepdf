@@ -55,6 +55,9 @@ import java.util.logging.Logger;
  */
 public class CCITTFax {
 
+    private static final Logger logger =
+            Logger.getLogger(CCITTFax.class.toString());
+
     // white codes
     static final String[] _twcodes = {
             "00110101", "000111", "0111", "1000", "1011", "1100", "1110", "1111",
@@ -70,6 +73,7 @@ public class CCITTFax {
             "01011011", "01001010", "01001011", "00110010", "00110011",
             "00110100"
     };
+
     // wite codes
     static final String[] _mwcodes = {
             "11011", "10010", "010111", "0110111", "00110110", "00110111", "01100100",
@@ -78,6 +82,7 @@ public class CCITTFax {
             "011010111", "011011000", "011011001", "011011010", "011011011",
             "010011000", "010011001", "010011010", "011000", "010011011"
     };
+
     // black codes
     static final String[] _tbcodes = {
             "0000110111", "010", "11", "10", "011", "0011", "0010", "00011", "000101",
@@ -110,6 +115,7 @@ public class CCITTFax {
             "000000010100", "000000010101", "000000010110", "000000010111",
             "000000011100", "000000011101", "000000011110", "000000011111"
     };
+
     // Mode command binary values
     static final String[] _modecodes = {
             "0001", // P  - Pass Mode
@@ -125,54 +131,66 @@ public class CCITTFax {
             "000000001111", // EXT1D   - Extension, 1D
             "000000000001"          // EOL
     };
+
+    private static class Code {
+        private long value;
+        private int length;
+        private int tablePosition;
+
+        public Code() {
+            value = 0L;
+            length = 0;
+        }
+
+        public Code(String strValue, int tablePosition) {
+            value = 0L;
+            length = 0;
+            this.tablePosition = tablePosition;
+            for (int i = 0; i < strValue.length(); i++)
+                append(strValue.charAt(i) == '1');
+        }
+
+        public final void append(boolean bit) {
+            // This is effectively similar to the old String code,
+            // which kept the extra bits, but would then not match
+            // any of the table entries
+            if (bit) {
+                if (length <= 63) {
+                    long mask = (1L << length);
+                    value |= mask;
+                }
+            }
+            length++;
+        }
+
+        public final boolean equals(Object ob) {
+            if (ob instanceof Code) {
+                Code c = (Code) ob;
+                return (value == c.value && length == c.length);
+            }
+            return false;
+        }
+
+        public final void reset() {
+            value = 0L;
+            length = 0;
+        }
+
+        public final int getLength() {
+            return length;
+        }
+
+        public final int getTablePosition() {
+            return tablePosition;
+        }
+    }
+
     static final Code[][] twcodes = convertStringArrayToCodeArray2D(_twcodes);
     static final Code[][] mwcodes = convertStringArrayToCodeArray2D(_mwcodes);
     static final Code[][] tbcodes = convertStringArrayToCodeArray2D(_tbcodes);
     static final Code[][] mbcodes = convertStringArrayToCodeArray2D(_mbcodes);
     static final Code[][] extmcodes = convertStringArrayToCodeArray2D(_extmcodes);
     static final Code[][] modecodes = convertStringArrayToCodeArray2D(_modecodes);
-    private static final Logger logger =
-            Logger.getLogger(CCITTFax.class.toString());
-    private static final short TIFF_COMPRESSION_NONE_default = 1;
-    private static final short TIFF_COMPRESSION_GROUP3_1D = 2;
-    private static final short TIFF_COMPRESSION_GROUP3_2D = 3;
-    private static final short TIFF_COMPRESSION_GROUP4 = 4;
-    private static final String[] TIFF_COMPRESSION_NAMES = new String[]{
-            "TIFF_COMPRESSION_NONE_default",
-            "TIFF_COMPRESSION_GROUP3_1D",
-            "TIFF_COMPRESSION_GROUP3_2D",
-            "TIFF_COMPRESSION_GROUP4"
-    };
-
-    // Never actually used.
-//    class FaxCode {
-//        FaxCode zero;
-//        FaxCode one;
-//        boolean leaf;
-//        int tipo;
-//        int len;
-//    }
-    private static final short TIFF_PHOTOMETRIC_INTERPRETATION_WHITE_IS_ZERO_default = 0;
-    private static final short TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO = 1;
-    // Black and white colour bit values.
-    static int black = 0;
-    static int white = 1;
-    private static boolean USE_JAI_IMAGE_LIBRARY = false;
-    private static Method jaiCreate = null;
-    private static Method ssWrapInputStream = null;
-    private static Method roGetAsBufferedImage = null;
-    static {
-        try {
-            Class<?> jaiClass = Class.forName("javax.media.jai.JAI");
-            jaiCreate = jaiClass.getMethod("create", new Class[]{String.class, ParameterBlock.class});
-            Class<?> ssClass = Class.forName("com.sun.media.jai.codec.SeekableStream");
-            ssWrapInputStream = ssClass.getMethod("wrapInputStream", new Class[]{InputStream.class, Boolean.TYPE});
-            Class<?> roClass = Class.forName("javax.media.jai.RenderedOp");
-            roGetAsBufferedImage = roClass.getMethod("getAsBufferedImage", new Class[]{});
-            USE_JAI_IMAGE_LIBRARY = true;
-        } catch (Exception e) {
-        }
-    }
 
     private static Code[][] convertStringArrayToCodeArray2D(String[] strArray) {
         int len = strArray.length;
@@ -226,6 +244,52 @@ public class CCITTFax {
         }
         return -1;
 
+    }
+
+    // Black and white colour bit values.
+    static int black = 0;
+    static int white = 1;
+
+    // Never actually used.
+//    class FaxCode {
+//        FaxCode zero;
+//        FaxCode one;
+//        boolean leaf;
+//        int tipo;
+//        int len;
+//    }
+
+    private static final short TIFF_COMPRESSION_NONE_default = 1;
+    private static final short TIFF_COMPRESSION_GROUP3_1D = 2;
+    private static final short TIFF_COMPRESSION_GROUP3_2D = 3;
+    private static final short TIFF_COMPRESSION_GROUP4 = 4;
+
+    private static final String[] TIFF_COMPRESSION_NAMES = new String[]{
+            "TIFF_COMPRESSION_NONE_default",
+            "TIFF_COMPRESSION_GROUP3_1D",
+            "TIFF_COMPRESSION_GROUP3_2D",
+            "TIFF_COMPRESSION_GROUP4"
+    };
+
+    private static final short TIFF_PHOTOMETRIC_INTERPRETATION_WHITE_IS_ZERO_default = 0;
+    private static final short TIFF_PHOTOMETRIC_INTERPRETATION_BLACK_IS_ZERO = 1;
+
+    private static boolean USE_JAI_IMAGE_LIBRARY = false;
+    private static Method jaiCreate = null;
+    private static Method ssWrapInputStream = null;
+    private static Method roGetAsBufferedImage = null;
+
+    static {
+        try {
+            Class<?> jaiClass = Class.forName("javax.media.jai.JAI");
+            jaiCreate = jaiClass.getMethod("create", new Class[]{String.class, ParameterBlock.class});
+            Class<?> ssClass = Class.forName("com.sun.media.jai.codec.SeekableStream");
+            ssWrapInputStream = ssClass.getMethod("wrapInputStream", new Class[]{InputStream.class, Boolean.TYPE});
+            Class<?> roClass = Class.forName("javax.media.jai.RenderedOp");
+            roGetAsBufferedImage = roClass.getMethod("getAsBufferedImage", new Class[]{});
+            USE_JAI_IMAGE_LIBRARY = true;
+        } catch (Exception e) {
+        }
     }
 
     /**
@@ -799,9 +863,9 @@ public class CCITTFax {
             // From empirically testing 6 of the 9 possible combinations of
             //  BlackIs1 {true, false, not given} and Decode {[0 1], [1 0], not given}
             //  this is the rule. Unknown combinations:
-            //    BlackIs1=false, Decode=[0 1]
-            //    BlackIs1=false, Decode=[1 0]
-            //    BlackIs1=true,  Decode=[0 1]
+            //    BlackIs1=false, Decode=[0 1] 
+            //    BlackIs1=false, Decode=[1 0] 
+            //    BlackIs1=true,  Decode=[0 1] 
             boolean flag = ((blackIs1 == null) && (!defaultDecode)) ||
                     ((blackIs1 != null) && blackIs1 && (decode == null));
             if (imageMask) {
@@ -839,59 +903,6 @@ public class CCITTFax {
             }
         }
         return img;
-    }
-
-    private static class Code {
-        private long value;
-        private int length;
-        private int tablePosition;
-
-        public Code() {
-            value = 0L;
-            length = 0;
-        }
-
-        public Code(String strValue, int tablePosition) {
-            value = 0L;
-            length = 0;
-            this.tablePosition = tablePosition;
-            for (int i = 0; i < strValue.length(); i++)
-                append(strValue.charAt(i) == '1');
-        }
-
-        public final void append(boolean bit) {
-            // This is effectively similar to the old String code,
-            // which kept the extra bits, but would then not match
-            // any of the table entries
-            if (bit) {
-                if (length <= 63) {
-                    long mask = (1L << length);
-                    value |= mask;
-                }
-            }
-            length++;
-        }
-
-        public final boolean equals(Object ob) {
-            if (ob instanceof Code) {
-                Code c = (Code) ob;
-                return (value == c.value && length == c.length);
-            }
-            return false;
-        }
-
-        public final void reset() {
-            value = 0L;
-            length = 0;
-        }
-
-        public final int getLength() {
-            return length;
-        }
-
-        public final int getTablePosition() {
-            return tablePosition;
-        }
     }
 
     /*

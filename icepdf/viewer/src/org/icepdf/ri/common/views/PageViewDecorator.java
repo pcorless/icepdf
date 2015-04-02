@@ -46,9 +46,15 @@ import java.util.logging.Logger;
 @SuppressWarnings("serial")
 public class PageViewDecorator extends JComponent {
 
-    protected static final int SHADOW_SIZE = 3;
     private static final Logger log =
             Logger.getLogger(PageViewDecorator.class.toString());
+
+    protected JComponent pageViewComponent;
+
+    protected static final int SHADOW_SIZE = 3;
+
+    protected Dimension preferredSize = new Dimension();
+
     private static Color pageBorderColor;
     private static Color pageShadowColor;
     private static Color pageColor;
@@ -95,8 +101,6 @@ public class PageViewDecorator extends JComponent {
             }
         }
     }
-    protected JComponent pageViewComponent;
-    protected Dimension preferredSize = new Dimension();
 
     public PageViewDecorator(JComponent pageViewComponent) {
         setLayout(new GridLayout(1, 1, 0, 0));

@@ -70,7 +70,7 @@ public class CryptFilter extends Dictionary {
      *
      * @param cryptFilterName name of crypt filter to find.
      * @return crypt filter entry specified by the given name.  if not found
-     * null is returned.
+     *         null is returned.
      */
     public CryptFilterEntry getCryptFilterByName(Name cryptFilterName) {
         // check if need to initialize the dictionary

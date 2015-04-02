@@ -28,19 +28,21 @@ public class RandomAccessFileInputStream extends InputStream implements Seekable
 
     private static final Logger logger =
             Logger.getLogger(RandomAccessFileInputStream.class.toString());
-    private final ReentrantLock lock = new ReentrantLock();
+
     private long m_lMarkPosition;
     private RandomAccessFile m_RandomAccessFile;
+
+    private final ReentrantLock lock = new ReentrantLock();
+
+    public static RandomAccessFileInputStream build(File file) throws FileNotFoundException {
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        return new RandomAccessFileInputStream(raf);
+    }
 
     protected RandomAccessFileInputStream(RandomAccessFile raf) {
         super();
         m_lMarkPosition = 0L;
         m_RandomAccessFile = raf;
-    }
-
-    public static RandomAccessFileInputStream build(File file) throws FileNotFoundException {
-        RandomAccessFile raf = new RandomAccessFile(file, "r");
-        return new RandomAccessFileInputStream(raf);
     }
 
 

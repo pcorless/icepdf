@@ -61,11 +61,13 @@ import java.util.logging.Logger;
  */
 public abstract class Function {
 
+    private static final Logger logger =
+            Logger.getLogger(Function.class.toString());
+
     public static final Name FUNCTIONTYPE_NAME = new Name("FunctionType");
     public static final Name DOMAIN_NAME = new Name("Domain");
     public static final Name RANGE_NAME = new Name("Range");
-    private static final Logger logger =
-            Logger.getLogger(Function.class.toString());
+
     /**
      * An array of 2 x m numbers, where m is the number of input values.  Input
      * values outside the declared domain are clipped to the nearest boundary value.
@@ -85,26 +87,6 @@ public abstract class Function {
     protected int functionType;
 
     /**
-     * Creates a new instance of <code>Function</code> object.
-     *
-     * @param d dictionary containing a vaild function dictionary.
-     */
-    protected Function(Dictionary d) {
-        List dom = (List) d.getObject(DOMAIN_NAME);
-        domain = new float[dom.size()];
-        for (int i = 0; i < dom.size(); i++) {
-            domain[i] = ((Number) dom.get(i)).floatValue();
-        }
-        List r = (List) d.getObject(RANGE_NAME);
-        if (r != null) {
-            range = new float[r.size()];
-            for (int i = 0; i < r.size(); i++) {
-                range[i] = ((Number) r.get(i)).floatValue();
-            }
-        }
-    }
-
-    /**
      * <p>Creates a new instance of a Function object.  Possible function types
      * are:</p>
      * <ul>
@@ -115,7 +97,7 @@ public abstract class Function {
      * @param l document library.
      * @param o dictionary or Hashmap containing Function type entries.
      * @return Function object for the specified function type, null if the
-     * function type is not available or not defined.
+     *         function type is not available or not defined.
      */
     public static Function getFunction(Library l, Object o) {
         Dictionary d = null;
@@ -154,20 +136,23 @@ public abstract class Function {
     }
 
     /**
-     * <p>Interpolation function.  For the given value of x, the interpolate
-     * calculates the y value on the line defined by the two points
-     * (x<sub>min</sub>, y<sub>min</sub>) and (x<sub>max</sub>, y<sub>max</sub>).
+     * Creates a new instance of <code>Function</code> object.
      *
-     * @param x    value we want to find a y value for.
-     * @param xmin point 1, x value.
-     * @param xmax point 2, x value.
-     * @param ymin point 1, y value.
-     * @param ymax oint 2, y value.
-     * @return y value for the given x value on the point define by
-     * (x<sub>min</sub>, y<sub>min</sub>) and (x<sub>max</sub>, y<sub>max</sub>).
+     * @param d dictionary containing a vaild function dictionary.
      */
-    public static float interpolate(float x, float xmin, float xmax, float ymin, float ymax) {
-        return ((x - xmin) * (ymax - ymin) / (xmax - xmin)) + ymin;
+    protected Function(Dictionary d) {
+        List dom = (List) d.getObject(DOMAIN_NAME);
+        domain = new float[dom.size()];
+        for (int i = 0; i < dom.size(); i++) {
+            domain[i] = ((Number) dom.get(i)).floatValue();
+        }
+        List r = (List) d.getObject(RANGE_NAME);
+        if (r != null) {
+            range = new float[r.size()];
+            for (int i = 0; i < r.size(); i++) {
+                range[i] = ((Number) r.get(i)).floatValue();
+            }
+        }
     }
 
     /**
@@ -189,6 +174,23 @@ public abstract class Function {
      */
     public int getFunctionType() {
         return functionType;
+    }
+
+    /**
+     * <p>Interpolation function.  For the given value of x, the interpolate
+     * calculates the y value on the line defined by the two points
+     * (x<sub>min</sub>, y<sub>min</sub>) and (x<sub>max</sub>, y<sub>max</sub>).
+     *
+     * @param x    value we want to find a y value for.
+     * @param xmin point 1, x value.
+     * @param xmax point 2, x value.
+     * @param ymin point 1, y value.
+     * @param ymax oint 2, y value.
+     * @return y value for the given x value on the point define by
+     *         (x<sub>min</sub>, y<sub>min</sub>) and (x<sub>max</sub>, y<sub>max</sub>).
+     */
+    public static float interpolate(float x, float xmin, float xmax, float ymin, float ymax) {
+        return ((x - xmin) * (ymax - ymin) / (xmax - xmin)) + ymin;
     }
 
     /**

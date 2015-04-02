@@ -32,10 +32,12 @@ import java.util.logging.Logger;
  */
 public class ObjectStream extends Stream {
 
-    public static final Name N_KEY = new Name("N");
-    public static final Name FIRST_KEY = new Name("First");
     private static final Logger logger =
             Logger.getLogger(Form.class.toString());
+
+    public static final Name N_KEY = new Name("N");
+    public static final Name FIRST_KEY = new Name("First");
+
     private boolean init;
     private SeekableInput decodedStream;
     private int[] objectNumbers;

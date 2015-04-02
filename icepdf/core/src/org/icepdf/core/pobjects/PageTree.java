@@ -48,14 +48,7 @@ public class PageTree extends Dictionary {
     public static final Name KIDS_KEY = new Name("Kids");
     public static final Name ROTATE_KEY = new Name("Rotate");
     public static final Name RESOURCES_KEY = new Name("Resources");
-    /**
-     * Inheritable rotation factor by child pages.
-     */
-    protected float rotationFactor = 0;
-    /**
-     * Indicates that the PageTree has a rotation factor which should be respected.
-     */
-    protected boolean isRotationFactor = false;
+
     // Number of leaf nodes
     private int kidsCount = 0;
     // vector of references to leafs
@@ -72,9 +65,19 @@ public class PageTree extends Dictionary {
     // inheritable Resources
     private Resources resources;
     // loaded resource flag, we can't use null check as some trees don't have
-    // resources.
+    // resources. 
     private boolean loadedResources;
     private WatermarkCallback watermarkCallback;
+
+    /**
+     * Inheritable rotation factor by child pages.
+     */
+    protected float rotationFactor = 0;
+
+    /**
+     * Indicates that the PageTree has a rotation factor which should be respected.
+     */
+    protected boolean isRotationFactor = false;
 
     /**
      * Creates a new instance of a PageTree.

@@ -40,13 +40,14 @@ import java.awt.event.ItemListener;
 public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
         ActionListener {
 
-    public static final int DEFAULT_STROKE_THICKNESS_STYLE = 0;
-    public static final int DEFAULT_STROKE_STYLE = 0;
-    public static final int DEFAULT_FILL_STYLE = 0;
     // default list values.
     private static final int DEFAULT_FONT_SIZE = 5;
     private static final int DEFAULT_FONT_FAMILY = 0;
     private static final Color DEFAULT_FONT_COLOR = Color.DARK_GRAY;
+
+    public static final int DEFAULT_STROKE_THICKNESS_STYLE = 0;
+    public static final int DEFAULT_STROKE_STYLE = 0;
+    public static final int DEFAULT_FILL_STYLE = 0;
     private static final Color DEFAULT_BORDER_COLOR = Color.LIGHT_GRAY;
     private static final Color DEFAULT_STROKE_COLOR = new Color(1, 1, 1);
 

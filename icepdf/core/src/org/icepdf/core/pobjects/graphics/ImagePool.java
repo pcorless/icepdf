@@ -49,13 +49,17 @@ import java.util.logging.Logger;
 public class ImagePool {
     private static final Logger log =
             Logger.getLogger(ImagePool.class.toString());
+
+    // Image pool
+    private final Map<Reference, BufferedImage> fCache;
+
+
     private static boolean enabled;
     static {
         // enable/disable the image pool all together.
         enabled = Defs.booleanProperty("org.icepdf.core.views.imagePoolEnabled", true);
     }
-    // Image pool
-    private final Map<Reference, BufferedImage> fCache;
+
 
     public ImagePool() {
         fCache = Collections.synchronizedMap(new WeakHashMap<Reference, BufferedImage>(50));

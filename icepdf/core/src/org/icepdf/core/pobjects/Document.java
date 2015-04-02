@@ -63,6 +63,18 @@ public class Document {
 
     private static final Logger logger =
             Logger.getLogger(Document.class.toString());
+
+    /**
+     * Gets the version number of ICEpdf rendering core.  This is not the version
+     * number of the PDF format used to encode this document.
+     *
+     * @return version number of ICEpdf's rendering core.
+     */
+    public static String getLibraryVersion() {
+        return ProductInfo.PRIMARY + "." + ProductInfo.SECONDARY + "." +
+                ProductInfo.TERTIARY + " " + ProductInfo.RELEASE_TYPE;
+    }
+
     private static final String INCREMENTAL_UPDATER =
             "org.icepdf.core.util.IncrementalUpdater";
     public static boolean foundIncrementalUpdater;
@@ -75,8 +87,7 @@ public class Document {
             logger.log(Level.WARNING, "PDF write support was not found on the class path");
         }
     }
-    // disable/enable file caching, overrides fileCachingSize.
-    private static boolean isCachingEnabled;
+
     // optional watermark callback
     private WatermarkCallback watermarkCallback;
 
@@ -103,6 +114,10 @@ public class Document {
 
     // callback for password dialogs, or command line access.
     private SecurityCallback securityCallback;
+
+    // disable/enable file caching, overrides fileCachingSize.
+    private static boolean isCachingEnabled;
+
     // repository of all PDF object associated with this document.
     private Library library = null;
     private SeekableInput documentSeekableInput;
@@ -121,29 +136,6 @@ public class Document {
     }
 
     /**
-     * Gets the version number of ICEpdf rendering core.  This is not the version
-     * number of the PDF format used to encode this document.
-     *
-     * @return version number of ICEpdf's rendering core.
-     */
-    public static String getLibraryVersion() {
-        return ProductInfo.PRIMARY + "." + ProductInfo.SECONDARY + "." +
-                ProductInfo.TERTIARY + " " + ProductInfo.RELEASE_TYPE;
-    }
-
-    /**
-     * Sets the caching mode when handling file loaded by an URI.  If enabled
-     * URI streams will be cached to disk, otherwise they will be stored in
-     * memory. This method must be set before a call to setByteArray() or
-     * setInputStream() is called.
-     *
-     * @param cachingEnabled true to enable, otherwise false.
-     */
-    public static void setCachingEnabled(boolean cachingEnabled) {
-        isCachingEnabled = cachingEnabled;
-    }
-
-    /**
      * Sets a page watermark implementation to be painted on top of the page
      * content.  Watermark can be specified for each page or once by calling
      * document.setWatermark().
@@ -155,12 +147,19 @@ public class Document {
     }
 
     /**
-     * Returns the cached file path in the case of opening a file from a URL.
+     * Utility method for setting the origin (filepath or URL) of this Document
      *
-     * @return file path
+     * @param o new origin value
+     * @see #getDocumentOrigin()
      */
-    private String getDocumentCachedFilePath() {
-        return cachedFilePath;
+    private void setDocumentOrigin(String o) {
+        origin = o;
+        if (logger.isLoggable(Level.CONFIG)) {
+            logger.config(
+                    "MEMFREE: " + Runtime.getRuntime().freeMemory() + " of " +
+                            Runtime.getRuntime().totalMemory());
+            logger.config("LOADING: " + o);
+        }
     }
 
     /**
@@ -171,6 +170,15 @@ public class Document {
      */
     private void setDocumentCachedFilePath(String o) {
         cachedFilePath = o;
+    }
+
+    /**
+     * Returns the cached file path in the case of opening a file from a URL.
+     *
+     * @return file path
+     */
+    private String getDocumentCachedFilePath() {
+        return cachedFilePath;
     }
 
     /**
@@ -916,22 +924,6 @@ public class Document {
     }
 
     /**
-     * Utility method for setting the origin (filepath or URL) of this Document
-     *
-     * @param o new origin value
-     * @see #getDocumentOrigin()
-     */
-    private void setDocumentOrigin(String o) {
-        origin = o;
-        if (logger.isLoggable(Level.CONFIG)) {
-            logger.config(
-                    "MEMFREE: " + Runtime.getRuntime().freeMemory() + " of " +
-                            Runtime.getRuntime().totalMemory());
-            logger.config("LOADING: " + o);
-        }
-    }
-
-    /**
      * Returns the file location or URL of this Document. This location may be different
      * from the file origin if the document was loaded from a URL or input stream.
      * If the file was loaded from a URL or input stream the file location is
@@ -1244,5 +1236,17 @@ public class Document {
      */
     public Catalog getCatalog() {
         return catalog;
+    }
+
+    /**
+     * Sets the caching mode when handling file loaded by an URI.  If enabled
+     * URI streams will be cached to disk, otherwise they will be stored in
+     * memory. This method must be set before a call to setByteArray() or
+     * setInputStream() is called.
+     *
+     * @param cachingEnabled true to enable, otherwise false.
+     */
+    public static void setCachingEnabled(boolean cachingEnabled) {
+        isCachingEnabled = cachingEnabled;
     }
 }

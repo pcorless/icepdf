@@ -46,6 +46,9 @@ import java.util.logging.Logger;
 @SuppressWarnings("serial")
 public class ImageUtility {
 
+    private static final Logger logger =
+            Logger.getLogger(ImageUtility.class.toString());
+
     protected static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
             0xFFFFFFFF,
             0xFF000000
@@ -84,8 +87,7 @@ public class ImageUtility {
     protected static final int JPEG_ENC_YCbCr = 3;
     protected static final int JPEG_ENC_YCCK = 4;
     protected static final int JPEG_ENC_GRAY = 5;
-    private static final Logger logger =
-            Logger.getLogger(ImageUtility.class.toString());
+
     private static boolean scaleQuality;
 
     static {

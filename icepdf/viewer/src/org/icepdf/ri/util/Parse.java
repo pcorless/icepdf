@@ -83,7 +83,7 @@ final class Parse {
      *
      * @param s string to be coverted to double if possible
      * @return a null if the string could not be converted to double, otherwise
-     * return the Double value of the string.
+     *         return the Double value of the string.
      */
     public static Double parseDouble(String s, ResourceBundle messageBundle) {
         s = s.trim();

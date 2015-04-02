@@ -28,15 +28,19 @@ import java.util.ResourceBundle;
 
 @SuppressWarnings("serial")
 public class AboutDialog extends JDialog implements ActionListener, WindowListener {
+
+
+    private JButton ok;
+    private Timer timer;
+    private int whichTimer;
+
+    private static final int WAIT_TIME = 3000; //time to wait in milliseconds
+    private static final String IMAGE = "icelogo.png"; //image to include in the dialog
+
     public static final int NO_BUTTONS = 0;
     public static final int OK = 2;
     public static final int NO_TIMER = 0;
     public static final int DISAPPEAR = 4;
-    private static final int WAIT_TIME = 3000; //time to wait in milliseconds
-    private static final String IMAGE = "icelogo.png"; //image to include in the dialog
-    private JButton ok;
-    private Timer timer;
-    private int whichTimer;
 
     public AboutDialog(Frame frame, ResourceBundle messageBundle, boolean isModal,
                        int buttons, int whichTimer) {

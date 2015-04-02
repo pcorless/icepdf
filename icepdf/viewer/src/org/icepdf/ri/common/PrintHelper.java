@@ -43,7 +43,7 @@ public class PrintHelper implements Printable {
 
     private static final Logger logger =
             Logger.getLogger(PrintHelper.class.toString());
-    private static PrintService[] services;
+
     private PageTree pageTree;
     private Container container;
     private float userRotation;
@@ -52,6 +52,8 @@ public class PrintHelper implements Printable {
     private int totalPagesToPrint;
     private boolean paintAnnotation = true;
     private boolean paintSearchHighlight = true;
+
+    private static PrintService[] services;
     private PrintService printService;
     private HashDocAttributeSet docAttributeSet;
     private HashPrintRequestAttributeSet printRequestAttributeSet;

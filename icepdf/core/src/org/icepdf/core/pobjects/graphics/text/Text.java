@@ -29,9 +29,9 @@ public interface Text {
 
     public boolean isHighlighted();
 
-    public void setHighlighted(boolean highlight);
-
     public boolean isSelected();
+
+    public void setHighlighted(boolean highlight);
 
     public void setSelected(boolean selected);
 

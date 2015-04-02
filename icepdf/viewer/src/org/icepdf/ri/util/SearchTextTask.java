@@ -37,8 +37,6 @@ import java.util.ResourceBundle;
  */
 public class SearchTextTask {
 
-    // parent swing controller
-    SwingController controller;
     // total length of task (total page count), used for progress bar
     private int lengthOfTask;
     // current progress, used for the progress bar
@@ -61,6 +59,10 @@ public class SearchTextTask {
     private boolean cumulative;
     private boolean showPages;
     private boolean r2L;
+
+    // parent swing controller
+    SwingController controller;
+
     // append nodes for found text.
     private SearchPanel searchPanel;
 
@@ -178,29 +180,6 @@ public class SearchTextTask {
     }
 
     /**
-     * Gets the message that should be displayed when the task has completed.
-     *
-     * @return search completed or stoped final message.
-     */
-    public String getFinalMessage() {
-        setDialogMessage();
-        return dialogMessage;
-    }
-
-    /**
-     * Utility method for setting the dialog message.
-     */
-    private void setDialogMessage() {
-
-        // Build Internationalized plural phrase.
-
-        Object[] messageArguments = {String.valueOf((current + 1)),
-                (current + 1), totalHitCount};
-
-        dialogMessage = searchCompletionMessageForm.format(messageArguments);
-    }
-
-    /**
      * The actual long running task.  This runs in a SwingWorker thread.
      */
     class ActualTask {
@@ -289,5 +268,28 @@ public class SearchTextTask {
                 }
             });
         }
+    }
+
+    /**
+     * Gets the message that should be displayed when the task has completed.
+     *
+     * @return search completed or stoped final message.
+     */
+    public String getFinalMessage() {
+        setDialogMessage();
+        return dialogMessage;
+    }
+
+    /**
+     * Utility method for setting the dialog message.
+     */
+    private void setDialogMessage() {
+
+        // Build Internationalized plural phrase.
+
+        Object[] messageArguments = {String.valueOf((current + 1)),
+                (current + 1), totalHitCount};
+
+        dialogMessage = searchCompletionMessageForm.format(messageArguments);
     }
 }

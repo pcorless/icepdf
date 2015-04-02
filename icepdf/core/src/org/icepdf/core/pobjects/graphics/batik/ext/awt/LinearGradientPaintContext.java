@@ -36,14 +36,16 @@ import java.awt.image.ColorModel;
  */
 final class LinearGradientPaintContext extends MultipleGradientPaintContext {
 
-    private static final int DEFAULT_IMPL = 1;
-    private static final int ANTI_ALIAS_IMPL = 3;
     /**
      * The following invariants are used to process the gradient value from
      * a device space coordinate, (X, Y):
      * g(X, Y) = dgdX*X + dgdY*Y + gc
      */
     private float dgdX, dgdY, gc, pixSz;
+
+    private static final int DEFAULT_IMPL = 1;
+    private static final int ANTI_ALIAS_IMPL = 3;
+
     private int fillMethod;
 
     /**

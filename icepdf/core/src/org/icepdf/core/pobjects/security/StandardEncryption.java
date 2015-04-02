@@ -40,6 +40,9 @@ import java.util.logging.Logger;
  */
 class StandardEncryption {
 
+    private static final Logger logger =
+            Logger.getLogger(StandardEncryption.class.toString());
+
     /**
      * The application shall not decrypt data but shall direct the input stream
      * to the security handler for decryption (NO SUPPORT)
@@ -61,8 +64,7 @@ class StandardEncryption {
      * as the first 16 bytes in the stream or string.
      */
     public static final String ENCRYPTION_TYPE_AES_V2 = "AESV2";
-    private static final Logger logger =
-            Logger.getLogger(StandardEncryption.class.toString());
+
     /**
      * Padding String used in PDF encryption related algorithms
      * < 28 BF 4E 5E 4E 75 8A 41 64 00 4E 56 FF FA 01 08
@@ -113,106 +115,6 @@ class StandardEncryption {
      */
     public StandardEncryption(EncryptionDictionary encryptionDictionary) {
         this.encryptionDictionary = encryptionDictionary;
-    }
-
-    /**
-     * ToDo: xjava.security.Padding,  look at class for interface to see
-     * if PDFPadding class could/should be built
-     * <p/>
-     * Pad or truncate the password string to exactly 32 bytes.  If the
-     * password is more than 32 bytes long, use only its first 32 bytes; if it
-     * is less than 32 bytes long, pad it by appending the required number of
-     * additional bytes from the beginning of the PADDING string.
-     * <p/>
-     * NOTE: This is algorithm is the <b>1st</b> step of <b>algorithm 3.2</b>
-     * and is commonly used by other methods in this class
-     *
-     * @param password password to padded
-     * @return returned updated password with appropriate padding applied
-     */
-    protected static byte[] padPassword(String password) {
-
-        // create the standard 32 byte password
-        byte[] paddedPassword = new byte[32];
-
-        // Passwords can be null, if so set it to an empty string
-        if (password == null || "".equals(password)) {
-            return PADDING;
-        }
-
-
-        int passwordLength = Math.min(password.length(), 32);
-
-        byte[] bytePassword =
-                Utils.convertByteCharSequenceToByteArray(password);
-        // copy passwords bytes, but truncate the password is > 32 bytes
-        System.arraycopy(bytePassword, 0, paddedPassword, 0, passwordLength);
-
-        // pad the password if it is < 32 bytes
-        System.arraycopy(PADDING,
-                0,
-                paddedPassword,
-                // start copy at end of string
-                passwordLength,
-                // append need bytes from PADDING
-                32 - passwordLength);
-
-        return paddedPassword;
-    }
-
-    /**
-     * Utility to decrypt the encryptedString via the intermediateKey.  AES
-     * encryption with cypher block chaining and no padding.
-     *
-     * @param intermediateKey key to use for decryption
-     * @param encryptedString byte[] to decrypt
-     * @return
-     */
-    private static byte[] AES256CBC(byte[] intermediateKey, byte[] encryptedString) {
-        byte[] finalData = null;
-        try {
-            // AES with cipher block chaining and no padding
-            SecretKeySpec key = new SecretKeySpec(intermediateKey, "AES");
-            Cipher aes = Cipher.getInstance("AES/CBC/NoPadding");
-            // empty initialization vector
-            final IvParameterSpec iVParameterSpec =
-                    new IvParameterSpec(new byte[16]);
-            // go!
-            aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
-            // finally add the stream or string data
-            finalData = aes.doFinal(encryptedString);
-        } catch (NoSuchAlgorithmException ex) {
-            logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
-        } catch (IllegalBlockSizeException ex) {
-            logger.log(Level.FINE, "IllegalBlockSizeException.", ex);
-        } catch (BadPaddingException ex) {
-            logger.log(Level.FINE, "BadPaddingException.", ex);
-        } catch (NoSuchPaddingException ex) {
-            logger.log(Level.FINE, "NoSuchPaddingException.", ex);
-        } catch (InvalidKeyException ex) {
-            logger.log(Level.FINE, "InvalidKeyException.", ex);
-        } catch (InvalidAlgorithmParameterException ex) {
-            logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
-        }
-        return finalData;
-    }
-
-    /**
-     * Compare two byte arrays to the specified max index.  No check is made
-     * for an index out of bounds error.
-     *
-     * @param byteArray1 byte array to compare
-     * @param byteArray2 byte array to compare
-     * @param range      number of elements to compare starting at zero.
-     * @return true if the
-     */
-    private static boolean byteCompare(byte[] byteArray1, byte[] byteArray2, int range) {
-        for (int i = 0; i < range; i++) {
-            if (byteArray1[i] != byteArray2[i]) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -615,13 +517,13 @@ class StandardEncryption {
             // MD5 hash and pass it as a input into a new MD5 hash;
             // only for R >= 3
             try {
-                if (encryptionDictionary.getRevisionNumber() >= 3 ) {
+                if (encryptionDictionary.getRevisionNumber() >= 3) {
                     for (int i = 0; i < 50; i++) {
                         md5.update(paddedPassword, 0, keySize);
                         md5.digest(paddedPassword, 0, paddedPassword.length);
                     }
                 }
-            }catch (DigestException e){
+            } catch (DigestException e) {
                 logger.log(Level.WARNING, "Error creating MD5 digest.", e);
             }
 
@@ -746,6 +648,51 @@ class StandardEncryption {
             logger.warning("Adobe standard Encryption R = 6 is not supported.");
         }
         return null;
+    }
+
+    /**
+     * ToDo: xjava.security.Padding,  look at class for interface to see
+     * if PDFPadding class could/should be built
+     * <p/>
+     * Pad or truncate the password string to exactly 32 bytes.  If the
+     * password is more than 32 bytes long, use only its first 32 bytes; if it
+     * is less than 32 bytes long, pad it by appending the required number of
+     * additional bytes from the beginning of the PADDING string.
+     * <p/>
+     * NOTE: This is algorithm is the <b>1st</b> step of <b>algorithm 3.2</b>
+     * and is commonly used by other methods in this class
+     *
+     * @param password password to padded
+     * @return returned updated password with appropriate padding applied
+     */
+    protected static byte[] padPassword(String password) {
+
+        // create the standard 32 byte password
+        byte[] paddedPassword = new byte[32];
+
+        // Passwords can be null, if so set it to an empty string
+        if (password == null || "".equals(password)) {
+            return PADDING;
+        }
+
+
+        int passwordLength = Math.min(password.length(), 32);
+
+        byte[] bytePassword =
+                Utils.convertByteCharSequenceToByteArray(password);
+        // copy passwords bytes, but truncate the password is > 32 bytes
+        System.arraycopy(bytePassword, 0, paddedPassword, 0, passwordLength);
+
+        // pad the password if it is < 32 bytes
+        System.arraycopy(PADDING,
+                0,
+                paddedPassword,
+                // start copy at end of string
+                passwordLength,
+                // append need bytes from PADDING
+                32 - passwordLength);
+
+        return paddedPassword;
     }
 
     /**
@@ -1123,6 +1070,21 @@ class StandardEncryption {
                 }
             }
 
+            // Step 3: The result of step 2 purports to be the user password.
+            // Authenticate this user password using Algorithm 3.6.  If it is found
+            // to be correct, the password supplied is the correct owner password.
+
+            String tmpUserPassword = Utils.convertByteArrayToByteString(decryptedO);
+            //System.out.println("tmp user password " + tmpUserPassword);
+            boolean isValid = authenticateUserPassword(tmpUserPassword);
+
+            if (isValid) {
+                userPassword = tmpUserPassword;
+                this.ownerPassword = ownerPassword;
+                // setup permissions if valid
+            }
+
+            return isValid;
         } catch (NoSuchAlgorithmException ex) {
             logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
         } catch (IllegalBlockSizeException ex) {
@@ -1134,21 +1096,9 @@ class StandardEncryption {
         } catch (InvalidKeyException ex) {
             logger.log(Level.FINE, "InvalidKeyException.", ex);
         }
-        // Step 3: The result of step 2 purports to be the user password.
-        // Authenticate this user password using Algorithm 3.6.  If it is found
-        // to be correct, the password supplied is the correct owner password.
 
-        String tmpUserPassword = Utils.convertByteArrayToByteString(decryptedO);
-        //System.out.println("tmp user password " + tmpUserPassword);
-        boolean isValid = authenticateUserPassword(tmpUserPassword);
+        return false;
 
-        if (isValid) {
-            userPassword = tmpUserPassword;
-            this.ownerPassword = ownerPassword;
-            // setup permissions if valid
-        }
-
-        return isValid;
     }
 
     public String getUserPassword() {
@@ -1157,5 +1107,60 @@ class StandardEncryption {
 
     public String getOwnerPassword() {
         return ownerPassword;
+    }
+
+    /**
+     * Utility to decrypt the encryptedString via the intermediateKey.  AES
+     * encryption with cypher block chaining and no padding.
+     *
+     * @param intermediateKey key to use for decryption
+     * @param encryptedString byte[] to decrypt
+     * @return
+     */
+    private static byte[] AES256CBC(byte[] intermediateKey, byte[] encryptedString) {
+        byte[] finalData = null;
+        try {
+            // AES with cipher block chaining and no padding
+            SecretKeySpec key = new SecretKeySpec(intermediateKey, "AES");
+            Cipher aes = Cipher.getInstance("AES/CBC/NoPadding");
+            // empty initialization vector
+            final IvParameterSpec iVParameterSpec =
+                    new IvParameterSpec(new byte[16]);
+            // go!
+            aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
+            // finally add the stream or string data
+            finalData = aes.doFinal(encryptedString);
+        } catch (NoSuchAlgorithmException ex) {
+            logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
+        } catch (IllegalBlockSizeException ex) {
+            logger.log(Level.FINE, "IllegalBlockSizeException.", ex);
+        } catch (BadPaddingException ex) {
+            logger.log(Level.FINE, "BadPaddingException.", ex);
+        } catch (NoSuchPaddingException ex) {
+            logger.log(Level.FINE, "NoSuchPaddingException.", ex);
+        } catch (InvalidKeyException ex) {
+            logger.log(Level.FINE, "InvalidKeyException.", ex);
+        } catch (InvalidAlgorithmParameterException ex) {
+            logger.log(Level.FINE, "InvalidAlgorithmParameterException", ex);
+        }
+        return finalData;
+    }
+
+    /**
+     * Compare two byte arrays to the specified max index.  No check is made
+     * for an index out of bounds error.
+     *
+     * @param byteArray1 byte array to compare
+     * @param byteArray2 byte array to compare
+     * @param range      number of elements to compare starting at zero.
+     * @return true if the
+     */
+    private static boolean byteCompare(byte[] byteArray1, byte[] byteArray2, int range) {
+        for (int i = 0; i < range; i++) {
+            if (byteArray1[i] != byteArray2[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }

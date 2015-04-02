@@ -255,7 +255,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param wordPadding word padding on either side of hit to give context
      *                    to found woords in the returned LineText
      * @return list of contectual hits for the give page.  If no hits an empty
-     * list is returned.
+     *         list is returned.
      */
     public ArrayList<LineText> searchHighlightPage(int pageIndex, int wordPadding) {
         // get search terms from model and search for each occurrence.
@@ -521,7 +521,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         char c;
         for (int start = 0, curs = 0, max = phrase.length(); curs < max; curs++) {
             c = phrase.charAt(curs);
-            if (WordText.isWhiteSpace(c) ||  WordText.isPunctuation(c)) {
+            if (WordText.isWhiteSpace(c) || WordText.isPunctuation(c)) {
                 // add word segment
                 if (start != curs) {
                     words.add(phrase.substring(start, curs));

@@ -241,18 +241,8 @@ public abstract class MarkupAnnotation extends Annotation {
         return titleText;
     }
 
-    public void setTitleText(String titleText) {
-        this.titleText = titleText;
-        entries.put(T_KEY, new LiteralStringObject(titleText));
-    }
-
     public PopupAnnotation getPopupAnnotation() {
         return popupAnnotation;
-    }
-
-    public void setPopupAnnotation(PopupAnnotation popupAnnotation) {
-        this.popupAnnotation = popupAnnotation;
-        entries.put(POPUP_KEY, popupAnnotation.getPObjectReference());
     }
 
     public float getOpacity() {
@@ -263,36 +253,16 @@ public abstract class MarkupAnnotation extends Annotation {
         return richText;
     }
 
-    public void setRichText(String richText) {
-        this.richText = richText;
-        entries.put(RC_KEY, new LiteralStringObject(richText));
-    }
-
     public PDate getCreationDate() {
         return creationDate;
-    }
-
-    public void setCreationDate(String creationDate) {
-        this.creationDate = new PDate(securityManager, creationDate);
-        entries.put(CREATION_DATE_KEY, new LiteralStringObject(creationDate));
     }
 
     public MarkupAnnotation getInReplyToAnnotation() {
         return inReplyToAnnotation;
     }
 
-    public void setInReplyToAnnotation(MarkupAnnotation inReplyToAnnotation) {
-        this.inReplyToAnnotation = inReplyToAnnotation;
-        entries.put(IRT_KEY, inReplyToAnnotation.getPObjectReference());
-    }
-
     public String getSubject() {
         return subject;
-    }
-
-    public void setSubject(String subject) {
-        this.subject = subject;
-        entries.put(SUBTYPE_KEY, new LiteralStringObject(subject));
     }
 
     public Name getReplyToRelation() {
@@ -301,6 +271,36 @@ public abstract class MarkupAnnotation extends Annotation {
 
     public Name getIntent() {
         return intent;
+    }
+
+    public void setTitleText(String titleText) {
+        this.titleText = titleText;
+        entries.put(T_KEY, new LiteralStringObject(titleText));
+    }
+
+    public void setPopupAnnotation(PopupAnnotation popupAnnotation) {
+        this.popupAnnotation = popupAnnotation;
+        entries.put(POPUP_KEY, popupAnnotation.getPObjectReference());
+    }
+
+    public void setRichText(String richText) {
+        this.richText = richText;
+        entries.put(RC_KEY, new LiteralStringObject(richText));
+    }
+
+    public void setCreationDate(String creationDate) {
+        this.creationDate = new PDate(securityManager, creationDate);
+        entries.put(CREATION_DATE_KEY, new LiteralStringObject(creationDate));
+    }
+
+    public void setInReplyToAnnotation(MarkupAnnotation inReplyToAnnotation) {
+        this.inReplyToAnnotation = inReplyToAnnotation;
+        entries.put(IRT_KEY, inReplyToAnnotation.getPObjectReference());
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+        entries.put(SUBTYPE_KEY, new LiteralStringObject(subject));
     }
 
     public String toString() {

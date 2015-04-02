@@ -34,7 +34,22 @@ import java.util.logging.Logger;
  */
 public class PropertiesManager {
 
+    private static final Logger logger =
+            Logger.getLogger(PropertiesManager.class.toString());
+
+    private static final String DEFAULT_HOME_DIR = ".icesoft/icepdf_viewer";
+    private static final String LOCK_FILE = "_syslock";
+    private final static String USER_FILENAME = "pdfviewerri.properties";
+    private final static String BACKUP_FILENAME = "old_pdfviewerri.properties";
+
+    //default file for all not specified properties
+    private static final String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";
+    private static final String DEFAULT_PROP_FILE_PATH = "org/icepdf/ri/viewer/res/";
     public static final String DEFAULT_MESSAGE_BUNDLE = "org.icepdf.ri.resources.MessageBundle";
+
+    private static final String PROPERTY_DEFAULT_FILE_PATH = "application.defaultFilePath";
+    private static final String PROPERTY_DEFAULT_URL = "application.defaultURL";
+
     // window properties
     public static final String PROPERTY_DIVIDER_LOCATION = "application.divider.location";
     // default page fit mode
@@ -84,23 +99,18 @@ public class PropertiesManager {
     public static final String PROPERTY_VIEWPREF_HIDETOOLBAR = "application.viewerpreferences.hidetoolbar";
     public static final String PROPERTY_VIEWPREF_HIDEMENUBAR = "application.viewerpreferences.hidemenubar";
     public static final String PROPERTY_VIEWPREF_FITWINDOW = "application.viewerpreferences.fitwindow";
-    private static final Logger logger =
-            Logger.getLogger(PropertiesManager.class.toString());
-    private static final String DEFAULT_HOME_DIR = ".icesoft/icepdf_viewer";
-    private static final String LOCK_FILE = "_syslock";
-    private final static String USER_FILENAME = "pdfviewerri.properties";
-    private final static String BACKUP_FILENAME = "old_pdfviewerri.properties";
-    //default file for all not specified properties
-    private static final String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";
-    private static final String DEFAULT_PROP_FILE_PATH = "org/icepdf/ri/viewer/res/";
-    private static final String PROPERTY_DEFAULT_FILE_PATH = "application.defaultFilePath";
-    private static final String PROPERTY_DEFAULT_URL = "application.defaultURL";
+
     //the version name, used in about dialog and start-up message
     String versionName = Document.getLibraryVersion();
-    Properties sysProps;
-    File userHome;
+
     private boolean unrecoverableError;
+
+    Properties sysProps;
+
     private ResourceBundle messageBundle;
+
+    File userHome;
+
     //the swingri home directory
     private File dataDir;
 
@@ -206,173 +216,6 @@ public class PropertiesManager {
         unrecoverableError = false;
     }
 
-    public static String makeResPath(String prefix, String base_name) {
-        if (base_name.length() != 0 && base_name.charAt(0) == '/') {
-            return base_name.substring(1, base_name.length());
-        } else if (prefix == null) {
-            return base_name;
-        } else {
-            return prefix + base_name;
-        }
-    }
-
-    public static boolean checkAndStoreBooleanProperty(PropertiesManager properties, String propertyName) {
-        return checkAndStoreBooleanProperty(properties, propertyName, true);
-    }
-
-    /**
-     * Method to check the value of a boolean property
-     * This is meant to be used for configuration via the properties file
-     * After the property has been checked, it will be stored back into the Properties
-     * object (using a default value if none was found)
-     *
-     * @param properties   to check with
-     * @param propertyName to check for
-     * @param defaultVal   to default to if no value is found on a property
-     * @return true if property is true, otherwise false
-     */
-    public static boolean checkAndStoreBooleanProperty(PropertiesManager properties, String propertyName, boolean defaultVal) {
-        // If we don't have a valid PropertiesManager just return the default value
-        if (properties == null) {
-            return defaultVal;
-        }
-
-        // Get the desired property, defaulting to the defaultVal parameter
-        boolean returnValue = properties.getBoolean(propertyName, defaultVal);
-
-        // Set the property back into the manager
-        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        properties.setBoolean(propertyName, returnValue);
-
-        return returnValue;
-    }
-
-    public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName) {
-        return checkAndStoreDoubleProperty(properties, propertyName, 1.0f);
-    }
-
-    /**
-     * Method to check the value of a double property
-     * This is meant to be used for configuration via the properties file
-     * After the property has been checked, it will be stored back into the Properties
-     * object (using a default value if none was found)
-     *
-     * @param properties   to check with
-     * @param propertyName to check for
-     * @param defaultVal   to default to if no value is found on a property
-     * @return double property value
-     */
-    public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName, double defaultVal) {
-        // If we don't have a valid PropertiesManager just return the default value
-        if (properties == null) {
-            return defaultVal;
-        }
-
-        // Get the desired property, defaulting to the defaultVal parameter
-        double returnValue = properties.getDouble(propertyName, defaultVal);
-
-        // Set the property back into the manager
-        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        properties.setDouble(propertyName, returnValue);
-
-        return returnValue;
-    }
-
-    public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName) {
-        return checkAndStoreIntegerProperty(properties, propertyName, 1);
-    }
-
-    /**
-     * Method to check the value of an int property
-     * This is meant to be used for configuration via the properties file
-     * After the property has been checked, it will be stored back into the Properties
-     * object (using a default value if none was found)
-     *
-     * @param properties   to check with
-     * @param propertyName to check for
-     * @param defaultVal   to default to if no value is found on a property
-     * @return int value of property
-     */
-    public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName, int defaultVal) {
-        // If we don't have a valid PropertiesManager just return the default value
-        if (properties == null) {
-            return defaultVal;
-        }
-
-        // Get the desired property, defaulting to the defaultVal parameter
-        int returnValue = properties.getInt(propertyName, defaultVal);
-
-        // Set the property back into the manager
-        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-        properties.setInt(propertyName, returnValue);
-
-        return returnValue;
-    }
-
-    /**
-     * Method to check the value of a comma separate list of floats property
-     * For example we will convert "0.4f, 0.5f, 0.6f" to a size 3 array with the values as floats
-     * This is meant to be used for configuration via the properties file
-     * After the property has been checked, it will be stored back into the Properties
-     * object (using a default value if none was found)
-     *
-     * @param properties   to check with
-     * @param propertyName to check for
-     * @param defaultVal   to default to if no value is found on a property
-     * @return array of floats from the property
-     */
-    public static float[] checkAndStoreFloatArrayProperty(PropertiesManager properties, String propertyName, float[] defaultVal) {
-        // If we don't have a valid PropertiesManager just return the default value
-        if ((properties == null) || (properties.props == null)) {
-            return defaultVal;
-        }
-
-        // Get the desired property, defaulting to the defaultVal parameter
-        String propertyString = properties.props.getProperty(propertyName);
-
-        float[] toReturn = defaultVal;
-
-        try {
-            // Ensure we have a property string to parse
-            // Then we'll conver the comma separated property to a list of floats
-            if ((propertyString != null) &&
-                    (propertyString.trim().length() > 0)) {
-                String[] split = propertyString.split(",");
-                toReturn = new float[split.length];
-
-                for (int i = 0; i < split.length; i++) {
-                    try {
-                        toReturn[i] = Float.parseFloat(split[i]);
-                    } catch (NumberFormatException failedValue) {
-                        /* ignore as we'll just automatically put a '0' in the invalid space */
-                    }
-                }
-            }
-            // Otherwise convert the defaultVal into a comma separated list
-            // This is done so it can be stored back into the properties file
-            else {
-                StringBuilder commaBuffer = new StringBuilder(defaultVal.length * 2);
-
-                for (int i = 0; i < defaultVal.length; i++) {
-                    commaBuffer.append(defaultVal[i]);
-
-                    // Check whether we need a comma
-                    if ((i + 1) < defaultVal.length) {
-                        commaBuffer.append(",");
-                    }
-                }
-
-                // Set the property back into the manager
-                // This is necessary in the cases where a property didn't exist, but needs to be added to the file
-                properties.set(propertyName, commaBuffer.toString());
-            }
-        } catch (Exception failedProperty) {
-            /* ignore on failure as we'll just return defaultVal */
-        }
-
-        return toReturn;
-    }
-
     private boolean setupDefaultProperties() {
         defaultProps = new Properties();
 
@@ -455,7 +298,7 @@ public class PropertiesManager {
             } else {
                 dataDir.mkdirs();
                 if (!dataDir.isDirectory()) {
-                    // check to make sure that dialog should be shown on the error.
+                    // check to make sure that dialog should be shown on the error.  
                     if (getBoolean("application.showLocalStorageDialogs", true)) {
                         Resources.showMessageDialog(null,
                                 JOptionPane.ERROR_MESSAGE, messageBundle,
@@ -960,15 +803,15 @@ public class PropertiesManager {
         return getString(PROPERTY_DEFAULT_FILE_PATH, null);
     }
 
+    public String getDefaultURL() {
+        return getString(PROPERTY_DEFAULT_URL, null);
+    }
+
     public void setDefaultFilePath(String defaultFilePath) {
         if (defaultFilePath == null)
             remove(PROPERTY_DEFAULT_FILE_PATH);
         else
             set(PROPERTY_DEFAULT_FILE_PATH, defaultFilePath);
-    }
-
-    public String getDefaultURL() {
-        return getString(PROPERTY_DEFAULT_URL, null);
     }
 
     public void setDefaultURL(String defaultURL) {
@@ -999,6 +842,173 @@ public class PropertiesManager {
             }
         }
         return ClassLoader.getSystemResourceAsStream(resourcePath);
+    }
+
+    public static String makeResPath(String prefix, String base_name) {
+        if (base_name.length() != 0 && base_name.charAt(0) == '/') {
+            return base_name.substring(1, base_name.length());
+        } else if (prefix == null) {
+            return base_name;
+        } else {
+            return prefix + base_name;
+        }
+    }
+
+    public static boolean checkAndStoreBooleanProperty(PropertiesManager properties, String propertyName) {
+        return checkAndStoreBooleanProperty(properties, propertyName, true);
+    }
+
+    /**
+     * Method to check the value of a boolean property
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     * object (using a default value if none was found)
+     *
+     * @param properties   to check with
+     * @param propertyName to check for
+     * @param defaultVal   to default to if no value is found on a property
+     * @return true if property is true, otherwise false
+     */
+    public static boolean checkAndStoreBooleanProperty(PropertiesManager properties, String propertyName, boolean defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if (properties == null) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        boolean returnValue = properties.getBoolean(propertyName, defaultVal);
+
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        properties.setBoolean(propertyName, returnValue);
+
+        return returnValue;
+    }
+
+    public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName) {
+        return checkAndStoreDoubleProperty(properties, propertyName, 1.0f);
+    }
+
+    /**
+     * Method to check the value of a double property
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     * object (using a default value if none was found)
+     *
+     * @param properties   to check with
+     * @param propertyName to check for
+     * @param defaultVal   to default to if no value is found on a property
+     * @return double property value
+     */
+    public static double checkAndStoreDoubleProperty(PropertiesManager properties, String propertyName, double defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if (properties == null) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        double returnValue = properties.getDouble(propertyName, defaultVal);
+
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        properties.setDouble(propertyName, returnValue);
+
+        return returnValue;
+    }
+
+    public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName) {
+        return checkAndStoreIntegerProperty(properties, propertyName, 1);
+    }
+
+    /**
+     * Method to check the value of an int property
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     * object (using a default value if none was found)
+     *
+     * @param properties   to check with
+     * @param propertyName to check for
+     * @param defaultVal   to default to if no value is found on a property
+     * @return int value of property
+     */
+    public static int checkAndStoreIntegerProperty(PropertiesManager properties, String propertyName, int defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if (properties == null) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        int returnValue = properties.getInt(propertyName, defaultVal);
+
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        properties.setInt(propertyName, returnValue);
+
+        return returnValue;
+    }
+
+    /**
+     * Method to check the value of a comma separate list of floats property
+     * For example we will convert "0.4f, 0.5f, 0.6f" to a size 3 array with the values as floats
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     * object (using a default value if none was found)
+     *
+     * @param properties   to check with
+     * @param propertyName to check for
+     * @param defaultVal   to default to if no value is found on a property
+     * @return array of floats from the property
+     */
+    public static float[] checkAndStoreFloatArrayProperty(PropertiesManager properties, String propertyName, float[] defaultVal) {
+        // If we don't have a valid PropertiesManager just return the default value
+        if ((properties == null) || (properties.props == null)) {
+            return defaultVal;
+        }
+
+        // Get the desired property, defaulting to the defaultVal parameter
+        String propertyString = properties.props.getProperty(propertyName);
+
+        float[] toReturn = defaultVal;
+
+        try {
+            // Ensure we have a property string to parse
+            // Then we'll conver the comma separated property to a list of floats
+            if ((propertyString != null) &&
+                    (propertyString.trim().length() > 0)) {
+                String[] split = propertyString.split(",");
+                toReturn = new float[split.length];
+
+                for (int i = 0; i < split.length; i++) {
+                    try {
+                        toReturn[i] = Float.parseFloat(split[i]);
+                    } catch (NumberFormatException failedValue) {
+                        /* ignore as we'll just automatically put a '0' in the invalid space */
+                    }
+                }
+            }
+            // Otherwise convert the defaultVal into a comma separated list
+            // This is done so it can be stored back into the properties file
+            else {
+                StringBuilder commaBuffer = new StringBuilder(defaultVal.length * 2);
+
+                for (int i = 0; i < defaultVal.length; i++) {
+                    commaBuffer.append(defaultVal[i]);
+
+                    // Check whether we need a comma
+                    if ((i + 1) < defaultVal.length) {
+                        commaBuffer.append(",");
+                    }
+                }
+
+                // Set the property back into the manager
+                // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+                properties.set(propertyName, commaBuffer.toString());
+            }
+        } catch (Exception failedProperty) {
+            /* ignore on failure as we'll just return defaultVal */
+        }
+
+        return toReturn;
     }
 }
 

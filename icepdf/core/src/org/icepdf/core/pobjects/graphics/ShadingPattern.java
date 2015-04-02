@@ -40,6 +40,9 @@ import java.util.logging.Logger;
  */
 public abstract class ShadingPattern extends Dictionary implements Pattern {
 
+    private static final Logger logger =
+            Logger.getLogger(ShadingPattern.class.toString());
+
     public static final Name PATTERN_TYPE_KEY = new Name("PatternType");
     public static final Name EXTGSTATE_KEY = new Name("ExtGState");
     public static final Name MATRIX_KEY = new Name("Matrix");
@@ -60,8 +63,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     public static final int SHADING_PATTERN_TYPE_4 = 4;
     public static final int SHADING_PATTERN_TYPE_5 = 5;
     public static final int SHADING_PATTERN_TYPE_6 = 6;
-    private static final Logger logger =
-            Logger.getLogger(ShadingPattern.class.toString());
+
     // type of PObject, should always be "Pattern"
     protected Name type;
 
@@ -136,7 +138,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
      * @param library   library for document
      * @param attribute dictionary for potential shading object.
      * @return returns a ShadingPatern object based ont he shadingType criteria.
-     * if the proper constructor cannot be found then null is returned.
+     *         if the proper constructor cannot be found then null is returned.
      */
     public static ShadingPattern getShadingPattern(Library library, HashMap attribute) {
         // factory type approach, find shading entries and get type
@@ -225,6 +227,10 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
         // nothing to be done for shading. 
     }
 
+    public void setMatrix(AffineTransform matrix) {
+        this.matrix = matrix;
+    }
+
     public int getPatternType() {
         return patternType;
     }
@@ -235,10 +241,6 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     public AffineTransform getMatrix() {
         return matrix;
-    }
-
-    public void setMatrix(AffineTransform matrix) {
-        this.matrix = matrix;
     }
 
     public int getShadingType() {

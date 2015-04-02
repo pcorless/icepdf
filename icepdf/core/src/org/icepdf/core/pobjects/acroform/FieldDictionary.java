@@ -46,6 +46,9 @@ import java.util.logging.Logger;
  */
 public class FieldDictionary extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(FieldDictionary.class.toString());
+
     /**
      * Required for terminal fields; inheritable) The type of field that this
      * dictionary describes:
@@ -162,8 +165,7 @@ public class FieldDictionary extends Dictionary {
      * If set, the field shall not be exported by a submit-form action (see 12.7.5.2, “Submit-Form Action”).
      */
     public static final int NO_EXPORT_BIT_FLAG = 0x4;
-    private static final Logger logger =
-            Logger.getLogger(FieldDictionary.class.toString());
+
     protected Name fieldType;
     protected VariableText variableText;
     protected String partialFieldName;

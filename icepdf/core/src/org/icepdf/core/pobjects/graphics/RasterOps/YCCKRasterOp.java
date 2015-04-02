@@ -26,24 +26,6 @@ public class YCCKRasterOp implements RasterOp {
         this.hints = hints;
     }
 
-    /**
-     * Clips the value according to the specified floor and ceiling.
-     *
-     * @param floor   floor value of clip
-     * @param ceiling ceiling value of clip
-     * @param value   value to clip.
-     * @return clipped value.
-     */
-    private static int clip(int floor, int ceiling, int value) {
-        if (value < floor) {
-            value = floor;
-        }
-        if (value > ceiling) {
-            value = ceiling;
-        }
-        return value;
-    }
-
     public WritableRaster filter(Raster src, WritableRaster dest) {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
@@ -108,6 +90,24 @@ public class YCCKRasterOp implements RasterOp {
 
     public RenderingHints getRenderingHints() {
         return hints;
+    }
+
+    /**
+     * Clips the value according to the specified floor and ceiling.
+     *
+     * @param floor   floor value of clip
+     * @param ceiling ceiling value of clip
+     * @param value   value to clip.
+     * @return clipped value.
+     */
+    private static int clip(int floor, int ceiling, int value) {
+        if (value < floor) {
+            value = floor;
+        }
+        if (value > ceiling) {
+            value = ceiling;
+        }
+        return value;
     }
 
     /*

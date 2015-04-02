@@ -54,6 +54,9 @@ import java.util.logging.Logger;
 public class DocumentViewControllerImpl
         implements DocumentViewController, ComponentListener {
 
+    private static final Logger logger =
+            Logger.getLogger(DocumentViewControllerImpl.class.toString());
+
     /**
      * Displays a one page at a time view.
      */
@@ -90,8 +93,7 @@ public class DocumentViewControllerImpl
      * Rotation factor used with rotating document.
      */
     public static final float ROTATION_FACTOR = 90F;
-    private static final Logger logger =
-            Logger.getLogger(DocumentViewControllerImpl.class.toString());
+
     // background colour
     public static Color backgroundColor;
 
@@ -110,6 +112,16 @@ public class DocumentViewControllerImpl
             }
         }
     }
+
+    private float[] zoomLevels;
+
+    private Document document;
+
+    private DocumentViewModelImpl documentViewModel;
+    private AbstractDocumentView documentView;
+
+    private JScrollPane documentViewScrollPane;
+
     protected int viewportWidth, oldViewportWidth;
     protected int viewportHeight, oldViewportHeight;
     protected int viewType, oldViewType;
@@ -119,11 +131,6 @@ public class DocumentViewControllerImpl
     protected AnnotationCallback annotationCallback;
     protected SecurityCallback securityCallback;
     protected PropertyChangeSupport changes = new PropertyChangeSupport(this);
-    private float[] zoomLevels;
-    private Document document;
-    private DocumentViewModelImpl documentViewModel;
-    private AbstractDocumentView documentView;
-    private JScrollPane documentViewScrollPane;
 
 
     public DocumentViewControllerImpl(final SwingController viewerController) {
@@ -223,6 +230,20 @@ public class DocumentViewControllerImpl
 
     public JViewport getViewPort() {
         return documentViewScrollPane.getViewport();
+    }
+
+    /**
+     * Set an annotation callback.
+     *
+     * @param annotationCallback annotation callback associated with this document
+     *                           view.
+     */
+    public void setAnnotationCallback(AnnotationCallback annotationCallback) {
+        this.annotationCallback = annotationCallback;
+    }
+
+    public void setSecurityCallback(SecurityCallback securityCallback) {
+        this.securityCallback = securityCallback;
     }
 
     public void clearSelectedAnnotations() {
@@ -334,26 +355,12 @@ public class DocumentViewControllerImpl
     }
 
     /**
-     * Set an annotation callback.
-     *
-     * @param annotationCallback annotation callback associated with this document
-     *                           view.
-     */
-    public void setAnnotationCallback(AnnotationCallback annotationCallback) {
-        this.annotationCallback = annotationCallback;
-    }
-
-    /**
      * Gets the security callback.
      *
      * @return security callback associated with this document.
      */
     public SecurityCallback getSecurityCallback() {
         return securityCallback;
-    }
-
-    public void setSecurityCallback(SecurityCallback securityCallback) {
-        this.securityCallback = securityCallback;
     }
 
     public DocumentView getDocumentView() {
@@ -857,10 +864,6 @@ public class DocumentViewControllerImpl
         return documentViewModel.getViewToolMode();
     }
 
-    public int getViewCursor() {
-        return cursorType;
-    }
-
     public void setViewCursor(final int cursorType) {
         this.cursorType = cursorType;
         Cursor cursor = getViewCursor(cursorType);
@@ -868,6 +871,10 @@ public class DocumentViewControllerImpl
             if (documentViewScrollPane.getViewport() != null)
                 documentViewScrollPane.getViewport().setCursor(cursor);
         }
+    }
+
+    public int getViewCursor() {
+        return cursorType;
     }
 
     public Cursor getViewCursor(final int currsorType) {

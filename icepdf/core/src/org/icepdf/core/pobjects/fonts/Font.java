@@ -122,6 +122,15 @@ public abstract class Font extends Dictionary {
      */
     public static final int FONT_FLAG_FORCE_BOLD = 0x40000;   // bit 19
 
+    // Object name always "Font"
+    protected Name name;
+
+    // The name of the object, Font
+    protected String basefont;
+
+    // The font subtype, type 0, 1, 2 etc.
+    protected Name subtype;
+
     /**
      * <p>Indicates that the font used to render this String object is in the
      * Simple Font family and thus each glyph is represented by one byte.</p>
@@ -134,6 +143,35 @@ public abstract class Font extends Dictionary {
      * one byte.</p>
      */
     public static final int CID_FORMAT = 2;
+
+    // supType Format, either simple or CID.
+    protected int subTypeFormat = SIMPLE_FORMAT;
+
+    // The actual Java font that will be used to display the Glyphs
+    protected FontFile font;
+
+    // The first character code defined in the font's Widths array.
+    protected int firstchar = 32;
+    protected int lastchar = 255;
+
+    // Font Descriptor used
+    protected FontDescriptor fontDescriptor;
+
+    // initiated flag
+    protected boolean inited;
+
+    // AFM flag
+    protected boolean isAFMFont;
+
+    // vertical writing flag;
+    protected boolean isVerticalWriting;
+
+    // font substitution being used
+    protected boolean isFontSubstitution;
+
+    // parent resource, needed by some type3 fonts to access resources.
+    protected Resources parentResource;
+
     /**
      * Map named CMap to Unicode mapping.
      */
@@ -190,31 +228,6 @@ public abstract class Font extends Dictionary {
             {"Symbol"},
             {"ZapfDingbats", "Zapf-Dingbats", "Dingbats"}
     };
-    // Object name always "Font"
-    protected Name name;
-    // The name of the object, Font
-    protected String basefont;
-    // The font subtype, type 0, 1, 2 etc.
-    protected Name subtype;
-    // supType Format, either simple or CID.
-    protected int subTypeFormat = SIMPLE_FORMAT;
-    // The actual Java font that will be used to display the Glyphs
-    protected FontFile font;
-    // The first character code defined in the font's Widths array.
-    protected int firstchar = 32;
-    protected int lastchar = 255;
-    // Font Descriptor used
-    protected FontDescriptor fontDescriptor;
-    // initiated flag
-    protected boolean inited;
-    // AFM flag
-    protected boolean isAFMFont;
-    // vertical writing flag;
-    protected boolean isVerticalWriting;
-    // font substitution being used
-    protected boolean isFontSubstitution;
-    // parent resource, needed by some type3 fonts to access resources.
-    protected Resources parentResource;
 
     /**
      * Creates a new instance of a PDF Font.

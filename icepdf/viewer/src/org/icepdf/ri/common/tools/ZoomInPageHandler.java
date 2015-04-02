@@ -46,24 +46,6 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         selectionBoxColour = Color.DARK_GRAY;
     }
 
-    public static float calculateZoom(DocumentViewController documentViewController,
-                                      Rectangle rectToDraw,
-                                      DocumentViewModel documentViewModel) {
-
-        Dimension viewport = documentViewController.getViewPort().getParent().getSize();
-        int selectionMax = rectToDraw.width;
-        int screenMax = viewport.width;
-        // find the largest dimension of the selection rectangle.
-        if (screenMax < viewport.getHeight()) {
-            screenMax = viewport.height;
-        }
-        if (selectionMax < rectToDraw.getHeight()) {
-            selectionMax = rectToDraw.height;
-        }
-        // figure out the zoom ratio
-        return (screenMax / (float) selectionMax) * documentViewModel.getViewZoom();
-    }
-
     public void mouseDragged(MouseEvent e) {
         // handle text selection drags.
         if (documentViewController != null) {
@@ -161,5 +143,23 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
 
     public void uninstallTool() {
 
+    }
+
+    public static float calculateZoom(DocumentViewController documentViewController,
+                                      Rectangle rectToDraw,
+                                      DocumentViewModel documentViewModel) {
+
+        Dimension viewport = documentViewController.getViewPort().getParent().getSize();
+        int selectionMax = rectToDraw.width;
+        int screenMax = viewport.width;
+        // find the largest dimension of the selection rectangle.
+        if (screenMax < viewport.getHeight()) {
+            screenMax = viewport.height;
+        }
+        if (selectionMax < rectToDraw.getHeight()) {
+            selectionMax = rectToDraw.height;
+        }
+        // figure out the zoom ratio
+        return (screenMax / (float) selectionMax) * documentViewModel.getViewZoom();
     }
 }

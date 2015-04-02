@@ -55,6 +55,19 @@ public class FontManager {
 
     private static final Logger logger =
             Logger.getLogger(FontManager.class.toString());
+
+    // stores all font data
+    private static List<Object[]> fontList;
+
+    // stores fonts loaded from jar, these won't be cached
+    private static List<Object[]> fontJarList;
+
+    // flags for detecting font decorations
+    private static int PLAIN = 0xF0000001;
+    private static int BOLD = 0xF0000010;
+    private static int ITALIC = 0xF0000100;
+    private static int BOLD_ITALIC = 0xF0001000;
+
     // Differences for type1 fonts which match adobe core14 metrics
     private static final String TYPE1_FONT_DIFFS[][] =
             {{"Bookman-Demi", "URWBookmanL-DemiBold", "Arial"},
@@ -120,15 +133,7 @@ public class FontManager {
             "Arial Unicode MS", "Gulim", "Batang",
             "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro"
     };
-    // stores all font data
-    private static List<Object[]> fontList;
-    // stores fonts loaded from jar, these won't be cached
-    private static List<Object[]> fontJarList;
-    // flags for detecting font decorations
-    private static int PLAIN = 0xF0000001;
-    private static int BOLD = 0xF0000010;
-    private static int ITALIC = 0xF0000100;
-    private static int BOLD_ITALIC = 0xF0001000;
+
     private static String JAVA_FONT_PATHS = Defs.sysProperty("java.home") + "/lib/fonts";
 
     // Default system directories to scan for font programs. This variable can
@@ -251,60 +256,6 @@ public class FontManager {
             fontManager = new FontManager();
         }
         return fontManager;
-    }
-
-    /**
-     * <p>Utility method for guessing a font family name from its base name.</p>
-     *
-     * @param name base name of font.
-     * @return guess of the base fonts name.
-     */
-    public static String guessFamily(String name) {
-        String fam = name;
-        int inx;
-        // Family name usually precedes a common, ie. "Arial,BoldItalic"
-        if ((inx = fam.indexOf(',')) > 0)
-            fam = fam.substring(0, inx);
-        // Family name usually precedes a dash, example "Times-Bold",
-        if ((inx = fam.lastIndexOf('-')) > 0)
-            fam = fam.substring(0, inx);
-        return fam;
-    }
-
-    /**
-     * Utility method which maps know style strings to an integer value which
-     * is used later for efficient font searching.
-     * todo: move out to FontUtil and use awt constants
-     *
-     * @param name base name of font.
-     * @return integer representing dffs
-     */
-    private static int guessFontStyle(String name) {
-        name = name.toLowerCase();
-        int decorations = 0;
-        if ((name.indexOf("boldital") > 0) || (name.indexOf("demiital") > 0)) {
-            decorations |= BOLD_ITALIC;
-        } else if (name.indexOf("bold") > 0 || name.indexOf("black") > 0
-                || name.indexOf("demi") > 0) {
-            decorations |= BOLD;
-        } else if (name.indexOf("ital") > 0 || name.indexOf("obli") > 0) {
-            decorations |= ITALIC;
-        } else {
-            decorations |= PLAIN;
-        }
-        return decorations;
-    }
-
-    /**
-     * Sorts the fontList of system fonts by font name or the first element
-     * int the object[] store.
-     */
-    private static void sortFontListByName() {
-        Collections.sort(fontList, new Comparator<Object[]>() {
-            public int compare(Object[] o1, Object[] o2) {
-                return ((String) o2[0]).compareTo((String) o1[0]);
-            }
-        });
     }
 
     /**
@@ -439,7 +390,7 @@ public class FontManager {
         // Iterate through SYSTEM_FONT_PATHS and load all readable fonts
         for (int i = fontDirectories.length - 1; i >= 0; i--) {
             path = fontDirectories[i];
-            // if the path is valid start reading fonts.
+            // if the path is valid start reading fonts. 
             if (path != null) {
                 loadSystemFont(new File(path));
             }
@@ -481,6 +432,25 @@ public class FontManager {
                 }
             }
         }
+    }
+
+
+    /**
+     * <p>Utility method for guessing a font family name from its base name.</p>
+     *
+     * @param name base name of font.
+     * @return guess of the base fonts name.
+     */
+    public static String guessFamily(String name) {
+        String fam = name;
+        int inx;
+        // Family name usually precedes a common, ie. "Arial,BoldItalic"
+        if ((inx = fam.indexOf(',')) > 0)
+            fam = fam.substring(0, inx);
+        // Family name usually precedes a dash, example "Times-Bold",
+        if ((inx = fam.lastIndexOf('-')) > 0)
+            fam = fam.substring(0, inx);
+        return fam;
     }
 
     /**
@@ -656,7 +626,7 @@ public class FontManager {
      * @param name  base name of font.
      * @param flags flags used to describe font.
      * @return a new instance of NFont which best approximates the font described
-     * by the name and flags attribute.
+     *         by the name and flags attribute.
      */
     public FontFile getInstance(String name, int flags) {
 
@@ -805,6 +775,8 @@ public class FontManager {
                             || baseName.equals("new")
                             // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
                             || baseName.equals("timesnewromanps")
+                            // doesn't seem to the correct cid mapping otf version anyways.
+                            || baseName.equals("kozminpro-regular")
                             ) {
                         //found = false;
                     } else if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
@@ -821,7 +793,7 @@ public class FontManager {
                         found = true;
                     }
                     // symbol type fonts don't have an associated style, so
-                    // no point trying to match  them based on style.
+                    // no point trying to match  them based on style. 
                     else if (baseName.contains("wingdings") ||
                             baseName.contains("zapfdingbats") ||
                             baseName.contains("dingbats") ||
@@ -1172,6 +1144,30 @@ public class FontManager {
     }
 
     /**
+     * Utility method which maps know style strings to an integer value which
+     * is used later for efficient font searching.
+     * todo: move out to FontUtil and use awt constants
+     *
+     * @param name base name of font.
+     * @return integer representing dffs
+     */
+    private static int guessFontStyle(String name) {
+        name = name.toLowerCase();
+        int decorations = 0;
+        if ((name.indexOf("boldital") > 0) || (name.indexOf("demiital") > 0)) {
+            decorations |= BOLD_ITALIC;
+        } else if (name.indexOf("bold") > 0 || name.indexOf("black") > 0 || name.endsWith("bt")
+                || name.indexOf("demi") > 0) {
+            decorations |= BOLD;
+        } else if (name.indexOf("ital") > 0 || name.indexOf("obli") > 0) {
+            decorations |= ITALIC;
+        } else {
+            decorations |= PLAIN;
+        }
+        return decorations;
+    }
+
+    /**
      * Returns the string representation of a font style specified by the
      * decoration and flags integers.
      *
@@ -1194,5 +1190,17 @@ public class FontManager {
             style += " Plain";
         }
         return style;
+    }
+
+    /**
+     * Sorts the fontList of system fonts by font name or the first element
+     * int the object[] store.
+     */
+    private static void sortFontListByName() {
+        Collections.sort(fontList, new Comparator<Object[]>() {
+            public int compare(Object[] o1, Object[] o2) {
+                return ((String) o2[0]).compareTo((String) o1[0]);
+            }
+        });
     }
 }

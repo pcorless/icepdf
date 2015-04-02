@@ -50,7 +50,6 @@ import java.util.logging.Logger;
 public abstract class AbstractAnnotationComponent extends JComponent implements FocusListener,
         MouseInputListener, AnnotationComponent {
 
-    public static final int resizeBoxSize = 4;
     protected static final Logger logger =
             Logger.getLogger(AbstractAnnotationComponent.class.toString());
     protected static boolean isInteractiveAnnotationsEnabled;
@@ -91,6 +90,9 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             annotationHighlightAlpha = 0.4f;
         }
     }
+
+    public static final int resizeBoxSize = 4;
+
     // reusable border
     protected static ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);

@@ -73,17 +73,25 @@ import java.util.List;
 
 public class JBIG2StreamDecoder {
 
-    public static boolean debug = false;
     private StreamReader reader;
+
     private boolean noOfPagesKnown;
     private boolean randomAccessOrganisation;
+
     private int noOfPages = -1;
+
     private List<Segment> segments = new ArrayList<Segment>();
     private List<JBIG2Bitmap> bitmaps = new ArrayList<JBIG2Bitmap>();
+
     private byte[] globalData;
+
     private ArithmeticDecoder arithmeticDecoder;
+
     private HuffmanDecoder huffmanDecoder;
+
     private MMRDecoder mmrDecoder;
+
+    public static boolean debug = false;
 
     public void movePointer(int i) {
         reader.movePointer(i);

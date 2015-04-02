@@ -60,11 +60,14 @@ import java.util.BitSet;
 
 public final class JBIG2Bitmap {
 
-    private static int counter = 0;
     private int width, height, line;
-    //private FastBitSet data;
     private int bitmapNumber;
+    //private FastBitSet data;
+
     private BitSet data;
+
+    private static int counter = 0;
+
     private ArithmeticDecoder arithmeticDecoder;
     private HuffmanDecoder huffmanDecoder;
     private MMRDecoder mmrDecoder;
@@ -1055,12 +1058,12 @@ public final class JBIG2Bitmap {
         this.data = newData;
     }
 
-    public int getBitmapNumber() {
-        return bitmapNumber;
-    }
-
     public void setBitmapNumber(int segmentNumber) {
         this.bitmapNumber = segmentNumber;
+    }
+
+    public int getBitmapNumber() {
+        return bitmapNumber;
     }
 
     public BufferedImage getBufferedImage() {

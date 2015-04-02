@@ -97,6 +97,9 @@ import java.util.List;
  */
 public class BorderStyle extends Dictionary {
 
+    //todo fill out with valid numbers...
+    private static final float[] DEFAULT_DASH_ARRAY = new float[]{3.0f};
+
     public static final Name BORDER_STYLE_KEY = new Name("S");
     public static final Name BORDER_WIDTH_KEY = new Name("W");
     public static final Name BORDER_DASH_KEY = new Name("D");
@@ -124,8 +127,7 @@ public class BorderStyle extends Dictionary {
      * Underline rectangle border style surrounding the annotation
      */
     public static final Name BORDER_STYLE_UNDERLINE = new Name("U");
-    //todo fill out with valid numbers...
-    private static final float[] DEFAULT_DASH_ARRAY = new float[]{3.0f};
+
     // stroke width
     private float strokeWidth = 1.0f;
 
@@ -174,6 +176,10 @@ public class BorderStyle extends Dictionary {
         return strokeWidth;
     }
 
+    public Name getBorderStyle() {
+        return borderStyle;
+    }
+
     /**
      * Sets the stroke width of the border style.  Default value 1.0.
      *
@@ -182,10 +188,6 @@ public class BorderStyle extends Dictionary {
     public void setStrokeWidth(float strokeWidth) {
         this.strokeWidth = strokeWidth;
         entries.put(BORDER_WIDTH_KEY, this.strokeWidth);
-    }
-
-    public Name getBorderStyle() {
-        return borderStyle;
     }
 
     /**
@@ -225,10 +227,6 @@ public class BorderStyle extends Dictionary {
         return BORDER_STYLE_UNDERLINE.equals(borderStyle);
     }
 
-    public float[] getDashArray() {
-        return dashArray;
-    }
-
     public void setDashArray(float[] dashArray) {
         if (dashArray != null) {
             this.dashArray = dashArray;
@@ -240,6 +238,10 @@ public class BorderStyle extends Dictionary {
             this.dashArray = dashArray;
             entries.put(BORDER_STYLE_DASHED, dashVector);
         }
+    }
+
+    public float[] getDashArray() {
+        return dashArray;
     }
 
 }

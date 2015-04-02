@@ -67,10 +67,52 @@ import java.util.logging.Logger;
  */
 public class Page extends Dictionary {
 
+    private static final Logger logger =
+            Logger.getLogger(Page.class.toString());
+
     /**
      * Transparency value used to simulate text highlighting.
      */
     public static final float selectionAlpha = 0.3f;
+
+    // text selection colour
+    public static Color selectionColor;
+
+    static {
+        // sets the shadow colour of the decorator.
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.text.selectionColor", "#0077FF");
+            int colorValue = ColorUtil.convertColor(color);
+            selectionColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("0077FF", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text selection colour");
+            }
+        }
+    }
+
+    // text highlight colour
+    public static Color highlightColor;
+
+    static {
+        // sets the shadow colour of the decorator.
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");
+            int colorValue = ColorUtil.convertColor(color);
+            highlightColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("FFF600", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text highlight colour");
+            }
+        }
+    }
+
     public static final Name TYPE = new Name("Page");
     public static final Name ANNOTS_KEY = new Name("Annots");
     public static final Name CONTENTS_KEY = new Name("Contents");
@@ -109,46 +151,7 @@ public class Page extends Dictionary {
      * page's creator.
      */
     public static final int BOUNDARY_ARTBOX = 5;
-    private static final Logger logger =
-            Logger.getLogger(Page.class.toString());
-    // text selection colour
-    public static Color selectionColor;
-    static {
-        // sets the shadow colour of the decorator.
-        try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.selectionColor", "#0077FF");
-            int colorValue = ColorUtil.convertColor(color);
-            selectionColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("0077FF", 16));
-        } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading text selection colour");
-            }
-        }
-    }
-    // text highlight colour
-    public static Color highlightColor;
-    static {
-        // sets the shadow colour of the decorator.
-        try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");
-            int colorValue = ColorUtil.convertColor(color);
-            highlightColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("FFF600", 16));
-        } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading text highlight colour");
-            }
-        }
-    }
-    // the collection of objects listening for page paint events
-    private final List<PaintPageListener> paintPageListeners = new ArrayList<PaintPageListener>(8);
-    // the collection of objects listening for page loading events
-    private final List<PageLoadingListener> pageLoadingListeners = new ArrayList<PageLoadingListener>();
+
     // resources for page's parent pages, default fonts, etc.
     private Resources resources;
     // Vector of annotations
@@ -157,6 +160,12 @@ public class Page extends Dictionary {
     private List<Stream> contents;
     // Container for all shapes stored on page
     private Shapes shapes = null;
+
+    // the collection of objects listening for page paint events
+    private final List<PaintPageListener> paintPageListeners = new ArrayList<PaintPageListener>(8);
+    // the collection of objects listening for page loading events
+    private final List<PageLoadingListener> pageLoadingListeners = new ArrayList<PageLoadingListener>();
+
     // Defines the boundaries of the physical medium on which the page is
     // intended to be displayed on.
     private PRectangle mediaBox;
@@ -1537,10 +1546,6 @@ public class Page extends Dictionary {
         return pageIndex;
     }
 
-    protected void setPageIndex(int pageIndex) {
-        this.pageIndex = pageIndex;
-    }
-
     /**
      * Gets the xObject image cound for this page which does not include
      * any inline images.
@@ -1571,6 +1576,10 @@ public class Page extends Dictionary {
      */
     public boolean isPagePainted() {
         return pagePainted;
+    }
+
+    protected void setPageIndex(int pageIndex) {
+        this.pageIndex = pageIndex;
     }
 
     /**

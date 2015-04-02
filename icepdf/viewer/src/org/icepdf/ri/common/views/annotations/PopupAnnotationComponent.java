@@ -65,6 +65,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     public static Color borderColor = new Color(153, 153, 153);
 
     protected PopupAnnotation popupAnnotation;
+
+    // layouts constraint
+    private GridBagConstraints constraints;
+
     protected JPanel commentPanel;
     protected JTextArea textArea;
     protected JLabel creationLabel;
@@ -85,8 +89,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     protected JMenuItem openAllMenuItem;
     protected JMenuItem minimizeAllMenuItem;
     protected JPopupMenu contextMenu;
-    // layouts constraint
-    private GridBagConstraints constraints;
 
     public PopupAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {

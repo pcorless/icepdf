@@ -27,58 +27,6 @@ package org.icepdf.core.pobjects.functions.postscript;
 public class OperatorNames {
 
     /**
-     * Postscript subset of operations used in a type 4 function PostScript
-     * calculator.
-     */
-    public final static int
-            NO_OP = 0,
-            OP_ABS = 1,
-            OP_ADD = 2,
-            OP_AND = 3,
-            OP_ATAN = 4,
-            OP_BITSHIFT = 5,
-            OP_CEILING = 6,
-            OP_COS = 7,
-            OP_COPY = 8,
-            OP_CVI = 9,
-            OP_CVR = 10,
-            OP_DIV = 11,
-            OP_DUP = 12,
-            OP_EQ = 13,
-            OP_EXCH = 14,
-            OP_EXP = 15,
-            OP_FALSE = 16,
-            OP_FLOOR = 17,
-            OP_GE = 18,
-            OP_GT = 19,
-            OP_IDIV = 20,
-            OP_IF = 21,
-            OP_IFELSE = 22,
-            OP_LN = 23,
-            OP_INDEX = 24,
-            OP_LE = 25,
-            OP_LOG = 26,
-            OP_LT = 27,
-            OP_MOD = 28,
-            OP_MUL = 29,
-            OP_NE = 30,
-            OP_NEG = 31,
-            OP_NOT = 32,
-            OP_OR = 33,
-            OP_POP = 34,
-            OP_ROLL = 35,
-            OP_ROUND = 36,
-            OP_SIN = 37,
-            OP_SQRT = 38,
-            OP_SUB = 39,
-            OP_TRUE = 40,
-            OP_TRUNCATE = 41,
-            OP_XOR = 42,
-            OP_EXP_START = 43,
-            OP_EXP_END = 44,
-            OP_PROC = 45;
-
-    /**
      * Gets the operator type specified by the input substring.  PostScript
      * operands should all be lower case but this function will handle upper
      * and mixed case if encountered.
@@ -87,7 +35,7 @@ public class OperatorNames {
      * @param offset starting offset of input substring.
      * @param length length of input substring.
      * @return integer representing the operand found as described in class
-     * constants.
+     *         constants.
      */
     public static int getType(char ch[], int offset, int length) {
         char c1, c2;
@@ -227,4 +175,56 @@ public class OperatorNames {
         }
         return NO_OP;
     }
+
+    /**
+     * Postscript subset of operations used in a type 4 function PostScript
+     * calculator.
+     */
+    public final static int
+            NO_OP = 0,
+            OP_ABS = 1,
+            OP_ADD = 2,
+            OP_AND = 3,
+            OP_ATAN = 4,
+            OP_BITSHIFT = 5,
+            OP_CEILING = 6,
+            OP_COS = 7,
+            OP_COPY = 8,
+            OP_CVI = 9,
+            OP_CVR = 10,
+            OP_DIV = 11,
+            OP_DUP = 12,
+            OP_EQ = 13,
+            OP_EXCH = 14,
+            OP_EXP = 15,
+            OP_FALSE = 16,
+            OP_FLOOR = 17,
+            OP_GE = 18,
+            OP_GT = 19,
+            OP_IDIV = 20,
+            OP_IF = 21,
+            OP_IFELSE = 22,
+            OP_LN = 23,
+            OP_INDEX = 24,
+            OP_LE = 25,
+            OP_LOG = 26,
+            OP_LT = 27,
+            OP_MOD = 28,
+            OP_MUL = 29,
+            OP_NE = 30,
+            OP_NEG = 31,
+            OP_NOT = 32,
+            OP_OR = 33,
+            OP_POP = 34,
+            OP_ROLL = 35,
+            OP_ROUND = 36,
+            OP_SIN = 37,
+            OP_SQRT = 38,
+            OP_SUB = 39,
+            OP_TRUE = 40,
+            OP_TRUNCATE = 41,
+            OP_XOR = 42,
+            OP_EXP_START = 43,
+            OP_EXP_END = 44,
+            OP_PROC = 45;
 }

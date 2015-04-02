@@ -29,13 +29,14 @@ import org.icepdf.core.util.Utils;
  */
 public class LiteralStringObject implements StringObject {
 
+    // core data used to represent the literal string information
+    private StringBuilder stringData;
+
     private static char[] hexChar = {'0', '1', '2', '3', '4', '5', '6',
             '7', '8', '9', 'a', 'b', 'c', 'd',
             'e', 'f'};
     // Reference is need for standard encryption
     Reference reference;
-    // core data used to represent the literal string information
-    private StringBuilder stringData;
 
     /**
      * <p>Creates a new literal string object so that it represents the same
@@ -161,7 +162,7 @@ public class LiteralStringObject implements StringObject {
      * which is converted to hexadecimal form.</p>
      *
      * @return a StringBufffer representation of the object's data in hexadecimal
-     * notation.
+     *         notation.
      */
     public StringBuilder getHexStringBuffer() {
         return stringToHex(stringData);
@@ -199,26 +200,40 @@ public class LiteralStringObject implements StringObject {
      *                   Composite and Simple font types respectively
      * @param font       font used to render the the literal string data.
      * @return StringBuffer which contains all renderaable characters for the
-     * given font.
+     *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
-        if (fontFormat == Font.SIMPLE_FORMAT || font.isOneByteEncoding()) {
+        if (fontFormat == Font.SIMPLE_FORMAT
+                || font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE) {
             return stringData;
         } else if (fontFormat == Font.CID_FORMAT) {
-            int charOffset = 2;
             int length = getLength();
-            StringBuilder tmp = new StringBuilder(length);
-            int lastIndex = 0;
             int charValue;
-            for (int i = 0; i < length; i += charOffset) {
-                charValue = getUnsignedInt(i - lastIndex, lastIndex + charOffset);
-                // it is possible to have some cid's that are zero
-                if (charValue >= 0 && font.canDisplayEchar((char) charValue)) {
-                    tmp.append((char) charValue);
-                    lastIndex = 0;
-                } else {
-                    lastIndex += charOffset;
+            StringBuilder tmp = new StringBuilder(length);
+            if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE) {
+                int charOffset = 1;
+                for (int i = 0; i < length; i += charOffset) {
+                    // check range for possible 2 byte char.
+                    charValue = getUnsignedInt(i, 1);
+                    if (font.canDisplayEchar((char) charValue)) {
+                        tmp.append((char) charValue);
+                    } else {
+                        int charValue2 = getUnsignedInt(i, 2);
+                        if (font.canDisplayEchar((char) charValue2)) {
+                            tmp.append((char) charValue2);
+                            i += 1;
+                        }
+                    }
+                }
+            } else {
+                // we have default 2bytes.
+                int charOffset = 2;
+                for (int i = 0; i < length; i += charOffset) {
+                    int charValue2 = getUnsignedInt(i, 2);
+                    if (font.canDisplayEchar((char) charValue2)) {
+                        tmp.append((char) charValue2);
+                    }
                 }
             }
             return tmp;
@@ -255,19 +270,19 @@ public class LiteralStringObject implements StringObject {
     /**
      * Sets the parent PDF object's reference.
      *
-     * @return returns the reference used for encryption.
+     * @param reference parent object reference.
      */
-    public Reference getReference() {
-        return reference;
+    public void setReference(Reference reference) {
+        this.reference = reference;
     }
 
     /**
      * Sets the parent PDF object's reference.
      *
-     * @param reference parent object reference.
+     * @return returns the reference used for encryption.
      */
-    public void setReference(Reference reference) {
-        this.reference = reference;
+    public Reference getReference() {
+        return reference;
     }
 
     /**

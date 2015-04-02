@@ -33,17 +33,21 @@ import java.util.zip.InflaterInputStream;
 public class FlateDecode extends ChunkingInputStream {
 
 
+    private static int DEFAULT_BUFFER_SIZE;
+
+    static {
+        DEFAULT_BUFFER_SIZE = Defs.sysPropertyInt("org.icepdf.core.flateDecode.bufferSize",
+                16384);
+    }
+
     public static final Name DECODE_PARMS_VALUE = new Name("DecodeParms");
     public static final Name PREDICTOR_VALUE = new Name("Predictor");
     public static final Name WIDTH_VALUE = new Name("Width");
     public static final Name COLUMNS_VALUE = new Name("Columns");
     public static final Name COLORS_VALUE = new Name("Colors");
     public static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
-    private static int DEFAULT_BUFFER_SIZE;
-    static {
-        DEFAULT_BUFFER_SIZE = Defs.sysPropertyInt("org.icepdf.core.flateDecode.bufferSize",
-                16384);
-    }
+
+
     private InputStream originalInputKeptSolelyForDebugging;
     private int width;
     private int numComponents;

@@ -35,10 +35,12 @@ import java.util.logging.Logger;
  */
 public class DeviceCMYK extends PColorSpace {
 
-    public static final Name DEVICECMYK_KEY = new Name("DeviceCMYK");
-    public static final Name CMYK_KEY = new Name("CMYK");
     private static final Logger logger =
             Logger.getLogger(DeviceCMYK.class.toString());
+
+    public static final Name DEVICECMYK_KEY = new Name("DeviceCMYK");
+    public static final Name CMYK_KEY = new Name("CMYK");
+
     private static final DeviceGray DEVICE_GRAY = new DeviceGray(null, null);
 
     // default cmyk value,  > 255 will lighten the image.
@@ -66,6 +68,28 @@ public class DeviceCMYK extends PColorSpace {
     public DeviceCMYK(Library l, HashMap h) {
         super(l, h);
     }
+
+
+    public int getNumComponents() {
+        return 4;
+    }
+
+    /**
+     * Converts a 4 component cmyk colour to rgb.  With out a valid ICC colour
+     * profile this is just an approximation.
+     *
+     * @param f 4 component values of the cmyk, assumes compoents between
+     *          0.0 and 1.0
+     * @return valid rgb colour object.
+     */
+    public Color getColor(float[] f, boolean fillAndStroke) {
+        return alternative2(f, iccCmykColorCache);
+    }
+
+    /**
+     * Ah yes the many possible ways to go from cmyk to rgb.  Everybody has
+     * an opinion but no one has the solution that is 100%
+     */
 
     /**
      * Adobe photo shop algorithm or so they say.  K is assumed to be f[0]
@@ -106,11 +130,6 @@ public class DeviceCMYK extends PColorSpace {
 
         return new Color(r, g, b);
     }
-
-    /**
-     * Ah yes the many possible ways to go from cmyk to rgb.  Everybody has
-     * an opinion but no one has the solution that is 100%
-     */
 
     /**
      * Auto cad color model
@@ -298,21 +317,5 @@ public class DeviceCMYK extends PColorSpace {
      */
     public static void setDisableICCCmykColorSpace(boolean disableICCCmykColorSpace) {
         DeviceCMYK.disableICCCmykColorSpace = disableICCCmykColorSpace;
-    }
-
-    public int getNumComponents() {
-        return 4;
-    }
-
-    /**
-     * Converts a 4 component cmyk colour to rgb.  With out a valid ICC colour
-     * profile this is just an approximation.
-     *
-     * @param f 4 component values of the cmyk, assumes compoents between
-     *          0.0 and 1.0
-     * @return valid rgb colour object.
-     */
-    public Color getColor(float[] f, boolean fillAndStroke) {
-        return alternative2(f, iccCmykColorCache);
     }
 }

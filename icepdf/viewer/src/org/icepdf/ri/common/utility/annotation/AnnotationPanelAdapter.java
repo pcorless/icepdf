@@ -32,16 +32,18 @@ import java.util.ResourceBundle;
 public abstract class AnnotationPanelAdapter extends JPanel
         implements AnnotationProperties {
 
+    // action instance that is being edited
+    protected AnnotationComponent currentAnnotationComponent;
+    protected DocumentViewController documentViewController;
+
+    protected SwingController controller;
+    protected ResourceBundle messageBundle;
+
     // border styles types.
     protected static ValueLabelItem[] VISIBLE_TYPE_LIST;
     protected static ValueLabelItem[] LINE_THICKNESS_LIST;
     // line styles.
     protected static ValueLabelItem[] LINE_STYLE_LIST;
-    // action instance that is being edited
-    protected AnnotationComponent currentAnnotationComponent;
-    protected DocumentViewController documentViewController;
-    protected SwingController controller;
-    protected ResourceBundle messageBundle;
 
     protected AnnotationPanelAdapter(
             SwingController controller) {

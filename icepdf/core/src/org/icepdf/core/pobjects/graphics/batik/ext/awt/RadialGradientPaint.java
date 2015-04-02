@@ -353,7 +353,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
 
         //calculate center point and radius based on bounding box coordinates.
         this((float) gradientBounds.getX() +
-                        ((float) gradientBounds.getWidth() / 2),
+                ((float) gradientBounds.getWidth() / 2),
 
                 (float) gradientBounds.getY() +
                         ((float) gradientBounds.getWidth() / 2),

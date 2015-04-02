@@ -27,18 +27,12 @@ import java.util.logging.Logger;
 public class OSXAdapter implements InvocationHandler {
     private static final Logger logger =
             Logger.getLogger(OSXAdapter.class.toString());
-    static Object macOSXApplication;
+
     protected Object targetObject;
     protected Method targetMethod;
     protected String proxySignature;
 
-    // Each OSXAdapter has the name of the EAWT method it intends to listen for (handleAbout, for example),
-    // the Object that will ultimately perform the task, and the Method to be called on that Object
-    protected OSXAdapter(String proxySignature, Object target, Method handler) {
-        this.proxySignature = proxySignature;
-        this.targetObject = target;
-        this.targetMethod = handler;
-    }
+    static Object macOSXApplication;
 
     // Pass this method an Object and Method equipped to perform application shutdown logic
     // The method passed should return a boolean stating whether or not the quit should occur
@@ -81,7 +75,7 @@ public class OSXAdapter implements InvocationHandler {
     }
 
     // Pass this method an Object and a Method equipped to handle document events from the Finder
-    // Documents are registered with the Finder via the CFBundleDocumentTypes dictionary in the
+    // Documents are registered with the Finder via the CFBundleDocumentTypes dictionary in the 
     // application bundle's Info.plist
     public static void setFileHandler(Object target, Method fileHandler) {
         setHandler(new OSXAdapter("handleOpenFile", target, fileHandler) {
@@ -119,6 +113,14 @@ public class OSXAdapter implements InvocationHandler {
         } catch (Exception ex) {  // Likely a NoSuchMethodException or an IllegalAccessException loading/invoking eawt.Application methods
             logger.log(Level.FINE, "Mac OS X Adapter could not talk to EAWT", ex);
         }
+    }
+
+    // Each OSXAdapter has the name of the EAWT method it intends to listen for (handleAbout, for example),
+    // the Object that will ultimately perform the task, and the Method to be called on that Object
+    protected OSXAdapter(String proxySignature, Object target, Method handler) {
+        this.proxySignature = proxySignature;
+        this.targetObject = target;
+        this.targetMethod = handler;
     }
 
     // Override this method to perform any operations on the event 

@@ -222,14 +222,6 @@ public class JBIG2ReaderPluginTester extends JFrame {
 
     // Open the specified JBIG2 file and read the file's JBIG2 image.
 
-    public static void main(String[] args) {
-        // Create the application's GUI and start the application.
-
-        new JBIG2ReaderPluginTester(appTitle);
-    }
-
-    // Application entry point.
-
     boolean doOpen(File file) {
         if (!file.exists()) {
             JOptionPane.showMessageDialog(JBIG2ReaderPluginTester.this, "File does not exist!", appTitle, JOptionPane.ERROR_MESSAGE);
@@ -311,6 +303,14 @@ public class JBIG2ReaderPluginTester extends JFrame {
 
             return false;
         }
+    }
+
+    // Application entry point.
+
+    public static void main(String[] args) {
+        // Create the application's GUI and start the application.
+
+        new JBIG2ReaderPluginTester(appTitle);
     }
 }
 

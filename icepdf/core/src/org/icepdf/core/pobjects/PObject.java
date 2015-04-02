@@ -58,7 +58,7 @@ public class PObject {
      * Gets the reference information for this PDF object.
      *
      * @return Reference object which contains the PDF objects
-     * number and generation data
+     *         number and generation data
      */
     public Reference getReference() {
         return objectReference;

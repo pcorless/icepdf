@@ -122,6 +122,10 @@ public class LineText extends AbstractText implements TextSelect {
         this.words.addAll(words);
     }
 
+    protected void setWords(List<WordText> words) {
+        this.words = words;
+    }
+
     /**
      * Gets the current word, if there is none, one is created.
      *
@@ -142,10 +146,6 @@ public class LineText extends AbstractText implements TextSelect {
      */
     public List<WordText> getWords() {
         return words;
-    }
-
-    protected void setWords(List<WordText> words) {
-        this.words = words;
     }
 
     /**

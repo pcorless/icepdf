@@ -31,12 +31,6 @@ import java.util.Stack;
  */
 public class Lexer {
 
-    // lexer states
-    private static final int
-            TOKEN_NUMBER = 1,
-            TOKEN_OPERAND = 2,
-            TOKEN_EXPRESSION = 3,
-            TOKEN_BOOLEAN = 5;
     // stream reader pointers.
     private Reader reader;
     private char[] buf = new char[2056];
@@ -44,24 +38,20 @@ public class Lexer {
     private int tokenType = 0;
     // expression depth count used to properly differ if and elseif operands.
     private int expressionDepth;
+
+    // lexer states
+    private static final int
+            TOKEN_NUMBER = 1,
+            TOKEN_OPERAND = 2,
+            TOKEN_EXPRESSION = 3,
+            TOKEN_BOOLEAN = 5;
+
     // procedure isa any {expression...}
     private Procedure procedures;
     private Procedure currentProcedure;
 
     public Lexer() {
         procedures = new Procedure(null);
-    }
-
-    /**
-     * Utility for finding token delimiter in a type 4 function stream.
-     *
-     * @param c character to compare against known delimiters.
-     * @return true if c is a delimiter otherwise, false.
-     */
-    private static boolean isDelimiter(char c) {
-        return c == ' ' || c == '\t' ||
-                c == '\n' || c == '\r' ||
-                c == '{' || c == '}';
     }
 
     /**
@@ -138,7 +128,7 @@ public class Lexer {
      * function output.
      *
      * @return stack containing the output of the type 4 function.  If #parse()
-     * was not called the stack will be empty
+     *         was not called the stack will be empty
      */
     public Stack getStack() {
         return procedures.getProc();
@@ -279,5 +269,17 @@ public class Lexer {
             currentProcedure.getProc().push(Boolean.valueOf(new String(buf, startTokenPos, pos - startTokenPos)));
         }
         parseNextState();
+    }
+
+    /**
+     * Utility for finding token delimiter in a type 4 function stream.
+     *
+     * @param c character to compare against known delimiters.
+     * @return true if c is a delimiter otherwise, false.
+     */
+    private static boolean isDelimiter(char c) {
+        return c == ' ' || c == '\t' ||
+                c == '\n' || c == '\r' ||
+                c == '{' || c == '}';
     }
 }

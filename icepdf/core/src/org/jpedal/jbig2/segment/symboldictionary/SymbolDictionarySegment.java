@@ -65,10 +65,12 @@ import java.util.List;
 
 public class SymbolDictionarySegment extends Segment {
 
-    short[] symbolDictionaryAdaptiveTemplateX = new short[4], symbolDictionaryAdaptiveTemplateY = new short[4];
-    short[] symbolDictionaryRAdaptiveTemplateX = new short[2], symbolDictionaryRAdaptiveTemplateY = new short[2];
     private int noOfExportedSymbols;
     private int noOfNewSymbols;
+
+    short[] symbolDictionaryAdaptiveTemplateX = new short[4], symbolDictionaryAdaptiveTemplateY = new short[4];
+    short[] symbolDictionaryRAdaptiveTemplateX = new short[2], symbolDictionaryRAdaptiveTemplateY = new short[2];
+
     private JBIG2Bitmap[] bitmaps;
 
     private SymbolDictionaryFlags symbolDictionaryFlags = new SymbolDictionaryFlags();
@@ -498,11 +500,11 @@ public class SymbolDictionarySegment extends Segment {
         this.genericRegionStats = genericRegionStats;
     }
 
-    private ArithmeticDecoderStats getRefinementRegionStats() {
-        return refinementRegionStats;
-    }
-
     private void setRefinementRegionStats(ArithmeticDecoderStats refinementRegionStats) {
         this.refinementRegionStats = refinementRegionStats;
+    }
+
+    private ArithmeticDecoderStats getRefinementRegionStats() {
+        return refinementRegionStats;
     }
 }

@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 /**
  * @since 5.0.1
  */
-public class FloydSteinbergImageReference {// extends CachedImageReference {
+public class FloydSteinbergImageReference{// extends CachedImageReference {
    /*
     private static final Logger logger =
             Logger.getLogger(ScaledImageReference.class.toString());
