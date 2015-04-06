@@ -87,7 +87,7 @@ public class DocumentViewComponent extends JComponent implements MouseListener, 
 
             // calculate how big/small the thumbnail needs to be
             PDimension defaultSize = page.getSize(Page.BOUNDARY_CROPBOX, 0, 1f);
-            float scale = minimumThumbHeight / defaultSize.getHeight();
+            float scale = minimumThumbHeight / (float) defaultSize.getHeight();
             pageSize = page.getSize(Page.BOUNDARY_CROPBOX, 0, scale).toDimension();
 
             int pageWidth = (int) pageSize.getWidth();

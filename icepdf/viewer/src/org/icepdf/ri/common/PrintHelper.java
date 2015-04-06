@@ -349,8 +349,8 @@ public class PrintHelper implements Printable {
         PDimension pageDim = currentPage.getSize(userRotation);
 
         // Grab default page width and height
-        float pageWidth = pageDim.getWidth();
-        float pageHeight = pageDim.getHeight();
+        float pageWidth = (float) pageDim.getWidth();
+        float pageHeight = (float) pageDim.getHeight();
 
         // Default zoom factor
         float zoomFactor = 1.0f;

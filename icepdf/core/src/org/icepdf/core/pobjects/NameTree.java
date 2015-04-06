@@ -67,7 +67,7 @@ public class NameTree extends Dictionary {
      */
     public List getNamesAndValues() {
         if (root != null) {
-            ArrayList namesAndValues = new ArrayList();
+            ArrayList<Object> namesAndValues = new ArrayList<Object>();
             // single root, just return the list.
             if (root.getNamesAndValues() != null) {
                 namesAndValues.addAll(root.getNamesAndValues());
@@ -98,7 +98,7 @@ public class NameTree extends Dictionary {
         }
         // intermediary node.
         else {
-            ArrayList namesAndValues = new ArrayList();
+            ArrayList<Object> namesAndValues = new ArrayList<Object> ();
             for (NameNode node : nameNode.getKidsNodes()) {
                 namesAndValues.addAll(getNamesAndValues(node));
             }

@@ -16,6 +16,8 @@
 package org.icepdf.core.pobjects;
 
 import java.awt.*;
+import java.awt.geom.Dimension2D;
+
 
 /**
  * <p>This class represents a dimension similar to java.awt.geom.Dimension2D.Dimension
@@ -23,7 +25,7 @@ import java.awt.*;
  *
  * @since 2.0
  */
-public class PDimension {
+public class PDimension extends Dimension2D {
     private float width;
     private float height;
 
@@ -74,7 +76,7 @@ public class PDimension {
      *
      * @return width
      */
-    public float getWidth() {
+    public double getWidth() {
         return width;
     }
 
@@ -83,7 +85,7 @@ public class PDimension {
      *
      * @return height
      */
-    public float getHeight() {
+    public double getHeight() {
         return height;
     }
 
@@ -105,5 +107,11 @@ public class PDimension {
      */
     public String toString() {
         return "PDimension { width=" + width + ", height=" + height + " }";
+    }
+
+    @Override
+    public void setSize(double width, double height) {
+        this.width = (float) width;
+        this.height = (float) height;
     }
 }
