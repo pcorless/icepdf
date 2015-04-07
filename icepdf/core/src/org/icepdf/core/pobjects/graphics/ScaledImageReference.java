@@ -42,9 +42,9 @@ public class ScaledImageReference extends CachedImageReference {
     private int width;
     private int height;
 
-    protected ScaledImageReference(ImageStream imageStream, Color fillColor,
+    protected ScaledImageReference(ImageStream imageStream, GraphicsState graphicsState,
                                    Resources resources, int imageIndex, Page page) {
-        super(imageStream, fillColor, resources, imageIndex, page);
+        super(imageStream, graphicsState, resources, imageIndex, page);
 
         // get eh original image width.
         width = imageStream.getWidth();
@@ -60,9 +60,9 @@ public class ScaledImageReference extends CachedImageReference {
         }
     }
 
-    public ScaledImageReference(ImageReference imageReference, Color fillColor, Resources resources,
+    public ScaledImageReference(ImageReference imageReference, GraphicsState graphicsState, Resources resources,
                                 int width, int height, int imageIndex, Page page) {
-        super(imageReference.getImageStream(), fillColor, resources, imageIndex, page);
+        super(imageReference.getImageStream(), graphicsState, resources, imageIndex, page);
 
         this.width = width;
         this.height = height;
@@ -95,7 +95,7 @@ public class ScaledImageReference extends CachedImageReference {
         long start = System.nanoTime();
         try {
             // get the stream image if need, otherwise scale what you have.
-            image = imageStream.getImage(fillColor, resources);
+            image = imageStream.getImage(graphicsState, resources);
 
             if (image != null) {
                 // get eh original image width.

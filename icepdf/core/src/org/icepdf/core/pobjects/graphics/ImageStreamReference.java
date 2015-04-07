@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
@@ -42,10 +41,10 @@ public class ImageStreamReference extends CachedImageReference {
     private static final Logger logger =
             Logger.getLogger(ImageStreamReference.class.toString());
 
-    protected ImageStreamReference(ImageStream imageStream, Color fillColor,
+    protected ImageStreamReference(ImageStream imageStream, GraphicsState graphicsState,
                                    Resources resources, int imageIndex,
                                    Page page) {
-        super(imageStream, fillColor, resources, imageIndex, page);
+        super(imageStream, graphicsState, resources, imageIndex, page);
 
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
@@ -71,7 +70,7 @@ public class ImageStreamReference extends CachedImageReference {
         BufferedImage image = null;
         long start = System.nanoTime();
         try {
-            image = imageStream.getImage(fillColor, resources);
+            image = imageStream.getImage(graphicsState, resources);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error loading image: " + imageStream.getPObjectReference() +
                     " " + imageStream.toString(), e);

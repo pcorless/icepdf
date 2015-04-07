@@ -151,13 +151,13 @@ public class ImageStream extends Stream {
      * scale an image to reduce the total memory foot print or to increase the
      * perceived render quality on screen at low zoom levels.
      *
-     * @param fill      color value of image
+     * @param graphicsState      graphic state for image or parent form
      * @param resources resources containing image reference
      * @return new image object
      */
     // was synchronized, not think it is needed?
     @SuppressWarnings("unchecked")
-    public synchronized BufferedImage getImage(Color fill, Resources resources) {
+    public synchronized BufferedImage getImage(GraphicsState graphicsState, Resources resources) {
         // check the pool encase we already parse this image.
 
         if (pObjectReference != null) {
@@ -228,7 +228,7 @@ public class ImageStream extends Stream {
         if (smaskObj instanceof Stream) {
             ImageStream smaskStream = (ImageStream) smaskObj;
             if (smaskStream.isImageSubtype()) {
-                smaskImage = smaskStream.getImage(fill, resources);
+                smaskImage = smaskStream.getImage(graphicsState, resources);
             }
         }
 
@@ -239,7 +239,7 @@ public class ImageStream extends Stream {
             if (maskObj instanceof Stream) {
                 ImageStream maskStream = (ImageStream) maskObj;
                 if (maskStream.isImageSubtype()) {
-                    maskImage = maskStream.getImage(fill, resources);
+                    maskImage = maskStream.getImage(graphicsState, resources);
                 }
             } else if (maskObj instanceof List) {
                 List maskVector = (List) maskObj;
@@ -286,7 +286,7 @@ public class ImageStream extends Stream {
         }
 
         BufferedImage image = getImage(
-                colourSpace, fill, width, height,
+                colourSpace, graphicsState, width, height,
                 colorSpaceCompCount, bitsPerComponent,
                 isImageMask,
                 decode,
@@ -305,7 +305,7 @@ public class ImageStream extends Stream {
      * image decoding.
      *
      * @param colourSpace         colour space of image.
-     * @param fill                fill color to aply to image from current graphics context.
+     * @param graphicsState       graphic state used to render image.
      * @param width               width of image.
      * @param height              heigth of image
      * @param colorSpaceCompCount colour space component count, 1, 3, 4 etc.
@@ -321,7 +321,8 @@ public class ImageStream extends Stream {
      * @return buffered image of decoded image stream, null if an error occured.
      */
     private BufferedImage getImage(
-            PColorSpace colourSpace, Color fill,
+            PColorSpace colourSpace,
+            GraphicsState graphicsState,
             int width, int height,
             int colorSpaceCompCount,
             int bitsPerComponent,
@@ -371,7 +372,7 @@ public class ImageStream extends Stream {
                     // will not happen.
                     try {
                         decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
-                                this, library, entries, fill);
+                                this, library, entries, graphicsState.getFillColor());
                     } catch (Throwable e1) {
                         // fall back on ccittfax code.
                         data = ccittFaxDecode(data, width, height);
@@ -385,7 +386,8 @@ public class ImageStream extends Stream {
             // and build a a Buffered image.
             try {
                 decodedImage = ImageUtility.makeImageWithRasterFromBytes(
-                        colourSpace, fill,
+                        colourSpace,
+                        graphicsState,
                         width, height,
                         colorSpaceCompCount,
                         bitsPerComponent,
@@ -415,7 +417,7 @@ public class ImageStream extends Stream {
                     height,
                     colourSpace,
                     isImageMask,
-                    fill,
+                    graphicsState,
                     bitsPerComponent,
                     decode,
                     data);
@@ -423,7 +425,7 @@ public class ImageStream extends Stream {
         if (decodedImage != null) {
             //        ImageUtility.displayImage(decodedImage, pObjectReference.toString());
             if (isImageMask) {
-                decodedImage = ImageUtility.applyExplicitMask(decodedImage, fill);
+                decodedImage = ImageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
             }
 
             // apply common mask and sMask processing
@@ -433,6 +435,12 @@ public class ImageStream extends Stream {
             if (maskImage != null) {
                 decodedImage = ImageUtility.applyExplicitMask(decodedImage, maskImage);
             }
+
+            // experimental check for different blending modes and apply a basic white = transparent,
+//            ExtGState extGState = graphicsState.getExtGState();
+//            if (extGState != null && extGState.getBlendingMode() != null ) {
+//                decodedImage = ImageUtility.applyBlendingMode(decodedImage, extGState.getBlendingMode(), Color.WHITE);
+//            }
             //        ImageUtility.displayImage(decodedImage, pObjectReference.toString());
 
             // with  little luck the image is ready for viewing.
@@ -821,7 +829,7 @@ public class ImageStream extends Stream {
             int height,
             PColorSpace colorSpace,
             boolean imageMask,
-            Color fill,
+            GraphicsState graphicsState,
             int bitsPerColour,
             float[] decode,
             byte[] baCCITTFaxData) {
@@ -830,7 +838,7 @@ public class ImageStream extends Stream {
         int[] imageBits = new int[width];
 
         // RGB value for colour used as fill for image
-        int fillRGB = fill.getRGB();
+        int fillRGB = graphicsState.getFillColor().getRGB();
 
         // Number of colour components in image, should be 3 for RGB or 4
         // for ARGB.

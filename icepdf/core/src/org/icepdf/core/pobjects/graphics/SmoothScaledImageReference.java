@@ -62,10 +62,10 @@ public class SmoothScaledImageReference extends CachedImageReference {
     private int width;
     private int height;
 
-    protected SmoothScaledImageReference(ImageStream imageStream, Color fillColor,
+    protected SmoothScaledImageReference(ImageStream imageStream, GraphicsState graphicsState,
                                          Resources resources, int imageIndex,
                                          Page page) {
-        super(imageStream, fillColor, resources, imageIndex, page);
+        super(imageStream, graphicsState, resources, imageIndex, page);
 
         // get eh original image width.
         width = imageStream.getWidth();
@@ -95,7 +95,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
         try {
             // get the stream image if need, otherwise scale what you have.
             if (image == null) {
-                image = imageStream.getImage(fillColor, resources);
+                image = imageStream.getImage(graphicsState, resources);
                 if (width > maxImageWidth || height > maxImageHeight) {
                     return image;
                 }

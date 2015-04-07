@@ -256,7 +256,7 @@ public class ExtGState extends Dictionary {
      * @return the line width with Number value.  If the line width was not
      *         specified in the dictionary null is returned.
      */
-    Number getLineWidth() {
+    public Number getLineWidth() {
         return getNumber(LW_KEY);
     }
 
@@ -266,7 +266,7 @@ public class ExtGState extends Dictionary {
      * @return the line cap style Number value.  If the cap style was not
      *         specified in the dictionary null is returned.
      */
-    Number getLineCapStyle() {
+    public Number getLineCapStyle() {
         return getNumber(LC_KEY);
     }
 
@@ -275,7 +275,7 @@ public class ExtGState extends Dictionary {
      *
      * @return
      */
-    Name getBlendingMode() {
+    public Name getBlendingMode() {
         return library.getName(entries, BM_KEY);
     }
 
@@ -285,7 +285,7 @@ public class ExtGState extends Dictionary {
      * @return the line join style Number value.  If the join style was not
      *         specified in the dictionary null is returned.
      */
-    Number getLineJoinStyle() {
+    public Number getLineJoinStyle() {
         return getNumber(LJ_KEY);
     }
 
@@ -305,7 +305,7 @@ public class ExtGState extends Dictionary {
      * @return the line dash array [dashArray dashPhase].  If the dash pattern
      *         is not specified the dictionary null is returned.
      */
-    List getLineDashPattern() {
+    public List getLineDashPattern() {
         List<Object> dashPattern = null;
         Number dashPhase;
         float[] dashArray = null;
@@ -347,7 +347,7 @@ public class ExtGState extends Dictionary {
      * @return the stroking alpha constant value.  If the stroking alpha constant
      *         was not specified in the dictionary null is returned.
      */
-    Number getStrokingAlphConstant() {
+    public Number getStrokingAlphConstant() {
         return getNumber(CA_KEY);
     }
 
@@ -357,7 +357,7 @@ public class ExtGState extends Dictionary {
      * @return the vstroking alpha constant value.  If the non-stroking alpha constant
      *         was not specified in the dictionary null is returned.
      */
-    Number getNonStrokingAlphConstant() {
+    public Number getNonStrokingAlphConstant() {
         return getNumber(ca_KEY);
     }
 
@@ -373,7 +373,7 @@ public class ExtGState extends Dictionary {
      *
      * @return true if OP is enabled.
      */
-    Boolean getOverprint() {
+    public Boolean getOverprint() {
         Object o = getObject(OP_KEY);
         if (o instanceof String)
             return Boolean.valueOf((String) o);
@@ -390,7 +390,7 @@ public class ExtGState extends Dictionary {
      *
      * @return true if enabled, false otherwise.
      */
-    Boolean getOverprintFill() {
+    public Boolean getOverprintFill() {
         Object o = getObject(op_KEY);
         if (o instanceof String)
             return Boolean.valueOf((String) o);
@@ -405,7 +405,7 @@ public class ExtGState extends Dictionary {
      *
      * @return
      */
-    Number getOverprintMode() {
+    public Number getOverprintMode() {
         return getNumber(OPM_KEY);
     }
 

@@ -501,6 +501,52 @@ public class ImageUtility {
     }
 
     /**
+     * Blending mode colour transparency test.
+     *
+     * @param baseImage
+     * @param blendingMode
+     * @param blendColor
+     * @return
+     */
+    public static BufferedImage applyBlendingMode(BufferedImage baseImage, Name blendingMode, Color blendColor) {
+
+//        extGState.getBlendingMode().equals("Multiply")
+
+
+        // check to make sure the mask and the image are the same size.
+
+        // apply the mask by simply painting white to the base image where
+        // the mask specified no colour.
+        int baseWidth = baseImage.getWidth();
+        int baseHeight = baseImage.getHeight();
+
+        BufferedImage argbImage = new BufferedImage(baseWidth,
+                baseHeight, BufferedImage.TYPE_INT_ARGB);
+        int[] srcBand = new int[baseWidth];
+        int[] blendBand = new int[baseWidth];
+        int blendColorValue = blendColor.getRGB();
+        // iterate over each band to apply the mask
+        for (int i = 0; i < baseHeight; i++) {
+            baseImage.getRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
+            // apply the soft mask blending
+            for (int j = 0; j < baseWidth; j++) {
+
+                if (srcBand[j] == blendColorValue || srcBand[j] == 0xffffff || srcBand[j] == 0xffff) {
+                    //  set the pixel as transparent
+                    blendBand[j] = 0xff;
+                } else {
+                    blendBand[j] = srcBand[j];
+                }
+            }
+            argbImage.setRGB(0, i, baseWidth, 1, blendBand, 0, baseWidth);
+        }
+        baseImage.flush();
+        baseImage = argbImage;
+
+        return baseImage;
+    }
+
+    /**
      * (see 11.6.5.3, "Soft-Mask Images")
      * A subsidiary image XObject defining a soft-mask image that shall be used
      * as a source of mask shape or mask opacity values in the transparent imaging
@@ -940,7 +986,7 @@ public class ImageUtility {
 
     protected static BufferedImage makeImageWithRasterFromBytes(
             PColorSpace colourSpace,
-            Color fill,
+            GraphicsState graphicsState,
             int width, int height,
             int colorSpaceCompCount,
             int bitsPerComponent,
@@ -980,6 +1026,7 @@ public class ImageUtility {
                 boolean defaultDecode = decode[0] == 0.0f;
                 //int a = Color.white.getRGB();
                 int a = 0x00FFFFFF; // Clear if alpha supported, else white
+                Color fill = graphicsState.getFillColor();
                 int[] cmap = new int[]{
                         (defaultDecode ? fill.getRGB() : a),
                         (defaultDecode ? a : fill.getRGB())

@@ -1112,8 +1112,7 @@ public class OContentParser extends AbstractContentParser {
             // create the image stream
             ImageStream st = new ImageStream(library, iih, data);
             ImageReference imageStreamReference =
-                    new InlineImageStreamReference(st, graphicState.getFillColor(),
-                            resources, 0, null);
+                    new InlineImageStreamReference(st, graphicState, resources, 0, null);
 //            ImageUtility.displayImage(imageStreamReference.getImage(), "BI");
             AffineTransform af = new AffineTransform(graphicState.getCTM());
             graphicState.scale(1, -1);

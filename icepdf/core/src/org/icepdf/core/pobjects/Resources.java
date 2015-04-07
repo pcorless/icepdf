@@ -187,10 +187,10 @@ public class Resources extends Dictionary {
 
     /**
      * @param s
-     * @param fill
+     * @param graphicsState
      * @return
      */
-    public Image getImage(Name s, Color fill) {
+    public Image getImage(Name s, GraphicsState graphicsState) {
 
         // check xobjects for stream
         ImageStream st = (ImageStream) library.getObject(xobjects, s);
@@ -204,7 +204,7 @@ public class Resources extends Dictionary {
         // lastly return the images.
         Image image = null;
         try {
-            image = st.getImage(fill, this);
+            image = st.getImage(graphicsState, this);
         } catch (Exception e) {
             logger.log(Level.FINE, "Error getting image by name: " + s, e);
         }
