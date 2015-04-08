@@ -30,6 +30,14 @@ import java.util.Map;
  */
 public interface FontFile {
 
+    /**
+     * Possible encoding format of string that was designed to work with this
+     * font.  Type is determined by queues in the parent Cmap definition.
+     */
+    public enum ByteEncoding {
+        ONE_BYTE, TWO_BYTE, MIXED_BYTE
+    }
+
     public static final long LAYOUT_NONE = 0;
 
     public Point2D echarAdvance(char ech);
@@ -137,7 +145,7 @@ public interface FontFile {
      */
     public Shape getEstringOutline(String estr, float x, float y);
 
-    public boolean isOneByteEncoding();
+    public ByteEncoding getByteEncoding();
 
     /**
      * Gets the source url of the underlying file if any.  Embedded fonts will

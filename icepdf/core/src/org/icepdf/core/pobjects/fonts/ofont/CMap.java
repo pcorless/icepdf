@@ -165,8 +165,16 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         this.cMapInputStream = cMapInputStream;
     }
 
-    public boolean isOneByte(int cid) {
+    public boolean isOneByte() {
         return oneByte;
+    }
+
+    public boolean isTwoByte() {
+        return !oneByte;
+    }
+
+    public boolean isMixedByte() {
+        return false;
     }
 
     /**

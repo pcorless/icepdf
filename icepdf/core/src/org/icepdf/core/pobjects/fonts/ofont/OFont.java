@@ -385,8 +385,8 @@ public class OFont implements FontFile {
         return String.valueOf(c);
     }
 
-    public boolean isOneByteEncoding() {
-        return false;
+    public ByteEncoding getByteEncoding() {
+        return ByteEncoding.ONE_BYTE;
     }
 
     public Shape getEstringOutline(String displayText, float x, float y) {
