@@ -363,6 +363,9 @@ public class GraphicsState {
         // smaks
         softMask = parentGraphicsState.getSoftMask();
 
+        // copy the parent too.
+        this.parentGraphicState = parentGraphicsState.parentGraphicState;
+
     }
 
     /**
