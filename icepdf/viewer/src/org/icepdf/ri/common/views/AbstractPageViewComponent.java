@@ -184,22 +184,25 @@ public abstract class AbstractPageViewComponent
                     annotationComponents =
                             new ArrayList<AnnotationComponent>(annotations.size());
                     for (Annotation annotation : annotations) {
-                        AbstractAnnotationComponent comp =
-                                AnnotationComponentFactory.buildAnnotationComponent(
-                                        annotation, documentViewController,
-                                        this, documentViewModel);
-                        if (comp != null) {
-                            // add for painting
-                            annotationComponents.add(comp);
-                            // add to layout
-                            if (comp instanceof PopupAnnotationComponent) {
-                                this.add(comp, JLayeredPane.POPUP_LAYER);
+                        // parser can sometimes return an empty array depending on the PDF syntax being used.
+                        if (annotation != null) {
+                            AbstractAnnotationComponent comp =
+                                    AnnotationComponentFactory.buildAnnotationComponent(
+                                            annotation, documentViewController,
+                                            this, documentViewModel);
+                            if (comp != null) {
+                                // add for painting
+                                annotationComponents.add(comp);
+                                // add to layout
+                                if (comp instanceof PopupAnnotationComponent) {
+                                    this.add(comp, JLayeredPane.POPUP_LAYER);
+                                } else {
+                                    this.add(comp, JLayeredPane.DEFAULT_LAYER);
+                                }
                             } else {
-                                this.add(comp, JLayeredPane.DEFAULT_LAYER);
+                                // have test file with null value here.
+                                // System.out.println();
                             }
-                        }else{
-                            // have test file with null value here.
-                            // System.out.println();
                         }
                     }
                 }
