@@ -296,7 +296,7 @@ public class GraphicsState {
 
     // current clipping area.
     private Area clip;
-    private boolean clipChange = false;
+    private boolean clipChange;
 
     // over print mode
     private int overprintMode;
@@ -332,13 +332,11 @@ public class GraphicsState {
         miterLimit = parentGraphicsState.miterLimit;
         lineJoin = parentGraphicsState.lineJoin;
 
-        fillColor = new Color(parentGraphicsState.fillColor.getRed(),
-                parentGraphicsState.fillColor.getGreen(),
-                parentGraphicsState.fillColor.getBlue());
 
-        strokeColor = new Color(parentGraphicsState.strokeColor.getRed(),
-                parentGraphicsState.strokeColor.getGreen(),
-                parentGraphicsState.strokeColor.getBlue());
+        fillColor = new Color(parentGraphicsState.fillColor.getRGB(), true);
+
+        strokeColor = new Color(parentGraphicsState.strokeColor.getRGB(), true);
+
         shapes = parentGraphicsState.shapes;
         if (parentGraphicsState.clip != null) {
             clip = (Area) parentGraphicsState.clip.clone();
