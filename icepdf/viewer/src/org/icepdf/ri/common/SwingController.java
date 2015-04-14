@@ -3179,42 +3179,47 @@ public class SwingController
     public void followOutlineItem(OutlineItem o) {
         if (o == null)
             return;
-
-        // capture the action if no destination is found and point to the
-        // actions destination information
-        Destination dest = o.getDest();
-        if (o.getAction() != null) {
-            Action action = o.getAction();
-            if (action instanceof GoToAction) {
-                dest = ((GoToAction) action).getDestination();
-            } else if (action instanceof URIAction) {
-                BareBonesBrowserLaunch.openURL(
-                        ((URIAction) action).getURI());
-            } else {
-                Library library = action.getLibrary();
-                HashMap entries = action.getEntries();
-                dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
-            }
-        } else if (dest.getNamedDestination() != null) {
-            NamedDestinations namedDestinations = document.getCatalog().getDestinations();
-            if (namedDestinations != null) {
-                dest = namedDestinations.getDestination(dest.getNamedDestination());
-            }
-        }
-
-        // Process the destination information
-        if (dest == null)
-            return;
-
         int oldTool = getDocumentViewToolMode();
         try {
+
             // set hour glass
+            outlinesTree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+
+            // capture the action if no destination is found and point to the
+            // actions destination information
+            Destination dest = o.getDest();
+            if (o.getAction() != null) {
+                Action action = o.getAction();
+                if (action instanceof GoToAction) {
+                    dest = ((GoToAction) action).getDestination();
+                } else if (action instanceof URIAction) {
+                    BareBonesBrowserLaunch.openURL(
+                            ((URIAction) action).getURI());
+                } else {
+                    Library library = action.getLibrary();
+                    HashMap entries = action.getEntries();
+                    dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
+                }
+            } else if (dest.getNamedDestination() != null) {
+                // building the namedDestination tree can be very time consuming, so we need
+                // update the icons accordingly.
+                NamedDestinations namedDestinations = document.getCatalog().getDestinations();
+                if (namedDestinations != null) {
+                    dest = namedDestinations.getDestination(dest.getNamedDestination());
+                }
+            }
+
+            // Process the destination information
+            if (dest == null)
+                return;
+
             // let the document view controller resolve the destination
             documentViewController.setDestinationTarget(dest);
         } finally {
             // set the icon back to the pointer
             setDisplayTool(oldTool);
+            outlinesTree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
     }
 
