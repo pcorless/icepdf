@@ -344,12 +344,14 @@ public class Page extends Dictionary {
             initPageContents();
 
             // send out loading event.
-            imageCount = resources.getImageCount();
-            int contentCount = 0;
-            if (contents != null) {
-                contentCount = contents.size();
+            if (resources != null) {
+                imageCount = resources.getImageCount();
+                int contentCount = 0;
+                if (contents != null) {
+                    contentCount = contents.size();
+                }
+                notifyPageLoadingStarted(contentCount, resources.getImageCount());
             }
-            notifyPageLoadingStarted(contentCount, resources.getImageCount());
 
             /**
              * Finally iterate through the contents vector and concat all of the
