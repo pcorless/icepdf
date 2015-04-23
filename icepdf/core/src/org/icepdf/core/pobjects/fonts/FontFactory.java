@@ -154,6 +154,30 @@ public class FontFactory {
                 }
             } catch (Throwable e) {
                 logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
+                if (fontType == FONT_TRUE_TYPE) {
+                    // we might have a very rare corner case where the file2 definition is actually a Open type font
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("Trying to reload TrueType definition as OpenType.");
+                    }
+                    try {
+                        // force a OpentType font load.
+                        Class<?> fontClass = getNFontClass(FONT_OPEN_TYPE);
+                        if (fontClass != null) {
+                            // convert the stream to byte[]
+                            Class[] bytArrayArg = {byte[].class, String.class};
+                            Constructor fontClassConstructor =
+                                    fontClass.getDeclaredConstructor(bytArrayArg);
+                            byte[] data = fontStream.getDecodedStreamBytes(0);
+                            Object[] fontStreamBytes = {data, fontSubType};
+                            if (data.length > 0) {
+                                fontFile = (FontFile) fontClassConstructor
+                                        .newInstance(fontStreamBytes);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        logger.log(Level.FINE, "Could not create instance of font file as OpenType." + fontType, ex);
+                    }
+                }
             }
         } else if (awtFontLoading) {
             // see if the font file can be loaded with Java Fonts
