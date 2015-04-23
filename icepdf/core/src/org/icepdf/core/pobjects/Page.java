@@ -239,7 +239,7 @@ public class Page extends Dictionary {
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
                     // prune any zero length streams,
-                    if (tmpStream.getRawBytes().length > 0) {
+                    if (tmpStream != null && tmpStream.getRawBytes().length > 0) {
                         tmpStream.setPObjectReference((Reference) conts.get(i));
                         contents.add(tmpStream);
                     }
@@ -279,7 +279,7 @@ public class Page extends Dictionary {
             org.icepdf.core.pobjects.annotations.Annotation a = null;
             for (int i = 0; i < v.size(); i++) {
 
-                if ( Thread.currentThread().isInterrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException(
                             "Page Annotation initialization thread interrupted");
                 }
@@ -352,12 +352,14 @@ public class Page extends Dictionary {
             initPageContents();
 
             // send out loading event.
-            imageCount = resources.getImageCount();
-            int contentCount = 0;
-            if (contents != null) {
-                contentCount = contents.size();
+            if (resources != null) {
+                imageCount = resources.getImageCount();
+                int contentCount = 0;
+                if (contents != null) {
+                    contentCount = contents.size();
+                }
+                notifyPageLoadingStarted(contentCount, resources.getImageCount());
             }
-            notifyPageLoadingStarted(contentCount, resources.getImageCount());
 
             /**
              * Finally iterate through the contents vector and concat all of the
@@ -394,7 +396,6 @@ public class Page extends Dictionary {
                     shapes = new Shapes();
                     logger.log(Level.FINE, "Error initializing Page.", e);
                 }
-
             }
             // empty page, nothing to do.
             else {
