@@ -23,6 +23,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.security.AccessControlException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -407,35 +408,43 @@ public class FontManager {
     }
 
     private void loadSystemFont(File directory) {
-        if (directory.canRead()) {
-            FontFile font;
-            StringBuilder fontPath;
-            String fontName;
-            String[] fontPaths = directory.list();
-            for (int j = fontPaths.length - 1; j >= 0; j--) {
-                fontName = fontPaths[j];
-                fontPath = new StringBuilder(25);
-                fontPath.append(directory.getAbsolutePath()).append(
-                        File.separatorChar).append(fontName);
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Trying to load font file: " + fontPath);
-                }
-                // try loading the font
-                font = buildFont(fontPath.toString());
-                // if a readable font was found
-                if (font != null) {
-                    // normalize name
-                    fontName = font.getName().toLowerCase();
-                    // Add new font data to the font list
-                    fontList.add(new Object[]{font.getName().toLowerCase(), // original PS name
-                            FontUtil.normalizeString(font.getFamily()), // family name
-                            guessFontStyle(fontName), // weight and decorations, mainly bold,italic
-                            fontPath.toString()});  // path to font on OS
+        try {
+            // can read seems to be redundant on some system as the security exception read access is denied.
+            if (directory.canRead()) {
+                FontFile font;
+                StringBuilder fontPath;
+                String fontName;
+                String[] fontPaths = directory.list();
+                for (int j = fontPaths.length - 1; j >= 0; j--) {
+                    fontName = fontPaths[j];
+                    fontPath = new StringBuilder(25);
+                    fontPath.append(directory.getAbsolutePath()).append(
+                            File.separatorChar).append(fontName);
                     if (logger.isLoggable(Level.FINER)) {
-                        logger.finer("Adding system font: " + font.getName() + " " + fontPath.toString());
+                        logger.finer("Trying to load font file: " + fontPath);
+                    }
+                    // try loading the font
+                    font = buildFont(fontPath.toString());
+                    // if a readable font was found
+
+                    if (font != null) {
+                        // normalize name
+                        fontName = font.getName().toLowerCase();
+                        // Add new font data to the font list
+                        fontList.add(new Object[]{font.getName().toLowerCase(), // original PS name
+                                FontUtil.normalizeString(font.getFamily()), // family name
+                                guessFontStyle(fontName), // weight and decorations, mainly bold,italic
+                                fontPath.toString()});  // path to font on OS
+                        if (logger.isLoggable(Level.FINER)) {
+                            logger.finer("Adding system font: " + font.getName() + " " + fontPath.toString());
+                        }
                     }
                 }
             }
+        } catch (AccessControlException e) {
+            logger.finer("SecurityException: failed to load fonts from directory: " + directory.getAbsolutePath());
+        } catch (Throwable e) {
+            logger.finer("Failed to load fonts from directory: " + directory.getAbsolutePath());
         }
     }
 
