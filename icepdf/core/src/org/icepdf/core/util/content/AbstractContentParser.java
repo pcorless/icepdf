@@ -523,7 +523,7 @@ public abstract class AbstractContentParser implements ContentParser {
         if (resources != null && resources.isForm(xobjectName)) {
             // Do operator steps:
             //  1.)save the graphics context
-            graphicState = new GraphicsState(graphicState);
+            graphicState = graphicState.save();
             // Try and find the named reference 'xobjectName', pass in a copy
             // of the current graphics state for the new content stream
             Form formXObject = resources.getForm(xobjectName);
