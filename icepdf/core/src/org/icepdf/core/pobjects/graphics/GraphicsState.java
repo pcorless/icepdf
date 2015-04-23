@@ -272,6 +272,7 @@ public class GraphicsState {
     // Normally it is simply a SRC_OVER rule but the group can also have isolated
     // and knockout values that directly affect which rule is used for the
     // transparency.
+    private ExtGState extGState;
     private int alphaRule = AlphaComposite.SRC_OVER;
 
     private boolean transparencyGroup;
@@ -295,7 +296,7 @@ public class GraphicsState {
 
     // current clipping area.
     private Area clip;
-    private boolean clipChange = false;
+    private boolean clipChange;
 
     // over print mode
     private int overprintMode;
@@ -331,13 +332,11 @@ public class GraphicsState {
         miterLimit = parentGraphicsState.miterLimit;
         lineJoin = parentGraphicsState.lineJoin;
 
-        fillColor = new Color(parentGraphicsState.fillColor.getRed(),
-                parentGraphicsState.fillColor.getGreen(),
-                parentGraphicsState.fillColor.getBlue());
 
-        strokeColor = new Color(parentGraphicsState.strokeColor.getRed(),
-                parentGraphicsState.strokeColor.getGreen(),
-                parentGraphicsState.strokeColor.getBlue());
+        fillColor = new Color(parentGraphicsState.fillColor.getRGB(), true);
+
+        strokeColor = new Color(parentGraphicsState.strokeColor.getRGB(), true);
+
         shapes = parentGraphicsState.shapes;
         if (parentGraphicsState.clip != null) {
             clip = (Area) parentGraphicsState.clip.clone();
@@ -361,6 +360,9 @@ public class GraphicsState {
 
         // smaks
         softMask = parentGraphicsState.getSoftMask();
+
+        // copy the parent too.
+        this.parentGraphicState = parentGraphicsState.parentGraphicState;
 
     }
 
@@ -438,8 +440,9 @@ public class GraphicsState {
      * @see org.icepdf.core.pobjects.graphics.ExtGState
      */
     public void concatenate(ExtGState extGState) {
+        // keep a reference for our partial Transparency group support.
+        this.extGState = extGState;
         // Map over extGState attributes if present.
-
         // line width
         if (extGState.getLineWidth() != null) {
             setLineWidth(extGState.getLineWidth().floatValue());
@@ -828,6 +831,10 @@ public class GraphicsState {
 
     public void setSoftMask(SoftMask softMask) {
         this.softMask = softMask;
+    }
+
+    public ExtGState getExtGState() {
+        return extGState;
     }
 }
 

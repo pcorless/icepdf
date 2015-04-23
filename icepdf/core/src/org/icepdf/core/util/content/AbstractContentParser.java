@@ -526,7 +526,7 @@ public abstract class AbstractContentParser implements ContentParser {
         if (resources != null && resources.isForm(xobjectName)) {
             // Do operator steps:
             //  1.)save the graphics context
-            graphicState = graphicState.save();
+            graphicState = new GraphicsState(graphicState);
             // Try and find the named reference 'xobjectName', pass in a copy
             // of the current graphics state for the new content stream
             Form formXObject = resources.getForm(xobjectName);
@@ -764,6 +764,7 @@ public abstract class AbstractContentParser implements ContentParser {
         float size = ((Number) stack.pop()).floatValue();
         Name name2 = (Name) stack.pop();
         // build the new font and initialize it.
+
         graphicState.getTextState().font = resources.getFont(name2);
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
@@ -1491,6 +1492,7 @@ public abstract class AbstractContentParser implements ContentParser {
             // Position of the specified glyph relative to the origin of glyphVector
             // advance is handled by the particular font implementation.
             newAdvanceX = (float) currentFont.echarAdvance(currentChar).getX();
+
             newAdvanceY = newAdvanceX;
             if (!isVerticalWriting) {
                 // add fonts rise to the to glyph position (sup,sub scripts)
