@@ -27,6 +27,7 @@ import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
@@ -1048,7 +1049,22 @@ public class SwingController
             // one final check as some docs will have meta data but will specify a page mode.
             if (catalog.getObject(Catalog.PAGEMODE_KEY) == null ||
                     ((Name) catalog.getObject(Catalog.PAGEMODE_KEY)).getName().equalsIgnoreCase("UseAttachments")) {
-                return true;
+                // check to see that at least one of the files is a PDF
+                NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
+                java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
+                Library library = catalog.getLibrary();
+                boolean found = false;
+                // check to see if at least one file is a PDF.
+                for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                    // get the name and document for
+                    // file name and file specification pairs.
+                    String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
+                    if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                        found = true;
+                        break;
+                    }
+                }
+                return found;
             }
         }
         return false;
