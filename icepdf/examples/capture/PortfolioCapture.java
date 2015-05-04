@@ -63,8 +63,7 @@ public class PortfolioCapture {
         try {
             document.setFile(filePath);
             // A fileNames tree indicates that we have a portfolio.
-            if (document.getCatalog().getNames() != null &&
-                    document.getCatalog().getNames().getEmbeddedFilesNameTree() != null) {
+            if (isPdfCollection(document)) {
                 NameTree embeddedFilesNameTree = document.getCatalog().getNames().getEmbeddedFilesNameTree();
                 if (embeddedFilesNameTree.getRoot() != null) {
                     Library library = document.getCatalog().getLibrary();
@@ -112,6 +111,40 @@ public class PortfolioCapture {
             System.out.println("Error parsing PDF document " + e);
         }
         executorService.shutdown();
+    }
+
+    /**
+     * Check to see if we have a collection.  There are many corners cases and
+     * or malformed documents that can make detection a bit trickier.
+     *
+     * @param document document to check for collections
+     * @return true if collections are present, false otherwise.
+     */
+    public boolean isPdfCollection(Document document) {
+        Catalog catalog = document.getCatalog();
+        if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
+                && catalog.getNames().getEmbeddedFilesNameTree().getRoot() != null) {
+            // one final check as some docs will have meta data but will specify a page mode.
+            if (catalog.getObject(Catalog.PAGEMODE_KEY) == null ||
+                    ((Name) catalog.getObject(Catalog.PAGEMODE_KEY)).getName().equalsIgnoreCase("UseAttachments")) {
+                // check to see that at least one of the files is a PDF
+                NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
+                java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
+                Library library = catalog.getLibrary();
+                boolean found = false;
+                for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                    // get the name and document for
+                    // file name and file specification pairs.
+                    String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
+                    if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                        found = true;
+                        break;
+                    }
+                }
+                return found;
+            }
+        }
+        return false;
     }
 
     /**
