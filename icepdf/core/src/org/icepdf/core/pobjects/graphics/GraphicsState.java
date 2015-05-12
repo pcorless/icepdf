@@ -737,7 +737,7 @@ public class GraphicsState {
     }
 
     public void setFillAlpha(float alpha) {
-        if (alpha > 1) {
+        if (alpha > 1.0f) {
             alpha = alpha / 255.0f;
         }
         fillAlpha = alpha;
