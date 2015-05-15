@@ -153,7 +153,7 @@ public class FontFactory {
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
+                logger.log(Level.FINE, "Could not create instance of font file " + fontType);
                 if (fontType == FONT_TRUE_TYPE) {
                     // we might have a very rare corner case where the file2 definition is actually a Open type font
                     if (logger.isLoggable(Level.FINE)) {
@@ -175,7 +175,7 @@ public class FontFactory {
                             }
                         }
                     } catch (Exception ex) {
-                        logger.log(Level.FINE, "Could not create instance of font file as OpenType." + fontType, ex);
+                        logger.log(Level.FINE, "Could not create instance of font file as OpenType." + fontType);
                     }
                 }
             }
