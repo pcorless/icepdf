@@ -399,8 +399,10 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     }
 
     protected void initiateMouseMoved(MouseEvent e) {
-        ResizableBorder border = (ResizableBorder) getBorder();
-        cursor = border.getCursor(e);
+        Border border = getBorder();
+        if (border!= null && border instanceof ResizableBorder ) {
+            cursor = ((ResizableBorder) border).getCursor(e);
+        }
         startPos = e.getPoint();
         previousAnnotationState = new AnnotationState(this);
         // mark annotation as selected.

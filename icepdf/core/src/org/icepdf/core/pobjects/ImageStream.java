@@ -838,7 +838,10 @@ public class ImageStream extends Stream {
         int[] imageBits = new int[width];
 
         // RGB value for colour used as fill for image
-        int fillRGB = graphicsState.getFillColor().getRGB();
+        int fillRGB = 1;
+        if (graphicsState != null){
+            fillRGB = graphicsState.getFillColor().getRGB();
+        }
 
         // Number of colour components in image, should be 3 for RGB or 4
         // for ARGB.

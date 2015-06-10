@@ -18,14 +18,15 @@ package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.WidgetAnnotation;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -53,13 +54,13 @@ public class FieldDictionary extends Dictionary {
      * Required for terminal fields; inheritable) The type of field that this
      * dictionary describes:
      * <p/>
-     * Btn -> Button (see 12.7.4.2, “Button Fields”)
+     * Button -> Button (see 12.7.4.2, “Button Fields”)
      * <p/>
-     * Tx -> Text (see 12.7.4.3, “Text Fields”)
+     * Text -> Text (see 12.7.4.3, “Text Fields”)
      * <p/>
-     * Ch -> Choice (see 12.7.4.4, “Choice Fields”)
+     * Choice -> Choice (see 12.7.4.4, “Choice Fields”)
      * <p/>
-     * Sig(PDF 1.3) -> Signature (see 12.7.4.5, “Signature Fields”)
+     * Signature(PDF 1.3) -> Signature (see 12.7.4.5, “Signature Fields”)
      * <p/>
      * This entry may be present in a non-terminal field (one whose descendants
      * are fields) to provide an inheritable FT value. However, a non-terminal
@@ -68,22 +69,7 @@ public class FieldDictionary extends Dictionary {
      * fields of any type.
      */
     public static final Name FT_KEY = new Name("FT");
-    /**
-     * Button terminal field.
-     */
-    public static final Name FT_BUTTON_VALUE = new Name("Btn");
-    /**
-     * Text terminal field.
-     */
-    public static final Name FT_TEXT_VALUE = new Name("Tx");
-    /**
-     * Choice terminal field.
-     */
-    public static final Name FT_CHOICE_VALUE = new Name("Ch");
-    /**
-     * Signature terminal field.
-     */
-    public static final Name FT_SIGNATURE_VALUE = new Name("Sig");
+
     /**
      * (Sometimes required, as described below) An array of indirect references
      * to the immediate children of this field.
@@ -146,6 +132,9 @@ public class FieldDictionary extends Dictionary {
      * dictionary (see 12.5.2, “Annotation Dictionaries”).
      */
     public static final Name AA_KEY = new Name("AA");
+
+    /** general field flags **/
+
     /**
      * If set, the user may not change the value of the field. Any associated
      * widget annotations will not interact with the user; that is, they will
@@ -155,7 +144,6 @@ public class FieldDictionary extends Dictionary {
      */
     public static final int READ_ONLY_BIT_FLAG = 0x1;
 
-    /** general field flags **/
     /**
      * If set, the field shall have a value at the time it is exported by a
      * submit-form action (see 12.7.5.2, “Submit-Form Action”).
@@ -167,32 +155,27 @@ public class FieldDictionary extends Dictionary {
     public static final int NO_EXPORT_BIT_FLAG = 0x4;
 
     protected Name fieldType;
-    protected VariableText variableText;
+    protected FieldDictionary parentField;
+    protected ArrayList<Object> kids;
+
     protected String partialFieldName;
     protected String alternativeFieldName;
     protected String exportMappingName;
-    protected int flags;
+    private int flags;
     protected Object fieldValue;
     protected Object defaultFieldValue;
-    protected WidgetAnnotation parentField;
-    protected ArrayList<AbstractWidgetAnnotation> kids;
-    private org.icepdf.core.pobjects.security.SecurityManager securityManager;
+    protected AdditionalActionsDictionary additionalActionsDictionary;
 
-
+    @SuppressWarnings("unchecked")
     public FieldDictionary(Library library, HashMap entries) {
         super(library, entries);
 
-        securityManager = library.getSecurityManager();
 
-        Object value = library.getName(entries, FT_KEY);
-        if (value != null) {
-            fieldType = (Name) value;
-        }
         // field name
-        value = library.getObject(entries, T_KEY);
+        Object value = library.getObject(entries, T_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            partialFieldName = text.getDecryptedLiteralString(securityManager);
+            partialFieldName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             partialFieldName = (String) value;
         }
@@ -200,50 +183,111 @@ public class FieldDictionary extends Dictionary {
         value = library.getObject(entries, TU_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            alternativeFieldName = text.getDecryptedLiteralString(securityManager);
+            alternativeFieldName = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             alternativeFieldName = (String) value;
         }
+        // mapping name for data export.
+        value = library.getObject(entries, TM_KEY);
+        if (value != null && value instanceof StringObject) {
+            StringObject text = (StringObject) value;
+            exportMappingName = Utils.convertStringObject(library, text);
+        } else if (value instanceof String) {
+            exportMappingName = (String) value;
+        }
+
         // value field
         value = library.getObject(entries, V_KEY);
         if (value instanceof Name) {
-            fieldValue = (Name) value;
+            fieldValue = value;
         } else if (value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            fieldValue = text.getDecryptedLiteralString(securityManager);
+            fieldValue = Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             fieldValue = value;
         } else {
             fieldValue = "";
         }
-        // default value
+        // todo default value, see 12.7.5.3, Reset-Form Action.
         value = library.getObject(entries, DV_KEY);
         if (value != null) {
             defaultFieldValue = value;
         }
 
-        // load the default appearance.
-        variableText = new VariableText(library, entries);
+        value = library.getObject(entries, AA_KEY);
+        if (value != null && value instanceof AdditionalActionsDictionary) {
+            additionalActionsDictionary = (AdditionalActionsDictionary) value;
+        }
 
-        // behaviour flags
-        flags = library.getInt(entries, Ff_KEY);
     }
 
-    public ArrayList<AbstractWidgetAnnotation> getKids() {
+    /**
+     * Gets the kids of of terminal and non terminal fields.  For non-terminal this
+     * can be a mix of field data and widget annotations.  And for terminal notes
+     * the array will only contain widget annotations.
+     *
+     * @return list of child elements.
+     */
+    public ArrayList<Object> getKids() {
+        // find some kids.
+        if (kids == null) {
+            Object value = library.getObject(entries, KIDS_KEY);
+            if (value != null && value instanceof List) {
+                List<Reference> children = (List<Reference>) value;
+                kids = new ArrayList(children.size());
+                Object tmp;
+                for (Reference aChildren : children) {
+                    tmp = library.getObject(aChildren);
+                    // have a deeper structure,  shouldn't happen though or at least no examples yet.
+                    if (tmp instanceof HashMap) {
+                        kids.add(FieldDictionaryFactory.buildField(library, (HashMap) tmp));
+                    } else if (tmp instanceof AbstractWidgetAnnotation) {
+                        kids.add(tmp);
+                    }
+                }
+            }
+        }
         return kids;
     }
 
-    public AbstractWidgetAnnotation getParent() {
-        Object value = library.getObject(entries, PARENT_KEY);
-        if (value instanceof HashMap) {
-            return new ButtonWidgetAnnotation(library, (HashMap) value);
+    public FieldDictionary getParent() {
+        // parent field there is an intermediary parent field dictionary define,  not present
+        // if the widget annotation and dictionary have been flattened.
+        if (parentField == null) {
+            Object value = library.getObject(entries, PARENT_KEY);
+            if (value instanceof HashMap) {
+                parentField = FieldDictionaryFactory.buildField(library, (HashMap) value);
+            }
         }
-        return null;
+        return parentField;
     }
 
-
     public Name getFieldType() {
+        // get teh field type.
+        if (fieldType == null) {
+            Object value = library.getName(entries, FT_KEY);
+            if (value != null) {
+                fieldType = (Name) value;
+            } else {
+                if (getParent() != null) {
+                    fieldType = parentField.getFieldType();
+                }
+            }
+        }
         return fieldType;
+    }
+
+    public int getFlags(){
+        // behaviour flags
+        flags = library.getInt(entries, Ff_KEY);
+        // check parrent for flags value.
+        if (flags == 0){
+            FieldDictionary parent = getParent();
+            if (parent != null){
+                flags = parent.getFlags();
+            }
+        }
+        return flags;
     }
 
     public String getPartialFieldName() {
@@ -258,8 +302,54 @@ public class FieldDictionary extends Dictionary {
         return exportMappingName;
     }
 
-    public int getFlags() {
-        return flags;
+    /**
+     * If set, the user may not change the value of the field. Any associated widget annotations will not interact with
+     * the user; that is, they will not respond to mouse clicks or change their appearance in response to mouse motions.
+     * This flag is useful for fields whose values are computed or imported from a database.
+     *
+     * @return true if read only, otherwise false.
+     */
+    public boolean isReadOnly() {
+        return ((flags & READ_ONLY_BIT_FLAG)
+                == READ_ONLY_BIT_FLAG);
+    }
+
+    /**
+     * If set, the field shall have a value at the time it is exported by a submit-form action
+     *
+     * @return true if value is required, otherwise false.
+     */
+    public boolean isRequired() {
+        return ((flags & REQUIRED_BIT_FLAG)
+                == REQUIRED_BIT_FLAG);
+    }
+
+    /**
+     * If set, the field shall not be exported by a submit-form action.
+     *
+     * @return true if no value should be exported, otherwise false.
+     *
+     */
+    public boolean isNoExport() {
+        return ((flags & NO_EXPORT_BIT_FLAG)
+                == NO_EXPORT_BIT_FLAG);
+    }
+
+    /**
+     * The T entry in the field dictionary (see Table 220) holds a text string defining the field’s partial field name.
+     * The fully qualified field name is not explicitly defined but shall be constructed from the partial field names
+     * of the field and all of its ancestors.
+     * <p/>
+     * This method will climb back up the inheritance tree to build the name.
+     *
+     * @return fully quality name of the field.
+     */
+    public String getFullyQualifiedFieldName(){
+        String qualifiedFieldName = partialFieldName;
+        if (parentField != null){
+            return parentField.getFullyQualifiedFieldName().concat(".").concat(partialFieldName);
+        }
+        return qualifiedFieldName;
     }
 
     public Object getFieldValue() {
@@ -270,11 +360,13 @@ public class FieldDictionary extends Dictionary {
         this.fieldValue = fieldValue;
     }
 
-    public VariableText getVariableText() {
-        return variableText;
-    }
+
 
     public Object getDefaultFieldValue() {
         return defaultFieldValue;
+    }
+
+    public AdditionalActionsDictionary getAdditionalActionsDictionary() {
+        return additionalActionsDictionary;
     }
 }

@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.security.SecurityManager;
@@ -583,28 +584,25 @@ public abstract class Annotation extends Dictionary {
             } else if (subType.equals(Annotation.SUBTYPE_POPUP)) {
                 annot = new PopupAnnotation(library, hashMap);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
-                // sub factory break out the various types.
-                String fieldType = library.getString(hashMap, FieldDictionary.FT_KEY);
+                Name fieldType = library.getName(hashMap, FieldDictionary.FT_KEY);
                 if (fieldType == null) {
-                    // get type from parent object.
-                    // radio buttons type is often found in the parent dictionary.
+                    // get type from parent object if we the widgeit and field dictionary aren't combined.
                     Object tmp = library.getObject(hashMap, FieldDictionary.PARENT_KEY);
                     if (tmp instanceof HashMap) {
-                        fieldType = library.getString((HashMap) tmp, FieldDictionary.FT_KEY);
-                        hashMap.put(FieldDictionary.FT_KEY, new Name(fieldType));
-                        hashMap.put(FieldDictionary.Ff_KEY,
-                                library.getInt((HashMap) tmp, FieldDictionary.Ff_KEY));
+                        fieldType = library.getName((HashMap) tmp, FieldDictionary.FT_KEY);
                     }
                 }
-                if (FieldDictionary.FT_BUTTON_VALUE.equals(fieldType)) {
+                if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
                     annot = new ButtonWidgetAnnotation(library, hashMap);
-                } else if (FieldDictionary.FT_CHOICE_VALUE.equals(fieldType)) {
+                } else if (FieldDictionaryFactory.TYPE_CHOICE.equals(fieldType)) {
                     annot = new ChoiceWidgetAnnotation(library, hashMap);
-                } else if (FieldDictionary.FT_TEXT_VALUE.equals(fieldType)) {
+                } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
                     annot = new TextWidgetAnnotation(library, hashMap);
                 }
                 // todo signatures widget.
-                else {
+                else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
+                    annot = new WidgetAnnotation(library, hashMap);
+                }else{
                     annot = new WidgetAnnotation(library, hashMap);
                 }
             }
@@ -1056,7 +1054,7 @@ public abstract class Annotation extends Dictionary {
         return border;
     }
 
-    public Annotation getParentAnnotation() {
+    public Object getParentAnnotation() {
         Annotation parent = null;
 
         Object ob = getObject(PARENT_KEY);
@@ -1065,7 +1063,7 @@ public abstract class Annotation extends Dictionary {
         if (ob instanceof Annotation)
             parent = (Annotation) ob;
         else if (ob instanceof HashMap)
-            parent = Annotation.buildAnnotation(library, (HashMap) ob);
+            return FieldDictionaryFactory.buildField(library, (HashMap) ob);
 
         return parent;
     }
@@ -1073,9 +1071,9 @@ public abstract class Annotation extends Dictionary {
     public Page getPage() {
         Page page = (Page) getObject(PARENT_PAGE_KEY);
         if (page == null) {
-            Annotation annot = getParentAnnotation();
-            if (annot != null)
-                page = annot.getPage();
+            Object annot = getParentAnnotation();
+            if (annot instanceof Annotation)
+                page = ((Annotation)annot).getPage();
         }
         return page;
     }
@@ -1241,12 +1239,12 @@ public abstract class Annotation extends Dictionary {
         g.setTransform(at);
         Shape preAppearanceStreamClip = g.getClip();
         Shape annotationShape = deriveDrawingRectangle();
-//        g.clip(deriveDrawingRectangle());
+        g.clip(deriveDrawingRectangle());
 
         renderAppearanceStream(g);
 
         g.setTransform(at);
-//        g.setClip(preAppearanceStreamClip);
+        g.setClip(preAppearanceStreamClip);
 
         if (tabSelected) {
             renderBorderTabSelected(g);
@@ -1289,6 +1287,11 @@ public abstract class Annotation extends Dictionary {
             AffineTransform tAs = AffineTransform.getScaleInstance(
                     (rect.getWidth() / tBbox.getWidth()),
                     (rect.getHeight() / tBbox.getHeight()));
+            if (matrix.getTranslateX() > 0 || matrix.getTranslateY() > 0){
+                // we have to align the boxes.
+                matrix.setToTranslation(rect.getX()- matrix.getTranslateX(),
+                        rect.getY()- matrix.getTranslateY());
+            }
             // Step 3. matrix is concatenated with A to form a matrix AA
             // that maps from the appearance's coordinate system to the
             // annotation's rectangle in default user space.

@@ -17,7 +17,6 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -30,15 +29,15 @@ import java.util.logging.Logger;
  *
  * @since 5.1
  */
-public abstract class AbstractWidgetAnnotation extends Annotation {
+public abstract class AbstractWidgetAnnotation<T> extends Annotation {
 
     /**
      * Indicates that the annotation has no highlight effect.
      */
     public static final Name HIGHLIGHT_NONE = new Name("N");
+
     private static final Logger logger =
             Logger.getLogger(AbstractWidgetAnnotation.class.toString());
-    protected FieldDictionary fieldDictionary;
 
     protected Name highlightMode;
 
@@ -76,7 +75,5 @@ public abstract class AbstractWidgetAnnotation extends Annotation {
         }
     }
 
-    public FieldDictionary getFieldDictionary() {
-        return fieldDictionary;
-    }
+    public abstract T getFieldDictionary();
 }

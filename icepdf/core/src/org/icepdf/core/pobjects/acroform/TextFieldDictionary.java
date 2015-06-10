@@ -58,10 +58,10 @@ import java.util.HashMap;
  *
  * @since 5.1
  */
-public class TextFieldDictionary extends FieldDictionary {
+public class TextFieldDictionary extends VariableTextFieldDictionary {
 
     /**
-     * The maximum length of the field’s text, in characters.
+     * The maximum length of the fields text, in characters.
      */
     public static final Name MAX_LENGTH_KEY = new Name("MaxLen");
 
@@ -111,6 +111,10 @@ public class TextFieldDictionary extends FieldDictionary {
      */
     public static final int COMB_BIT_FLAG = 0x1000000;
 
+    public enum TextFieldType {
+        TEXT_INPUT, TEXT_AREA, TEXT_PASSWORD, FILE_SELECT
+    }
+
     /**
      * (PDF 1.5) If set, the value of this field shall be a rich text string
      * (see 12.7.3.4, “Rich Text Strings”). If the field has a value, the RV entry
@@ -128,6 +132,7 @@ public class TextFieldDictionary extends FieldDictionary {
             maxLength = ((Number) value).intValue();
         }
         // determine the text type
+        int flags = getFlags();
         if ((flags & MULTILINE_BIT_FLAG) ==
                 MULTILINE_BIT_FLAG) {
             textFieldType = TextFieldType.TEXT_AREA;
@@ -150,7 +155,54 @@ public class TextFieldDictionary extends FieldDictionary {
         return textFieldType;
     }
 
-    public enum TextFieldType {
-        TEXT_INPUT, TEXT_AREA, TEXT_PASSWORD, FILE_SELECT
+    /**
+     * Field may container multiple lines of text.
+     *
+     * @return true if multiline text,  otherwise false.
+     */
+    public boolean isMultiLine() {
+        return (getFlags() & MULTILINE_BIT_FLAG) == MULTILINE_BIT_FLAG;
+    }
+
+    /**
+     * Filed is a file select component.
+     *
+     * @return true if file select,  otherwise false.
+     */
+    public boolean isFileSelect() {
+        return (getFlags() & FILE_SELECT_BIT_FLAG) == FILE_SELECT_BIT_FLAG;
+    }
+
+    /**
+     * If set, the field shall not scroll (horizontally for single-line fields, vertically for multiple-line fields)
+     * to accommodate more text than fits within its annotation rectangle. Once the field is full, no further text
+     * shall be accepted for interactive form filling; for non-interactive form filling, the filler should take care
+     * not to add more character than will visibly fit in the defined area.
+     *
+     * @return true if do not scroll is enabled,  otherwise false.
+     */
+    public boolean isDoNotScroll() {
+        return (getFlags() & DO_NOT_SCROLL_BIT_FLAG) == DO_NOT_SCROLL_BIT_FLAG;
+    }
+
+    /**
+     * May be set only if the MaxLen entry is present in the text field dictionary (see Table 229) and if the Multiline,
+     * Password, and FileSelect flags are clear. If set, the field shall be automatically divided into as many equally
+     * spaced positions, or combs, as the value of MaxLen, and the text is laid out into those combs.
+     *
+     * @return true if comb is enabled,  otherwise false.
+     */
+    public boolean isComb() {
+        return (getFlags() & COMB_BIT_FLAG) == COMB_BIT_FLAG;
+    }
+
+    /**
+     * If set, the value of this field shall be a rich text string (see 12.7.3.4, “Rich Text Strings”). If the field has
+     * a value, the RV entry of the field dictionary (Table 222) shall specify the rich text string.
+     *
+     * @return true if file select,  otherwise false.
+     */
+    public boolean isRichText() {
+        return (getFlags() & RICH_TEXT_BIT_FLAG) == RICH_TEXT_BIT_FLAG;
     }
 }

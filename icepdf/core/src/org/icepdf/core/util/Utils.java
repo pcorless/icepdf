@@ -392,10 +392,10 @@ public class Utils {
             // convert teh unicode to characters.
             for (int i = 2; i < titleText.length(); i += 2) {
                 try {
-                    int b1 = ((int) titleText.charAt(i)) & 0xFF;
-                    int b2 = ((int) titleText.charAt(i + 1)) & 0xFF;
+                    int b1 = ((((int) titleText.charAt(i)) & 0xFF)  << 8 ) |
+                            ((int) titleText.charAt(i + 1)) & 0xFF;
                     //System.err.println(b1 + " " + b2);
-                    sb1.append((char) (b1 * 256 + b2));
+                    sb1.append((char) (b1));
                 } catch (Exception ex) {
                     // intentionally left blank.
                 }

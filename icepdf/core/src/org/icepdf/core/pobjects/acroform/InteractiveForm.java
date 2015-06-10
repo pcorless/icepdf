@@ -16,9 +16,8 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.WidgetAnnotation;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +41,7 @@ import java.util.logging.Logger;
  * fields is called a terminal field.
  * <p/>
  * The contents and properties of a document’s interactive form shall be defined
- * by an interactive form dictionarythat shall be referenced from the AcroForm
+ * by an interactive form dictionary that shall be referenced from the AcroForm
  * entry in the document catalogue (see 7.7.2, “Document Catalog”).
  *
  * @since 5.1
@@ -109,64 +108,170 @@ public class InteractiveForm extends Dictionary {
      * and require explicit confirmation before continuing with the operation.
      */
     public static final int SIG_FLAGS_APPEND_ONLY = 2;
+
     private static final Logger logger =
             Logger.getLogger(InteractiveForm.class.toString());
-    // field list, we keep reference as we don't want these garbage collected.
-    private ArrayList<AbstractWidgetAnnotation> fields;
-    private boolean needAppearances;
-    private int sigFlags;
-    private ArrayList calculationOrder;
-    private Resources resources;
-    private String defaultVariableTextDAField;
-    private int defaultVariableTextQField;
-    // ignore XFA for now as it isn't in the ISO yet.
 
+    // field list, we keep reference as we don't want these garbage collected.
+    private ArrayList<Object> fields;
+
+    // A flag specifying whether to construct appearance streams and appearance dictionaries for all
+    // widget annotations in the document (see 12.7.3.3, “Variable Text”). Default value: false.
+    private boolean needAppearances;
+
+    // A set of flags specifying various document-level characteristics related to signature fields .
+    private int sigFlags;
+
+    // An array of indirect references to field dictionaries with calculation actions, defining the calculation order in
+    // which their values will be recalculated when the value of any field changes
+    private List<Reference> calculationOrder;
+
+    // A resource dictionary containing default resources (such as fonts, patterns, or colour spaces) that shall be used
+    // by form field appearance streams.
+    private Resources resources;
+
+    // A document-wide default value for the DA attribute of variable text fields
+    private String defaultVariableTextDAField;
+
+    // A document-wide default value for the Q attribute of variable text fields
+    // 0 - left-justified, 1 Centered, 2 right-justified.
+    private int defaultVariableTextQField;
+
+    // todo XFA entry stream or array processing.
+    // important to test for data import reasons.
 
     public InteractiveForm(Library library, HashMap entries) {
         super(library, entries);
     }
 
     public void init() {
-        // get the fields in the document.
-        Object tmp = library.getObject(entries, FIELDS_KEY);
-        if (tmp instanceof List) {
-            List tmpFields = (List) tmp;
-            fields = new ArrayList<AbstractWidgetAnnotation>(tmpFields.size());
-            AbstractWidgetAnnotation annotation;
-            Object annotObj;
-            for (Object fieldRef : tmpFields) {
-                if (fieldRef instanceof Reference) {
-                    annotObj = library.getObject((Reference) fieldRef);
-                    // find the terminal fields.
-                    if (annotObj instanceof AbstractWidgetAnnotation) {
-                        annotation = (AbstractWidgetAnnotation) annotObj;
-                        fields.add(annotation);
 
-                    } else if (annotObj instanceof HashMap) {
-                        annotation = new WidgetAnnotation(library, (HashMap) annotObj);
-                        fields.add(annotation);
-                    }
-                    // check for non-terminal fields, if found execute
-                    // flag logic.
-//                    if (annotation.getFieldDictionary().getKids() != null){
-//                        System.out.println();
-//                    }
-                }
-            }
+        // load the resources
+        Object tmp = library.getObject(entries, NEEDS_APPEARANCES_KEY);
+        if (tmp instanceof HashMap) {
+            needAppearances = library.getBoolean(entries, NEEDS_APPEARANCES_KEY);
         }
+
+        // sig flags.
+        tmp = library.getObject(entries, SIG_FLAGS_KEY);
+        if (tmp instanceof HashMap) {
+            sigFlags = library.getInt(entries, SIG_FLAGS_KEY);
+        }
+
         // load the resources
         tmp = library.getObject(entries, DR_KEY);
         if (tmp instanceof HashMap) {
             resources = library.getResources(entries, DR_KEY);
         }
 
+        // load the resources,  useful for rebuilding form elements.
+        tmp = library.getObject(entries, SIG_FLAGS_KEY);
+        if (tmp instanceof HashMap) {
+            resources = library.getResources(entries, DR_KEY);
+        }
+
+        // get the calculation order array.
+        tmp = library.getObject(entries, CO_KEY);
+        if (tmp instanceof List) {
+            calculationOrder = library.getArray(entries, CO_KEY);
+        }
+
+        tmp = library.getObject(entries, Q_KEY);
+        if (tmp instanceof List) {
+            defaultVariableTextQField = library.getInt(entries, Q_KEY);
+        }
+
         // load the default appearance.
         tmp = library.getObject(entries, DA_KEY);
         if (tmp instanceof StringObject) {
-            org.icepdf.core.pobjects.security.SecurityManager securityManager =
-                    library.getSecurityManager();
-            defaultVariableTextDAField = ((StringObject) tmp)
-                    .getDecryptedLiteralString(securityManager);
+            defaultVariableTextDAField = Utils.convertStringObject(library, (StringObject) tmp);
         }
+
+        // get the fields in the document, keeping hierarchy intact.
+        tmp = library.getObject(entries, FIELDS_KEY);
+        if (tmp instanceof List) {
+            List tmpFields = (List) tmp;
+            fields = new ArrayList<Object>(tmpFields.size());
+            Object annotObj;
+            for (Object fieldRef : tmpFields) {
+                if (fieldRef instanceof Reference) {
+                    // add them all as we find them.
+                    annotObj = library.getObject((Reference) fieldRef);
+                    if (annotObj != null){
+                        fields.add(annotObj);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * A set of flags specifying various document-level characteristics related to signature fields
+     *
+     * @return true if enabled, false otherwise.
+     */
+    public boolean signatureExists() {
+        return ((sigFlags & SIG_FLAGS_SIGNATURES_EXIST)
+                == SIG_FLAGS_SIGNATURES_EXIST);
+    }
+
+    /**
+     * If set, the document contains signatures that may be invalidated if the
+     * file is saved (written) in a way that alters its previous contents, as
+     * opposed to an incremental update
+     *
+     * @return true if enabled, false otherwise.
+     */
+    public boolean signatureAppendOnly() {
+        return ((sigFlags & SIG_FLAGS_APPEND_ONLY)
+                == SIG_FLAGS_APPEND_ONLY);
+    }
+
+    /**
+     * A flag specifying whether to construct appearance streams and appearance dictionaries for all
+     * widget annotations in the document. Default value: false.
+     *
+     * @return true if appearance streams need to be generated, otherwise false.
+     */
+    public boolean needAppearances() {
+        return needAppearances;
+    }
+
+    /**
+     * Gets a list of indirect references to fields that have calculation actions, defining the calculation
+     * order in which values should be calculated when the value of any field changes.
+     *
+     * @return list of indirect references if present, otherwise null;
+     */
+    public List<Reference> getCalculationOrder() {
+        return calculationOrder;
+    }
+
+    /**
+     * Get the resources associated with the child widgets.
+     *
+     * @return common resources to all child widgets. Can be null.
+     */
+    public Resources getResources() {
+        return resources;
+    }
+
+    /**
+     * Gest the default variable text DA entry which can be helpful for rebuilding field data appearance streams.
+     *
+     * @return default da values, null if not present.
+     */
+    public String getDefaultVariableTextDAField() {
+        return defaultVariableTextDAField;
+    }
+
+    /**
+     * Ges the default variable text quadding rule.
+     *
+     * @return integer represented by VariableTextFieldDictionary.QUADDING_LEFT_JUSTIFIED, VariableTextFieldDictionary.QUADDING_CENTERED or
+     * VariableTextFieldDictionary.QUADDING_RIGHT_JUSTIFIED.
+     */
+    public int getDefaultVariableTextQField() {
+        return defaultVariableTextQField;
     }
 }

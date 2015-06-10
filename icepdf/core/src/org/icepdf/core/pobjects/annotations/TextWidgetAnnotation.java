@@ -17,7 +17,6 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.acroform.TextFieldDictionary;
-import org.icepdf.core.pobjects.acroform.VariableText;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -35,32 +34,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * Text field (field type Tx) is a box or space for text fill-in data typically
+ * Text field (field type Text) is a box or space for text fill-in data typically
  * entered from a keyboard. The text may be restricted to a single line or may
  * be permitted to span multiple lines, depending on the setting of the Multi line
  * flag in the field dictionary’s Ff entry. Table 228 shows the flags pertaining
- * to this type of field. A text field shall have a field type of Tx. A conforming
+ * to this type of field. A text field shall have a field type of Text. A conforming
  * PDF file, and a conforming processor shall obey the usage guidelines as
  * defined by the big flags below.
  *
  * @since 5.1
  */
-public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
+public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDictionary> {
 
     protected FontFile fontFile;
+
+    private TextFieldDictionary fieldDictionary;
 
     public TextWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
         fieldDictionary = new TextFieldDictionary(library, entries);
-        VariableText variableText = fieldDictionary.getVariableText();
-        fontFile = FontManager.getInstance().getInstance(variableText.getFontName(), 0);
+        fontFile = FontManager.getInstance().getInstance(fieldDictionary.getFontName(), 0);
     }
 
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         // we won't touch password fields, we'll used the orginal display
-        TextFieldDictionary textFieldDictionary = (TextFieldDictionary) fieldDictionary;
-        TextFieldDictionary.TextFieldType textFieldType = textFieldDictionary.getTextFieldType();
+        TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();
         if (textFieldType == TextFieldDictionary.TextFieldType.TEXT_PASSWORD) {
             return;
         }
@@ -69,7 +68,6 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         Rectangle2D bbox = appearanceState.getBbox();
         Shapes shapes = appearanceState.getShapes();
-        VariableText variableText = fieldDictionary.getVariableText();
         String contents = (String) fieldDictionary.getFieldValue();
 
         // remove previous text objects
@@ -82,7 +80,8 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
             DrawCmd tmp;
             for (int i = 0; i < drawShapes.size(); i++) {
                 tmp = drawShapes.get(i);
-                if (tmp instanceof TextSpriteDrawCmd) {
+                if (tmp instanceof TextSpriteDrawCmd ||
+                        tmp instanceof TransformDrawCmd) {
                     drawShapes.remove(i);
                 }
             }
@@ -102,17 +101,17 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
         af.translate(insets, -insets);
         shapes.add(new TransformDrawCmd(af));
 
-        fontFile = fontFile.deriveFont(variableText.getSize());
+        fontFile = fontFile.deriveFont(fieldDictionary.getSize());
         // init font's metrics
         fontFile.echarAdvance(' ');
         TextSprite textSprites =
                 new TextSprite(fontFile,
                         contents.length(),
-                        new AffineTransform(),null);
+                        new AffineTransform(), null);
         textSprites.setRMode(TextState.MODE_FILL);
-        textSprites.setStrokeColor(variableText.getColor());
-        textSprites.setFontName(variableText.getFontName());
-        textSprites.setFontSize(variableText.getSize());
+        textSprites.setStrokeColor(fieldDictionary.getColor());
+        textSprites.setFontName(fieldDictionary.getFontName());
+        textSprites.setFontSize(fieldDictionary.getSize());
 
         float lineHeight = (float) (fontFile.getAscent() + fontFile.getDescent());
 
@@ -169,7 +168,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
 //            shapes.add(new DrawDrawCmd());
 //        }
         // actual font.
-        shapes.add(new ColorDrawCmd(variableText.getColor()));
+        shapes.add(new ColorDrawCmd(fieldDictionary.getColor()));
         shapes.add(new TextSpriteDrawCmd(textSprites));
     }
 
@@ -178,5 +177,10 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation {
         // set the  fields value (V) to the default value defined by the DV key.
         TextFieldDictionary textFieldDictionary = (TextFieldDictionary) fieldDictionary;
         textFieldDictionary.setFieldValue(textFieldDictionary.getDefaultFieldValue());
+    }
+
+    @Override
+    public TextFieldDictionary getFieldDictionary() {
+        return fieldDictionary;
     }
 }

@@ -33,14 +33,10 @@ public class Appearance {
 
     private Name selectedName = Annotation.APPEARANCE_STREAM_NORMAL_KEY;
     private Name offName = new Name("Off");
-    private Name onName = new Name("ON");
+    private Name onName = new Name("Yes");
 
     /**
      * Create a new instance of an Appearance stream.
-     *
-     * @param l                  library containing a hash of all document objects
-     * @param h                  HashMap of parameters specific to the Stream object.
-     * @param streamInputWrapper Accessor to stream byte data
      */
     public Appearance() {
         appearance = new HashMap<Name, AppearanceState>(2);

@@ -18,6 +18,7 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
@@ -105,22 +106,22 @@ public class AnnotationComponentFactory {
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_WIDGET.equals(subtype)) {
                 AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
-                Name fieldType = widgetAnnotation.getFieldDictionary().getFieldType();
+                Name fieldType = ((FieldDictionary) widgetAnnotation.getFieldDictionary()).getFieldType();
                 // load pro interactive annotation support.
                 if (Document.foundIncrementalUpdater) {
-                    if (FieldDictionary.FT_BUTTON_VALUE.equals(fieldType)) {
+                    if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
                         return generatedWidgetField(BUTTON_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent,
                                 documentViewModel);
-                    } else if (FieldDictionary.FT_CHOICE_VALUE.equals(fieldType)) {
+                    } else if (FieldDictionaryFactory.TYPE_CHOICE.equals(fieldType)) {
                         return generatedWidgetField(CHOICE_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent,
                                 documentViewModel);
-                    } else if (FieldDictionary.FT_TEXT_VALUE.equals(fieldType)) {
+                    } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
                         return generatedWidgetField(TEXT_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent,
                                 documentViewModel);
-                    } else if (FieldDictionary.FT_SIGNATURE_VALUE.equals(fieldType)) {
+                    } else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
                         return new WidgetAnnotationComponent(annotation, documentViewController,
                                 pageViewComponent, documentViewModel);
                     }
@@ -134,6 +135,7 @@ public class AnnotationComponentFactory {
                 return new AbstractAnnotationComponent(annotation, documentViewController,
                         pageViewComponent, documentViewModel) {
                     private static final long serialVersionUID = 409696785049691125L;
+
                     @Override
                     public void resetAppearanceShapes() {
 

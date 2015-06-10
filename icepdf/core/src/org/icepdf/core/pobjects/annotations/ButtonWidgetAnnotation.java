@@ -29,7 +29,9 @@ import java.util.HashMap;
  *
  * @since 5.1
  */
-public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation {
+public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonFieldDictionary> {
+
+    private ButtonFieldDictionary fieldDictionary;
 
     public ButtonWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
@@ -46,9 +48,15 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation {
 
     public void turnOff() {
         Appearance appearance = appearances.get(currentAppearance);
-        if (appearance.hasAlternativeAppearance()) {
+        if (appearance != null && appearance.hasAlternativeAppearance()) {
             appearance.setSelectedName(appearance.getOffName());
         }
+    }
+
+    public boolean isOn() {
+        Appearance appearance = appearances.get(currentAppearance);
+        Name selectedNormalAppearance = appearance.getSelectedName();
+        return !selectedNormalAppearance.equals(appearance.getOffName());
     }
 
     public Name toggle() {
@@ -71,6 +79,11 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation {
         if (appearance.hasAlternativeAppearance()) {
             appearance.setSelectedName(appearance.getOnName());
         }
+    }
+
+    @Override
+    public ButtonFieldDictionary getFieldDictionary() {
+        return fieldDictionary;
     }
 }
 

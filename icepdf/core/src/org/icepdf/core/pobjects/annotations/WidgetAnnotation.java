@@ -34,6 +34,10 @@ import java.util.HashMap;
  */
 public class WidgetAnnotation extends AbstractWidgetAnnotation {
 
+
+    private FieldDictionary fieldDictionary;
+
+
     public WidgetAnnotation(Library l, HashMap h) {
         super(l, h);
         fieldDictionary = new FieldDictionary(library, entries);
@@ -46,5 +50,10 @@ public class WidgetAnnotation extends AbstractWidgetAnnotation {
     @Override
     public void reset() {
 
+    }
+
+    @Override
+    public Object getFieldDictionary() {
+        return fieldDictionary;
     }
 }

@@ -17,7 +17,6 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
-import org.icepdf.core.pobjects.acroform.VariableText;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.TextSprite;
@@ -39,7 +38,9 @@ import java.util.HashMap;
  *
  * @since 5.1
  */
-public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation {
+public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceFieldDictionary> {
+
+    private ChoiceFieldDictionary fieldDictionary;
 
     public ChoiceWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
@@ -47,17 +48,14 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation {
     }
 
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
-        final ChoiceFieldDictionary choiceFieldDictionary =
-                (ChoiceFieldDictionary) fieldDictionary;
         ChoiceFieldDictionary.ChoiceFieldType choiceFieldType =
-                choiceFieldDictionary.getChoiceFieldType();
+                fieldDictionary.getChoiceFieldType();
 
         // clear previous shapes.
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         Rectangle2D bbox = appearanceState.getBbox();
         Shapes shapes = appearanceState.getShapes();
-        VariableText variableText = fieldDictionary.getVariableText();
         String contents = (String) fieldDictionary.getFieldValue();
         FontFile fontFile = null;
         // remove previous text objects
@@ -97,17 +95,17 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation {
             af.translate(insets, -insets);
             shapes.add(new TransformDrawCmd(af));
 
-            fontFile = fontFile.deriveFont(variableText.getSize());
+            fontFile = fontFile.deriveFont(fieldDictionary.getSize());
             // init font's metrics
             fontFile.echarAdvance(' ');
             TextSprite textSprites =
                     new TextSprite(fontFile,
                             contents.length(),
-                            new AffineTransform(),null);
+                            new AffineTransform(), null);
             textSprites.setRMode(TextState.MODE_FILL);
-            textSprites.setStrokeColor(variableText.getColor());
-            textSprites.setFontName(variableText.getFontName());
-            textSprites.setFontSize(variableText.getSize());
+            textSprites.setStrokeColor(fieldDictionary.getColor());
+            textSprites.setFontName(fieldDictionary.getFontName());
+            textSprites.setFontSize(fieldDictionary.getSize());
 
             float lineHeight = (float) (fontFile.getAscent());
             float advanceX = (float) bbox.getMinX();
@@ -121,6 +119,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation {
             for (int i = 0, max = contents.length(); i < max; i++) {
                 currentChar = contents.charAt(i);
                 newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
+
                 currentX = advanceX + lastx;
                 lastx += newAdvanceX;
                 // get normalized from from text sprite
@@ -130,7 +129,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation {
                         currentX, currentY, newAdvanceX);
             }
             // actual font.
-            shapes.add(new ColorDrawCmd(variableText.getColor()));
+            shapes.add(new ColorDrawCmd(fieldDictionary.getColor()));
             shapes.add(new TextSpriteDrawCmd(textSprites));
 
         } else if (choiceFieldType == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_LIST_SINGLE_SELECT ||
@@ -142,5 +141,10 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation {
 
     public void reset() {
 
+    }
+
+    @Override
+    public ChoiceFieldDictionary getFieldDictionary() {
+        return fieldDictionary;
     }
 }

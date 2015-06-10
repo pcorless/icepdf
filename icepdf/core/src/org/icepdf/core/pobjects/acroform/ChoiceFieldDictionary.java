@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @since 5.1
  */
-public class ChoiceFieldDictionary extends FieldDictionary {
+public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
 
     /**
      * (Optional) An array of options that shall be presented to the user. Each
@@ -109,6 +109,12 @@ public class ChoiceFieldDictionary extends FieldDictionary {
      * value is not committed until the user exits the field.
      */
     public static final int COMMIT_ON_SEL_CHANGE_BIT_FLAG = 0x4000000;
+
+    public enum ChoiceFieldType {
+        CHOICE_COMBO, CHOICE_EDITABLE_COMBO,
+        CHOICE_LIST_SINGLE_SELECT, CHOICE_LIST_MULTIPLE_SELECT
+    }
+
     protected ChoiceFieldType choiceFieldType;
     protected ArrayList<ChoiceOption> options;
     protected int topIndex;
@@ -143,6 +149,7 @@ public class ChoiceFieldDictionary extends FieldDictionary {
         }
 
         // determine combo or list
+        int flags = getFlags();
         if ((flags & COMBO_BIT_FLAG) ==
                 COMBO_BIT_FLAG) {
             // check for editable
@@ -178,9 +185,18 @@ public class ChoiceFieldDictionary extends FieldDictionary {
                 }
             }
         }
-
     }
 
+    public ChoiceFieldType getChoiceFieldType() {
+        return choiceFieldType;
+    }
+
+    /**
+     * For scrollable list boxes, the top index (the index in the Opt array of the first option visible in the list).
+     * Default value: 0.
+     *
+     * @return the top index of a scrollable list boxes.
+     */
     public int getTopIndex() {
         return topIndex;
     }
@@ -193,21 +209,30 @@ public class ChoiceFieldDictionary extends FieldDictionary {
         return indexes;
     }
 
+    /**
+     * For choice fields that allow multiple selection (MultiSelect flag set), an array of integers, sorted in
+     * ascending order, representing the zero-based indices in the Opt array of the currently selected option items.
+     * This entry shall be used when two or more elements in the Opt array have different names but the same export
+     * value or when the value of the choice field is an array. This entry should not be used for choice fields that
+     * do not allow multiple selection. If the items identified by this entry differ from those in the V entry of the
+     * field dictionary (see discussion following this Table), the V entry shall be used.
+     *
+     * @param indexes list of selected indexes for multiple selection.
+     */
     public void setIndexes(int[] indexes) {
         this.indexes = indexes;
     }
 
-    public ChoiceFieldType getChoiceFieldType() {
-        return choiceFieldType;
-    }
-
+    /**
+     * An array of options that shall be presented to the user. Each element of the array is either a text
+     * string representing one of the available options or an array consisting of two text strings: the option’s
+     * export value and the text that shall be displayed as the name of the option.
+     * <p/>
+     * If this entry is not present, no choices should be presented to the user.
+     * @return
+     */
     public ArrayList<ChoiceOption> getOptions() {
         return options;
-    }
-
-    public enum ChoiceFieldType {
-        CHOICE_COMBO, CHOICE_EDITABLE_COMBO,
-        CHOICE_LIST_SINGLE_SELECT, CHOICE_LIST_MULTIPLE_SELECT
     }
 
     public class ChoiceOption {
@@ -239,5 +264,42 @@ public class ChoiceFieldDictionary extends FieldDictionary {
         public String toString() {
             return label;
         }
+    }
+
+    /**
+     * If set, the field’s option items shall be sorted alphabetically. This flag is intended for use by
+     * writers, not by readers. Conforming readers shall display the options in the order in which they
+     * occur in the Opt array.
+     *
+     * @return true if field items are to be sorted.
+     */
+    public boolean isSortFields() {
+        return (getFlags() & SORT_BIT_FLAG) == SORT_BIT_FLAG;
+    }
+
+    /**
+     * If set, more than one of the field’s option items may be selected simultaneously; if clear, at most
+     * one item shall be selected.
+     *
+     * @return true if more then one field can be selected, otherwise false.
+     */
+    public boolean isMultiSelect() {
+        return (getFlags() & MULTI_SELECT_BIT_FLAG) == MULTI_SELECT_BIT_FLAG;
+    }
+
+    /**
+     * If set, the new value shall be committed as soon as a selection is made (commonly with the pointing device).
+     * In this case, supplying a value for a field involves three actions: selecting the field for fill-in, selecting
+     * a choice for the fill-in value, and leaving that field, which finalizes or “commits” the data choice and triggers
+     * any actions associated with the entry or changing of this data. If this flag is on, then processing does not wait
+     * for leaving the field action to occur, but immediately proceeds to the third step.
+     * <p/>
+     * This option enables applications to perform an action once a selection is made, without requiring the user to
+     * exit the field. If clear, the new value is not committed until the user exits the field.
+     *
+     * @return true if commit on set change, otherwise false.
+     */
+    public boolean isCommitOnSetChange() {
+        return (getFlags() & COMMIT_ON_SEL_CHANGE_BIT_FLAG) == COMMIT_ON_SEL_CHANGE_BIT_FLAG;
     }
 }

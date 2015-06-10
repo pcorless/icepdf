@@ -34,6 +34,9 @@ public class ActionFactory {
     public static final int URI_ACTION = 2;
     public static final int LAUNCH_ACTION = 3;
 
+    private ActionFactory() {
+    }
+
     /**
      * Creates a new ACTION object of the type specified by the type constant.
      * Currently there are only two supporte action types; GoTo, Launch and URI.

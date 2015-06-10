@@ -15,19 +15,21 @@
  */
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Parser;
+import org.icepdf.core.util.Utils;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Stack;
+import java.util.logging.Logger;
 
 /**
  * When the contents and properties of a field are known in advance, its visual
@@ -38,7 +40,14 @@ import java.util.Stack;
  *
  * @since 5.1
  */
-public class VariableText extends Dictionary {
+public class VariableTextFieldDictionary extends FieldDictionary {
+
+    private static final Logger logger =
+            Logger.getLogger(VariableTextFieldDictionary.class.toString());
+
+    public enum Quadding {
+        LEFT_JUSTIFIED, CENTERED, RIGHT_JUSTIFIED
+    }
 
     /**
      * The default appearance string containing a sequence of valid page-content
@@ -63,56 +72,76 @@ public class VariableText extends Dictionary {
     public static final Name DS_KEY = new Name("DS");
 
     /**
+     * Variable text fields.
+     */
+    private String defaultAppearance;
+    private String defaultStyle;
+    private String defaultRichText;
+
+    /**
      * A rich text string, as described in 12.7.3.4, “Rich Text Strings.”
      */
     public static final Name RV_KEY = new Name("RV");
-    protected QUADING quading = QUADING.LEFT_JUSTIFIED;
+
+    protected Quadding quadding = Quadding.LEFT_JUSTIFIED;
     protected int size = 12;
     protected String fontName = "Helvetic";
     protected Color color = Color.BLACK;
 
-    public VariableText(Library library, HashMap entries) {
+    public VariableTextFieldDictionary(Library library, HashMap entries) {
         super(library, entries);
 
-        // parse out quading
+        // parse out quadding
         Number value = library.getInt(entries, Q_KEY);
         int quad = value.intValue();
         switch (quad) {
             case 0:
-                quading = QUADING.LEFT_JUSTIFIED;
+                quadding = Quadding.LEFT_JUSTIFIED;
                 break;
             case 1:
-                quading = QUADING.CENTERED;
+                quadding = Quadding.CENTERED;
                 break;
             case 2:
-                quading = QUADING.RIGHT_JUSTIFIED;
+                quadding = Quadding.RIGHT_JUSTIFIED;
                 break;
             default:
-                quading = QUADING.LEFT_JUSTIFIED;
+                quadding = Quadding.LEFT_JUSTIFIED;
                 break;
         }
+        // get the default style string
+        Object tmp = library.getObject(entries, DS_KEY);
+        if (tmp != null){
+            defaultStyle = Utils.convertStringObject(library, (StringObject) tmp);
+        }
+
+        tmp = library.getObject(entries, RV_KEY);
+        if (tmp != null){
+            if (tmp instanceof StringObject) {
+                defaultStyle = Utils.convertStringObject(library, (StringObject) tmp);
+            }else if (tmp instanceof Stream){
+                defaultStyle =  new String(((Stream)tmp).getDecodedStreamBytes());
+            }
+        }
+
         // parse out fontName, size and color.
         // /ZaDb 12 Tf 0 g
-        Object defaultAppearance = library.getObject(entries, DA_KEY);
-        if (defaultAppearance instanceof StringObject) {
-            org.icepdf.core.pobjects.security.SecurityManager securityManager =
-                    library.getSecurityManager();
-            String defaultVariableTextDAField = ((StringObject) defaultAppearance)
-                    .getDecryptedLiteralString(securityManager);
-            Parser parser = new Parser(new ByteArrayInputStream(defaultVariableTextDAField.getBytes()));
+        tmp = library.getObject(entries, DA_KEY);
+        if (tmp instanceof StringObject) {
+            defaultAppearance = Utils.convertStringObject(library, (StringObject) tmp);
+            Parser parser = new Parser(new ByteArrayInputStream(defaultAppearance.getBytes()));
             try {
-                for (Object tmp = parser.getToken(); tmp != null; tmp = parser.getToken()) {
-                    if (tmp instanceof Name) {
-                        fontName = ((Name) tmp).getName();
-                    } else if (tmp instanceof Number) {
-                        size = ((Number) tmp).intValue();
-                    } else if (tmp instanceof String) {
+                for (Object token = parser.getToken(); token != null; token = parser.getToken()) {
+                    if (token instanceof Name) {
+                        fontName = ((Name) token).getName();
+                    } else if (token instanceof Number) {
+                        size = ((Number) token).intValue();
+                    } else if (token instanceof String) {
                         // we have the Tj, try to get the color
-                        tmp = parser.getToken();
+                        token = parser.getToken();
                         Stack<Object> stack = new Stack<Object>();
-                        while (tmp instanceof Number) {
-                            stack.push(tmp);
-                            tmp = parser.getToken();
+                        while (token instanceof Number) {
+                            stack.push(token);
+                            token = parser.getToken();
                         }
                         // derive color
                         if (stack.size() == 1) {
@@ -146,7 +175,6 @@ public class VariableText extends Dictionary {
                 // silent end of string parse.
             }
         }
-
     }
 
     public int getSize() {
@@ -161,7 +189,7 @@ public class VariableText extends Dictionary {
         return color;
     }
 
-    public static enum QUADING {
-        LEFT_JUSTIFIED, CENTERED, RIGHT_JUSTIFIED
+    public Quadding getQuadding() {
+        return quadding;
     }
 }
