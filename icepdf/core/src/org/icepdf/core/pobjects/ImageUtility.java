@@ -1169,7 +1169,8 @@ public class ImageUtility {
                     img = new BufferedImage(cm, wr, false, null);
                 } else if (usingAlpha) {
                     int[] rgbaData = new int[width * height];
-                    for (int index = 0; index < dataLength; index++) {
+                    // use rgbaData length as an inline image may have a couple extra bytes at the end.
+                    for (int index = 0, max = rgbaData.length; index < max; index++) {
                         int cmapIndex = (data[index] & 0xFF);
                         rgbaData[index] = cmap[cmapIndex];
                     }
