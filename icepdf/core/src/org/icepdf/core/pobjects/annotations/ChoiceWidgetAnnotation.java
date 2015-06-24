@@ -91,20 +91,17 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
                 choiceFieldType == ChoiceFieldType.CHOICE_EDITABLE_COMBO) {
             // relatively straight forward replace with new selected value.
             if (currentContentStream != null) {
-                // remove first instance as we might have place holder text like 'select one'...
-                int start = currentContentStream.indexOf('(');
-                int end = currentContentStream.lastIndexOf(')');
-                if (start >= 0 && end >= 0) {
-                    String replace = currentContentStream.substring(start + 1, end);
-                    String selectedField = (String) fieldDictionary.getFieldValue();
-                    currentContentStream = currentContentStream.replace(replace, selectedField);
-                }
+                currentContentStream = buildChoiceComboContents(currentContentStream);
             } else {
                 // todo no stream and we will need to build one.
             }
         } else {
             // build out the complex choice list content stream
-            currentContentStream = buildChoiceListContents(currentContentStream);
+            if (currentContentStream != null) {
+                currentContentStream = buildChoiceListContents(currentContentStream);
+            }else{
+                // todo no stream and we will need to build one.
+            }
         }
         // finally create the shapes from the altered stream.
         if (currentContentStream != null) {
@@ -120,6 +117,46 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
     @Override
     public ChoiceFieldDictionary getFieldDictionary() {
         return fieldDictionary;
+    }
+
+    public String buildChoiceComboContents(String currentContentStream) {
+        ArrayList<ChoiceFieldDictionary.ChoiceOption> choices = fieldDictionary.getOptions();
+        // double check we have some choices to work with.
+        if (choices == null) {
+            // generate them from the content stream.
+            choices = generateChoices();
+            fieldDictionary.setOptions(choices);
+        }
+        String selectedField = (String) fieldDictionary.getFieldValue();
+        int bmcStart = currentContentStream.indexOf("BT") + 2;
+        int bmcEnd = currentContentStream.lastIndexOf("ET");
+        // grab the pre post marked content postscript.
+        String preBmc = currentContentStream.substring(0, bmcStart);
+        String postEmc = currentContentStream.substring(bmcEnd);
+        // marked content which we will use to try and find some data points.
+        String markedContent = currentContentStream.substring(bmcStart, bmcEnd);
+
+        // check for a bounding box definition
+        Rectangle2D.Float bounds = findBoundRectangle(markedContent);
+
+        // finally build out the new content stream
+        StringBuilder content = new StringBuilder();
+        // apply font
+        if (fieldDictionary.getDefaultAppearance() != null) {
+            content.append(fieldDictionary.getDefaultAppearance()).append(' ');
+        }else{ // common font and colour layout for most form elements.
+            content.append("/Helv 12 Tf 0 g ");
+        }
+        // apply the text offset, 4 is just a generic padding.
+        content.append(4).append(' ').append(4).append(" Td ");
+        // print out text
+        ChoiceFieldDictionary.ChoiceOption choice;
+        content.append('(').append(selectedField).append(") Tj ");
+        // build the final content stream.
+        currentContentStream = preBmc + "\n" + content + "\n" + postEmc;
+        System.out.println(content);
+
+        return currentContentStream;
     }
 
     public String buildChoiceListContents(String currentContentStream) {
@@ -251,8 +288,6 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         content.append("ET Q");
         // build the final content stream.
         currentContentStream = preBmc + "\n" + content + "\n" + postEmc;
-        System.out.println(content);
-
         return currentContentStream;
     }
 
