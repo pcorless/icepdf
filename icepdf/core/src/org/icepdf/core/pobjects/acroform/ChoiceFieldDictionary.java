@@ -145,7 +145,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
                 }
             }
         } else {
-            options = new ArrayList<ChoiceOption>();
+            options = null;
         }
 
         // determine combo or list
@@ -175,16 +175,28 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
                 topIndex = ((Number) value).intValue();
             }
         }
-        if (choiceFieldType == ChoiceFieldType.CHOICE_LIST_MULTIPLE_SELECT) {
-            value = library.getObject(entries, I_KEY);
-            if (value instanceof ArrayList) {
-                ArrayList<Number> tmp = (ArrayList) value;
-                indexes = new int[tmp.size()];
-                for (int i = 0, max = tmp.size(); i < max; i++) {
-                    indexes[i] = tmp.get(i).intValue();
+        value = library.getObject(entries, I_KEY);
+        if (value instanceof ArrayList) {
+            ArrayList<Number> tmp = (ArrayList) value;
+            indexes = new int[tmp.size()];
+            for (int i = 0, max = tmp.size(); i < max; i++) {
+                indexes[i] = tmp.get(i).intValue();
+            }
+        }
+        // we might not have an I_key but should have a value to work with if so we build the index our self.
+        if (indexes == null && options != null){
+            indexes = new int[1];
+            for (int i = 0, max = options.size(); i < max; i++){
+                if (options.get(i).getLabel().equals(value)){
+                    indexes[0] = i;
+                    break;
                 }
             }
         }
+    }
+
+    public ChoiceOption buildChoiceOption(String label, String value){
+        return new ChoiceOption(label, value);
     }
 
     public ChoiceFieldType getChoiceFieldType() {
@@ -235,9 +247,14 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         return options;
     }
 
+    public void setOptions(ArrayList<ChoiceOption> options) {
+        this.options = options;
+    }
+
     public class ChoiceOption {
         private String label;
         private String value;
+        private boolean isSelected;
 
         public ChoiceOption(String label, String value) {
             this.label = label;
@@ -263,6 +280,14 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         @Override
         public String toString() {
             return label;
+        }
+
+        public boolean isSelected() {
+            return isSelected;
+        }
+
+        public void setIsSelected(boolean isSelected) {
+            this.isSelected = isSelected;
         }
     }
 

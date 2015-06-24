@@ -16,6 +16,8 @@
 
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.ri.common.views.DocumentViewModel;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -27,7 +29,7 @@ public class ScalableJList extends JList implements ScalableField {
     private static final long serialVersionUID = 1434627181898233990L;
     private boolean active;
 
-    public ScalableJList(ListModel dataModel) {
+    public ScalableJList(ListModel dataModel, final DocumentViewModel documentViewModel) {
         super(dataModel);
     }
 

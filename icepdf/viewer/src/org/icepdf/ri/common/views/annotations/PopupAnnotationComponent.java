@@ -470,7 +470,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     }
 
     private void showHidePopupAnnotations(boolean visible) {
-        ArrayList<AnnotationComponent> annotationComponents =
+        ArrayList<AbstractAnnotationComponent> annotationComponents =
                 pageViewComponent.getAnnotationComponents();
         for (AnnotationComponent annotationComponent : annotationComponents) {
             if (annotationComponent instanceof PopupAnnotationComponent) {
@@ -649,7 +649,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
     private void removeMarkupInReplyTo(Reference reference) {
         if (reference != null) {
-            ArrayList<AnnotationComponent> annotationComponents =
+            ArrayList<AbstractAnnotationComponent> annotationComponents =
                     pageViewComponent.getAnnotationComponents();
             MarkupAnnotationComponent markupAnnotationComponent;
             MarkupAnnotation markupAnnotation;
@@ -714,7 +714,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     }
 
     private AnnotationComponent findAnnotationComponent(Annotation annotation) {
-        ArrayList<AnnotationComponent> annotationComponents =
+        ArrayList<AbstractAnnotationComponent> annotationComponents =
                 pageViewComponent.getAnnotationComponents();
         Reference compReference;
         Reference annotationReference = annotation.getPObjectReference();

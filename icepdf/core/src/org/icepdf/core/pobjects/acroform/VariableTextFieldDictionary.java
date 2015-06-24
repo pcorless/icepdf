@@ -192,4 +192,16 @@ public class VariableTextFieldDictionary extends FieldDictionary {
     public Quadding getQuadding() {
         return quadding;
     }
+
+    public String getDefaultAppearance() {
+        return defaultAppearance;
+    }
+
+    public String getDefaultStyle() {
+        return defaultStyle;
+    }
+
+    public String getDefaultRichText() {
+        return defaultRichText;
+    }
 }

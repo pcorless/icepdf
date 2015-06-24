@@ -44,6 +44,8 @@ public class AppearanceState extends Dictionary {
     protected Shapes shapes;
     protected AffineTransform matrix;
     protected Rectangle2D bbox;
+    protected String originalContentStream;
+    protected Resources res;
 
     public AppearanceState(Library library, HashMap entries, Object streamOrDictionary) {
         super(library, entries);
@@ -53,14 +55,17 @@ public class AppearanceState extends Dictionary {
         if (streamOrDictionary instanceof Form) {
             Form form = (Form) streamOrDictionary;
             form.init();
+            originalContentStream = new String(((Form) streamOrDictionary).getDecodedStreamBytes());
+            res = form.getResources();
             shapes = form.getShapes();
             matrix = form.getMatrix();
             bbox = form.getBBox();
         } else if (streamOrDictionary instanceof Stream) {
             Stream stream = (Stream) streamOrDictionary;
-            Resources res = library.getResources(stream.getEntries(), Annotation.RESOURCES_VALUE);
+            res = library.getResources(stream.getEntries(), Annotation.RESOURCES_VALUE);
             bbox = library.getRectangle(stream.getEntries(), Annotation.BBOX_VALUE);
             matrix = new AffineTransform();
+            originalContentStream = new String(stream.getDecodedStreamBytes());
             try {
                 ContentParser cp = ContentParserFactory.getInstance()
                         .getContentParser(library, res);
@@ -101,4 +106,26 @@ public class AppearanceState extends Dictionary {
     public void setBbox(Rectangle2D bbox) {
         this.bbox = bbox;
     }
+
+    /**
+     * Gets the original unaltered content stream.  When the annotation is initialized the content stream is cached
+     * and use used in some instances as the base to any content stream editing during an annotation edit.
+     *
+     * @return original unaltered content stream.
+     */
+    public String getOriginalContentStream() {
+        return originalContentStream;
+    }
+
+    public void setContentStream(byte[] contentBytes){
+        try {
+            ContentParser cp = ContentParserFactory.getInstance()
+                    .getContentParser(library, res);
+            shapes = cp.parse(new byte[][]{contentBytes}, null).getShapes();
+        } catch (Exception e) {
+            shapes = new Shapes();
+            logger.log(Level.FINE, "Error initializing Page.", e);
+        }
+    }
+
 }

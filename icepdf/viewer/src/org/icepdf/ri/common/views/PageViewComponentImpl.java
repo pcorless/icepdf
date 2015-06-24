@@ -28,7 +28,6 @@ import org.icepdf.core.util.*;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.common.views.listeners.DefaultPageViewLoadingListener;
 import org.icepdf.ri.common.views.listeners.PageViewLoadingListener;
@@ -232,9 +231,9 @@ public class PageViewComponentImpl extends
     public void addAnnotation(AnnotationComponent annotation) {
         // delegate to handler.
         if (annotationComponents == null) {
-            annotationComponents = new ArrayList<AnnotationComponent>();
+            annotationComponents = new ArrayList<AbstractAnnotationComponent>();
         }
-        annotationComponents.add(annotation);
+        annotationComponents.add((AbstractAnnotationComponent)annotation);
         if (annotation instanceof PopupAnnotationComponent) {
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
         } else {
@@ -354,6 +353,12 @@ public class PageViewComponentImpl extends
     public void validate() {
         // calculate real size of page.
         calculatePageSize(pageSize);
+        // validate annotation field components.
+        if (annotationComponents != null){
+            for (AbstractAnnotationComponent comp: annotationComponents){
+                comp.validate();
+            }
+        }
         super.validate();
     }
 

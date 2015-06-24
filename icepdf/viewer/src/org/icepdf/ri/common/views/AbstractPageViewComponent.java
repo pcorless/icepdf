@@ -41,7 +41,7 @@ public abstract class AbstractPageViewComponent
     protected ToolHandler currentToolHandler;
 
     // annotations component for this pageViewComp.
-    protected ArrayList<AnnotationComponent> annotationComponents;
+    protected ArrayList<AbstractAnnotationComponent> annotationComponents;
 
     public abstract Page getPage();
 
@@ -182,7 +182,7 @@ public abstract class AbstractPageViewComponent
                 // get duplicates if the page has be gc'd
                 if (annotationComponents == null) {
                     annotationComponents =
-                            new ArrayList<AnnotationComponent>(annotations.size());
+                            new ArrayList<AbstractAnnotationComponent>(annotations.size());
                     for (Annotation annotation : annotations) {
                         // parser can sometimes return an empty array depending on the PDF syntax being used.
                         if (annotation != null) {
@@ -210,7 +210,12 @@ public abstract class AbstractPageViewComponent
         }
     }
 
-    public ArrayList<AnnotationComponent> getAnnotationComponents() {
+    /**
+     * Gets a list of the annotation components used in this page view.
+     *
+     * @return list of annotation components, can be null.
+     */
+    public ArrayList<AbstractAnnotationComponent> getAnnotationComponents() {
         return annotationComponents;
     }
 

@@ -16,6 +16,8 @@
 
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.ri.common.views.DocumentViewModel;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -28,7 +30,7 @@ public class ScalableJScrollPane extends JScrollPane implements ScalableField {
     private static final long serialVersionUID = -7748761572295520052L;
     private boolean active;
 
-    public ScalableJScrollPane(Component view) {
+    public ScalableJScrollPane(Component view, final DocumentViewModel documentViewModel) {
         super(view);
     }
 
@@ -61,12 +63,12 @@ public class ScalableJScrollPane extends JScrollPane implements ScalableField {
     }
 
     //    @Override
-//    protected void paintChildren(Graphics g) {
-//        if (!active) {
-//            return;
-//        }
-//        super.paintChildren(g);
-//    }
+    protected void paintChildren(Graphics g) {
+        if (!active) {
+            return;
+        }
+        super.paintChildren(g);
+    }
     @Override
     public void repaint(int x, int y, int width, int height) {
         super.repaint();

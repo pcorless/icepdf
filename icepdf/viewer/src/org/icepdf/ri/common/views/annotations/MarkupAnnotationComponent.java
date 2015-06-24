@@ -82,7 +82,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                     // toggle the visibility of the popup
                     popup.setOpen(!popup.isOpen());
                     // find the popup component
-                    ArrayList<AnnotationComponent> annotationComponents =
+                    ArrayList<AbstractAnnotationComponent> annotationComponents =
                             pageViewComponent.getAnnotationComponents();
                     Reference compReference;
                     Reference popupReference = popup.getPObjectReference();
