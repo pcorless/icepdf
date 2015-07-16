@@ -135,6 +135,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                         fontName = ((Name) token).getName();
                     } else if (token instanceof Number) {
                         size = ((Number) token).intValue();
+                        // double check for zero as we have many test cases that default to zero.
+                        if (size == 0) size = 12;
                     } else if (token instanceof String) {
                         // we have the Tj, try to get the color
                         token = parser.getToken();

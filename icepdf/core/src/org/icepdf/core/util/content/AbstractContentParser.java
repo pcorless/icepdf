@@ -16,7 +16,6 @@
 package org.icepdf.core.util.content;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.*;
@@ -768,7 +767,7 @@ public abstract class AbstractContentParser implements ContentParser {
         if (graphicState.getTextState().font == null ||
                 graphicState.getTextState().font.getFont() == null) {
             // turn on the old awt font engine, as we have a null font
-            FontFactory fontFactory = FontFactory.getInstance();
+//            FontFactory fontFactory = FontFactory.getInstance();
 //            boolean awtState = fontFactory.isAwtFontSubstitution();
 //            fontFactory.setAwtFontSubstitution(true);
             try {
@@ -804,6 +803,12 @@ public abstract class AbstractContentParser implements ContentParser {
             // if no fonts found then we just bail and accept the null pointer
         }
         if (graphicState.getTextState().font != null) {
+            graphicState.getTextState().currentfont =
+                    graphicState.getTextState().font.getFont().deriveFont(size);
+        }else{
+            // not font found which is a problem,  so we need to check for interactive form dictionary
+            graphicState.getTextState().font = resources.getLibrary().getInteractiveFormFont(name2.getName());
+            graphicState.getTextState().currentfont = graphicState.getTextState().font.getFont();
             graphicState.getTextState().currentfont =
                     graphicState.getTextState().font.getFont().deriveFont(size);
         }
@@ -1127,7 +1132,7 @@ public abstract class AbstractContentParser implements ContentParser {
                                       Resources resources) {
         Object properties = stack.pop();// properties
         // try and process the Optional content.
-        if (properties instanceof Name) {
+        if (properties instanceof Name && resources != null) {
             OptionalContents optionalContents =
                     resources.getPropertyEntry((Name) properties);
             // make sure the reference is valid, no point

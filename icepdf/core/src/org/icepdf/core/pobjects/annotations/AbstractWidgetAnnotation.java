@@ -17,12 +17,17 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Abstract base class for Widget annotations types, button, choice and text.
@@ -76,4 +81,193 @@ public abstract class AbstractWidgetAnnotation<T> extends Annotation {
     }
 
     public abstract T getFieldDictionary();
+
+    /**
+     * Generally immediately after the BMC there is a rectangle that defines the actual size of the annotation.  If
+     * found we can use this to make many assumptions and regenerate the content stream.
+     *
+     * @param markedContent content stream of the marked content.
+     * @return a rectangle either way, if the q # # # # re isn't found then we use the bbox as a potential bound.
+     */
+    protected Rectangle2D.Float findBoundRectangle(String markedContent) {
+        int selectionStart = markedContent.indexOf("q") + 1;
+        int selectionEnd = markedContent.indexOf("re");
+        if (selectionStart < selectionEnd && selectionEnd > 0) {
+            String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
+            float[] points = parseRectanglePoints(potentialNumbers);
+            if (points != null) {
+                return new Rectangle2D.Float(points[0], points[1], points[2], points[3]);
+            }
+        }
+        // default to the bounding box.
+        Rectangle2D bbox = getBbox();
+        return new Rectangle2D.Float(1, 1, (float) bbox.getWidth(), (float) bbox.getHeight());
+    }
+
+    /**
+     * Finds a rectangle  in the marked content.
+     *
+     * @param markedContent content to search for a rectangle.
+     * @return rectangle if found,  otherwise bbox is used.
+     */
+    protected Rectangle2D.Float findRectangle(String markedContent) {
+        int selectionEnd = markedContent.indexOf("re");
+        if (selectionEnd >= 0) {
+            String potentialNumbers = markedContent.substring(0, selectionEnd);
+            float[] points = parseRectanglePoints(potentialNumbers);
+            if (points != null) {
+                return new Rectangle2D.Float(points[0], points[1], points[2], points[3]);
+            }
+            // default to the bounding box.
+            Rectangle2D bbox = getBbox();
+            return new Rectangle2D.Float(1, 1, (float) bbox.getWidth(), (float) bbox.getHeight());
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get the line height as specified by Th or the font size.
+     *
+     * @param defaultAppearance searchable stream
+     * @return line height, or 13.87 if now resason approximation can be found.
+     */
+    protected double getLineHeight(String defaultAppearance) {
+        if (defaultAppearance != null && checkAppearance(defaultAppearance)) {
+            String sub = defaultAppearance.substring(0, defaultAppearance.indexOf("Tf"));
+            StringTokenizer toker = new StringTokenizer(sub);
+            while (toker.hasMoreTokens()) {
+                Object obj = toker.nextElement();
+                if (obj instanceof String) {
+                    try {
+                        double tmp = Double.parseDouble((String) obj);
+                        tmp *= 1.15;
+                        if (tmp > 0) {
+                            return tmp;
+                        }
+                    } catch (NumberFormatException e) {
+                        // intentionally blank.
+                    }
+                }
+            }
+        }
+        return 13.87;
+    }
+
+    protected String generateDefaultAppearance(String content, String defaultAppearance) {
+        String appearanceText = "";
+
+        if (defaultAppearance != null &&
+                checkAppearance(defaultAppearance)) {
+            appearanceText = defaultAppearance + ' ';
+        } else { // common font and colour layout for most form elements.
+            // try and find text size
+            Pattern pattern = Pattern.compile("\\d+(\\.\\d+)?\\s+Tf");
+            Matcher matcher = pattern.matcher(content);
+            double size = 12;
+            if (matcher.find()) {
+                String fontDef = content.substring(matcher.start(), matcher.end());
+                fontDef = fontDef.split(" ")[0];
+                try {
+                    size = Double.parseDouble(fontDef);
+                } catch (NumberFormatException e) {
+                    // ignore and move on
+                }
+            }
+            appearanceText = "/Helv " + size + " Tf 0 g ";
+        }
+        return appearanceText;
+    }
+
+    protected StringBuilder encodeLiteralString(StringBuilder content, String contents) {
+        String[] lines = contents.split("\n|\r|\f");
+        for (String line : lines) {
+            content.append('(').append(line.replaceAll("(?=[()\\\\])", "\\\\")).append(")' ");
+        }
+        return content;
+    }
+
+    /**
+     * Utility to try and determine if the appearance is valid.
+     *
+     * @param appearance appearance ot test.
+     * @return true if valid, false otherwise.
+     */
+    protected boolean checkAppearance(String appearance) {
+        // example of a bad appearance, /TiBo 0 Tf 0 g
+        // size is zero and the font can't be found.
+        StringTokenizer toker = new StringTokenizer(appearance);
+        String fontName = toker.nextToken().substring(1);
+        String fontSize = toker.nextToken();
+        Appearance appearance1 = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance1.getSelectedAppearanceState();
+        Resources resources = appearanceState.getResources();
+        org.icepdf.core.pobjects.fonts.Font font = resources.getFont(new Name(fontName));
+        if (font == null || library.getInteractiveFormFont(fontName) == null ||
+                fontSize.equals("0")) {
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * The selection rectangle if present will help define the line height of the text.  If not present we can use
+     * the default value 13.87 later which seems to be very common in the samples.
+     *
+     * @param markedContent content to look for "rg # # # # re".
+     * @return selection rectangle, null if not found.
+     */
+    protected Rectangle2D.Float findSelectionRectangle(String markedContent) {
+        int selectionStart = markedContent.indexOf("rg") + 2;
+        int selectionEnd = markedContent.lastIndexOf("re");
+        if (selectionStart < selectionEnd && selectionEnd > 0) {
+            String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
+            float[] points = parseRectanglePoints(potentialNumbers);
+            if (points != null) {
+                return new Rectangle2D.Float(points[0], points[1], points[2], points[3]);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Simple utility to write Rectangle2D.Float in postscript.
+     *
+     * @param rect Rectangle2D.Float to convert to postscript. Null value with throw null pointer exception.
+     * @return postscript representation of the rect.
+     */
+    protected String generateRectangle(Rectangle2D.Float rect) {
+        return rect.x + " " + rect.y + " " + rect.width + " " + rect.height + " re ";
+    }
+
+    /**
+     * Converts a given string of four numbers into an array of floats. If a conversion error is encountered
+     * null value is returned.
+     *
+     * @param potentialNumbers space separated string of four numbers.
+     * @return list of four numbers, null if string can not be converted.
+     */
+    protected float[] parseRectanglePoints(String potentialNumbers) {
+        StringTokenizer toker = new StringTokenizer(potentialNumbers);
+        float[] points = new float[4];
+        int max = toker.countTokens();
+        Object[] tokens = new Object[max];
+        for (int i = 0; i < max; i++) {
+            tokens[i] = toker.nextElement();
+        }
+        boolean notFound = false;
+        for (int i = 3, j = 0; j < 4; j++, i--) {
+            try {
+                points[j] = Float.parseFloat((String) tokens[max - i - 1]);
+            } catch (NumberFormatException e) {
+                notFound = true;
+            }
+        }
+        if (!notFound) {
+            return points;
+        } else {
+            return null;
+        }
+    }
 }

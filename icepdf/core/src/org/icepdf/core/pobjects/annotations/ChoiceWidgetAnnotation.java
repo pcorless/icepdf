@@ -150,11 +150,9 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         // apply the text offset, 4 is just a generic padding.
         content.append(4).append(' ').append(4).append(" Td ");
         // print out text
-        ChoiceFieldDictionary.ChoiceOption choice;
         content.append('(').append(selectedField).append(") Tj ");
         // build the final content stream.
         currentContentStream = preBmc + "\n" + content + "\n" + postEmc;
-        System.out.println(content);
 
         return currentContentStream;
     }
@@ -289,83 +287,6 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         // build the final content stream.
         currentContentStream = preBmc + "\n" + content + "\n" + postEmc;
         return currentContentStream;
-    }
-
-    /**
-     * Generally immediately after the BMC there is a rectangle that defines the actual size of the annotation.  If
-     * found we can use this to make many assumptions and regenerate the content stream.
-     *
-     * @param markedContent content stream of the marked content.
-     * @return a rectable either way, if the q # # # # re isn't found then we use the bbox as a potential bound.
-     */
-    private Rectangle2D.Float findBoundRectangle(String markedContent) {
-        int selectionStart = markedContent.indexOf("q") + 1;
-        int selectionEnd = markedContent.indexOf("re");
-        if (selectionStart < selectionEnd && selectionEnd > 0) {
-            String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
-            float[] points = parseRectanglePoints(potentialNumbers);
-            if (points != null) {
-                return new Rectangle2D.Float(points[0], points[1], points[2], points[3]);
-            }
-        }
-        // default to the bounding box.
-        Rectangle2D bbox = getBbox();
-        return new Rectangle2D.Float(1, 1, (float) bbox.getWidth(), (float) bbox.getHeight());
-    }
-
-    /**
-     * The selection rectangle if present will help define the line height of the text.  If not present we can use
-     * the default value 13.87 later which seems to be very common in the samples.
-     *
-     * @param markedContent content to look for "rg # # # # re".
-     * @return selection rectangle, null if not found.
-     */
-    private Rectangle2D.Float findSelectionRectangle(String markedContent) {
-        int selectionStart = markedContent.indexOf("rg") + 2;
-        int selectionEnd = markedContent.lastIndexOf("re");
-        if (selectionStart < selectionEnd && selectionEnd > 0) {
-            String potentialNumbers = markedContent.substring(selectionStart, selectionEnd);
-            float[] points = parseRectanglePoints(potentialNumbers);
-            if (points != null) {
-                return new Rectangle2D.Float(points[0], points[1], points[2], points[3]);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Simple utility to write Rectangle2D.Float in postscript.
-     * @param rect Rectangle2D.Float to convert to postscript. Null value with throw null pointer exception.
-     * @return postscript representation of the rect.
-     */
-    private String generateRectangle(Rectangle2D.Float rect) {
-        return rect.x + " " + rect.y + " " + rect.width + " " + rect.height + " re ";
-    }
-
-    /**
-     * Converts a given string of four numbers into an array of floats. If a conversion error is encountered
-     * null value is returned.
-     * @param potentialNumbers space separated string of four numbers.
-     * @return list of four numbers, null if string can not be converted.
-     */
-    private float[] parseRectanglePoints(String potentialNumbers) {
-        StringTokenizer toker = new StringTokenizer(potentialNumbers);
-        float[] points = new float[4];
-        int i = 0;
-        while (toker.hasMoreTokens() && i < 4) {
-            try {
-                float tmp = Float.parseFloat(toker.nextToken());
-                points[i] = tmp;
-                i++;
-            } catch (NumberFormatException e) {
-                break;
-            }
-        }
-        if (i == 4) {
-            return points;
-        } else {
-            return null;
-        }
     }
 
     /**

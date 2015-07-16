@@ -58,6 +58,7 @@ public class Resources extends Dictionary {
     HashMap shading;
     HashMap extGStates;
     HashMap properties;
+
     /**
      * @param l
      * @param h
@@ -73,6 +74,9 @@ public class Resources extends Dictionary {
         properties = library.getDictionary(entries, PROPERTIES_KEY);
     }
 
+    public HashMap getFonts() {
+        return fonts;
+    }
 
     /**
      * @param o
@@ -157,7 +161,9 @@ public class Resources extends Dictionary {
                         }
                         if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
                             font = (org.icepdf.core.pobjects.fonts.Font) ob;
-                            if (s.getName().equals(font.getBaseFont())) {
+                            String baseFont = font.getBaseFont();
+                            if (s.getName().equals(baseFont) ||
+                                    baseFont.contains(s.getName())) {
                                 // cache the font for later use.
                                 library.addObject(font, (Reference) tmp);
                                 font.setPObjectReference((Reference) tmp);

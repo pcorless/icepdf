@@ -16,6 +16,7 @@
 package org.icepdf.core.util;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
@@ -663,6 +664,21 @@ public class Library {
      */
     public void setCatalog(Catalog c) {
         catalog = c;
+    }
+
+    /**
+     * Checks the Catalog for an interactive Forms dictionary and if found the resources object
+     * is used for a font lookup.
+     * @param fontName font name to look for.
+     * @return font font,  null otherwise.
+     */
+    public Font getInteractiveFormFont(String fontName){
+        InteractiveForm form = getCatalog().getInteractiveForm();
+        if (form != null){
+            Resources resources = form.getResources();
+            return resources.getFont(new Name(fontName));
+        }
+        return null;
     }
 
     /**

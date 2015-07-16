@@ -19,18 +19,10 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.acroform.TextFieldDictionary;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
-import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.pobjects.graphics.TextSprite;
-import org.icepdf.core.pobjects.graphics.TextState;
-import org.icepdf.core.pobjects.graphics.commands.ColorDrawCmd;
-import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
-import org.icepdf.core.pobjects.graphics.commands.TextSpriteDrawCmd;
-import org.icepdf.core.pobjects.graphics.commands.TransformDrawCmd;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -61,115 +53,77 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         // we won't touch password fields, we'll used the orginal display
         TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();
         if (textFieldType == TextFieldDictionary.TextFieldType.TEXT_PASSWORD) {
-            return;
-        }
-
-        Appearance appearance = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-        Rectangle2D bbox = appearanceState.getBbox();
-        Shapes shapes = appearanceState.getShapes();
-        String contents = (String) fieldDictionary.getFieldValue();
-
-        // remove previous text objects
-        if (shapes == null) {
-            shapes = new Shapes();
-            appearanceState.setShapes(shapes);
+            // nothing to do, let the password comp handle the look.
         } else {
-            // remove any previous text
-            ArrayList<DrawCmd> drawShapes = appearanceState.getShapes().getShapes();
-            DrawCmd tmp;
-            for (int i = 0; i < drawShapes.size(); i++) {
-                tmp = drawShapes.get(i);
-                if (tmp instanceof TextSpriteDrawCmd ||
-                        tmp instanceof TransformDrawCmd) {
-                    drawShapes.remove(i);
-                }
+            // get at the original postscript as well alter the marked content
+            Appearance appearance = appearances.get(currentAppearance);
+            AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+            String currentContentStream = appearanceState.getOriginalContentStream();
+            currentContentStream = buildTextWidgetContents(currentContentStream);
+
+            // finally create the shapes from the altered stream.
+            if (currentContentStream != null) {
+                appearanceState.setContentStream(currentContentStream.getBytes());
             }
         }
+    }
 
-        // add new text object, the ideas is that we preserve any border information
-        // that was part of the appearance stream.
+    public String buildTextWidgetContents(String currentContentStream) {
 
-        // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
-        af.scale(1, -1);
-        af.translate(-bbox.getMinX(), -bbox.getMaxY());
-
-        // adjust of the border offset, offset is define in viewer,
-        // so we can't use the constant because of dependency issues.
-        double insets = 2 * pageTransform.getScaleX();
-        af.translate(insets, -insets);
-        shapes.add(new TransformDrawCmd(af));
-
-        fontFile = fontFile.deriveFont(fieldDictionary.getSize());
-        // init font's metrics
-        fontFile.echarAdvance(' ');
-        TextSprite textSprites =
-                new TextSprite(fontFile,
-                        contents.length(),
-                        new AffineTransform(), null);
-        textSprites.setRMode(TextState.MODE_FILL);
-        textSprites.setStrokeColor(fieldDictionary.getColor());
-        textSprites.setFontName(fieldDictionary.getFontName());
-        textSprites.setFontSize(fieldDictionary.getSize());
-
-        float lineHeight = (float) (fontFile.getAscent() + fontFile.getDescent());
-
-        float advanceX = (float) bbox.getMinX();
-        float advanceY = (float) bbox.getMinY();
-
-        float currentX;
-        float currentY = advanceY + lineHeight;
-
-        float lastx = 0;
-        float newAdvanceX;
-        char currentChar;
-        for (int i = 0, max = contents.length(); i < max; i++) {
-
-            currentChar = contents.charAt(i);
-
-            newAdvanceX = (float) fontFile.echarAdvance(currentChar).getX();
-            currentX = advanceX + lastx;
-            lastx += newAdvanceX;
-
-            // get normalized from from text sprite
-            if (!(currentChar == '\n' || currentChar == '\r')) {
-                textSprites.addText(
-                        String.valueOf(currentChar), // cid
-                        String.valueOf(currentChar), // unicode value
-                        currentX, currentY, newAdvanceX);
-            } else {
-                // move back to start of next line
-                currentY += lineHeight;
-                advanceX = (float) bbox.getMinX();
-                lastx = 0;
-            }
+        // text widgets can be null, in this case we setup the default so we can add our own data.
+        if (currentContentStream == null || currentContentStream.isEmpty()) {
+            currentContentStream = " /Tx BMC q BT ET Q EMC";
         }
-//        BasicStroke stroke;
-//        if (strokeType && borderStyle.isStyleDashed()) {
-//            stroke = new BasicStroke(
-//                    borderStyle.getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-//                    borderStyle.getStrokeWidth() * 2.0f, borderStyle.getDashArray(), 0.0f);
-//        } else {
-//            stroke = new BasicStroke(borderStyle.getStrokeWidth());
-//        }
-//
-//        // background colour
-//        shapes.add(new ShapeDrawCmd(new Rectangle2D.Double(bbox.getX(), bbox.getY()+10,
-//                bbox.getWidth()-10, bbox.getHeight()- 10)));
-//        if (fillType) {
-//            shapes.add(new ColorDrawCmd(fillColor));
-//            shapes.add(new FillDrawCmd());
-//        }
-//        // border
-//        if (strokeType) {
-//            shapes.add(new StrokeDrawCmd(stroke));
-//            shapes.add(new ColorDrawCmd(color));
-//            shapes.add(new DrawDrawCmd());
-//        }
-        // actual font.
-        shapes.add(new ColorDrawCmd(fieldDictionary.getColor()));
-        shapes.add(new TextSpriteDrawCmd(textSprites));
+        String contents = (String) fieldDictionary.getFieldValue();
+//        int btStart = currentContentStream.indexOf("BT") + 2;
+//        int etEnd = currentContentStream.lastIndexOf("ET");
+        int btStart = currentContentStream.indexOf("BMC") + 3;
+        int etEnd = currentContentStream.lastIndexOf("EMC");
+
+        String preBt = "";
+        String postEt = "";
+        String markedContent = "";
+        if (btStart >= 0 && etEnd >= 0) {
+            // grab the pre post marked content postscript.
+            preBt = currentContentStream.substring(0, btStart) + " q BT ";
+            postEt = " Q ET " + currentContentStream.substring(etEnd);
+            // marked content which we will use to try and find some data points.
+            markedContent = currentContentStream.substring(btStart, etEnd);
+        } else {
+            preBt = currentContentStream + " /Tx BMC q BT ";
+            postEt = " ET Q EMC ";
+        }
+
+        // check for a bounding box definition
+        Rectangle2D.Float bounds = findRectangle(preBt);
+        boolean isfourthQuadrant = false;
+        if (bounds != null && bounds.getHeight() < 0) {
+            isfourthQuadrant = true;
+        }
+
+        // finally build out the new content stream
+        StringBuilder content = new StringBuilder();
+        // calculate line light
+        double lineHeight = getLineHeight(fieldDictionary.getDefaultAppearance());
+
+        // apply the default appearance.
+        content.append(generateDefaultAppearance(markedContent, fieldDictionary.getDefaultAppearance()));
+
+        // apply the text offset, 4 is just a generic padding.
+        if (!isfourthQuadrant) {
+            content.append(lineHeight).append(" TL ");
+            // todo rework taking into account multi line height.
+            content.append(2).append(' ').append((Math.round(getBbox().getHeight() * 100) / 100)).append(" Td ");
+//            content.append(4).append(' ').append(lineHeight).append(" Td ");
+        } else {
+            content.append(2).append(' ').append(2).append(" Td ");
+        }
+        // encode the text so it can be properly encoded in PDF string format
+        content = encodeLiteralString(content, contents);
+
+        // build the final content stream.
+        currentContentStream = preBt + " " + content + " " + postEt;
+        return currentContentStream;
     }
 
 
