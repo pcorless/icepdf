@@ -144,6 +144,7 @@ public class InteractiveForm extends Dictionary {
         super(library, entries);
     }
 
+    @SuppressWarnings("unchecked")
     public void init() {
 
         // load the resources
@@ -191,7 +192,7 @@ public class InteractiveForm extends Dictionary {
         tmp = library.getObject(entries, FIELDS_KEY);
         if (tmp instanceof List) {
             List tmpFields = (List) tmp;
-            fields = new ArrayList<Object>(tmpFields.size());
+            fields = new ArrayList(tmpFields.size());
             Object annotObj;
             for (Object fieldRef : tmpFields) {
                 if (fieldRef instanceof Reference) {

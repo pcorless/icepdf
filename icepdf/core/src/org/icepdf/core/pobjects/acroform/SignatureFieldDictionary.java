@@ -21,7 +21,7 @@ import org.icepdf.core.util.Library;
 import java.util.HashMap;
 
 /**
- * Signature field (PDF 1.3) is a form field that contains a digital signature (see 12.8, “Digital Signatures”). The field
+ * Signature field (PDF 1.3) is a form field that contains a digital signature (see 12.8, "Digital Signatures"). The field
  * dictionary representing a signature field may contain the additional entries listed in Table 232, as well as the
  * standard entries described in Table 220. The field type (FT) shall be Sig, and the field value (V), if present, shall
  * be a signature dictionary containing the signature and specifying various attributes of the signature field
@@ -36,7 +36,7 @@ import java.util.HashMap;
  * the associated widget annotation. Exporting a signature field typically exports the T, V, and AP entries.
  * <p/>
  * Like any other field, a signature field may be described by a widget annotation dictionary containing entries pertaining
- * to an annotation as well as a field (see 12.5.6.19, “Widget Annotations”). The annotation rectangle (Rect) in such a
+ * to an annotation as well as a field (see 12.5.6.19, "Widget Annotations"). The annotation rectangle (Rect) in such a
  * dictionary shall give the position of the field on its page. Signature fields that are not intended to be visible shall
  * have an annotation rectangle that has zero height and width. Conforming readers shall treat such signatures as not
  * visible. Conforming readers shall also treat signatures as not visible if either the Hidden bit or the NoView bit of

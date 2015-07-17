@@ -71,7 +71,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
     public String buildTextWidgetContents(String currentContentStream) {
 
         // text widgets can be null, in this case we setup the default so we can add our own data.
-        if (currentContentStream == null || currentContentStream.isEmpty()) {
+        if (currentContentStream == null || currentContentStream.equals("")) {
             currentContentStream = " /Tx BMC q BT ET Q EMC";
         }
         String contents = (String) fieldDictionary.getFieldValue();

@@ -60,7 +60,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             for (LineText lines : pageLines) {
                 for (WordText word : lines.getWords()) {
                     tmp = word.toString();
-                    if (!(tmp.isEmpty() || tmp.equals(" "))) {
+                    if (!(tmp.equals("") || tmp.equals(" "))) {
                         options.add(fieldDictionary.buildChoiceOption(tmp, tmp));
                     }
                 }
