@@ -379,7 +379,8 @@ public class PageViewComponentImpl extends
         if (!isPageSizeCalculated) {
             calculatePageSize(pageSize);
             // revalidate the parent PageDecorator.
-            getParent().revalidate();
+            getParent().invalidate();
+            getParent().validate();
             pagePainter.setIsBufferDirty(true);
         } else if (isPageStateDirty()) {
             if (pagePainter.isRunning()) {
