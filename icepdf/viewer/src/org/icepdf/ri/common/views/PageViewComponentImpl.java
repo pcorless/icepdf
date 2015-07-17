@@ -383,7 +383,9 @@ public class PageViewComponentImpl extends
         if (!isPageSizeCalculated) {
             calculatePageSize(pageSize);
             // revalidate the parent PageDecorator.
-            getParent().revalidate();
+            // in todo 1.6 we can use revalidate. 
+            getParent().invalidate();
+            getParent().validate();
             pagePainter.setIsBufferDirty(true);
         } else if (isPageStateDirty()) {
             if (pagePainter.isRunning()) {
