@@ -1056,37 +1056,10 @@ public class ImageUtility {
                 ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             } else if (bitsPerComponent == 8) {
-//                //int data_length = data.length;
-//                DataBuffer db = new DataBufferByte(data, dataLength);
-//                SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(),
-//                        width, height, 1, width, new int[]{0});
-//                WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-//                // apply decode array manually
-//                byte[] dataValues = new byte[sm.getNumBands()];
-//                float[] origValues = new float[sm.getNumBands()];
-//                for (int y = 0; y < height; y++) {
-//                    for (int x = 0; x < width; x++) {
-//                        ImageUtility.getNormalizedComponents(
-//                                (byte[]) wr.getDataElements(x, y, dataValues),
-//                                decode,
-//                                origValues
-//                        );
-//                        float gray = origValues[0];
-//                        gray *= 255;
-//                        byte rByte = (gray < 0) ? (byte) 0 : (gray > 255) ? (byte) 0xFF : (byte) gray;
-//                        origValues[0] = rByte;
-//                        wr.setPixel(x, y, origValues);
-//                    }
-//                }
-//                ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
-//                ColorModel cm = new ComponentColorModel(cs, new int[]{bitsPerComponent},
-//                        false, false, ColorModel.OPAQUE, db.getDataType());
-//                img = new BufferedImage(cm, wr, false, null);
-
                 img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
                 // convert image data to rgb, seems to to give better colour tones. ?
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-                copyDecodedStreamBytesIntoGray(data, dataToRGB);
+                copyDecodedStreamBytesIntoGray(data, dataToRGB, decode);
             }
         } else if (colourSpace instanceof DeviceRGB) {
             if (bitsPerComponent == 8) {
@@ -1207,6 +1180,8 @@ public class ImageUtility {
                     cmap = GRAY_2_BIT_INDEX_TO_RGB;
                 } else if (bitsPerComponent == 4) {
                     cmap = GRAY_4_BIT_INDEX_TO_RGB;
+                } else if (bitsPerComponent == 8) {
+                    return null;
                 }
                 ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
@@ -1244,8 +1219,10 @@ public class ImageUtility {
         }
     }
 
-    private static void copyDecodedStreamBytesIntoGray(byte[] data, int[] pixels) {
-        byte[] rgb = new byte[3];
+    private static void copyDecodedStreamBytesIntoGray(byte[] data, int[] pixels, float[] decode) {
+        byte[] rgb = new byte[1];
+        boolean defaultDecode = 0.0f == decode[0];
+        int Y;
         try {
             InputStream input = new ByteArrayInputStream(data);
             for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
@@ -1258,9 +1235,11 @@ public class ImageUtility {
                         break;
                     haveRead += currRead;
                 }
-                argb |= ((((int) rgb[0]) << 16) & 0x00FF0000);
-                argb |= ((((int) rgb[0]) << 8) & 0x0000FF00);
-                argb |= (((int) rgb[0]) & 0x000000FF);
+                Y = (int)rgb[0] & 0xff;
+                Y = defaultDecode ? Y : 255- Y;
+                argb |= (Y << 16) & 0x00FF0000;
+                argb |= (Y << 8) & 0x0000FF00;
+                argb |= (Y & 0x000000FF);
                 pixels[pixelIndex] = argb;
             }
             input.close();
