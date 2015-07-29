@@ -115,21 +115,25 @@ public class FontManager {
                     {"ZapfChancery-MediumItalic", "URWChanceryL-MediItal", "Arial"},
                     {"ZapfDingbats", "Dingbats", "Zapf-Dingbats"}
             };
+
     private static final String[] JAPANESE_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "MS PMincho", "MS Mincho", "Kochi Mincho", "Hiragino Mincho Pro",
             "KozMinPro Regular Acro", "HeiseiMin W3 Acro", "Adobe Ming Std Acro"
     };
+
     private static final String[] CHINESE_SIMPLIFIED_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "SimSun", "NSimSun", "Kochi Mincho", "STFangsong", "STSong Light Acro",
             "Adobe Song Std Acro"
     };
+
     private static final String[] CHINESE_TRADITIONAL_FONT_NAMES = {
             "Arial Unicode MS", "PMingLiU", "MingLiU",
             "SimSun", "NSimSun", "Kochi Mincho", "BiauKai", "MSungStd Light Acro",
             "Adobe Song Std Acro"
     };
+
     private static final String[] KOREAN_FONT_NAMES = {
             "Arial Unicode MS", "Gulim", "Batang",
             "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro"
@@ -271,7 +275,7 @@ public class FontManager {
         Properties fontProperites;
         // make sure we are initialized
         if (fontList == null) {
-            readSystemFonts(null);
+            fontList = new ArrayList<Object[]>();
         }
         // copy all data from fontList into the properties file
         fontProperites = new Properties();
@@ -348,16 +352,24 @@ public class FontManager {
     }
 
     /**
-     * <p>Searches all default system font paths and any font paths
-     * specified by the extraFontPaths parameter, and records data about all
-     * found fonts.  This font data is used to substitute fonts which are not
+     * <p>Reads font from the specified array of file paths only, no .  This font data is used to substitute fonts which are not
      * embedded inside a PDF document.</p>
      *
      * @param extraFontPaths array String object where each entry represents
      *                       a system directory path containing font programs.
      */
-    public synchronized void readSystemFonts(String[] extraFontPaths) {
+    public synchronized void readFonts(String[] extraFontPaths) {
+        readSystemFonts(extraFontPaths, true);
+    }
 
+    /**
+     * Reads system fonts as defined in SYSTEM_FONT_PATHS plush any extra fonts paths.  The reading
+     * of system fonts can be suspended with the param skipSystemFonts.
+     *
+     * @param extraFontPaths  optional, extra fonts path to read.
+     * @param skipSystemFonts true to skip system fonts, extraFontsPaths should not be null if skipSystemFonts=true.
+     */
+    private synchronized void readSystemFonts(String[] extraFontPaths, boolean skipSystemFonts) {
         // create a new font list if needed.
         if (fontList == null) {
             fontList = new ArrayList<Object[]>(150);
@@ -376,12 +388,16 @@ public class FontManager {
         if (extraFontPaths == null) {
             fontDirectories = SYSTEM_FONT_PATHS;
         } else {
-            int length = SYSTEM_FONT_PATHS.length + extraFontPaths.length;
-            fontDirectories = new String[length];
-            // copy the static list into the new list
-            System.arraycopy(SYSTEM_FONT_PATHS, 0, fontDirectories, 0, SYSTEM_FONT_PATHS.length);
-            // added any paths specified by the user
-            System.arraycopy(extraFontPaths, 0, fontDirectories, SYSTEM_FONT_PATHS.length, extraFontPaths.length);
+            if (!skipSystemFonts) {
+                int length = SYSTEM_FONT_PATHS.length + extraFontPaths.length;
+                fontDirectories = new String[length];
+                // copy the static list into the new list
+                System.arraycopy(SYSTEM_FONT_PATHS, 0, fontDirectories, 0, SYSTEM_FONT_PATHS.length);
+                // added any paths specified by the user
+                System.arraycopy(extraFontPaths, 0, fontDirectories, SYSTEM_FONT_PATHS.length, extraFontPaths.length);
+            } else {
+                fontDirectories = extraFontPaths;
+            }
         }
 
         if (logger.isLoggable(Level.FINER)) {
@@ -391,15 +407,30 @@ public class FontManager {
         // Iterate through SYSTEM_FONT_PATHS and load all readable fonts
         for (int i = fontDirectories.length - 1; i >= 0; i--) {
             path = fontDirectories[i];
-            // if the path is valid start reading fonts. 
+            // if the path is valid start reading fonts.
             if (path != null) {
                 loadSystemFont(new File(path));
             }
         }
         // read java font's lucida.
-        loadSystemFont(new File(JAVA_FONT_PATHS));
+        if (!skipSystemFonts) {
+            loadSystemFont(new File(JAVA_FONT_PATHS));
+        }
 
         sortFontListByName();
+    }
+
+    /**
+     * <p>Searches all default system font paths and any font paths
+     * specified by the extraFontPaths parameter, and records data about all
+     * found fonts.  This font data is used to substitute fonts which are not
+     * embedded inside a PDF document.</p>
+     *
+     * @param extraFontPaths array String object where each entry represents
+     *                       a system directory path containing font programs.
+     */
+    public synchronized void readSystemFonts(String[] extraFontPaths) {
+        readSystemFonts(extraFontPaths, false);
     }
 
     private void loadSystemFont(File directory) {
@@ -551,7 +582,7 @@ public class FontManager {
     private FontFile getAsianInstance(List<Object[]> fontList, String name, String[] list, int flags) {
 
         if (fontList == null) {
-            readSystemFonts(null);
+            fontList = new ArrayList<Object[]>(150);
         }
 
         FontFile font = null;
@@ -640,7 +671,7 @@ public class FontManager {
     public FontFile getInstance(String name, int flags) {
 
         if (fontList == null) {
-            readSystemFonts(null);
+            fontList = new ArrayList<Object[]>();
         }
 
         FontFile font;
