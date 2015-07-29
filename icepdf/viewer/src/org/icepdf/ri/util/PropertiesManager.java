@@ -227,6 +227,10 @@ public class PropertiesManager {
         unrecoverableError = false;
     }
 
+    public Properties getSystemProperties() {
+        return sysProps;
+    }
+
     private boolean setupDefaultProperties() {
         defaultProps = new Properties();
 
