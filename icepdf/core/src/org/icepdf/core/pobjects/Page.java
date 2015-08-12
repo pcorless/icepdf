@@ -988,7 +988,9 @@ public class Page extends Dictionary {
         // retrieve a pointer to the pageTreeParent
         Object tmp = library.getObject(entries, PARENT_KEY);
         if (tmp instanceof PageTree) {
-            return (PageTree) tmp;//library.getObject(entries, "Parent");
+            return (PageTree) tmp;
+        } else if (tmp instanceof HashMap) {
+            return new PageTree(library, (HashMap) tmp);
         } else {
             return null;
         }
