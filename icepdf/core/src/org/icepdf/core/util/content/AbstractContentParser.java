@@ -1415,12 +1415,12 @@ public abstract class AbstractContentParser implements ContentParser {
                     glyphOutlineClip,
                     graphicState, oCGs);
             graphicState.set(tmp);
-            graphicState.translate(textMetrics.getAdvance().x, 0);
-            float shift = textMetrics.getShift();
-            shift += textMetrics.getAdvance().x;
-            textMetrics.setShift(shift);
-            textMetrics.setPreviousAdvance(0);
-            textMetrics.getAdvance().setLocation(0, 0);
+//            graphicState.translate(textMetrics.getAdvance().x, 0);
+//            float shift = textMetrics.getShift();
+//            shift += textMetrics.getAdvance().x;
+//            textMetrics.setShift(shift);
+//            textMetrics.setPreviousAdvance(0);
+//            textMetrics.getAdvance().setLocation(0, 0);
         }
     }
 
