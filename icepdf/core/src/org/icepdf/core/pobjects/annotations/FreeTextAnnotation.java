@@ -480,29 +480,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
-        Form form = null;
-        if (hasAppearanceStream()) {
-            Stream stream = getAppearanceStream();
-            if (stream instanceof Form) {
-                form = (Form) stream;
-            } else if (stream != null) {
-                // build out an appearance stream, corner case iText 2.1
-                // didn't correctly set type = form on the appearance stream obj.
-                form = new Form(library, stream.getEntries(), null);
-                form.setPObjectReference(stream.getPObjectReference());
-                form.setRawBytes(stream.getDecodedStreamBytes());
-                form.init();
-            }
-        }// else a stream, we won't support this for annotations.
-        else {
-            // create a new xobject/form object
-            HashMap<Name, Object> formEntries = new HashMap<Name, Object>();
-            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
-            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
-            form.setPObjectReference(stateManager.getNewReferencNumber());
-            library.addObject(form, form.getPObjectReference());
-        }
+        Form form = getOrGenerateAppearanceForm();
 
         if (form != null) {
             Rectangle2D formBbox = new Rectangle2D.Float(0, 0,

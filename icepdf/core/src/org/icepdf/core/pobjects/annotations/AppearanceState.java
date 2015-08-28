@@ -53,6 +53,7 @@ public class AppearanceState extends Dictionary {
         if (streamOrDictionary instanceof Reference) {
             streamOrDictionary = library.getObject((Reference) streamOrDictionary);
         }
+        // gather the state info for the appearance.
         if (streamOrDictionary instanceof Form) {
             Form form = (Form) streamOrDictionary;
             form.init();

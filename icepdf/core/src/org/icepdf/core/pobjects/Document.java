@@ -806,7 +806,7 @@ public class Document {
      */
     private boolean makeSecurityManager(PTrailer documentTrailer) throws PDFSecurityException {
         /**
-         * Before a securtiy manager can be created or needs to be created
+         * Before a security manager can be created or needs to be created
          * we need the following
          *      1.  The trailer object must have an encrypt entry
          *      2.  The trailer object must have an ID entry

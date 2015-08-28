@@ -17,6 +17,8 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.acroform.ButtonFieldDictionary;
 import org.icepdf.core.util.Library;
 
@@ -38,12 +40,35 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
         fieldDictionary = new ButtonFieldDictionary(library, entries);
     }
 
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
+    public ButtonWidgetAnnotation(Annotation widgetAnnotation){
+        super(widgetAnnotation.getLibrary(), widgetAnnotation.getEntries());
+        fieldDictionary = new ButtonFieldDictionary(library, entries);
+        // copy over the reference number.
+        setPObjectReference(widgetAnnotation.getPObjectReference());
+    }
 
+    /**
+     * Button appearance streams are fixed, all that is done in this method is appearance selected state
+     * is set and the change persisted to the StateManager.
+     * @param dx current location of the annotation
+     * @param dy current location of the annotation
+     * @param pageSpace current page space.
+     */
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
+        // update the appearanceState in the state manager so the change will persist.
+        Appearance appearance = appearances.get(currentAppearance);
+        if (appearance != null) {
+            appearance.updateAppearanceDictionary(entries);
+        }else{
+            System.out.println();
+        }
+        // add this annotation to the state manager.
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(this, this.getPObjectReference()));
     }
 
     public void reset() {
-        // todo.
+        // todo, assuming this would be the default state.
     }
 
     public void turnOff() {

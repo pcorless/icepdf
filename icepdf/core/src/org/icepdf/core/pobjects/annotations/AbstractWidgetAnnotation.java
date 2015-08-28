@@ -164,6 +164,7 @@ public abstract class AbstractWidgetAnnotation<T> extends Annotation {
             // try and find text size
             Pattern pattern = Pattern.compile("\\d+(\\.\\d+)?\\s+Tf");
             Matcher matcher = pattern.matcher(content);
+            String fontName = "/Helv";
             double size = 12;
             if (matcher.find()) {
                 String fontDef = content.substring(matcher.start(), matcher.end());
@@ -173,8 +174,19 @@ public abstract class AbstractWidgetAnnotation<T> extends Annotation {
                 } catch (NumberFormatException e) {
                     // ignore and move on
                 }
+                if (size < 2){
+                    size = 12;
+                }
             }
-            appearanceText = "/Helv " + size + " Tf 0 g ";
+            // try and find the font name.
+            if (defaultAppearance != null) {
+                StringTokenizer toker = new StringTokenizer(defaultAppearance);
+                String tmp = toker.nextToken();
+                if (tmp != null && tmp.startsWith("/")) {
+                    fontName = tmp;
+                }
+            }
+            appearanceText = fontName + " " + size + " Tf 0 g ";
         }
         return appearanceText;
     }
@@ -197,17 +209,17 @@ public abstract class AbstractWidgetAnnotation<T> extends Annotation {
         // example of a bad appearance, /TiBo 0 Tf 0 g
         // size is zero and the font can't be found.
         StringTokenizer toker = new StringTokenizer(appearance);
-        String fontName = toker.nextToken().substring(1);
-        String fontSize = toker.nextToken();
-        Appearance appearance1 = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance1.getSelectedAppearanceState();
-        Resources resources = appearanceState.getResources();
-        org.icepdf.core.pobjects.fonts.Font font = resources.getFont(new Name(fontName));
-        if (font == null || library.getInteractiveFormFont(fontName) == null ||
-                fontSize.equals("0")) {
-            return false;
+        if (toker.hasMoreTokens()) {
+            String fontName = toker.nextToken().substring(1);
+            String fontSize = toker.nextToken();
+            Appearance appearance1 = appearances.get(currentAppearance);
+            AppearanceState appearanceState = appearance1.getSelectedAppearanceState();
+            Resources resources = appearanceState.getResources();
+            org.icepdf.core.pobjects.fonts.Font font = resources.getFont(new Name(fontName));
+            return !(font == null || library.getInteractiveFormFont(fontName) == null ||
+                    fontSize.equals("0"));
         }
-        return true;
+        return false;
     }
 
 

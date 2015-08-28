@@ -80,4 +80,13 @@ public class Appearance {
         AppearanceState state = appearance.get(name);
         return state;
     }
+
+    /**
+     * Updates or adds the APPEARANCE_STATE_KEY with the currently selected state.
+     *
+     * @param entries parent annotation dictionary to update.
+     */
+    protected void updateAppearanceDictionary(HashMap<Object, Object> entries) {
+        entries.put(Annotation.APPEARANCE_STATE_KEY, selectedName);
+    }
 }

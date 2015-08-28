@@ -17,6 +17,7 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 
@@ -118,7 +119,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
     protected ChoiceFieldType choiceFieldType;
     protected ArrayList<ChoiceOption> options;
     protected int topIndex;
-    protected int[] indexes;
+    protected ArrayList<Integer> indexes;
 
     @SuppressWarnings("unchecked")
     public ChoiceFieldDictionary(Library library, HashMap entries) {
@@ -178,24 +179,52 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         value = library.getObject(entries, I_KEY);
         if (value instanceof ArrayList) {
             ArrayList<Number> tmp = (ArrayList) value;
-            indexes = new int[tmp.size()];
-            for (int i = 0, max = tmp.size(); i < max; i++) {
-                indexes[i] = tmp.get(i).intValue();
+            indexes = new ArrayList<Integer>(tmp.size());
+            for (Number aTmp : tmp) {
+                indexes.add(aTmp.intValue());
             }
         }
         // we might not have an I_key but should have a value to work with if so we build the index our self.
-        if (indexes == null && options != null){
-            indexes = new int[1];
-            for (int i = 0, max = options.size(); i < max; i++){
-                if (options.get(i).getLabel().equals(value)){
-                    indexes[0] = i;
-                    break;
+        if (indexes == null && options != null) {
+            indexes = new ArrayList<Integer>(1);
+            for (int i = 0, j = 0, max = options.size(); i < max; i++) {
+                if (options.get(i).getLabel().equals(value)) {
+                    indexes.set(j, i);
+                    j++;
                 }
             }
         }
     }
 
-    public ChoiceOption buildChoiceOption(String label, String value){
+    /**
+     * Regular field value writing takes place as well as the update of the I (indexes) entry in the dictionary.
+     * TODO: Further work is needed to fully support multiSelect values.
+     * @param fieldValue value to write.
+     * @param parentReference parent reference.
+     */
+    @Override
+    public void setFieldValue(Object fieldValue, Reference parentReference) {
+        super.setFieldValue(fieldValue, parentReference);
+        // update the index to reflect the change,
+        String selectedValue = null;
+        if (fieldValue instanceof String) {
+            selectedValue = (String) fieldValue;
+        } else if (fieldValue instanceof StringObject) {
+            StringObject tmp = (StringObject) fieldValue;
+            selectedValue = tmp.getDecryptedLiteralString(library.getSecurityManager());
+        }
+        indexes.clear();
+        for (int i = 0, j = 0, max = options.size(); i < max; i++) {
+            if (options.get(i).getLabel().equals(selectedValue)) {
+                indexes.add(j, i);
+            }
+        }
+        indexes.trimToSize();
+        // store the new indexes in the dictionary.
+        entries.put(I_KEY, indexes);
+    }
+
+    public ChoiceOption buildChoiceOption(String label, String value) {
         return new ChoiceOption(label, value);
     }
 
@@ -217,7 +246,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         this.topIndex = topIndex;
     }
 
-    public int[] getIndexes() {
+    public ArrayList<Integer> getIndexes() {
         return indexes;
     }
 
@@ -231,7 +260,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      *
      * @param indexes list of selected indexes for multiple selection.
      */
-    public void setIndexes(int[] indexes) {
+    public void setIndexes(ArrayList<Integer> indexes) {
         this.indexes = indexes;
     }
 
@@ -241,6 +270,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      * export value and the text that shall be displayed as the name of the option.
      * <p/>
      * If this entry is not present, no choices should be presented to the user.
+     *
      * @return
      */
     public ArrayList<ChoiceOption> getOptions() {

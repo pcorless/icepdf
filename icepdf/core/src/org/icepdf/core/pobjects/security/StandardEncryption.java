@@ -179,6 +179,16 @@ class StandardEncryption {
 
                     // calculate 16 byte initialization vector.
                     byte[] initialisationVector = new byte[16];
+                    // need to normalize size for encryption.
+                    if (inputData.length < 16){
+                        byte[] tmp = new byte[16];
+                        System.arraycopy(inputData, 0, tmp, 0, inputData.length);
+                        inputData = tmp;
+                    }else if (inputData.length > 16){
+                        byte[] tmp = new byte[16];
+                        System.arraycopy(inputData, 0, tmp, 0, tmp.length);
+                        inputData = tmp;
+                    }
                     System.arraycopy(inputData, 0, initialisationVector, 0, 16);
 
                     // trim the input

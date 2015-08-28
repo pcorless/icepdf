@@ -16,10 +16,7 @@
 
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -277,13 +274,13 @@ public class FieldDictionary extends Dictionary {
         return fieldType;
     }
 
-    public int getFlags(){
+    public int getFlags() {
         // behaviour flags
         flags = library.getInt(entries, Ff_KEY);
-        // check parrent for flags value.
-        if (flags == 0){
+        // check parent for flags value.
+        if (flags == 0) {
             FieldDictionary parent = getParent();
-            if (parent != null){
+            if (parent != null) {
                 flags = parent.getFlags();
             }
         }
@@ -328,7 +325,6 @@ public class FieldDictionary extends Dictionary {
      * If set, the field shall not be exported by a submit-form action.
      *
      * @return true if no value should be exported, otherwise false.
-     *
      */
     public boolean isNoExport() {
         return ((flags & NO_EXPORT_BIT_FLAG)
@@ -344,9 +340,9 @@ public class FieldDictionary extends Dictionary {
      *
      * @return fully quality name of the field.
      */
-    public String getFullyQualifiedFieldName(){
+    public String getFullyQualifiedFieldName() {
         String qualifiedFieldName = partialFieldName;
-        if (parentField != null){
+        if (parentField != null) {
             return parentField.getFullyQualifiedFieldName().concat(".").concat(partialFieldName);
         }
         return qualifiedFieldName;
@@ -356,10 +352,23 @@ public class FieldDictionary extends Dictionary {
         return fieldValue;
     }
 
-    public void setFieldValue(Object fieldValue) {
+    /**
+     * Set the value field of the field dictionary (/V).  The value can be anything but special attention is given
+     * to Strings especially if the document is already encrypted.  We need to stored String in an Encrypted environment
+     * as encrypted so that we can write it correctly later.
+     *
+     * @param fieldValue      value to write.
+     * @param parentReference parent reference.
+     */
+    public void setFieldValue(Object fieldValue, Reference parentReference) {
         this.fieldValue = fieldValue;
+        if (fieldValue instanceof String) {
+            // make sure we store an encrypted documents string as encrypted
+            entries.put(V_KEY, new LiteralStringObject((String) fieldValue, parentReference, library.getSecurityManager()));
+        } else {
+            entries.put(V_KEY, fieldValue);
+        }
     }
-
 
 
     public Object getDefaultFieldValue() {

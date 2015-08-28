@@ -72,8 +72,8 @@ public class LiteralStringObject implements StringObject {
 
     /**
      * <p>Creates a new literal string object so that it represents the same
-     * sequence of character data specifed by the arguments.  The string
-     * value is assumed to be unencrypted and will be encrytped.  The
+     * sequence of character data specified by the arguments.  The string
+     * value is assumed to be unencrypted and will be encrypted.  The
      * method #LiteralStringObject(String string) should be used if the string
      * is all ready encrypted. This method is used for creating new
      * LiteralStringObject's that are created post document parse. </p>
@@ -87,7 +87,8 @@ public class LiteralStringObject implements StringObject {
                                SecurityManager securityManager) {
         // append string data
         this.reference = reference;
-        // decrypt the string. 
+        // decrypt the string.
+        stringData = new StringBuilder(string.replaceAll("(?=[()\\\\])", "\\\\"));
         stringData = new StringBuilder(
                 encryption(string, false, securityManager));
     }
@@ -296,7 +297,7 @@ public class LiteralStringObject implements StringObject {
     }
 
     /**
-     * Decryptes or encrtypes a string.
+     * Decrypts or encrypts a string.
      *
      * @param string          string to encrypt or decrypt
      * @param decrypt         true to decrypt string, false otherwise;

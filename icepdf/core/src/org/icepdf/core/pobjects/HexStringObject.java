@@ -77,6 +77,29 @@ public class HexStringObject implements StringObject {
     }
 
     /**
+     * <p>Creates a new literal string object so that it represents the same
+     * sequence of character data specified by the arguments.  The string
+     * value is assumed to be unencrypted and will be encrypted.  The
+     * method #LiteralStringObject(String string) should be used if the string
+     * is all ready encrypted. This method is used for creating new
+     * LiteralStringObject's that are created post document parse. </p>
+     *
+     * @param string          the initial contents of the literal string object,
+     *                        unencrypted.
+     * @param reference       of parent PObject
+     * @param securityManager security manager used ot encrypt the string.
+     */
+    public HexStringObject(String string, Reference reference,
+                               SecurityManager securityManager) {
+        // append string data
+        this.reference = reference;
+        // decrypt the string.
+        stringData = new StringBuilder(
+                encryption(Utils.convertByteArrayToHexString(string.getBytes(),false),
+                        false, securityManager));
+    }
+
+    /**
      * Gets the integer value of the hexidecimal data specified by the start and
      * offset parameters.
      *
@@ -374,6 +397,42 @@ public class HexStringObject implements StringObject {
             return Utils.convertByteArrayToByteString(textBytes);
         }
         return getLiteralString();
+    }
+
+    /**
+     * Decrypts or encrypts a string.
+     *
+     * @param string          string to encrypt or decrypt
+     * @param decrypt         true to decrypt string, false otherwise;
+     * @param securityManager security manager for document.
+     * @return encrypted or decrypted string, depends on value of decrypt param.
+     */
+    public String encryption(String string, boolean decrypt,
+                             SecurityManager securityManager) {
+        // get the security manager instance
+        if (securityManager != null && reference != null) {
+            // get the key
+            byte[] key = securityManager.getDecryptionKey();
+
+            // convert string to bytes.
+            byte[] textBytes =
+                    Utils.convertByteCharSequenceToByteArray(string);
+
+            // Decrypt String
+            if (decrypt) {
+                textBytes = securityManager.decrypt(reference,
+                        key,
+                        textBytes);
+            } else {
+                textBytes = securityManager.encrypt(reference,
+                        key,
+                        textBytes);
+            }
+
+            // convert back to a string
+            return Utils.convertByteArrayToByteString(textBytes);
+        }
+        return string;
     }
 
 }

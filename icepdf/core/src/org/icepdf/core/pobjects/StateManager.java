@@ -120,7 +120,6 @@ public class StateManager {
      * @return If there are any changes
      */
     public boolean isChanged() {
-////if(true) return true;
         return !changes.isEmpty();
     }
 

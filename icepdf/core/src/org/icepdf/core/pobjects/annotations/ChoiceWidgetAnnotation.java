@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -73,8 +74,9 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
     /**
      * Resets the appearance stream for this instance using the current state.  The mark content section of the stream
      * is found and the edit it make to best of our ability.
-     * @param dx x offset of the annotation
-     * @param dy y offset of the annotation
+     *
+     * @param dx            x offset of the annotation
+     * @param dy            y offset of the annotation
      * @param pageTransform current page transform.
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
@@ -84,6 +86,8 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         // get at the original postscript as well alter the marked content
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+        Rectangle2D bbox = appearanceState.getBbox();
+        AffineTransform matrix = appearanceState.getMatrix();
         String currentContentStream = appearanceState.getOriginalContentStream();
 
         // alterations vary by choice type.
@@ -99,13 +103,46 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             // build out the complex choice list content stream
             if (currentContentStream != null) {
                 currentContentStream = buildChoiceListContents(currentContentStream);
-            }else{
+            } else {
                 // todo no stream and we will need to build one.
             }
         }
         // finally create the shapes from the altered stream.
         if (currentContentStream != null) {
             appearanceState.setContentStream(currentContentStream.getBytes());
+        }
+
+        // some widgets don't have AP dictionaries in such a case we need to create the form object
+        // and build out the default properties.
+        Form appearanceStream = getOrGenerateAppearanceForm();
+
+        if (appearanceStream != null) {
+            // update the content stream with the new stream data.
+            appearanceStream.setRawBytes(currentContentStream.getBytes());
+            // add the appearance stream
+            StateManager stateManager = library.getStateManager();
+            stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
+            // add an AP entry for the
+            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
+            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
+            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
+                    (float) bbox.getWidth(), (float) bbox.getHeight());
+            appearanceStream.setAppearance(null, matrix, formBbox);
+            // add link to resources on forum, if no resources exist.
+            if (library.getResources(appearanceStream.getEntries(), Form.RESOURCES_KEY) == null) {
+                appearanceStream.getEntries().put(Form.RESOURCES_KEY,
+                        library.getCatalog().getInteractiveForm().getResources().getEntries());
+            }
+            // add the annotation as changed as T entry has also been updated to reflect teh changed content.
+            stateManager.addChange(new PObject(this, this.getPObjectReference()));
+
+            // compress the form object stream.
+            if (false && compressAppearanceStream) {
+                appearanceStream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+            } else {
+                appearanceStream.getEntries().remove(Stream.FILTER_KEY);
+            }
         }
     }
 
@@ -137,14 +174,14 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         String markedContent = currentContentStream.substring(bmcStart, bmcEnd);
 
         // check for a bounding box definition
-        Rectangle2D.Float bounds = findBoundRectangle(markedContent);
+        //Rectangle2D.Float bounds = findBoundRectangle(markedContent);
 
         // finally build out the new content stream
         StringBuilder content = new StringBuilder();
         // apply font
         if (fieldDictionary.getDefaultAppearance() != null) {
             content.append(fieldDictionary.getDefaultAppearance()).append(' ');
-        }else{ // common font and colour layout for most form elements.
+        } else { // common font and colour layout for most form elements.
             content.append("/Helv 12 Tf 0 g ");
         }
         // apply the text offset, 4 is just a generic padding.
@@ -166,7 +203,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             choices = generateChoices();
             fieldDictionary.setOptions(choices);
         }
-        int[] selections = fieldDictionary.getIndexes();
+        ArrayList<Integer> selections = fieldDictionary.getIndexes();
         // mark the indexes of the mark content.
         int bmcStart = currentContentStream.indexOf("BMC") + 3;
         int bmcEnd = currentContentStream.indexOf("EMC");
@@ -206,28 +243,27 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         }
         // figure out offset range to insure a single selection is always visible
         int startIndex = 0, endIndex = choices.size();
-        if (selections != null && selections.length == 1) {
-            int numberLines = (int)Math.floor(bounds.height/lineHeight);
+        if (selections != null && selections.size() == 1) {
+            int numberLines = (int) Math.floor(bounds.height / lineHeight);
             // check if list is smaller then number of lines
-            int selectedIndex = selections[0];
-            if (choices.size() < numberLines){
+            int selectedIndex = selections.get(0);
+            if (choices.size() < numberLines) {
                 // nothing to do.
-            }
-            else if (selectedIndex < numberLines){
-                endIndex  = numberLines + 1;
+            } else if (selectedIndex < numberLines) {
+                endIndex = numberLines + 1;
             }
             // check for bottom out range
-            else if (endIndex - selectedIndex <= numberLines){
+            else if (endIndex - selectedIndex <= numberLines) {
                 startIndex = endIndex - numberLines;
             }
             // else mid range just need to start the index.
-            else{
+            else {
                 startIndex = selectedIndex;
                 endIndex = numberLines + 1;
 
             }
             // we have a single line
-            if (startIndex > endIndex){
+            if (startIndex > endIndex) {
                 endIndex = startIndex + 1;
             }
         }
@@ -250,7 +286,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
                         selectionRectangle.width, lineHeight);
             }
             ChoiceFieldDictionary.ChoiceOption choice;
-            for (int i = startIndex; i < endIndex; i++){
+            for (int i = startIndex; i < endIndex; i++) {
                 choice = choices.get(i);
                 // check if a selection rectangle was defined, if not we might have a custom style and we
                 // avoid the selection background (only have one test case for this)
@@ -265,7 +301,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         // apply font
         if (fieldDictionary.getDefaultAppearance() != null) {
             content.append(fieldDictionary.getDefaultAppearance());
-        }else{ // common font and colour layout for most form elements.
+        } else { // common font and colour layout for most form elements.
             content.append("/Helv 12 Tf 0 g ");
         }
         // apply the line height
@@ -274,7 +310,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         content.append(4).append(' ').append(bounds.height + 4).append(" Td ");
         // print out text
         ChoiceFieldDictionary.ChoiceOption choice;
-        for (int i = startIndex; i < endIndex; i++){
+        for (int i = startIndex; i < endIndex; i++) {
             choice = choices.get(i);
             if (choice.isSelected() && selectionRectangle != null) {
                 content.append("1 g ");

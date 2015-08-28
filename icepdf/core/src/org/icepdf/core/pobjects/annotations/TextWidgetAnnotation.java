@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.TextFieldDictionary;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
@@ -50,7 +51,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
-        // we won't touch password fields, we'll used the orginal display
+        // we won't touch password fields, we'll used the original display
         TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();
         if (textFieldType == TextFieldDictionary.TextFieldType.TEXT_PASSWORD) {
             // nothing to do, let the password comp handle the look.
@@ -58,12 +59,47 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             // get at the original postscript as well alter the marked content
             Appearance appearance = appearances.get(currentAppearance);
             AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+            Rectangle2D bbox = appearanceState.getBbox();
+            AffineTransform matrix = appearanceState.getMatrix();
             String currentContentStream = appearanceState.getOriginalContentStream();
             currentContentStream = buildTextWidgetContents(currentContentStream);
 
             // finally create the shapes from the altered stream.
             if (currentContentStream != null) {
                 appearanceState.setContentStream(currentContentStream.getBytes());
+            }
+
+            // some widgets don't have AP dictionaries in such a case we need to create the form object
+            // and build out the default properties.
+            Form appearanceStream = getOrGenerateAppearanceForm();
+
+            if (appearanceStream != null) {
+                // update the content stream with the new stream data.
+                appearanceStream.setRawBytes(currentContentStream.getBytes());
+                // add the appearance stream
+                StateManager stateManager = library.getStateManager();
+                stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
+                // add an AP entry for the
+                HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
+                appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
+                entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+                Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
+                        (float) bbox.getWidth(), (float) bbox.getHeight());
+                appearanceStream.setAppearance(null, matrix, formBbox);
+                // add link to resources on forum, if no resources exist.
+                if (library.getResources(appearanceStream.getEntries(), Form.RESOURCES_KEY) == null) {
+                    appearanceStream.getEntries().put(Form.RESOURCES_KEY,
+                            library.getCatalog().getInteractiveForm().getResources().getEntries());
+                }
+                // add the annotation as changed as T entry has also been updated to reflect teh changed content.
+                stateManager.addChange(new PObject(this, this.getPObjectReference()));
+
+                // compress the form object stream.
+                if (compressAppearanceStream) {
+                    appearanceStream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+                } else {
+                    appearanceStream.getEntries().remove(Stream.FILTER_KEY);
+                }
             }
         }
     }
@@ -85,8 +121,8 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         String markedContent = "";
         if (btStart >= 0 && etEnd >= 0) {
             // grab the pre post marked content postscript.
-            preBt = currentContentStream.substring(0, btStart) + " q BT ";
-            postEt = " Q ET " + currentContentStream.substring(etEnd);
+            preBt = currentContentStream.substring(0, btStart) + " BT ";
+            postEt = "ET " + currentContentStream.substring(etEnd);
             // marked content which we will use to try and find some data points.
             markedContent = currentContentStream.substring(btStart, etEnd);
         } else {
@@ -122,7 +158,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         content = encodeLiteralString(content, contents);
 
         // build the final content stream.
-        currentContentStream = preBt + " " + content + " " + postEt;
+        currentContentStream = preBt + content + postEt;
         return currentContentStream;
     }
 
@@ -130,7 +166,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
     public void reset() {
         // set the  fields value (V) to the default value defined by the DV key.
         TextFieldDictionary textFieldDictionary = (TextFieldDictionary) fieldDictionary;
-        textFieldDictionary.setFieldValue(textFieldDictionary.getDefaultFieldValue());
+        textFieldDictionary.setFieldValue(textFieldDictionary.getDefaultFieldValue(), getPObjectReference());
     }
 
     @Override

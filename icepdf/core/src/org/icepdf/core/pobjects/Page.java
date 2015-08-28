@@ -1344,6 +1344,10 @@ public class Page extends Dictionary {
                 }
             }
         }
+        // last resort
+        if (mediaBox == null){
+            mediaBox = new PRectangle(new Point.Float(0,0), new Point.Float(612, 792));
+        }
         return mediaBox;
     }
 
