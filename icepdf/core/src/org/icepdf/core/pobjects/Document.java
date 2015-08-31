@@ -127,11 +127,11 @@ public class Document {
         // sets if file caching is enabled or disabled.
         isCachingEnabled =
                 Defs.sysPropertyBoolean("org.icepdf.core.streamcache.enabled",
-                        true);
+                        false);
 
         isFileCachingEnabled = Defs.sysPropertyBoolean("org.icepdf.core.filecache.enabled",
                 true);
-        fileCacheMaxSize = Defs.intProperty("org.icepdf.core.filecache.size", 200000);
+        fileCacheMaxSize = Defs.intProperty("org.icepdf.core.filecache.size", 200000000);
     }
 
     /**
