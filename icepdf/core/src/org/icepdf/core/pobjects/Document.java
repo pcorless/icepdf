@@ -117,6 +117,8 @@ public class Document {
 
     // disable/enable file caching, overrides fileCachingSize.
     private static boolean isCachingEnabled;
+    private static boolean isFileCachingEnabled;
+    private static int fileCacheMaxSize;
 
     // repository of all PDF object associated with this document.
     private Library library = null;
@@ -126,6 +128,10 @@ public class Document {
         isCachingEnabled =
                 Defs.sysPropertyBoolean("org.icepdf.core.streamcache.enabled",
                         true);
+
+        isFileCachingEnabled = Defs.sysPropertyBoolean("org.icepdf.core.filecache.enabled",
+                true);
+        fileCacheMaxSize = Defs.intProperty("org.icepdf.core.filecache.size", 200000);
     }
 
     /**
@@ -193,28 +199,20 @@ public class Document {
     public void setFile(String filepath)
             throws PDFException, PDFSecurityException, IOException {
         setDocumentOrigin(filepath);
-        RandomAccessFileInputStream rafis =
-                RandomAccessFileInputStream.build(new File(filepath));
-        /*
-        // Test code for setByteArray(-)
-        if( true ) {
-            byte[] buffer = new byte[4096];
-            int read = buffer.length;
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream( 40960 );
-            while ((read = rafis.read(buffer, 0, buffer.length)) > 0){
-                byteArrayOutputStream.write(buffer, 0, read);
-            }
-            byteArrayOutputStream.flush();
-            byteArrayOutputStream.close();
-            rafis.close();
-            int length = byteArrayOutputStream.size();
-            byte[] data = byteArrayOutputStream.toByteArray();
-            setByteArray( data, 0, length, null );
-            return;
-        }
-        */
+        File file = new File(filepath);
 
-        setInputStream(rafis);
+        if (isFileCachingEnabled && file.length() > 0  && fileCacheMaxSize <= file.length()) {
+            // copy the file contents into byte[], for direct memory mapping.
+            int fileLength = (int) file.length();
+            byte[] data = new byte[fileLength];
+            FileInputStream inputStream = new FileInputStream(file);
+            inputStream.read(data);
+            setByteArray(data, 0, fileLength, filepath);
+        }else{
+            RandomAccessFileInputStream rafis =
+                    RandomAccessFileInputStream.build(new File(filepath));
+            setInputStream(rafis);
+        }
     }
 
     /**
@@ -406,7 +404,7 @@ public class Document {
     /**
      * Sets the input stream of the PDF file to be rendered.
      *
-     * @param in inputstream containing PDF data stream
+     * @param in inputStream containing PDF data stream
      * @throws PDFException         if error occurs
      * @throws PDFSecurityException security error
      * @throws IOException          io error during stream handling
