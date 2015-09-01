@@ -45,6 +45,13 @@ public class AnnotationComponentFactory {
     protected static final Logger logger =
             Logger.getLogger(AnnotationComponentFactory.class.toString());
 
+    private static final String BUTTON_FIELD_CLASS =
+            "org.icepdf.core.pro.acroform.ButtonFieldComponent";
+    private static final String CHOICE_FIELD_CLASS =
+            "org.icepdf.core.pro.acroform.ChoiceFieldComponent";
+    private static final String TEXT_FIELD_CLASS =
+            "org.icepdf.core.pro.acroform.TextFieldComponent";
+
     private AnnotationComponentFactory() {
     }
 
@@ -103,18 +110,15 @@ public class AnnotationComponentFactory {
                 // load pro interactive annotation support.
                 if (Document.foundIncrementalUpdater) {
                     if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
-                        return generatedWidgetField(
-                                org.icepdf.core.pro.acroform.ButtonFieldComponent.class, annotation,
+                        return generatedWidgetField(BUTTON_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent,
                                 documentViewModel);
                     } else if (FieldDictionaryFactory.TYPE_CHOICE.equals(fieldType)) {
-                        return generatedWidgetField(
-                                org.icepdf.core.pro.acroform.ChoiceFieldComponent.class, annotation,
+                        return generatedWidgetField(CHOICE_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent,
                                 documentViewModel);
                     } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
-                        return generatedWidgetField(
-                                org.icepdf.core.pro.acroform.TextFieldComponent.class, annotation,
+                        return generatedWidgetField(TEXT_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent,
                                 documentViewModel);
                     } else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
@@ -152,11 +156,11 @@ public class AnnotationComponentFactory {
     }
 
     private static AbstractAnnotationComponent generatedWidgetField(
-            final Class widgetFieldClassName,
+            final String widgetFieldClassName,
             Annotation annotation, DocumentViewController documentViewController,
             AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         try {
-            Class<?> widgetFieldClass = widgetFieldClassName;
+            Class<?> widgetFieldClass = Class.forName(widgetFieldClassName);
             Class[] widgetArgs = {Annotation.class, DocumentViewController.class,
                     AbstractPageViewComponent.class, DocumentViewModel.class};
             Constructor widgetFieldClassConstructor =
