@@ -55,6 +55,10 @@ public class Action extends Dictionary {
 
     public static final Name ACTION_TYPE_SUBMIT_SUBMIT = new Name("SubmitForm");
 
+    public static final Name ACTION_TYPE_NAMED = new Name("Named");
+
+    public static final Name ACTION_TYPE_JAVA_SCRIPT = new Name("JavaScript");
+
     // type of annotation
     private String type;
 
@@ -87,6 +91,10 @@ public class Action extends Dictionary {
                 return new ResetFormAction(library, hashMap);
             } else if (actionType.equals(Action.ACTION_TYPE_SUBMIT_SUBMIT)) {
                 return new SubmitFormAction(library, hashMap);
+            } else if (actionType.equals(Action.ACTION_TYPE_NAMED)) {
+                return new NamedAction(library, hashMap);
+            } else if (actionType.equals(Action.ACTION_TYPE_JAVA_SCRIPT)) {
+                return new JavaScriptAction(library, hashMap);
             }
         }
         return new Action(library, hashMap);

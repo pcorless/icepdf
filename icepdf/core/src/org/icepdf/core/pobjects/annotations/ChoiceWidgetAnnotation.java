@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
@@ -148,7 +149,32 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
 
 
     public void reset() {
-        // todo, default value and rest appearance stream.
+        Object oldValue = fieldDictionary.getFieldValue();
+        Object tmp = fieldDictionary.getDefaultFieldValue();
+        if (tmp == null){
+            FieldDictionary parentFieldDictionary = fieldDictionary.getParent();
+            if (parentFieldDictionary != null) {
+                tmp = parentFieldDictionary.getDefaultFieldValue();
+            }
+        }
+        if (tmp != null) {
+            // apply the default value
+            fieldDictionary.setFieldValue(tmp, getPObjectReference());
+            changeSupport.firePropertyChange("valueFieldReset", oldValue, tmp);
+        }else{
+            // otherwise we remove the key
+            fieldDictionary.getEntries().remove(FieldDictionary.V_KEY);
+            fieldDictionary.setIndexes(null);
+            // check the parent as well.
+            FieldDictionary parentFieldDictionary = fieldDictionary.getParent();
+            if (parentFieldDictionary != null) {
+                parentFieldDictionary.getEntries().remove(FieldDictionary.V_KEY);
+                if (parentFieldDictionary instanceof ChoiceFieldDictionary){
+                    ((ChoiceFieldDictionary)parentFieldDictionary).setIndexes(null);
+                }
+            }
+            changeSupport.firePropertyChange("valueFieldReset", oldValue, null);
+        }
     }
 
     @Override

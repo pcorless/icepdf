@@ -20,9 +20,11 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.acroform.ButtonFieldDictionary;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 
 /**
@@ -34,6 +36,8 @@ import java.util.HashMap;
 public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonFieldDictionary> {
 
     private ButtonFieldDictionary fieldDictionary;
+
+    protected Name originalAppearance;
 
     public ButtonWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
@@ -59,16 +63,47 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance != null) {
             appearance.updateAppearanceDictionary(entries);
-        }else{
-            System.out.println();
         }
         // add this annotation to the state manager.
         StateManager stateManager = library.getStateManager();
         stateManager.addChange(new PObject(this, this.getPObjectReference()));
+
+        Name selectedName = appearance.getSelectedName();
+        // check boxes will have a V entry which
+        if (getFieldDictionary().hasFieldValue()){
+            // update the value
+            entries.put(FieldDictionary.V_KEY, selectedName);
+            // object already in state manager, nothing further to to.
+        } // radio buttons will store the value in the parent.
+        else if (getFieldDictionary().getParent() != null &&
+                getFieldDictionary().getParent().hasFieldValue()){
+            // update the value
+            //getFieldDictionary().getParent().getEntries().put(FieldDictionary.V_KEY, selectedName);
+            // add to state manager.
+            stateManager.addChange(new PObject(getFieldDictionary().getParent(),
+                    getFieldDictionary().getParent().getPObjectReference()));
+        }
+
+        if (originalAppearance == null){
+            originalAppearance = currentAppearance;
+        }
     }
 
     public void reset() {
-        // todo, assuming this would be the default state.
+        Object oldValue = fieldDictionary.getFieldValue();
+        Object defaultFieldValue = fieldDictionary.getDefaultFieldValue();
+        FieldDictionary parentFaultFieldValue = fieldDictionary.getParent();
+        if (defaultFieldValue != null) {
+            // apply the default value
+            changeSupport.firePropertyChange("valueFieldReset", oldValue, defaultFieldValue);
+        }else if (parentFaultFieldValue != null) {
+            // apply the default value
+            changeSupport.firePropertyChange("valueFieldReset", oldValue,
+                    parentFaultFieldValue.getDefaultFieldValue());
+        }else{
+            // otherwise we remove the key
+            changeSupport.firePropertyChange("valueFieldReset", oldValue, "");
+        }
     }
 
     public void turnOff() {

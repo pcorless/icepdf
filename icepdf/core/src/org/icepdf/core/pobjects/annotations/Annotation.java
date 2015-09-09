@@ -27,6 +27,8 @@ import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
@@ -508,6 +510,8 @@ public abstract class Annotation extends Dictionary {
     public static final int VISIBLE_RECTANGLE = 1;
     public static final int INVISIBLE_RECTANGLE = 0;
 
+    protected PropertyChangeSupport changeSupport;
+
     /**
      * Debug flag to turn off appearance stream compression for easier
      * human file reading.
@@ -864,7 +868,7 @@ public abstract class Annotation extends Dictionary {
         // create the new action object on the fly.  However it is also possible
         // that we are parsing an action that has no type specification and
         // thus we can't use the parser to create the new action.
-        if (tmp != null && tmp instanceof HashMap) {
+        if (tmp != null) {
             Action action = Action.buildAction(library, (HashMap) tmp);
             // assign reference if applicable
             if (action != null &&
@@ -1771,5 +1775,18 @@ public abstract class Annotation extends Dictionary {
 
     public HashMap<Name, Appearance> getAppearances() {
         return appearances;
+    }
+
+    public void addPropertyChangeListener(
+            PropertyChangeListener listener) {
+        synchronized (this) {
+            if (listener == null) {
+                return;
+            }
+            if (changeSupport == null) {
+                changeSupport = new PropertyChangeSupport(this);
+            }
+            changeSupport.addPropertyChangeListener(listener);
+        }
     }
 }

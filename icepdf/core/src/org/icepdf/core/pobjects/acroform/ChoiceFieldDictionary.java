@@ -128,6 +128,10 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         // options/list times.
         org.icepdf.core.pobjects.security.SecurityManager securityManager = library.getSecurityManager();
         Object value = library.getArray(entries, OPT_KEY);
+        if (value == null) {
+            FieldDictionary parent = getParent();
+            value = library.getArray(parent.getEntries(), OPT_KEY);
+        }
         if (value != null) {
             ArrayList opts = (ArrayList) value;
             options = new ArrayList<ChoiceOption>(opts.size());
@@ -212,8 +216,15 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         } else if (fieldValue instanceof StringObject) {
             StringObject tmp = (StringObject) fieldValue;
             selectedValue = tmp.getDecryptedLiteralString(library.getSecurityManager());
+        }else if (fieldValue instanceof ChoiceOption) {
+            ChoiceOption tmp = (ChoiceOption) fieldValue;
+            selectedValue = tmp.getValue();
         }
-        indexes.clear();
+        if (indexes != null) {
+            indexes.clear();
+        }else{
+            indexes = new ArrayList<Integer>();
+        }
         for (int i = 0, j = 0, max = options.size(); i < max; i++) {
             if (options.get(i).getLabel().equals(selectedValue)) {
                 indexes.add(j, i);

@@ -198,12 +198,21 @@ public class InteractiveForm extends Dictionary {
                 if (fieldRef instanceof Reference) {
                     // add them all as we find them.
                     annotObj = library.getObject((Reference) fieldRef);
-                    if (annotObj != null){
+                    if (annotObj != null) {
                         fields.add(annotObj);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Gets the fields associated with this form.
+     *
+     * @return array of fields.
+     */
+    public ArrayList<Object> getFields() {
+        return fields;
     }
 
     /**

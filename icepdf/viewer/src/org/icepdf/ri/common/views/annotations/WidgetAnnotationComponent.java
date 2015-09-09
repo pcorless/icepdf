@@ -22,12 +22,14 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  *
  */
 @SuppressWarnings("serial")
-public class WidgetAnnotationComponent extends AbstractAnnotationComponent {
+public class WidgetAnnotationComponent extends AbstractAnnotationComponent implements PropertyChangeListener {
 
 
     public WidgetAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
@@ -36,6 +38,11 @@ public class WidgetAnnotationComponent extends AbstractAnnotationComponent {
         isShowInvisibleBorder = true;
         isResizable = true;
         isMovable = true;
+
+        // assign property change listener so we can notification of annotation value change, via the
+        // edit panel or form reset action.
+        annotation.addPropertyChangeListener(this);
+
     }
 
     @Override
@@ -50,5 +57,9 @@ public class WidgetAnnotationComponent extends AbstractAnnotationComponent {
 
     public boolean isActive() {
         return false;
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+
     }
 }

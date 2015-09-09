@@ -26,6 +26,12 @@ import org.icepdf.core.pobjects.Name;
 public interface FormAction {
 
     /**
+     * (Required) A URL file specification (see 7.11.5, "URL Specifications") giving the uniform resource locator
+     * (URL) of the script at the Web server that will process the submission.
+     */
+    public static final Name F_KEY = new Name("F");
+
+    /**
      * An array identifying which fields to reset or which to exclude from
      * resetting, depending on the setting of the Include/Exclude flag in the
      * Flags entry (see Table 239). Each element of the array shall be either
@@ -33,8 +39,10 @@ public interface FormAction {
      * representing the fully qualified name of a field. Elements of both kinds
      * may be mixed in the same array.
      * <p/>
-     * If this entry is omitted, the Include/Exclude flag shall be ignored; all
-     * fields in the document’s interactive form are reset.
+     * If this entry is omitted, the Include/Exclude flag shall be ignored, and all
+     * fields in the document’s interactive form shall be submitted except those whose
+     * NoExport flag (see Table 221) is set. Fields with no values may also be excluded,
+     * as dictated by the value of the IncludeNoValueFields flag; see Table 237.
      */
     public static final Name FIELDS_KEY = new Name("Fields");
 
@@ -49,5 +57,5 @@ public interface FormAction {
      *
      * @return determined by the implementation.
      */
-    public int executeFormAction();
+    public int executeFormAction(int x, int y);
 }

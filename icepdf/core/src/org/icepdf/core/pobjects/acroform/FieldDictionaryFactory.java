@@ -55,6 +55,8 @@ public class FieldDictionaryFactory {
             fieldDictionary = new ChoiceFieldDictionary(library, entries);
         } else if (TYPE_SIGNATURE.equals(fieldType)) {
             fieldDictionary = new SignatureFieldDictionary(library, entries);
+        }else{
+            fieldDictionary = new FieldDictionary(library, entries);
         }
         return fieldDictionary;
     }

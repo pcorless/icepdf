@@ -17,6 +17,7 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.TextFieldDictionary;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
@@ -165,8 +166,18 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
     public void reset() {
         // set the  fields value (V) to the default value defined by the DV key.
-        TextFieldDictionary textFieldDictionary = (TextFieldDictionary) fieldDictionary;
-        textFieldDictionary.setFieldValue(textFieldDictionary.getDefaultFieldValue(), getPObjectReference());
+        Object oldValue = fieldDictionary.getFieldValue();
+        Object tmp = fieldDictionary.getDefaultFieldValue();
+        if (tmp != null) {
+            // apply the default value
+            fieldDictionary.setFieldValue(fieldDictionary.getDefaultFieldValue(), getPObjectReference());
+            changeSupport.firePropertyChange("valueFieldReset", oldValue, fieldDictionary.getFieldValue());
+        }else{
+            // otherwise we remove the key
+            fieldDictionary.getEntries().remove(FieldDictionary.V_KEY);
+            fieldDictionary.setFieldValue("", getPObjectReference());
+            changeSupport.firePropertyChange("valueFieldReset", oldValue, "");
+        }
     }
 
     @Override

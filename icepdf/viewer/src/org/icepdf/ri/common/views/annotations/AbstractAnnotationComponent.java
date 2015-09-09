@@ -16,7 +16,12 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.acroform.AdditionalActionsDictionary;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.actions.Action;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.Appearance;
 import org.icepdf.core.util.ColorUtil;
@@ -55,6 +60,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected static boolean isInteractiveAnnotationsEnabled;
     protected static Color annotationHighlightColor;
     protected static float annotationHighlightAlpha;
+
     static {
         // enables interactive annotation support.
         isInteractiveAnnotationsEnabled =
@@ -203,14 +209,25 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     }
 
     public void focusGained(FocusEvent e) {
-        repaint();
         isSelected = true;
+
+        // on mouse enter pass event to annotation callback if we are in normal viewing
+        // mode. A and AA dictionaries are taken into consideration.
+        additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_FO_KEY, null);
+
+        repaint();
     }
 
     public void focusLost(FocusEvent e) {
-        repaint();
+
         // if we've lost focus then drop the selected state
         isSelected = false;
+
+        // on mouse enter pass event to annotation callback if we are in normal viewing
+        // mode. A and AA dictionaries are taken into consideration.
+        additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_Bl_KEY, null);
+
+        repaint();
     }
 
     protected void resize() {
@@ -333,6 +350,10 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         // set selected appearance state
         annotation.setCurrentAppearance(Annotation.APPEARANCE_STREAM_NORMAL_KEY);
 
+        // on exit pass event to annotation callback if we are in normal viewing
+        // mode. A and AA dictionaries are taken into consideration.
+        additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_X_KEY, mouseEvent);
+
         setCursor(Cursor.getDefaultCursor());
         isRollover = false;
         repaint();
@@ -342,17 +363,6 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         // clear the selection.
         requestFocus();
 
-        // on click pass event to annotation callback if we are in normal viewing
-        // mode.
-        if (!(AbstractPageViewComponent.isAnnotationTool(
-                documentViewModel.getViewToolMode())) &&
-                isInteractiveAnnotationsEnabled) {
-
-            if (documentViewController.getAnnotationCallback() != null) {
-                documentViewController.getAnnotationCallback()
-                        .processAnnotationAction(annotation);
-            }
-        }
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -368,6 +378,11 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         isRollover = (documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 (this instanceof PopupAnnotationComponent));
+
+        // on mouse enter pass event to annotation callback if we are in normal viewing
+        // mode. A and AA dictionaries are taken into consideration.
+        //additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_E_KEY, e);
+
         repaint();
     }
 
@@ -395,12 +410,62 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 !annotation.getFlagReadOnly()) {
             initiateMouseMoved(e);
         }
+
+        // on mouse pressed event to annotation callback if we are in normal viewing
+        // mode. A and AA dictionaries are taken into consideration.
+        boolean actionFired = additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_D_KEY, e);
+
+        // fire the main action associated with the
+        if (!actionFired && !(AbstractPageViewComponent.isAnnotationTool(
+                documentViewModel.getViewToolMode())) &&
+                isInteractiveAnnotationsEnabled) {
+            if (documentViewController.getAnnotationCallback() != null) {
+                // get the A and AA entries.
+                Action action = annotation.getAction();
+                if (action != null) {
+                    documentViewController.getAnnotationCallback()
+                            .processAnnotationAction(annotation, action, e.getX(), e.getY());
+                }
+            }
+        }
         repaint();
+    }
+
+    protected boolean additionalActionsHandler(Name additionalActionKey, MouseEvent e) {
+        if (!(AbstractPageViewComponent.isAnnotationTool(
+                documentViewModel.getViewToolMode())) &&
+                isInteractiveAnnotationsEnabled) {
+            if (documentViewController.getAnnotationCallback() != null) {
+                int x = -1, y = -1;
+                if (e != null) {
+                    x = e.getX();
+                    y = e.getY();
+                }
+                // get the A and AA entries.
+                if (annotation instanceof AbstractWidgetAnnotation) {
+                    AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
+                    FieldDictionary fieldDictionary = (FieldDictionary) widgetAnnotation.getFieldDictionary();
+                    if (fieldDictionary != null) {
+                        AdditionalActionsDictionary additionalActionsDictionary =
+                                fieldDictionary.getAdditionalActionsDictionary();
+                        if (additionalActionsDictionary != null &&
+                                additionalActionsDictionary.isAnnotationValue(additionalActionKey)) {
+                            documentViewController.getAnnotationCallback()
+                                    .processAnnotationAction(annotation,
+                                            additionalActionsDictionary.getAction(additionalActionKey),
+                                            x, y);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     protected void initiateMouseMoved(MouseEvent e) {
         Border border = getBorder();
-        if (border!= null && border instanceof ResizableBorder ) {
+        if (border != null && border instanceof ResizableBorder) {
             cursor = ((ResizableBorder) border).getCursor(e);
         }
         startPos = e.getPoint();
@@ -550,6 +615,11 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                     PropertyConstants.ANNOTATION_BOUNDS,
                     previousAnnotationState, new AnnotationState(this));
         }
+
+        // on mouse released event to annotation callback if we are in normal viewing
+        // mode. A and AA dictionaries are taken into consideration.
+        additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_U_KEY, mouseEvent);
+
         repaint();
     }
 
@@ -594,7 +664,6 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         }
         return at;
     }
-
 
     /**
      * Is the annotation editable

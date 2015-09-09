@@ -167,7 +167,6 @@ public class FieldDictionary extends Dictionary {
     public FieldDictionary(Library library, HashMap entries) {
         super(library, entries);
 
-
         // field name
         Object value = library.getObject(entries, T_KEY);
         if (value != null && value instanceof StringObject) {
@@ -194,17 +193,7 @@ public class FieldDictionary extends Dictionary {
         }
 
         // value field
-        value = library.getObject(entries, V_KEY);
-        if (value instanceof Name) {
-            fieldValue = value;
-        } else if (value instanceof StringObject) {
-            StringObject text = (StringObject) value;
-            fieldValue = Utils.convertStringObject(library, text);
-        } else if (value instanceof String) {
-            fieldValue = value;
-        } else {
-            fieldValue = "";
-        }
+//        getFieldValue();
         // todo default value, see 12.7.5.3, Reset-Form Action.
         value = library.getObject(entries, DV_KEY);
         if (value != null) {
@@ -212,8 +201,8 @@ public class FieldDictionary extends Dictionary {
         }
 
         value = library.getObject(entries, AA_KEY);
-        if (value != null && value instanceof AdditionalActionsDictionary) {
-            additionalActionsDictionary = (AdditionalActionsDictionary) value;
+        if (value != null && value instanceof HashMap) {
+            additionalActionsDictionary = new AdditionalActionsDictionary(library, (HashMap)value);
         }
 
     }
@@ -254,6 +243,9 @@ public class FieldDictionary extends Dictionary {
             Object value = library.getObject(entries, PARENT_KEY);
             if (value instanceof HashMap) {
                 parentField = FieldDictionaryFactory.buildField(library, (HashMap) value);
+                if (parentField != null) {
+                    parentField.setPObjectReference((Reference) entries.get(PARENT_KEY));
+                }
             }
         }
         return parentField;
@@ -349,7 +341,26 @@ public class FieldDictionary extends Dictionary {
     }
 
     public Object getFieldValue() {
+        Object value = library.getObject(entries, V_KEY);
+        if (value instanceof Name) {
+            fieldValue = value;
+        } else if (value instanceof StringObject) {
+            StringObject text = (StringObject) value;
+            fieldValue = Utils.convertStringObject(library, text);
+        } else if (value instanceof String) {
+            fieldValue = value;
+        } else {
+            fieldValue = "";
+        }
         return fieldValue;
+    }
+
+    public boolean hasFieldValue(){
+        return entries.containsKey(V_KEY);
+    }
+
+    public boolean hasDefaultValue(){
+        return entries.containsKey(DV_KEY);
     }
 
     /**

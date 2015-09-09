@@ -405,7 +405,8 @@ public class Utils {
             StringBuilder sb = new StringBuilder();
             Encoding enc = Encoding.getPDFDoc();
             for (int i = 0; i < titleText.length(); i++) {
-                sb.append(enc.get(titleText.charAt(i)));
+                sb.append(titleText.charAt(i));
+//                sb.append(enc.get(titleText.charAt(i)));
             }
             convertedStringObject = sb.toString();
         }
