@@ -27,7 +27,7 @@ import java.util.HashMap;
 /**
  * Upon invocation of a JavaScript action, a conforming processor shall execute a script that is written in the
  * JavaScript programming language. Depending on the nature of the script, various interactive form fields in the
- * document may update their values or change their visual appearances. Mozilla Development Center’s Client-Side
+ * document may update their values or change their visual appearances. Mozilla Development Center's Client-Side
  * JavaScript Reference and the Adobe JavaScript for Acrobat API Reference (see the Bibliography) give details on
  * the contents and effects of JavaScript scripts. Table 217 shows the action dictionary entries specific to this
  * type of action.
@@ -48,7 +48,7 @@ public class JavaScriptAction extends Action{
             javaScript = Utils.convertStringObject(library, text);
         }else if (value instanceof Stream){
             Stream jsStream = (Stream)value;
-            javaScript = new String(jsStream.getDecodedStreamBytes(), Charset.forName("UTF-8"));
+            javaScript = new String(jsStream.getDecodedStreamBytes());
         }
     }
 
