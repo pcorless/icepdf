@@ -101,16 +101,14 @@ public class FontPropertiesManager {
 
         setupLock();
         // create the properties file and scan for font sif the
-        if (ownLock()) {
-            propertyFile = new File(dataDir, USER_FILENAME);
-            if (!propertyFile.exists()) {
-                // scan the system for know font locations.
-                readDefaulFontPaths(null);
-                // save the file
-                saveProperties();
-            }else{
-                loadProperties();
-            }
+        propertyFile = new File(dataDir, USER_FILENAME);
+        if (!propertyFile.exists()) {
+            // scan the system for know font locations.
+            readDefaulFontPaths(null);
+            // save the file
+            saveProperties();
+        }else{
+            loadProperties();
         }
 
     }
