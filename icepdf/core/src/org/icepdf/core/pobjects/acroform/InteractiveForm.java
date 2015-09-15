@@ -198,6 +198,9 @@ public class InteractiveForm extends Dictionary {
                 if (fieldRef instanceof Reference) {
                     // add them all as we find them.
                     annotObj = library.getObject((Reference) fieldRef);
+                    if (annotObj instanceof HashMap){
+                        annotObj = FieldDictionaryFactory.buildField(library, (HashMap)annotObj);
+                    }
                     if (annotObj != null) {
                         fields.add(annotObj);
                     }

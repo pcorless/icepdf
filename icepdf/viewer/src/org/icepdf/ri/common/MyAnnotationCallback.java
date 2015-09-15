@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class represents a basic implemenation of the AnnotationCallback
+ * This class represents a basic implementation of the AnnotationCallback
  *
  * @author ICEsoft Technologies, Inc.
  * @since 2.6
@@ -83,7 +83,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
                     BareBonesBrowserLaunch.openURL(
                             ((URIAction) action).getURI());
                 } else if (action instanceof GoToRAction) {
-
+                    // process resource request
                 } else if (action instanceof LaunchAction) {
                     LaunchAction launchAction = (LaunchAction) action;
                     String file = launchAction.getExternalFile();
@@ -115,11 +115,11 @@ public class MyAnnotationCallback implements AnnotationCallback {
                     BareBonesBrowserLaunch.openURL(
                             ((URIAction) action).getURI());
                 } else if (action instanceof SubmitFormAction) {
-                    // submits form data following the submit actions properties.
-                    ((FormAction) action).executeFormAction(x, y);
+                    // submits form data following the submit actions.
+                    int responseCode = ((SubmitFormAction) action).executeFormAction(x, y);
                 } else if (action instanceof ResetFormAction) {
-                    // resets the form dat following reset actions properties
-                    ((ResetFormAction) action).executeFormAction(x, y);
+                    // resets the form data following reset action.
+                    int responseCode = ((ResetFormAction) action).executeFormAction(x, y);
                 } else if (action instanceof JavaScriptAction) {
                     // resets the form dat following reset actions properties
                     JavaScriptAction javaScriptAction = (JavaScriptAction) action;

@@ -17,13 +17,16 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.util.Library;
+
+import java.util.HashMap;
 
 /**
  * Execute interface for Form actions.
  *
  * @since 5.1
  */
-public interface FormAction {
+public abstract class FormAction extends Action {
 
     /**
      * (Required) A URL file specification (see 7.11.5, "URL Specifications") giving the uniform resource locator
@@ -52,10 +55,25 @@ public interface FormAction {
      */
     public static final Name FLAGS_KEY = new Name("Flags");
 
+    public FormAction(Library l, HashMap h) {
+        super(l, h);
+    }
+
+    /**
+     * (Optional; inheritable) A set of flags specifying various characteristics of the action (see Table 239).
+     * Default value: 0.
+     *
+     * @return flag value
+     */
+    public int getFlags() {
+        // behaviour flags
+        return library.getInt(entries, FLAGS_KEY);
+    }
+
     /**
      * Execute the form action and return the appropriate return code;
      *
      * @return determined by the implementation.
      */
-    public int executeFormAction(int x, int y);
+    public abstract int executeFormAction(int x, int y);
 }

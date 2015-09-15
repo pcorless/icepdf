@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -34,7 +35,7 @@ import java.util.regex.Pattern;
  *
  * @since 5.1
  */
-public abstract class AbstractWidgetAnnotation<T> extends Annotation {
+public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extends Annotation {
 
     /**
      * Indicates that the annotation has no highlight effect.
@@ -130,7 +131,7 @@ public abstract class AbstractWidgetAnnotation<T> extends Annotation {
      * Get the line height as specified by Th or the font size.
      *
      * @param defaultAppearance searchable stream
-     * @return line height, or 13.87 if now resason approximation can be found.
+     * @return line height, or 13.87 if no reasonable approximation can be found.
      */
     protected double getLineHeight(String defaultAppearance) {
         if (defaultAppearance != null && checkAppearance(defaultAppearance)) {
@@ -155,8 +156,7 @@ public abstract class AbstractWidgetAnnotation<T> extends Annotation {
     }
 
     protected String generateDefaultAppearance(String content, String defaultAppearance) {
-        String appearanceText = "";
-
+        String appearanceText;
         if (defaultAppearance != null &&
                 checkAppearance(defaultAppearance)) {
             appearanceText = defaultAppearance + ' ';

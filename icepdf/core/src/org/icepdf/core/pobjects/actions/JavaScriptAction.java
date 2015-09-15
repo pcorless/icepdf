@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
-import java.nio.charset.Charset;
 import java.util.HashMap;
 
 /**

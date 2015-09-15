@@ -53,7 +53,7 @@ public class WidgetAnnotation extends AbstractWidgetAnnotation {
     }
 
     @Override
-    public Object getFieldDictionary() {
+    public FieldDictionary getFieldDictionary() {
         return fieldDictionary;
     }
 }

@@ -16,8 +16,8 @@
 
 package org.icepdf.core.pobjects.actions;
 
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.util.Library;
@@ -30,11 +30,12 @@ import java.util.HashMap;
  * selected interactive form fields to their default values; that is, it shall
  * set the value of the V entry in the field dictionary to that of the DV entry.
  * If no default value is defined for a field, its V entry shall be removed.
- * For fields that can have no value (such as pushbuttons), the action has no
+ * For fields that can have no value (such as pushButtons), the action has no
  * effect. Table 238 shows the action dictionary entries specific to this type
  * of action.
  * <p/>
  * The value of the action dictionary’s Flags entry is a non-negative containing
+ *
  * flags specifying various characteristics of the action. Bit positions within
  * the flag word shall be numbered starting from 1 (low-order). Only one flag is
  * defined for this type of action. All undefined flag bits shall be reserved
@@ -42,7 +43,7 @@ import java.util.HashMap;
  *
  * @since 5.1
  */
-public class ResetFormAction extends Action implements FormAction {
+public class ResetFormAction extends FormAction {
 
     /**
      * If clear, the Fields array specifies which fields to reset.
@@ -58,22 +59,11 @@ public class ResetFormAction extends Action implements FormAction {
     }
 
     /**
-     * (Optional; inheritable) A set of flags specifying various characteristics of the action (see Table 239).
-     * Default value: 0.
-     * todo setup an inheritable herarchy.
-     *
-     * @return flag value
-     */
-    public int getFlags() {
-        return library.getInt(entries, F_KEY);
-    }
-
-    /**
      * Upon invocation of a reset-form action, a conforming processor shall reset
      * selected interactive form fields to their default values; that is, it shall
      * set the value of the V entry in the field dictionary to that of the DV entry.
      * If no default value is defined for a field, its V entry shall be removed.
-     * For fields that can have no value (such as pushbuttons), the action has no
+     * For fields that can have no value (such as pushButtons), the action has no
      * effect. Table 238 shows the action dictionary entries specific to this type
      * of action.
      *
@@ -85,7 +75,7 @@ public class ResetFormAction extends Action implements FormAction {
         // get a reference to the form data
         InteractiveForm interactiveForm = library.getCatalog().getInteractiveForm();
         ArrayList<Object> fields = interactiveForm.getFields();
-        for (Object tmp : fields){
+        for (Object tmp : fields) {
             descendFormTree(tmp);
         }
         // update the annotation an component values.
@@ -97,23 +87,22 @@ public class ResetFormAction extends Action implements FormAction {
      *
      * @param formNode root form node.
      */
-    private void descendFormTree(Object formNode){
-        if (formNode instanceof AbstractWidgetAnnotation){
-            ((AbstractWidgetAnnotation)formNode).reset();
-        }else if (formNode instanceof HashMap){
+    protected void descendFormTree(Object formNode) {
+        if (formNode instanceof AbstractWidgetAnnotation) {
+            ((AbstractWidgetAnnotation) formNode).reset();
+        } else if (formNode instanceof FieldDictionary) {
             // iterate over the kid's array.
-            HashMap child = (HashMap)formNode;
-            formNode = child.get(new Name("Kids"));
-            if (formNode instanceof ArrayList){
-                ArrayList kidsArray = (ArrayList)formNode;
+            FieldDictionary child = (FieldDictionary) formNode;
+            formNode = child.getKids();
+            if (formNode != null) {
+                ArrayList kidsArray = (ArrayList) formNode;
                 for (Object kid : kidsArray) {
-                    if (kid instanceof Reference){
-                        kid = library.getObject((Reference)kid);
+                    if (kid instanceof Reference) {
+                        kid = library.getObject((Reference) kid);
                     }
                     if (kid instanceof AbstractWidgetAnnotation) {
                         ((AbstractWidgetAnnotation) kid).reset();
-                    }
-                    else if (kid instanceof HashMap){
+                    } else if (kid instanceof FieldDictionary) {
                         descendFormTree(kid);
                     }
                 }
