@@ -208,17 +208,19 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      */
     @Override
     public void setFieldValue(Object fieldValue, Reference parentReference) {
-        super.setFieldValue(fieldValue, parentReference);
         // update the index to reflect the change,
         String selectedValue = null;
         if (fieldValue instanceof String) {
             selectedValue = (String) fieldValue;
+            super.setFieldValue(selectedValue, parentReference);
         } else if (fieldValue instanceof StringObject) {
             StringObject tmp = (StringObject) fieldValue;
             selectedValue = tmp.getDecryptedLiteralString(library.getSecurityManager());
+            super.setFieldValue(selectedValue, parentReference);
         }else if (fieldValue instanceof ChoiceOption) {
             ChoiceOption tmp = (ChoiceOption) fieldValue;
             selectedValue = tmp.getValue();
+            super.setFieldValue(selectedValue, parentReference);
         }
         if (indexes != null) {
             indexes.clear();
@@ -282,7 +284,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      * <p/>
      * If this entry is not present, no choices should be presented to the user.
      *
-     * @return
+     * @return choice options.
      */
     public ArrayList<ChoiceOption> getOptions() {
         return options;
