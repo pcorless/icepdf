@@ -308,7 +308,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         if (resized) {
             refreshAnnotationRect();
             if (getParent() != null) {
-                getParent().validate();
+//                getParent().validate();
                 getParent().repaint();
             }
             resized = false;
@@ -390,8 +390,15 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.
         isMousePressed = true;
-        startOfMousePress = e.getPoint();
-        endOfMousePress = e.getPoint();
+        int x = 0, y = 0;
+        Point point = new Point();
+        if (e != null){
+            x = e.getX();
+            y = e.getY();
+            point = e.getPoint();
+        }
+        startOfMousePress = point;
+        endOfMousePress = point;
 
         // check if there is a mouse down state
         Appearance down = annotation.getAppearances().get(Annotation.APPEARANCE_STREAM_DOWN_KEY);
@@ -424,7 +431,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 Action action = annotation.getAction();
                 if (action != null) {
                     documentViewController.getAnnotationCallback()
-                            .processAnnotationAction(annotation, action, e.getX(), e.getY());
+                            .processAnnotationAction(annotation, action, x, y);
                 }
             }
         }
