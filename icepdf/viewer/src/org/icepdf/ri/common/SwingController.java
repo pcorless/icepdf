@@ -170,6 +170,7 @@ public class SwingController
     private JToggleButton selectToolButton;
     private JToggleButton highlightAnnotationToolButton;
     private JToggleButton textAnnotationToolButton;
+    private JToggleButton formHighlightButton;
     private JToggleButton linkAnnotationToolButton;
     private JToggleButton highlightAnnotationUtilityToolButton;
     private JToggleButton strikeOutAnnotationToolButton;
@@ -886,6 +887,15 @@ public class SwingController
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * for the form highlight button.
+     */
+    public void setFormHighlightButton(JToggleButton btn) {
+        formHighlightButton = btn;
+        btn.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
     public void setTextAnnotationUtilityToolButton(JToggleButton btn) {
         textAnnotationUtilityToolButton = btn;
@@ -1152,6 +1162,7 @@ public class SwingController
         setEnabled(freeTextAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(textAnnotationUtilityToolButton, opened && canModify && !pdfCollection);
+        setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
         setEnabled(fontEngineButton, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
         setEnabled(singlePageViewContinuousButton, opened && !pdfCollection);
@@ -1163,7 +1174,17 @@ public class SwingController
             reflectFitInFitButtons();
             reflectDocumentViewModeInButtons();
             reflectToolInToolButtons();
+            reflectFormHighlightButtons();
         }
+    }
+
+    private boolean hasForms(){
+        if (document == null){
+            return false;
+        }
+        return !(document.getCatalog().getInteractiveForm() == null ||
+                document.getCatalog().getInteractiveForm().getFields() == null ||
+                document.getCatalog().getInteractiveForm().getFields().size() == 0);
     }
 
     private void reflectPageChangeInComponents() {
@@ -1565,6 +1586,8 @@ public class SwingController
                 ));
         reflectSelectionInButton(showHideUtilityPaneButton,
                 isUtilityPaneVisible());
+        reflectSelectionInButton(formHighlightButton,
+                viewModel.isWidgetAnnotationHighlight());
     }
 
     /**
@@ -1581,6 +1604,16 @@ public class SwingController
                 isDocumentFitMode(DocumentViewController.PAGE_FIT_WINDOW_HEIGHT));
         reflectSelectionInButton(fitActualSizeButton,
                 isDocumentFitMode(DocumentViewController.PAGE_FIT_ACTUAL_SIZE));
+    }
+
+    /**
+     * Sets the state of the highlight forms button.  Insures button is depressed when active.
+     */
+    private void reflectFormHighlightButtons() {
+        if (document == null) {
+            return;
+        }
+        reflectSelectionInButton(formHighlightButton, viewModel.isWidgetAnnotationHighlight());
     }
 
     /**
@@ -2233,6 +2266,12 @@ public class SwingController
             setUtilityPaneVisible(showUtilityPane);
         }
 
+        // apply state value for whether form highlight is being used or not.
+        boolean showFormHighlight = PropertiesManager.checkAndStoreBooleanProperty(
+                propertiesManager,
+                PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
+        setFormHighlightVisible(showFormHighlight);
+
         // check if there are layers and enable/disable the tab as needed
         OptionalContent optionalContent = document.getCatalog().getOptionalContent();
         if (layersPanel != null && utilityTabbedPane != null) {
@@ -2441,6 +2480,7 @@ public class SwingController
         freeTextAnnotationToolButton = null;
         textAnnotationToolButton = null;
         textAnnotationUtilityToolButton = null;
+        formHighlightButton = null;
 
         fontEngineButton = null;
 
@@ -2512,7 +2552,7 @@ public class SwingController
         }
 
         if (document.getStateManager().isChanged() &&
-                !document.foundIncrementalUpdater) {
+                !Document.foundIncrementalUpdater) {
             org.icepdf.ri.util.Resources.showMessageDialog(
                     viewer,
                     JOptionPane.INFORMATION_MESSAGE,
@@ -2543,7 +2583,7 @@ public class SwingController
             );
             if (lastSeparator >= 0) {
                 originalFileName = origin.substring(lastSeparator + 1);
-                if (originalFileName != null && originalFileName.length() > 0) {
+                if (originalFileName.length() > 0) {
                     // Set the selected file to a slightly modified name of the original
                     fileChooser.setSelectedFile(new File(generateNewSaveName(originalFileName)));
                 } else {
@@ -2643,8 +2683,7 @@ public class SwingController
             }
             return result;
         }
-
-        return fileName;
+        return null;
     }
 
     /**
@@ -2738,7 +2777,7 @@ public class SwingController
                     SwingWorker worker = new SwingWorker() {
                         public Object construct() {
                             // save the file
-                            String error;
+                            String error = null;
                             try {
                                 // It is important to create a UTF-8 encoded file.
                                 OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
@@ -2747,7 +2786,6 @@ public class SwingController
                                         pageIndex,
                                         out);
                                 out.close();
-                                error = null;
                             } catch (Throwable e) {
                                 error = e.getMessage();
                                 logger.log(Level.FINE, "Error exporting to SVG");
@@ -2775,12 +2813,11 @@ public class SwingController
                                         messageBundle.getString("viewer.dialog.exportSVG.status.error.msg"));
                                 tmpMsg = formatter.format(messageArguments);
                             }
-                            final String msg = tmpMsg;
 
                             Runnable doSwingWork = new Runnable() {
                                 public void run() {
                                     if (statusLabel != null)
-                                        statusLabel.setText(msg);
+                                        statusLabel.setText(tmpMsg);
                                 }
                             };
                             SwingUtilities.invokeLater(doSwingWork);
@@ -2823,7 +2860,7 @@ public class SwingController
         // want to save the changes.
         if (document != null) {
             boolean documentChanges = document.getStateManager().isChanged();
-            if (documentChanges && document.foundIncrementalUpdater) {
+            if (documentChanges && Document.foundIncrementalUpdater) {
 
                 Object[] colorArgument = new Object[]{document.getDocumentOrigin()};
                 MessageFormat formatter = new MessageFormat(
@@ -3273,7 +3310,7 @@ public class SwingController
     /**
      * Zoom to a new zoom level, without centering on any new specific point
      *
-     * @param zoom
+     * @param zoom zoom value passed to view controller.
      */
     public void setZoom(float zoom) {
         documentViewController.setZoom(zoom);
@@ -3289,7 +3326,7 @@ public class SwingController
     /**
      * Returns tree if there is a current page associated with this controller.
      *
-     * @return true if their is a currentpage, otherwise false.
+     * @return true if their is a current page, otherwise false.
      */
     public boolean isCurrentPage() {
         PageTree pageTree = getPageTree();
@@ -3525,12 +3562,40 @@ public class SwingController
     }
 
     /**
+     * Set the form highlight mode for the viewer.
+     *
+     * @param visible true enables the highlight mode, otherwise; false.
+     */
+    private void setFormHighlightVisible(boolean visible) {
+        viewModel.setIsWidgetAnnotationHighlight(visible);
+
+        // update annotation state for highlight
+        document.setFormHighlight(viewModel.isWidgetAnnotationHighlight());
+
+        // repaint the page.
+        ((AbstractDocumentView)documentViewController.getDocumentView()).repaint();
+    }
+
+    /**
      * Flips the visibility of the utility pane to the opposite of what it was
      *
      * @see #setUtilityPaneVisible(boolean)
      */
     public void toggleUtilityPaneVisibility() {
         setUtilityPaneVisible(!isUtilityPaneVisible());
+    }
+
+    /**
+     * Flips the visibility of the form highlight functionality ot hte opposite of what it was.
+     */
+    public void toggleFormHighlight(){
+        viewModel.setIsWidgetAnnotationHighlight(!viewModel.isWidgetAnnotationHighlight());
+        // write the property for next viewing.
+        propertiesManager.setBoolean(PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT,
+                viewModel.isWidgetAnnotationHighlight());
+        reflectFormHighlightButtons();
+
+        setFormHighlightVisible(viewModel.isWidgetAnnotationHighlight());
     }
 
     /**
@@ -3940,6 +4005,8 @@ public class SwingController
                         rotateRight();
                     } else if (source == showHideUtilityPaneMenuItem || source == showHideUtilityPaneButton) {
                         toggleUtilityPaneVisibility();
+                    } else if (source == formHighlightButton) {
+                        toggleFormHighlight();
                     } else if (source == firstPageMenuItem || source == firstPageButton) {
                         showPage(0);
                     } else if (source == previousPageMenuItem || source == previousPageButton) {

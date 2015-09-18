@@ -1104,6 +1104,8 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildToolToolBar());
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
             addToToolBar(toolbar, buildAnnotationlToolBar());
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
+            addToToolBar(toolbar, buildFormsToolBar());
 
         // we only add the configurable font engin in the demo version
         if (isDemo) {
@@ -1424,6 +1426,13 @@ public class SwingViewBuilder {
         return toolbar;
     }
 
+    public JToolBar buildFormsToolBar() {
+        JToolBar toolbar = new JToolBar();
+        commonToolBarSetup(toolbar, false);
+        addToToolBar(toolbar, buildFormHighlightButton(Images.SIZE_LARGE));
+        return toolbar;
+    }
+
     public JToolBar buildAnnotationUtilityToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, true);
@@ -1595,6 +1604,16 @@ public class SwingViewBuilder {
                 "text_annot", Images.SIZE_MEDIUM, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setTextAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildFormHighlightButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.forms.highlight.label"),
+                messageBundle.getString("viewer.toolbar.tool.forms.highlight.tooltip"),
+                "form_highlight", Images.SIZE_LARGE, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setFormHighlightButton(btn);
         return btn;
     }
 

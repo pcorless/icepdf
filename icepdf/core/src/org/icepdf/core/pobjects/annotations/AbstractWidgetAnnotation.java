@@ -19,6 +19,8 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -26,6 +28,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +47,41 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     private static final Logger logger =
             Logger.getLogger(AbstractWidgetAnnotation.class.toString());
+
+    /**
+     * Transparency value used to simulate text highlighting.
+     */
+    protected static float highlightAlpha = 0.1f;
+
+    // text selection colour
+    protected static Color highlightColor;
+
+    private boolean enableHighlightedWidget;
+
+    static {
+        // sets the background colour of the annotation highlight
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.widget.highlight.color", "#CC00FF");
+            int colorValue = ColorUtil.convertColor(color);
+            highlightColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("0077FF", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading widget highlight colour.");
+            }
+        }
+
+        try {
+            highlightAlpha = (float) Defs.doubleProperty(
+                    "org.icepdf.core.views.page.annotation.widget.highlight.alpha", 0.3f);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading widget highlight alpha.");
+            }
+        }
+    }
 
     protected Name highlightMode;
 
@@ -77,7 +115,21 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
         if (appearanceState != null &&
                 appearanceState.getShapes() != null) {
+            // render the main annotation content
             super.renderAppearanceStream(g);
+        }
+        // check the highlight widgetAnnotation field and if true we draw a light background colour to mark
+        // the widgets on a page.
+        if (enableHighlightedWidget) {
+            AffineTransform preHighLightTransform = g.getTransform();
+
+            g.setColor(highlightColor);
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, highlightAlpha));
+            Rectangle2D bbox = userSpaceRectangle;
+            g.fillRect(0, 0, (int) bbox.getWidth(), (int) bbox.getHeight());
+
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            g.setTransform(preHighLightTransform);
         }
     }
 
@@ -174,7 +226,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
                 } catch (NumberFormatException e) {
                     // ignore and move on
                 }
-                if (size < 2){
+                if (size < 2) {
                     size = 12;
                 }
             }
@@ -281,5 +333,40 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         } else {
             return null;
         }
+    }
+
+    /**
+     * Set the static highlight color used to highlight widget annotations.
+     *
+     * @param highlightColor colour of
+     */
+    public static void setHighlightColor(Color highlightColor) {
+        AbstractWidgetAnnotation.highlightColor = highlightColor;
+    }
+
+    /**
+     * Set enable highlight on an individual widget.
+     *
+     * @param enableHighlightedWidget true to enable highlight mode, otherwise false.
+     */
+    public void setEnableHighlightedWidget(boolean enableHighlightedWidget) {
+        this.enableHighlightedWidget = enableHighlightedWidget;
+    }
+
+    /**
+     * Set the static alpha value uses to paint a color over a widget annotation.
+     *
+     * @param highlightAlpha
+     */
+    public static void setHighlightAlpha(float highlightAlpha) {
+        AbstractWidgetAnnotation.highlightAlpha = highlightAlpha;
+    }
+
+    /**
+     * Is enable highlight enabled.
+     * @return return true if highlight is enabled, false otherwise.
+     */
+    public boolean isEnableHighlightedWidget() {
+        return enableHighlightedWidget;
     }
 }

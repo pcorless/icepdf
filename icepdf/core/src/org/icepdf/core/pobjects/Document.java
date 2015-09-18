@@ -20,6 +20,9 @@ import org.icepdf.core.application.ProductInfo;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.*;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.security.SecurityManager;
@@ -1189,6 +1192,52 @@ public class Document {
         if (pTrailer == null)
             return null;
         return pTrailer.getInfo();
+    }
+
+    /**
+     * Enables or disables the form widget annotation highlighting.  Generally not use for print but can be very
+     * useful for highlight input fields in a Viewer application.
+     *
+     * @param highlight true to enable highlight mode, otherwise; false.
+     */
+    public void setFormHighlight(boolean highlight){
+        // iterate over the document annotations and set the appropriate highlight value.
+        if (catalog != null && catalog.getInteractiveForm() != null){
+            InteractiveForm interactiveForm = catalog.getInteractiveForm();
+            ArrayList<Object> widgets = interactiveForm.getFields();
+            for (Object widget : widgets) {
+                descendFormTree(widget, highlight);
+            }
+        }
+    }
+
+    /**
+     * Recursively set highlight on all the form fields.
+     *
+     * @param formNode root form node.
+     */
+    private  void descendFormTree(Object formNode, boolean highLight) {
+        if (formNode instanceof AbstractWidgetAnnotation) {
+            ((AbstractWidgetAnnotation) formNode).setEnableHighlightedWidget(highLight);
+        } else if (formNode instanceof FieldDictionary) {
+            // iterate over the kid's array.
+            FieldDictionary child = (FieldDictionary) formNode;
+            formNode = child.getKids();
+            if (formNode != null) {
+                ArrayList kidsArray = (ArrayList) formNode;
+                for (Object kid : kidsArray) {
+                    if (kid instanceof Reference) {
+                        kid = library.getObject((Reference) kid);
+                    }
+                    if (kid instanceof AbstractWidgetAnnotation) {
+                        ((AbstractWidgetAnnotation) kid).setEnableHighlightedWidget(highLight);
+                    } else if (kid instanceof FieldDictionary) {
+                        descendFormTree(kid, highLight);
+                    }
+                }
+            }
+
+        }
     }
 
     /**

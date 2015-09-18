@@ -68,6 +68,7 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_TOOLBAR_ROTATE = "application.toolbar.show.rotate";
     public static final String PROPERTY_SHOW_TOOLBAR_TOOL = "application.toolbar.show.tool";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION = "application.toolbar.show.annotation";
+    public static final String PROPERTY_SHOW_TOOLBAR_FORMS = "application.toolbar.show.forms";
     // properties used to hide/show status bar buttons
     public static final String PROPERTY_SHOW_STATUSBAR = "application.statusbar";
     // properties used to hide/show status bar status label
@@ -99,6 +100,7 @@ public class PropertiesManager {
     public static final String PROPERTY_VIEWPREF_HIDETOOLBAR = "application.viewerpreferences.hidetoolbar";
     public static final String PROPERTY_VIEWPREF_HIDEMENUBAR = "application.viewerpreferences.hidemenubar";
     public static final String PROPERTY_VIEWPREF_FITWINDOW = "application.viewerpreferences.fitwindow";
+    public static final String PROPERTY_VIEWPREF_FORM_HIGHLIGHT = "application.viewerpreferences.form.highlight";
 
     //the version name, used in about dialog and start-up message
     String versionName = Document.getLibraryVersion();
