@@ -606,7 +606,7 @@ public abstract class Annotation extends Dictionary {
                 // todo signatures widget.
                 else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
                     annot = new WidgetAnnotation(library, hashMap);
-                }else{
+                } else {
                     annot = new WidgetAnnotation(library, hashMap);
                 }
             }
@@ -1077,7 +1077,7 @@ public abstract class Annotation extends Dictionary {
         if (page == null) {
             Object annot = getParentAnnotation();
             if (annot instanceof Annotation)
-                page = ((Annotation)annot).getPage();
+                page = ((Annotation) annot).getPage();
         }
         return page;
     }
@@ -1291,10 +1291,10 @@ public abstract class Annotation extends Dictionary {
             AffineTransform tAs = AffineTransform.getScaleInstance(
                     (rect.getWidth() / tBbox.getWidth()),
                     (rect.getHeight() / tBbox.getHeight()));
-            if (matrix.getTranslateX() > 0 || matrix.getTranslateY() > 0){
+            if (matrix.getTranslateX() > 0 || matrix.getTranslateY() > 0) {
                 // we have to align the boxes.
-                matrix.setToTranslation(rect.getX()- matrix.getTranslateX(),
-                        rect.getY()- matrix.getTranslateY());
+                matrix.setToTranslation(rect.getX() - matrix.getTranslateX(),
+                        rect.getY() - matrix.getTranslateY());
             }
             // Step 3. matrix is concatenated with A to form a matrix AA
             // that maps from the appearance's coordinate system to the
@@ -1684,7 +1684,7 @@ public abstract class Annotation extends Dictionary {
      *
      * @return appearance for annotation.
      */
-    public Form getOrGenerateAppearanceForm(){
+    public Form getOrGenerateAppearanceForm() {
         StateManager stateManager = library.getStateManager();
         Form form = null;
         if (hasAppearanceStream()) {
