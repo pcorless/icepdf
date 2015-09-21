@@ -287,6 +287,7 @@ public class TextAnnotation extends MarkupAnnotation {
             Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
                     (float) bbox.getWidth(), (float) bbox.getHeight());
             form.setAppearance(shapes, matrix, formBbox);
+            appearanceState.setShapes(shapes);
             stateManager.addChange(new PObject(form, form.getPObjectReference()));
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(iconContentString.getBytes());
