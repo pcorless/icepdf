@@ -398,7 +398,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             point = e.getPoint();
         }
         startOfMousePress = point;
-        endOfMousePress = point;
+        endOfMousePress = new Point(point); // need clone not a copy...
 
         // check if there is a mouse down state
         Appearance down = annotation.getAppearances().get(Annotation.APPEARANCE_STREAM_DOWN_KEY);
