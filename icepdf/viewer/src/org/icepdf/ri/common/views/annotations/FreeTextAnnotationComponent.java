@@ -144,7 +144,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         if (annotation.getBbox() != null) {
             setBounds(annotation.getBbox().getBounds());
         }
-//        resetAppearanceShapes();
+        resetAppearanceShapes();
         revalidate();
     }
 
