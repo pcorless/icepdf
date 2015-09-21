@@ -621,6 +621,12 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             documentViewController.firePropertyChange(
                     PropertyConstants.ANNOTATION_BOUNDS,
                     previousAnnotationState, new AnnotationState(this));
+
+            // notify the annotation callback of the annotation resize.
+            if (documentViewController.getAnnotationCallback() != null) {
+                documentViewController.getAnnotationCallback()
+                        .updateAnnotation(this);
+            }
         }
 
         // on mouse released event to annotation callback if we are in normal viewing
@@ -628,6 +634,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_U_KEY, mouseEvent);
 
         repaint();
+
     }
 
     /**
