@@ -1345,8 +1345,8 @@ public class Page extends Dictionary {
             }
         }
         // last resort
-        if (mediaBox == null){
-            mediaBox = new PRectangle(new Point.Float(0,0), new Point.Float(612, 792));
+        if (mediaBox == null) {
+            mediaBox = new PRectangle(new Point.Float(0, 0), new Point.Float(612, 792));
         }
         return mediaBox;
     }
@@ -1479,6 +1479,18 @@ public class Page extends Dictionary {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Gets the Shapes object associated with this Page.  The return value can be
+     * null depending on the PDF encoding.  The init() method should be called to
+     * insure the the page parsing and resource loading has completed.  This method
+     * will not call init() if the page has not yet be initialized.
+     *
+     * @return shapes object associated with this Page,  can be null.
+     */
+    public Shapes getShapes() {
+        return shapes;
     }
 
     /**

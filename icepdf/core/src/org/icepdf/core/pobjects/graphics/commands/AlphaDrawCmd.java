@@ -46,4 +46,23 @@ public class AlphaDrawCmd extends AbstractDrawCmd {
 
         return currentShape;
     }
+
+    /**
+     * Gets the alpha value that is applied to the graphics context.
+     *
+     * @return alpha context which will be applied by this command.
+     */
+    public AlphaComposite getAlphaComposite() {
+        return alphaComposite;
+    }
+
+    /**
+     * Sets the alpha composite to be executed by this command. Care should be taken as this
+     * will have direct impact on the PDF shapes stack on the next paint call.
+     *
+     * @param alphaComposite alphaComposite object to be executed by this command.
+     */
+    public void setAlphaComposite(AlphaComposite alphaComposite) {
+        this.alphaComposite = alphaComposite;
+    }
 }
