@@ -75,7 +75,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
         try {
             highlightAlpha = (float) Defs.doubleProperty(
-                    "org.icepdf.core.views.page.annotation.widget.highlight.alpha", 0.3f);
+                    "org.icepdf.core.views.page.annotation.widget.highlight.alpha", 0.1f);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading widget highlight alpha.");
