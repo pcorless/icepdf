@@ -145,6 +145,9 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
         // apply the default appearance.
         content.append(generateDefaultAppearance(markedContent, fieldDictionary.getDefaultAppearance()));
+        if (fieldDictionary.getDefaultAppearance() == null) {
+            lineHeight = getFontSize(markedContent);
+        }
 
         // apply the text offset, 4 is just a generic padding.
         if (!isfourthQuadrant) {
@@ -183,5 +186,29 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
     @Override
     public TextFieldDictionary getFieldDictionary() {
         return fieldDictionary;
+    }
+
+    public String generateDefaultAppearance(String content, String defaultAppearance) {
+        String appearanceText;
+        if (defaultAppearance != null &&
+                checkAppearance(defaultAppearance)) {
+            appearanceText = defaultAppearance + ' ';
+        } else { // common font and colour layout for most form elements.
+            // try and find text size
+            String fontName = "/Helv";
+            double size = getFontSize(content);
+            // try and find the font name.
+//            if (defaultAppearance != null) {
+//                StringTokenizer toker = new StringTokenizer(defaultAppearance);
+//                String tmp = toker.nextToken();
+//                if (tmp != null && tmp.startsWith("/")) {
+//                    fontName = tmp;
+//                }
+//            }
+            fieldDictionary.setSize((int)size);
+            fieldDictionary.setFontName(fontName);
+            appearanceText = fontName + " " + size + " Tf 0 g ";
+        }
+        return appearanceText;
     }
 }

@@ -88,7 +88,7 @@ public class LiteralStringObject implements StringObject {
         // append string data
         this.reference = reference;
         // decrypt the string.
-        stringData = new StringBuilder(string.replaceAll("(?=[()\\\\])", "\\\\"));
+//        stringData = new StringBuilder(string.replaceAll("(?=[()\\\\])", "\\\\"));
         stringData = new StringBuilder(
                 encryption(string, false, securityManager));
     }

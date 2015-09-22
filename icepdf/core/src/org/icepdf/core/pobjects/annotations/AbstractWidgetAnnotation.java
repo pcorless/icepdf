@@ -207,17 +207,13 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         return 13.87;
     }
 
-    protected String generateDefaultAppearance(String content, String defaultAppearance) {
-        String appearanceText;
-        if (defaultAppearance != null &&
-                checkAppearance(defaultAppearance)) {
-            appearanceText = defaultAppearance + ' ';
-        } else { // common font and colour layout for most form elements.
-            // try and find text size
+    protected double getFontSize(String content){
+        // try and find text size
+        double size = 12;
+
+        if (content != null){
             Pattern pattern = Pattern.compile("\\d+(\\.\\d+)?\\s+Tf");
             Matcher matcher = pattern.matcher(content);
-            String fontName = "/Helv";
-            double size = 12;
             if (matcher.find()) {
                 String fontDef = content.substring(matcher.start(), matcher.end());
                 fontDef = fontDef.split(" ")[0];
@@ -230,17 +226,8 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
                     size = 12;
                 }
             }
-            // try and find the font name.
-            if (defaultAppearance != null) {
-                StringTokenizer toker = new StringTokenizer(defaultAppearance);
-                String tmp = toker.nextToken();
-                if (tmp != null && tmp.startsWith("/")) {
-                    fontName = tmp;
-                }
-            }
-            appearanceText = fontName + " " + size + " Tf 0 g ";
         }
-        return appearanceText;
+        return size;
     }
 
     protected StringBuilder encodeLiteralString(StringBuilder content, String contents) {

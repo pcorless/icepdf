@@ -187,6 +187,14 @@ public class VariableTextFieldDictionary extends FieldDictionary {
         return fontName;
     }
 
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public void setFontName(String fontName) {
+        this.fontName = fontName;
+    }
+
     public Color getColor() {
         return color;
     }
