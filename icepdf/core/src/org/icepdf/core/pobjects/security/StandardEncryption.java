@@ -130,7 +130,8 @@ class StandardEncryption {
     public byte[] generalEncryptionAlgorithm(Reference objectReference,
                                              byte[] encryptionKey,
                                              final String algorithmType,
-                                             byte[] inputData) {
+                                             byte[] inputData,
+                                             boolean encrypt) {
 
         if (objectReference == null || encryptionKey == null ||
                 inputData == null) {
@@ -161,6 +162,9 @@ class StandardEncryption {
                 System.arraycopy(step3Bytes, 0, rc4Key, 0, rc4Key.length);
             }
 
+            // shouldn't matter as both RC4 and AES are symmetric.
+            int encryptionMode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
+
             // Set up an RC4 cipher and try to decrypt:
             byte[] finalData = null; // return data if all goes well
             try {
@@ -169,39 +173,47 @@ class StandardEncryption {
                     // Use above as key for the RC4 encryption function.
                     SecretKeySpec key = new SecretKeySpec(rc4Key, "RC4");
                     Cipher rc4 = Cipher.getInstance("RC4");
-                    rc4.init(Cipher.DECRYPT_MODE, key);
-
+                    rc4.init(encryptionMode, key);
                     // finally add the stream or string data
                     finalData = rc4.doFinal(inputData);
                 } else {
                     SecretKeySpec key = new SecretKeySpec(rc4Key, "AES");
                     Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
-                    // calculate 16 byte initialization vector.
-                    byte[] initialisationVector = new byte[16];
-                    // need to normalize size for encryption.
-                    if (inputData.length < 16){
-                        byte[] tmp = new byte[16];
-                        System.arraycopy(inputData, 0, tmp, 0, inputData.length);
-                        inputData = tmp;
-                    }else if (inputData.length > 16){
-                        byte[] tmp = new byte[16];
-                        System.arraycopy(inputData, 0, tmp, 0, tmp.length);
-                        inputData = tmp;
+                    // decrypt the data.
+                    if (encryptionMode == Cipher.DECRYPT_MODE) {
+                        // calculate 16 byte initialization vector.
+                        byte[] initialisationVector = new byte[16];
+                        //  should never happen as it would mean a string that won't encrypted properly as it
+                        // would be missing full length 16 byte public key.
+                        if (inputData.length < 16) {
+                            byte[] tmp = new byte[16];
+                            System.arraycopy(inputData, 0, tmp, 0, inputData.length);
+                            inputData = tmp;
+                        }
+                        // grab the public key.
+                        System.arraycopy(inputData, 0, initialisationVector, 0, 16);
+                        final IvParameterSpec iVParameterSpec =
+                                new IvParameterSpec(initialisationVector);
+
+                        // trim the input, get rid of the key and expose the data to decrypt
+                        byte[] intermData = new byte[inputData.length - 16];
+                        System.arraycopy(inputData, 16, intermData, 0, intermData.length);
+
+                        // finally add the stream or string data
+                        aes.init(encryptionMode, key, iVParameterSpec);
+                        finalData = aes.doFinal(intermData);
+                    } else {
+                        // padding is taken care of by PKCS5Padding, so we don't have to touch the data.
+                        final IvParameterSpec iVParameterSpec = new IvParameterSpec(generateIv());
+                        aes.init(encryptionMode, key, iVParameterSpec);
+                        finalData = aes.doFinal(inputData);
+                        // add randomness to the start
+                        byte[] output = new byte[iVParameterSpec.getIV().length + finalData.length];
+                        System.arraycopy(iVParameterSpec.getIV(), 0, output, 0, 16);
+                        System.arraycopy(finalData, 0, output, 16, finalData.length);
+                        finalData = output;
                     }
-                    System.arraycopy(inputData, 0, initialisationVector, 0, 16);
-
-                    // trim the input
-                    byte[] intermData = new byte[inputData.length - 16];
-                    System.arraycopy(inputData, 16, intermData, 0, intermData.length);
-
-                    final IvParameterSpec iVParameterSpec =
-                            new IvParameterSpec(initialisationVector);
-
-                    aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
-
-                    // finally add the stream or string data
-                    finalData = aes.doFinal(intermData);
                 }
 
             } catch (NoSuchAlgorithmException ex) {
@@ -268,6 +280,19 @@ class StandardEncryption {
             }
         }
         return null;
+    }
+
+    /**
+     * Generates a recure random 16 byte (128 bit) public key for string to be
+     * encryped using AES.
+     *
+     * @return 16 byte public key.
+     */
+    private byte[] generateIv() {
+        SecureRandom random = new SecureRandom();
+        byte[] ivBytes = new byte[16];
+        random.nextBytes(ivBytes);
+        return ivBytes;
     }
 
     /**
@@ -709,7 +734,7 @@ class StandardEncryption {
      * Computing Owner password value, Algorithm 3.3.
      * <p/>
      * AESv3 passwords are not handle by this method, instead use
-     * {@link #generalEncryptionAlgorithm(org.icepdf.core.pobjects.Reference, byte[], String, byte[])}
+     * {@link #generalEncryptionAlgorithm(org.icepdf.core.pobjects.Reference, byte[], String, byte[], boolean)}
      * If the result is not null then the encryptionDictionary will container
      * values for isAuthenticatedOwnerPassword and isAuthenticatedUserPassword.
      *
@@ -854,7 +879,7 @@ class StandardEncryption {
      * otherwise.
      * <p/>
      * AESv3 passwords are not handle by this method, instead use
-     * {@link #generalEncryptionAlgorithm(org.icepdf.core.pobjects.Reference, byte[], String, byte[])}
+     * {@link #generalEncryptionAlgorithm(org.icepdf.core.pobjects.Reference, byte[], String, byte[], boolean)}
      * If the result is not null then the encryptionDictionary will container
      * values for isAuthenticatedOwnerPassword and isAuthenticatedUserPassword.
      *

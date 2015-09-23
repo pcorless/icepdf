@@ -175,6 +175,29 @@ public class StandardSecurityHandler extends SecurityHandler {
                           byte[] data) {
 
         // check if crypt filters are being used and find out if V2 or AESV2
+        String algorithmType = getAlgorithmType();
+
+        // use the general encryption algorithm for encryption
+        return standardEncryption.generalEncryptionAlgorithm(
+                objectReference, encryptionKey, algorithmType, data, true);
+    }
+
+
+    public byte[] decrypt(Reference objectReference,
+                          byte[] encryptionKey,
+                          byte[] data) {
+        // check if crypt filters are being used and find out if V2 or AESV2
+        String algorithmType = getAlgorithmType();
+
+        // use the general encryption algorithm for encryption
+        return standardEncryption.generalEncryptionAlgorithm(
+                objectReference, encryptionKey, algorithmType, data, false);
+    }
+
+    /**
+     * Utility to determine encryption type used.
+     */
+    private String getAlgorithmType() {
         String algorithmType;
         if (encryptionDictionary.getCryptFilter() != null) {
             CryptFilterEntry cryptFilterEntry =
@@ -185,17 +208,7 @@ public class StandardSecurityHandler extends SecurityHandler {
         } else {
             algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
         }
-
-        // use the general encryption algorithm for encryption
-        return standardEncryption.generalEncryptionAlgorithm(
-                objectReference, encryptionKey, algorithmType, data);
-    }
-
-    public byte[] decrypt(Reference objectReference,
-                          byte[] encryptionKey,
-                          byte[] data) {
-        // standard encryption is symmetric, so we can just use enrypt to decrypt
-        return encrypt(objectReference, encryptionKey, data);
+        return algorithmType;
     }
 
     public synchronized InputStream getEncryptionInputStream(
