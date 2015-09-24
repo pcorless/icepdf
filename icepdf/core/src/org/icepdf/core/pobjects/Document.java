@@ -1205,8 +1205,10 @@ public class Document {
         if (catalog != null && catalog.getInteractiveForm() != null){
             InteractiveForm interactiveForm = catalog.getInteractiveForm();
             ArrayList<Object> widgets = interactiveForm.getFields();
-            for (Object widget : widgets) {
-                descendFormTree(widget, highlight);
+            if (widgets != null) {
+                for (Object widget : widgets) {
+                    descendFormTree(widget, highlight);
+                }
             }
         }
     }
