@@ -205,10 +205,7 @@ public class LiteralStringObject implements StringObject {
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
 
-        if (fontFormat == Font.SIMPLE_FORMAT
-                || font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE) {
-            return stringData;
-        } else if (fontFormat == Font.CID_FORMAT) {
+        if (fontFormat == Font.CID_FORMAT) {
             int length = getLength();
             int charValue;
             StringBuilder tmp = new StringBuilder(length);
@@ -238,6 +235,9 @@ public class LiteralStringObject implements StringObject {
                 }
             }
             return tmp;
+        } else if (fontFormat == Font.SIMPLE_FORMAT
+                || font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE) {
+            return stringData;
         }
         return null;
     }
