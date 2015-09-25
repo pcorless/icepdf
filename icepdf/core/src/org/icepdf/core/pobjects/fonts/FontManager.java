@@ -135,8 +135,9 @@ public class FontManager {
     };
 
     private static final String[] KOREAN_FONT_NAMES = {
-            "Arial Unicode MS", "Gulim", "Batang",
-            "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro"
+            "Arial Unicode MS", "Dotum", "Gulim", "New Gulim", "GulimChe", "Batang",
+            "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro",
+            "AppleGothic", "Malgun Gothic", "UnDotum", "UnShinmun", "Baekmuk Gulim"
     };
 
     private static String JAVA_FONT_PATHS = Defs.sysProperty("java.home") + "/lib/fonts";
