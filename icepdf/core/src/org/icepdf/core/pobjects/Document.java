@@ -815,6 +815,15 @@ public class Document {
         boolean madeSecurityManager = false;
         HashMap<Object, Object> encryptDictionary = documentTrailer.getEncrypt();
         List fileID = documentTrailer.getID();
+        // check for a missing file ID.
+        if (fileID == null) {
+            // we have a couple malformed documents that don't specify a FILE ID.
+            // but proving two empty string allows the document to be decrypted.
+            fileID = new ArrayList(2);
+            fileID.add(new LiteralStringObject(""));
+            fileID.add(new LiteralStringObject(""));
+        }
+
         if (encryptDictionary != null && fileID != null) {
             // create new security manager
             library.securityManager = new SecurityManager(
