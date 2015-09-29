@@ -203,18 +203,20 @@ public class Document {
             throws PDFException, PDFSecurityException, IOException {
         setDocumentOrigin(filepath);
         File file = new File(filepath);
-
-        if (isFileCachingEnabled && file.length() > 0  && fileCacheMaxSize <= file.length()) {
+        FileInputStream inputStream = new FileInputStream(file);
+        int fileLength = inputStream.available();
+        if (isFileCachingEnabled && file.length() > 0 && fileLength <= fileCacheMaxSize) {
             // copy the file contents into byte[], for direct memory mapping.
-            int fileLength = (int) file.length();
             byte[] data = new byte[fileLength];
-            FileInputStream inputStream = new FileInputStream(file);
             inputStream.read(data);
             setByteArray(data, 0, fileLength, filepath);
         }else{
             RandomAccessFileInputStream rafis =
                     RandomAccessFileInputStream.build(new File(filepath));
             setInputStream(rafis);
+        }
+        if (inputStream != null) {
+            inputStream.close();
         }
     }
 
