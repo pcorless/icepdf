@@ -14,11 +14,13 @@
  * governing permissions and limitations under the License.
  */
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -26,6 +28,7 @@ import org.icepdf.ri.common.views.PageViewComponent;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
@@ -72,7 +75,8 @@ public class MyAnnotationCallback implements AnnotationCallback {
      * @param annotation annotation that was activated by a user via the
      *                   PageViewComponent.
      */
-    public void processAnnotationAction(Annotation annotation) {
+
+    public void processAnnotationAction(Annotation annotation, Action action, int x, int y) {
         if (logger.isLoggable(Level.INFO)) {
             logger.info("Annotation " + annotation.toString());
             if (annotation.getAction() != null) {
@@ -83,9 +87,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
         if (annotation instanceof LinkAnnotation) {
             LinkAnnotation linkAnnotation = (LinkAnnotation) annotation;
             // look for an A entry,
-            if (linkAnnotation.getAction() != null) {
-                Action action =
-                        linkAnnotation.getAction();
+            if (action != null) {
                 // do instance of check to process actions correctly.
                 if (action instanceof GoToAction &&
                         documentViewController != null) {
@@ -95,13 +97,19 @@ public class MyAnnotationCallback implements AnnotationCallback {
                     BareBonesBrowserLaunch.openURL(
                             ((URIAction) action).getURI());
                 } else if (action instanceof GoToRAction) {
-
+                    // process resource request
                 } else if (action instanceof LaunchAction) {
-
+                    LaunchAction launchAction = (LaunchAction) action;
+                    String file = launchAction.getExternalFile();
+                    String location =
+                            documentViewController.getDocument().getDocumentLocation();
+                    location = location.substring(0, location.lastIndexOf(File.separator) + 1);
+                    BareBonesBrowserLaunch.openFile(location + file);
                 }
 
             }
-            // look for a Destination entry, only present if an action is not found
+            // look for a Dest entry, only present if an action is not found
+            // or vise versa.
             else if (linkAnnotation.getDestination() != null &&
                     documentViewController != null) {
                 // use this controller to navigate to the correct page
@@ -111,19 +119,57 @@ public class MyAnnotationCallback implements AnnotationCallback {
         }
         // catch any other annotation types and try and process their action.
         else {
-            // look for the destination entry and navigate to it.
-            if (annotation.getAction() != null) {
-                Action action = annotation.getAction();
+            // look for the dest entry and navigate to it.
+            if (action != null) {
                 if (action instanceof GoToAction) {
                     documentViewController.setDestinationTarget(
                             ((GoToAction) action).getDestination());
                 } else if (action instanceof URIAction) {
                     BareBonesBrowserLaunch.openURL(
                             ((URIAction) action).getURI());
+                } else if (action instanceof SubmitFormAction) {
+                    // submits form data following the submit actions.
+                    int responseCode = ((SubmitFormAction) action).executeFormAction(x, y);
+                } else if (action instanceof ResetFormAction) {
+                    // resets the form data following reset action.
+                    int responseCode = ((ResetFormAction) action).executeFormAction(x, y);
+                } else if (action instanceof JavaScriptAction) {
+                    // resets the form dat following reset actions properties
+                    JavaScriptAction javaScriptAction = (JavaScriptAction) action;
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("Annotation JS: " + javaScriptAction.getJavaScript());
+                    }
+                } else if (action instanceof NamedAction) {
+                    // Named actions are key words that we should act on.
+                    NamedAction namedAction = (NamedAction) action;
+                    Name actionName = namedAction.getNamedAction();
+                    // go to the first page of the document.
+                    if (NamedAction.FIRST_PAGE_KEY.equals(actionName)) {
+                        documentViewController.setCurrentPageIndex(0);
+                    } // go to the last page of the document.
+                    else if (NamedAction.LAST_PAGE_KEY.equals(actionName)) {
+                        int numberOfPages = documentViewController.getDocument().getNumberOfPages();
+                        documentViewController.setCurrentPageIndex(numberOfPages - 1);
+                    } // next page.
+                    else if (NamedAction.NEXT_PAGE_KEY.equals(actionName)) {
+                        int currentPageNumber = documentViewController.getCurrentPageIndex();
+                        documentViewController.setCurrentPageIndex(currentPageNumber + 1);
+                    } // previous page.
+                    else if (NamedAction.PREV_PAGE_KEY.equals(actionName)) {
+                        int currentPageNumber = documentViewController.getCurrentPageIndex();
+                        documentViewController.setCurrentPageIndex(currentPageNumber - 1);
+                    } // print the current document.
+                    else if (NamedAction.PRINT_KEY.equals(actionName)) {
+                        SwingController controller = (SwingController) documentViewController.getParentController();
+                        controller.print(true);
+                    } // show save as dialog.
+                    else if (NamedAction.SAVE_AS_KEY.equals(actionName)) {
+                        SwingController controller = (SwingController) documentViewController.getParentController();
+                        controller.saveFile();
+                    }
                 }
             }
         }
-
         /**
          * Mark the annotation as visited.
          */

@@ -91,14 +91,6 @@ public class PrintServices {
                 PrintServiceLookup.lookupPrintServices(
                         DocFlavor.SERVICE_FORMATTED.PAGEABLE, null);
 
-        MultiDocPrintService mdps[] =
-                PrintServiceLookup.lookupMultiDocPrintServices(
-                        new DocFlavor[]{DocFlavor.SERVICE_FORMATTED.PAGEABLE}, null);
-
-        MultiDocPrintJob mdpj = mdps[0].createMultiDocPrintJob();
-        System.out.println(mdpj);
-
-
         int selectedPrinter = 0;
         // ask the user which printer they want, only quite when they type
         // q, otherwise just keep asking them which printer to use.

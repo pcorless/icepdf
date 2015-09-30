@@ -40,7 +40,7 @@ public class SearchController {
     public static void main(String[] args) {
 
         if (args.length < 2) {
-            System.out.println("At leasts two command line arguments must " +
+            System.out.println("At least two command line arguments must " +
                     "be specified. ");
             System.out.println("<filename> <term1> ... <termN>");
         }
