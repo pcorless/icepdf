@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.acroform;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -46,8 +47,54 @@ import java.util.HashMap;
  */
 public class SignatureFieldDictionary extends FieldDictionary {
 
-    // todo implement class.
+    /**
+     * (Optional; shall be an indirect reference; PDF 1.5) A signature field lock dictionary that specifies a set of form
+     * fields that shall be locked when this signature field is signed. Table 233 lists the entries in this dictionary.
+     */
+    public static final Name LOCK_KEY = new Name("Lock");
+
+    /**
+     * (Optional; shall be an indirect reference; PDF 1.5) A seed value dictionary (see Table 234) containing information
+     * that constrains the properties of a signature that is applied to this field.
+     */
+    public static final Name SV_KEY = new Name("SV");
+
+    private LockDictionary lockDictionary;
+
+    private SeedValueDictionary seedValueDictionary;
+
     public SignatureFieldDictionary(Library library, HashMap entries) {
         super(library, entries);
+
+        // get the lock
+        Object tmp = library.getObject(entries, LOCK_KEY);
+        if (tmp instanceof HashMap) {
+            lockDictionary = new LockDictionary(library, (HashMap) tmp);
+        }
+        // get the seeds.
+        tmp = library.getObject(entries, SV_KEY);
+        if (tmp instanceof HashMap) {
+            seedValueDictionary = new SeedValueDictionary(library, (HashMap) tmp);
+        }
+    }
+
+    /**
+     * A signature field lock dictionary that specifies a set of form fields that shall be locked when this signature
+     * field is signed. Table 233 lists the entries in this dictionary.
+     *
+     * @return signature field object, can be null.
+     */
+    public LockDictionary getLockDictionary() {
+        return lockDictionary;
+    }
+
+    /**
+     * A seed value dictionary (see Table 234) containing information that constrains the properties of a signature
+     * that is applied to this field.
+     *
+     * @return seed value object, can be null.
+     */
+    public SeedValueDictionary getSeedValueDictionary() {
+        return seedValueDictionary;
     }
 }
