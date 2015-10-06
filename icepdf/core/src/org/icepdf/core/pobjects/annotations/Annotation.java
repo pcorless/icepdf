@@ -603,9 +603,8 @@ public abstract class Annotation extends Dictionary {
                 } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
                     annot = new TextWidgetAnnotation(library, hashMap);
                 }
-                // todo signatures widget.
                 else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
-                    annot = new WidgetAnnotation(library, hashMap);
+                    annot = new SignatureWidgetAnnotation(library, hashMap);
                 } else {
                     annot = new WidgetAnnotation(library, hashMap);
                 }
