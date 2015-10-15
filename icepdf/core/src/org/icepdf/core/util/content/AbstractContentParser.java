@@ -178,7 +178,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static void consume_g(GraphicsState graphicState, Stack stack,
                                     Library library) {
-        float gray = ((Number) stack.pop()).floatValue();
+        float gray = Math.abs(((Number) stack.pop()).floatValue());
         // Fill Color Gray
         graphicState.setFillColorSpace(
                 PColorSpace.getColorSpace(library, DeviceGray.DEVICEGRAY_KEY));
@@ -593,7 +593,6 @@ public abstract class AbstractContentParser implements ContentParser {
                         (formXObject.getGraphicsState() != null &&
                                 formXObject.getGraphicsState().getSoftMask() != null)) &&
                         formXObject.isTransparencyGroup() &&
-//                        graphicState.getFillAlpha() < 1.0f &&
                         // limit size, as buffer is needed
                         (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
                                 formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
@@ -674,12 +673,16 @@ public abstract class AbstractContentParser implements ContentParser {
             java.util.List dashVector = (java.util.List) stack.pop();
             // if the dash vector size is zero we have a default none dashed
             // line and thus we skip out
-            if (dashVector.size() > 0) {
+            if (!dashVector.isEmpty() && dashVector.get(0) != null) {
                 // convert dash vector to a array of floats
                 final int sz = dashVector.size();
                 dashArray = new float[sz];
+                Object tmp;
                 for (int i = 0; i < sz; i++) {
-                    dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
+                    tmp = dashVector.get(i);
+                    if (tmp != null && tmp instanceof Number) {
+                        dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
+                    }
                 }
                 // corner case check to see if the dash array contains a first element
                 // that is very different then second which is likely the result of
@@ -837,8 +840,8 @@ public abstract class AbstractContentParser implements ContentParser {
         AffineTransform af = new AffineTransform(textBlockBase);
 
         // grab old values.
-        double oldTransY = graphicState.getCTM().getTranslateY();
-        double oldScaleY = graphicState.getCTM().getScaleY();
+//        double oldTransY = graphicState.getCTM().getTranslateY();
+//        double oldScaleY = graphicState.getCTM().getScaleY();
 
         // apply the transform
         graphicState.getTextState().tmatrix = new AffineTransform(tm);
