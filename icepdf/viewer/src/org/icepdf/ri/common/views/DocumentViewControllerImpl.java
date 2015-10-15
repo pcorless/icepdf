@@ -18,6 +18,7 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.NamedDestinations;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.ColorUtil;
@@ -376,6 +377,15 @@ public class DocumentViewControllerImpl
 
         if (documentView == null || documentViewModel == null) {
             return;
+        }
+
+        // check for a named destination def, and if so do the lookup.
+        NamedDestinations namedDestinations = document.getCatalog().getDestinations();
+        if (namedDestinations != null) {
+            Destination tmp = namedDestinations.getDestination(destination.getNamedDestination());
+            if (tmp != null) {
+                destination = tmp;
+            }
         }
 
         if (destination == null || destination.getPageReference() == null) {

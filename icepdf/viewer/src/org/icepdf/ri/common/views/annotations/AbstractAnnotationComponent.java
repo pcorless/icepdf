@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.Appearance;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
@@ -429,10 +430,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             if (documentViewController.getAnnotationCallback() != null) {
                 // get the A and AA entries.
                 Action action = annotation.getAction();
-                if (action != null) {
-                    documentViewController.getAnnotationCallback()
-                            .processAnnotationAction(annotation, action, x, y);
-                }
+                documentViewController.getAnnotationCallback()
+                        .processAnnotationAction(annotation, action, x, y);
             }
         }
         repaint();
