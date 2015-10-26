@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Library;
@@ -23,9 +24,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -83,6 +82,9 @@ public class SquareAnnotation extends MarkupAnnotation {
             fillColor = new Color(red, green, blue);
             isFillColor = true;
         }
+
+        // try and generate an appearance stream.
+        resetNullAppearanceStream();
     }
 
     /**

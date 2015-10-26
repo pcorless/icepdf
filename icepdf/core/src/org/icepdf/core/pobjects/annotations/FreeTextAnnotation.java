@@ -319,6 +319,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 }
             }
         }
+        // try and generate an appearance stream.
+        resetNullAppearanceStream();
     }
 
     /**

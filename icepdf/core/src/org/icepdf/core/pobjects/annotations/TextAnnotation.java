@@ -147,6 +147,9 @@ public class TextAnnotation extends MarkupAnnotation {
         } else if (value instanceof String) {
             stateModel = (String) value;
         }
+
+        // try and generate an appearance stream.
+        resetNullAppearanceStream();
     }
 
     /**
