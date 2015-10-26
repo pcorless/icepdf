@@ -148,6 +148,8 @@ public class LinkAnnotation extends Annotation {
 
     public void init() {
         super.init();
+        // try and generate an appearance stream.
+        resetNullAppearanceStream();
     }
 
     /**

@@ -60,6 +60,13 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
 
     }
 
+    public SignatureWidgetAnnotation(Annotation widgetAnnotation) {
+        super(widgetAnnotation.getLibrary(), widgetAnnotation.getEntries());
+        fieldDictionary = new SignatureFieldDictionary(library, entries);
+        // copy over the reference number.
+        setPObjectReference(widgetAnnotation.getPObjectReference());
+    }
+
     public SignatureDictionary getSignatureDictionary() {
         return signatureDictionary;
     }

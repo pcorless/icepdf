@@ -86,6 +86,8 @@ public class CircleAnnotation extends MarkupAnnotation {
             fillColor = new Color(red, green, blue);
             isFillColor = true;
         }
+        // try and generate an appearance stream.
+        resetNullAppearanceStream();
     }
 
     /**

@@ -590,7 +590,7 @@ public abstract class Annotation extends Dictionary {
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
                 Name fieldType = library.getName(hashMap, FieldDictionary.FT_KEY);
                 if (fieldType == null) {
-                    // get type from parent object if we the widgeit and field dictionary aren't combined.
+                    // get type from parent object if we the widget and field dictionary aren't combined.
                     Object tmp = library.getObject(hashMap, FieldDictionary.PARENT_KEY);
                     if (tmp instanceof HashMap) {
                         fieldType = library.getName((HashMap) tmp, FieldDictionary.FT_KEY);
@@ -602,8 +602,7 @@ public abstract class Annotation extends Dictionary {
                     annot = new ChoiceWidgetAnnotation(library, hashMap);
                 } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
                     annot = new TextWidgetAnnotation(library, hashMap);
-                }
-                else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
+                } else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
                     annot = new SignatureWidgetAnnotation(library, hashMap);
                 } else {
                     annot = new WidgetAnnotation(library, hashMap);
@@ -830,6 +829,21 @@ public abstract class Annotation extends Dictionary {
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         return appearanceState.getBbox();
+    }
+
+    protected void resetNullAppearanceStream() {
+        // try and generate an appearance stream.
+        if (!hasAppearanceStream()) {
+            Object tmp = getObject(RECTANGLE_KEY);
+            Rectangle2D.Float rectangle = null;
+            if (tmp instanceof java.util.List) {
+                rectangle = library.getRectangle(entries, RECTANGLE_KEY);
+            }
+            if (rectangle != null) {
+                setBBox(rectangle.getBounds());
+            }
+            resetAppearanceStream(new AffineTransform());
+        }
     }
 
     public Name getCurrentAppearance() {
@@ -1732,7 +1746,7 @@ public abstract class Annotation extends Dictionary {
             if (value == null)
                 sb.append("null");
             else if (value instanceof StringObject)
-                sb.append(((StringObject) value).getDecryptedLiteralString(library.securityManager));
+                sb.append(((StringObject) value).getDecryptedLiteralString(library.getSecurityManager()));
             else
                 sb.append(value.toString());
             sb.append(',');

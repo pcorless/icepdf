@@ -194,7 +194,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             }
 
         }
-
+        // try and generate an appearance stream.
+        resetNullAppearanceStream();
     }
 
     /**

@@ -565,6 +565,8 @@ public class LineAnnotation extends MarkupAnnotation {
             }
             resetAppearanceStream(new AffineTransform());
         }
+        // try and generate an appearance stream.
+        resetNullAppearanceStream();
     }
 
     /**
