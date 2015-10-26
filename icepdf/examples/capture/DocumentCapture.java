@@ -21,8 +21,6 @@ import java.util.concurrent.Executors;
  */
 public class DocumentCapture {
 
-    private boolean running = false;
-
     public static final String FOLDER_PATH = "c:/ftp/";
     public static final float IMAGE_FIXED_WIDTH = 500;
 
@@ -40,7 +38,7 @@ public class DocumentCapture {
             Path ftpFolder = Paths.get(FOLDER_PATH);
             WatchService watchService = FileSystems.getDefault().newWatchService();
             ftpFolder.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
-            running = true;
+            boolean running;
             do {
                 // Returns a queued key. If no queued key is available, this method waits.
                 // poll(long, TimeUnit) is another valid option
@@ -127,8 +125,7 @@ public class DocumentCapture {
                         ImageIO.write(image, "jpg", outputStream);
                         // create an output stream and pass it off the the cloud storage insert method.
                         InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-                        long byteCount = outputStream.size();
-
+//                        long byteCount = outputStream.size();
                         // make the insert call, https://cloud.google.com/storage/docs/json_api/v1/objects/insert
                         // insert(inputStream, byteCount, fileName);
 
