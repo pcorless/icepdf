@@ -429,10 +429,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             if (documentViewController.getAnnotationCallback() != null) {
                 // get the A and AA entries.
                 Action action = annotation.getAction();
-                if (action != null) {
-                    documentViewController.getAnnotationCallback()
-                            .processAnnotationAction(annotation, action, x, y);
-                }
+                documentViewController.getAnnotationCallback()
+                        .processAnnotationAction(annotation, action, x, y);
             }
         }
         repaint();
