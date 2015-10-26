@@ -54,16 +54,11 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
 
     protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
 
-    // need to make the stroke cap, thickness configurable. Or potentially
-    // static from the AnnotationHandle so it would look like the last
-    // settings where remembered.
-    protected static BasicStroke stroke = new BasicStroke(DEFAULT_STROKE_WIDTH,
-            BasicStroke.CAP_BUTT,
-            BasicStroke.JOIN_MITER,
-            1.0f);
-
+    protected static BasicStroke stroke;
+    protected static float strokeWidth;
     protected static Color lineColor;
     protected static Color internalColor;
+    protected static boolean useInternalColor;
 
     static {
 
@@ -82,6 +77,10 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         }
 
         // sets annotation link squareCircle colour
+        useInternalColor = Defs.booleanProperty(
+                "org.icepdf.core.views.page.annotation.squareCircle.fill.enabled", false);
+
+        // sets annotation link squareCircle colour
         try {
             String color = Defs.sysProperty(
                     "org.icepdf.core.views.page.annotation.squareCircle.fill.color", "#ffffff");
@@ -94,6 +93,17 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                 logger.warning("Error reading squareCircle Annotation fill colour");
             }
         }
+
+        strokeWidth = (float)Defs.doubleProperty("org.icepdf.core.views.page.annotation.squareCircle.stroke.width",
+                DEFAULT_STROKE_WIDTH);
+
+        // need to make the stroke cap, thickness configurable. Or potentially
+        // static from the AnnotationHandle so it would look like the last
+        // settings where remembered.
+        stroke = new BasicStroke(strokeWidth,
+                BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_MITER,
+                1.0f);
     }
 
     // start and end point
@@ -121,8 +131,10 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
             Color oldColor = gg.getColor();
             Stroke oldStroke = gg.getStroke();
             gg.setStroke(stroke);
-//            gg.setColor(internalColor);
-//            gg.fill(rectangle);
+            if (useInternalColor) {
+                gg.setColor(internalColor);
+                gg.fill(rectangle);
+            }
             gg.setColor(lineColor);
             gg.draw(rectangle);
             g.setColor(oldColor);
@@ -166,9 +178,13 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                         Annotation.SUBTYPE_SQUARE,
                         tBbox);
         annotation.setColor(lineColor);
-        if (annotation.isFillColor()) {
+        if (annotation.isFillColor() || useInternalColor) {
             annotation.setFillColor(internalColor);
+            if (!annotation.isFillColor()){
+                annotation.setFillColor(true);
+            }
         }
+        borderStyle.setStrokeWidth(strokeWidth);
         annotation.setRectangle(rectangle);
         annotation.setBorderStyle(borderStyle);
 
