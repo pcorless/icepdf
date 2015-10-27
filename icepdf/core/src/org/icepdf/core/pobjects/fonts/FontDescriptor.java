@@ -293,7 +293,6 @@ public class FontDescriptor extends Dictionary {
                             fontStream, FontFactory.FONT_TYPE_1, subType.getName());
                 }
                 if (subType != null && subType.equals(FONT_FILE_3_OPEN_TYPE)) {
-//                        font = new NFontOpenType(fontStreamBytes);
                     font = fontFactory.createFontFile(
                             fontStream, FontFactory.FONT_OPEN_TYPE, subType.getName());
                 }

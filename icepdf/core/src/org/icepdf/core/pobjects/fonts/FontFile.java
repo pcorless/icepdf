@@ -117,6 +117,14 @@ public interface FontFile {
      */
     public int getNumGlyphs();
 
+    /**
+     * Gets the style associated with the font.  The following values can be be extracted using bit flag detection:
+     * PLAIN = 0<br />
+     * BOLD = 1<br />
+     * ITALIC = 2
+     *
+     * @return int value representing the fonts style.
+     */
     public int getStyle();
 
     /**
