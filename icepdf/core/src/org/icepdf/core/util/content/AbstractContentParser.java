@@ -606,8 +606,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 if (formXObject.getShapes() != null &&
                         formXObject.getShapes().getPageText() != null) {
                     // normalize each sprite.
+                    AffineTransform pageSpace = graphicState.getCTM();
+                    pageSpace.concatenate(formXObject.getMatrix());
                     formXObject.getShapes().getPageText()
-                            .applyXObjectTransform(graphicState.getCTM());
+                            .applyXObjectTransform(pageSpace);
                     // add the text to the current shapes for extraction and
                     // selection purposes.
                     PageText pageText = formXObject.getShapes().getPageText();
