@@ -343,7 +343,7 @@ public class ImageStream extends Stream {
         }
         // JBIG2 writes out image if successful
         else if (shouldUseJBIG2Decode()) {
-            decodedImage = jbig2Decode(width, height, colourSpace, bitsPerComponent);
+            decodedImage = jbig2Decode(width, height, colourSpace, bitsPerComponent, decode);
         }
         // JPEG2000 writes out image if successful
         else if (shouldUseJPXDecode()) {
@@ -603,7 +603,7 @@ public class ImageStream extends Stream {
      */
     private BufferedImage jbig2Decode(int width, int height,
                                       PColorSpace colourSpace,
-                                      int bitspercomponent) {
+                                      int bitsPerComponent, float[] decode) {
         BufferedImage tmpImage;
 
         // get the decode params form the stream
@@ -619,7 +619,7 @@ public class ImageStream extends Stream {
         byte[] data = getDecodedStreamBytes(
                 width * height
                         * colourSpace.getNumComponents()
-                        * bitspercomponent / 8);
+                        * bitsPerComponent / 8);
 
         // ICEpdf-pro has a commercial license of the levigo library but the OS
         // library can use it to if the project can comply with levigo's open
@@ -641,6 +641,11 @@ public class ImageStream extends Stream {
                     data,
                     decodeParms, globalsStream);
         }
+        // apply decode
+        if ((colourSpace instanceof DeviceGray)) {
+            tmpImage = ImageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
+        }
+
         // apply the fill colour and alpha if masking is enabled.
         return tmpImage;
     }

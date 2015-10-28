@@ -870,6 +870,22 @@ public class ImageUtility {
         return jpegEncoding;
     }
 
+    public static BufferedImage applyGrayDecode(BufferedImage rgbImage, int bitsPerComponent, float[] decode) {
+        WritableRaster wr = rgbImage.getRaster();
+        int[] cmap = null;
+        if (bitsPerComponent == 1) {
+            boolean defaultDecode = 0.0f == decode[0];
+            cmap = defaultDecode ? GRAY_1_BIT_INDEX_TO_RGB : GRAY_1_BIT_INDEX_TO_RGB_REVERSED;
+        } else if (bitsPerComponent == 2) {
+            cmap = GRAY_2_BIT_INDEX_TO_RGB;
+        } else if (bitsPerComponent == 4) {
+            cmap = GRAY_4_BIT_INDEX_TO_RGB;
+        }
+        ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, wr.getDataBuffer().getDataType());
+        rgbImage = new BufferedImage(cm, wr, false, null);
+        return rgbImage;
+    }
+
     public static BufferedImage convertSpaceToRgb(
             Raster colourRaster, PColorSpace colorSpace,
             float[] decode) {
