@@ -64,7 +64,7 @@ public interface Pattern {
 
     public Rectangle2D getBBox();
 
-    void init();
+    void init(GraphicsState graphicsState);
 
     public Paint getPaint();
 

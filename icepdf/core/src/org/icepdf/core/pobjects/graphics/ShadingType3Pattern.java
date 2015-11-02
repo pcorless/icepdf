@@ -74,7 +74,7 @@ public class ShadingType3Pattern extends ShadingPattern {
     }
 
     @SuppressWarnings("unchecked")
-    public synchronized void init() {
+    public synchronized void init(GraphicsState graphicsState) {
 
         if (inited) {
             return;
