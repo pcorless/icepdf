@@ -1327,7 +1327,7 @@ public abstract class AbstractContentParser implements ContentParser {
             Name patternName = (Name) stack.pop();
             Pattern pattern = resources.getShading(patternName);
             if (pattern != null) {
-                pattern.init();
+                pattern.init(graphicState);
                 // we paint the shape and color shading as defined
                 // by the pattern dictionary and respect the current clip
 
@@ -1705,7 +1705,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 graphicState = graphicState.save();
                 // 2.) install the graphic state
                 tilingPattern.setParentGraphicState(graphicState);
-                tilingPattern.init();
+                tilingPattern.init(graphicState);
                 // 4.) Restore the saved graphics state
                 graphicState = graphicState.restore();
                 // 1x1 tiles don't seem to paint so we'll resort to using the
@@ -1727,7 +1727,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 shapes.add(new DrawDrawCmd());
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
-                pattern.init();
+                pattern.init(graphicState);
                 shapes.add(new PaintDrawCmd(pattern.getPaint()));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new DrawDrawCmd());
@@ -1813,7 +1813,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 graphicState = graphicState.save();
                 // 2.) install the graphic state
                 tilingPattern.setParentGraphicState(graphicState);
-                tilingPattern.init();
+                tilingPattern.init(graphicState);
                 // 4.) Restore the saved graphics state
                 graphicState = graphicState.restore();
                 // tiles nee to be 1x1 or larger to paint so we'll resort to using the
@@ -1835,7 +1835,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 shapes.add(new FillDrawCmd());
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
-                pattern.init();
+                pattern.init(graphicState);
                 shapes.add(new PaintDrawCmd(pattern.getPaint()));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new FillDrawCmd());

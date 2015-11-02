@@ -221,7 +221,7 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
      * Initialized shading dictionary attributes. Discrepancies between sh and
      * scn tokens cause us to handle initialization at a later time.
      */
-    public abstract void init();
+    public abstract void init(GraphicsState graphicsState);
 
     public void setParentGraphicState(GraphicsState graphicsState) {
         // nothing to be done for shading. 
