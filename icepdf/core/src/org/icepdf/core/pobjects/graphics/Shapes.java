@@ -137,8 +137,8 @@ public class Shapes {
             DrawCmd nextShape;
             // for loops actually faster in this case.
             for (int i = 0, max = shapes.size(); i < max; i++) {
-
-                if (interrupted || Thread.currentThread().isInterrupted()) {
+                // try and minimize interrupted checks, costly.
+                if (interrupted || (i % 1000 == 0 && Thread.currentThread().isInterrupted())) {
                     interrupted = false;
                     logger.log(Level.FINE, "Page painting interrupted");
                     break;

@@ -69,17 +69,17 @@ public class ImagePool {
         // create a new reference so we don't have a hard link to the page
         // which will likely keep a page from being GC'd.
         if (enabled) {
-            synchronized (fCache) {
+//            synchronized (fCache) {
                 fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()), image);
-            }
+//            }
         }
     }
 
     public BufferedImage get(Reference ref) {
         if (enabled) {
-            synchronized (fCache) {
+//            synchronized (fCache) {
                 return fCache.get(ref);
-            }
+//            }
         } else {
             return null;
         }
@@ -87,9 +87,9 @@ public class ImagePool {
 
     public boolean containsKey(Reference ref) {
         if (enabled) {
-            synchronized (fCache) {
+//            synchronized (fCache) {
                 return fCache.containsKey(ref);
-            }
+//            }
         } else {
             return false;
         }

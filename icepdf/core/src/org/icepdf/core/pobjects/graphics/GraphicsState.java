@@ -217,53 +217,48 @@ public class GraphicsState {
     // enabled buy default but can be turned off if required.
     private static boolean enabledOverpaint;
 
-    private static boolean enableQuickClip;
-
     static {
         enabledOverpaint =
                 Defs.sysPropertyBoolean("org.icepdf.core.overpaint",
                         true);
-        enableQuickClip =
-                Defs.sysPropertyBoolean("org.icepdf.core.quickclip",
-                        false);
     }
 
 
     // Current transformation matrix.
-    private AffineTransform CTM = new AffineTransform();
+    private AffineTransform CTM;
 
-    private ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
-    private NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
+    private static ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+    private static NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     // Specifies the shape of the endpoint for any open path.
-    private int lineCap = BasicStroke.CAP_BUTT;
+    private int lineCap;
 
     // Specifies the thickness in user parse of a path to be stroked.
-    private float lineWidth = 1;
+    private float lineWidth;
 
     // Specifies the shape of the joints between connected segments.
-    private int lineJoin = BasicStroke.JOIN_MITER;
+    private int lineJoin;
 
     // Maximum length of mitered line join for stroked paths.
-    private float miterLimit = 10;
+    private float miterLimit;
 
     // Stores the lengths of the dash segments
-    private float[] dashArray = null;
+    private float[] dashArray;
 
     // Stores the current dash phase
-    private float dashPhase = 0.0f;
+    private float dashPhase;
 
     // color used to fill a stroked path.
-    private Color fillColor = Color.black;
+    private Color fillColor;
 
     // The current color to be used during a painting operation.
-    private Color strokeColor = Color.black;
+    private Color strokeColor;
 
     // Stroking alpha constant for "CA"
-    private float strokeAlpha = 1.0f;
+    private float strokeAlpha;
 
     // Fill alpha constant for "ca" or non-stroking alpha
-    private float fillAlpha = 1.0f;
+    private float fillAlpha;
 
     // soft mask information for transparency model
     private SoftMask softMask;
@@ -273,23 +268,23 @@ public class GraphicsState {
     // and knockout values that directly affect which rule is used for the
     // transparency.
     private ExtGState extGState;
-    private int alphaRule = AlphaComposite.SRC_OVER;
+    private int alphaRule;
 
     private boolean transparencyGroup;
     private boolean isolated;
     private boolean knockOut;
 
     // Color space of the fill color, non-stroking colour.
-    private PColorSpace fillColorSpace = new DeviceGray(null, null);
+    private PColorSpace fillColorSpace;
 
     // Color space of the stroke color, stroking colour.
-    private PColorSpace strokeColorSpace = new DeviceGray(null, null);
+    private PColorSpace strokeColorSpace;
 
     // Set of graphics stat parameter  for painting text.
-    private TextState textState = new TextState();
+    private TextState textState;
 
     // parent graphics state if it exists.
-    private GraphicsState parentGraphicState = null;
+    private GraphicsState parentGraphicState;
 
     // all shapes associated with this graphics state.
     private Shapes shapes;
@@ -313,6 +308,23 @@ public class GraphicsState {
      */
     public GraphicsState(Shapes shapes) {
         this.shapes = shapes;
+        CTM = new AffineTransform();
+
+        lineCap = BasicStroke.CAP_BUTT;
+        lineWidth = 1;
+        lineJoin = BasicStroke.JOIN_MITER;
+        miterLimit = 10;
+
+        fillColor = Color.black;
+        strokeColor = Color.black;
+        strokeAlpha = 1.0f;
+        fillAlpha = 1.0f;
+
+        alphaRule = AlphaComposite.SRC_OVER;
+        fillColorSpace = new DeviceGray(null, null);
+        strokeColorSpace = new DeviceGray(null, null);
+        textState = new TextState();
+
     }
 
     /**
@@ -345,21 +357,21 @@ public class GraphicsState {
         fillColorSpace = parentGraphicsState.fillColorSpace;
         strokeColorSpace = parentGraphicsState.strokeColorSpace;
         textState = new TextState(parentGraphicsState.textState);
-        dashPhase = parentGraphicsState.getDashPhase();
-        dashArray = parentGraphicsState.getDashArray();
+        dashPhase = parentGraphicsState.dashPhase;
+        dashArray = parentGraphicsState.dashArray;
 
         // copy over printing attributes
-        overprintMode = parentGraphicsState.getOverprintMode();
-        overprintOther = parentGraphicsState.isOverprintOther();
-        overprintStroking = parentGraphicsState.isOverprintStroking();
+        overprintMode = parentGraphicsState.overprintMode;
+        overprintOther = parentGraphicsState.overprintOther;
+        overprintStroking = parentGraphicsState.overprintStroking;
 
         // copy the alpha rules
-        fillAlpha = parentGraphicsState.getFillAlpha();
-        strokeAlpha = parentGraphicsState.getStrokeAlpha();
-        alphaRule = parentGraphicsState.getAlphaRule();
+        fillAlpha = parentGraphicsState.fillAlpha;
+        strokeAlpha = parentGraphicsState.strokeAlpha;
+        alphaRule = parentGraphicsState.alphaRule;
 
         // smaks
-        softMask = parentGraphicsState.getSoftMask();
+        softMask = parentGraphicsState.softMask;
 
         // copy the parent too.
         this.parentGraphicState = parentGraphicsState.parentGraphicState;
@@ -533,35 +545,19 @@ public class GraphicsState {
      * @see #save()
      */
     public GraphicsState restore() {
-        // Return the graphics state which is pointed to by the
-        // parentGraphicState.
-
         // make sure we have a parent to restore to
         if (parentGraphicState != null) {
             // Add the parents CTM to the stack,
             parentGraphicState.set(parentGraphicState.CTM);
             // Add the parents clip to the stack
-            if (parentGraphicState.clipChange || clipChange) {
-                if (enableQuickClip) {
-                    if (parentGraphicState.clip != null && clip != null) {
-                        // quick version but will drop potentially complex clips
-                        Rectangle rect = parentGraphicState.clip.getBounds();
-                        if (rect != null && !rect.equals(clip.getBounds())) {
-                            parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
-                            parentGraphicState.shapes.add(clipDrawCmd);
-                        }
-                    } else {
-                        parentGraphicState.shapes.add(noClipDrawCmd);
+            if (clipChange) {
+                if (parentGraphicState.clip != null) {
+                    if (!parentGraphicState.clip.equals(clip)) {
+                        parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
+                        parentGraphicState.shapes.add(clipDrawCmd);
                     }
-                }else{
-                    if (parentGraphicState.clip != null) {
-                        if (!parentGraphicState.clip.equals(clip)) {
-                            parentGraphicState.shapes.add(new ShapeDrawCmd(new Area(parentGraphicState.clip)));
-                            parentGraphicState.shapes.add(clipDrawCmd);
-                        }
-                    } else {
-                        parentGraphicState.shapes.add(noClipDrawCmd);
-                    }
+                } else {
+                    parentGraphicState.shapes.add(noClipDrawCmd);
                 }
             }
             // Update the stack with the parentGraphicsState stack.
@@ -581,7 +577,6 @@ public class GraphicsState {
 
             // stroke Color
 //            parentGraphicState.shapes.add(parentGraphicState.getStrokeColor());
-
         }
 
         return parentGraphicState;
@@ -631,10 +626,10 @@ public class GraphicsState {
             // update the clip with the new value if it is new.
             if (clip == null || !clip.equals(area)) {
                 clip = new Area(area);
-                shapes.add(new ShapeDrawCmd(new Area(area)));
+                shapes.add(new ShapeDrawCmd(area));
                 shapes.add(clipDrawCmd);
-                // mark that the clip has changed.
                 clipChange = true;
+                parentGraphicState.clipChange = true;
             } else {
                 clip = new Area(area);
             }
@@ -642,7 +637,10 @@ public class GraphicsState {
             // add a null clip for a null shape, should not normally happen
             clip = null;
             shapes.add(noClipDrawCmd);
+            clipChange = true;
+            parentGraphicState.clipChange = true;
         }
+
     }
 
     public Area getClip() {
