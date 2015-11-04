@@ -518,14 +518,16 @@ public abstract class AbstractContentParser implements ContentParser {
                                               boolean viewParse, // events
                                               AtomicInteger imageIndex, Page page) {
         Name xobjectName = (Name) stack.pop();
+        if (resources == null) return graphicState;
         // Form XObject
-        if (resources != null && resources.isForm(xobjectName)) {
+        Object xObject = resources.getXObject(xobjectName);
+        if (xObject instanceof Form) {
             // Do operator steps:
             //  1.)save the graphics context
             graphicState = graphicState.save();
             // Try and find the named reference 'xobjectName', pass in a copy
             // of the current graphics state for the new content stream
-            Form formXObject = resources.getForm(xobjectName);
+            Form formXObject = (Form) xObject;
             if (formXObject != null) {
                 // check if the form is an optional content group.
                 Object oc = formXObject.getObject(OptionalContent.OC_KEY);
@@ -626,8 +628,7 @@ public abstract class AbstractContentParser implements ContentParser {
         // Image XObject
         else if (viewParse) {
             setAlpha(shapes, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-
-            ImageStream imageStream = resources.getImageStream(xobjectName);
+            ImageStream imageStream = (ImageStream) xObject;
             if (imageStream != null) {
                 Object oc = imageStream.getObject(OptionalContent.OC_KEY);
                 if (oc != null) {

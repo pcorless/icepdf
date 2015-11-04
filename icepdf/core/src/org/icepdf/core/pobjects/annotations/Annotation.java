@@ -1283,6 +1283,7 @@ public abstract class Annotation extends Dictionary {
 
     protected void renderAppearanceStream(Graphics2D g) {
         Appearance appearance = appearances.get(currentAppearance);
+        if (appearance == null) return;
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
         if (appearanceState.getShapes() != null) {
 
