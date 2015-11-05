@@ -629,7 +629,7 @@ public class GraphicsState {
                 shapes.add(new ShapeDrawCmd(area));
                 shapes.add(clipDrawCmd);
                 clipChange = true;
-                parentGraphicState.clipChange = true;
+                if (parentGraphicState != null) parentGraphicState.clipChange = true;
             } else {
                 clip = new Area(area);
             }
@@ -638,7 +638,7 @@ public class GraphicsState {
             clip = null;
             shapes.add(noClipDrawCmd);
             clipChange = true;
-            parentGraphicState.clipChange = true;
+            if (parentGraphicState != null) parentGraphicState.clipChange = true;
         }
 
     }
