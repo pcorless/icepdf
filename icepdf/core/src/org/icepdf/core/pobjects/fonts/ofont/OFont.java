@@ -136,10 +136,6 @@ public class OFont implements FontFile {
 
     public FontFile deriveFont(float pointsize) {
         OFont font = new OFont(this);
-        // clear font metric cache if we change the font's size
-        if (font.getSize() != pointsize) {
-            this.echarAdvanceCache.clear();
-        }
         font.awtFont = this.awtFont.deriveFont(pointsize);
         font.maxCharBounds = this.maxCharBounds;
         return font;
@@ -152,7 +148,7 @@ public class OFont implements FontFile {
         float advanceY;
 
         // check cache for existing layout
-        String text = String.valueOf(ech);
+        String text = ech + "_" + awtFont.getSize();
         Point2D.Float echarAdvance = echarAdvanceCache.get(text);
 
         // generate metrics is needed
@@ -162,11 +158,10 @@ public class OFont implements FontFile {
             // are drawing, the method also does a check to apply differences if toUnicode is null.
             char echGlyph = getCMapping(ech);
 
-            GlyphVector glyphVector = awtFont.createGlyphVector(
-                    new FontRenderContext(new AffineTransform(), true, true),
-                    String.valueOf(echGlyph));
-
             FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+            GlyphVector glyphVector = awtFont.createGlyphVector(
+                    frc,
+                    String.valueOf(echGlyph));
             TextLayout textLayout = new TextLayout(String.valueOf(echGlyph), awtFont, frc);
 
             // get bounds, only need to do this once.
