@@ -403,7 +403,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
-            fontFile = FontManager.getInstance().getInstance(fontName, 0);
+            fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
             fontPropertyChanged = false;
         }
         fontFile = fontFile.deriveFont(fontSize);

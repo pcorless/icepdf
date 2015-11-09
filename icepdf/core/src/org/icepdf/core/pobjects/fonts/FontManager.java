@@ -265,6 +265,20 @@ public class FontManager {
     }
 
     /**
+     * <p>Initializes the fontList by reading the system fonts paths via readFonts()
+     * but only if the fontList is null or is empty.  Generally the fontManager
+     * is used
+     * </p>
+     * @return instance of the singleton fontManager.
+     */
+    public FontManager initialize() {
+        if (fontList == null || fontList.size() == 0) {
+            readFonts(null);
+        }
+        return fontManager;
+    }
+
+    /**
      * <p>Gets a Properties object containing font information for the operating
      * system which the FontManager is running on.  This Properties object
      * can be saved to disk and read at a later time using the {@see #setFontProperties}
