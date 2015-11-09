@@ -151,7 +151,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     public void setAppearanceStream() {
         // copy over annotation properties from the free text annotation.
         if (fontFile == null || freeTextAnnotation.isFontPropertyChanged()) {
-            fontFile = FontManager.getInstance().getType1AWTFont(
+            fontFile = FontManager.getInstance().initialize().getType1AWTFont(
                     freeTextAnnotation.getFontName(), freeTextAnnotation.getFontSize());
         }
         freeTextPane.setFont(fontFile);

@@ -47,7 +47,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
     public TextWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
         fieldDictionary = new TextFieldDictionary(library, entries);
-        fontFile = FontManager.getInstance().getInstance(fieldDictionary.getFontName(), 0);
+        fontFile = FontManager.getInstance().initialize().getInstance(fieldDictionary.getFontName(), 0);
     }
 
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {

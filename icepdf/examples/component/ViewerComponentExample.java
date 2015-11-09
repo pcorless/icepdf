@@ -17,6 +17,7 @@
 
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.util.FontPropertiesManager;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -45,6 +46,11 @@ public class ViewerComponentExample {
                 PropertiesManager properties = new PropertiesManager(
                         System.getProperties(),
                         ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+
+                // read/store the font cache.
+                ResourceBundle messageBundle = ResourceBundle.getBundle(
+                        PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+                new FontPropertiesManager(properties, System.getProperties(), messageBundle);
 
                 properties.set(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, "1.25");
 
