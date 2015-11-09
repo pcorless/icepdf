@@ -196,77 +196,88 @@ public class Destination {
      */
     private void parse(List v) {
 
+        if (v == null) return;
+
         // Assign a Reference
-        Object ob = v.get(0);
+        Object ob = getDestValue(0, v);
         if (ob instanceof Reference) {
             ref = (Reference) ob;
         }
         // store type.
-        ob = v.get(1);
+        ob = getDestValue(1, v);
         if (ob instanceof Name) {
             type = (Name) ob;
-        } else {
+        } else if (ob != null) {
             type = new Name(ob.toString());
         }
         // [page /XYZ left top zoom ]
-        if (type.equals(TYPE_XYZ)) {
-            ob = v.get(2);
+        if (TYPE_XYZ.equals(type)) {
+            ob = getDestValue(2, v);
             if (ob != null && !ob.equals("null")) {
                 left = ((Number) ob).floatValue();
             }
-            ob = v.get(3);
+            ob = getDestValue(3, v);
             if (ob != null && !ob.equals("null")) {
                 top = ((Number) ob).floatValue();
             }
-            ob = v.get(4);
+            // zoom can be a value but zero and null are treated as no zoom change.
+            ob = getDestValue(4, v);
             if (ob != null && !ob.equals("null") && !ob.equals("0")) {
                 zoom = ((Number) ob).floatValue();
             }
         }
         // [page /FitH top]
-        else if (type.equals(TYPE_FITH)) {
-            ob = v.get(2);
+        else if (TYPE_FITH.equals(type)) {
+            ob = getDestValue(2, v);
             if (ob != null && !ob.equals("null")) {
                 top = ((Number) ob).floatValue();
             }
         }
         // [page /FitR left bottom right top]
-        else if (type.equals(TYPE_FITR)) {
-            ob = v.get(2);
+        else if (TYPE_FITR.equals(type)) {
+            ob = getDestValue(2, v);
             if (ob != null && !ob.equals("null")) {
                 left = ((Number) ob).floatValue();
             }
-            ob = v.get(3);
+            ob = getDestValue(3, v);
             if (ob != null && !ob.equals("null")) {
                 bottom = ((Number) ob).floatValue();
             }
-            ob = v.get(4);
+            ob = getDestValue(4, v);
             if (ob != null && !ob.equals("null")) {
                 right = ((Number) ob).floatValue();
             }
-            ob = v.get(5);
+            ob = getDestValue(5, v);
             if (ob != null && !ob.equals("null")) {
                 top = ((Number) ob).floatValue();
             }
         }
         // [page /FitB]
-        else if (type.equals(TYPE_FITB)) {
+        else if (TYPE_FITB.equals(type)) {
             // nothing to parse
         }
         // [page /FitBH top]
-        else if (type.equals(TYPE_FITBH)) {
-            ob = v.get(2);
+        else if (TYPE_FITBH.equals(type)) {
+            ob = getDestValue(2, v);
             if (ob != null && !ob.equals("null")) {
                 top = ((Number) ob).floatValue();
             }
         }
         // [page /FitBV left]
-        else if (type.equals(TYPE_FITBV)) {
-            ob = v.get(2);
+        else if (TYPE_FITBV.equals(type)) {
+            ob = getDestValue(2, v);
             if (ob != null && !ob.equals("null")) {
                 left = ((Number) ob).floatValue();
             }
         }
+    }
+
+    // utility to avoid indexing issues with malformed dest type formats.
+    private static Object getDestValue(int index, List params) {
+        if (params.size() > index) {
+            return params.get(index);
+        }
+        return null;
     }
 
     /**
