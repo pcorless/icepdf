@@ -130,6 +130,10 @@ public class Resources extends Dictionary {
             if (ob instanceof org.icepdf.core.pobjects.fonts.Font) {
                 font = (org.icepdf.core.pobjects.fonts.Font) ob;
             }
+            // corner case where font is just a inline dictionary.
+            else if (ob instanceof HashMap) {
+                font = FontFactory.getInstance().getFont(library, (HashMap) ob);
+            }
             // the default value is most likely Reference
             else if (ob instanceof Reference) {
                 Reference ref = (Reference) ob;
