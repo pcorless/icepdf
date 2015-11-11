@@ -85,6 +85,7 @@ public class ImageStream extends Stream {
     private final Object colorSpaceAssignmentLock = new Object();
 
     private static boolean isLevigoJBIG2ImageReaderClass;
+
     static {
         // define alternate page size ration w/h, default Legal.
         pageRatio =
@@ -151,8 +152,8 @@ public class ImageStream extends Stream {
      * scale an image to reduce the total memory foot print or to increase the
      * perceived render quality on screen at low zoom levels.
      *
-     * @param graphicsState      graphic state for image or parent form
-     * @param resources resources containing image reference
+     * @param graphicsState graphic state for image or parent form
+     * @param resources     resources containing image reference
      * @return new image object
      */
     // was synchronized, not think it is needed?
@@ -349,6 +350,13 @@ public class ImageStream extends Stream {
         else if (shouldUseJPXDecode()) {
             decodedImage = jpxDecode(width, height, colourSpace, bitsPerComponent, decode);
         }
+        // CCITTFax data is raw byte decode.
+        else if (shouldUseCCITTFaxDecode()) {
+            // try default ccittfax decode.
+            decodedImage = ccittFaxDecode(colourSpace, graphicsState, width, height,
+                    colorSpaceCompCount, bitsPerComponent, isImageMask, decode, sMaskImage, maskImage,
+                    maskMinRGB, maskMaxRGB, maskMinIndex, maskMaxIndex, false);
+        }
         // we have some raw data so, CCITTfax or some other image primitive.
         else {
             byte[] data = getDecodedStreamBytes(
@@ -356,32 +364,6 @@ public class ImageStream extends Stream {
                             * colourSpace.getNumComponents()
                             * bitsPerComponent / 8);
             int dataLength = data.length;
-            // CCITTfax data is raw byte decode.
-            if (shouldUseCCITTFaxDecode()) {
-                // try default ccittfax decode.
-                try {
-                    // corner case where a user may want to use JAI because of
-                    // speed or compatibility requirements.
-                    if (forceJaiccittfax) {
-                        throw new Throwable("Forcing CCITTFAX decode via JAI");
-                    }
-                    data = ccittFaxDecode(data, width, height);
-                    dataLength = data.length;
-                } catch (Throwable e) {
-                    // on a failure then fall back to JAI for a try. likely
-                    // will not happen.
-                    try {
-                        decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
-                                this, library, entries, graphicsState.getFillColor());
-                    } catch (Throwable e1) {
-                        // fall back on ccittfax code.
-                        data = ccittFaxDecode(data, width, height);
-                        dataLength = data.length;
-                    }
-                    return decodedImage;
-                }
-            }
-
             // finally push the bytes though the common image processor to try
             // and build a a Buffered image.
             try {
@@ -447,6 +429,112 @@ public class ImageStream extends Stream {
             return decodedImage;
         }
         return null;
+    }
+
+    /**
+     * Utility to try and parse out the CCITTFax data.  We have two code paths one using our own decode algorithms
+     * as well as the use of JAI if available on the class path.  We've had trouble in the past with gracefully falling
+     * back onto working implementation as each decoding method often errors without any exception.
+     */
+    private BufferedImage ccittFaxDecode(
+            PColorSpace colourSpace,
+            GraphicsState graphicsState,
+            int width, int height,
+            int colorSpaceCompCount,
+            int bitsPerComponent,
+            boolean isImageMask,
+            float[] decode,
+            BufferedImage sMaskImage,
+            BufferedImage maskImage,
+            int[] maskMinRGB, int[] maskMaxRGB,
+            int maskMinIndex, int maskMaxIndex, boolean forceJAI) {
+        BufferedImage decodedImage = null;
+
+        byte[] data = getDecodedStreamBytes(
+                width * height
+                        * colourSpace.getNumComponents()
+                        * bitsPerComponent / 8);
+        int dataLength = data.length;
+        // try default ccittfax decode.
+        try {
+            // corner case where a user may want to use JAI because of
+            // speed or compatibility requirements.
+            if (forceJaiccittfax || forceJAI) {
+                throw new Throwable("Forcing CCITTFAX decode via JAI");
+            }
+            data = ccittFaxDecode(data, width, height);
+            dataLength = data.length;
+        } catch (Throwable e) {
+            // on a failure then fall back to JAI for a try. likely
+            // will not happen.
+            try {
+                decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
+                        this, library, entries, graphicsState.getFillColor());
+            } catch (Throwable e1) {
+                // fall back on ccittfax code.
+                data = ccittFaxDecode(data, width, height);
+                dataLength = data.length;
+            }
+            if (decodedImage != null) {
+                return decodedImage;
+            }
+        }
+        // basic error check for an all white or black image, if we try and load the image again.
+        boolean allWhite = true;
+        boolean allBlack = true;
+        for (int i = 0; i < dataLength; i++) {
+            if (data[i] != -1) {
+                allWhite = false;
+                break;
+            }
+        }
+        for (int i = 0; i < dataLength; i++) {
+            if (data[i] != 0) {
+                allBlack = false;
+                break;
+            }
+        }
+        if (!forceJaiccittfax && (allBlack || allWhite)) {
+            try {
+                decodedImage = CCITTFax.attemptDeriveBufferedImageFromBytes(
+                        this, library, entries, graphicsState.getFillColor());
+                if (decodedImage != null) {
+                    return decodedImage;
+                }
+            } catch (Throwable e1) {
+                logger.finer("Failed to do secondary load attempt with JAI");
+            }
+        } else if (forceJaiccittfax && (allBlack || allWhite)) {
+            try {
+                data = ccittFaxDecode(data, width, height);
+                dataLength = data.length;
+            } catch (Throwable e) {
+                logger.finer("Failed to do secondary load attempt with ccittFax");
+            }
+        }
+        try {
+            decodedImage = ImageUtility.makeImageWithRasterFromBytes(
+                    colourSpace,
+                    graphicsState,
+                    width, height,
+                    colorSpaceCompCount,
+                    bitsPerComponent,
+                    isImageMask,
+                    decode,
+                    sMaskImage,
+                    maskImage,
+                    maskMinRGB, maskMaxRGB,
+                    maskMinIndex, maskMaxIndex,
+                    data, dataLength);
+        } catch (Exception e) {
+            logger.log(Level.FINE, "Error building image raster.", e);
+            if (!forceJAI) {
+                decodedImage = ccittFaxDecode(colourSpace, graphicsState, width, height,
+                        colorSpaceCompCount, bitsPerComponent, isImageMask, decode, sMaskImage, maskImage,
+                        maskMinRGB, maskMaxRGB, maskMinIndex, maskMaxIndex, true);
+            }
+        }
+        return decodedImage;
     }
 
     /**
@@ -728,7 +816,6 @@ public class ImageStream extends Stream {
                     colourSpace = iccBased.getAlternate();
                 }
             }
-
             // apply respective colour models to the JPEG2000 image.
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
@@ -844,7 +931,7 @@ public class ImageStream extends Stream {
 
         // RGB value for colour used as fill for image
         int fillRGB = 1;
-        if (graphicsState != null){
+        if (graphicsState != null) {
             fillRGB = graphicsState.getFillColor().getRGB();
         }
 
