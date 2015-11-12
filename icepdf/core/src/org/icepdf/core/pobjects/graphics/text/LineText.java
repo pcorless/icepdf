@@ -64,17 +64,8 @@ public class LineText extends AbstractText implements TextSelect {
     protected void addText(GlyphText sprite) {
 
         // look for white space characters and insert whitespace word
-        if (WordText.detectWhiteSpace(sprite)) {
-            // add as a new word, nothing special otherwise
-            WordText newWord = new WordText();
-            newWord.setWhiteSpace(true);
-            newWord.addText(sprite);
-            addWord(newWord);
-            // ready new word
-            currentWord = null;
-        }
-        //  add punctuation as new words
-        else if (WordText.detectPunctuation(sprite, currentWord)) {
+        if (WordText.detectWhiteSpace(sprite) ||
+                WordText.detectPunctuation(sprite, currentWord)) {
             // add as a new word, nothing special otherwise
             WordText newWord = new WordText();
             newWord.setWhiteSpace(true);

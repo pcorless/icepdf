@@ -73,6 +73,11 @@ public class GlyphText extends AbstractText {
             generalPath = new GeneralPath(bounds);
             generalPath.transform(new AffineTransform(0, -1, 1, 0, 0, 0));
             textExtractionBounds = (Rectangle2D.Float) generalPath.getBounds2D();
+        } else if (af1 != null && af1.getShearY() < 0) {
+            // adjust of the rotation, move the text back to a normal layout.
+            generalPath = new GeneralPath(bounds);
+            generalPath.transform(new AffineTransform(0, 1, -1, 0, 0, 0));
+            textExtractionBounds = (Rectangle2D.Float) generalPath.getBounds2D();
         } else {
             // 99% of the time we just use the bounds.
             textExtractionBounds = bounds;
