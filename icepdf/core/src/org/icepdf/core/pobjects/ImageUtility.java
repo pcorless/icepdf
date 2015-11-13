@@ -625,13 +625,20 @@ public class ImageUtility {
         }
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
-        for (int y = 0; y < baseHeight; y++) {
-            for (int x = 0; x < baseWidth; x++) {
-                int maskPixel = baseImage.getRGB(x, y);
-                if (!(maskPixel == -1 || maskPixel == 0xffffff)) {
-                    imageMask.setRGB(x, y, fill.getRGB());
+        int[] srcBand = new int[baseWidth];
+        int[] maskBnd = new int[baseWidth];
+        int fillRgb = fill.getRGB();
+        // iterate over each band to apply the mask
+        for (int i = 0; i < baseHeight; i++) {
+            baseImage.getRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
+            imageMask.getRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
+            // apply the soft mask blending
+            for (int j = 0; j < baseWidth; j++) {
+                if (!(srcBand[j] == -1 || srcBand[j] == 0xffffff)) {
+                    maskBnd[j] = fillRgb;
                 }
             }
+            imageMask.setRGB(0, i, baseWidth, 1, maskBnd, 0, baseWidth);
         }
         // clean up the old image.
         baseImage.flush();
