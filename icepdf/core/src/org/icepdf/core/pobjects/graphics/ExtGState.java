@@ -238,6 +238,10 @@ public class ExtGState extends Dictionary {
     public static final Name op_KEY = new Name("op");
     public static final Name OPM_KEY = new Name("OPM");
     public static final Name D_KEY = new Name("D");
+    public static final Name BM_MULTIPLY_VALUE = new Name("Multiply");
+    public static final Name BM_SCREEN_VALUE = new Name("Screen");
+
+    private boolean ignoreBlending = false;
 
     /**
      * Creates a a new Graphics State object.
@@ -248,6 +252,16 @@ public class ExtGState extends Dictionary {
      */
     public ExtGState(Library library, HashMap graphicsState) {
         super(library, graphicsState);
+        Name blendingMode = library.getName(entries, BM_KEY);
+        if (blendingMode != null &&
+                (blendingMode.equals(BM_MULTIPLY_VALUE) ||
+                        blendingMode.equals(BM_SCREEN_VALUE))) {
+            ignoreBlending = true;
+        }
+    }
+
+    public boolean ignoreBlending() {
+        return ignoreBlending;
     }
 
     /**
@@ -405,8 +419,8 @@ public class ExtGState extends Dictionary {
      *
      * @return
      */
-    public Number getOverprintMode() {
-        return getNumber(OPM_KEY);
+    public int getOverprintMode() {
+        return getInt(OPM_KEY);
     }
 
 

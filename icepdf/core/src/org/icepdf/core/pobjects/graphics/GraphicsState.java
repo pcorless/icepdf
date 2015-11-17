@@ -493,15 +493,13 @@ public class GraphicsState {
         // blending mode - quick hack for blending support that at lest doesn't
         // hide the content. More work on this to follow.
         if (extGState.getBlendingMode() != null) {
-            if (extGState.getBlendingMode().equals("Multiply")) {
+            if (extGState.ignoreBlending()) {
                 setFillAlpha(0.70f);
                 setStrokeAlpha(0.70f);
             }
         }
 
-        if (extGState.getOverprintMode() != null) {
-            setOverprintMode(extGState.getOverprintMode().intValue());
-        }
+        setOverprintMode(extGState.getOverprintMode());
 
         // save soft mask information
         if (extGState.getSMask() != null) {
