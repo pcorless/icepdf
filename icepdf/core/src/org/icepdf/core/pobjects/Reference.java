@@ -113,6 +113,6 @@ public class Reference implements Serializable {
      * @return summary of reference object data.
      */
     public String toString() {
-        return objf + " " + genf + "R";
+        return objf + " " + genf + " R";
     }
 }

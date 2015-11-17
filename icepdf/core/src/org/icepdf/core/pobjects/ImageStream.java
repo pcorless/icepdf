@@ -718,7 +718,7 @@ public class ImageStream extends Stream {
                         ImageIO.createImageInputStream(new ByteArrayInputStream(data)),
                         decodeParms, globalsStream);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Problem loading JBIG2 imageusing Levigo: ", e);
+                logger.log(Level.WARNING, "Problem loading JBIG2 image using Levigo: ", e);
                 // fall back and try and load with the OS jbig2 implementation.
                 tmpImage = ImageUtility.jbig2Decode(
                         data,
