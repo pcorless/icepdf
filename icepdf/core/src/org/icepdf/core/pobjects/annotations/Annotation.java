@@ -738,10 +738,10 @@ public abstract class Annotation extends Dictionary {
             Appearance newAppearance = new Appearance();
             HashMap appearanceDictionary = new HashMap();
             Rectangle2D rect = getUserSpaceRectangle();
-            if (rect.getWidth() < 15) {
+            if (rect.getWidth() <= 1) {
                 rect.setRect(rect.getX(), rect.getY(), 15, rect.getHeight());
             }
-            if (rect.getHeight() < 15) {
+            if (rect.getHeight() <= 1) {
                 rect.setRect(rect.getX(), rect.getY(), rect.getWidth(), 15);
             }
             appearanceDictionary.put(BBOX_VALUE, rect);
