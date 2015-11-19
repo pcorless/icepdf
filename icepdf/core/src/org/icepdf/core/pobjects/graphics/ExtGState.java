@@ -238,6 +238,7 @@ public class ExtGState extends Dictionary {
     public static final Name op_KEY = new Name("op");
     public static final Name OPM_KEY = new Name("OPM");
     public static final Name D_KEY = new Name("D");
+    public static final Name AIS_KEY = new Name("AIS");
     public static final Name BM_MULTIPLY_VALUE = new Name("Multiply");
     public static final Name BM_SCREEN_VALUE = new Name("Screen");
 
@@ -253,9 +254,13 @@ public class ExtGState extends Dictionary {
     public ExtGState(Library library, HashMap graphicsState) {
         super(library, graphicsState);
         Name blendingMode = library.getName(entries, BM_KEY);
+        // we have a few cases where a fill has a screen or multiply value which causes rendering
+        // issue out our current model. Until we can dive a true blending scheme we can
         if (blendingMode != null &&
-                (blendingMode.equals(BM_MULTIPLY_VALUE) ||
-                        blendingMode.equals(BM_SCREEN_VALUE))) {
+                (blendingMode.equals(BM_MULTIPLY_VALUE)
+                        || blendingMode.equals(BM_SCREEN_VALUE))
+                && library.getObject(entries, SMASK_KEY) instanceof HashMap
+                ) {
             ignoreBlending = true;
         }
     }

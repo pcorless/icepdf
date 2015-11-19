@@ -1843,14 +1843,14 @@ public abstract class AbstractContentParser implements ContentParser {
             }
 
         } else {
-            if (!(graphicState.getExtGState() != null &&
+            if (graphicState.getExtGState() != null &&
                     graphicState.getExtGState().getOverprintMode() == 1
-                    && graphicState.getExtGState().ignoreBlending()
-            )) {
-                shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
-                shapes.add(new ShapeDrawCmd(geometricPath));
-                shapes.add(new FillDrawCmd());
+                    && graphicState.getExtGState().ignoreBlending()) {
+                return;
             }
+            shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
+            shapes.add(new ShapeDrawCmd(geometricPath));
+            shapes.add(new FillDrawCmd());
         }
         // add old alpha back to stack
         if (graphicState.isOverprintOther()) {
