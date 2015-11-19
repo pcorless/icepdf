@@ -739,7 +739,14 @@ public abstract class Annotation extends Dictionary {
             // new annotation, so setup the default appearance states.
             Appearance newAppearance = new Appearance();
             HashMap appearanceDictionary = new HashMap();
-            appearanceDictionary.put(BBOX_VALUE, getUserSpaceRectangle());
+            Rectangle2D rect = getUserSpaceRectangle();
+            if (rect.getWidth() < 15) {
+                rect.setRect(rect.getX(), rect.getY(), 15, rect.getHeight());
+            }
+            if (rect.getHeight() < 15) {
+                rect.setRect(rect.getX(), rect.getY(), rect.getWidth(), 15);
+            }
+            appearanceDictionary.put(BBOX_VALUE, rect);
 
             newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
                     new AppearanceState(library, appearanceDictionary));

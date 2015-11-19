@@ -246,19 +246,20 @@ public class TextAnnotation extends MarkupAnnotation {
         } else {
             iconContentString = COMMENT_CONTENT_STREAM;
         }
-        // get the colour string
-        if (color != null) {
-            float[] compArray = new float[3];
-            color.getColorComponents(compArray);
-            StringBuilder colorString = new StringBuilder()
-                    .append(compArray[0]).append(" ")
-                    .append(compArray[1]).append(" ")
-                    .append(compArray[2]);
-            // apply the colour
-            Object[] colorArgument = new Object[]{colorString};
-            MessageFormat formatter = new MessageFormat(iconContentString);
-            iconContentString = formatter.format(colorArgument);
+        //  need to make sure we have a colour so we can generate the content stream.
+        if (color == null) {
+            color = Color.YELLOW;
         }
+        float[] compArray = new float[3];
+        color.getColorComponents(compArray);
+        StringBuilder colorString = new StringBuilder()
+                .append(compArray[0]).append(" ")
+                .append(compArray[1]).append(" ")
+                .append(compArray[2]);
+        // apply the colour
+        Object[] colorArgument = new Object[]{colorString};
+        MessageFormat formatter = new MessageFormat(iconContentString);
+        iconContentString = formatter.format(colorArgument);
 
         // parse the shapes and assign to this instance
         try {
@@ -267,7 +268,7 @@ public class TextAnnotation extends MarkupAnnotation {
             shapes = cp.parse(new byte[][]{iconContentString.getBytes()}, null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
-            logger.log(Level.FINE, "Error building named icon.", e);
+            logger.log(Level.FINEST, "Error building named icon.", e);
         }
 
         // update the appearance stream
