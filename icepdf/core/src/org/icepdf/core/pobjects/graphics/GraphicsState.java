@@ -493,7 +493,7 @@ public class GraphicsState {
         // blending mode - quick hack for blending support that at lest doesn't
         // hide the content. More work on this to follow.
         if (extGState.getBlendingMode() != null) {
-            if (extGState.ignoreBlending()) {
+            if (extGState.getBlendingMode().equals("Multiply")) {
                 setFillAlpha(0.70f);
                 setStrokeAlpha(0.70f);
             }
