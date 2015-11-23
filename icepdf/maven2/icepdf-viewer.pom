@@ -30,7 +30,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.icepdf</groupId>
+            <groupId>org.icepdf.os</groupId>
             <artifactId>icepdf-core</artifactId>
             <version>X.X.X</version>
         </dependency>
