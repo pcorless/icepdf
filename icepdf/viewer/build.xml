@@ -97,6 +97,7 @@
     <target name="javadoc">
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="false" useexternalfile="true" failonerror="true"
+                 encoding="utf8" additionalparam="-Xdoclint:none"
                  destdir="${build.dir}/javadocs" windowtitle="ICEpdf Viewer RI">
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
