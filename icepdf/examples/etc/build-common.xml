@@ -23,8 +23,6 @@
     <property name="build.classes.dir" location="${build.dir}/classes"/>
     <property name="build.lib.dir" location="../lib"/>
 
-    <property name="compile.source" value="1.5"/>
-    <property name="compile.target" value="1.5"/>
     <property name="compile.debug" value="true"/>
 
     <property name="productinfo.file" value="ProductInfo.java"/>
@@ -92,7 +90,6 @@
             <mkdir dir="${build.classes.dir}"/>
 
             <javac destdir="${build.classes.dir}" sourcepath="" encoding="UTF-8"
-                   source="${compile.source}" target="${compile.target}"
                    includeantruntime="false"
                    debug="${compile.debug}" failonerror="@{failonerror}">
                 <compilerarg value="-Xlint"/>
