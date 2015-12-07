@@ -412,6 +412,10 @@ public class Parser {
                                 }
                             }
                             obj = hashMap.get(Dictionary.TYPE_KEY);
+                            if (obj == null) {
+                                // PDF-927,  incorrect /type def.
+                                obj = hashMap.get(new Name("type"));
+                            }
                             // Process the know first level dictionaries.
                             if (obj != null && obj instanceof Name) {
                                 Name n = (Name) obj;
