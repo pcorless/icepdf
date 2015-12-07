@@ -68,10 +68,10 @@ public class TextSprite {
      * <p>Creates a new TextSprit object.</p>
      *
      * @param font font used when painting glyphs.
-     * @param size size of the font in user space
+     * @param contentLength length of text content.
      */
-    public TextSprite(FontFile font, int size, AffineTransform graphicStateTransform, AffineTransform tmTransform) {
-        glyphTexts = new ArrayList<GlyphText>(size);
+    public TextSprite(FontFile font, int contentLength, AffineTransform graphicStateTransform, AffineTransform tmTransform) {
+        glyphTexts = new ArrayList<GlyphText>(contentLength);
         // all glyphs in text share this ctm
         this.graphicStateTransform = graphicStateTransform;
         this.tmTransform = tmTransform;

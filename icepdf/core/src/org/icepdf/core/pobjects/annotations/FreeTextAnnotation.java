@@ -401,6 +401,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         af.translate(insets, -insets);
         shapes.add(new TransformDrawCmd(af));
 
+        // iterate over each line of text painting the strings.
+        if (content == null) {
+            content = "";
+        }
+
         // create the new font to draw with
         if (fontFile == null || fontPropertyChanged) {
             fontFile = FontManager.getInstance().initialize().getInstance(fontName, 0);
