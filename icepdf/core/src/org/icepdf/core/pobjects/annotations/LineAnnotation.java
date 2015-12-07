@@ -574,6 +574,11 @@ public class LineAnnotation extends MarkupAnnotation {
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
+        // nothing to reset,  creating new annotation.
+        if (startOfLine == null || endOfLine == null){
+            return;
+        }
+
         // adjust the line's start and end points for any potential move
         AffineTransform af = new AffineTransform();
         af.setToTranslation(dx * pageTransform.getScaleX(), -dy * pageTransform.getScaleY());
