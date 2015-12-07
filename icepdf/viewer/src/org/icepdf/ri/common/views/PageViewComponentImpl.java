@@ -531,7 +531,7 @@ public class PageViewComponentImpl extends
 
                 // paint all annotations on top of the content buffer
                 AnnotationComponent annotation;
-                for (int i = 0, max = annotationComponents.size(); i < max; i++) {
+                for (int i = 0; i < annotationComponents.size(); i++) {
                     annotation = annotationComponents.get(i);
                     if (annotation != null &&((Component) annotation).isVisible() &&
                             !(annotation.getAnnotation() instanceof FreeTextAnnotation
