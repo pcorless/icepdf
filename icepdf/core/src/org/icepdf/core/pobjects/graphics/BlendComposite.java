@@ -107,6 +107,10 @@ public final class BlendComposite implements Composite {
 
     // todo consider composite cache.
     public static Composite getInstance(Name modeName, float alpha) {
+        // check for -1, value not set and default should be used.
+        if (alpha == -1){
+            alpha = 1;
+        }
         if (modeName.equals(NORMAL_VALUE) || modeName.equals(COMPATIBLE_VALUE)){
             return AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
 //            return new BlendComposite(BlendingMode.NORMAL, alpha);

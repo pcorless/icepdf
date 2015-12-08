@@ -33,7 +33,10 @@ public class BlendCompositeDrawCmd extends AbstractDrawCmd {
     private Composite blendComposite;
 
     public BlendCompositeDrawCmd(Name blendComposite, float alpha) {
-
+        // check for -1, value not set and default should be used.
+        if (alpha == -1){
+            alpha = 1;
+        }
         this.blendComposite = BlendComposite.getInstance(blendComposite, alpha);
     }
 

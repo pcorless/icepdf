@@ -824,9 +824,11 @@ public abstract class AbstractContentParser implements ContentParser {
         }else{
             // not font found which is a problem,  so we need to check for interactive form dictionary
             graphicState.getTextState().font = resources.getLibrary().getInteractiveFormFont(name2.getName());
-            graphicState.getTextState().currentfont = graphicState.getTextState().font.getFont();
-            graphicState.getTextState().currentfont =
-                    graphicState.getTextState().font.getFont().deriveFont(size);
+            if (graphicState.getTextState().font  != null) {
+                graphicState.getTextState().currentfont = graphicState.getTextState().font.getFont();
+                graphicState.getTextState().currentfont =
+                        graphicState.getTextState().font.getFont().deriveFont(size);
+            }
         }
     }
 
