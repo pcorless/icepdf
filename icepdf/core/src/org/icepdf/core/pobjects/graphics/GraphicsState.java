@@ -482,21 +482,12 @@ public class GraphicsState {
             }
         }
         // Stroking alpha
-        if (extGState.getNonStrokingAlphConstant() != null) {
-            setFillAlpha(extGState.getNonStrokingAlphConstant().floatValue());
+        if (extGState.getNonStrokingAlphConstant() != -1) {
+            setFillAlpha(extGState.getNonStrokingAlphConstant());
         }
         // none stroking alpha
-        if (extGState.getStrokingAlphConstant() != null) {
-            setStrokeAlpha(extGState.getStrokingAlphConstant().floatValue());
-        }
-
-        // blending mode - quick hack for blending support that at lest doesn't
-        // hide the content. More work on this to follow.
-        if (extGState.getBlendingMode() != null) {
-            if (extGState.getBlendingMode().equals("Multiply")) {
-                setFillAlpha(0.70f);
-                setStrokeAlpha(0.70f);
-            }
+        if (extGState.getStrokingAlphConstant() != -1) {
+            setStrokeAlpha(extGState.getStrokingAlphConstant());
         }
 
         setOverprintMode(extGState.getOverprintMode());

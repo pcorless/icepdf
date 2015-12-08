@@ -45,7 +45,7 @@ import java.util.logging.Logger;
  * <td valign="top" >Type</td>
  * <td valign="top" >name</td>
  * <td>(Optional) The type of PDF object that this dictionary describes;
- * must beExtGState for a graphics state parameter dictionary.</td>
+ * must be ExtGState for a graphics state parameter dictionary.</td>
  * </tr>
  * <tr>
  * <td valign="top" >LW</td>
@@ -239,10 +239,9 @@ public class ExtGState extends Dictionary {
     public static final Name OPM_KEY = new Name("OPM");
     public static final Name D_KEY = new Name("D");
     public static final Name AIS_KEY = new Name("AIS");
-    public static final Name BM_MULTIPLY_VALUE = new Name("Multiply");
-    public static final Name BM_SCREEN_VALUE = new Name("Screen");
-
-    private boolean ignoreBlending = false;
+    // (Optional) A flag specifying whether to apply automatic stroke adjustment
+    // (see 10.6.5, "Automatic Stroke Adjustment").
+    public static final Name SA_KEY = new Name("SA");
 
     /**
      * Creates a a new Graphics State object.
@@ -253,20 +252,6 @@ public class ExtGState extends Dictionary {
      */
     public ExtGState(Library library, HashMap graphicsState) {
         super(library, graphicsState);
-        Name blendingMode = library.getName(entries, BM_KEY);
-        // we have a few cases where a fill has a screen or multiply value which causes rendering
-        // issue out our current model. Until we can dive a true blending scheme we can
-        if (blendingMode != null &&
-                (blendingMode.equals(BM_MULTIPLY_VALUE)
-                        || blendingMode.equals(BM_SCREEN_VALUE))
-                && library.getObject(entries, SMASK_KEY) instanceof HashMap
-                ) {
-            ignoreBlending = true;
-        }
-    }
-
-    public boolean ignoreBlending() {
-        return ignoreBlending;
     }
 
     /**
@@ -295,7 +280,14 @@ public class ExtGState extends Dictionary {
      * @return
      */
     public Name getBlendingMode() {
-        return library.getName(entries, BM_KEY);
+        Object tmp = library.getObject(entries, BM_KEY);
+        if (tmp instanceof Name){
+            return (Name)tmp;
+        }else if (tmp instanceof List){
+            List list = (List)tmp;
+            return (Name)list.get(0);
+        }
+        return null;
     }
 
     /**
@@ -366,18 +358,26 @@ public class ExtGState extends Dictionary {
      * @return the stroking alpha constant value.  If the stroking alpha constant
      *         was not specified in the dictionary null is returned.
      */
-    public Number getStrokingAlphConstant() {
-        return getNumber(CA_KEY);
+    public float getStrokingAlphConstant() {
+        if (getNumber(CA_KEY) != null)
+            return getFloat(CA_KEY);
+        else{
+            return -1;
+        }
     }
 
     /**
      * Gets the non-stroking alpha constant specified by the external graphics state.
      *
-     * @return the vstroking alpha constant value.  If the non-stroking alpha constant
+     * @return the non stroking alpha constant value.  If the non-stroking alpha constant
      *         was not specified in the dictionary null is returned.
      */
-    public Number getNonStrokingAlphConstant() {
-        return getNumber(ca_KEY);
+    public float getNonStrokingAlphConstant() {
+        if (getNumber(ca_KEY) != null)
+            return getFloat(ca_KEY);
+        else{
+            return -1;
+        }
     }
 
     /**
@@ -394,6 +394,15 @@ public class ExtGState extends Dictionary {
      */
     public Boolean getOverprint() {
         Object o = getObject(OP_KEY);
+        if (o instanceof String)
+            return Boolean.valueOf((String) o);
+        else if (o instanceof Boolean) {
+            return (Boolean) o;
+        }
+        return null;
+    }
+    public Boolean isAlphaAShape() {
+        Object o = getObject(AIS_KEY);
         if (o instanceof String)
             return Boolean.valueOf((String) o);
         else if (o instanceof Boolean) {

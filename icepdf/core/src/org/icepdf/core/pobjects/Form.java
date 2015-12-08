@@ -84,6 +84,10 @@ public class Form extends Stream {
         }
     }
 
+    public HashMap getGroup(){
+        return library.getDictionary(entries, GROUP_KEY);
+    }
+
     @SuppressWarnings("unchecked")
     public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
         this.shapes = shapes;

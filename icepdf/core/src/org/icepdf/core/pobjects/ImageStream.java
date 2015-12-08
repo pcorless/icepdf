@@ -950,9 +950,9 @@ public class ImageStream extends Stream {
         // image mask from
         float imageMaskValue = decode[0];
 
-        // Create the memory hole where where the buffered image will be writen
-        // too, bit by painfull bit.
-        BufferedImage bim = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        // Create the memory hole where where the buffered image will be written
+        // too, bit by painful bit.
+        BufferedImage bim = ImageUtility.createTranslucentCompatibleImage(width, height);
 
         // create the buffer and get the first series of bytes from the cached
         // stream

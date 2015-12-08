@@ -16,6 +16,7 @@
 
 package org.icepdf.ri.common;
 
+import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.Thumbnail;
@@ -200,8 +201,7 @@ public class PageThumbnailComponent extends JComponent implements MouseListener 
             if (pageTree != null) {
                 // paint to the image cache.
                 // paint to buffer
-                BufferedImage image = new BufferedImage(pageSize.width, pageSize.height,
-                        BufferedImage.TYPE_INT_ARGB);
+                BufferedImage image = ImageUtility.createTranslucentCompatibleImage(pageSize.width, pageSize.height);
                 Graphics2D imageGraphics = image.createGraphics();
                 Page page = pageTree.getPage(pageIndex);
                 page.init();

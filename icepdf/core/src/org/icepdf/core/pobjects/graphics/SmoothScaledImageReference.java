@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Defs;
@@ -255,7 +256,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
                                             int type,
                                             Object hint,
                                             int w, int h) {
-        BufferedImage tmp = new BufferedImage(w, h, type);
+        BufferedImage tmp = ImageUtility.createTranslucentCompatibleImage(w, h);
         Graphics2D g2 = tmp.createGraphics();
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
         g2.drawImage(orig, 0, 0, w, h, null);

@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.ImageUtility;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.util.Defs;
@@ -25,6 +26,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+
 
 /**
  * The FormDrawCmd when executed will draw an xForm's shapes to a raster and
@@ -41,12 +43,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private int x, y;
 
     private static boolean disableXObjectSMask;
+
     static {
         // decide if large images will be scaled
         disableXObjectSMask =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableXObjectSMask",
                         false);
-
     }
 
     public FormDrawCmd(Form xForm) {
@@ -66,7 +68,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             // check if we have  sMask and apply it.
             GraphicsState graphicsState = xForm.getGraphicsState();
             // create the buffer of the xobject content.
-            xFormBuffer = createBufferXObject(parentPage, xForm, graphicsState, renderingHints);
+            xFormBuffer = createBufferXObject(parentPage, xForm, graphicsState, renderingHints, false);
             if (!disableXObjectSMask &&
                     graphicsState != null && graphicsState.getSoftMask() != null) {
                 SoftMask softMask = graphicsState.getSoftMask();
@@ -75,7 +77,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 // check for a shading instance and if so that means
                 // we need to alter the shapes stack.
                 BufferedImage sMaskBuffer =
-                        createBufferXObject(parentPage, sMaskForm, graphicsState, renderingHints);
+                        createBufferXObject(parentPage, sMaskForm, graphicsState, renderingHints, true);
 
                 if (sMaskBuffer.getWidth() > xFormBuffer.getWidth()) {
                     x = (int) sMaskForm.getBBox().getX();
@@ -83,25 +85,45 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 }
                 // apply the mask and paint.
                 if (!sMaskForm.getResources().isShading()) {
-//                    ImageUtility.displayImage(xFormBuffer, "xform");
-//                    ImageUtility.displayImage(sMaskBuffer, "sMask");
-                    // check for a backdrop color.
-//                    java.util.List<Number> list = softMask.getBC();
-//                    if(list != null){
-//                        System.out.println();
-//                    }
-                    xFormBuffer = ImageUtility.applyExplicitSMask(xFormBuffer, sMaskBuffer);
+//                    ImageUtility.displayImage(xFormBuffer, "xform" + xForm.getGroup() + " " + xForm.getPObjectReference());
+//                    ImageUtility.displayImage(sMaskBuffer, "sMask" + xForm.getGroup() + " " + xForm.getPObjectReference());
+                    if (softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_ALPHA)) {
+                        logger.warning("Smask alpha example, currently not supported.");
+                    } else if (softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)) {
+                        // check for a backdrop color.
+                        java.util.List<Number> list = softMask.getBC();
+                        if (list != null && xForm.getGroup().get(new Name("CS")) == null) {
+                            // great a new image with thee specified colour,  apply the mask to it,
+                            // generally this will create an inversion
+                            if (graphicsState.getExtGState() != null) {
+                                xFormBuffer = ImageUtility.applyExplicitLuminosity(xFormBuffer, sMaskBuffer);
+                            } else {
+                                xFormBuffer = ImageUtility.applyExplicitSMask(xFormBuffer, sMaskBuffer);
+                            }
+                        } else {
+                            xFormBuffer = ImageUtility.applyExplicitSMask(xFormBuffer, sMaskBuffer);
+                        }
+                        // test for TR function
+                        if (softMask.getTR() != null) {
+                            logger.warning("Smask Transfer Function example, currently not supported.");
+                        }
+                        // need to look at matte too which is on the xobject.
+                    }
                     sMaskBuffer.flush();
-
+                } else {
+                    // still not property aligning the form or mask space to correctly apply a shading pattern.
+                    // experimental as it fixes some, breaks others, but regardless we don't support it well.
+                    logger.warning("Smask pattern paint example, currently not supported.");
+                    xFormBuffer.flush();
+                    xFormBuffer = sMaskBuffer;
+                    return currentShape;
                 }
+            } else {
+                BufferedImage shape = createBufferXObject(parentPage, xForm, graphicsState, renderingHints, true);
+                xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, shape);
             }
-            // apply transparency
-//            AlphaComposite alphaComposite =
-//                    AlphaComposite.getInstance(graphicsState.getAlphaRule(),
-//                            graphicsState.getFillAlpha());
-//            g.setComposite(alphaComposite);
         }
-//        ImageUtility.displayImage(xFormBuffer, "final");
+//        ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference());
         g.drawImage(xFormBuffer, null, x, y);
         return currentShape;
     }
@@ -118,7 +140,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
      */
     private BufferedImage createBufferXObject(Page parentPage, Form xForm,
                                               GraphicsState graphicsState,
-                                              RenderingHints renderingHints) {
+                                              RenderingHints renderingHints, boolean isMask) {
         Rectangle2D bBox = xForm.getBBox();
         int width = (int) bBox.getWidth();
         int height = (int) bBox.getHeight();
@@ -134,14 +156,17 @@ public class FormDrawCmd extends AbstractDrawCmd {
             height = xFormBuffer.getHeight();
         }
         // create the new image to write too.
-        BufferedImage bi = new BufferedImage(width, height,
-                BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(width, height);
         Graphics2D canvas = bi.createGraphics();
-        if (graphicsState.getFillAlpha() < 1.0f && !xForm.getResources().isShading()) {
-            AlphaComposite alphaComposite =
-                    AlphaComposite.getInstance(graphicsState.getAlphaRule(),
-                            graphicsState.getFillAlpha());
-            canvas.setComposite(alphaComposite);
+        if (!isMask && graphicsState.getSoftMask() == null ) {// && graphicsState.getSoftMask() != null && graphicsState.getSoftMask().getBC() != null
+//            java.util.List<Number> compRaw = graphicsState.getSoftMask().getBC();
+//            float[] comps = new float[compRaw.size()];
+//            for (int i= 0, max = comps.length; i < max; i++){
+//                comps[i] = compRaw.get(i).floatValue();
+//            }
+//            canvas.setColor(graphicsState.getFillColorSpace().getColor(comps));
+            canvas.setColor(Color.WHITE);
+            canvas.fillRect(0, 0, width, height);
         }
         // copy over the rendering hints
         canvas.setRenderingHints(renderingHints);
@@ -151,20 +176,30 @@ public class FormDrawCmd extends AbstractDrawCmd {
             xFormShapes.setPageParent(parentPage);
             // translate the coordinate system as we'll paint the g
             // graphic at the correctly location later.
-//            if (!xForm.getResources().isShading()) {
+            if (!xForm.getResources().isShading()) {
                 canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
                 canvas.setClip(bBox);
                 xFormShapes.paint(canvas);
                 xFormShapes.setPageParent(null);
-//            }
+            }
             // gradient define smask, this still needs some work to get the
             // coord system correct, but basically smask defines pattern but
             // doesn't actually paint/fill a shape, it's assumed that its done
             // by the pattern.
-//            else{
-//                canvas.setPaint(xForm.getResources().getShading(new Name("Sh0")).getPaint());
-//                canvas.fill(bBox.getBounds2D());
-//            }
+            else{
+                if (xFormShapes != null){
+//                    for (DrawCmd cmd: xFormShapes.getShapes()){
+//                        if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd)cmd).getShape() == null ){
+//                            Rectangle2D bounds = bBox.getBounds2D();
+//                            ((ShapeDrawCmd)cmd).setShape(bounds);
+//                        }
+//                    }
+                    canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
+                    canvas.setClip(bBox);
+                    xFormShapes.paint(canvas);
+                    xFormShapes.setPageParent(null);
+                }
+            }
         }
         canvas.dispose();
         return bi;

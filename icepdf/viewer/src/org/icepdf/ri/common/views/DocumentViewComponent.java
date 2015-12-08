@@ -93,9 +93,7 @@ public class DocumentViewComponent extends JComponent implements MouseListener, 
             int pageWidth = (int) pageSize.getWidth();
             int pageHeight = (int) pageSize.getHeight();
 
-            BufferedImage image = new BufferedImage(pageWidth,
-                    pageHeight,
-                    BufferedImage.TYPE_INT_RGB);
+            BufferedImage image = ImageUtility.createTranslucentCompatibleImage(pageWidth, pageHeight);
             Graphics g = image.createGraphics();
 
             page.paint(g, GraphicsRenderingHints.PRINT,

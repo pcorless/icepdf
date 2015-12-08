@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -134,5 +135,12 @@ public class SoftMask extends Dictionary {
      *
      * Type: function or name.
      */
+    public Object getTR() {
+        Object object = library.getObject(entries, BC_KEY);
+        if (object != null) {
+            return Function.getFunction(library, object);
+        }
+        return null;
+    }
 
 }
