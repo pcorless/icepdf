@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.pobjects.graphics.ExtGState;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
@@ -56,6 +57,7 @@ public class Form extends Stream {
     private Shapes shapes;
     // Graphics state object to be used by content parser
     private GraphicsState graphicsState;
+    private ExtGState extGState;
     private Resources resources;
     private Resources parentResource;
     // transparency grouping data
@@ -108,6 +110,7 @@ public class Form extends Stream {
     public void setGraphicsState(GraphicsState graphicsState) {
         if (graphicsState != null) {
             this.graphicsState = graphicsState;
+            this.extGState = graphicsState.getExtGState();
         }
     }
 
@@ -118,6 +121,16 @@ public class Form extends Stream {
      */
     public GraphicsState getGraphicsState() {
         return graphicsState;
+    }
+
+    /**
+     * Gets the extended graphics state for the form at the time of creation.  This contains any masking and blending
+     * data that might bet over written during the forms parsing.
+     *
+     * @return extended graphic state at the time of creation.
+     */
+    public ExtGState getExtGState() {
+        return extGState;
     }
 
     /**

@@ -538,7 +538,7 @@ public abstract class AbstractContentParser implements ContentParser {
                         return graphicState;
                     }
                 }
-                // init formXobject
+                // init form XObject with current gs state but we need to keep the original state for blending
                 GraphicsState xformGraphicsState =
                         new GraphicsState(graphicState);
                 formXObject.setGraphicsState(xformGraphicsState);
@@ -583,20 +583,25 @@ public abstract class AbstractContentParser implements ContentParser {
                 // 4.) Paint the graphics objects in font stream.
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
-                if (graphicState.getExtGState() != null) {
-                    shapes.add(new BlendCompositeDrawCmd(xformGraphicsState.getExtGState().getBlendingMode(),
-                            xformGraphicsState.getExtGState().getNonStrokingAlphConstant()));
+                // apply the original pre draw blending mode.
+                if (formXObject.getExtGState() != null &&
+                        formXObject.getExtGState().getBlendingMode() != null
+//                        && formXObject.getExtGState().getOverprintMode() == 1
+                        && !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)
+                        ) {
+                    shapes.add(new BlendCompositeDrawCmd(formXObject.getExtGState().getBlendingMode(),
+                            formXObject.getExtGState().getNonStrokingAlphConstant()));
                 }
                 // If we have a transparency group we paint it
                 // slightly different then a regular xObject as we
                 // need to capture the alpha which is only possible
                 // by paint the xObject to an image.
                 if (!disableTransparencyGroups &&
-                        ((formXObject.getGraphicsState() != null &&
-                                formXObject.getGraphicsState().getSoftMask() != null) ||
-                                (formXObject.isTransparencyGroup())) &&
+                        // need to very ify which group we should be looking at current or ending state.
+                        ((formXObject.getExtGState() != null && formXObject.getExtGState().getSMask() != null)
+                        || formXObject.isTransparencyGroup())
                         // limit size, as buffer is needed
-                        (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
+                        && (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
                                 formXObject.getBBox().getHeight() < Short.MAX_VALUE)) {
                     // add the hold form for further processing.
                     shapes.add(new FormDrawCmd(formXObject));
@@ -607,6 +612,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 // by just adding the objects to the shapes stack.
                 else {
                     shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
+                    if (graphicState.getExtGState() != null) {
+                        // update the parent alpha cache, so we can minimize the number of alpha's that are applied.
+                        shapes.setAlpha(formXObject.getExtGState().getNonStrokingAlphConstant());
+                    }
                 }
                 // update text sprites with geometric path state
                 if (formXObject.getShapes() != null &&
@@ -763,8 +772,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 graphicState.concatenate(extGState);
             }
             if (graphicState.getExtGState() != null
-                    && graphicState.getExtGState().getBlendingMode() != null
-                    && graphicState.getExtGState().getOverprintMode() == 1 ) {
+                    && graphicState.getExtGState().getBlendingMode() != null // && graphicState.getExtGState().getOverprintMode() == 1
+                    ) {
                 float alpha =  graphicState.getExtGState().getNonStrokingAlphConstant();
                 shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(),
                         alpha));
@@ -791,10 +800,6 @@ public abstract class AbstractContentParser implements ContentParser {
                 // corner cases:
                 // get the first pages resources, no need to lock the page, already locked.
                 Page page = resources.getLibrary().getCatalog().getPageTree().getPage(0);
-                // make sure page resources are available.
-//                while(!page.isInitiated()){
-//                    Thread.currentThread().wait(100);
-//                }
                 page.init();
                 Resources res = page.getResources();
                 // try and get a font off the first page.
@@ -1346,9 +1351,9 @@ public abstract class AbstractContentParser implements ContentParser {
                 pattern.init(graphicState);
                 // we paint the shape and color shading as defined
                 // by the pattern dictionary and respect the current clip
-
-                // apply a rudimentary softmask for an shading .
-                if (graphicState.getSoftMask() != null) {
+                // TODO further work is needed here to build out the pattern fill.
+                if (graphicState.getExtGState() != null &&
+                        graphicState.getExtGState().getSMask() != null) {
                     setAlpha(shapes, graphicState,
                             graphicState.getAlphaRule(),
                             0.50f);

@@ -28,6 +28,7 @@ import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -91,10 +92,11 @@ public class ImageUtility {
     private static boolean scaleQuality;
 
     private static GraphicsConfiguration configuration = null;
+
     static {
-        try{
-            configuration =  GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
-        }catch(Throwable e){
+        try {
+            configuration = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        } catch (Throwable e) {
             // just eat it as we likely have a headless exception and need to fall back to
             // creating our own buffers.
         }
@@ -115,14 +117,14 @@ public class ImageUtility {
      * Creates a new bufferd image using a GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
      * instance.  If not available (headless) we full back to raw buffer creation.
      *
-     * @param width width of new image.
+     * @param width  width of new image.
      * @param height height of new image.
      * @return returns an INT_RGB images.
      */
     public static BufferedImage createCompatibleImage(int width, int height) {
         if (configuration != null) {
             return configuration.createCompatibleImage(width, height);
-        }else{
+        } else {
             return new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         }
     }
@@ -131,15 +133,14 @@ public class ImageUtility {
      * Creates a new bufferd image using a GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
      * instance.  If not available (headless) we full back to raw buffer creation.
      *
-     * @param width width of new image.
+     * @param width  width of new image.
      * @param height height of new image.
-     * @return returns an INT_ARGB images.
      * @return
      */
     public static BufferedImage createTranslucentCompatibleImage(int width, int height) {
         if (configuration != null) {
             return configuration.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
-        }else{
+        } else {
             return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         }
     }
@@ -215,26 +216,28 @@ public class ImageUtility {
             public void run() {
                 final JFrame f = new JFrame("Image - " + title);
                 f.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                final int width = (int) (bufferedImage.getWidth() * 1.2);
+                final int height = (int) (bufferedImage.getHeight() * 1.2);
 
                 JComponent image = new JComponent() {
                     @Override
                     public void paint(Graphics g_) {
                         super.paint(g_);
                         g_.setColor(Color.green);
-                        g_.fillRect(0, 0, 800, 800);
+                        g_.fillRect(0, 0, width, height);
                         g_.drawImage(bufferedImage, 0, 0, f);
                         g_.setColor(Color.red);
                         g_.drawRect(0, 0, bufferedImage.getWidth() - 2, bufferedImage.getHeight() - 2);
                     }
                 };
                 image.setPreferredSize(new Dimension(bufferedImage.getWidth(), bufferedImage.getHeight()));
-                image.setSize(new Dimension(bufferedImage.getWidth(), bufferedImage.getHeight()));
+                image.setSize(new Dimension(width, height));
 
                 JPanel test = new JPanel();
-                test.setPreferredSize(new Dimension(1200, 1200));
+                test.setPreferredSize(new Dimension(width, height));
                 JScrollPane tmp = new JScrollPane(image);
                 tmp.revalidate();
-                f.setSize(new Dimension(800, 800));
+                f.setSize(new Dimension(width < 250 ? 250 : width, height < 250 ? 250 : height));
                 f.getContentPane().add(tmp);
                 f.validate();
                 f.setVisible(true);
@@ -620,11 +623,9 @@ public class ImageUtility {
         int baseHeight = baseImage.getHeight();
 
         BufferedImage argbImage;
-        if (hasAlpha(baseImage)) {
-            argbImage = baseImage;
-        } else {
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
-        }
+        // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+        argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
         // iterate over each band to apply the mask
@@ -632,7 +633,7 @@ public class ImageUtility {
             baseImage.getRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
             sMaskImage.getRGB(0, i, baseWidth, 1, sMaskBand, 0, baseWidth);
             // apply the soft mask blending
-           for (int j = 0; j < baseWidth; j++) {
+            for (int j = 0; j < baseWidth; j++) {
                 // take any one of the primaries and apply src image alpha.
                 int red = (sMaskBand[j] >> 16) & 0x000000FF;
                 int alpha = (srcBand[j] >> 24) & 0x000000FF;
@@ -648,6 +649,7 @@ public class ImageUtility {
 
         return baseImage;
     }
+
     public static BufferedImage applyExplicitLuminosity(BufferedImage baseImage, BufferedImage sMaskImage) {
 
         // check to make sure the mask and the image are the same size.
@@ -660,11 +662,9 @@ public class ImageUtility {
         int baseHeight = baseImage.getHeight();
 
         BufferedImage argbImage;
-        if (hasAlpha(baseImage)) {
-            argbImage = baseImage;
-        } else {
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
-        }
+        // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+        argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
         // iterate over each band to apply the mask
@@ -677,19 +677,18 @@ public class ImageUtility {
                 int blue = (srcBand[j]) & 0x000000FF;
                 // colour is used as a degree of masking.
                 int alpha = (sMaskBand[j] >> 16) & 0x000000FF;
-                int trans = 255;
+                int trans = (sMaskBand[j] >> 24) & 0x000000FF;
 
-                int redOut = red - alpha;
-                int greenOut = green - alpha;
-                int blueOut = blue - alpha;
+                int redOut = Math.min(255, red - alpha);
+                int greenOut = Math.min(255, green - alpha);
+                int blueOut = Math.min(255, blue - alpha);
+//                trans = trans - alpha;,
 
-                trans = trans - alpha;
-
-                // apply the smask value as the alpha value
-                srcBand[j] = trans  << 24
-                        | Math.max(0,redOut) << 16
-                        | Math.max(0,greenOut) << 8
-                        | Math.max(0,blueOut);
+                // todo still broken,  needs some more examples/
+                srcBand[j] = trans << 24
+                        | Math.max(0, redOut) << 16
+                        | Math.max(0, greenOut) << 8
+                        | Math.max(0, blueOut);
             }
             argbImage.setRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
         }
@@ -711,11 +710,9 @@ public class ImageUtility {
         int baseHeight = baseImage.getHeight();
 
         BufferedImage argbImage;
-        if (hasAlpha(baseImage)) {
-            argbImage = baseImage;
-        } else {
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
-        }
+        // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+        argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
         // iterate over each band to apply the outline,  where the outline is any pixel with alpha.
@@ -724,13 +721,12 @@ public class ImageUtility {
             sMaskImage.getRGB(0, i, baseWidth, 1, sMaskBand, 0, baseWidth);
             for (int j = 0; j < baseWidth; j++) {
                 // take any one of the primaries and apply src image alpha.
-                int red = (sMaskBand[j] >> 16) & 0x000000FF;
                 int alpha = (sMaskBand[j] >> 24) & 0x000000FF;
                 int sa = alpha << 24;
                 // apply the smask value as the alpha value
-                if (sMaskBand[j] == 0 )
+                if (sMaskBand[j] == 0)
                     srcBand[j] = sa
-                        | (srcBand[j] & ~0xff000000);
+                            | (srcBand[j] & ~0xff000000);
             }
             argbImage.setRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
         }

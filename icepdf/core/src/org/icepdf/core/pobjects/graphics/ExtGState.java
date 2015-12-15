@@ -22,6 +22,7 @@ import org.icepdf.core.util.Library;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -443,6 +444,7 @@ public class ExtGState extends Dictionary {
         if (tmp != null && tmp instanceof HashMap) {
             // create a new SMask dictionary
             SoftMask softMask = new SoftMask(library, (HashMap) tmp);
+            softMask.setPObjectReference(library.getReference(entries, SMASK_KEY));
             return softMask;
         }
         return null;
