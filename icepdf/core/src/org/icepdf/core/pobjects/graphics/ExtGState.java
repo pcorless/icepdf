@@ -409,7 +409,7 @@ public class ExtGState extends Dictionary {
         else if (o instanceof Boolean) {
             return (Boolean) o;
         }
-        return null;
+        return false;
     }
 
     /**
@@ -436,6 +436,10 @@ public class ExtGState extends Dictionary {
      */
     public int getOverprintMode() {
         return getInt(OPM_KEY);
+    }
+
+    public boolean hasOverPrintMode(){
+        return library.getObject(entries, OPM_KEY) != null;
     }
 
 

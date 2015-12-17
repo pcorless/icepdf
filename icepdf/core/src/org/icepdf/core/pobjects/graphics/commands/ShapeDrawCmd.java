@@ -44,6 +44,10 @@ public class ShapeDrawCmd implements DrawCmd {
         return shape;
     }
 
+    public void setShape(Shape shape) {
+        this.shape = shape;
+    }
+
     public Shape getShape() {
         return shape;
     }

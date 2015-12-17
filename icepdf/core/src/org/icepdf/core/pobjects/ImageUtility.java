@@ -224,7 +224,7 @@ public class ImageUtility {
                     public void paint(Graphics g_) {
                         super.paint(g_);
                         g_.setColor(Color.green);
-                        g_.fillRect(0, 0, width, height);
+                        g_.fillRect(0, 0, 10000, 10000);
                         g_.drawImage(bufferedImage, 0, 0, f);
                         g_.setColor(Color.red);
                         g_.drawRect(0, 0, bufferedImage.getWidth() - 2, bufferedImage.getHeight() - 2);

@@ -64,6 +64,7 @@ public class Form extends Stream {
     private boolean transparencyGroup;
     private boolean isolated;
     private boolean knockOut;
+    private boolean shading;
     private boolean inited = false;
 
     /**
@@ -272,5 +273,13 @@ public class Form extends Stream {
      */
     public boolean isKnockOut() {
         return knockOut;
+    }
+
+    public boolean isShading() {
+        return shading;
+    }
+
+    public void setShading(boolean shading) {
+        this.shading = shading;
     }
 }
