@@ -240,6 +240,8 @@ public class ExtGState extends Dictionary {
     public static final Name OPM_KEY = new Name("OPM");
     public static final Name D_KEY = new Name("D");
     public static final Name AIS_KEY = new Name("AIS");
+    public static final Name HT_KEY = new Name("HT");
+    public static final Name BG2_KEY = new Name("BG2");
     // (Optional) A flag specifying whether to apply automatic stroke adjustment
     // (see 10.6.5, "Automatic Stroke Adjustment").
     public static final Name SA_KEY = new Name("SA");
@@ -440,6 +442,18 @@ public class ExtGState extends Dictionary {
 
     public boolean hasOverPrintMode(){
         return library.getObject(entries, OPM_KEY) != null;
+    }
+
+    public boolean hasAlphaIsShape(){
+        return library.getObject(entries, AIS_KEY) != null;
+    }
+
+    public boolean hasHalfTone(){
+        return library.getObject(entries, HT_KEY) != null;
+    }
+
+    public boolean hasBG2Function(){
+        return library.getObject(entries, BG2_KEY) != null;
     }
 
 

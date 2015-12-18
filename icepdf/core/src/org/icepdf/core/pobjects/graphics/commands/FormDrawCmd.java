@@ -181,7 +181,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         } else if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)) {
             BufferedImage sMaskBuffer = createBufferXObject(parentPage, softMask.getG(), softMask, renderingHints, true);
 //            ImageUtility.displayImage(xFormBuffer, "base " + xForm.getPObjectReference() + " " + xFormBuffer.getHeight() + " x " + xFormBuffer.getHeight());
-//            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " + isAIS + " " + useLuminosity);
+//            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " + useLuminosity);
             if (!useLuminosity) {
                 xFormBuffer = ImageUtility.applyExplicitSMask(xFormBuffer, sMaskBuffer);
             } else {
@@ -234,7 +234,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 HashMap tmp = xForm.getGroup();
                 Object cs = xForm.getLibrary().getObject(tmp, new Name("CS"));
                 // looking for additive colour spaces, if so we paint an background.
-                if (cs instanceof Name && ((Name) cs).equals(DeviceRGB.DEVICERGB_KEY)) {
+                if (cs == null || cs instanceof ICCBased ||cs instanceof Name &&
+                        (((Name) cs).equals(DeviceRGB.DEVICERGB_KEY)
+                                ||((Name) cs).equals(DeviceCMYK.DEVICECMYK_KEY))){
                     canvas.setColor(Color.WHITE);
                     canvas.fillRect(0, 0, width, height);
                 }
