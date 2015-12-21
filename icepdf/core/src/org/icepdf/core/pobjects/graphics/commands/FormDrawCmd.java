@@ -228,8 +228,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // create the new image to write too.
         BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(width, height);
         Graphics2D canvas = bi.createGraphics();
-        if (!isMask && !xForm.isShading() && xForm.getExtGState() != null
-                && xForm.getExtGState().getBlendingMode() != null) {
+        if (!isMask && xForm.getExtGState() != null && xForm.getExtGState().getBlendingMode() != null
+                && !new Name("Normal").equals(xForm.getExtGState().getBlendingMode())
+                ) {
             if (xForm.getGroup() != null) {
                 HashMap tmp = xForm.getGroup();
                 Object cs = xForm.getLibrary().getObject(tmp, new Name("CS"));
