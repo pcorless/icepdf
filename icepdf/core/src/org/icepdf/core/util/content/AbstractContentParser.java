@@ -597,13 +597,14 @@ public abstract class AbstractContentParser implements ContentParser {
                         ((formXObject.getExtGState() != null && formXObject.getExtGState().getSMask() != null) ||
                                 (formXObject.getGraphicsState() != null && formXObject.getGraphicsState().getExtGState() != null
                                         && formXObject.getGraphicsState().getExtGState().getSMask() != null))
-                                || (formXObject.getExtGState() != null && formXObject.getExtGState().getBlendingMode() != null &&
-                                    !(new Name("Normal").equals(formXObject.getExtGState().getBlendingMode())))
                         || (formXObject.getExtGState() != null && (
                                     formXObject.getExtGState().hasOverPrintMode()
                                 || (formXObject.getExtGState().getNonStrokingAlphConstant() > 0 &&
                                     formXObject.getExtGState().getNonStrokingAlphConstant() < 1)
                         ))
+                        && (formXObject.getExtGState() != null &&
+                                ( formXObject.getExtGState().getBlendingMode() != null && !new Name("Normal").equals(formXObject.getExtGState().getBlendingMode()) ||
+                                        (formXObject.getExtGState().getNonStrokingAlphConstant() < 1 && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
                         // limit size, as buffer is needed
                         && (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
                         formXObject.getBBox().getHeight() < Short.MAX_VALUE))) {
