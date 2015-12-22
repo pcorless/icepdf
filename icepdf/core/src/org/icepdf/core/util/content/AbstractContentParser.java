@@ -592,22 +592,13 @@ public abstract class AbstractContentParser implements ContentParser {
                 // slightly different then a regular xObject as we
                 // need to capture the alpha which is only possible
                 // by paint the xObject to an image.
-                if (!disableTransparencyGroups && (
-                        // need to very ify which group we should be looking at current or ending state.
-                        ((formXObject.getExtGState() != null && formXObject.getExtGState().getSMask() != null) ||
-                                (formXObject.getGraphicsState() != null && formXObject.getGraphicsState().getExtGState() != null
-                                        && formXObject.getGraphicsState().getExtGState().getSMask() != null))
-                        || (formXObject.getExtGState() != null && (
-                                    formXObject.getExtGState().hasOverPrintMode()
-                                || (formXObject.getExtGState().getNonStrokingAlphConstant() > 0 &&
-                                    formXObject.getExtGState().getNonStrokingAlphConstant() < 1)
-                        ))
-                        && (formXObject.getExtGState() != null &&
-                                ( formXObject.getExtGState().getBlendingMode() != null && !new Name("Normal").equals(formXObject.getExtGState().getBlendingMode()) ||
-                                        (formXObject.getExtGState().getNonStrokingAlphConstant() < 1 && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
-                        // limit size, as buffer is needed
-                        && (formXObject.getBBox().getWidth() < Short.MAX_VALUE &&
-                        formXObject.getBBox().getHeight() < Short.MAX_VALUE))) {
+                if (!disableTransparencyGroups &&
+                        (formXObject.getBBox().getWidth() < Short.MAX_VALUE  && formXObject.getBBox().getHeight() < Short.MAX_VALUE
+                        &&  (formXObject.getExtGState() != null &&
+                        (formXObject.getExtGState().getSMask() != null || formXObject.getExtGState().getBlendingMode() != null
+                          || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
+                                && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
+                )) {
                     // add the hold form for further processing.
                     shapes.add(new FormDrawCmd(formXObject));
                 }
