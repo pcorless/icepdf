@@ -28,7 +28,7 @@
         <icefaces.product.name>ICEfaces</icefaces.product.name>
         <icefaces.lib.name>icefaces</icefaces.lib.name>
         <icefaces.version>4.0.0</icefaces.version>
-        <icepdf.version>5.1.1_P01</icepdf.version>
+        <icepdf.version>6.0.2</icepdf.version>
         <!-- Versions of JSF implementations -->
         <mojarra.version>2.2.4</mojarra.version>
         <!-- Various library versions settable from one place -->
