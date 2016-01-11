@@ -1,3 +1,18 @@
+/*
+ * Copyright 2006-2015 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
@@ -8,7 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Created by pcorl_000 on 2015-09-29.
+ * A certificate seed value dictionary (see Table 235) containing information about the characteristics of the
+ * certificate that shall be used when signing.
  */
 public class CertSeedValueDictionary extends Dictionary {
 
@@ -84,14 +100,14 @@ public class CertSeedValueDictionary extends Dictionary {
      * <li>9 decipherOnly</li>
      * </ul>
      * Any additional characters shall be ignored. Any missing characters or characters that are not one of the following
-     * values, shall be treated as ‘X’. The following character values shall be supported:
+     * values, shall be treated as X. The following character values shall be supported:
      * <ul>
      * <li>0 Corresponding key-usage shall not be set.</li>
      * <li>1 Corresponding key-usage shall be set.</li>
      * <li>X State of the corresponding key-usage does not matter.</li>
      * </ul>
      * EXAMPLE 1<br />
-     * The string values ‘1’ and ‘1XXXXXXXX’ represent settings where the key-usage type digitalSignature is set
+     * The string values 1 and 1XXXXXXXX represent settings where the key-usage type digitalSignature is set
      * and the state of all other key-usage types do not matter.
      * The value of the corresponding flag in the Ff entry indicates whether this is a required constraint.
      */
@@ -99,7 +115,7 @@ public class CertSeedValueDictionary extends Dictionary {
 
     /**
      * (Optional) An array of byte strings containing DER-encoded X.509v3 certificates of acceptable issuers. If the
-     * signer’s certificate refers to any of the specified issuers (either directly or indirectly), the certificate shall
+     * signer's certificate refers to any of the specified issuers (either directly or indirectly), the certificate shall
      * be considered acceptable for signing. The value of the corresponding flag in the Ff entry indicates whether this
      * is a required constraint.
      * <p/>
@@ -129,8 +145,8 @@ public class CertSeedValueDictionary extends Dictionary {
      * (Optional; PDF 1.7) A name indicating the usage of the URL entry. There are standard uses and there can be
      * implementation-specific uses for this URL. The following value specifies a valid standard usage:
      * <p/>
-     * Browser – The URL references content that shall be displayed in a web browser to allow enrolling for a new
-     * credential if a matching credential is not found. The Ff attribute’s URL bit shall be ignored for this usage.
+     * Browser - The URL references content that shall be displayed in a web browser to allow enrolling for a new
+     * credential if a matching credential is not found. The Ff attribute's URL bit shall be ignored for this usage.
      * <p/>
      * Third parties may extend the use of this attribute with their own attribute values, which shall conform to the
      * guidelines described in Annex E.
@@ -149,7 +165,7 @@ public class CertSeedValueDictionary extends Dictionary {
 
     public List getSubject() {
         Object tmp = library.getArray(entries, SUBJECT_KEY);
-        if (tmp instanceof List) {
+        if (tmp != null) {
             return (List) tmp;
         } else {
             return null;
@@ -158,7 +174,7 @@ public class CertSeedValueDictionary extends Dictionary {
 
     public List<HashMap> getSubjectDn() {
         Object tmp = library.getArray(entries, SUBJECT_DN_KEY);
-        if (tmp instanceof List) {
+        if (tmp != null) {
             return (List) tmp;
         } else {
             return null;
@@ -167,7 +183,7 @@ public class CertSeedValueDictionary extends Dictionary {
 
     public List<String> getKeyUsage() {
         Object tmp = library.getArray(entries, KEY_USAGE_KEY);
-        if (tmp instanceof List) {
+        if (tmp != null) {
             return (List) tmp;
         } else {
             return null;
@@ -176,7 +192,7 @@ public class CertSeedValueDictionary extends Dictionary {
 
     public List getIssuer() {
         Object tmp = library.getArray(entries, ISSUER_KEY);
-        if (tmp instanceof List) {
+        if (tmp != null) {
             return (List) tmp;
         } else {
             return null;
@@ -185,7 +201,7 @@ public class CertSeedValueDictionary extends Dictionary {
 
     public List getIOD() {
         Object tmp = library.getArray(entries, OID_KEY);
-        if (tmp instanceof List) {
+        if (tmp != null) {
             return (List) tmp;
         } else {
             return null;

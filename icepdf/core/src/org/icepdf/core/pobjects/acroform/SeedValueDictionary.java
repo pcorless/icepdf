@@ -1,3 +1,18 @@
+/*
+ * Copyright 2006-2015 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
@@ -17,7 +32,6 @@ import java.util.List;
  * The seed value dictionary may include seed values for private entries belonging to multiple handlers. A given handler
  * shall use only those entries that are pertinent to itself and ignore the others.
  *
- * @since 6.1
  */
 public class SeedValueDictionary extends Dictionary {
 
@@ -111,7 +125,7 @@ public class SeedValueDictionary extends Dictionary {
 
     /**
      * (Optional; PDF 1.6) A dictionary containing a single entry whose key is P and whose value is an integer
-     * between 0 and 3. A value of 0 defines the signature as an author signature (see 12.8, “Digital Signatures”).
+     * between 0 and 3. A value of 0 defines the signature as an author signature (see 12.8, Digital Signatures).
      * The values 1 through 3 shall be used for certification signatures and correspond to the value of P in a DocMDP
      * transform parameters dictionary (see Table 254).
      * <p/>
@@ -134,7 +148,7 @@ public class SeedValueDictionary extends Dictionary {
 
     /**
      * (Optional; PDF 1.6) An array of text strings specifying possible legal attestations
-     * (see 12.8.5, “Legal Content Attestations”). The value of the corresponding flag in the Ff entry indicates
+     * (see 12.8.5, Legal Content Attestations). The value of the corresponding flag in the Ff entry indicates
      * whether this is a required constraint.
      */
     public static final Name LEGAL_ATTESTATION_KEY = new Name("LegalAttestation");

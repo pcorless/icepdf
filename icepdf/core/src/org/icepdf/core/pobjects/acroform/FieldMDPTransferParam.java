@@ -1,3 +1,18 @@
+/*
+ * Copyright 2006-2015 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
@@ -16,7 +31,7 @@ import java.util.HashMap;
  * <li>The author specifies that form fields shall be filled in without invalidating the approval or certification
  * signature. The P entry of the DocMDP transform parameters dictionary shall be set to either 2 or 3 (see Table 254).</li>
  * <li>The author can also specify that after a specific recipient has signed the document, any modifications to
- * specific form fields shall invalidate that recipient’s signature. There shall be a separate signature field for
+ * specific form fields shall invalidate that recipient's signature. There shall be a separate signature field for
  * each designated recipient, each having an associated signature field lock dictionary (see Table 233) specifying
  * the form fields that shall be locked for that user.</li>
  * <li>When the recipient signs the field, the signature, signature reference, and transform parameters dictionaries
@@ -29,7 +44,7 @@ import java.util.HashMap;
  * dictionary indirectly.
  * <p/>
  * FieldMDP signatures shall be validated in a similar manner to DocMDP signatures. See Validating Signatures That Use
- * the DocMDP Transform Method in 12.8.2.2, “DocMDP” for details.
+ * the DocMDP Transform Method in 12.8.2.2, DocMDP for details.
  */
 public class FieldMDPTransferParam extends Dictionary implements TransformParams {
 

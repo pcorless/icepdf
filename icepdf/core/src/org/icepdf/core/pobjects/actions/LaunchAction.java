@@ -98,7 +98,7 @@ public class LaunchAction extends Action {
      */
     public void setExternalFile(String externalFile) {
         StringObject tmp = new LiteralStringObject(
-                externalFile, getPObjectReference(), library.securityManager);
+                externalFile, getPObjectReference(), library.getSecurityManager());
         entries.put(FILE_KEY, tmp);
         this.externalFile = externalFile;
     }

@@ -46,6 +46,13 @@
                 "
             />
 
+    <patternset id="icepdf.lib.bouncy.jars"
+                includes="
+                bcprov-jdk15on-152.jar
+                bcpkix-jdk15on-152.jar
+                "
+    />
+
     <target name="update.product.info">
         <copy file="${productinfo.src}/${productinfo.file}"
               todir="${productinfo.dest}" overwrite="true"/>
@@ -68,6 +75,9 @@
         <pathelement location="${build.classes.dir}"/>
         <fileset dir="${build.lib.dir}">
             <patternset refid="icepdf.lib.batik.jars"/>
+        </fileset>
+        <fileset dir="${build.lib.dir}">
+            <patternset refid="icepdf.lib.bouncy.jars"/>
         </fileset>
     </path>
 

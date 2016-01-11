@@ -59,9 +59,12 @@ public class SignatureFieldDictionary extends FieldDictionary {
      */
     public static final Name SV_KEY = new Name("SV");
 
+    // optional
     private LockDictionary lockDictionary;
-
+    // optional
     private SeedValueDictionary seedValueDictionary;
+    // not optional
+    private SignatureDictionary signatureDictionary;
 
     public SignatureFieldDictionary(Library library, HashMap entries) {
         super(library, entries);
@@ -76,6 +79,23 @@ public class SignatureFieldDictionary extends FieldDictionary {
         if (tmp instanceof HashMap) {
             seedValueDictionary = new SeedValueDictionary(library, (HashMap) tmp);
         }
+        // get the sig dictionary
+        if (hasFieldValue()) {
+            tmp = library.getObject(entries, V_KEY);
+            if (tmp instanceof HashMap) {
+                signatureDictionary = new SignatureDictionary(library, (HashMap) tmp);
+            }
+        }
+
+    }
+
+    /**
+     * Gets the associated signature dictionary and sub dictionaries.
+     *
+     * @return /sig's field dictionary.
+     */
+    public SignatureDictionary getSignatureDictionary() {
+        return signatureDictionary;
     }
 
     /**

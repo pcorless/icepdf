@@ -1,3 +1,18 @@
+/*
+ * Copyright 2006-2015 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
@@ -11,7 +26,7 @@ import java.util.HashMap;
 
 /**
  * The UR transform method shall be used to detect changes to a document that shall invalidate a usage rightssignature,
- * which is referred to from the UR3 entry in the permissions dictionary (see 12.8.4, “Permissions”). Usage rights
+ * which is referred to from the UR3 entry in the permissions dictionary (see 12.8.4, Permissions). Usage rights
  * signatures shall be used to enable additional interactive features that may not available by default in a conforming
  * reader. The signature shall be used to validate that the permissions have been granted by a bonafide granting
  * authority. The transform parameters dictionary (see Table 255) specifies the additional rights that shall be enabled

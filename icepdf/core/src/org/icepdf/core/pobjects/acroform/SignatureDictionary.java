@@ -1,3 +1,18 @@
+/*
+ * Copyright 2006-2015 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
@@ -12,7 +27,13 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
+ * A digital signature (PDF 1.3) may be used to authenticate the identity of a user and the documentâ€™s contents. It stores
+ * information about the signer and the state of the document when it was signed. The signature may be purely mathematical,
+ * such as a public/private-key encrypted document digest, or it may be a biometric form of identification, such as a
+ * handwritten signature, fingerprint, or retinal scan. The specific form of authentication used shall be implemented by
+ * a special software module called a signature handler.
  *
+ * The SignatureDictionary store root data for signing and verifying signature in a document.
  */
 public class SignatureDictionary extends Dictionary {
 
@@ -32,20 +53,20 @@ public class SignatureDictionary extends Dictionary {
      * A conforming reader may use any handler that supports this format to validate the signature.
      * <p/>
      * (PDF 1.6) The following values for public-key cryptographic signatures shall be used: adbe.x509.rsa_sha1,
-     * adbe.pkcs7.detached, and adbe.pkcs7.sha1 (see 12.8.3, “Signature Interoperability”). Other values may be defined
+     * adbe.pkcs7.detached, and adbe.pkcs7.sha1 (see 12.8.3, Signature Interoperability). Other values may be defined
      * by developers, and when used, shall be prefixed with the registered developer identification. All prefix names
-     * shall be registered (see Annex E). The prefix “adbe” has been registered by Adobe Systems and the three subfilter
-     * names listed above and defined in 12.8.3, “Signature Interoperability“ may be used by any developer.
+     * shall be registered (see Annex E). The prefix adbe has been registered by Adobe Systems and the three subfilter
+     * names listed above and defined in 12.8.3, Signature Interoperability may be used by any developer.
      */
     public static final Name SUB_FILTER_KEY = new Name("SubFilter");
 
     /**
      * (Required) The signature value. When ByteRange is present, the value shall be a hexadecimal string (see 7.3.4.3,
-     * “Hexadecimal Strings”) representing the value of the byte range digest.
+     * "Hexadecimal Strings") representing the value of the byte range digest.
      * <br />
      * For public-key signatures, Contents should be either a DER-encoded PKCS#1 binary data object or a DER-encoded
      * PKCS#7 binary data object.
-     * Space for the Contents value must be allocated before the message digest is computed. (See 7.3.4, “String Objects“)
+     * Space for the Contents value must be allocated before the message digest is computed. (See 7.3.4, String Objects)
      */
     public static final Name CONTENTS_KEY = new Name("Contents");
 
@@ -101,7 +122,7 @@ public class SignatureDictionary extends Dictionary {
      * <br />
      * EXAMPLE 2<br />
      * A  time stamp can be embedded in a PKCS#7 binary data object
-     * (see 12.8.3.3, “PKCS#7 Signatures as used in ISO 32000”).
+     * (see 12.8.3.3, PKCS#7 Signatures as used in ISO 32000).
      */
     public static final Name M_KEY = new Name("M");
 
@@ -111,7 +132,7 @@ public class SignatureDictionary extends Dictionary {
     public static final Name LOCATION_KEY = new Name("Location");
 
     /**
-     * (Optional) The reason for the signing, such as (I agree…).
+     * (Optional) The reason for the signing, such as (I agree).
      */
     public static final Name REASON_KEY = new Name("Reason");
 

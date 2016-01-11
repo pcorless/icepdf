@@ -81,6 +81,7 @@ public class Document {
     private static final String INCREMENTAL_UPDATER =
             "org.icepdf.core.util.IncrementalUpdater";
     public static boolean foundIncrementalUpdater;
+
     static {
         // check class bath for NFont library, and declare results.
         try {
@@ -126,6 +127,7 @@ public class Document {
     // repository of all PDF object associated with this document.
     private Library library = null;
     private SeekableInput documentSeekableInput;
+
     static {
         // sets if file caching is enabled or disabled.
         isCachingEnabled =
@@ -210,7 +212,7 @@ public class Document {
             byte[] data = new byte[fileLength];
             inputStream.read(data);
             setByteArray(data, 0, fileLength, filepath);
-        }else{
+        } else {
             RandomAccessFileInputStream rafis =
                     RandomAccessFileInputStream.build(new File(filepath));
             setInputStream(rafis);
@@ -422,6 +424,9 @@ public class Document {
             // create library to hold all document objects
             library = new Library();
 
+            // reference the stream and origin with library so we can handle verification and writing of signatures.
+            library.setDocumentInput(documentSeekableInput);
+
             // if interactive show visual progress bar
             //ProgressMonitorInputStream monitor = null;
 
@@ -539,8 +544,11 @@ public class Document {
             throw new NullPointerException("Loading via xref failed to find catalog");
 
         boolean madeSecurityManager = makeSecurityManager(documentTrailer);
-        if (madeSecurityManager)
+        if (madeSecurityManager) {
             attemptAuthorizeSecurityManager();
+        }
+        // setup a signature permission dictionary
+        configurePermissions();
     }
 
     private long getInitialCrossReferencePosition(SeekableInput in) throws IOException {
@@ -696,6 +704,9 @@ public class Document {
             if (madeSecurityManager)
                 attemptAuthorizeSecurityManager();
         }
+
+        // setup a signature handler
+        configurePermissions();
     }
 
     /**
@@ -828,11 +839,31 @@ public class Document {
 
         if (encryptDictionary != null && fileID != null) {
             // create new security manager
-            library.securityManager = new SecurityManager(
-                    library, encryptDictionary, fileID);
+            library.setSecurityManager(new SecurityManager(
+                    library, encryptDictionary, fileID));
             madeSecurityManager = true;
         }
         return madeSecurityManager;
+    }
+
+    /**
+     * Initializes permission object as it is uses with encrypt permission to define
+     * document characteristics at load time.
+     *
+     * @return true if permissions where found, false otherwise.
+     */
+    private boolean configurePermissions() {
+        if (catalog != null) {
+            Permissions permissions = catalog.getPermissions();
+            if (permissions != null) {
+                library.setPermissions(permissions);
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Document perms dictionary found and configured. ");
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -845,7 +876,7 @@ public class Document {
     private void attemptAuthorizeSecurityManager() throws PDFSecurityException {
         // check if pdf is password protected, by passing in black
         // password
-        if (!library.securityManager.isAuthorized("")) {
+        if (!library.getSecurityManager().isAuthorized("")) {
             // count password tries
             int count = 1;
             // store temporary password
@@ -867,7 +898,7 @@ public class Document {
 
                 // Verify new password,  proceed if authorized,
                 //    fatal exception otherwise.
-                if (library.securityManager.isAuthorized(password)) {
+                if (library.getSecurityManager().isAuthorized(password)) {
                     break;
                 }
                 count++;
@@ -1177,7 +1208,7 @@ public class Document {
      * @return security manager for document if available.
      */
     public SecurityManager getSecurityManager() {
-        return library.securityManager;
+        return library.getSecurityManager();
     }
 
     /**
@@ -1211,9 +1242,9 @@ public class Document {
      *
      * @param highlight true to enable highlight mode, otherwise; false.
      */
-    public void setFormHighlight(boolean highlight){
+    public void setFormHighlight(boolean highlight) {
         // iterate over the document annotations and set the appropriate highlight value.
-        if (catalog != null && catalog.getInteractiveForm() != null){
+        if (catalog != null && catalog.getInteractiveForm() != null) {
             InteractiveForm interactiveForm = catalog.getInteractiveForm();
             ArrayList<Object> widgets = interactiveForm.getFields();
             if (widgets != null) {
@@ -1229,7 +1260,7 @@ public class Document {
      *
      * @param formNode root form node.
      */
-    private  void descendFormTree(Object formNode, boolean highLight) {
+    private void descendFormTree(Object formNode, boolean highLight) {
         if (formNode instanceof AbstractWidgetAnnotation) {
             ((AbstractWidgetAnnotation) formNode).setEnableHighlightedWidget(highLight);
         } else if (formNode instanceof FieldDictionary) {

@@ -730,7 +730,7 @@ public class ImageStream extends Stream {
                     decodeParms, globalsStream);
         }
         // apply decode
-        if ((colourSpace instanceof DeviceGray)) {
+        if ((colourSpace instanceof DeviceGray) && tmpImage != null) {
             tmpImage = ImageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
         }
 

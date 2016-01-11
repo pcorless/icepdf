@@ -1,3 +1,18 @@
+/*
+ * Copyright 2006-2015 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Dictionary;
@@ -10,20 +25,20 @@ import java.util.HashMap;
  * The DocMDP transform method shall be used to detect modifications relative to a signature field that is signed by
  * the author of a document (the person applying the first signature). A document can contain only one signature field
  * that contains a DocMDP transform method; it shall be the first signed field in the document. It enables the author
- * to specify what changes shall be permitted to be made the document and what changes invalidate the author’s signature.
+ * to specify what changes shall be permitted to be made the document and what changes invalidate the author's signature.
  * <p/>
  * NOTE <br />
- * As discussed earlier, “MDP” stands for modification detection and prevention. Certification signatures that use the
+ * As discussed earlier, MDP stands for modification detection and prevention. Certification signatures that use the
  * DocMDP transform method enable detection of disallowed changes specified by the author. In addition, disallowed
  * changes can also be prevented when the signature dictionary is referred to by the DocMDP entry in the permissions
- * dictionary (see 12.8.4, “Permissions”).
+ * dictionary (see 12.8.4, Permissions).
  * <p/>
- * A certification signature should have a legal attestation dictionary (see 12.8.5, “Legal Content Attestations”) that
- * specifies all content that might result in unexpected rendering of the document contents, along with the author’s
- * attestation to such content. This dictionary may be used to establish an author’s intent if the integrity of the
+ * A certification signature should have a legal attestation dictionary (see 12.8.5, Legal Content Attestations) that
+ * specifies all content that might result in unexpected rendering of the document contents, along with the author's
+ * attestation to such content. This dictionary may be used to establish an author's intent if the integrity of the
  * document is questioned.
  * <p/>
- * The P entry in the DocMDP transform parameters dictionary (see Table 254) shall indicate the author’s specification
+ * The P entry in the DocMDP transform parameters dictionary (see Table 254) shall indicate the author's specification
  * of which changes to the document will invalidate the signature. (These changes to the document shall also be
  * prevented if the signature dictionary is referred from the DocMDP entry in the permissions dictionary.) A value of 1
  * for P indicates that the document shall be final; that is, any changes shall invalidate the signature. The values 2

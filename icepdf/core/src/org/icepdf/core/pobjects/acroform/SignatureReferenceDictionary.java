@@ -1,6 +1,5 @@
 package org.icepdf.core.pobjects.acroform;
 
-import com.sun.org.apache.xml.internal.security.transforms.TransformParam;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
@@ -19,15 +18,15 @@ public class SignatureReferenceDictionary extends Dictionary {
     public static final Name SIG_REF_TYPE_VALUE = new Name("SigRef");
 
     /**
-     * (Required) The name of the transform method (see Section 12.8.2, “Transform Methods”) that shall guide the
+     * (Required) The name of the transform method (see Section 12.8.2, Transform Methods) that shall guide the
      * modification analysis that takes place when the signature is validated. Valid values shall be:
      * <ul>
      * <li>DocMDP Used to detect modifications to a document relative to a signature field that is signed by the
-     * originator of a document; see 12.8.2.2, “DocMDP.”</li>
+     * originator of a document; see 12.8.2.2, DocMDP.</li>
      * <li>UR Used to detect modifications to a document that would invalidate a signature in a rights-enabled
-     * document; see 12.8.2.3, “UR.”</li>
+     * document; see 12.8.2.3, UR.</li>
      * <li>FieldMDPUsed to detect modifications to a list of form fields specified in TransformParams;
-     * see 12.8.2.4, “FieldMDP.”</li>
+     * see 12.8.2.4, FieldMDP.</li>
      * </ul>
      */
     public static final Name TRANSFORM_METHOD_KEY = new Name("TransformMethod");
