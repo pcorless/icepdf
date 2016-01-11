@@ -48,8 +48,8 @@
 
     <patternset id="icepdf.lib.bouncy.jars"
                 includes="
-                bcprov-jdk15on-152.jar
-                bcpkix-jdk15on-152.jar
+                bcprov-jdk15on.jar
+                bcpkix-jdk15on.jar
                 "
     />
 

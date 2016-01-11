@@ -36,12 +36,24 @@
 
     <dependencies>
 
+        <!-- Bouncy castle is need for building the core bundles as well as digital signature support -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.54</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.54</version>
+        </dependency>
+
         <!--
            JAI imageIO is not redistributable but need for JPEG2000 support
            Can be downloaded here:
                http://download.java.net/media/jai-imageio/builds/release/1.1/
        -->
-
         <dependency>
             <groupId>javax.media</groupId>
             <artifactId>jai-core</artifactId>
