@@ -111,12 +111,13 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     protected void renderAppearanceStream(Graphics2D g) {
 
         Appearance appearance = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-
-        if (appearanceState != null &&
-                appearanceState.getShapes() != null) {
-            // render the main annotation content
-            super.renderAppearanceStream(g);
+        if (appearance != null) {
+            AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+            if (appearanceState != null &&
+                    appearanceState.getShapes() != null) {
+                // render the main annotation content
+                super.renderAppearanceStream(g);
+            }
         }
         // check the highlight widgetAnnotation field and if true we draw a light background colour to mark
         // the widgets on a page.
