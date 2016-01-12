@@ -39,6 +39,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -861,7 +862,8 @@ public class PageViewComponentImpl extends
                     // get the optimal image for the platform
                     pageBufferImage = gc.createCompatibleImage(
                             bufferedPageImageBounds.width,
-                            bufferedPageImageBounds.height);
+                            bufferedPageImageBounds.height,
+                            BufferedImage.TYPE_INT_ARGB);
                     // paint white, try to avoid black flicker
                     Graphics g = pageBufferImage.getGraphics();
                     g.setColor(pageColor);

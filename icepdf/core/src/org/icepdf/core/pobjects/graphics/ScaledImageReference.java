@@ -116,9 +116,9 @@ public class ScaledImageReference extends CachedImageReference {
 
                     BufferedImage scaled;
                     if (ImageUtility.hasAlpha(image)) {
-                        scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                        scaled = ImageUtility.createTranslucentCompatibleImage(width, height);
                     } else {
-                        scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+                        scaled = ImageUtility.createCompatibleImage(width, height);
                     }
                     Graphics2D g = scaled.createGraphics();
                     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);

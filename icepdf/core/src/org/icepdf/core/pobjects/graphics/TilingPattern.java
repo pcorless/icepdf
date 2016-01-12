@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.pobjects.ImageUtility;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
@@ -381,8 +382,7 @@ public class TilingPattern extends Stream implements Pattern {
         double imageHeight = height * baseScale;
 
         // create the new image to write too.
-        final BufferedImage bi = new BufferedImage((int) imageWidth, (int) imageHeight,
-                BufferedImage.TYPE_INT_ARGB);
+        final BufferedImage bi = ImageUtility.createTranslucentCompatibleImage((int) imageWidth, (int) imageHeight);
         Graphics2D canvas = bi.createGraphics();
 
         TexturePaint patternPaint = new TexturePaint(bi, new Rectangle2D.Double(

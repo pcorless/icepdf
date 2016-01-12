@@ -260,9 +260,6 @@ public class GraphicsState {
     // Fill alpha constant for "ca" or non-stroking alpha
     private float fillAlpha;
 
-    // soft mask information for transparency model
-    private SoftMask softMask;
-
     // Transparency grouping changes which transparency rule is applied.
     // Normally it is simply a SRC_OVER rule but the group can also have isolated
     // and knockout values that directly affect which rule is used for the
@@ -370,8 +367,11 @@ public class GraphicsState {
         strokeAlpha = parentGraphicsState.strokeAlpha;
         alphaRule = parentGraphicsState.alphaRule;
 
-        // smaks
-        softMask = parentGraphicsState.softMask;
+        // extra graphics
+        if (parentGraphicsState.getExtGState() != null) {
+            extGState = new ExtGState(parentGraphicsState.getExtGState().getLibrary(),
+                    parentGraphicsState.getExtGState().getEntries());
+        }
 
         // copy the parent too.
         this.parentGraphicState = parentGraphicsState.parentGraphicState;
@@ -453,7 +453,9 @@ public class GraphicsState {
      */
     public void concatenate(ExtGState extGState) {
         // keep a reference for our partial Transparency group support.
-        this.extGState = extGState;
+        this.extGState = new ExtGState(extGState.getLibrary(),
+                extGState.getEntries());
+
         // Map over extGState attributes if present.
         // line width
         if (extGState.getLineWidth() != null) {
@@ -482,33 +484,15 @@ public class GraphicsState {
             }
         }
         // Stroking alpha
-        if (extGState.getNonStrokingAlphConstant() != null) {
-            setFillAlpha(extGState.getNonStrokingAlphConstant().floatValue());
+        if (extGState.getNonStrokingAlphConstant() != -1) {
+            setFillAlpha(extGState.getNonStrokingAlphConstant());
         }
         // none stroking alpha
-        if (extGState.getStrokingAlphConstant() != null) {
-            setStrokeAlpha(extGState.getStrokingAlphConstant().floatValue());
-        }
-
-        // blending mode - quick hack for blending support that at lest doesn't
-        // hide the content. More work on this to follow.
-        if (extGState.getBlendingMode() != null) {
-            if (extGState.ignoreBlending()) {
-                setFillAlpha(0.70f);
-                setStrokeAlpha(0.70f);
-            }
+        if (extGState.getStrokingAlphConstant() != -1) {
+            setStrokeAlpha(extGState.getStrokingAlphConstant());
         }
 
         setOverprintMode(extGState.getOverprintMode());
-
-        // save soft mask information
-        if (extGState.getSMask() != null) {
-            setSoftMask(extGState.getSMask());
-        }
-        if (extGState.getSMask() != null) {
-            SoftMask sMask = extGState.getSMask();
-            setSoftMask(sMask);
-        }
 
         // apply over print logic
         processOverPaint(extGState.getOverprint(), extGState.getOverprintFill());
@@ -825,14 +809,6 @@ public class GraphicsState {
 
     public void setKnockOut(boolean knockOut) {
         this.knockOut = knockOut;
-    }
-
-    public SoftMask getSoftMask() {
-        return softMask;
-    }
-
-    public void setSoftMask(SoftMask softMask) {
-        this.softMask = softMask;
     }
 
     public ExtGState getExtGState() {

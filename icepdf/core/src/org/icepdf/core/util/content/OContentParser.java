@@ -296,7 +296,7 @@ public class OContentParser extends AbstractContentParser {
                     // The graphics state parameters in the ExtGState must be concatenated
                     // with the the current graphics state.
                     else if (tok.equals(PdfOps.gs_TOKEN)) {
-                        consume_gs(graphicState, stack, resources);
+                        consume_gs(graphicState, stack, resources, shapes);
                     }
 
                     // End the path object without filling or stroking it. This
@@ -633,7 +633,7 @@ public class OContentParser extends AbstractContentParser {
         } finally {
             // End of stream set alpha state back to 1.0f, so that other
             // streams aren't applied an incorrect alpha value.
-            setAlpha(shapes, AlphaComposite.SRC_OVER, 1.0f);
+            setAlpha(shapes, graphicState, AlphaComposite.SRC_OVER, 1.0f);
         }
 //        long endTime = System.currentTimeMillis();
 //        System.out.println("Paring Duration " + (endTime - startTime));
@@ -854,7 +854,7 @@ public class OContentParser extends AbstractContentParser {
                 // The graphics state parameters in the ExtGState must be concatenated
                 // with the the current graphics state.
                 else if (nextToken.equals(PdfOps.gs_TOKEN)) {
-                    consume_gs(graphicState, stack, resources);
+                    consume_gs(graphicState, stack, resources, shapes);
                 }
 
                 // Set the line width in the graphics state

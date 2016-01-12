@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.io.SeekableInputConstrainedWrapper;
+import org.icepdf.core.pobjects.graphics.ExtGState;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
@@ -56,12 +57,14 @@ public class Form extends Stream {
     private Shapes shapes;
     // Graphics state object to be used by content parser
     private GraphicsState graphicsState;
+    private ExtGState extGState;
     private Resources resources;
     private Resources parentResource;
     // transparency grouping data
     private boolean transparencyGroup;
     private boolean isolated;
     private boolean knockOut;
+    private boolean shading;
     private boolean inited = false;
 
     /**
@@ -84,6 +87,10 @@ public class Form extends Stream {
         }
     }
 
+    public HashMap getGroup() {
+        return library.getDictionary(entries, GROUP_KEY);
+    }
+
     @SuppressWarnings("unchecked")
     public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
         this.shapes = shapes;
@@ -104,6 +111,7 @@ public class Form extends Stream {
     public void setGraphicsState(GraphicsState graphicsState) {
         if (graphicsState != null) {
             this.graphicsState = graphicsState;
+            this.extGState = graphicsState.getExtGState();
         }
     }
 
@@ -114,6 +122,16 @@ public class Form extends Stream {
      */
     public GraphicsState getGraphicsState() {
         return graphicsState;
+    }
+
+    /**
+     * Gets the extended graphics state for the form at the time of creation.  This contains any masking and blending
+     * data that might bet over written during the forms parsing.
+     *
+     * @return extended graphic state at the time of creation.
+     */
+    public ExtGState getExtGState() {
+        return extGState;
     }
 
     /**
@@ -255,5 +273,13 @@ public class Form extends Stream {
      */
     public boolean isKnockOut() {
         return knockOut;
+    }
+
+    public boolean isShading() {
+        return shading;
+    }
+
+    public void setShading(boolean shading) {
+        this.shading = shading;
     }
 }

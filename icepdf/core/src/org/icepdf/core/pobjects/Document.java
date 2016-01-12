@@ -1147,9 +1147,7 @@ public class Document {
         int pageWidth = (int) sz.getWidth();
         int pageHeight = (int) sz.getHeight();
 
-        BufferedImage image = new BufferedImage(pageWidth,
-                pageHeight,
-                BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = ImageUtility.createCompatibleImage(pageWidth, pageHeight);
         Graphics g = image.createGraphics();
 
         page.paint(g, renderHintType,
