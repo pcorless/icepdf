@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2015 ICEsoft Technologies Inc.
+ * Copyright 2006-2016 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -16,7 +16,6 @@
 package org.icepdf.core.pobjects.annotations;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.util.Library;
@@ -24,7 +23,9 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**

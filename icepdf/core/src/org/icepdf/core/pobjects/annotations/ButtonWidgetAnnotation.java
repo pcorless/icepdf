@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2015 ICEsoft Technologies Inc.
+ * Copyright 2006-2016 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -24,7 +24,6 @@ import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.lang.reflect.Field;
 import java.util.HashMap;
 
 /**

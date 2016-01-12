@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2015 ICEsoft Technologies Inc.
+ * Copyright 2006-2016 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -24,7 +24,6 @@ import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.Appearance;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
