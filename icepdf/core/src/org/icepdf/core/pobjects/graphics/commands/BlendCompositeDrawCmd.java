@@ -1,6 +1,6 @@
 package org.icepdf.core.pobjects.graphics.commands;
 /*
- * Copyright 2006-2015 ICEsoft Technologies Inc.
+ * Copyright 2006-2016 ICEsoft Technologies Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
