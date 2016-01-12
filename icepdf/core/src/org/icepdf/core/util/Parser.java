@@ -1215,7 +1215,7 @@ public class Parser {
      */
     public static boolean isWhitespace(char c) {
         return ((c == ' ') || (c == '\t') || (c == '\r') ||
-                (c == '\n') || (c == '\f'));
+                (c == '\n') || (c == '\f') || (c == 0 ) );
     }
 
     private static boolean isDelimiter(char c) {
