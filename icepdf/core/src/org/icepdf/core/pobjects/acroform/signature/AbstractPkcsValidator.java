@@ -65,6 +65,7 @@ public abstract class AbstractPkcsValidator implements Validator {
     protected SignatureFieldDictionary signatureFieldDictionary;
 
     // signer certificate
+    protected Collection<Certificate> certificateChain;
     protected X509Certificate signerCertificate;
     // digests used for verification
     protected String digestAlgorithmIdentifier;
@@ -79,6 +80,7 @@ public abstract class AbstractPkcsValidator implements Validator {
     private boolean isDocumentModified = true;
     // todo validate this properties.
     private boolean isCertificateTrusted;
+    private boolean isRevocationCheck;
     private boolean isSignerTimeValid;
     private boolean isValidationTimeValid;
 
@@ -115,7 +117,7 @@ public abstract class AbstractPkcsValidator implements Validator {
      * 0, version CMSVersion,
      * 1, digestAlgorithms DigestAlgorithmIdentifiers,
      * 2, encapContentInfo EncapsulatedContentInfo,
-     * 3, certificates [0] IMPLICIT CertificateSet OPTIONAL,
+     * 3, certificateChain [0] IMPLICIT CertificateSet OPTIONAL,
      * 4, crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
      * 5, signerInfos SignerInfos }
      * <p/>
@@ -253,33 +255,32 @@ public abstract class AbstractPkcsValidator implements Validator {
     private ASN1Sequence parseCertificateData(byte[] cmsData, ASN1Sequence signedData) throws SignatureIntegrityException {
 
         // Next two entries are optional.
-        // 3, certificates [0] IMPLICIT CertificateSet OPTIONAL,
+        // 3, certificateChain [0] IMPLICIT CertificateSet OPTIONAL,
         // crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
         // Most of our example seem to have what looks like a CertificateSet but I haven't had much luck finding
         // a specific format to follow ot parse out the data.
-        // CertificatSet is defined as:<br/>
-        // The CertificateSet type provides a set of certificates. It is
+        // CertificateSet is defined as:<br/>
+        // The CertificateSet type provides a set of certificateChain. It is
         // intended that the set be sufficient to contain certification paths
         // from a recognized "root" or "top-level certification authority" to
-        // all of the sender certificates with which the set is associated.
-        // However, there may be more certificates than necessary, or there MAY
+        // all of the sender certificateChain with which the set is associated.
+        // However, there may be more certificateChain than necessary, or there MAY
         // be fewer than necessary.
         // <br/>
         // The precise meaning of a "certification path" is outside the scope of
         // this document. However, [PROFILE] provides a definition for X.509
-        // certificates. Some applications may impose upper limits on the
+        // certificateChain. Some applications may impose upper limits on the
         // length of a certification path; others may enforce certain
-        // relationships between the subjects and issuers of certificates within
+        // relationships between the subjects and issuers of certificateChain within
         // a certification path.
         // <br/>
         // Object tmp = signedData.getObjectAt(3);
 
-        // the certificates
+        // the certificateChain
         X509CertParser x509CertParser = new X509CertParser();
         x509CertParser.engineInit(new ByteArrayInputStream(cmsData));
-        Collection<Certificate> certificates;
         try {
-            certificates = x509CertParser.engineReadAll();
+            certificateChain = x509CertParser.engineReadAll();
         } catch (StreamParsingException e) {
             logger.log(Level.WARNING, "Error parsing certificate data: ", e);
             throw new SignatureIntegrityException("Error parsing certificate data ");
@@ -323,7 +324,7 @@ public abstract class AbstractPkcsValidator implements Validator {
             BigInteger serialNumber = ((ASN1Integer) issuerAndSerialNumber.getObjectAt(1)).getValue();
             signerCertificate = null;
             // signer cert should always be the first in the list.
-            for (Object element : certificates) {
+            for (Object element : certificateChain) {
                 X509Certificate certificate = (X509Certificate) element;
                 if (certificate.getIssuerX500Principal().equals(issuer) &&
                         serialNumber.equals(certificate.getSerialNumber())) {
@@ -588,12 +589,35 @@ public abstract class AbstractPkcsValidator implements Validator {
         return isCertificateTrusted;
     }
 
+    public boolean isRevocationCheck() {
+        return isRevocationCheck;
+    }
+
     public boolean isSignerTimeValid() {
         return isSignerTimeValid;
     }
 
     public boolean isValidationTimeValid() {
         return isValidationTimeValid;
+    }
+
+    /**
+     * Gets the certificate used to sing the document.  The signature principle matches the certificates
+     * principle in other words.
+     *
+     * @return signer certificate.
+     */
+    public X509Certificate getSignerCertificate() {
+        return signerCertificate;
+    }
+
+    /**
+     * Gets the certificate chain associated with this signature.
+     *
+     * @return certificate chain of one or more certificates.
+     */
+    public Collection<Certificate> getCertificateChain() {
+        return certificateChain;
     }
 
     /**

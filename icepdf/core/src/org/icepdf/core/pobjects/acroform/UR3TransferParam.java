@@ -35,7 +35,7 @@ import java.util.HashMap;
  * <br />
  * EXAMPLE<br />
  * Adobe Systems grants permissions to enable additional features in Adobe Reader, using public-key cryptography. It
- * uses certificate authorities to issue public key certificates to document creators with which it has entered into a
+ * uses certificate authorities to issue public key certificateChain to document creators with which it has entered into a
  * business relationship. Adobe Reader verifies that the rights-enabling signature uses a certificate from an
  * Adobe-authorized certificate authority. Other conforming readers are free to use this same mechanism for their
  * own purposes.

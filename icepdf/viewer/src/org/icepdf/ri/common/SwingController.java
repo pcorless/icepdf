@@ -33,6 +33,7 @@ import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.search.SearchPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
@@ -191,6 +192,7 @@ public class SwingController
     private SearchPanel searchPanel;
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
+    private SignaturesPanel signaturesPanel;
     private AnnotationPanel annotationPanel;
     private JTabbedPane utilityTabbedPane;
     private JSplitPane utilityAndDocumentSplitPane;
@@ -947,6 +949,10 @@ public class SwingController
         layersPanel = tn;
     }
 
+    public void setSignaturesPanel(SignaturesPanel tn) {
+        signaturesPanel = tn;
+    }
+
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
@@ -1178,8 +1184,8 @@ public class SwingController
         }
     }
 
-    private boolean hasForms(){
-        if (document == null){
+    private boolean hasForms() {
+        if (document == null) {
             return false;
         }
         return !(document.getCatalog().getInteractiveForm() == null ||
@@ -2200,6 +2206,10 @@ public class SwingController
             layersPanel.setDocument(document);
         }
 
+        if (signaturesPanel != null) {
+            signaturesPanel.setDocument(document);
+        }
+
         // Refresh the properties manager object if we don't already have one
         // This would be not null if the UI was constructed manually
         if ((propertiesManager == null) && (windowManagementCallback != null)) {
@@ -2285,6 +2295,24 @@ public class SwingController
                         true);
             }
         }
+        // check if there are signatures and enable/disable the tab as needed
+        boolean signaturesExist = document.getCatalog().getInteractiveForm() != null &&
+                document.getCatalog().getInteractiveForm().isSignatureFields();
+        if (signaturesPanel != null && utilityTabbedPane != null) {
+            if (signaturesExist) {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(signaturesPanel),
+                        true);
+                // TODO: remove after testing/UI is complete.
+                setUtilityPaneVisible(true);
+                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(signaturesPanel));
+
+            } else {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(signaturesPanel),
+                        false);
+            }
+        }
 
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
@@ -2330,6 +2358,10 @@ public class SwingController
             layersPanel.setDocument(null);
         }
 
+        if (signaturesPanel != null) {
+            signaturesPanel.setDocument(null);
+        }
+
         // set the default cursor.  
         documentViewController.closeDocument();
 
@@ -2357,6 +2389,7 @@ public class SwingController
         // update thew view to show no pages in the view
         updateDocumentView();
 
+        // tear down the outline tree.
         TreeModel treeModel = (outlinesTree != null) ? outlinesTree.getModel() : null;
         if (treeModel != null) {
             OutlineItemTreeNode root = (OutlineItemTreeNode) treeModel.getRoot();
@@ -2501,6 +2534,9 @@ public class SwingController
         }
         if (layersPanel != null) {
             layersPanel.dispose();
+        }
+        if (signaturesPanel != null) {
+            signaturesPanel.dispose();
         }
         if (utilityTabbedPane != null) {
             utilityTabbedPane.removeAll();
@@ -3573,7 +3609,7 @@ public class SwingController
         document.setFormHighlight(viewModel.isWidgetAnnotationHighlight());
 
         // repaint the page.
-        ((AbstractDocumentView)documentViewController.getDocumentView()).repaint();
+        ((AbstractDocumentView) documentViewController.getDocumentView()).repaint();
     }
 
     /**
@@ -3588,7 +3624,7 @@ public class SwingController
     /**
      * Flips the visibility of the form highlight functionality ot hte opposite of what it was.
      */
-    public void toggleFormHighlight(){
+    public void toggleFormHighlight() {
         viewModel.setIsWidgetAnnotationHighlight(!viewModel.isWidgetAnnotationHighlight());
         // write the property for next viewing.
         propertiesManager.setBoolean(PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT,

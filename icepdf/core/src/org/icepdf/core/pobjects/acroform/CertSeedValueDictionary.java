@@ -57,8 +57,8 @@ public class CertSeedValueDictionary extends Dictionary {
     private static final int Ff_URL_BIT = 0x40;
 
     /**
-     * (Optional) An array of byte strings containing DER-encoded X.509v3 certificates that are acceptable for
-     * signing. X.509v3 certificates are described in RFC 3280, Internet X.509 Public Key Infrastructure, Certificate
+     * (Optional) An array of byte strings containing DER-encoded X.509v3 certificateChain that are acceptable for
+     * signing. X.509v3 certificateChain are described in RFC 3280, Internet X.509 Public Key Infrastructure, Certificate
      * and Certificate Revocation List (CRL) Profile (see the Bibliography). The value of the corresponding flag in the
      * Ff entry indicates whether this is a required constraint.
      */
@@ -114,12 +114,12 @@ public class CertSeedValueDictionary extends Dictionary {
     public static final Name KEY_USAGE_KEY = new Name("KeyUsage");
 
     /**
-     * (Optional) An array of byte strings containing DER-encoded X.509v3 certificates of acceptable issuers. If the
+     * (Optional) An array of byte strings containing DER-encoded X.509v3 certificateChain of acceptable issuers. If the
      * signer's certificate refers to any of the specified issuers (either directly or indirectly), the certificate shall
      * be considered acceptable for signing. The value of the corresponding flag in the Ff entry indicates whether this
      * is a required constraint.
      * <p/>
-     * This array may contain self-signed certificates.
+     * This array may contain self-signed certificateChain.
      */
     public static final Name ISSUER_KEY = new Name("Issuer");
 

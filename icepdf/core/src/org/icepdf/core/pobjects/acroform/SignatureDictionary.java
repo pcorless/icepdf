@@ -74,7 +74,7 @@ public class SignatureDictionary extends Dictionary {
      * (Required when SubFilter is adbe.x509.rsa_sha1) An array of byte strings that shall represent the X.509
      * certificate chain used when signing and verifying signatures that use public-key cryptography, or a byte
      * string if the chain has only one entry. The signing certificate shall appear first in the array; it shall
-     * be used to verify the signature value in Contents, and the other certificates shall be used to verify the
+     * be used to verify the signature value in Contents, and the other certificateChain shall be used to verify the
      * authenticity of the signing certificate.
      * <br />
      * If SubFilter is adbe.pkcs7.detached or adbe.pkcs7.sha1, this entry shall not be used, and the certificate chain

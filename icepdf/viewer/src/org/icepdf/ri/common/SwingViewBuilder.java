@@ -21,6 +21,7 @@ import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -1715,6 +1716,12 @@ public class SwingViewBuilder {
                     buildLayersComponents());
         }
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SIGNATURES)) {
+            utilityTabbedPane.add(
+                    messageBundle.getString("viewer.utilityPane.signatures.tab.title"),
+                    buildSignatureComponents());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
@@ -1756,6 +1763,14 @@ public class SwingViewBuilder {
             viewerController.setLayersPanel(layersPanel);
         }
         return layersPanel;
+    }
+
+    public JComponent buildSignatureComponents() {
+        SignaturesPanel signaturesPanel = new SignaturesPanel(viewerController);
+        if (viewerController != null) {
+            viewerController.setSignaturesPanel(signaturesPanel);
+        }
+        return signaturesPanel;
     }
 
     public SearchPanel buildSearchPanel() {

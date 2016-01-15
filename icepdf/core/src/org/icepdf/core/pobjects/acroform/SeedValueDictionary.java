@@ -157,7 +157,7 @@ public class SeedValueDictionary extends Dictionary {
      * (Optional; PDF 1.7) A flag indicating whether revocation checking shall be carried out. If AddRevInfo is true,
      * the conforming processor shall perform the following additional tasks when signing the signature field:
      * <p/>
-     * Perform revocation checking of the certificate (and the corresponding issuing certificates) used to sign.
+     * Perform revocation checking of the certificate (and the corresponding issuing certificateChain) used to sign.
      * <p/>
      * Include the revocation information within the signature value.
      * <p/>
