@@ -49,6 +49,7 @@
     <patternset id="icepdf.lib.bouncy.jars"
                 includes="
                 bcprov-jdk15on.jar
+                bcprov-ext-jdk15on.jar
                 bcpkix-jdk15on.jar
                 "
     />
