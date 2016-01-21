@@ -54,8 +54,7 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
                                        Image image) {
         super(parent, true);
         this.messageBundle = messageBundle;
-        // set the dialog icon
-        setIconImage(image);
+
         setTitle(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.title"));
 
         getContentPane().setLayout(new BorderLayout());
