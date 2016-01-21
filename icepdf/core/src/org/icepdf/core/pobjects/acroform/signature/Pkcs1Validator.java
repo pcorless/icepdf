@@ -29,9 +29,7 @@ import org.icepdf.core.util.Utils;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayInputStream;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
 
 /**
  * "adbe.x509.rsa_sha1"
@@ -63,8 +61,8 @@ public class Pkcs1Validator extends AbstractPkcsValidator {
         try {
             X509CertParser x509CertParser = new X509CertParser();
             x509CertParser.engineInit(new ByteArrayInputStream(certsKey));
-            Collection<Certificate> certificates = x509CertParser.engineReadAll();
-            signerCertificate = (X509Certificate) certificates.iterator().next();
+            certificateChain = x509CertParser.engineReadAll();
+            signerCertificate = (X509Certificate) certificateChain.iterator().next();
 
             // content data is encrypted using the cert above.
             ASN1InputStream asn1InputStream = new ASN1InputStream(new ByteArrayInputStream(cmsData));

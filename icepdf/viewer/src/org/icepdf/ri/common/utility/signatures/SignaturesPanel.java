@@ -93,7 +93,7 @@ public class SignaturesPanel extends JPanel {
             }
             // build out the tree
             if (signatures.size() > 0) {
-                nodes = new LayersTreeNode("Signatures");
+                nodes = new LayersTreeNode(messageBundle.getString("viewer.utilityPane.signatures.tab.title"));
                 nodes.setAllowsChildren(true);
                 buildTree(signatures);
                 buildUI();
@@ -113,7 +113,7 @@ public class SignaturesPanel extends JPanel {
             SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
             // filter any unsigned singer fields.
             if (signatureDictionary.getEntries().size() > 0) {
-                tmp = new SignatureTreeNode(signature);
+                tmp = new SignatureTreeNode(signature, messageBundle);
                 tmp.setAllowsChildren(true);
                 nodes.add(tmp);
             } else if (!foundUnsignedSignatureFields) {
@@ -125,7 +125,8 @@ public class SignaturesPanel extends JPanel {
         //    - look at Signature Reference Dictionary for /Transform Method
         // add the unsigned singer fields to there own root node.
         if (foundUnsignedSignatureFields) {
-            DefaultMutableTreeNode unsignedFieldNode = new DefaultMutableTreeNode("Unsigned Signature Fields");
+            DefaultMutableTreeNode unsignedFieldNode = new DefaultMutableTreeNode(
+                    messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.unsigned.label"));
             nodes.add(unsignedFieldNode);
             for (SignatureWidgetAnnotation signature : signatures) {
                 SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
@@ -157,28 +158,20 @@ public class SignaturesPanel extends JPanel {
             int row = tree.getRowForLocation(x, y);
             TreePath path = tree.getPathForRow(row);
             if (path != null) {
-//                LayersTreeNode node = (LayersTreeNode) path.getLastPathComponent();
-//                boolean isSelected = !(node.isSelected());
-//                node.setSelected(isSelected);
-//                // the current page and repaint
-//                List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
-//                AbstractPageViewComponent page = pages.get(documentViewModel.getViewCurrentPageIndex());
-//                page.invalidatePageBuffer();
-//                // resort page text as layer visibility will have changed.
-//                try {
-//                    page.getPage().getText().sortAndFormatText();
-//                } catch (InterruptedException e1) {
-//                    // silent running for now.
-//                }
-//                // repaint the page.
-//                page.repaint();
-//                // repaint the tree so the checkbox states are show correctly.
-//                tree.repaint();
-//                ((DefaultTreeModel) tree.getModel()).nodeChanged(node);
-//                if (row == 0) {
-//                    tree.revalidate();
-//                    tree.repaint();
-//                }
+                Object node = path.getLastPathComponent();
+                if (node instanceof SignatureCertTreeNode) {
+                    // someone clicked on the show certificate node.
+                    // create new dialog to show certificate properties.
+                    final SignatureCertTreeNode signatureCertTreeNode = (SignatureCertTreeNode) node;
+                    Runnable doSwingWork = new Runnable() {
+                        public void run() {
+                            new CertificatePropertiesDialog(controller.getViewerFrame(), messageBundle,
+                                    signatureCertTreeNode.getCertificateChain(), signatureCertTreeNode.getImage())
+                                    .setVisible(true);
+                        }
+                    };
+                    SwingUtilities.invokeLater(doSwingWork);
+                }
             }
         }
     }

@@ -43,19 +43,19 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
         signatureDictionary = new SignatureDictionary(library, valueDict);
 
         // little test
-        System.out.println("Filter:   " + signatureDictionary.getFilter());
-        System.out.println("sub:      " + signatureDictionary.getSubFilter());
-        System.out.println("Location: " + signatureDictionary.getLocation());
-        System.out.println("Name:     " + signatureDictionary.getName());
-        System.out.println("Reason:   " + signatureDictionary.getReason());
-        System.out.println("Contact:  " + signatureDictionary.getContactInfo());
-        System.out.println("Date:     " + signatureDictionary.getDate());
-        System.out.println("range:    " + signatureDictionary.getByteRange());
-        System.out.println("cert:     " + signatureDictionary.getCertArray());
-        System.out.println("ref:     " + signatureDictionary.getReferences());
-        System.out.println("r:     " + signatureDictionary.getDictionaryVersion());
-        System.out.println("v:     " + signatureDictionary.getHandlerVersion());
-        System.out.println();
+//        System.out.println("Filter:   " + signatureDictionary.getFilter());
+//        System.out.println("sub:      " + signatureDictionary.getSubFilter());
+//        System.out.println("Location: " + signatureDictionary.getLocation());
+//        System.out.println("Name:     " + signatureDictionary.getName());
+//        System.out.println("Reason:   " + signatureDictionary.getReason());
+//        System.out.println("Contact:  " + signatureDictionary.getContactInfo());
+//        System.out.println("Date:     " + signatureDictionary.getDate());
+//        System.out.println("range:    " + signatureDictionary.getByteRange());
+//        System.out.println("cert:     " + signatureDictionary.getCertArray());
+//        System.out.println("ref:     " + signatureDictionary.getReferences());
+//        System.out.println("r:     " + signatureDictionary.getDictionaryVersion());
+//        System.out.println("v:     " + signatureDictionary.getHandlerVersion());
+//        System.out.println();
 
     }
 

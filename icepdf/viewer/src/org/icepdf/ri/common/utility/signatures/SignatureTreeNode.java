@@ -32,7 +32,9 @@ import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.Date;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
@@ -45,6 +47,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     private static final Logger logger =
             Logger.getLogger(SignatureTreeNode.class.toString());
 
+    private ResourceBundle messageBundle;
     private SignatureWidgetAnnotation signatureWidgetAnnotation;
     private Validator validator;
     private boolean verifyingSignature;
@@ -64,9 +67,10 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      *
      * @param signatureWidgetAnnotation Contains PDF Outline signatureWidgetAnnotation data
      */
-    public SignatureTreeNode(SignatureWidgetAnnotation signatureWidgetAnnotation) {
+    public SignatureTreeNode(SignatureWidgetAnnotation signatureWidgetAnnotation, ResourceBundle messageBundle) {
         super();
         this.signatureWidgetAnnotation = signatureWidgetAnnotation;
+        this.messageBundle = messageBundle;
 
         try {
             validateSignatureNode();
@@ -74,9 +78,10 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             logger.warning("There was an issue creating a node for the signature: " +
                     signatureWidgetAnnotation.toString());
             // build a user node object to report the error.
-            setUserObject("Signer certificate could not be validated " +
-                    (commonName != null ? commonName + " " : " ") +
-                    (emailAddress != null ? "<" + emailAddress + ">" : ""));
+            MessageFormat formatter = new MessageFormat(messageBundle.getString(
+                    "viewer.utilityPane.signatures.tab.certTree.error.label"));
+            setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
+                    (emailAddress != null ? "<" + emailAddress + ">" : "")}));
         }
     }
 
@@ -155,12 +160,12 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * @throws SignatureIntegrityException
      */
     public synchronized void refreshSignerNode() {
-        DefaultMutableTreeNode rootSignatureNode;
         if (isVerifyingSignature()) {
             // should have enough data to build a out a full signature node.
-            setUserObject("Signed by " +
-                    (commonName != null ? commonName + " " : " ") +
-                    (emailAddress != null ? "<" + emailAddress + ">" : ""));
+            MessageFormat formatter = new MessageFormat(messageBundle.getString(
+                    "viewer.utilityPane.signatures.tab.certTree.rootSigned.label"));
+            setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
+                    (emailAddress != null ? "<" + emailAddress + ">" : "")}));
             // signature validity
             buildSignatureValidity(this);
             // add signature details
@@ -169,15 +174,15 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             buildVerifiedDateAndFieldLink(this);
         } else {
             // build out a simple validating message
-            setUserObject("Validating signature " +
-                    (commonName != null ? commonName + " " : " ") +
-                    (emailAddress != null ? "<" + emailAddress + ">" : ""));
-
+            MessageFormat formatter = new MessageFormat(messageBundle.getString(
+                    "viewer.utilityPane.signatures.tab.certTree.rootValidating.label"));
+            setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
+                    (emailAddress != null ? "<" + emailAddress + ">" : "")}));
         }
     }
 
     // set one of the three icon's to represent the validity status of the signature node.
-    protected Icon getRootNodeValidityIcon() {
+    protected ImageIcon getRootNodeValidityIcon() {
         if (!validator.isDocumentModified() && validator.isCertificateTrusted()) {
             return new ImageIcon(Images.get("signatue_valid.png"));
         } else if (!validator.isDocumentModified()) {
@@ -190,61 +195,72 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     // builds otu the validity tree node.
     private void buildSignatureValidity(DefaultMutableTreeNode root) {
         // figure out the opening messages.
-        String validity = "Signature is invalid:";
+        String validity = "viewer.utilityPane.signatures.tab.certTree.cert.invalid.label";
         if (!validator.isDocumentModified() && !validator.isCertificateTrusted()) {
-            validity = "Signature validity is unknown:";
+            validity = "viewer.utilityPane.signatures.tab.certTree.cert.unknown.label";
         } else if (!validator.isDocumentModified() && validator.isCertificateTrusted()) {
-            validity = "Signature is valid:";
+            validity = "viewer.utilityPane.signatures.tab.certTree.cert.valid.label";
         }
-        SigPropertyTreeNode rootValidityDetails = new SigPropertyTreeNode(validity);
+        SigPropertyTreeNode rootValidityDetails = new SigPropertyTreeNode(
+                messageBundle.getString(validity));
 
         // document modification
-        String documentModified = "Document has not been modified since it was signed";
+        String documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.modified.label";
         if (!validator.isDocumentModified()) {
-            documentModified = "Document has not been modified since it was certified";
+            documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.unmodified.label";
         }
-        rootValidityDetails.add(new SigPropertyTreeNode(documentModified));
+        rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(documentModified)));
         // trusted certification
-        String certificateTrusted = "Signer's identity is unknown";
+        String certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.unknown.label";
         if (validator.isCertificateTrusted()) {
             if (validator.isRevocationCheck()) {
-                certificateTrusted = "Signature is valid, but revocation of the signer's identity could not be checked";
+                certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.unchecked.label";
             } else {
-                certificateTrusted = "Signer's identity is valid";
+                certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.valid.label";
             }
         }
-        rootValidityDetails.add(new SigPropertyTreeNode(certificateTrusted));
+        rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(certificateTrusted)));
         // signature time.
-        String signatureTime = "Signing time is from the clock on this signer's computer.";
+        String signatureTime = "viewer.utilityPane.signatures.tab.certTree.signature.time.local.label";
         if (validator.isSignerTimeValid()) {
-            signatureTime = "Signature is LTV enabled";
+            signatureTime = "viewer.utilityPane.signatures.tab.certTree.signature.time.valid.label";
         }
-        rootValidityDetails.add(new SigPropertyTreeNode(signatureTime));
+        rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(signatureTime)));
         root.add(rootValidityDetails);
     }
 
     // builds out the signature details
     private void buildSignatureDetails(DefaultMutableTreeNode root) {
-        SigPropertyTreeNode rootSignatureDetails = new SigPropertyTreeNode("Signature Details");
+        SigPropertyTreeNode rootSignatureDetails = new SigPropertyTreeNode(
+                messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.signature.details.label"));
         // try and add the reason
         if (reason != null && reason.length() > 0) {
-            rootSignatureDetails.add(new SigPropertyTreeNode("Reason: " + reason));
+            MessageFormat messageFormat = new MessageFormat(messageBundle.getString(
+                    "viewer.utilityPane.signatures.tab.certTree.signature.details.reason.label"));
+            rootSignatureDetails.add(new SigPropertyTreeNode(messageFormat.format(new Object[]{reason})));
         }
         // add the location
         if (location != null && location.length() > 0) {
-            rootSignatureDetails.add(new SigPropertyTreeNode("Location: " + location));
+            MessageFormat messageFormat = new MessageFormat(messageBundle.getString(
+                    "viewer.utilityPane.signatures.tab.certTree.signature.details.location.label"));
+            rootSignatureDetails.add(new SigPropertyTreeNode(messageFormat.format(new Object[]{location})));
         }
         // add link for bringing up the certificate details.
-        rootSignatureDetails.add(new SigPropertyTreeNode("Certificate Details..."));
+        rootSignatureDetails.add(new SignatureCertTreeNode(
+                messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.signature.details.full.label"),
+                validator.getCertificateChain(),
+                getRootNodeValidityIcon().getImage()));
         root.add(rootSignatureDetails);
     }
 
     private void buildVerifiedDateAndFieldLink(DefaultMutableTreeNode root) {
         if (lastVerified != null) {
+            MessageFormat messageFormat = new MessageFormat(messageBundle.getString(
+                    "viewer.utilityPane.signatures.tab.certTree.signature.lastChecked.label"));
             SigPropertyTreeNode lastChecked =
-                    new SigPropertyTreeNode("Last Checked: " +
+                    new SigPropertyTreeNode(messageFormat.format(new Object[]{
                             new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(),
-                                    PDate.formatDateTime(lastVerified)).toString());
+                                    PDate.formatDateTime(lastVerified)).toString()}));
             lastChecked.setAllowsChildren(false);
             root.add(lastChecked);
         }

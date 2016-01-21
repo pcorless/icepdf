@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.NameTree;
+import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
@@ -25,7 +26,6 @@ import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 /**
@@ -35,7 +35,7 @@ import java.util.ResourceBundle;
  * @since 4.0
  */
 @SuppressWarnings("serial")
-public class NameTreeDialog extends JDialog
+public class NameTreeDialog extends EscapeJDialog
         implements ActionListener, TreeSelectionListener {
 
     private SwingController controller;
@@ -144,24 +144,6 @@ public class NameTreeDialog extends JDialog
     public void setDestinationName(JLabel destinationName) {
         this.destinationName = destinationName;
     }
-
-    /**
-     * Override createRootPane so that "escape" key can be used to
-     * close this window.
-     */
-    protected JRootPane createRootPane() {
-        ActionListener actionListener = new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                setVisible(false);
-                dispose();
-            }
-        };
-        JRootPane rootPane = new JRootPane();
-        KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        rootPane.registerKeyboardAction(actionListener, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
-        return rootPane;
-    }
-
 
     private void addGB(JPanel layout, Component component,
                        int x, int y,

@@ -17,7 +17,9 @@ package org.icepdf.core.pobjects.acroform.signature;
 
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 
 /**
  * Interface for Digital Signature validation.  Singer certificate validity can be determined from this class.
@@ -77,5 +79,12 @@ public interface Validator {
      * @return signers certificate.
      */
     X509Certificate getSignerCertificate();
+
+    /**
+     * CertificateChain.
+     *
+     * @return certificate chain.
+     */
+    Collection<Certificate> getCertificateChain();
 
 }

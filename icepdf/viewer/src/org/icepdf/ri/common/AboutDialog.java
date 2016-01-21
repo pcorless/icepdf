@@ -27,7 +27,7 @@ import java.awt.event.WindowListener;
 import java.util.ResourceBundle;
 
 @SuppressWarnings("serial")
-public class AboutDialog extends JDialog implements ActionListener, WindowListener {
+public class AboutDialog extends EscapeJDialog implements ActionListener, WindowListener {
 
 
     private JButton ok;
