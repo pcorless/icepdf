@@ -293,14 +293,18 @@ public class Page extends Dictionary {
                     a = Annotation.buildAnnotation(library, (HashMap) annotObj);
                 }
                 // set the object reference, so we can save the state correct
-                // and update any references accordingly. 
-                if (ref != null && a != null) {
-                    a.setPObjectReference(ref);
-                    a.init();
+                // and update any references accordingly.
+                try {
+                    if (ref != null && a != null) {
+                        a.setPObjectReference(ref);
+                        a.init();
+                    }
+                    // add any found annotations to the vector.
+                    annotations.add(a);
+                } catch (IllegalStateException e) {
+                    logger.warning("Malformed annotation could not be initialized. " +
+                            a != null ? " " + a.getPObjectReference() + a.getEntries() : "");
                 }
-
-                // add any found annotations to the vector.
-                annotations.add(a);
             }
         }
     }
@@ -538,7 +542,7 @@ public class Page extends Dictionary {
     /**
      * Paints the contents of this page to the graphics context using
      * the specified rotation, zoom, rendering hints.
-     * <p/>
+     * <p>
      * The drawing commands that are issued on the given graphics context will use coordinates
      * in PDF user coordinate space. It is the responsibility of the caller of this method
      * to setup the graphics context to correctly interpret these coordinates.

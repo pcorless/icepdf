@@ -740,6 +740,10 @@ public abstract class Annotation extends Dictionary {
             Appearance newAppearance = new Appearance();
             HashMap appearanceDictionary = new HashMap();
             Rectangle2D rect = getUserSpaceRectangle();
+            if (rect == null){
+                // we need a rect in order to render correctly,  bail if not found. PDF-964
+                throw new IllegalStateException("Annotation is missing required /rect value");
+            }
             if (rect.getWidth() <= 1) {
                 rect.setRect(rect.getX(), rect.getY(), 15, rect.getHeight());
             }
