@@ -260,6 +260,19 @@ public class Page extends Dictionary {
         resources = res;
     }
 
+    /**
+     * Gets a raw list of annotation references.  The annotations are not initialized.
+     *
+     * @return list of a pages annotation reference list.
+     */
+    public ArrayList<Reference> getAnnotationReferences() {
+        Object annots = library.getObject(entries, ANNOTS_KEY);
+        if (annots != null && annots instanceof ArrayList) {
+            return (ArrayList<Reference>) annots;
+        }
+        return null;
+    }
+
     private void initPageAnnotations() throws InterruptedException {
         // find annotations in main library for our pages dictionary
         Object annots = library.getObject(entries, ANNOTS_KEY);

@@ -15,8 +15,6 @@
  */
 package org.icepdf.ri.common.utility.signatures;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.PDate;
@@ -33,7 +31,6 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -51,7 +48,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     private SignatureWidgetAnnotation signatureWidgetAnnotation;
     private Validator validator;
     private boolean verifyingSignature;
-    private Date lastVerified;
+
 
     private String location = null;
     private String reason = null;
@@ -98,6 +95,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         if (fieldDictionary != null) {
 
+            // todo consolidate with SignatureValidationStatus
             // grab some signer properties right from the annotations dictionary.
             name = signatureDictionary.getName();
             location = signatureDictionary.getLocation();
@@ -113,9 +111,9 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             X500Principal principal = certificate.getIssuerX500Principal();
             X500Name x500name = new X500Name(principal.getName());
             if (x500name.getRDNs() != null) {
-                commonName = parseRelativeDistinguishedName(x500name, BCStyle.CN);
-                organization = parseRelativeDistinguishedName(x500name, BCStyle.O);
-                emailAddress = parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
+                commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
+                organization = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.O);
+                emailAddress = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
             }
             // Start validation process.
             // todo move this off the awt thread as it will likely take a while.  We'll need to create
@@ -123,7 +121,6 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             // done will update the node with the retrieved data.
             validator.validate();
             setVerifyingSignature(true);
-            lastVerified = new Date();
         }
         // build the tree with a "validating signature message"
         refreshSignerNode();
@@ -184,7 +181,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     // set one of the three icon's to represent the validity status of the signature node.
     protected ImageIcon getRootNodeValidityIcon() {
         if (!validator.isDocumentModified() && validator.isCertificateTrusted()) {
-            return new ImageIcon(Images.get("signatue_valid.png"));
+            return new ImageIcon(Images.get("signature_valid.png"));
         } else if (!validator.isDocumentModified()) {
             return new ImageIcon(Images.get("signature_caution.png"));
         } else {
@@ -254,13 +251,13 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     }
 
     private void buildVerifiedDateAndFieldLink(DefaultMutableTreeNode root) {
-        if (lastVerified != null) {
+        if (validator != null && validator.getLastValidated() != null) {
             MessageFormat messageFormat = new MessageFormat(messageBundle.getString(
                     "viewer.utilityPane.signatures.tab.certTree.signature.lastChecked.label"));
             SigPropertyTreeNode lastChecked =
                     new SigPropertyTreeNode(messageFormat.format(new Object[]{
                             new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(),
-                                    PDate.formatDateTime(lastVerified)).toString()}));
+                                    PDate.formatDateTime(validator.getLastValidated())).toString()}));
             lastChecked.setAllowsChildren(false);
             root.add(lastChecked);
         }
@@ -281,16 +278,11 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         this.verifyingSignature = verifyingSignature;
     }
 
-    private String parseRelativeDistinguishedName(X500Name rdName, ASN1ObjectIdentifier commonCode) {
-        RDN[] rdns = rdName.getRDNs(commonCode);
-        if (rdns != null && rdns.length > 0 && rdns[0].getFirst() != null) {
-            return rdns[0].getFirst().getValue().toString();
-        }
-        return null;
-    }
-
     public SignatureWidgetAnnotation getOutlineItem() {
         return signatureWidgetAnnotation;
     }
 
+    public Validator getValidator() {
+        return validator;
+    }
 }

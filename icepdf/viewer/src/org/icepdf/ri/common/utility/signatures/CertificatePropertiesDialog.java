@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.utility.signatures;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.util.HexDumper;
@@ -43,18 +42,29 @@ import java.util.Collection;
 import java.util.ResourceBundle;
 
 /**
- * CertificatePropertiesDialog takes a certificate chain and displays each certificate in a summery view. Certificates can
- * be easily viewed and selected via a jTree component hierarchy.
+ * CertificatePropertiesDialog takes a certificate chain and displays each certificate in a summery view. Certificates
+ * can be easily viewed and selected via a jTree component hierarchy.
  */
 public class CertificatePropertiesDialog extends EscapeJDialog {
 
     protected static ResourceBundle messageBundle;
+    private Collection<Certificate> certs;
 
-    public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle, Collection<Certificate> certs,
-                                       Image image) {
+    public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle, Collection<Certificate> certs) {
         super(parent, true);
-        this.messageBundle = messageBundle;
+        CertificatePropertiesDialog.messageBundle = messageBundle;
+        this.certs = certs;
+        buildUI();
+    }
 
+    public CertificatePropertiesDialog(JDialog parent, ResourceBundle messageBundle, Collection<Certificate> certs) {
+        super(parent, true);
+        CertificatePropertiesDialog.messageBundle = messageBundle;
+        this.certs = certs;
+        buildUI();
+    }
+
+    private void buildUI() {
         setTitle(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.title"));
 
         getContentPane().setLayout(new BorderLayout());
@@ -79,7 +89,7 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
         buttonPanel.add(closeButton);
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
         setSize(new Dimension(760, 450));
-        setLocationRelativeTo(parent);
+        setLocationRelativeTo(getParent());
         setResizable(true);
     }
 
@@ -170,9 +180,9 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
     }
 
     protected static String parseRelativeDistinguishedName(X500Name rdName, ASN1ObjectIdentifier commonCode) {
-        RDN[] rdns = rdName.getRDNs(commonCode);
-        if (rdns != null && rdns.length > 0 && rdns[0].getFirst() != null) {
-            return rdns[0].getFirst().getValue().toString();
+        String rdn = SignatureUtilities.parseRelativeDistinguishedName(rdName, commonCode);
+        if (rdn != null) {
+            return rdn;
         }
         return messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.info.notAvailable.label");
     }

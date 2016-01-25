@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrity
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * Interface for Digital Signature validation.  Singer certificate validity can be determined from this class.
@@ -86,5 +87,12 @@ public interface Validator {
      * @return certificate chain.
      */
     Collection<Certificate> getCertificateChain();
+
+    /**
+     * Gets the last time the signature was validation cycle was completed.
+     *
+     * @return date that validation last completed.
+     */
+    Date getLastValidated();
 
 }

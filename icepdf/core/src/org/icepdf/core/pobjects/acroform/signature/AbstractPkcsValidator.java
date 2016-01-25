@@ -36,10 +36,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -83,6 +80,8 @@ public abstract class AbstractPkcsValidator implements Validator {
     private boolean isRevocationCheck;
     private boolean isSignerTimeValid;
     private boolean isValidationTimeValid;
+
+    private Date lastVerified;
 
     protected boolean initialized;
 
@@ -574,6 +573,7 @@ public abstract class AbstractPkcsValidator implements Validator {
                     isDocumentModified = false;
                 }
             }
+            lastVerified = new Date();
         } catch (SignatureException e) {
             throw new SignatureIntegrityException(e);
         } catch (IOException e) {
@@ -627,5 +627,9 @@ public abstract class AbstractPkcsValidator implements Validator {
      */
     public boolean isValid() {
         return !isDocumentModified && isCertificateTrusted && isSignerTimeValid && isValidationTimeValid;
+    }
+
+    public Date getLastValidated() {
+        return lastVerified;
     }
 }

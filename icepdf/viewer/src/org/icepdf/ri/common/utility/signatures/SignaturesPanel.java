@@ -16,27 +16,41 @@
 package org.icepdf.ri.common.utility.signatures;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
+import org.icepdf.core.pobjects.acroform.SignatureHandler;
+import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.layers.LayersTreeNode;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
+import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationDialog;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 /**
- *
+ * The SignaturesPanel lists all the digital signatures in a document as well as the signature fields components
+ * that are just placeholders.
  */
 public class SignaturesPanel extends JPanel {
+
+    private static final Logger logger =
+            Logger.getLogger(SignaturesPanel.class.toString());
 
     protected DocumentViewController documentViewController;
 
@@ -48,6 +62,7 @@ public class SignaturesPanel extends JPanel {
     protected DocumentViewModel documentViewModel;
     // message bundle for internationalization
     ResourceBundle messageBundle;
+    protected NodeSelectionListener nodeSelectionListener;
 
     public SignaturesPanel(SwingController controller) {
         super(true);
@@ -57,11 +72,11 @@ public class SignaturesPanel extends JPanel {
     }
 
     private void buildUI() {
-
         JTree tree = new SignaturesTree(nodes);
         tree.setShowsRootHandles(true);
         tree.setRootVisible(false);
-        tree.addMouseListener(new NodeSelectionListener(tree));
+        nodeSelectionListener = new NodeSelectionListener(tree);
+        tree.addMouseListener(nodeSelectionListener);
 
         this.setLayout(new BorderLayout());
         JScrollPane scrollPane = new JScrollPane(tree,
@@ -146,10 +161,29 @@ public class SignaturesPanel extends JPanel {
     }
 
     class NodeSelectionListener extends MouseAdapter {
-        JTree tree;
+        protected JTree tree;
+        protected JPopupMenu contextMenu;
+        private SignatureTreeNode signatureTreeNode;
 
         NodeSelectionListener(JTree tree) {
             this.tree = tree;
+
+            // add context menu for quick access to validating and signature properties.
+            contextMenu = new JPopupMenu();
+            JMenuItem validateMenu = new JMenuItem(messageBundle.getString(
+                    "viewer.annotation.signature.menu.validateSignature.label"));
+            validateMenu.addActionListener(new validationActionListener());
+            contextMenu.add(validateMenu);
+            contextMenu.add(new JPopupMenu.Separator());
+            JMenuItem signaturePropertiesMenu = new JMenuItem(messageBundle.getString(
+                    "viewer.annotation.signature.menu.signatureProperties.label"));
+            signaturePropertiesMenu.addActionListener(new SignaturesPropertiesActionListener(tree));
+            contextMenu.add(signaturePropertiesMenu);
+            contextMenu.add(new JPopupMenu.Separator());
+            JMenuItem signaturePageNavigationMenu = new JMenuItem(messageBundle.getString(
+                    "viewer.annotation.signature.menu.signaturePageNavigation.label"));
+            signaturePageNavigationMenu.addActionListener(new SignaturesPageNavigationListener());
+            contextMenu.add(signaturePageNavigationMenu);
         }
 
         public void mouseClicked(MouseEvent e) {
@@ -162,16 +196,94 @@ public class SignaturesPanel extends JPanel {
                 if (node instanceof SignatureCertTreeNode) {
                     // someone clicked on the show certificate node.
                     // create new dialog to show certificate properties.
-                    final SignatureCertTreeNode signatureCertTreeNode = (SignatureCertTreeNode) node;
-                    Runnable doSwingWork = new Runnable() {
-                        public void run() {
-                            new CertificatePropertiesDialog(controller.getViewerFrame(), messageBundle,
-                                    signatureCertTreeNode.getCertificateChain(), signatureCertTreeNode.getImage())
-                                    .setVisible(true);
-                        }
-                    };
-                    SwingUtilities.invokeLater(doSwingWork);
+                    SignatureCertTreeNode selectedSignatureCert = (SignatureCertTreeNode) node;
+                    new CertificatePropertiesDialog(controller.getViewerFrame(), messageBundle,
+                            selectedSignatureCert.getCertificateChain())
+                            .setVisible(true);
+                } else if (node instanceof SignatureTreeNode &&
+                        (e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)) {
+                    signatureTreeNode = (SignatureTreeNode) node;
+                    // show context menu.
+                    contextMenu.show(e.getComponent(), e.getX(), e.getY());
                 }
+
+            }
+        }
+
+        public SignatureTreeNode getSignatureTreeNode() {
+            return signatureTreeNode;
+        }
+    }
+
+    /**
+     * Shows the SignatureValidationDialog dialog.
+     */
+    class validationActionListener implements ActionListener {
+        public void actionPerformed(ActionEvent actionEvent) {
+            // validate the signature and show the summary dialog.
+            final SignatureTreeNode signatureTreeNode = nodeSelectionListener.getSignatureTreeNode();
+            SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
+            SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
+            if (fieldDictionary != null) {
+                SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
+                Validator validator = signatureHandler.validateSignature(fieldDictionary);
+                if (validator != null) {
+                    try {
+                        validator.validate();
+                        new SignatureValidationDialog(controller.getViewerFrame(),
+                                messageBundle, signatureWidgetAnnotation, validator).setVisible(true);
+                    } catch (SignatureIntegrityException e1) {
+                        logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
+                    }
+                }
+            }
+        }
+    }
+
+    class SignaturesPageNavigationListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            if (nodeSelectionListener.getSignatureTreeNode() != null) {
+                final SignatureTreeNode signatureTreeNode = nodeSelectionListener.getSignatureTreeNode();
+                SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
+                // turn out the parent is seldom used correctly and generally just points to page zero.
+//                Page parentPage = signatureWidgetAnnotation.getPage();
+                Document document = controller.getDocument();
+                int pages = controller.getPageTree().getNumberOfPages();
+                boolean found = false;
+                for (int i = 0; i < pages && !found; i++) {
+                    // check is page's annotation array for a matching reference.
+                    ArrayList<Reference> annotationReferences = document.getPageTree().getPage(i).getAnnotationReferences();
+                    if (annotationReferences != null) {
+                        for (Reference reference : annotationReferences) {
+                            if (reference.equals(signatureWidgetAnnotation.getPObjectReference())) {
+                                controller.showPage(i);
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Command object for displaying the SignaturePropertiesDialog.
+     */
+    class SignaturesPropertiesActionListener implements ActionListener {
+        protected JTree tree;
+
+        public SignaturesPropertiesActionListener(JTree tree) {
+            this.tree = tree;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (nodeSelectionListener.getSignatureTreeNode() != null) {
+                final SignatureTreeNode signatureTreeNode = nodeSelectionListener.getSignatureTreeNode();
+                new SignaturePropertiesDialog(controller.getViewerFrame(),
+                        messageBundle, signatureTreeNode.getOutlineItem(),
+                        signatureTreeNode.getValidator()).setVisible(true);
+
             }
         }
     }

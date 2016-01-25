@@ -7,11 +7,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 /**
- *
+ * Base JDialog implementation that sets up an escape key listener which will close the the dialog.
  */
 public class EscapeJDialog extends JDialog {
 
     public EscapeJDialog() {
+    }
+
+    public EscapeJDialog(Dialog owner, boolean modal) {
+        super(owner, modal);
     }
 
     public EscapeJDialog(Frame owner) {
