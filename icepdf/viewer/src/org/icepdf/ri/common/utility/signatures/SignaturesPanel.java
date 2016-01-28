@@ -20,12 +20,10 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.Validator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.utility.layers.LayersTreeNode;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
@@ -40,6 +38,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -58,7 +57,7 @@ public class SignaturesPanel extends JPanel {
 
     private SwingController controller;
 
-    protected LayersTreeNode nodes;
+    protected DefaultMutableTreeNode nodes;
     protected DocumentViewModel documentViewModel;
     // message bundle for internationalization
     ResourceBundle messageBundle;
@@ -108,7 +107,7 @@ public class SignaturesPanel extends JPanel {
             }
             // build out the tree
             if (signatures.size() > 0) {
-                nodes = new LayersTreeNode(messageBundle.getString("viewer.utilityPane.signatures.tab.title"));
+                nodes = new DefaultMutableTreeNode(messageBundle.getString("viewer.utilityPane.signatures.tab.title"));
                 nodes.setAllowsChildren(true);
                 buildTree(signatures);
                 buildUI();
@@ -123,6 +122,7 @@ public class SignaturesPanel extends JPanel {
     public void buildTree(ArrayList<SignatureWidgetAnnotation> signatures) {
         SignatureTreeNode tmp;
         boolean foundUnsignedSignatureFields = false;
+        boolean signaturesCoverDocument = false;
         // add the base certificateChain.
         for (SignatureWidgetAnnotation signature : signatures) {
             SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
@@ -131,10 +131,29 @@ public class SignaturesPanel extends JPanel {
                 tmp = new SignatureTreeNode(signature, messageBundle);
                 tmp.setAllowsChildren(true);
                 nodes.add(tmp);
+                // looking for one match as this will indicate the signature(s) cover the whole document,  if not
+                // then we have a document that has had modification but hasn't been signed for.
+                if (!tmp.getValidator().isDocumentDataModified()) {
+                    signaturesCoverDocument = true;
+                }
             } else if (!foundUnsignedSignatureFields) {
                 foundUnsignedSignatureFields = true;
             }
         }
+        // we want to make sure we show the correct node icons, so we'll iterate of the nodes and set the icon
+        // state.
+        Enumeration treePath = nodes.breadthFirstEnumeration();
+        Object path;
+        while (treePath.hasMoreElements()) {
+            path = treePath.nextElement();
+            if (path instanceof SignatureTreeNode) {
+                ((SignatureTreeNode) path).getValidator().setSignaturesCoverDocumentLength(signaturesCoverDocument);
+                // update labels.
+                ((SignatureTreeNode) path).refreshSignerNode();
+            }
+        }
+
+
         // todo add permission data from as new node:
         //    - field dictionary's /Lock field if present
         //    - look at Signature Reference Dictionary for /Transform Method
@@ -225,8 +244,7 @@ public class SignaturesPanel extends JPanel {
             SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
             SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
             if (fieldDictionary != null) {
-                SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-                Validator validator = signatureHandler.validateSignature(fieldDictionary);
+                Validator validator = signatureTreeNode.getValidator();
                 if (validator != null) {
                     try {
                         validator.validate();

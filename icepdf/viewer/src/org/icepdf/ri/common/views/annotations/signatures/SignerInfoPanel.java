@@ -52,9 +52,19 @@ public class SignerInfoPanel extends JPanel {
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.insets = new Insets(5, 5, 5, 5);
 
+        String validationMessage = "viewer.annotation.signature.properties.dialog.pathValidation.failure";
+        if (validator.isCertificateChainTrusted()) {
+            validationMessage = "viewer.annotation.signature.properties.dialog.pathValidation.success";
+        }
+        validationMessage = messageBundle.getString(validationMessage);
+        String revocationsMessage = "viewer.annotation.signature.properties.dialog.revocation.success";
+        if (!validator.isCertificateChainTrusted() || validator.isRevocation()) {
+            revocationsMessage = "viewer.annotation.signature.properties.dialog.revocation.failure";
+        }
+        revocationsMessage = messageBundle.getString(revocationsMessage);
         constraints.anchor = GridBagConstraints.WEST;
-        addGB(new JLabel("TODO - path validation results."), 1, 0, 1, 1);
-        addGB(new JLabel("      - Revocation check results."), 1, 1, 1, 1);
+        addGB(new JLabel(validationMessage), 1, 0, 1, 1);
+        addGB(new JLabel(revocationsMessage), 1, 1, 1, 1);
     }
 
     /**

@@ -57,9 +57,9 @@ public class SignatureValidationStatus {
 
         // build out the string that we need to display
         validity = "viewer.annotation.signature.validation.common.invalid.label";
-        if (!validator.isDocumentModified() && !validator.isCertificateTrusted()) {
+        if (!validator.isSignedDataModified() && validator.isCertificateChainTrusted()) {
             validity = "viewer.annotation.signature.validation.common.unknown.label";
-        } else if (!validator.isDocumentModified() && validator.isCertificateTrusted()) {
+        } else if (!validator.isSignedDataModified() && !validator.isCertificateChainTrusted()) {
             validity = "viewer.annotation.signature.validation.common.valid.label";
         }
         validity = messageBundle.getString(validity);
@@ -78,15 +78,19 @@ public class SignatureValidationStatus {
 
         // document modification
         documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
-        if (!validator.isDocumentModified()) {
+        if (!validator.isSignedDataModified() && !validator.isDocumentDataModified()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.unmodified.label";
+        } else if (!validator.isSignedDataModified() && validator.isDocumentDataModified() && validator.isSignaturesCoverDocumentLength()) {
+            documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
+        } else if (!validator.isSignaturesCoverDocumentLength()) {
+            documentModified = "viewer.annotation.signature.validation.common.doc.major.label";
         }
         documentModified = messageBundle.getString(documentModified);
 
         // trusted certification
         certificateTrusted = "viewer.annotation.signature.validation.common.identity.unknown.label";
-        if (validator.isCertificateTrusted()) {
-            if (validator.isRevocationCheck()) {
+        if (validator.isCertificateChainTrusted()) {
+            if (validator.isRevocation()) {
                 certificateTrusted = "viewer.annotation.signature.validation.common.identity.unchecked.label";
             } else {
                 certificateTrusted = "viewer.annotation.signature.validation.common.identity.valid.label";
@@ -97,7 +101,7 @@ public class SignatureValidationStatus {
         // signature time.
         signatureTime = "viewer.annotation.signature.validation.common.time.local.label";
         if (validator.isSignerTimeValid()) {
-            signatureTime = "viewer.annotation.signature.validation.common.time.valid.label";
+            signatureTime = "viewer.annotation.signature.validation.common.time.embedded.label";
         }
         signatureTime = messageBundle.getString(signatureTime);
 
@@ -132,9 +136,10 @@ public class SignatureValidationStatus {
 
     // set one of the three icon's to represent the validity status of the signature node.
     protected URL getLargeValidityIcon(Validator validator) {
-        if (!validator.isDocumentModified() && validator.isCertificateTrusted()) {
+        if (!validator.isSignedDataModified() && validator.isCertificateChainTrusted()
+                && validator.isSignaturesCoverDocumentLength()) {
             return Images.get("signature_valid_lg.png");
-        } else if (!validator.isDocumentModified()) {
+        } else if (!validator.isSignedDataModified() && validator.isSignaturesCoverDocumentLength()) {
             return Images.get("signature_caution_lg.png");
         } else {
             return Images.get("signature_invalid_lg.png");

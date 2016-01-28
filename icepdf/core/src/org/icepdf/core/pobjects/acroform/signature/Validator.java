@@ -30,35 +30,58 @@ public interface Validator {
     void init() throws SignatureIntegrityException;
 
     /**
-     * Checks integrity of the signature and will set the boolean property defining isDocumentModified.
+     * Checks integrity of the signature and will set the boolean property defining isSignedDataModified.
      *
      * @throws SignatureIntegrityException occurs if there is an issue validating the public key against the cert.
      */
     void validate() throws SignatureIntegrityException;
 
     /**
-     * General is valid call: !isDocumentModified and isCertificateTrusted and isSignerTimeValid and isValidationTimeValid.
-     * This method may return invalid even if the document !isDocumentModified because of singer trust issues.
+     * Indicates if the singed data section specified by a signature has been modified.  This indicates the document
+     * has been tampered with.
      *
-     * @return true if valid, otherwise false.
+     * @return true if singed data has been altered, false otherwise.
      */
-    boolean isValid();
+    boolean isSignedDataModified();
 
     /**
-     * Evaluation of the signature has yielded if the document has bee altered or not since it was singed.
+     * Indicates that data after the signature definition has been been modified.  This is most likely do to another
+     * signature being added to the document or some form or page manipulation.  However it is possible that
+     * an major update has been appended to the document.
      *
-     * @return true true if the document has been modified since it was singed.
+     * @return true if the document has been modified outside the byte range of the signature.
      */
-    boolean isDocumentModified();
+    boolean isDocumentDataModified();
+
+    /**
+     * Indicates that there are no unaccounted for bytes in the file that haven't been singed.  This generally indicates
+     * if true that the document is unmodified as the signatures cover all teh bytes in the file.
+     *
+     * @return true if signatures cover length of file.
+     */
+    boolean isSignaturesCoverDocumentLength();
+
+    /**
+     * Sets the signaturesCoverDocumentLength param to indicate that all signatures have been check and cover
+     * all the bytes in the document.
+     *
+     * @param signaturesCoverDocumentLength
+     */
+    void setSignaturesCoverDocumentLength(boolean signaturesCoverDocumentLength);
 
     /**
      * The certificate has been verified as trusted.
      *
      * @return true if the certificate is trusted, otherwise false.
      */
-    boolean isCertificateTrusted();
+    boolean isCertificateChainTrusted();
 
-    boolean isRevocationCheck();
+    /**
+     * Indicates if the signing certificate or a certificate in the chain is on a revocation list.
+     *
+     * @return true if the certy have been revoked, false otherwise.
+     */
+    boolean isRevocation();
 
     /**
      * The singer time stamp is valid.
@@ -72,7 +95,7 @@ public interface Validator {
      *
      * @return true if the validation time is valid.
      */
-    boolean isValidationTimeValid();
+    boolean isEmbeddedTimeStamp();
 
     /**
      * Gets the signers certificate.

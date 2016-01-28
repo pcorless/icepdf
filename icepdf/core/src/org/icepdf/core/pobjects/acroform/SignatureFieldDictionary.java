@@ -69,12 +69,12 @@ public class SignatureFieldDictionary extends FieldDictionary {
     public SignatureFieldDictionary(Library library, HashMap entries) {
         super(library, entries);
 
-        // get the lock
+        // get the lock, todo currently no examples of this
         Object tmp = library.getObject(entries, LOCK_KEY);
         if (tmp instanceof HashMap) {
             lockDictionary = new LockDictionary(library, (HashMap) tmp);
         }
-        // get the seeds.
+        // get the seeds, todo currently no examples of this
         tmp = library.getObject(entries, SV_KEY);
         if (tmp instanceof HashMap) {
             seedValueDictionary = new SeedValueDictionary(library, (HashMap) tmp);

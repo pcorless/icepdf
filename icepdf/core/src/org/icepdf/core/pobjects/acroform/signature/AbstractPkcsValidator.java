@@ -27,7 +27,12 @@ import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
+import org.icepdf.core.pobjects.acroform.signature.certificates.CertificateVerifier;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerificationException;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
+import org.icepdf.core.util.Defs;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
@@ -35,6 +40,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -48,6 +55,13 @@ public abstract class AbstractPkcsValidator implements Validator {
 
     private static final Logger logger =
             Logger.getLogger(AbstractPkcsValidator.class.toString());
+
+    private static String caCertLocation = "/lib/security/cacerts";
+
+    static {
+        String javaHome = Defs.sysProperty("java.home");
+        caCertLocation = Defs.sysProperty("org.icepdf.core.signatures.caCertPath", javaHome + caCertLocation);
+    }
 
     // data object descriptor codes.
     public static final String ID_DATA_OBJECT_IDENTIFIER = PKCSObjectIdentifiers.data.getId();
@@ -74,13 +88,17 @@ public abstract class AbstractPkcsValidator implements Validator {
     protected byte[] signatureValue;
 
     // validity checks.
-    private boolean isDocumentModified = true;
-    // todo validate this properties.
-    private boolean isCertificateTrusted;
-    private boolean isRevocationCheck;
+    private boolean isSignedDataModified = true;
+    private boolean isDocumentDataModified;
+    private boolean isSignaturesCoverDocumentLength;
+    private boolean isCertificateChainTrusted;
+    private boolean isCertificateDateValid = true;
+    private boolean isRevocation;
+    private boolean isSelfSigned;
+    // todo impelement singer time check.
     private boolean isSignerTimeValid;
-    private boolean isValidationTimeValid;
-
+    private boolean isEmbeddedTimeStamp;
+    // last time validate call was made.
     private Date lastVerified;
 
     protected boolean initialized;
@@ -210,12 +228,19 @@ public abstract class AbstractPkcsValidator implements Validator {
                     ASN1Set set = (ASN1Set) attributePair.getObjectAt(1);
                     messageDigest = ((ASN1OctetString) set.getObjectAt(0)).getOctets();
                 }
-                // todo further work for timestamp verification.
-                if (((ASN1ObjectIdentifier) attributePair.getObjectAt(0)).getId().equals(
-                        PKCSObjectIdentifiers.pkcs_9_at_signingTime.getId())) {
-                    ASN1Set set = (ASN1Set) attributePair.getObjectAt(1);
-                    ASN1UTCTime signerTime = ((ASN1UTCTime) set.getObjectAt(0));
-                }
+                // try and pull out the signing time.
+                // currently not using this time.
+//                if (((ASN1ObjectIdentifier) attributePair.getObjectAt(0)).getId().equals(
+//                        PKCSObjectIdentifiers.pkcs_9_at_signingTime.getId())) {
+//                    ASN1Set set = (ASN1Set) attributePair.getObjectAt(1);
+//                    ASN1UTCTime signerTime = ((ASN1UTCTime) set.getObjectAt(0));
+//                    try {
+//                        // see if the signer time matches the certificate validity times.
+//                        System.out.println(" Signer Time " + signerTime.getDate());
+//                    } catch (ParseException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
                 // more attributes to come.
             }
             if (messageDigest == null) {
@@ -241,11 +266,12 @@ public abstract class AbstractPkcsValidator implements Validator {
                 ASN1Set attributeValues = timeStamp.getAttrValues();
                 ASN1Sequence tokenSequence = ASN1Sequence.getInstance(attributeValues.getObjectAt(0));
                 ContentInfo contentInfo = ContentInfo.getInstance(tokenSequence);
-                // todo further work for timestamp verification.
+                // if we can parse it we call it good, so cert has a embedded time but we don't do any validation on it
                 try {
-                    TimeStampToken timeStampToken = new TimeStampToken(contentInfo);
+                    new TimeStampToken(contentInfo);
+                    isEmbeddedTimeStamp = true;
                 } catch (Throwable e1) {
-//                    throw new SignatureIntegrityException("Valid TimeStamp could now be created");
+                    throw new SignatureIntegrityException("Valid TimeStamp could now be created");
                 }
             }
         }
@@ -518,6 +544,13 @@ public abstract class AbstractPkcsValidator implements Validator {
         SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
         documentInput.beginThreadAccess();
         try {
+            long totalLength = documentInput.getLength();
+            long digestedLength = byteRange.get(2) + byteRange.get(3);
+            // this doesn't mean the signature has been tampered with just that there are subsequent modification
+            // or signatures added after this signature.
+            if (digestedLength < totalLength) {
+                isDocumentDataModified = true;
+            }
             documentInput.seekAbsolute(byteRange.get(0));
             byte[] firstSection = new byte[byteRange.get(1)];
             documentInput.read(firstSection);
@@ -549,7 +582,7 @@ public abstract class AbstractPkcsValidator implements Validator {
                 boolean nonEncapsulatedDigestCheck = Arrays.equals(documentDigestBytes, messageDigest);
                 // When the field is present, however, the result is the message digest of the complete DER encoding of
                 // the SignedAttrs value contained in the signedAttrs field
-                boolean signatureVerified =
+                boolean isSignatureValid =
                         verifySignedAttributes(signatureDictionary.getFilter().getName(), signerCertificate, signatureValue,
                                 signatureAlgorithmIdentifier,
                                 digestAlgorithmIdentifier,
@@ -557,12 +590,12 @@ public abstract class AbstractPkcsValidator implements Validator {
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("Encapsulated Digest verified: " + encapsulatedDigestCheck);
                     logger.finer("Non-encapsulated Digest verified: " + nonEncapsulatedDigestCheck);
-                    logger.finer("Signature verified: " + signatureVerified);
+                    logger.finer("Signature verified: " + isSignatureValid);
                     logger.finer("Encapsulated data verified: " + verifyEncContentInfoData);
                 }
                 // verify the attributes.
-                if ((encapsulatedDigestCheck || nonEncapsulatedDigestCheck) && signatureVerified && verifyEncContentInfoData) {
-                    isDocumentModified = false;
+                if ((encapsulatedDigestCheck || nonEncapsulatedDigestCheck) && verifyEncContentInfoData) {
+                    isSignedDataModified = false;
                 }
             } else {
                 if (encapsulatedContentInfoData != null) {
@@ -570,7 +603,7 @@ public abstract class AbstractPkcsValidator implements Validator {
                 }
                 boolean nonEncapsulatedDigestCheck = Arrays.equals(documentDigestBytes, messageDigest);
                 if (nonEncapsulatedDigestCheck) {
-                    isDocumentModified = false;
+                    isSignedDataModified = false;
                 }
             }
             lastVerified = new Date();
@@ -579,26 +612,51 @@ public abstract class AbstractPkcsValidator implements Validator {
         } catch (IOException e) {
             throw new SignatureIntegrityException(e);
         }
-    }
 
-    public boolean isDocumentModified() {
-        return isDocumentModified;
-    }
-
-    public boolean isCertificateTrusted() {
-        return isCertificateTrusted;
-    }
-
-    public boolean isRevocationCheck() {
-        return isRevocationCheck;
-    }
-
-    public boolean isSignerTimeValid() {
-        return isSignerTimeValid;
-    }
-
-    public boolean isValidationTimeValid() {
-        return isValidationTimeValid;
+        try {
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            java.io.FileInputStream fis = null;
+            try {
+                fis = new java.io.FileInputStream(caCertLocation);
+                trustStore.load(fis, null);
+            } finally {
+                if (fis != null) {
+                    fis.close();
+                }
+            }
+            // cert validation
+            X509Certificate[] cers = certificateChain.toArray(new X509Certificate[0]);
+            ArrayList<X509Certificate> trusted = new ArrayList<X509Certificate>(trustStore.size());
+            Enumeration<String> aliases = trustStore.aliases();
+            while (aliases.hasMoreElements()) {
+                trusted.add((X509Certificate) trustStore.getCertificate(aliases.nextElement()));
+            }
+            CertificateVerifier.verifyCertificate(cers[0], trusted);
+            isCertificateChainTrusted = true;
+            isCertificateDateValid = true;
+            lastVerified = new Date();
+        } catch (CertificateExpiredException e) {
+            logger.log(Level.FINER, "Certificate chain could not be validated, certificate is expired", e);
+            isCertificateDateValid = false;
+        } catch (SelfSignedVerificationException e) {
+            logger.log(Level.FINER, "Certificate chain could not be validated, signature is self singed.", e);
+            isSelfSigned = true;
+        } catch (CertificateVerificationException e) {
+            logger.log(Level.FINER, "Certificate chain could not be validated. ", e);
+            isCertificateChainTrusted = false;
+        } catch (RevocationVerificationException e) {
+            logger.log(Level.FINER, "Certificate chain could not be validated, certificate has been revoked.", e);
+            isRevocation = true;
+        } catch (IOException e) {
+            logger.log(Level.FINER, "Error locating trusted keystore .", e);
+            isCertificateChainTrusted = false;
+        } catch (CertificateException e) {
+            logger.log(Level.FINER, "Certificate exception.", e);
+            isCertificateChainTrusted = false;
+        } catch (Throwable e) {
+            logger.log(Level.FINER, "Error validation certificate chain.", e);
+            isCertificateChainTrusted = false;
+        }
     }
 
     /**
@@ -621,15 +679,90 @@ public abstract class AbstractPkcsValidator implements Validator {
     }
 
     /**
-     * Determined by the flags isDocumentModified && isCertificateTrusted && isSignerTimeValid && isValidationTimeValid;
+     * Date that validation process was last executed.
      *
-     * @return true if all flags are true, otherwise false.
+     * @return Date last validation cycle was executed
      */
-    public boolean isValid() {
-        return !isDocumentModified && isCertificateTrusted && isSignerTimeValid && isValidationTimeValid;
-    }
-
     public Date getLastValidated() {
         return lastVerified;
+    }
+
+    /**
+     * Indicates if the singed data section specified by a signature has been modified.  This indicates the document
+     * has been tampered with.
+     *
+     * @return true if singed data has been altered, false otherwise.
+     */
+    public boolean isSignedDataModified() {
+        return isSignedDataModified;
+    }
+
+    /**
+     * Indicates that data after the signature definition has been been modified.  This is most likely do to another
+     * signature being added to the document or some form or page manipulation.  However it is possible that
+     * an major update has been appended to the document.
+     *
+     * @return true if the document has been modified outside the byte range of the signature.
+     */
+    public boolean isDocumentDataModified() {
+        return isDocumentDataModified;
+    }
+
+    public boolean isSignaturesCoverDocumentLength() {
+        return isSignaturesCoverDocumentLength;
+    }
+
+    public void setSignaturesCoverDocumentLength(boolean signaturesCoverDocumentLength) {
+        isSignaturesCoverDocumentLength = signaturesCoverDocumentLength;
+    }
+
+    /**
+     * Indicates the certificate chain has been validated against keystore of trusted certificates.
+     *
+     * @return true if the certificate chain has been validated, false otherwise.
+     */
+    public boolean isCertificateChainTrusted() {
+        return isCertificateChainTrusted;
+    }
+
+    /**
+     * Indicates if the signing certificate or a certificate in the chain is on a revocation list.
+     *
+     * @return true if the certy have been revoked, false otherwise.
+     */
+    public boolean isRevocation() {
+        return isRevocation;
+    }
+
+    /**
+     * Indicates the signature was self singed and the certificate can not be trusted.
+     *
+     * @return true if self signed, false otherwise.
+     */
+    public boolean isSelfSigned() {
+        return isSelfSigned;
+    }
+
+    /**
+     * Indicates if a certificate data has been marked as invalid.  This generally means that a certificate
+     * has expired.
+     *
+     * @return true if the certificate data is valid, otherwise false.
+     */
+    public boolean isCertificateDateValid() {
+        return isCertificateDateValid;
+    }
+
+    public boolean isEmbeddedTimeStamp() {
+        return isEmbeddedTimeStamp;
+    }
+
+    /**
+     * Will always return fals,  timestamps are currently not validated.
+     *
+     * @return false.
+     */
+    public boolean isSignerTimeValid() {
+        return false;
     }
 }
