@@ -220,6 +220,25 @@ public class InteractiveForm extends Dictionary {
     }
 
     /**
+     * Gets the signature fields associated with this form.  A new array that references the forms signature annotations.
+     * If no fields are found an empty list is returned.
+     *
+     * @return a list of form signature objects.
+     */
+    public ArrayList<SignatureWidgetAnnotation> getSignatureFields() {
+        // capture the document signatures.
+        ArrayList<SignatureWidgetAnnotation> signatures = new ArrayList<SignatureWidgetAnnotation>();
+        if (fields != null) {
+            for (Object field : fields) {
+                if (field instanceof SignatureWidgetAnnotation) {
+                    signatures.add((SignatureWidgetAnnotation) field);
+                }
+            }
+        }
+        return signatures;
+    }
+
+    /**
      * Checks to see if the fields list contains any signature anntoations.
      *
      * @return true if there are any signatures, otherwise false.

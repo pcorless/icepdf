@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations.signatures;
 
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.utility.signatures.CertificatePropertiesDialog;
@@ -38,24 +38,24 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
     // layouts constraint
     private GridBagConstraints constraints;
 
-    private Validator validator;
+    private SignatureValidator signatureValidator;
     protected static ResourceBundle messageBundle;
     protected SignatureWidgetAnnotation signatureWidgetAnnotation;
 
     public SignaturePropertiesDialog(Dialog parent, ResourceBundle messageBundle,
-                                     SignatureWidgetAnnotation signatureWidgetAnnotation, Validator validator) {
+                                     SignatureWidgetAnnotation signatureWidgetAnnotation) {
         super(parent, true);
         SignaturePropertiesDialog.messageBundle = messageBundle;
-        this.validator = validator;
+        this.signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
         this.signatureWidgetAnnotation = signatureWidgetAnnotation;
         buildUI();
     }
 
     public SignaturePropertiesDialog(Frame parent, ResourceBundle messageBundle,
-                                     SignatureWidgetAnnotation signatureWidgetAnnotation, Validator validator) {
+                                     SignatureWidgetAnnotation signatureWidgetAnnotation) {
         super(parent, true);
         SignaturePropertiesDialog.messageBundle = messageBundle;
-        this.validator = validator;
+        this.signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
         this.signatureWidgetAnnotation = signatureWidgetAnnotation;
         buildUI();
     }
@@ -63,7 +63,7 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
     private void buildUI() {
 
         SignatureValidationStatus signatureValidationStatus =
-                new SignatureValidationStatus(messageBundle, signatureWidgetAnnotation, validator);
+                new SignatureValidationStatus(messageBundle, signatureWidgetAnnotation, signatureValidator);
 
         JPanel annotationPanel = new JPanel(new GridBagLayout());
         add(annotationPanel, BorderLayout.NORTH);
@@ -77,18 +77,18 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
 
         // basic signer information
         SignerSummaryPanel signerSummaryPanel =
-                new SignerSummaryPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation, validator, true);
+                new SignerSummaryPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation, signatureValidator, true);
         addGB(annotationPanel, signerSummaryPanel, 0, 0, 2, 1);
 
         // Validity summary
         SignatureValidationPanel validityPanel =
                 new SignatureValidationPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation,
-                        validator, false, true);
+                        signatureValidator, false, true);
         addGB(annotationPanel, validityPanel, 0, 1, 2, 1);
 
 
-        // Signer info
-        SignerInfoPanel signerInfoPanel = new SignerInfoPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation, validator);
+        // SignatureSigner info
+        SignerInfoPanel signerInfoPanel = new SignerInfoPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation, signatureValidator);
         addGB(annotationPanel, signerInfoPanel, 0, 2, 2, 1);
 
         // close buttons.
@@ -108,7 +108,7 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
         certPropertiesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 new CertificatePropertiesDialog(parent, messageBundle,
-                        validator.getCertificateChain())
+                        signatureValidator.getCertificateChain())
                         .setVisible(true);
             }
         });

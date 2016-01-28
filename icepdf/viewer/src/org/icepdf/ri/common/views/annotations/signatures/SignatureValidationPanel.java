@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations.signatures;
 
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 
 import javax.swing.*;
@@ -33,7 +33,7 @@ public class SignatureValidationPanel extends JPanel {
 
 
     public SignatureValidationPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
-                                    SignatureWidgetAnnotation signatureWidgetAnnotation, Validator validator,
+                                    SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator,
                                     boolean showIcon, boolean showBorder) {
         if (showBorder) {
             setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),

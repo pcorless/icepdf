@@ -20,7 +20,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.SwingController;
@@ -38,7 +38,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -57,6 +56,8 @@ public class SignaturesPanel extends JPanel {
 
     private SwingController controller;
 
+    protected JTree signatueTree;
+    protected JScrollPane scrollPane;
     protected DefaultMutableTreeNode nodes;
     protected DocumentViewModel documentViewModel;
     // message bundle for internationalization
@@ -71,14 +72,14 @@ public class SignaturesPanel extends JPanel {
     }
 
     private void buildUI() {
-        JTree tree = new SignaturesTree(nodes);
-        tree.setShowsRootHandles(true);
-        tree.setRootVisible(false);
-        nodeSelectionListener = new NodeSelectionListener(tree);
-        tree.addMouseListener(nodeSelectionListener);
+        signatueTree = new SignaturesTree(nodes);
+        signatueTree.setShowsRootHandles(true);
+        signatueTree.setRootVisible(false);
+        nodeSelectionListener = new NodeSelectionListener(signatueTree);
+        signatueTree.addMouseListener(nodeSelectionListener);
 
         this.setLayout(new BorderLayout());
-        JScrollPane scrollPane = new JScrollPane(tree,
+        scrollPane = new JScrollPane(signatueTree,
                 JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(20);
@@ -95,22 +96,37 @@ public class SignaturesPanel extends JPanel {
         if (this.currentDocument != null &&
                 currentDocument.getCatalog().getInteractiveForm() != null) {
             InteractiveForm interactiveForm = currentDocument.getCatalog().getInteractiveForm();
-            ArrayList<Object> fields = interactiveForm.getFields();
-            // capture the document signatures.
-            ArrayList<SignatureWidgetAnnotation> signatures = new ArrayList<SignatureWidgetAnnotation>();
-            if (fields != null) {
-                for (Object field : fields) {
-                    if (field instanceof SignatureWidgetAnnotation) {
-                        signatures.add((SignatureWidgetAnnotation) field);
-                    }
-                }
-            }
+            final ArrayList<SignatureWidgetAnnotation> signatures = interactiveForm.getSignatureFields();
             // build out the tree
             if (signatures.size() > 0) {
                 nodes = new DefaultMutableTreeNode(messageBundle.getString("viewer.utilityPane.signatures.tab.title"));
                 nodes.setAllowsChildren(true);
-                buildTree(signatures);
-                buildUI();
+//                buildUI();
+
+
+                final org.icepdf.ri.common.SwingWorker worker = new org.icepdf.ri.common.SwingWorker() {
+                    public Object construct() {
+                        // unload to a swing worker.
+                        validateSignatures(signatures);
+                        Runnable doSwingWork = new Runnable() {
+                            public void run() {
+                                buildSignatureTree(signatures);
+//                                scrollPane.invalidate();
+//                                scrollPane.validate();
+//                                signatueTree.revalidate();
+                                // nice and quick.
+                                buildUnsignatureTree(signatures);
+                                buildUI();
+                                revalidate();
+                            }
+                        };
+                        SwingUtilities.invokeLater(doSwingWork);
+                        return null;
+                    }
+                };
+                worker.setThreadPriority(Thread.NORM_PRIORITY);
+                worker.start();
+
             }
         } else {
             // tear down the old container.
@@ -118,61 +134,94 @@ public class SignaturesPanel extends JPanel {
         }
     }
 
+    /**
+     * @param signatures
+     */
+    public void validateSignatures(ArrayList<SignatureWidgetAnnotation> signatures) {
+        boolean signaturesCoverDocument = false;
+        for (SignatureWidgetAnnotation signature : signatures) {
+            SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
+            // filter any unsigned singer fields.
+            if (signatureDictionary.getEntries().size() > 0) {
+                try {
+                    signature.getSignatureValidator().validate();
+                    // add a new node to the tree.
+                } catch (SignatureIntegrityException e) {
+                    e.printStackTrace();
+                }
+                // looking for one match as this will indicate the signature(s) cover the whole document,  if not
+                // then we have a document that has had modification but hasn't been signed for.
+                if (!signature.getSignatureValidator().isDocumentDataModified()) {
+                    signaturesCoverDocument = true;
+                    break;
+                }
+            }
+        }
+        // update the validators so that they have some context of the validity of the other signatures.
+        for (SignatureWidgetAnnotation signature : signatures) {
+            SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
+            // filter any unsigned singer fields.
+            if (signatureDictionary.getEntries().size() > 0) {
+                signature.getSignatureValidator().setSignaturesCoverDocumentLength(signaturesCoverDocument);
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    public void buildTree(ArrayList<SignatureWidgetAnnotation> signatures) {
+    public void buildSignatureNode(SignatureWidgetAnnotation signature) {
+        SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
+        // filter any unsigned singer fields.
+        if (signatureDictionary.getEntries().size() > 0) {
+            SignatureTreeNode tmp = new SignatureTreeNode(signature, messageBundle);
+            tmp.refreshSignerNode();
+            tmp.setAllowsChildren(true);
+            nodes.add(tmp);
+            revalidate();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void buildSignatureTree(ArrayList<SignatureWidgetAnnotation> signatures) {
+
         SignatureTreeNode tmp;
         boolean foundUnsignedSignatureFields = false;
-        boolean signaturesCoverDocument = false;
+
         // add the base certificateChain.
         for (SignatureWidgetAnnotation signature : signatures) {
             SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
             // filter any unsigned singer fields.
             if (signatureDictionary.getEntries().size() > 0) {
                 tmp = new SignatureTreeNode(signature, messageBundle);
+                tmp.refreshSignerNode();
                 tmp.setAllowsChildren(true);
                 nodes.add(tmp);
-                // looking for one match as this will indicate the signature(s) cover the whole document,  if not
-                // then we have a document that has had modification but hasn't been signed for.
-                if (!tmp.getValidator().isDocumentDataModified()) {
-                    signaturesCoverDocument = true;
-                }
             } else if (!foundUnsignedSignatureFields) {
                 foundUnsignedSignatureFields = true;
             }
         }
-        // we want to make sure we show the correct node icons, so we'll iterate of the nodes and set the icon
-        // state.
-        Enumeration treePath = nodes.breadthFirstEnumeration();
-        Object path;
-        while (treePath.hasMoreElements()) {
-            path = treePath.nextElement();
-            if (path instanceof SignatureTreeNode) {
-                ((SignatureTreeNode) path).getValidator().setSignaturesCoverDocumentLength(signaturesCoverDocument);
-                // update labels.
-                ((SignatureTreeNode) path).refreshSignerNode();
-            }
-        }
-
 
         // todo add permission data from as new node:
         //    - field dictionary's /Lock field if present
         //    - look at Signature Reference Dictionary for /Transform Method
+
+    }
+
+    public void buildUnsignatureTree(ArrayList<SignatureWidgetAnnotation> signatures) {
         // add the unsigned singer fields to there own root node.
-        if (foundUnsignedSignatureFields) {
-            DefaultMutableTreeNode unsignedFieldNode = new DefaultMutableTreeNode(
-                    messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.unsigned.label"));
-            nodes.add(unsignedFieldNode);
-            for (SignatureWidgetAnnotation signature : signatures) {
-                SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
-                // filter any unsigned singer fields.
-                if (signatureDictionary.getEntries().size() == 0) {
-                    DefaultMutableTreeNode field =
-                            new DefaultMutableTreeNode(signature.getFieldDictionary().getPartialFieldName());
-                    field.setAllowsChildren(false);
-                    unsignedFieldNode.add(field);
-                }
+        DefaultMutableTreeNode unsignedFieldNode = new DefaultMutableTreeNode(
+                messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.unsigned.label"));
+        nodes.add(unsignedFieldNode);
+        for (SignatureWidgetAnnotation signature : signatures) {
+            SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
+            // filter any unsigned singer fields.
+            if (signatureDictionary.getEntries().size() == 0) {
+                DefaultMutableTreeNode field =
+                        new DefaultMutableTreeNode(signature.getFieldDictionary().getPartialFieldName());
+                field.setAllowsChildren(false);
+                unsignedFieldNode.add(field);
             }
         }
+        revalidate();
     }
 
     public void dispose() {
@@ -244,12 +293,12 @@ public class SignaturesPanel extends JPanel {
             SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
             SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
             if (fieldDictionary != null) {
-                Validator validator = signatureTreeNode.getValidator();
-                if (validator != null) {
+                SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
+                if (signatureValidator != null) {
                     try {
-                        validator.validate();
+                        signatureValidator.validate();
                         new SignatureValidationDialog(controller.getViewerFrame(),
-                                messageBundle, signatureWidgetAnnotation, validator).setVisible(true);
+                                messageBundle, signatureWidgetAnnotation, signatureValidator).setVisible(true);
                     } catch (SignatureIntegrityException e1) {
                         logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
                     }
@@ -299,8 +348,7 @@ public class SignaturesPanel extends JPanel {
             if (nodeSelectionListener.getSignatureTreeNode() != null) {
                 final SignatureTreeNode signatureTreeNode = nodeSelectionListener.getSignatureTreeNode();
                 new SignaturePropertiesDialog(controller.getViewerFrame(),
-                        messageBundle, signatureTreeNode.getOutlineItem(),
-                        signatureTreeNode.getValidator()).setVisible(true);
+                        messageBundle, signatureTreeNode.getOutlineItem()).setVisible(true);
 
             }
         }

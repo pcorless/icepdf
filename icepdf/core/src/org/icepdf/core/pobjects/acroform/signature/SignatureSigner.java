@@ -18,6 +18,6 @@ package org.icepdf.core.pobjects.acroform.signature;
 /**
  * Placeholder for singer interface.
  */
-public interface Signer {
+public interface SignatureSigner {
 
 }

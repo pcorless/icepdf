@@ -46,13 +46,13 @@ public class DigitalSignatureFactory {
     }
 
     // TODO: implement singer stance creation, likely just go with adbe.x509.rsa.sha1 for forget about adbe.pkcs7.detached
-    public Signer getSignerInstance(SignatureFieldDictionary signatureFieldDictionary) {
+    public SignatureSigner getSignerInstance(SignatureFieldDictionary signatureFieldDictionary) {
         return null;
     }
 
     /**
      * Returns an appropriate validator instance for the the specified SignatureFieldDictionary.
-     * The returned Validator can then be used to validate the respective signature against the
+     * The returned SignatureValidator can then be used to validate the respective signature against the
      * current document.
      *
      * @param signatureFieldDictionary documents signature dictionary.
@@ -60,7 +60,7 @@ public class DigitalSignatureFactory {
      * @throws SignatureIntegrityException can occur if the signature dictionary certificate and
      *                                     public key are invalid or can not be verified.
      */
-    public Validator getValidatorInstance(SignatureFieldDictionary signatureFieldDictionary) throws SignatureIntegrityException {
+    public SignatureValidator getValidatorInstance(SignatureFieldDictionary signatureFieldDictionary) throws SignatureIntegrityException {
         SignatureDictionary signatureDictionary = signatureFieldDictionary.getSignatureDictionary();
         // PKCS#7 detached and sha-1 digest method
         if (signatureDictionary.getSubFilter().equals(DSS_SUB_FILTER_PKCS7_DETACHED) ||

@@ -18,7 +18,7 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -81,13 +81,12 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
     protected void showSignatureWidgetPropertiesDialog() {
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
         if (fieldDictionary != null) {
-            SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-            Validator validator = signatureHandler.validateSignature(fieldDictionary);
-            if (validator != null) {
+            SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
+            if (signatureValidator != null) {
                 try {
-                    validator.validate();
+                    signatureValidator.validate();
                     new SignaturePropertiesDialog(controller.getViewerFrame(),
-                            messageBundle, signatureWidgetAnnotation, validator).setVisible(true);
+                            messageBundle, signatureWidgetAnnotation).setVisible(true);
                 } catch (SignatureIntegrityException e1) {
                     logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
                 }
@@ -104,12 +103,12 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
             SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
             if (fieldDictionary != null) {
                 SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-                Validator validator = signatureHandler.validateSignature(fieldDictionary);
-                if (validator != null) {
+                SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
+                if (signatureValidator != null) {
                     try {
-                        validator.validate();
+                        signatureValidator.validate();
                         new CertificatePropertiesDialog(controller.getViewerFrame(),
-                                messageBundle, validator.getCertificateChain()).setVisible(true);
+                                messageBundle, signatureValidator.getCertificateChain()).setVisible(true);
                     } catch (SignatureIntegrityException e1) {
                         logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
                     }
@@ -127,12 +126,12 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
             SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
             if (fieldDictionary != null) {
                 SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-                Validator validator = signatureHandler.validateSignature(fieldDictionary);
-                if (validator != null) {
+                SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
+                if (signatureValidator != null) {
                     try {
-                        validator.validate();
+                        signatureValidator.validate();
                         new SignatureValidationDialog(controller.getViewerFrame(),
-                                messageBundle, signatureWidgetAnnotation, validator).setVisible(true);
+                                messageBundle, signatureWidgetAnnotation, signatureValidator).setVisible(true);
                     } catch (SignatureIntegrityException e1) {
                         logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
                     }

@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations.signatures;
 
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 
 import javax.swing.*;
@@ -33,7 +33,7 @@ public class SignerInfoPanel extends JPanel {
 
 
     public SignerInfoPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
-                           SignatureWidgetAnnotation signatureWidgetAnnotation, Validator validator) {
+                           SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
 
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.annotation.signature.properties.dialog.signerInfo.title"),
@@ -53,18 +53,25 @@ public class SignerInfoPanel extends JPanel {
         constraints.insets = new Insets(5, 5, 5, 5);
 
         String validationMessage = "viewer.annotation.signature.properties.dialog.pathValidation.failure";
-        if (validator.isCertificateChainTrusted()) {
+        if (signatureValidator.isCertificateChainTrusted()) {
             validationMessage = "viewer.annotation.signature.properties.dialog.pathValidation.success";
         }
         validationMessage = messageBundle.getString(validationMessage);
         String revocationsMessage = "viewer.annotation.signature.properties.dialog.revocation.success";
-        if (!validator.isCertificateChainTrusted() || validator.isRevocation()) {
+        if (!signatureValidator.isCertificateChainTrusted() || signatureValidator.isRevocation()) {
             revocationsMessage = "viewer.annotation.signature.properties.dialog.revocation.failure";
         }
         revocationsMessage = messageBundle.getString(revocationsMessage);
+        String expiryMessage = null;
+        if (!signatureValidator.isCertificateDateValid()) {
+            expiryMessage = messageBundle.getString("viewer.annotation.signature.properties.dialog.certificateExpired.failure");
+        }
         constraints.anchor = GridBagConstraints.WEST;
         addGB(new JLabel(validationMessage), 1, 0, 1, 1);
         addGB(new JLabel(revocationsMessage), 1, 1, 1, 1);
+        if (!signatureValidator.isCertificateDateValid()) {
+            addGB(new JLabel(expiryMessage), 1, 2, 1, 1);
+        }
     }
 
     /**

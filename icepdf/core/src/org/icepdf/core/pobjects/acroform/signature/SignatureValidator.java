@@ -25,7 +25,7 @@ import java.util.Date;
 /**
  * Interface for Digital Signature validation.  Singer certificate validity can be determined from this class.
  */
-public interface Validator {
+public interface SignatureValidator {
 
     void init() throws SignatureIntegrityException;
 
@@ -82,6 +82,21 @@ public interface Validator {
      * @return true if the certy have been revoked, false otherwise.
      */
     boolean isRevocation();
+
+    /**
+     * Indicates the signature was self singed and the certificate can not be trusted.
+     *
+     * @return true if self signed, false otherwise.
+     */
+    boolean isSelfSigned();
+
+    /**
+     * Indicates if a certificate data has been marked as invalid.  This generally means that a certificate
+     * has expired.
+     *
+     * @return true if the certificate data is valid, otherwise false.
+     */
+    boolean isCertificateDateValid();
 
     /**
      * The singer time stamp is valid.

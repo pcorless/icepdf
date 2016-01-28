@@ -20,8 +20,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureHandler;
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.images.Images;
@@ -46,7 +45,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
 
     private ResourceBundle messageBundle;
     private SignatureWidgetAnnotation signatureWidgetAnnotation;
-    private Validator validator;
+    private SignatureValidator signatureValidator;
     // flag that validation process is taking place.
     private boolean verifyingSignature;
 
@@ -95,7 +94,6 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         if (fieldDictionary != null) {
-
             // todo consolidate with SignatureValidationStatus
             // grab some signer properties right from the annotations dictionary.
             name = signatureDictionary.getName();
@@ -104,11 +102,10 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             contact = signatureDictionary.getContactInfo();
             date = signatureDictionary.getDate();
 
-            // getting a validator should give us a pointer the to the signer cert if all goes well.
-            SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-            validator = signatureHandler.validateSignature(fieldDictionary);
+            // getting a signatureValidator should give us a pointer the to the signer cert if all goes well.
+            signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
             // try and parse out the signer info.
-            X509Certificate certificate = validator.getSignerCertificate();
+            X509Certificate certificate = signatureValidator.getSignerCertificate();
             X500Principal principal = certificate.getIssuerX500Principal();
             X500Name x500name = new X500Name(principal.getName());
             if (x500name.getRDNs() != null) {
@@ -120,7 +117,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             // todo move this off the awt thread as it will likely take a while.  We'll need to create
             // an executer service to queue up the one or more signatures for validation. which when
             // done will update the node with the retrieved data.
-            validator.validate();
+            signatureValidator.validate();
             setVerifyingSignature(true);
         }
         // build the tree with a "validating signature message"
@@ -139,7 +136,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * - Signature is <valid|invalid>
      * |
      * - This version of the document has <not> been altered
-     * - Signer's identity is <valid|invalid>
+     * - SignatureSigner's identity is <valid|invalid>
      * - Signature includes an embedded timestamp | Signing is from the clock of the signer's computer.
      * - Permissions
      * |
@@ -181,10 +178,10 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
 
     // set one of the three icon's to represent the validity status of the signature node.
     protected ImageIcon getRootNodeValidityIcon() {
-        if (!validator.isSignedDataModified() && validator.isCertificateChainTrusted()
-                && validator.isSignaturesCoverDocumentLength()) {
+        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
+                && signatureValidator.isSignaturesCoverDocumentLength()) {
             return new ImageIcon(Images.get("signature_valid.png"));
-        } else if (!validator.isSignedDataModified() && validator.isSignaturesCoverDocumentLength()) {
+        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
             return new ImageIcon(Images.get("signature_caution.png"));
         } else {
             return new ImageIcon(Images.get("signature_invalid.png"));
@@ -195,9 +192,9 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     private void buildSignatureValidity(DefaultMutableTreeNode root) {
         // figure out the opening messages.
         String validity = "viewer.utilityPane.signatures.tab.certTree.cert.invalid.label";
-        if (!validator.isSignedDataModified() && validator.isCertificateChainTrusted()) {
+        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()) {
             validity = "viewer.utilityPane.signatures.tab.certTree.cert.unknown.label";
-        } else if (!validator.isSignedDataModified() && !validator.isCertificateChainTrusted()) {
+        } else if (!signatureValidator.isSignedDataModified() && !signatureValidator.isCertificateChainTrusted()) {
             validity = "viewer.utilityPane.signatures.tab.certTree.cert.valid.label";
         }
         SigPropertyTreeNode rootValidityDetails = new SigPropertyTreeNode(
@@ -205,18 +202,18 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
 
         // document modification
         String documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.modified.label";
-        if (!validator.isSignedDataModified() && !validator.isDocumentDataModified()) {
+        if (!signatureValidator.isSignedDataModified() && !signatureValidator.isDocumentDataModified()) {
             documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.unmodified.label";
-        } else if (!validator.isSignedDataModified() && validator.isDocumentDataModified() && validator.isSignaturesCoverDocumentLength()) {
+        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isDocumentDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
             documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.modified.label";
-        } else if (!validator.isSignaturesCoverDocumentLength()) {
+        } else if (!signatureValidator.isSignaturesCoverDocumentLength()) {
             documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.major.label";
         }
         rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(documentModified)));
         // trusted certification
         String certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.unknown.label";
-        if (validator.isCertificateChainTrusted()) {
-            if (validator.isRevocation()) {
+        if (signatureValidator.isCertificateChainTrusted()) {
+            if (signatureValidator.isRevocation()) {
                 certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.unchecked.label";
             } else {
                 certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.valid.label";
@@ -225,7 +222,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(certificateTrusted)));
         // signature time.
         String signatureTime = "viewer.utilityPane.signatures.tab.certTree.signature.time.local.label";
-        if (validator.isEmbeddedTimeStamp()) {
+        if (signatureValidator.isEmbeddedTimeStamp()) {
             signatureTime = "viewer.utilityPane.signatures.tab.certTree.signature.time.embedded.label";
         }
         rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(signatureTime)));
@@ -251,19 +248,19 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         // add link for bringing up the certificate details.
         rootSignatureDetails.add(new SignatureCertTreeNode(
                 messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.signature.details.full.label"),
-                validator.getCertificateChain(),
+                signatureValidator.getCertificateChain(),
                 getRootNodeValidityIcon().getImage()));
         root.add(rootSignatureDetails);
     }
 
     private void buildVerifiedDateAndFieldLink(DefaultMutableTreeNode root) {
-        if (validator != null && validator.getLastValidated() != null) {
+        if (signatureValidator != null && signatureValidator.getLastValidated() != null) {
             MessageFormat messageFormat = new MessageFormat(messageBundle.getString(
                     "viewer.utilityPane.signatures.tab.certTree.signature.lastChecked.label"));
             SigPropertyTreeNode lastChecked =
                     new SigPropertyTreeNode(messageFormat.format(new Object[]{
                             new PDate(signatureWidgetAnnotation.getLibrary().getSecurityManager(),
-                                    PDate.formatDateTime(validator.getLastValidated())).toString()}));
+                                    PDate.formatDateTime(signatureValidator.getLastValidated())).toString()}));
             lastChecked.setAllowsChildren(false);
             root.add(lastChecked);
         }
@@ -288,7 +285,4 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         return signatureWidgetAnnotation;
     }
 
-    public Validator getValidator() {
-        return validator;
-    }
 }

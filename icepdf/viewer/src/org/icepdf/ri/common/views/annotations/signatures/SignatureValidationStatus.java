@@ -19,7 +19,7 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
@@ -53,13 +53,13 @@ public class SignatureValidationStatus {
     private String dictionaryDate;
 
     public SignatureValidationStatus(ResourceBundle messageBundle,
-                                     SignatureWidgetAnnotation signatureWidgetAnnotation, Validator validator) {
+                                     SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
 
         // build out the string that we need to display
         validity = "viewer.annotation.signature.validation.common.invalid.label";
-        if (!validator.isSignedDataModified() && validator.isCertificateChainTrusted()) {
+        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()) {
             validity = "viewer.annotation.signature.validation.common.unknown.label";
-        } else if (!validator.isSignedDataModified() && !validator.isCertificateChainTrusted()) {
+        } else if (!signatureValidator.isSignedDataModified() && !signatureValidator.isCertificateChainTrusted()) {
             validity = "viewer.annotation.signature.validation.common.valid.label";
         }
         validity = messageBundle.getString(validity);
@@ -67,7 +67,7 @@ public class SignatureValidationStatus {
         // signed by
         singedBy = messageBundle.getString("viewer.annotation.signature.validation.common.notAvailable.label");
         try {
-            validateSignatureNode(signatureWidgetAnnotation, validator);
+            validateSignatureNode(signatureWidgetAnnotation, signatureValidator);
             MessageFormat formatter = new MessageFormat(messageBundle.getString(
                     "viewer.annotation.signature.validation.common.signedBy.label"));
             singedBy = formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
@@ -78,19 +78,19 @@ public class SignatureValidationStatus {
 
         // document modification
         documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
-        if (!validator.isSignedDataModified() && !validator.isDocumentDataModified()) {
+        if (!signatureValidator.isSignedDataModified() && !signatureValidator.isDocumentDataModified()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.unmodified.label";
-        } else if (!validator.isSignedDataModified() && validator.isDocumentDataModified() && validator.isSignaturesCoverDocumentLength()) {
+        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isDocumentDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
-        } else if (!validator.isSignaturesCoverDocumentLength()) {
+        } else if (!signatureValidator.isSignaturesCoverDocumentLength()) {
             documentModified = "viewer.annotation.signature.validation.common.doc.major.label";
         }
         documentModified = messageBundle.getString(documentModified);
 
         // trusted certification
         certificateTrusted = "viewer.annotation.signature.validation.common.identity.unknown.label";
-        if (validator.isCertificateChainTrusted()) {
-            if (validator.isRevocation()) {
+        if (signatureValidator.isCertificateChainTrusted()) {
+            if (signatureValidator.isRevocation()) {
                 certificateTrusted = "viewer.annotation.signature.validation.common.identity.unchecked.label";
             } else {
                 certificateTrusted = "viewer.annotation.signature.validation.common.identity.valid.label";
@@ -100,12 +100,12 @@ public class SignatureValidationStatus {
 
         // signature time.
         signatureTime = "viewer.annotation.signature.validation.common.time.local.label";
-        if (validator.isSignerTimeValid()) {
+        if (signatureValidator.isSignerTimeValid()) {
             signatureTime = "viewer.annotation.signature.validation.common.time.embedded.label";
         }
         signatureTime = messageBundle.getString(signatureTime);
 
-        validityIconPath = getLargeValidityIcon(validator);
+        validityIconPath = getLargeValidityIcon(signatureValidator);
 
         // signature dictionary common names.
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
@@ -117,13 +117,13 @@ public class SignatureValidationStatus {
         dictionaryDate = signatureDictionary.getDate();
     }
 
-    private void validateSignatureNode(SignatureWidgetAnnotation signatureWidgetAnnotation, Validator validator)
+    private void validateSignatureNode(SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator)
             throws SignatureIntegrityException {
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
 
         if (fieldDictionary != null) {
             // try and parse out the signer info.
-            X509Certificate certificate = validator.getSignerCertificate();
+            X509Certificate certificate = signatureValidator.getSignerCertificate();
             X500Principal principal = certificate.getIssuerX500Principal();
             X500Name x500name = new X500Name(principal.getName());
             if (x500name.getRDNs() != null) {
@@ -135,11 +135,11 @@ public class SignatureValidationStatus {
     }
 
     // set one of the three icon's to represent the validity status of the signature node.
-    protected URL getLargeValidityIcon(Validator validator) {
-        if (!validator.isSignedDataModified() && validator.isCertificateChainTrusted()
-                && validator.isSignaturesCoverDocumentLength()) {
+    protected URL getLargeValidityIcon(SignatureValidator signatureValidator) {
+        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
+                && signatureValidator.isSignaturesCoverDocumentLength()) {
             return Images.get("signature_valid_lg.png");
-        } else if (!validator.isSignedDataModified() && validator.isSignaturesCoverDocumentLength()) {
+        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
             return Images.get("signature_caution_lg.png");
         } else {
             return Images.get("signature_invalid_lg.png");

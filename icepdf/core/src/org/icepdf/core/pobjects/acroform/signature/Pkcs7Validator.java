@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 /**
  * Pkcs7Validator is based on the RFC3852 specification for Cryptographic Message Syntax (CMS).  The
- * Digital SignatureFactory is responsible for creating any Validator implementation and does so based on the
+ * Digital SignatureFactory is responsible for creating any SignatureValidator implementation and does so based on the
  * subFilter value of the SignatureFieldDictionary.  In this particular cas the validation takes place when the
  * subFilter is equal to "adbe.pkcs7.detached".
  * <p/>

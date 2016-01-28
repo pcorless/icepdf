@@ -17,7 +17,7 @@ package org.icepdf.ri.common.views.annotations.signatures;
 
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.EscapeJDialog;
@@ -38,22 +38,22 @@ public class SignatureValidationDialog extends EscapeJDialog {
     private static final Logger logger =
             Logger.getLogger(SignatureValidationDialog.class.toString());
 
-    private Validator validator;
+    private SignatureValidator signatureValidator;
     protected static ResourceBundle messageBundle;
     protected SignatureWidgetAnnotation signatureWidgetAnnotation;
 
     public SignatureValidationDialog(Frame parent, ResourceBundle messageBundle,
-                                     SignatureWidgetAnnotation signatureWidgetAnnotation, Validator validator) {
+                                     SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
         super(parent, true);
         this.messageBundle = messageBundle;
-        this.validator = validator;
+        this.signatureValidator = signatureValidator;
         this.signatureWidgetAnnotation = signatureWidgetAnnotation;
         buildUI();
     }
 
     protected void buildUI() {
         SignatureValidationStatus signatureValidationStatus =
-                new SignatureValidationStatus(messageBundle, signatureWidgetAnnotation, validator);
+                new SignatureValidationStatus(messageBundle, signatureWidgetAnnotation, signatureValidator);
 
         setTitle(messageBundle.getString("viewer.annotation.signature.validation.dialog.title"));
         // simple close
@@ -76,12 +76,12 @@ public class SignatureValidationDialog extends EscapeJDialog {
                 SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
                 if (fieldDictionary != null) {
                     SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-                    Validator validator = signatureHandler.validateSignature(fieldDictionary);
-                    if (validator != null) {
+                    SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
+                    if (signatureValidator != null) {
                         try {
-                            validator.validate();
-                            new SignaturePropertiesDialog(parent,
-                                    messageBundle, signatureWidgetAnnotation, validator).setVisible(true);
+                            signatureValidator.validate();
+                            new SignaturePropertiesDialog(parent, messageBundle, signatureWidgetAnnotation)
+                                    .setVisible(true);
                         } catch (SignatureIntegrityException e1) {
                             logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
                         }
@@ -93,7 +93,7 @@ public class SignatureValidationDialog extends EscapeJDialog {
         // put it all together.
         SignatureValidationPanel validityPanel =
                 new SignatureValidationPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation,
-                        validator, true, false);
+                        signatureValidator, true, false);
         GridBagConstraints constraints = validityPanel.getConstraints();
 
         constraints.insets = new Insets(15, 5, 5, 5);

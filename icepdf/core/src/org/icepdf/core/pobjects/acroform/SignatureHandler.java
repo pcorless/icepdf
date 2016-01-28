@@ -17,7 +17,7 @@ package org.icepdf.core.pobjects.acroform;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.icepdf.core.pobjects.acroform.signature.DigitalSignatureFactory;
-import org.icepdf.core.pobjects.acroform.signature.Validator;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 
 import java.security.Security;
@@ -49,16 +49,16 @@ public class SignatureHandler {
      * Validates the given SignatureFieldDictionary.
      *
      * @param signatureFieldDictionary signature to validate
-     * @return Validator object if cert and public key verified, null otherwise.
+     * @return SignatureValidator object if cert and public key verified, null otherwise.
      */
-    public Validator validateSignature(SignatureFieldDictionary signatureFieldDictionary) {
+    public SignatureValidator validateSignature(SignatureFieldDictionary signatureFieldDictionary) {
 
         SignatureDictionary signatureDictionary = signatureFieldDictionary.getSignatureDictionary();
         if (signatureDictionary != null) {
             // Generate the correct validator and try to validate the signature.
             try {
-                Validator validator = DigitalSignatureFactory.getInstance().getValidatorInstance(signatureFieldDictionary);
-                return validator;
+                SignatureValidator signatureValidator = DigitalSignatureFactory.getInstance().getValidatorInstance(signatureFieldDictionary);
+                return signatureValidator;
             } catch (SignatureIntegrityException e) {
                 logger.log(Level.WARNING, "Signature certificate could not be initialized.", e);
             } catch (Throwable e) {

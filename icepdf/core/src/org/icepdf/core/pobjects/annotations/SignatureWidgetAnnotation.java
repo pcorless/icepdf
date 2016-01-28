@@ -3,6 +3,8 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
+import org.icepdf.core.pobjects.acroform.SignatureHandler;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
@@ -35,6 +37,8 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
     // signatures value holds all the signature info for signing.
     private SignatureDictionary signatureDictionary;
 
+    private SignatureValidator signatureValidator;
+
     public SignatureWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
         fieldDictionary = new SignatureFieldDictionary(library, entries);
@@ -42,21 +46,14 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
         HashMap valueDict = library.getDictionary(entries, FieldDictionary.V_KEY);
         signatureDictionary = new SignatureDictionary(library, valueDict);
 
-        // little test
-//        System.out.println("Filter:   " + signatureDictionary.getFilter());
-//        System.out.println("sub:      " + signatureDictionary.getSubFilter());
-//        System.out.println("Location: " + signatureDictionary.getLocation());
-//        System.out.println("Name:     " + signatureDictionary.getName());
-//        System.out.println("Reason:   " + signatureDictionary.getReason());
-//        System.out.println("Contact:  " + signatureDictionary.getContactInfo());
-//        System.out.println("Date:     " + signatureDictionary.getDate());
-//        System.out.println("range:    " + signatureDictionary.getByteRange());
-//        System.out.println("cert:     " + signatureDictionary.getCertArray());
-//        System.out.println("ref:     " + signatureDictionary.getReferences());
-//        System.out.println("r:     " + signatureDictionary.getDictionaryVersion());
-//        System.out.println("v:     " + signatureDictionary.getHandlerVersion());
-//        System.out.println();
+    }
 
+    public SignatureValidator getSignatureValidator() {
+        if (signatureValidator == null) {
+            SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
+            signatureValidator = signatureHandler.validateSignature(fieldDictionary);
+        }
+        return signatureValidator;
     }
 
     public SignatureWidgetAnnotation(Annotation widgetAnnotation) {

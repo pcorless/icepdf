@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  * PKCS#1 and PKCS#7 are fairly close from a verification point of view so we'll use this class for common
  * functionality between PKCS#1 and PKCS#7.
  */
-public abstract class AbstractPkcsValidator implements Validator {
+public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     private static final Logger logger =
             Logger.getLogger(AbstractPkcsValidator.class.toString());
@@ -146,15 +146,15 @@ public abstract class AbstractPkcsValidator implements Validator {
         if (logger.isLoggable(Level.FINER)) {
             // should always be 1.
             int cmsVersion = ((ASN1Integer) signedData.getObjectAt(0)).getValue().intValue();
-            logger.finer("CMS version: " + cmsVersion);
+            logger.finest("CMS version: " + cmsVersion);
             Enumeration<ASN1Sequence> enumeration = ((ASN1Set) signedData.getObjectAt(1)).getObjects();
             while (enumeration.hasMoreElements()) {
                 String objectId = ((ASN1ObjectIdentifier) enumeration.nextElement().getObjectAt(0)).getId();
                 try {
                     String digestAlgorithmName = AlgorithmIdentifier.getDigestAlgorithmName(objectId);
                     MessageDigest tmp = AlgorithmIdentifier.getDigestInstance(objectId, null);
-                    logger.finer("DigestAlgorithmIdentifiers: " + digestAlgorithmName + " " + objectId);
-                    logger.finer(tmp.toString());
+                    logger.finest("DigestAlgorithmIdentifiers: " + digestAlgorithmName + " " + objectId);
+                    logger.finest(tmp.toString());
                 } catch (Throwable ex) {
                     logger.log(Level.WARNING, "Error finding iod: " + objectId, ex);
                 }
@@ -175,7 +175,7 @@ public abstract class AbstractPkcsValidator implements Validator {
             ASN1ObjectIdentifier eObjectIdentifier = (ASN1ObjectIdentifier) encapsulatedContentInfo.getObjectAt(0);
             String eObjectIdentifierId = eObjectIdentifier.getId();
             if (logger.isLoggable(Level.FINER)) {
-                logger.finer("EncapsulatedContentInfo: " + eObjectIdentifierId + " " +
+                logger.finest("EncapsulatedContentInfo: " + eObjectIdentifierId + " " +
                         Pkcs7Validator.getObjectIdName(eObjectIdentifierId));
             }
             // should be octets encode as pkcs#7
@@ -184,13 +184,13 @@ public abstract class AbstractPkcsValidator implements Validator {
             // shows up in pkcs7.sha1 only
             encapsulatedContentInfoData = eContent.getOctets();
             if (logger.isLoggable(Level.FINER)) {
-                logger.finer("EncapsulatedContentInfo Data " + eContent.toString());
+                logger.finest("EncapsulatedContentInfo Data " + eContent.toString());
             }
         } else if (encapsulatedContentInfo.size() == 1) {
             if (logger.isLoggable(Level.FINER)) {
                 ASN1ObjectIdentifier eObjectIdentifier = (ASN1ObjectIdentifier) encapsulatedContentInfo.getObjectAt(0);
                 String eObjectIdentifierId = eObjectIdentifier.getId();
-                logger.finer("EncapsulatedContentInfo size is 1: " + eObjectIdentifierId + " " +
+                logger.finest("EncapsulatedContentInfo size is 1: " + eObjectIdentifierId + " " +
                         Pkcs7Validator.getObjectIdName(eObjectIdentifierId));
             }
         }
@@ -236,7 +236,7 @@ public abstract class AbstractPkcsValidator implements Validator {
 //                    ASN1UTCTime signerTime = ((ASN1UTCTime) set.getObjectAt(0));
 //                    try {
 //                        // see if the signer time matches the certificate validity times.
-//                        System.out.println(" Signer Time " + signerTime.getDate());
+//                        System.out.println(" SignatureSigner Time " + signerTime.getDate());
 //                    } catch (ParseException e) {
 //                        e.printStackTrace();
 //                    }
@@ -398,7 +398,7 @@ public abstract class AbstractPkcsValidator implements Validator {
             logger.warning("ANSI object id is not a valid PKCS7 identifier " + objectIdentifier);
             throw new SignatureIntegrityException("ANSI object id is not a valid PKCS7 identifier");
         } else {
-            logger.finer("Object identifier: " + objectIdentifier.getId() + " " +
+            logger.finest("Object identifier: " + objectIdentifier.getId() + " " +
                     Pkcs7Validator.getObjectIdName(objectIdentifier.getId()));
         }
 
@@ -436,7 +436,7 @@ public abstract class AbstractPkcsValidator implements Validator {
         String encryptionAlgorithmName = AlgorithmIdentifier.getEncryptionAlgorithmName(signatureAlgorithmIdentifier);
         String digestAlgorithmName = AlgorithmIdentifier.getDigestAlgorithmName(digestAlgorithmIdentifier);
         String digestAlgorithm = digestAlgorithmName + ALGORITHM_WITH + encryptionAlgorithmName;
-        logger.finer("DigestAlgorithm " + digestAlgorithm);
+        logger.finest("DigestAlgorithm " + digestAlgorithm);
         Signature signature;
         if (provider != null) {
             try {
@@ -467,11 +467,11 @@ public abstract class AbstractPkcsValidator implements Validator {
 
             if (pkcs instanceof ASN1Sequence) {
                 if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("ASN1Sequence found starting sequence processing.  ");
+                    logger.finest("ASN1Sequence found starting sequence processing.  ");
                 }
                 return (ASN1Sequence) pkcs;
             } else if (logger.isLoggable(Level.FINER)) {
-                logger.finer("ASN1Sequence was not found backing out.  ");
+                logger.finest("ASN1Sequence was not found backing out.  ");
             }
 
         } catch (IOException e) {
@@ -526,8 +526,8 @@ public abstract class AbstractPkcsValidator implements Validator {
 
             PublicKey publicKey = signerCertificate.getPublicKey();
             if (logger.isLoggable(Level.FINER)) {
-                logger.finer("Certificate: \n" + signerCertificate.toString());
-                logger.finer("Public Key:  \n" + publicKey);
+                logger.finest("Certificate: \n" + signerCertificate.toString());
+                logger.finest("Public Key:  \n" + publicKey);
             }
         } catch (NoSuchProviderException e1) {
             logger.log(Level.WARNING, "No such provider found ", e1);
@@ -587,11 +587,11 @@ public abstract class AbstractPkcsValidator implements Validator {
                                 signatureAlgorithmIdentifier,
                                 digestAlgorithmIdentifier,
                                 signedAttributesSequence.getEncoded(ASN1Encoding.DER));
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Encapsulated Digest verified: " + encapsulatedDigestCheck);
-                    logger.finer("Non-encapsulated Digest verified: " + nonEncapsulatedDigestCheck);
-                    logger.finer("Signature verified: " + isSignatureValid);
-                    logger.finer("Encapsulated data verified: " + verifyEncContentInfoData);
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest("Encapsulated Digest verified: " + encapsulatedDigestCheck);
+                    logger.finest("Non-encapsulated Digest verified: " + nonEncapsulatedDigestCheck);
+                    logger.finest("Signature verified: " + isSignatureValid);
+                    logger.finest("Encapsulated data verified: " + verifyEncContentInfoData);
                 }
                 // verify the attributes.
                 if ((encapsulatedDigestCheck || nonEncapsulatedDigestCheck) && verifyEncContentInfoData) {
@@ -636,25 +636,25 @@ public abstract class AbstractPkcsValidator implements Validator {
             isCertificateDateValid = true;
             lastVerified = new Date();
         } catch (CertificateExpiredException e) {
-            logger.log(Level.FINER, "Certificate chain could not be validated, certificate is expired", e);
+            logger.log(Level.FINEST, "Certificate chain could not be validated, certificate is expired", e);
             isCertificateDateValid = false;
         } catch (SelfSignedVerificationException e) {
-            logger.log(Level.FINER, "Certificate chain could not be validated, signature is self singed.", e);
+            logger.log(Level.FINEST, "Certificate chain could not be validated, signature is self singed.", e);
             isSelfSigned = true;
         } catch (CertificateVerificationException e) {
-            logger.log(Level.FINER, "Certificate chain could not be validated. ", e);
+            logger.log(Level.FINEST, "Certificate chain could not be validated. ", e);
             isCertificateChainTrusted = false;
         } catch (RevocationVerificationException e) {
-            logger.log(Level.FINER, "Certificate chain could not be validated, certificate has been revoked.", e);
+            logger.log(Level.FINEST, "Certificate chain could not be validated, certificate has been revoked.", e);
             isRevocation = true;
         } catch (IOException e) {
-            logger.log(Level.FINER, "Error locating trusted keystore .", e);
+            logger.log(Level.FINEST, "Error locating trusted keystore .", e);
             isCertificateChainTrusted = false;
         } catch (CertificateException e) {
-            logger.log(Level.FINER, "Certificate exception.", e);
+            logger.log(Level.FINEST, "Certificate exception.", e);
             isCertificateChainTrusted = false;
         } catch (Throwable e) {
-            logger.log(Level.FINER, "Error validation certificate chain.", e);
+            logger.log(Level.FINEST, "Error validation certificate chain.", e);
             isCertificateChainTrusted = false;
         }
     }
