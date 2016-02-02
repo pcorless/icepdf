@@ -660,6 +660,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     }
 
     public boolean checkByteRange() throws SignatureIntegrityException {
+        if (signatureFieldDictionary == null) {
+            return false;
+        }
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
         SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
         documentInput.beginThreadAccess();

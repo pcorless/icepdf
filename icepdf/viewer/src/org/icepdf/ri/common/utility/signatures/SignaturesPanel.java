@@ -73,8 +73,6 @@ public class SignaturesPanel extends JPanel {
     protected Timer timer;
     // refresh rate of gui elements
     private static final int REFRESH_TIME = 100;
-    // flag indicating if validation is under way.
-    private boolean isLoadingSignatures;
 
     protected JScrollPane scrollPane;
     private GridBagConstraints constraints;
@@ -198,6 +196,7 @@ public class SignaturesPanel extends JPanel {
             }
         }
         signatureTree.expandPath(new TreePath(rootTreeNode));
+        signatureTree.expandPath(new TreePath(unsignedFieldNode));
         revalidate();
     }
 
@@ -296,12 +295,9 @@ public class SignaturesPanel extends JPanel {
                     // start a new verification task
                     sigVerificationTask = new SigVerificationTask(this, controller, messageBundle);
                     progressBar.setMaximum(sigVerificationTask.getLengthOfTask());
-                    isLoadingSignatures = true;
                     // start the task and the timer
                     sigVerificationTask.verifyAllSignatures();
                     timer.start();
-                } else {
-                    isLoadingSignatures = false;
                 }
             }
         }
@@ -314,15 +310,6 @@ public class SignaturesPanel extends JPanel {
         signatureTree.setSelectionPath(null);
         rootTreeNode.removeAllChildren();
         treeModel.nodeStructureChanged(rootTreeNode);
-    }
-
-    /**
-     * Sets the isLoading flag which will use to disable menus or stop other verifcations from starting.
-     *
-     * @param loadingSignatures
-     */
-    public void setLoadingSignatures(boolean loadingSignatures) {
-        isLoadingSignatures = loadingSignatures;
     }
 
     /**
@@ -420,7 +407,7 @@ public class SignaturesPanel extends JPanel {
      */
     class validationActionListener implements ActionListener {
         public void actionPerformed(ActionEvent actionEvent) {
-            if (!isLoadingSignatures) {
+            if (!sigVerificationTask.isCurrentlyVerifying()) {
                 // validate the signature and show the summary dialog.
                 final SignatureTreeNode signatureTreeNode = nodeSelectionListener.getSignatureTreeNode();
                 SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
@@ -429,13 +416,9 @@ public class SignaturesPanel extends JPanel {
                     progressLabel.setVisible(true);
                     progressBar.setVisible(true);
                     progressBar.setMaximum(1);
-                    isLoadingSignatures = true;
-
                     // start the task and the timer
-                    sigVerificationTask.verifySignatures(signatureWidgetAnnotation, signatureTreeNode);
+                    sigVerificationTask.verifySignature(signatureWidgetAnnotation, signatureTreeNode);
                     timer.start();
-                } else {
-                    isLoadingSignatures = false;
                 }
             }
         }
@@ -502,7 +485,7 @@ public class SignaturesPanel extends JPanel {
                 progressLabel.setText(s);
             }
             // update the text and stop the timer when the validation is completed or terminated.
-            if (sigVerificationTask.isDone() || !isLoadingSignatures) {
+            if (sigVerificationTask.isDone() || !sigVerificationTask.isCurrentlyVerifying()) {
                 // update search status
                 timer.stop();
                 sigVerificationTask.stop();

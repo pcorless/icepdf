@@ -101,8 +101,8 @@ public class SigVerificationTask {
     /**
      * Start the task, verify the specified signature annotation.
      */
-    public void verifySignatures(final SignatureWidgetAnnotation signatureWidgetAnnotation,
-                                 final SignatureTreeNode signatureTreeNode) {
+    public void verifySignature(final SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                final SignatureTreeNode signatureTreeNode) {
         final SwingWorker worker = new SwingWorker() {
             public Object construct() {
                 current = 0;
@@ -170,6 +170,7 @@ public class SigVerificationTask {
      */
     class VerifyAllSignatures {
         VerifyAllSignatures() {
+            currentlyVerifying = true;
             MessageFormat messageFormat = new MessageFormat(
                     messageBundle.getString("viewer.utilityPane.signatures.verify.initializingMessage.label"));
             try {
@@ -229,7 +230,6 @@ public class SigVerificationTask {
                                 }
                             });
                         }
-                        signaturesPanel.setLoadingSignatures(false);
                     }
                     // update the dialog and end the task
                     dialogMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.completeMessage.label");
@@ -262,6 +262,7 @@ public class SigVerificationTask {
         VerifySignature(final SignatureWidgetAnnotation signatureWidgetAnnotation,
                         final SignatureTreeNode signatureTreeNode) {
             try {
+                currentlyVerifying = true;
                 current = 0;
                 try {
                     dialogMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.validating.label");

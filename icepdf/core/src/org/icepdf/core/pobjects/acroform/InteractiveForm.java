@@ -255,7 +255,8 @@ public class InteractiveForm extends Dictionary {
                 for (Object field : fields) {
                     if (field instanceof SignatureWidgetAnnotation) {
                         signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
-                        if (signatureWidgetAnnotation.getSignatureValidator().checkByteRange()) {
+                        if (signatureWidgetAnnotation.getSignatureValidator() != null &&
+                                signatureWidgetAnnotation.getSignatureValidator().checkByteRange()) {
                             isValidByteRange = true;
                             break;
                         }
