@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views.annotations.signatures;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.EscapeJDialog;
-import org.icepdf.ri.common.utility.signatures.CertificatePropertiesDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -129,15 +128,6 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
         setResizable(false);
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
     private void addGB(JPanel layout, Component component,
                        int x, int y,
                        int rowSpan, int colSpan) {

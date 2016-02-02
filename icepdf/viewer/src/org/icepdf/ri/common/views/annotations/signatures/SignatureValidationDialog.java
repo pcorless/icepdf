@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views.annotations.signatures;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.EscapeJDialog;
 
@@ -78,13 +77,8 @@ public class SignatureValidationDialog extends EscapeJDialog {
                     SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
                     SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
                     if (signatureValidator != null) {
-                        try {
-                            signatureValidator.validate();
-                            new SignaturePropertiesDialog(parent, messageBundle, signatureWidgetAnnotation)
-                                    .setVisible(true);
-                        } catch (SignatureIntegrityException e1) {
-                            logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
-                        }
+                        new SignaturePropertiesDialog(parent, messageBundle, signatureWidgetAnnotation)
+                                .setVisible(true);
                     }
                 }
             }

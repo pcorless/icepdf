@@ -98,7 +98,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     private static final int ONE_SECOND = 1000;
 
     // flag indicating if search is under way.
-    private boolean isSearching = false;
+    private boolean isSearching;
 
     // message bundle for internationalization
     ResourceBundle messageBundle;
@@ -208,9 +208,7 @@ public class SearchPanel extends JPanel implements ActionListener,
         progressBar = new JProgressBar(0, 1);
         progressBar.setValue(0);
         progressBar.setVisible(false);
-        findMessage = new JLabel(
-                messageBundle.getString(
-                        "viewer.utilityPane.search.searching.msg"));
+        findMessage = new JLabel(messageBundle.getString("viewer.utilityPane.search.searching.msg"));
         findMessage.setVisible(false);
         timer = new Timer(ONE_SECOND, new TimerListener());
 
@@ -799,18 +797,6 @@ public class SearchPanel extends JPanel implements ActionListener,
 
         // The destination to be displayed when this item is activated
         int pageNumber;
-
-        /**
-         * Creates a new instance of a FindEntry.
-         *
-         * @param title of found entry
-         */
-        FindEntry(String title) {
-            super();
-            this.pageNumber = 0;
-            this.title = title;
-            setUserObject(title);
-        }
 
         /**
          * Creates a new instance of a FindEntry.

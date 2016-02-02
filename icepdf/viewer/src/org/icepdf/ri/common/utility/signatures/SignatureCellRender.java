@@ -38,9 +38,12 @@ public class SignatureCellRender extends DefaultTreeCellRenderer {
                 tree, value, sel,
                 expanded, leaf, row,
                 hasFocus);
+        // dynamic as the validator status changes, so will the icon.
         if (value instanceof SignatureTreeNode) {
             SignatureTreeNode signatureTreeNode = (SignatureTreeNode) value;
-            setIcon(signatureTreeNode.getRootNodeValidityIcon());
+            if (signatureTreeNode.getRootNodeValidityIcon() != null) {
+                setIcon(signatureTreeNode.getRootNodeValidityIcon());
+            }
         } else {
             setIcon(null);
         }

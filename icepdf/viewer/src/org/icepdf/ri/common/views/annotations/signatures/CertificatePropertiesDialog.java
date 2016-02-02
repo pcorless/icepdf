@@ -13,13 +13,14 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.signatures;
+package org.icepdf.ri.common.views.annotations.signatures;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.util.HexDumper;
 import org.icepdf.ri.common.EscapeJDialog;
+import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;

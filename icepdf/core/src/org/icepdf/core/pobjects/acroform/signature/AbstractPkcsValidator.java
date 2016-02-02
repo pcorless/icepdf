@@ -659,6 +659,26 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         }
     }
 
+    public boolean checkByteRange() throws SignatureIntegrityException {
+        ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
+        SeekableInput documentInput = signatureFieldDictionary.getLibrary().getDocumentInput();
+        documentInput.beginThreadAccess();
+        try {
+            long totalLength = documentInput.getLength();
+            long digestedLength = byteRange.get(2) + byteRange.get(3);
+            // this doesn't mean the signature has been tampered with just that there are subsequent modification
+            // or signatures added after this signature.
+            if (digestedLength == totalLength) {
+                return true;
+            }
+        } catch (IOException e) {
+            throw new SignatureIntegrityException(e);
+        } finally {
+            documentInput.endThreadAccess();
+        }
+        return false;
+    }
+
     /**
      * Gets the certificate used to sing the document.  The signature principle matches the certificates
      * principle in other words.

@@ -18,7 +18,7 @@ package org.icepdf.ri.common.utility.signatures;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreeSelectionModel;
 
 /**
@@ -32,8 +32,9 @@ import javax.swing.tree.TreeSelectionModel;
  */
 @SuppressWarnings("serial")
 public class SignaturesTree extends JTree {
-    public SignaturesTree(TreeNode root) {
-        super(root);
+
+    public SignaturesTree(TreeModel newModel) {
+        super(newModel);
         getSelectionModel().setSelectionMode(
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
         setRootVisible(true);

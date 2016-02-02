@@ -86,15 +86,13 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * Validates the signatures represented by this tree node.  This method is called by a worker thread
      * and once validation is complete the notes states is updated with a call to {@link #refreshSignerNode()}
      *
-     * @return true node displaying various properties of
      * @throws SignatureIntegrityException
      */
-    private void validateSignatureNode() throws SignatureIntegrityException {
+    public void validateSignatureNode() throws SignatureIntegrityException {
 
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         if (fieldDictionary != null) {
-            // todo consolidate with SignatureValidationStatus
             // grab some signer properties right from the annotations dictionary.
             name = signatureDictionary.getName();
             location = signatureDictionary.getLocation();
@@ -114,14 +112,10 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
                 emailAddress = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
             }
             // Start validation process.
-            // todo move this off the awt thread as it will likely take a while.  We'll need to create
-            // an executer service to queue up the one or more signatures for validation. which when
-            // done will update the node with the retrieved data.
+            setVerifyingSignature(true);
             signatureValidator.validate();
             setVerifyingSignature(true);
         }
-        // build the tree with a "validating signature message"
-//        refreshSignerNode();
 
     }
 
@@ -151,8 +145,6 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * - Last Checked: <verification last run time>
      * - Field Name: <field name> on page X (clickable, takes to page and applies focus).
      *
-     * @return true node displaying various properties of
-     * @throws SignatureIntegrityException
      */
     public synchronized void refreshSignerNode() {
         if (isVerifyingSignature()) {
@@ -161,6 +153,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
                     "viewer.utilityPane.signatures.tab.certTree.rootSigned.label"));
             setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
                     (emailAddress != null ? "<" + emailAddress + ">" : "")}));
+            removeAllChildren();
             // signature validity
             buildSignatureValidity(this);
             // add signature details
@@ -264,7 +257,6 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             lastChecked.setAllowsChildren(false);
             root.add(lastChecked);
         }
-        // todo add new custom node that can navigate to page annotation is on.
     }
 
     public synchronized boolean isVerifyingSignature() {
