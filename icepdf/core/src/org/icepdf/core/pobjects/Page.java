@@ -306,14 +306,20 @@ public class Page extends Dictionary {
                     a = Annotation.buildAnnotation(library, (HashMap) annotObj);
                 }
                 // set the object reference, so we can save the state correct
-                // and update any references accordingly. 
-                if (ref != null && a != null) {
-                    a.setPObjectReference(ref);
-                    a.init();
+                // and update any references accordingly.
+                try {
+                    // set the object reference, so we can save the state correct
+                    // and update any references accordingly.
+                    if (ref != null && a != null) {
+                        a.setPObjectReference(ref);
+                        a.init();
+                    }
+                    // add any found annotations to the vector.
+                    annotations.add(a);
+                } catch (IllegalStateException e) {
+                    logger.warning("Malformed annotation could not be initialized. " +
+                            a != null ? " " + a.getPObjectReference() + a.getEntries() : "");
                 }
-
-                // add any found annotations to the vector.
-                annotations.add(a);
             }
         }
     }
