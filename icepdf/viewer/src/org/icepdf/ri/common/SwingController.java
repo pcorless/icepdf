@@ -2303,9 +2303,9 @@ public class SwingController
                 utilityTabbedPane.setEnabledAt(
                         utilityTabbedPane.indexOfComponent(signaturesPanel),
                         true);
-                // TODO: remove after testing/UI is complete.
-                setUtilityPaneVisible(true);
-                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(signaturesPanel));
+                // shows the signature pain on load.
+//                setUtilityPaneVisible(true);
+//                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(signaturesPanel));
 
             } else {
                 utilityTabbedPane.setEnabledAt(
