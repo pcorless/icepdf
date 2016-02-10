@@ -17,6 +17,7 @@ package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
+import org.icepdf.ri.common.utility.acroform.AcroformPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
@@ -1727,6 +1728,12 @@ public class SwingViewBuilder {
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
                     buildAnnotationPanel());
         }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ACROFORM)) {
+            utilityTabbedPane.add(
+                    messageBundle.getString("viewer.utilityPane.acroform.tab.title"),
+                    buildAcroFormPanel());
+        }
 
         // Ensure something was added to the utility pane, otherwise reset it to null
         // By doing this we will stop the utility pane management buttons from displaying
@@ -1786,6 +1793,14 @@ public class SwingViewBuilder {
         if (viewerController != null)
             viewerController.setAnnotationPanel(annotationPanel);
         return annotationPanel;
+    }
+
+    public JComponent buildAcroFormPanel(){
+        AcroformPanel acroFormPanel = new AcroformPanel(viewerController);
+        if (viewerController != null) {
+            viewerController.setAcroFormPanel(acroFormPanel);
+        }
+        return acroFormPanel;
     }
 
     /**

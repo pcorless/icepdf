@@ -192,9 +192,6 @@ public class FieldDictionary extends Dictionary {
             exportMappingName = (String) value;
         }
 
-        // value field
-//        getFieldValue();
-        // todo default value, see 12.7.5.3, Reset-Form Action.
         value = library.getObject(entries, DV_KEY);
         if (value != null) {
             defaultFieldValue = value;

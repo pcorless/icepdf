@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.utility.signatures;
 
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
@@ -24,6 +23,7 @@ import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.AnnotationSelector;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
@@ -432,24 +432,7 @@ public class SignaturesPanel extends JPanel {
             if (nodeSelectionListener.getSignatureTreeNode() != null) {
                 final SignatureTreeNode signatureTreeNode = nodeSelectionListener.getSignatureTreeNode();
                 SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
-                // turn out the parent is seldom used correctly and generally just points to page zero.
-                // so we should
-                Document document = controller.getDocument();
-                int pages = controller.getPageTree().getNumberOfPages();
-                boolean found = false;
-                for (int i = 0; i < pages && !found; i++) {
-                    // check is page's annotation array for a matching reference.
-                    ArrayList<Reference> annotationReferences = document.getPageTree().getPage(i).getAnnotationReferences();
-                    if (annotationReferences != null) {
-                        for (Reference reference : annotationReferences) {
-                            if (reference.equals(signatureWidgetAnnotation.getPObjectReference())) {
-                                controller.showPage(i);
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                }
+                AnnotationSelector.SelectAnnotationComponent(controller, signatureWidgetAnnotation);
             }
         }
     }

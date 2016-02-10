@@ -29,6 +29,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.utility.acroform.AcroformPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
@@ -194,6 +195,7 @@ public class SwingController
     private LayersPanel layersPanel;
     private SignaturesPanel signaturesPanel;
     private AnnotationPanel annotationPanel;
+    private AcroformPanel acroFormPanel;
     private JTabbedPane utilityTabbedPane;
     private JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
@@ -951,6 +953,10 @@ public class SwingController
 
     public void setSignaturesPanel(SignaturesPanel tn) {
         signaturesPanel = tn;
+    }
+
+    public void setAcroFormPanel(AcroformPanel acroFormPanel){
+        this.acroFormPanel = acroFormPanel;
     }
 
     /**
@@ -2210,6 +2216,10 @@ public class SwingController
             signaturesPanel.setDocument(document);
         }
 
+        if (acroFormPanel != null) {
+            acroFormPanel.setDocument(document);
+        }
+
         // Refresh the properties manager object if we don't already have one
         // This would be not null if the UI was constructed manually
         if ((propertiesManager == null) && (windowManagementCallback != null)) {
@@ -2313,6 +2323,24 @@ public class SwingController
                         false);
             }
         }
+        // check to see if
+        boolean acroFormsExist = document.getCatalog().getInteractiveForm() != null &&
+                document.getCatalog().getInteractiveForm().getFields() != null;
+        if (acroFormPanel != null && utilityTabbedPane != null) {
+            if (acroFormsExist) {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(acroFormPanel),
+                        true);
+                // shows the signature pain on load.
+//                setUtilityPaneVisible(true);
+//                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(acroFormPanel));
+
+            } else {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(acroFormPanel),
+                        false);
+            }
+        }
 
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
@@ -2360,6 +2388,10 @@ public class SwingController
 
         if (signaturesPanel != null) {
             signaturesPanel.setDocument(null);
+        }
+
+        if (acroFormPanel != null) {
+            acroFormPanel.setDocument(null);
         }
 
         // set the default cursor.  
