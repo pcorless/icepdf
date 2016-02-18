@@ -1019,6 +1019,20 @@ public class PageViewComponentImpl extends
         }
     }
 
+    /**
+     * Gets a list of the annotation components used in this page view.
+     *
+     * @return list of annotation components, can be null.
+     */
+    public ArrayList<AbstractAnnotationComponent> getSynchronousAnnotationComponents() {
+        init();
+        while (!(pageInitializer.hasBeenQueued() || pageInitializer.isRunning())) {
+            pageInitializer.run();
+            break;
+        }
+        return annotationComponents;
+    }
+
     public class PagePainter implements Runnable {
 
         private boolean isRunning;

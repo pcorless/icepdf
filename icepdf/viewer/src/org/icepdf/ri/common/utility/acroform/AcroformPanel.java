@@ -42,6 +42,7 @@ import java.util.logging.Logger;
  * The AcroformPanel list all form widget in a document and arranges them using the hierarchy defined by the document,
  * not attemps are mode to flatten the form structure or change order.
  */
+@SuppressWarnings("serial")
 public class AcroformPanel extends JPanel {
 
     private static final Logger logger =
@@ -60,6 +61,7 @@ public class AcroformPanel extends JPanel {
     protected JTree interactiveFieldTree;
     private DefaultMutableTreeNode rootTreeNode;
     private DefaultTreeModel treeModel;
+    private JPanel acroFormPanel;
 
     // message bundle for internationalization
     protected ResourceBundle messageBundle;
@@ -109,21 +111,20 @@ public class AcroformPanel extends JPanel {
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.weighty = 0;
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(10, 5, 1, 5);
 
-        JPanel signaturePanel = new JPanel(layout);
-        this.add(signaturePanel);
+        acroFormPanel = new JPanel(layout);
+        this.add(acroFormPanel);
 
-        // add the lit to scroll pane
+        // add the forms tree to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
         constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(signaturePanel, scrollPane, 0, 0, 1, 1);
-
+        addGB(acroFormPanel, scrollPane, 0, 1, 1, 1);
+        constraints.weighty = 0;
     }
 
     /**
@@ -160,25 +161,6 @@ public class AcroformPanel extends JPanel {
             revalidate();
         }
     }
-    /**
-     DefaultMutableTreeNode unsignedFieldNode = new DefaultMutableTreeNode(
-     messageBundle.getString("viewer.utilityPane.signatures.tab.certTree.unsigned.label"));
-     treeModel.insertNodeInto(unsignedFieldNode, rootTreeNode,
-     rootTreeNode.getChildCount());
-     for (SignatureWidgetAnnotation signature : signatures) {
-     SignatureDictionary signatureDictionary = signature.getSignatureDictionary();
-     // filter for only unsigned signer fields.
-     if (signatureDictionary.getEntries().size() == 0) {
-     DefaultMutableTreeNode field =
-     new DefaultMutableTreeNode(signature.getFieldDictionary().getPartialFieldName());
-     field.setAllowsChildren(false);
-     unsignedFieldNode.add(field);
-     }
-     }
-     signatureTree.expandPath(new TreePath(rootTreeNode));
-     signatureTree.expandPath(new TreePath(unsignedFieldNode));
-     revalidate();
-     */
 
     /**
      * Recursively set highlight on all the form fields.
@@ -212,6 +194,10 @@ public class AcroformPanel extends JPanel {
             }
 
         }
+    }
+
+    public void setAcroFromUtilityToolbar(JToolBar annotationUtilityToolbar) {
+        addGB(acroFormPanel, annotationUtilityToolbar, 0, 0, 1, 1);
     }
 
     /**

@@ -15,10 +15,7 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
-import org.icepdf.core.pobjects.actions.ActionFactory;
-import org.icepdf.core.pobjects.actions.GoToAction;
-import org.icepdf.core.pobjects.actions.LaunchAction;
-import org.icepdf.core.pobjects.actions.URIAction;
+import org.icepdf.core.pobjects.actions.*;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -463,6 +460,16 @@ public class ActionsPanel extends AnnotationPanelAdapter
         } else if (action instanceof URIAction) {
             actionListModel.addElement(new ActionEntry(uriActionLabel, action));
         } else if (action instanceof LaunchAction) {
+            actionListModel.addElement(new ActionEntry(launchActionLabel, action));
+        } else if (action instanceof ResetFormAction) {
+            actionListModel.addElement(new ActionEntry(launchActionLabel, action));
+        } else if (action instanceof GoToRAction) {
+            actionListModel.addElement(new ActionEntry(launchActionLabel, action));
+        } else if (action instanceof JavaScriptAction) {
+            actionListModel.addElement(new ActionEntry(launchActionLabel, action));
+        } else if (action instanceof NamedAction) {
+            actionListModel.addElement(new ActionEntry(launchActionLabel, action));
+        } else if (action instanceof SubmitFormAction) {
             actionListModel.addElement(new ActionEntry(launchActionLabel, action));
         }
         // todo check for an next entry

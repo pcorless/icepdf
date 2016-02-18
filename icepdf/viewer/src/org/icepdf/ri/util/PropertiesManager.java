@@ -51,7 +51,8 @@ public class PropertiesManager {
     private static final String PROPERTY_DEFAULT_URL = "application.defaultURL";
 
     // window properties
-    public static final String PROPERTY_DIVIDER_LOCATION = "application.divider.location";
+    public static final String PROPERTY_UTILITY_DIVIDER_LOCATION = "application.divider.location";
+    public static final String PROPERTY_DIVIDER_LOCATION = "application.properties.divider.location";
     // default page fit mode
     public static final String PROPERTY_DEFAULT_PAGEFIT = "document.pagefitMode";
     // default print media size.

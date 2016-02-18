@@ -164,6 +164,24 @@ public abstract class AbstractPageViewComponent
                         documentViewModel);
                 documentViewController.clearSelectedText();
                 break;
+            case DocumentViewModel.DISPLAY_TOOL_TEXT_FIELD_ANNOTATION:
+//               // todo text field handler
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_BUTTON_CHECKBOX_FIELD_ANNOTATION:
+//                // todo checkbox handler.
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_BUTTON_RADIO_FIELD_ANNOTATION:
+//                // todo radio handler.
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_BUTTON_FIELD_ANNOTATION:
+//                // todo button handler.
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_SIGNATURE_FIELD_ANNOTATION:
+//                // todo signature handler.
+                break;
+            case DocumentViewModel.DISPLAY_TOOL_CHOICE_FIELD_ANNOTATION:
+//                // todo choicei handler.
+                break;
             default:
                 currentToolHandler = null;
         }
