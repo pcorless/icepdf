@@ -29,7 +29,7 @@ import java.awt.*;
 /**
  * Renders a form elements icons that represent the given element.
  */
-public class AcroformCellRender extends DefaultTreeCellRenderer {
+public class AcroFormCellRender extends DefaultTreeCellRenderer {
 
     /**
      * Text widget annotation icon.
@@ -75,8 +75,8 @@ public class AcroformCellRender extends DefaultTreeCellRenderer {
                 expanded, leaf, row,
                 hasFocus);
         Object currentUserObject = null;
-        if (value instanceof AcroformTreeNode) {
-            currentUserObject = ((AcroformTreeNode) value).getWidgetAnnotation();
+        if (value instanceof AcroFormTreeNode) {
+            currentUserObject = ((AcroFormTreeNode) value).getWidgetAnnotation();
         }
         // check user object for type and assign the appropriate icon.
         if (currentUserObject instanceof TextWidgetAnnotation) {

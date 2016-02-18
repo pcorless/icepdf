@@ -43,10 +43,10 @@ import java.util.logging.Logger;
  * not attemps are mode to flatten the form structure or change order.
  */
 @SuppressWarnings("serial")
-public class AcroformPanel extends JPanel {
+public class AcroFormPanel extends JPanel {
 
     private static final Logger logger =
-            Logger.getLogger(AcroformPanel.class.toString());
+            Logger.getLogger(AcroFormPanel.class.toString());
 
     protected DocumentViewController documentViewController;
 
@@ -67,7 +67,7 @@ public class AcroformPanel extends JPanel {
     protected ResourceBundle messageBundle;
     protected NodeSelectionListener nodeSelectionListener;
 
-    public AcroformPanel(SwingController controller) {
+    public AcroFormPanel(SwingController controller) {
         super(true);
         setFocusable(true);
         this.controller = controller;
@@ -85,7 +85,7 @@ public class AcroformPanel extends JPanel {
         interactiveFieldTree.setRootVisible(true);
         interactiveFieldTree.setScrollsOnExpand(true);
         // setup a custom cell render
-        interactiveFieldTree.setCellRenderer(new AcroformCellRender());
+        interactiveFieldTree.setCellRenderer(new AcroFormCellRender());
         // old font was Arial with is no go for linux.
         interactiveFieldTree.setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 13));
         interactiveFieldTree.setRowHeight(18);
@@ -170,7 +170,7 @@ public class AcroformPanel extends JPanel {
     private void descendFormTree(Library library, DefaultMutableTreeNode currentRoot, Object formNode) {
 
         if (formNode instanceof AbstractWidgetAnnotation) {
-            AcroformTreeNode unsignedFieldNode = new AcroformTreeNode((AbstractWidgetAnnotation) formNode, messageBundle);
+            AcroFormTreeNode unsignedFieldNode = new AcroFormTreeNode((AbstractWidgetAnnotation) formNode, messageBundle);
             treeModel.insertNodeInto(unsignedFieldNode, currentRoot, currentRoot.getChildCount());
         } else if (formNode instanceof FieldDictionary) {
             // iterate over the kid's array.
@@ -183,10 +183,10 @@ public class AcroformPanel extends JPanel {
                         kid = library.getObject((Reference) kid);
                     }
                     if (kid instanceof AbstractWidgetAnnotation) {
-                        AcroformTreeNode unsignedFieldNode = new AcroformTreeNode((AbstractWidgetAnnotation) kid, messageBundle);
+                        AcroFormTreeNode unsignedFieldNode = new AcroFormTreeNode((AbstractWidgetAnnotation) kid, messageBundle);
                         treeModel.insertNodeInto(unsignedFieldNode, currentRoot, currentRoot.getChildCount());
                     } else if (kid instanceof FieldDictionary) {
-                        AcroformTreeNode unsignedFieldNode = new AcroformTreeNode((FieldDictionary) kid, messageBundle);
+                        AcroFormTreeNode unsignedFieldNode = new AcroFormTreeNode((FieldDictionary) kid, messageBundle);
                         treeModel.insertNodeInto(unsignedFieldNode, currentRoot, currentRoot.getChildCount());
                         descendFormTree(library, unsignedFieldNode, kid);
                     }
@@ -237,8 +237,8 @@ public class AcroformPanel extends JPanel {
             TreePath path = tree.getPathForRow(row);
             if (path != null) {
                 Object node = path.getLastPathComponent();
-                if (node instanceof AcroformTreeNode) {
-                    AcroformTreeNode formNode = (AcroformTreeNode) node;
+                if (node instanceof AcroFormTreeNode) {
+                    AcroFormTreeNode formNode = (AcroFormTreeNode) node;
                     // on double click, navigate to page and set focus of component.
                     if (e.getClickCount() == 2) {
                         AbstractWidgetAnnotation widgetAnnotation = formNode.getWidgetAnnotation();

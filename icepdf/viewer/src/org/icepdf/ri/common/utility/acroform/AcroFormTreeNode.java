@@ -33,14 +33,14 @@ import java.util.logging.Logger;
  * AcroformTreeNode is a simple wrapper used to extract the correct DefaultMutableTreeNode label for the the
  * given FieldDictionary implementation.
  */
-public class AcroformTreeNode extends DefaultMutableTreeNode {
+public class AcroFormTreeNode extends DefaultMutableTreeNode {
 
     private static final Logger logger =
-            Logger.getLogger(AcroformTreeNode.class.toString());
+            Logger.getLogger(AcroFormTreeNode.class.toString());
 
     private AbstractWidgetAnnotation widgetAnnotation;
 
-    public AcroformTreeNode(FieldDictionary fieldDictionary, ResourceBundle messageBundle) {
+    public AcroFormTreeNode(FieldDictionary fieldDictionary, ResourceBundle messageBundle) {
         String text = fieldDictionary.getPartialFieldName();
         if (text != null) {
             MessageFormat messageFormat = new MessageFormat(
@@ -51,7 +51,7 @@ public class AcroformTreeNode extends DefaultMutableTreeNode {
         }
     }
 
-    public AcroformTreeNode(AbstractWidgetAnnotation widgetAnnotation, ResourceBundle messageBundle) {
+    public AcroFormTreeNode(AbstractWidgetAnnotation widgetAnnotation, ResourceBundle messageBundle) {
         this.widgetAnnotation = widgetAnnotation;
         String message = null;
         // setup label.

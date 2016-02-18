@@ -17,8 +17,8 @@ package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
+import org.icepdf.ri.common.utility.acroform.AcroFormPanel;
 import org.icepdf.ri.common.utility.acroform.AcroFormPropertiesPanel;
-import org.icepdf.ri.common.utility.acroform.AcroformPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
@@ -1917,7 +1917,7 @@ public class SwingViewBuilder {
     }
 
     public JComponent buildAcroFormPanel(){
-        AcroformPanel acroFormPanel = new AcroformPanel(viewerController);
+        AcroFormPanel acroFormPanel = new AcroFormPanel(viewerController);
         acroFormPanel.setAcroFromUtilityToolbar(buildAcroFormUtilityToolBar());
         if (viewerController != null) {
             viewerController.setAcroFormPanel(acroFormPanel);

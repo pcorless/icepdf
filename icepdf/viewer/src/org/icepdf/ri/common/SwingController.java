@@ -30,8 +30,8 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
+import org.icepdf.ri.common.utility.acroform.AcroFormPanel;
 import org.icepdf.ri.common.utility.acroform.AcroFormPropertiesPanel;
-import org.icepdf.ri.common.utility.acroform.AcroformPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
@@ -207,7 +207,7 @@ public class SwingController
     private LayersPanel layersPanel;
     private SignaturesPanel signaturesPanel;
     private AnnotationPanel annotationPanel;
-    private AcroformPanel acroFormPanel;
+    private AcroFormPanel acroFormPanel;
     private AcroFormPropertiesPanel acroFormPropertiesPanel;
     private JTabbedPane utilityTabbedPane;
     private JSplitPane utilityAndDocumentSplitPane;
@@ -1005,7 +1005,7 @@ public class SwingController
         signaturesPanel = tn;
     }
 
-    public void setAcroFormPanel(AcroformPanel acroFormPanel) {
+    public void setAcroFormPanel(AcroFormPanel acroFormPanel) {
         this.acroFormPanel = acroFormPanel;
     }
 
