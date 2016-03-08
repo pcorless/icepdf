@@ -71,7 +71,7 @@ public class AnnotationSelector {
             // annotation Components may be null and user will have ot double click again
             // todo need to figure out a better scheme.
 //                            ((PageViewComponentImpl)pageViewComponent).getSynchronousAnnotationComponents();
-            ArrayList<AbstractAnnotationComponent> annotationComponents = ((PageViewComponentImpl) pageViewComponent).getAnnotationComponents();
+            ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
             if (annotationComponents != null) {
                 for (AbstractAnnotationComponent annotationComponent : annotationComponents) {
                     if (widgetAnnotation.getPObjectReference().equals(

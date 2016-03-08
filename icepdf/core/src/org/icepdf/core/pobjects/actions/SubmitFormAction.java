@@ -29,7 +29,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,36 +53,26 @@ public class SubmitFormAction extends FormAction {
     // Table 236 flags, Additional entries specific to a submit-form action.
 
     /**
-     * If clear, the Fields array (see Table 236) specifies which fields to include in the submission.
-     * (All descendants of the specified fields in the field hierarchy shall be submitted as well.)
-     * <p/>
-     * If set, the Fields array tells which fields to exclude. All fields in the document’s interactive form shall be
-     * submitted except those listed in the Fields array and those whose NoExport flag (see Table 221)
-     * is set and fields with no values if the IncludeNoValueFields flag is clear.
-     */
-    public int INCLUDE_EXCLUDE_BIT = 0X0000001;  // bit 1
-
-    /**
      * If set, all fields designated by the Fields array and the Include/Exclude flag shall be submitted, regardless
      * of whether they have a value (V entry in the field dictionary). For fields without a value, only the field name
      * shall be transmitted.
      * <p/>
      * If clear, fields without a value shall not be submitted.
      */
-    public int INCLUDE_NO_VALUE_FIELDS_BIT = 0X0000002; // bit 2
+    public static int INCLUDE_NO_VALUE_FIELDS_BIT = 0X0000002; // bit 2
 
     /**
      * Meaningful only if the SubmitPDF and XFDF flags are clear. If set, field names and values shall be submitted in
      * HTML Form format. If clear, they shall be submitted in Forms Data Format (FDF); see 12.7.7, “Forms Data Format.”
      */
-    public int EXPORT_FORMAT_BIT = 0X0000004;  // bit 3
+    public static int EXPORT_FORMAT_BIT = 0X0000004;  // bit 3
 
     /**
      * If set, field names and values shall be submitted using an HTTP GET request. If clear, they shall be submitted
      * using a POST request. This flag is meaningful only when the ExportFormat flag is set; if ExportFormat is clear,
      * this flag shall also be clear.
      */
-    public int GET_METHOD_BIT = 0X0000010;  // bit 4
+    public static int GET_METHOD_BIT = 0X0000010;  // bit 4
 
     /**
      * If set, the coordinates of the mouse click that caused the submit-form action shall be transmitted as part of
@@ -101,13 +90,13 @@ public class SubmitFormAction extends FormAction {
      * This flag shall be used only when the ExportFormat flag is set. If ExportFormat is clear, this flag shall also
      * be clear
      */
-    public int SUBMIT_COORDINATES_BIT = 0X0000004;  // bit 5
+    public static int SUBMIT_COORDINATES_BIT = 0X0000004;  // bit 5
 
     /**
      * (PDF 1.4) shall be used only if the SubmitPDF flags are clear. If set, field names and values shall be
      * submitted as XFDF.
      */
-    public int XFDF_BIT = 0X0000020;  // bit 6
+    public static int XFDF_BIT = 0X0000020;  // bit 6
 
     /**
      * (PDF 1.4) shall be used only when the form is being submitted in Forms Data Format (that is, when both the
@@ -115,7 +104,7 @@ public class SubmitFormAction extends FormAction {
      * incremental updates to the underlying PDF document, as contained in the Differences entry in the FDF
      * dictionary (see Table 243). If clear, the incremental updates shall not be included.
      */
-    public int INCLUDE_APPEND_SAVES_BIT = 0X0000040;  // bit 7
+    public static int INCLUDE_APPEND_SAVES_BIT = 0X0000040;  // bit 7
 
     /**
      * (PDF 1.4) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF a
@@ -123,14 +112,14 @@ public class SubmitFormAction extends FormAction {
      * annotations in the underlying PDF document (see 12.5.6.2, “Markup Annotations”). If clear, markup annotations
      * shall not be included.
      */
-    public int INCLUDE_ANNOTATIONS_BIT = 0X0000040;  // bit 8
+    public static int INCLUDE_ANNOTATIONS_BIT = 0X0000040;  // bit 8
 
     /**
      * (PDF 1.4) If set, the document shall be submitted as PDF, using the MIME content type application/pdf (described
      * in Internet RFC 2045, Multipurpose Internet Mail Extensions (MIME), Part One: Format of Internet Message Bodies;
      * see the Bibliography). If set, all other flags shall be ignored except GetMethod.
      */
-    public int SUBMIT_PDF_BIT = 0X0000100;  // bit 9
+    public static int SUBMIT_PDF_BIT = 0X0000100;  // bit 9
 
     /**
      * (PDF 1.4) If set, any submitted field values representing dates shall be converted to the standard format
@@ -140,7 +129,7 @@ public class SubmitFormAction extends FormAction {
      * The interpretation of a form field as a date is not specified explicitly in the field itself but only in the
      * JavaScript code that processes it.
      */
-    public int CANONICAL_FORMAT_BIT = 0X0000512;  // bit 10
+    public static int CANONICAL_FORMAT_BIT = 0X0000512;  // bit 10
 
     /**
      * (PDF 1.4) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF
@@ -154,48 +143,27 @@ public class SubmitFormAction extends FormAction {
      * <b>NOTE 2</b><br/>This allows multiple users to collaborate in annotating a single remote PDF document without
      * affecting one another’s annotations.
      */
-    public int EXCL_NON_USER_ANNOTS_BIT = 0X0001024;  // bit 11
+    public static int EXCL_NON_USER_ANNOTS_BIT = 0X0001024;  // bit 11
 
     /**
      * (PDF 1.4) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF
      * and ExportFormat flags are clear). If set, the submitted FDF shall exclude the F entry.
      */
-    public int EXCL_F_KEY_BIT = 0X0002048;  // bit 12
+    public static int EXCL_F_KEY_BIT = 0X0002048;  // bit 12
 
     /**
      * (PDF 1.5) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF
      * and ExportFormat flags are clear). If set, the F entry of the submitted FDF shall be a file specification
      * containing an embedded file stream representing the PDF file from which the FDF is being submitted.
      */
-    public int EMBED_FORM_BIT = 0X0008192;  // bit 14
+    public static int EMBED_FORM_BIT = 0X0008192;  // bit 14
 
     public SubmitFormAction(Library l, HashMap h) {
         super(l, h);
     }
 
 
-    /**
-     * An array identifying which fields to reset or which to exclude from
-     * resetting, depending on the setting of the Include/Exclude flag in the
-     * Flags entry (see Table 239). Each element of the array shall be either
-     * an indirect reference to a field dictionary or (PDF 1.3) a text string
-     * representing the fully qualified name of a field. Elements of both kinds
-     * may be mixed in the same array.
-     * <p/>
-     * If this entry is omitted, the Include/Exclude flag shall be ignored, and all
-     * fields in the document’s interactive form shall be submitted except those whose
-     * NoExport flag (see Table 221) is set. Fields with no values may also be excluded,
-     * as dictated by the value of the IncludeNoValueFields flag; see Table 237.
-     *
-     * @return list of fields if present otherwise null.
-     */
-    public List getFields() {
-        Object tmp = library.getArray(entries, FIELDS_KEY);
-        if (tmp != null) {
-            return (List) tmp;
-        }
-        return null;
-    }
+
 
     public FileSpecification getFileSpecification() {
         Object tmp = library.getObject(entries, F_KEY);
@@ -203,6 +171,16 @@ public class SubmitFormAction extends FormAction {
             return new FileSpecification(library, (HashMap) tmp);
         }
         return null;
+    }
+
+    /**
+     * Sets the fileSpecifaction object value of this SubmitFormAction.  The dictionary
+     * entries are stored a a direct value of the 'F' key to avoid saving create a new object.
+     *
+     * @param fileSpecification entries to be copied.
+     */
+    public void setFileSpecification(FileSpecification fileSpecification) {
+        entries.put(F_KEY, fileSpecification.getEntries());
     }
 
     /**
@@ -285,9 +263,9 @@ public class SubmitFormAction extends FormAction {
             }
 
             // submit the data.
-            if (isGetMethod()){
+            if (isGetMethod()) {
                 return sendGET(fileSpecification.getFileSpecification(), formatParams(params));
-            }else{
+            } else {
                 return sendPOST(fileSpecification.getFileSpecification(), formatParams(params));
             }
 
@@ -334,8 +312,8 @@ public class SubmitFormAction extends FormAction {
             }
             if (value != null && !value.equals("")) {
                 params.put(child.getPartialFieldName(), value.toString());
-            }else if(isIncludeNoValueFields()){
-                params.put(child.getPartialFieldName(), value == null?null:value.toString());
+            } else if (isIncludeNoValueFields()) {
+                params.put(child.getPartialFieldName(), value == null ? null : value.toString());
             }
         }
     }
@@ -360,8 +338,8 @@ public class SubmitFormAction extends FormAction {
                     }
                     in.close();
                     logger.finer("HTTP GET response: " + response.toString());
-                }else {
-                    if (logger.isLoggable(Level.FINER)){
+                } else {
+                    if (logger.isLoggable(Level.FINER)) {
                         logger.finer("HTTP GET failed: " + url + ", response " + responseCode);
                     }
                 }
@@ -389,7 +367,7 @@ public class SubmitFormAction extends FormAction {
             responseCode = urlConnection.getResponseCode();
 
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                if (logger.isLoggable(Level.FINER)){
+                if (logger.isLoggable(Level.FINER)) {
                     BufferedReader in = new BufferedReader(new InputStreamReader(
                             urlConnection.getInputStream()));
                     String inputLine;
@@ -401,8 +379,8 @@ public class SubmitFormAction extends FormAction {
                     in.close();
                     logger.finer("HTTP POST response: " + response.toString());
                 }
-            }else {
-                if (logger.isLoggable(Level.FINER)){
+            } else {
+                if (logger.isLoggable(Level.FINER)) {
                     logger.finer("HTTP POST failed: " + url + ", response " + responseCode);
                 }
             }
@@ -412,7 +390,7 @@ public class SubmitFormAction extends FormAction {
         return responseCode;
     }
 
-    private String formatParams(HashMap<String, String> params){
+    private String formatParams(HashMap<String, String> params) {
         StringBuilder submitParams = new StringBuilder();
         for (String key : params.keySet()) {
             submitParams.append(key).append("=").append(params.get(key));
@@ -420,7 +398,7 @@ public class SubmitFormAction extends FormAction {
         }
         if (submitParams.length() > 1) {
             return submitParams.subSequence(0, submitParams.length() - 1).toString();
-        }else{
+        } else {
             return "";
         }
     }
@@ -446,7 +424,7 @@ public class SubmitFormAction extends FormAction {
         return (getFlags() & EXPORT_FORMAT_BIT) == EXPORT_FORMAT_BIT;
     }
 
-    /**
+    /**`
      * @see #GET_METHOD_BIT
      */
     public boolean isGetMethod() {

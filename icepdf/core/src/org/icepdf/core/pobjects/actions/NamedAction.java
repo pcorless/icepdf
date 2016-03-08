@@ -21,13 +21,14 @@ import org.icepdf.core.util.Library;
 import java.util.HashMap;
 
 /**
- * Named actions that the conformign reader shall support.  Names can be but not limited too.
+ * Named actions that the conforming reader shall support.  Names can be but not limited too.
  * <ul>
  * <li>NextPage</li>
  * <li>PrevPage</li>
  * <li>FirstPage</li>
  * <li>LastPage</li>
  * <li>Print</li>
+ * <li>SavaAs</li>
  * </ul>
  *
  * @since 5.2
@@ -80,5 +81,10 @@ public class NamedAction extends Action {
 
     public Name getNamedAction(){
         return name;
+    }
+
+    public void setName(Name name) {
+        this.name = name;
+        entries.put(N_KEY, name);
     }
 }
