@@ -48,9 +48,9 @@ public class ResetFormActionDialog extends AbstractFormActionDialog {
 
         // if no previous action then we have a 'new' action.
         if (action == null) {
-            action = (SubmitFormAction)
+            action = (FormAction)
                     ActionFactory.buildAction(annotation.getLibrary(),
-                            ActionFactory.SUBMIT_ACTION);
+                            ActionFactory.RESET_ACTION);
             annotation.addAction(action);
             // update the parent view with the new action.
             actionsPanel.clearActionList();

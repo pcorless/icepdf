@@ -31,6 +31,7 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.util.logging.Logger;
 
 /**
@@ -335,6 +336,9 @@ public class ActionsPanel extends AnnotationPanelAdapter
         } else if (action instanceof ResetFormAction || action == null) {
             // goToAction dialog handles the save action processing
             showResetFormActionDialog();
+        } else if (action instanceof NamedAction || action == null) {
+            // goToAction dialog handles the save action processing
+            showNamedActionDialog();
         }
     }
 
@@ -399,7 +403,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
 //                        ActionFactory.JAVA_SCRIPT_ACTION),
                     new ActionChoice(
                             messageBundle.getString(
-                                    "viewer.utilityPane.action.type.namedAction.label"),
+                                    "viewer.utilityPane.action.type.namedAction.title"),
                             ActionFactory.NAMED_ACTION),
                     new ActionChoice(
                             messageBundle.getString(
@@ -454,7 +458,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
     }
 
     private void showNamedActionDialog() {
-        Object[] namedActions = {
+        ActionChoice[] namedActions = {
                 new ActionChoice(
                         messageBundle.getString(
                                 "viewer.utilityPane.action.dialog.named.type.nextPage.label"),
@@ -480,30 +484,51 @@ public class ActionsPanel extends AnnotationPanelAdapter
                                 "viewer.utilityPane.action.dialog.named.type.print.label"),
                         NamedAction.PRINT_KEY)
         };
+        // check for previous value, in case we are editing.
+        ActionChoice oldValue = null;
+        if (currentAnnotationComponent.getAnnotation().getAction() != null) {
+            NamedAction namedAction = (NamedAction) currentAnnotationComponent.getAnnotation().getAction();
+            for (ActionChoice action : namedActions) {
+                if (action.equals(namedAction.getNamedAction())) {
+                    oldValue = action;
+                    break;
+                }
+            }
+        }
         // show the jOptionPane dialog
         ActionChoice namedActionType = (ActionChoice) JOptionPane.showInputDialog(
                 controller.getViewerFrame(),
                 messageBundle.getString("viewer.utilityPane.action.dialog.named.msgs"),
                 messageBundle.getString("viewer.utilityPane.action.dialog.named.title"),
                 JOptionPane.PLAIN_MESSAGE, null,
-                namedActions, null);
+                namedActions, oldValue);
         // finally do all the lifting for adding a new action for the
         // current action
         if (namedActionType != null && currentAnnotationComponent != null) {
-            // create a new instance of the action type
-            NamedAction namedAction = (NamedAction)
-                    ActionFactory.buildAction(
-                            currentAnnotationComponent.getAnnotation().getLibrary(),
-                            ActionFactory.NAMED_ACTION);
-            if (namedAction != null) {
-                // get action and add the new action
-                namedAction.setName(namedAction.getNamedAction());
-                currentAnnotationComponent.getAnnotation().addAction(namedAction);
-                // add the new action to the list.
-                actionListModel.addElement(new ActionEntry(
-                        messageBundle.getString(
-                                "viewer.utilityPane.action.type.namedAction.label"),
-                        namedAction));
+
+            if (currentAnnotationComponent.getAnnotation().getAction() == null) {
+                // create a new instance of the action type
+                NamedAction namedAction = (NamedAction)
+                        ActionFactory.buildAction(
+                                currentAnnotationComponent.getAnnotation().getLibrary(),
+                                ActionFactory.NAMED_ACTION);
+                if (namedAction != null) {
+                    namedAction.setName(namedActionType.getActionName());
+                    currentAnnotationComponent.getAnnotation().addAction(namedAction);
+                    // add the new action to the list.
+                    MessageFormat formatter = new MessageFormat(messageBundle.getString(
+                            "viewer.utilityPane.action.type.namedAction.label"));
+                    actionListModel.addElement(new ActionEntry(
+                            formatter.format(new Object[]{namedAction.getNamedAction()}),
+                            namedAction));
+                    // disable add button.
+                    addAction.setEnabled(false);
+                }
+            } else {
+                NamedAction namedAction = (NamedAction) currentAnnotationComponent.getAnnotation().getAction();
+                namedAction.setName(namedActionType.getActionName());
+                currentAnnotationComponent.getAnnotation().updateAction(namedAction);
+
             }
         }
 
@@ -707,6 +732,14 @@ public class ActionsPanel extends AnnotationPanelAdapter
             super();
             this.actionName = actionName;
             this.title = title;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Name) {
+                return actionName.equals((Name) obj);
+            }
+            return super.equals(obj);
         }
 
         int getActionType() {
