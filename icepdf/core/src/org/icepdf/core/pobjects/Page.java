@@ -227,7 +227,7 @@ public class Page extends Dictionary {
                 if (Thread.currentThread().isInterrupted()) {
                     throw new InterruptedException("Page Content initialization thread interrupted");
                 }
-                Object tmp = library.getObject((Reference) conts.get(i));
+                Object tmp = library.getObject(conts.get(i));
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
                     // prune any zero length streams,
