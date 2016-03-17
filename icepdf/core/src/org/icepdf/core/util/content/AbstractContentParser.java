@@ -581,6 +581,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 }
                 shapes.add(clipDrawCmd);
                 // 4.) Paint the graphics objects in font stream.
+                setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
+                        graphicState.getFillAlpha());
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
                 // apply the original pre draw blending mode.
@@ -646,7 +648,7 @@ public abstract class AbstractContentParser implements ContentParser {
                     // avoid loading the image if oc is not visible
                     // may have to add this logic to the stack for dynamic content
                     // if we get an example.
-                    if (!optionalContent.isVisible(oc)) {
+                    if (!optionalContent.isEmptyDefinition() && !optionalContent.isVisible(oc)) {
                         return graphicState;
                     }
                 }
@@ -1850,7 +1852,7 @@ public abstract class AbstractContentParser implements ContentParser {
                     // draw partial fill colour
                     if (tilingPattern.getPaintType() ==
                             TilingPattern.PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-                        shapes.add(new ColorDrawCmd(tilingPattern.getUnColored()));
+                        shapes.add(new ColorDrawCmd(Color.WHITE));
                     } else {
                         shapes.add(new ColorDrawCmd(tilingPattern.getFirstColor()));
                     }
