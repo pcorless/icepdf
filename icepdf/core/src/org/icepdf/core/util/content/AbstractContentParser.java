@@ -648,7 +648,7 @@ public abstract class AbstractContentParser implements ContentParser {
                     // avoid loading the image if oc is not visible
                     // may have to add this logic to the stack for dynamic content
                     // if we get an example.
-                    if (!optionalContent.isVisible(oc)) {
+                    if (!optionalContent.isEmptyDefinition() && !optionalContent.isVisible(oc)) {
                         return graphicState;
                     }
                 }
