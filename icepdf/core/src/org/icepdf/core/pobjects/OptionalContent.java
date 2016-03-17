@@ -99,6 +99,10 @@ public class OptionalContent extends Dictionary {
 
     private List<Object> rbGroups;
 
+    // object was created but the PDF doesn't actually have optional content definition and optional content
+    // properties may no longer be valid.
+    private boolean emptyDefinition;
+
     public OptionalContent(Library l, HashMap h) {
         super(l, h);
         groups = new HashMap<Reference, OptionalContentGroup>();
@@ -109,6 +113,10 @@ public class OptionalContent extends Dictionary {
     public void init() {
         if (inited) {
             return;
+        }
+        // test of a valid definition.
+        if (entries == null || entries.size() == 0) {
+            emptyDefinition = true;
         }
 
         // build out the optionContentGroups from the OCGs array, array should always
@@ -295,5 +303,9 @@ public class OptionalContent extends Dictionary {
 
     public OptionalContentGroup getOCGs(Reference reference) {
         return groups.get(reference);
+    }
+
+    public boolean isEmptyDefinition() {
+        return emptyDefinition;
     }
 }
