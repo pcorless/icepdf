@@ -581,6 +581,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 }
                 shapes.add(clipDrawCmd);
                 // 4.) Paint the graphics objects in font stream.
+                setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
+                        graphicState.getFillAlpha());
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
                 // apply the original pre draw blending mode.
