@@ -84,6 +84,10 @@ public class WordText extends AbstractText implements TextSelect {
         glyphs = new ArrayList<GlyphText>(4);
     }
 
+    public int size() {
+        return text.length();
+    }
+
     public boolean isWhiteSpace() {
         return isWhiteSpace;
     }
@@ -97,11 +101,13 @@ public class WordText extends AbstractText implements TextSelect {
             // last added glyph
             Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
             float spriteXCoord = sprite.getTextExtractionBounds().x;
+            float spriteYCoord = sprite.getTextExtractionBounds().y;
             // spaces can be negative if we have a LTR layout.
             float space = Math.abs(spriteXCoord - (bounds1.x + bounds1.width));
             // half previous glyph width will be used to determine a space
             float tolerance = bounds1.width / spaceFraction;
-            return space > tolerance;
+            // checking the y coordinate as well as any shift normall means a new work, this might need to get fuzzy later.
+            return space > tolerance || spriteYCoord != bounds1.y;
         } else {
             return false;
         }

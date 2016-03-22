@@ -880,6 +880,9 @@ public abstract class AbstractContentParser implements ContentParser {
             textMetrics.setYstart(false);
         }
 
+        // update the extract text
+        pageText.setTextTransform(new AffineTransform(tm));
+
     }
 
     protected static void consume_T_star(GraphicsState graphicState,
@@ -1947,7 +1950,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static void setAlpha(Shapes shapes, GraphicsState graphicsState, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes but only
         // if it hash changed.
-        if (shapes.getAlpha() != alpha || shapes.getRule() != rule) {
+        if (shapes != null && (shapes.getAlpha() != alpha || shapes.getRule() != rule)) {
             AlphaComposite alphaComposite =
                     AlphaComposite.getInstance(rule,
                             alpha);
