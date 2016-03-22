@@ -60,6 +60,8 @@ public class PageText implements TextSelect {
     private ArrayList<LineText> pageLines;
     private ArrayList<LineText> sortedPageLines;
 
+    private AffineTransform previousTextTransform;
+
     private LinkedHashMap<OptionalContents, PageText> optionalPageLines;
 
     public PageText() {
@@ -186,6 +188,16 @@ public class PageText implements TextSelect {
         if (pageLines != null) {
             this.pageLines.addAll(pageLines);
         }
+    }
+
+    public void setTextTransform(AffineTransform affineTransform){
+        // look to see if we have shear and thus text that has been rotated, if so we insert a page break
+        if (previousTextTransform != null && currentLine != null){
+            if (previousTextTransform.getShearX() != affineTransform.getShearX() ||
+                    previousTextTransform.getShearY() != affineTransform.getShearY())
+            currentLine.newWord();
+        }
+        previousTextTransform = affineTransform;
     }
 
     public void addGlyph(GlyphText glyphText, LinkedList<OptionalContents> oCGs) {

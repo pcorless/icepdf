@@ -880,6 +880,9 @@ public abstract class AbstractContentParser implements ContentParser {
             textMetrics.setYstart(false);
         }
 
+        // update the extract text
+        pageText.setTextTransform(new AffineTransform(tm));
+
     }
 
     protected static void consume_T_star(GraphicsState graphicState,
