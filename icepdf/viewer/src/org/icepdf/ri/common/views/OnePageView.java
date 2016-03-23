@@ -47,7 +47,7 @@ public class OnePageView extends AbstractDocumentView {
 
     public OnePageView(DocumentViewController documentDocumentViewController,
                        JScrollPane documentScrollpane,
-                       DocumentViewModelImpl documentViewModel) {
+                       DocumentViewModel documentViewModel) {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
 

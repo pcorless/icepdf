@@ -51,7 +51,7 @@ public class TwoPageView extends AbstractDocumentView {
 
     public TwoPageView(DocumentViewController documentDocumentViewController,
                        JScrollPane documentScrollpane,
-                       DocumentViewModelImpl documentViewModel,
+                       DocumentViewModel documentViewModel,
                        final int viewAlignment) {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
