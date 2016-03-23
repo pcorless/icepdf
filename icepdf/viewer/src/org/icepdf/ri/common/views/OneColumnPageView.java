@@ -49,7 +49,7 @@ public class OneColumnPageView extends AbstractDocumentView {
 
     public OneColumnPageView(DocumentViewController documentDocumentViewController,
                              JScrollPane documentScrollpane,
-                             DocumentViewModelImpl documentViewModel) {
+                             DocumentViewModel documentViewModel) {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
 

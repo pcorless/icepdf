@@ -51,7 +51,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
 
     public TwoColumnPageView(DocumentViewController documentDocumentViewController,
                              JScrollPane documentScrollpane,
-                             DocumentViewModelImpl documentViewModel,
+                             DocumentViewModel documentViewModel,
                              final int viewAlignment) {
 
         super(documentDocumentViewController, documentScrollpane, documentViewModel);
