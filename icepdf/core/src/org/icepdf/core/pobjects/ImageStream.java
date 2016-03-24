@@ -86,6 +86,8 @@ public class ImageStream extends Stream {
 
     private static boolean isLevigoJBIG2ImageReaderClass;
 
+    private static boolean CHECK_PARENT_BLACK_IS_1;
+
     static {
         // define alternate page size ration w/h, default Legal.
         pageRatio =
@@ -102,6 +104,8 @@ public class ImageStream extends Stream {
         } catch (ClassNotFoundException e) {
             logger.info("Levigo JBIG2 image library was not found on classpath");
         }
+
+        CHECK_PARENT_BLACK_IS_1 = Defs.booleanProperty("org.icepdf.core.ccittfax.checkParentBlackIs1", false);
     }
 
     private int width;
@@ -857,7 +861,7 @@ public class ImageStream extends Stream {
         // default value is always false
         boolean blackIs1 = getBlackIs1(library, decodeParms);
         // double check for blackIs1 in the main dictionary.
-        if (!blackIs1) {
+        if (!blackIs1 && CHECK_PARENT_BLACK_IS_1) {
             blackIs1 = getBlackIs1(library, entries);
         }
         // get value of key if it is available.
