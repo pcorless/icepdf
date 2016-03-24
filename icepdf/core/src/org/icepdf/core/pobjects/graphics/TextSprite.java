@@ -40,8 +40,11 @@ import java.util.ArrayList;
 public class TextSprite {
 
     // ability to turn off optimized drawing for text.
-    private final static boolean OPTIMIZED_DRAWING_ENABLED =
+    private static boolean optimizedDrawingEnabled =
             Defs.booleanProperty("org.icepdf.core.text.optimized", true);
+
+    private final static boolean OPTIMIZED_DRAWING_TYPE_3_ENABLED =
+            Defs.booleanProperty("org.icepdf.core.text.optimized.type3", true);
 
     // child GlyphText objects
     private ArrayList<GlyphText> glyphTexts;
@@ -64,8 +67,10 @@ public class TextSprite {
     private String fontName;
     private int fontSize;
 
+    private static final String TYPE_3 = "Type3";
+
     /**
-     * <p>Creates a new TextSprit object.</p>
+     * <p>Creates a new TextSprite object.</p>
      *
      * @param font font used when painting glyphs.
      * @param contentLength length of text content.
@@ -76,6 +81,9 @@ public class TextSprite {
         this.graphicStateTransform = graphicStateTransform;
         this.tmTransform = tmTransform;
         this.font = font;
+        if (optimizedDrawingEnabled && !OPTIMIZED_DRAWING_TYPE_3_ENABLED) {
+            optimizedDrawingEnabled = !(font.getFormat() != null && font.getFormat().equals(TYPE_3));
+        }
         bounds = new Rectangle2D.Float();
     }
 
@@ -339,7 +347,7 @@ public class TextSprite {
      */
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
-        return !OPTIMIZED_DRAWING_ENABLED ||
+        return !(optimizedDrawingEnabled) ||
                 (shape != null && shape.intersects(bounds));
     }
 }
