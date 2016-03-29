@@ -1848,8 +1848,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 // tiles nee to be 1x1 or larger to paint so we'll resort to using the
                 // first pattern colour or the uncolour.
                 if (tilingPattern.getbBoxMod() != null &&
-                        (tilingPattern.getbBoxMod().getWidth() >= 1 ||
-                                tilingPattern.getbBoxMod().getHeight() >= 1)) {
+                        (tilingPattern.getbBoxMod().getWidth() >= 0.5 ||
+                                tilingPattern.getbBoxMod().getHeight() >= 0.5)) {
                     shapes.add(new TilingPatternDrawCmd(tilingPattern));
                 } else {
                     // draw partial fill colour
@@ -1950,7 +1950,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static void setAlpha(Shapes shapes, GraphicsState graphicsState, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes but only
         // if it hash changed.
-        if (shapes.getAlpha() != alpha || shapes.getRule() != rule) {
+        if (shapes != null && (shapes.getAlpha() != alpha || shapes.getRule() != rule)) {
             AlphaComposite alphaComposite =
                     AlphaComposite.getInstance(rule,
                             alpha);
