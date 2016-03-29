@@ -183,6 +183,7 @@ public class TilingPattern extends Stream implements Pattern {
 
     public TilingPattern(Stream stream) {
         super(stream.getLibrary(), stream.getEntries(), stream.getRawBytes());
+        pObjectReference = stream.getPObjectReference();
         initiParams();
     }
 
