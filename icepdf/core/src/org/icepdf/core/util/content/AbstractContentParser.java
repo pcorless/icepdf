@@ -692,8 +692,17 @@ public abstract class AbstractContentParser implements ContentParser {
                 Object tmp;
                 for (int i = 0; i < sz; i++) {
                     tmp = dashVector.get(i);
+                    float dash;
                     if (tmp != null && tmp instanceof Number) {
-                        dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
+                        dash = Math.abs(((Number) dashVector.get(i)).floatValue());
+                        // java has a hard time with painting dash array with values < 1.
+                        // we have a few examples where converting the value to user space
+                        // correct the problem PDF-966.
+                        if (dash < 0.5f){
+                            dash = dash * 1000;
+                        }
+                        dashArray[i] = dash;
+
                     }
                 }
                 // corner case check to see if the dash array contains a first element
