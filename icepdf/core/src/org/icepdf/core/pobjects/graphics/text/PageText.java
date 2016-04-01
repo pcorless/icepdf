@@ -194,9 +194,13 @@ public class PageText implements TextSelect {
         // look to see if we have shear and thus text that has been rotated, if so we insert a page break
         if (previousTextTransform != null && currentLine != null) {
             // hard round as we're just looking for a 90 degree shift in writing direction.
-            if ((int) previousTextTransform.getShearX() != (int) affineTransform.getShearX() ||
-                    (int) previousTextTransform.getShearY() != (int) affineTransform.getShearY())
-                currentLine.newWord();
+            // if found we clear the current work so we can start a new word.
+            if ((previousTextTransform.getShearX() < 0 && (int) affineTransform.getShearX() > 0) ||
+                    (previousTextTransform.getShearX() > 0 && (int) affineTransform.getShearX() < 0) ||
+                    (previousTextTransform.getShearY() < 0 && (int) affineTransform.getShearY() > 0) ||
+                    (previousTextTransform.getShearY() > 0 && (int) affineTransform.getShearY() < 0)) {
+                currentLine.clearCurrentWord();
+            }
         }
         previousTextTransform = affineTransform;
     }
