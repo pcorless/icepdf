@@ -1032,16 +1032,18 @@ public class SwingController
                 // check to see that at least one of the files is a PDF
                 NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
                 java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
-                Library library = catalog.getLibrary();
                 boolean found = false;
-                // check to see if at least one file is a PDF.
-                for (int i = 0, max = filePairs.size(); i < max; i += 2) {
-                    // get the name and document for
-                    // file name and file specification pairs.
-                    String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
-                    if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
-                        found = true;
-                        break;
+                if (filePairs != null) {
+                    Library library = catalog.getLibrary();
+                    // check to see if at least one file is a PDF.
+                    for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                        // get the name and document for
+                        // file name and file specification pairs.
+                        String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
+                        if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
                 return found;

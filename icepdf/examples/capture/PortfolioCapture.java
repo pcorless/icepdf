@@ -68,31 +68,33 @@ public class PortfolioCapture {
                 if (embeddedFilesNameTree.getRoot() != null) {
                     Library library = document.getCatalog().getLibrary();
                     List filePairs = embeddedFilesNameTree.getNamesAndValues();
-                    List<Callable<Void>> callables =
-                            new ArrayList<Callable<Void>>(filePairs.size() / 2);
-                    // queue up the embedded documents
-                    for (int i = 0, max = filePairs.size(); i < max; i += 2) {
-                        // file name and file specification pairs.
-                        String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
-                        HashMap tmp = (HashMap) library.getObject((Reference) filePairs.get(i + 1));
+                    if (filePairs != null) {
+                        List<Callable<Void>> callables =
+                                new ArrayList<Callable<Void>>(filePairs.size() / 2);
+                        // queue up the embedded documents
+                        for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                            // file name and file specification pairs.
+                            String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
+                            HashMap tmp = (HashMap) library.getObject((Reference) filePairs.get(i + 1));
 
-                        // file specification has the document stream
-                        FileSpecification fileSpec = new FileSpecification(library, tmp);
-                        tmp = fileSpec.getEmbeddedFileDictionary();
+                            // file specification has the document stream
+                            FileSpecification fileSpec = new FileSpecification(library, tmp);
+                            tmp = fileSpec.getEmbeddedFileDictionary();
 
-                        // create the stream instance from the embedded file streams File entry.
-                        Reference fileRef = (Reference) tmp.get(FileSpecification.F_KEY);
-                        Stream fileStream = (Stream) library.getObject(fileRef);
-                        InputStream fileInputStream = fileStream.getDecodedByteArrayInputStream();
+                            // create the stream instance from the embedded file streams File entry.
+                            Reference fileRef = (Reference) tmp.get(FileSpecification.F_KEY);
+                            Stream fileStream = (Stream) library.getObject(fileRef);
+                            InputStream fileInputStream = fileStream.getDecodedByteArrayInputStream();
 
-                        // queue the embedded document for page capture
-                        System.out.println("Loading embedded file: " + fileName);
-                        Document embeddedDocument = new Document();
-                        embeddedDocument.setInputStream(fileInputStream, fileName);
-                        callables.add(new CaptureDocument(embeddedDocument, i, fileName));
+                            // queue the embedded document for page capture
+                            System.out.println("Loading embedded file: " + fileName);
+                            Document embeddedDocument = new Document();
+                            embeddedDocument.setInputStream(fileInputStream, fileName);
+                            callables.add(new CaptureDocument(embeddedDocument, i, fileName));
+                        }
+                        executorService.invokeAll(callables);
+                        executorService.submit(new DocumentCloser(document)).get();
                     }
-                    executorService.invokeAll(callables);
-                    executorService.submit(new DocumentCloser(document)).get();
                 }
             }
             // else we can do document capture as per usual.
