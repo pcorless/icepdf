@@ -193,8 +193,9 @@ public class PageText implements TextSelect {
     public void setTextTransform(AffineTransform affineTransform){
         // look to see if we have shear and thus text that has been rotated, if so we insert a page break
         if (previousTextTransform != null && currentLine != null){
-            if (previousTextTransform.getShearX() != affineTransform.getShearX() ||
-                    previousTextTransform.getShearY() != affineTransform.getShearY())
+            // hard round as we're just looking for a 90 degree shift in writing direction.
+            if ((int)previousTextTransform.getShearX() != (int)affineTransform.getShearX() ||
+                    (int)previousTextTransform.getShearY() != (int)affineTransform.getShearY())
             currentLine.newWord();
         }
         previousTextTransform = affineTransform;
@@ -357,9 +358,13 @@ public class PageText implements TextSelect {
                     // break the words into lines on every change of y
                     double lastY = Math.round(words.get(0).getTextExtractionBounds().y);
                     int start = 0, end = 0;
-                    double currentY, diff;
+                    double currentY = 0, diff;
                     for (WordText word : words) {
-                        currentY = Math.round(word.getTextExtractionBounds().getY());
+                        try {
+                            currentY = Math.round(word.getTextExtractionBounds().getY());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                         // little bit of tolerance for detecting a line,  basically anything that is
                         // >  then half the current word height / 2 will be marked as a break.
                         // this works well enough sub and super script and inconsistencies
