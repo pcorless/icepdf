@@ -409,7 +409,8 @@ public class ImageStream extends Stream {
                     data);
         }
         if (decodedImage != null) {
-            //        ImageUtility.displayImage(decodedImage, pObjectReference.toString());
+//            ImageUtility.displayImage(decodedImage, pObjectReference.toString());
+//            ImageUtility.writeImage(decodedImage, pObjectReference.toString(), "D:\\log\\");
             if (isImageMask) {
                 decodedImage = ImageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
             }
@@ -632,9 +633,11 @@ public class ImageStream extends Stream {
                         tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                     }
                 } else {
-                    if (wr.getNumBands() == 1) {
+                    if (colourSpace instanceof Indexed){
+                        tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
+                    } else if (wr.getNumBands() == 1) {
                         tmpImage = ImageUtility.makeGrayBufferedImage(wr);
-                    } else {
+                    }else {
                         tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
                     }
                 }

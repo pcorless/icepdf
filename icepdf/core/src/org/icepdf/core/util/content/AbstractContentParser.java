@@ -585,17 +585,13 @@ public abstract class AbstractContentParser implements ContentParser {
                         graphicState.getFillAlpha());
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
-                // apply the original pre draw blending mode.
-                if (formXObject.getExtGState() != null && formXObject.getExtGState().getBlendingMode() != null) {
-                    shapes.add(new BlendCompositeDrawCmd(formXObject.getExtGState().getBlendingMode(),
-                            formXObject.getExtGState().getNonStrokingAlphConstant()));
-                }
                 // If we have a transparency group we paint it
                 // slightly different then a regular xObject as we
                 // need to capture the alpha which is only possible
                 // by paint the xObject to an image.
                 if (!disableTransparencyGroups &&
-                        (formXObject.getBBox().getWidth() < Short.MAX_VALUE && formXObject.getBBox().getHeight() < Short.MAX_VALUE
+                        ((formXObject.getBBox().getWidth() < Short.MAX_VALUE && formXObject.getBBox().getWidth() > 1) &&
+                                (formXObject.getBBox().getHeight() < Short.MAX_VALUE && formXObject.getBBox().getHeight() > 1)
                                 && (formXObject.getExtGState() != null &&
                                 (formXObject.getExtGState().getSMask() != null || formXObject.getExtGState().getBlendingMode() != null
                                         || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
@@ -610,10 +606,6 @@ public abstract class AbstractContentParser implements ContentParser {
                 // by just adding the objects to the shapes stack.
                 else {
                     shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
-                    if (graphicState.getExtGState() != null) {
-                        // update the parent alpha cache, so we can minimize the number of alpha's that are applied.
-                        shapes.setAlpha(formXObject.getExtGState().getNonStrokingAlphConstant());
-                    }
                 }
                 // update text sprites with geometric path state
                 if (formXObject.getShapes() != null &&
@@ -638,7 +630,6 @@ public abstract class AbstractContentParser implements ContentParser {
         }
         // Image XObject
         else if (viewParse) {
-            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
             ImageStream imageStream = (ImageStream) xObject;
             if (imageStream != null) {
                 Object oc = imageStream.getObject(OptionalContent.OC_KEY);
@@ -664,8 +655,8 @@ public abstract class AbstractContentParser implements ContentParser {
                             new AffineTransform(graphicState.getCTM());
                     graphicState.scale(1, -1);
                     graphicState.translate(0, -1);
-                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
+//                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
+//                            graphicState.getFillAlpha());
                     // add the image
                     shapes.add(new ImageDrawCmd(imageReference));
                     graphicState.set(af);
@@ -784,6 +775,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 float alpha = graphicState.getExtGState().getNonStrokingAlphConstant();
                 shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(),
                         alpha));
+            }else{
+                setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
             }
         }
     }
@@ -937,7 +930,7 @@ public abstract class AbstractContentParser implements ContentParser {
         graphicState.translate(-textMetrics.getShift(), graphicState.getTextState().leading);
 
         // apply transparency
-        setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+//        setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
 
         textMetrics.setShift(0);
         textMetrics.setPreviousAdvance(0);
@@ -1764,7 +1757,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 shapes.add(new DrawDrawCmd());
             }
         } else {
-            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getStrokeAlpha());
+//            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getStrokeAlpha());
             shapes.add(new ColorDrawCmd(graphicState.getStrokeColor()));
             shapes.add(new ShapeDrawCmd(geometricPath));
             shapes.add(new DrawDrawCmd());
@@ -1831,9 +1824,10 @@ public abstract class AbstractContentParser implements ContentParser {
         // composite to source.
         else if (graphicState.isKnockOut()) {
             setAlpha(shapes, graphicState, AlphaComposite.SRC, graphicState.getFillAlpha());
-        } else {
-            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
+//        else {
+//            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+//        }
 
         // found a PatternColor
         if (graphicState.getFillColorSpace() instanceof PatternColor) {
