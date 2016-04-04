@@ -141,6 +141,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
      * SignerInfos ::= SET OF SignerInfo
      */
+    @SuppressWarnings("unchecked")
     protected void parseSignerData(ASN1Sequence signedData, byte[] cmsData) throws SignatureIntegrityException {
         // digest algorithms ID, not currently using them but useful for debug.
         if (logger.isLoggable(Level.FINER)) {
@@ -277,6 +278,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private ASN1Sequence parseCertificateData(byte[] cmsData, ASN1Sequence signedData) throws SignatureIntegrityException {
 
         // Next two entries are optional.

@@ -20,6 +20,8 @@ package org.icepdf.core.pobjects.acroform.signature.exceptions;
  */
 public class SelfSignedVerificationException extends Exception {
 
+    private static final long serialVersionUID = 9191882237967173026L;
+
     public SelfSignedVerificationException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -20,6 +20,9 @@ package org.icepdf.core.pobjects.acroform.signature.exceptions;
  */
 public class SignatureIntegrityException extends Exception {
 
+
+    private static final long serialVersionUID = 6493354736393787443L;
+
     public SignatureIntegrityException(String message) {
         super(message);
     }

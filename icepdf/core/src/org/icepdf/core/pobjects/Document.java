@@ -817,7 +817,9 @@ public class Document {
      * @param documentTrailer document trailer
      * @return Whether or not a SecurityManager was made, and set in the Library
      * @throws PDFSecurityException if there is an issue finding encryption libraries.
+     *
      */
+    @SuppressWarnings("unchecked")
     private boolean makeSecurityManager(PTrailer documentTrailer) throws PDFSecurityException {
         /**
          * Before a security manager can be created or needs to be created
@@ -827,17 +829,17 @@ public class Document {
          */
         boolean madeSecurityManager = false;
         HashMap<Object, Object> encryptDictionary = documentTrailer.getEncrypt();
-        List fileID = documentTrailer.getID();
+        List<StringObject> fileID = (List<StringObject>) documentTrailer.getID();
         // check for a missing file ID.
         if (fileID == null) {
             // we have a couple malformed documents that don't specify a FILE ID.
             // but proving two empty string allows the document to be decrypted.
-            fileID = new ArrayList(2);
+            fileID = new ArrayList<StringObject>(2);
             fileID.add(new LiteralStringObject(""));
             fileID.add(new LiteralStringObject(""));
         }
 
-        if (encryptDictionary != null && fileID != null) {
+        if (encryptDictionary != null) {
             // create new security manager
             library.setSecurityManager(new SecurityManager(
                     library, encryptDictionary, fileID));
@@ -1109,7 +1111,7 @@ public class Document {
                 Object[] argValues = {this, out, documentLength};
                 Method method = incrementalUpdaterClass.getDeclaredMethod(
                         "appendIncrementalUpdate",
-                        new Class[]{Document.class, OutputStream.class, Long.TYPE});
+                        Document.class, OutputStream.class, Long.TYPE);
                 long appendedLength = (Long) method.invoke(null, argValues);
                 return documentLength + appendedLength;
             } catch (Throwable e) {

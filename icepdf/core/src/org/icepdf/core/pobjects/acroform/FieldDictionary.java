@@ -211,13 +211,14 @@ public class FieldDictionary extends Dictionary {
      *
      * @return list of child elements.
      */
+    @SuppressWarnings("unchecked")
     public ArrayList<Object> getKids() {
         // find some kids.
         if (kids == null) {
             Object value = library.getObject(entries, KIDS_KEY);
             if (value != null && value instanceof List) {
                 List<Reference> children = (List<Reference>) value;
-                kids = new ArrayList(children.size());
+                kids = new ArrayList<Object>(children.size());
                 Object tmp;
                 for (Reference aChildren : children) {
                     tmp = library.getObject(aChildren);

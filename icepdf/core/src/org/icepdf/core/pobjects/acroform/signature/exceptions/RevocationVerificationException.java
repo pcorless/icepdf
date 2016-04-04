@@ -21,6 +21,8 @@ package org.icepdf.core.
  */
 public class RevocationVerificationException extends Exception {
 
+    private static final long serialVersionUID = 2725609592081062923L;
+
     public RevocationVerificationException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -93,6 +93,7 @@ public class FieldMDPTransferParam extends Dictionary implements TransformParams
      *
      * @return array of text string,  null if not set.
      */
+    @SuppressWarnings("unchecked")
     public ArrayList<Name> getFields() {
         return (ArrayList) library.getArray(entries, FIELDS_KEY);
     }

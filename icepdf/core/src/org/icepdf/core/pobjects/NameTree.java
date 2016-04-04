@@ -65,6 +65,7 @@ public class NameTree extends Dictionary {
      *
      * @return list of all name and corresponding references.
      */
+    @SuppressWarnings("unchecked")
     public List getNamesAndValues() {
         if (root != null) {
             ArrayList<Object> namesAndValues = new ArrayList<Object>();
@@ -91,6 +92,7 @@ public class NameTree extends Dictionary {
      * @param nameNode Name node to check for names and nodes.
      * @return found names and values for the given node.
      */
+    @SuppressWarnings("unchecked")
     private List getNamesAndValues(NameNode nameNode) {
         // leaf node.
         if (nameNode.getNamesAndValues() != null) {

@@ -23,6 +23,8 @@ package org.icepdf.core.pobjects.acroform.signature.exceptions;
  */
 public class CertificateVerificationException extends Exception {
 
+    private static final long serialVersionUID = 1472112983862509700L;
+
     public CertificateVerificationException(String message, Throwable cause) {
         super(message, cause);
     }

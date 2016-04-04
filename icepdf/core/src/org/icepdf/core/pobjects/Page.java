@@ -265,6 +265,7 @@ public class Page extends Dictionary {
      *
      * @return list of a pages annotation reference list.
      */
+    @SuppressWarnings("unchecked")
     public ArrayList<Reference> getAnnotationReferences() {
         Object annots = library.getObject(entries, ANNOTS_KEY);
         if (annots != null && annots instanceof ArrayList) {

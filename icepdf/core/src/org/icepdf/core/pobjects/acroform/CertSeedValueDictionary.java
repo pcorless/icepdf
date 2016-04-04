@@ -172,6 +172,7 @@ public class CertSeedValueDictionary extends Dictionary {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public List<HashMap> getSubjectDn() {
         Object tmp = library.getArray(entries, SUBJECT_DN_KEY);
         if (tmp != null) {
@@ -181,6 +182,7 @@ public class CertSeedValueDictionary extends Dictionary {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public List<String> getKeyUsage() {
         Object tmp = library.getArray(entries, KEY_USAGE_KEY);
         if (tmp != null) {
