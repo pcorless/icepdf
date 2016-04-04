@@ -41,6 +41,7 @@ import java.util.logging.Logger;
  *
  * @since 6.1
  */
+@SuppressWarnings("serial")
 public class SignatureFieldComponent extends WidgetAnnotationComponent {
 
     private static final Logger logger =

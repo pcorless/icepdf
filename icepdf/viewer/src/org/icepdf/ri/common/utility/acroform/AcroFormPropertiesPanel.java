@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  * component is selected the panel is enabled and the respective properties panels are made visible and populated
  * with the widgets properties.
  */
+@SuppressWarnings("serial")
 public class AcroFormPropertiesPanel extends AnnotationPanelAdapter {
 
     private static final Logger logger =

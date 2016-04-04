@@ -26,6 +26,7 @@ import java.awt.*;
 /**
  * Properties pane for the editing of the choice widget annotation.
  */
+@SuppressWarnings("serial")
 public class ChoiceWidgetAnnotationPanel extends AnnotationPanelAdapter {
 
 

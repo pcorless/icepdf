@@ -27,10 +27,10 @@ import java.util.ResourceBundle;
 /**
  * SignatureValidationPanel shows a summary of the the validation results.
  */
+@SuppressWarnings("serial")
 public class SignatureValidationPanel extends JPanel {
     // layouts constraint
     private GridBagConstraints constraints;
-
 
     public SignatureValidationPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
                                     SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator,

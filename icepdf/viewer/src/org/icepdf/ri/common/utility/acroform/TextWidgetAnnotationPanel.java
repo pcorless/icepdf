@@ -26,8 +26,8 @@ import java.awt.*;
 /**
  * Properties pane for the editing of the text widget annotations.
  */
+@SuppressWarnings("serial")
 public class TextWidgetAnnotationPanel extends AnnotationPanelAdapter {
-
 
     public TextWidgetAnnotationPanel(SwingController controller) {
         super(controller);

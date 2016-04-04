@@ -26,6 +26,7 @@ import java.awt.*;
 /**
  * Properties pane for the editing of the signature widget annotations.
  */
+@SuppressWarnings("serial")
 public class SignatureWidgetAnnotationPanel extends AnnotationPanelAdapter {
 
 

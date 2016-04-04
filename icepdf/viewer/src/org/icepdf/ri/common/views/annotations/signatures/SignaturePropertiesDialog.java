@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 /**
  * The SignaturePropertiesDialog shows a signatures basic information; validation, signer info and a summary panel.
  */
+@SuppressWarnings("serial")
 public class SignaturePropertiesDialog extends EscapeJDialog {
 
     private static final Logger logger =

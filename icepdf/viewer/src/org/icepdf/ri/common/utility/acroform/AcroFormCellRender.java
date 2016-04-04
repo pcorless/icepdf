@@ -29,6 +29,7 @@ import java.awt.*;
 /**
  * Renders a form elements icons that represent the given element.
  */
+@SuppressWarnings("serial")
 public class AcroFormCellRender extends DefaultTreeCellRenderer {
 
     /**

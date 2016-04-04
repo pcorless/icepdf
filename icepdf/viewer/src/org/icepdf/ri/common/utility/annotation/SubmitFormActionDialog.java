@@ -34,6 +34,7 @@ import java.util.HashMap;
  * SubmitFormActionDialog builds a valid Submit-Form Action which at the very least contains a URL but may also
  * include a list of form elements to submit.
  */
+@SuppressWarnings("serial")
 public class SubmitFormActionDialog extends AbstractFormActionDialog {
 
     // submit fields

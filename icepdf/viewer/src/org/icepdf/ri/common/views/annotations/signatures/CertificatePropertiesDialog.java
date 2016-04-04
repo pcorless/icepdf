@@ -46,6 +46,7 @@ import java.util.ResourceBundle;
  * CertificatePropertiesDialog takes a certificate chain and displays each certificate in a summery view. Certificates
  * can be easily viewed and selected via a jTree component hierarchy.
  */
+@SuppressWarnings("serial")
 public class CertificatePropertiesDialog extends EscapeJDialog {
 
     protected static ResourceBundle messageBundle;

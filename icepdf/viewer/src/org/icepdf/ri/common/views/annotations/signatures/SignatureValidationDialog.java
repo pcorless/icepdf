@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  * The SignatureValidationDialog shows a summary of the validation status of a signature.  This
  * is very similar to the signature tree view in the Signature utility tab.
  */
+@SuppressWarnings("serial")
 public class SignatureValidationDialog extends EscapeJDialog {
 
     private static final Logger logger =

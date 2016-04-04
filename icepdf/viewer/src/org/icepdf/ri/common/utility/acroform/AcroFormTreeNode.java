@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  * AcroformTreeNode is a simple wrapper used to extract the correct DefaultMutableTreeNode label for the the
  * given FieldDictionary implementation.
  */
+@SuppressWarnings("serial")
 public class AcroFormTreeNode extends DefaultMutableTreeNode {
 
     private static final Logger logger =

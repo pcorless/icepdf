@@ -22,6 +22,7 @@ import java.util.logging.Logger;
  * Represent a signature property tree node.  This object is used by the SignatureCellRender to make sure
  * properties aren't painted with an icon.
  */
+@SuppressWarnings("serial")
 public class SigPropertyTreeNode extends DefaultMutableTreeNode {
 
     private static final Logger logger =

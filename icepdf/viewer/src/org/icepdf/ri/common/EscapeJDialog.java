@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 /**
  * Base JDialog implementation that sets up an escape key listener which will close the the dialog.
  */
+@SuppressWarnings("serial")
 public class EscapeJDialog extends JDialog {
 
     public EscapeJDialog() {

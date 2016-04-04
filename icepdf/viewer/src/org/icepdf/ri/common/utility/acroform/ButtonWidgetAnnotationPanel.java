@@ -26,6 +26,7 @@ import java.awt.*;
 /**
  * Properties pane for the editing of the button widget annotation.
  */
+@SuppressWarnings("serial")
 public class ButtonWidgetAnnotationPanel extends AnnotationPanelAdapter {
 
 

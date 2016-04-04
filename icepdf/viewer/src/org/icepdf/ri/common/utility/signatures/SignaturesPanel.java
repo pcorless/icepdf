@@ -48,6 +48,7 @@ import java.util.logging.Logger;
  * The SignaturesPanel lists all the digital signatures in a document as well as the signature fields components
  * that are just placeholders.  SwingWorkers are used to
  */
+@SuppressWarnings("serial")
 public class SignaturesPanel extends JPanel {
 
     private static final Logger logger =

@@ -27,6 +27,7 @@ import java.util.ResourceBundle;
 /**
  * Displays a summary info of the signer properties.
  */
+@SuppressWarnings("serial")
 public class SignerInfoPanel extends JPanel {
     // layouts constraint
     private GridBagConstraints constraints;

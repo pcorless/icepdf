@@ -23,6 +23,7 @@ import java.awt.*;
  * Renders the appropriate root icon for a SignatureTreeNode.  Child elements of SigPropertyTreeNode will
  * have their icon set to null.
  */
+@SuppressWarnings("serial")
 public class SignatureCellRender extends DefaultTreeCellRenderer {
 
     public Component getTreeCellRendererComponent(

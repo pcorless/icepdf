@@ -33,6 +33,7 @@ import java.util.ArrayList;
  * SubmitFormActionDialog builds a valid Submit-Form Action which at the very least contains a URL but may also
  * include a list of form elements to submit.
  */
+@SuppressWarnings("serial")
 public class ResetFormActionDialog extends AbstractFormActionDialog {
 
     public ResetFormActionDialog(SwingController controller,
