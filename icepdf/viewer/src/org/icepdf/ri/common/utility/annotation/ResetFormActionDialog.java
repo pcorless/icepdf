@@ -66,7 +66,7 @@ public class ResetFormActionDialog extends AbstractFormActionDialog {
             int max = excludeIncludedListModel.getSize();
             ArrayList<Object> referenceList = new ArrayList<Object>(max);
             for (int i = 0; i < max; i++) {
-                referenceList.add(excludeIncludedListModel.get(i).getReference());
+                referenceList.add(((FieldItem) excludeIncludedListModel.get(i)).getReference());
             }
             action.setFieldsValue(referenceList);
         }

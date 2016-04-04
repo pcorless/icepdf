@@ -49,7 +49,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
             Logger.getLogger(ActionsPanel.class.toString());
 
     // actionList of action actions
-    private DefaultListModel<ActionEntry> actionListModel;
+    private DefaultListModel actionListModel;
     private JList actionList;
 
     // add, edit, remove buttons.
@@ -347,7 +347,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
      * from the current annotation.
      */
     private void removeAction() {
-        ActionEntry actionEntry = actionListModel.getElementAt(
+        ActionEntry actionEntry = (ActionEntry) actionListModel.getElementAt(
                 actionList.getSelectedIndex());
         org.icepdf.core.pobjects.actions.Action action =
                 actionEntry.getAction();
@@ -606,7 +606,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 TitledBorder.DEFAULT_POSITION));
 
         // create the new list
-        actionListModel = new DefaultListModel<ActionEntry>();
+        actionListModel = new DefaultListModel();
         actionList = new JList(actionListModel);
         actionList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         actionList.setVisibleRowCount(-1);

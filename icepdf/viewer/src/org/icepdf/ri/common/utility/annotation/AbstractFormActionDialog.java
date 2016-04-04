@@ -52,10 +52,10 @@ public abstract class AbstractFormActionDialog extends AnnotationDialogAdapter
     // action properties
     protected JCheckBox excludeFieldsCheckbox;
     // field selection
-    protected JList<FieldItem> fieldList;
-    protected JList<FieldItem> includedList;
-    protected DefaultListModel<FieldItem> fieldListModel;
-    protected DefaultListModel<FieldItem> excludeIncludedListModel;
+    protected JList fieldList;
+    protected JList includedList;
+    protected DefaultListModel fieldListModel;
+    protected DefaultListModel excludeIncludedListModel;
     protected JButton includeFieldButton;
     protected JButton excludeFieldButton;
 
@@ -87,14 +87,14 @@ public abstract class AbstractFormActionDialog extends AnnotationDialogAdapter
             // disposes this dialog
             dispose();
         } else if (e.getSource() == excludeFieldButton) {
-            java.util.List<FieldItem> selectedValues = includedList.getSelectedValuesList();
-            for (FieldItem selected : selectedValues) {
+            Object[] selectedValues = includedList.getSelectedValues();
+            for (Object selected : selectedValues) {
                 excludeIncludedListModel.removeElement(selected);
                 fieldListModel.addElement(selected);
             }
         } else if (e.getSource() == includeFieldButton) {
-            java.util.List<FieldItem> selectedValues = fieldList.getSelectedValuesList();
-            for (FieldItem selected : selectedValues) {
+            Object[] selectedValues = fieldList.getSelectedValues();
+            for (Object selected : selectedValues) {
                 fieldListModel.removeElement(selected);
                 excludeIncludedListModel.addElement(selected);
             }
@@ -151,9 +151,9 @@ public abstract class AbstractFormActionDialog extends AnnotationDialogAdapter
                                     formField.getFieldDictionary().getPartialFieldName());
                             excludeIncludedListModel.addElement(foundFieldItem);
                             // double back and removed any fields values for the field list.
-                            Enumeration<FieldItem> fieldItems = fieldListModel.elements();
+                            Enumeration fieldItems = fieldListModel.elements();
                             while (fieldItems.hasMoreElements()) {
-                                FieldItem tmp = fieldItems.nextElement();
+                                FieldItem tmp = (FieldItem) fieldItems.nextElement();
                                 if (tmp.equals(foundFieldItem)) {
                                     fieldListModel.removeElement(tmp);
                                 }
@@ -223,7 +223,7 @@ public abstract class AbstractFormActionDialog extends AnnotationDialogAdapter
      *
      * @param formNode root form node.
      */
-    private void descendFormTree(Library library, DefaultListModel<FieldItem> listModel, Object formNode) {
+    private void descendFormTree(Library library, DefaultListModel listModel, Object formNode) {
 
         if (formNode instanceof AbstractWidgetAnnotation) {
             AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) formNode;
