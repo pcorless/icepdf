@@ -72,11 +72,10 @@ public class OneColumnPageView extends AbstractDocumentView {
         }
     }
 
-
     private void buildGUI() {
         // add all page components to grid layout panel
         pagesPanel = new JPanel();
-        pagesPanel.setBackground(backgroundColor);
+        pagesPanel.setBackground(BACKGROUND_COLOUR);
         // one column equals single page view continuous
         GridLayout gridLayout = new GridLayout(0, 1, horizontalSpace, verticalSpace);
         pagesPanel.setLayout(gridLayout);
@@ -176,7 +175,7 @@ public class OneColumnPageView extends AbstractDocumentView {
     public void paintComponent(Graphics g) {
         Rectangle clipBounds = g.getClipBounds();
         // paint background gray
-        g.setColor(backgroundColor);
+        g.setColor(BACKGROUND_COLOUR);
         g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
         // paint selection box
         super.paintComponent(g);

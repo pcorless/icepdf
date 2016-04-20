@@ -50,7 +50,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         // handle text selection drags.
         if (documentViewController != null) {
             // update the currently selected box
-            updateSelectionSize(e, pageViewComponent);
+            updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
         }
     }
 
@@ -82,7 +82,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
     public void mouseReleased(MouseEvent e) {
         if (documentViewController != null) {
             // update selection rectangle
-            updateSelectionSize(e, pageViewComponent);
+            updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
             // adjust the starting position of rectToDraw to match the actual
             // view position of the rectangle as the mouseEven position is

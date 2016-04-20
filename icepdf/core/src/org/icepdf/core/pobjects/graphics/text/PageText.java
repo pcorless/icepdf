@@ -235,7 +235,7 @@ public class PageText implements TextSelect {
      * Utility method to normalize text created in a Xform content stream
      * and is only called from the contentParser when parsing 'Do' token.
      *
-     * @param transform do matrix tranform
+     * @param transform do matrix transform
      */
     public void applyXObjectTransform(AffineTransform transform) {
         for (LineText lineText : pageLines) {
@@ -356,9 +356,9 @@ public class PageText implements TextSelect {
                 // all page words will be on one line
                 java.util.List<WordText> words = pageLine.getWords();
                 if (words != null && words.size() > 0) {
-                    if (!preserveColumns) {
-                        Collections.sort(words, new LinePositionComparator());
-                    }
+//                    if (!preserveColumns) {
+//                        Collections.sort(words, new LinePositionComparator());
+//                    }
                     // break the words into lines on every change of y
                     double lastY = Math.round(words.get(0).getTextExtractionBounds().y);
                     int start = 0, end = 0;
@@ -424,6 +424,12 @@ public class PageText implements TextSelect {
                 for (LineText lineText : sortedPageLines) {
                     lineText.getBounds();
                 }
+            }
+
+            // sort the lines
+            if (sortedPageLines.size() > 0 && !preserveColumns) {
+                Collections.sort(sortedPageLines,
+                        new LinePositionComparator());
             }
             // assign back the sorted lines.
             this.sortedPageLines = sortedPageLines;

@@ -166,10 +166,6 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         pageViewComponent.repaint();
     }
 
-    public void paintTool(Graphics g) {
-        paintSelectionBox(g, rectToDraw);
-    }
-
     private ArrayList<Shape> getSelectedTextBounds() {
         Page currentPage = pageViewComponent.getPage();
         ArrayList<Shape> highlightBounds = null;
@@ -228,7 +224,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.
      *
-     * @return transformed bbox.
+     * @return transformed bBox.
      */
     protected Rectangle convertToPageSpace(ArrayList<Shape> bounds,
                                            GeneralPath path) {
@@ -258,7 +254,5 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         path.transform(at);
 
         return tBbox;
-
     }
-
 }
