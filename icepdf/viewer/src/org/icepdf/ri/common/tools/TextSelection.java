@@ -30,7 +30,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -110,7 +109,7 @@ public class TextSelection extends SelectionBoxHandler {
 
             ArrayList<LineText> pageLines = pageText.getPageLines();
             Point2D.Float dragStartLocation = convertMouseToPageSpace(startPoint, pageTransform);
-            glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true);
+            glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, null);
         }
 
         // text selection box.
@@ -164,9 +163,9 @@ public class TextSelection extends SelectionBoxHandler {
     }
 
     public void selection(Point dragPoint, AbstractPageViewComponent pageViewComponent,
-                          boolean isDown, boolean isMovingRight, int selectionPageCount) {
+                          boolean isDown, boolean isMovingRight) {
         if (pageViewComponent != null) {
-            multiLineSelectHandler(pageViewComponent, dragPoint, isDown, isMovingRight, selectionPageCount);
+            multiLineSelectHandler(pageViewComponent, dragPoint, isDown, isMovingRight);
         }
     }
 
@@ -207,6 +206,13 @@ public class TextSelection extends SelectionBoxHandler {
         }
     }
 
+    /**
+     * Paints any text that is selected in the page wrapped by a pageViewComponent.
+     *
+     * @param g                 graphics context to paint to.
+     * @param pageViewComponent page view component to paint selected to on.
+     * @param documentViewModel document model contains view properties such as zoom and rotation.
+     */
     public static void paintSelectedText(Graphics g,
                                          AbstractPageViewComponent pageViewComponent,
                                          DocumentViewModel documentViewModel) {
@@ -264,7 +270,6 @@ public class TextSelection extends SelectionBoxHandler {
                 }
             }
         }
-//        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         gg.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.NORMAL, 1.0f));
         // restore graphics state to where we left it.
         gg.setTransform(prePaintTransform);
@@ -326,8 +331,17 @@ public class TextSelection extends SelectionBoxHandler {
         g.setColor(oldColor);
     }
 
+    /**
+     * Entry point for multiline text selection.  Contains logic for moving from once page to the next which boils
+     * down to defining a start position when a new page is entered.
+     *
+     * @param pageViewComponent page view that is being acted.
+     * @param mouseLocation     current mouse location already normalized to page space. .
+     * @param isDown            general selection trent is down, if false it's up.
+     * @param isMovingRight     general selection trent is right, if alse it's left.
+     */
     protected void multiLineSelectHandler(AbstractPageViewComponent pageViewComponent, Point mouseLocation,
-                                          boolean isDown, boolean isMovingRight, int selectionPageCount) {
+                                          boolean isDown, boolean isMovingRight) {
         Page currentPage = pageViewComponent.getPage();
         selectedCount = 0;
 
@@ -349,7 +363,7 @@ public class TextSelection extends SelectionBoxHandler {
                 ArrayList<LineText> pageLines = pageText.getPageLines();
 
                 Point2D.Float dragEndLocation = convertMouseToPageSpace(mouseLocation, pageTransform);
-                glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, dragEndLocation, isDown);
+                glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, dragEndLocation, isDown, lastGlyphEndLocation);
 
                 // moving to a new page,  so we need to setup the first word.
                 if (glyphStartLocation == null) {
@@ -362,14 +376,14 @@ public class TextSelection extends SelectionBoxHandler {
                 }
                 // normal page selection,  fill in the the highlight between start and end.
                 if (glyphStartLocation != null && glyphEndLocation != null) {
-                    GlyphLocation.highLightGlyphs(pageLines, glyphStartLocation, glyphEndLocation, leftToRight,
+                    selectedCount = GlyphLocation.highLightGlyphs(pageLines, glyphStartLocation, glyphEndLocation, leftToRight,
                             isDown, isMovingRight);
                     lastGlyphStartLocation = glyphStartLocation;
                     lastGlyphEndLocation = glyphEndLocation;
                 }
                 // check if last draw are still around and draw them.
                 else if (lastGlyphStartLocation != null && lastGlyphEndLocation != null) {
-                    GlyphLocation.highLightGlyphs(pageLines, lastGlyphStartLocation, lastGlyphEndLocation, leftToRight,
+                    selectedCount = GlyphLocation.highLightGlyphs(pageLines, lastGlyphStartLocation, lastGlyphEndLocation, leftToRight,
                             isDown, isMovingRight);
                 }
             }
@@ -435,7 +449,7 @@ public class TextSelection extends SelectionBoxHandler {
 
     /**
      * Utility for selecting a LineText which is usually a sentence in the
-     * document.   This is usually triggered by a tripple click of the mouse
+     * document.   This is usually triggered by a triple click of the mouse
      *
      * @param currentPage   page to select
      * @param mouseLocation location of mouse
@@ -487,7 +501,7 @@ public class TextSelection extends SelectionBoxHandler {
 
 class GlyphLocation {
 
-    int line, word, glyph;
+    private int line, word, glyph;
 
     public GlyphLocation(int line, int word, int glyph) {
         this.line = line;
@@ -515,7 +529,7 @@ class GlyphLocation {
             return new GlyphLocation(0, 0, 0);
         }
         // first line and last glyph
-        else if (isDown && !leftToRight) {
+        else if (isDown) {
             int lastWordIndex = pageLines.get(0).getWords().size() - 1;
             WordText lastWord = pageLines.get(0).getWords().get(lastWordIndex);
             return new GlyphLocation(0, lastWordIndex, lastWord.getGlyphs().size() - 1);
@@ -529,7 +543,7 @@ class GlyphLocation {
     }
 
     public static GlyphLocation findGlyphLocation(ArrayList<LineText> pageLines, Point2D.Float cursorLocation,
-                                                  boolean isDown) {
+                                                  boolean isDown, GlyphLocation lastGlyphEndLocation) {
         if (pageLines != null) {
             LineText pageLine;
             // check for a direct intersection.
@@ -552,83 +566,97 @@ class GlyphLocation {
                     }
                 }
             }
-            // check mouse location against y-coordinate of a line  and grab the last line
-            if (isDown){
-                // find right most world.
-                for (int lineIndex = 0, lineMax = pageLines.size(); lineIndex < lineMax -1; lineIndex++) {
-                    float y1 = pageLines.get(lineIndex).getBounds().y;
-                    float y2 = pageLines.get(lineIndex + 1).getBounds().y;
-                    if (cursorLocation.y < y1 && cursorLocation.y >= y2){
-                        java.util.List<WordText> words = pageLines.get(lineIndex).getWords();
-                        return new GlyphLocation(lineIndex, words.size() - 1,
-                                words.get(words.size() - 1).getGlyphs().size() - 1);
-                    }
+            // todo check against optional header and footer limits.
 
+            // check mouse location against y-coordinate of a line  and grab the last line
+            // this is buggy if the lines aren't sorted via !org.icepdf.core.views.page.text.preserveColumns.
+            if (isDown) {
+                if (lastGlyphEndLocation != null) {
+                    // get the next line last word.
+                    int lineIndex = lastGlyphEndLocation.line;
+                    for (int lineMax = pageLines.size(); lineIndex < lineMax - 1; lineIndex++) {
+                        float y1 = pageLines.get(lineIndex).getBounds().y;
+                        float y2 = pageLines.get(lineIndex + 1).getBounds().y;
+                        if (cursorLocation.y < y1 && cursorLocation.y >= y2) {
+                            java.util.List<WordText> words = pageLines.get(lineIndex).getWords();
+                            return new GlyphLocation(lineIndex, words.size() - 1,
+                                    words.get(words.size() - 1).getGlyphs().size() - 1);
+                        }
+
+                    }
                 }
             }else{
-                // find left most world.
-                for (int lineIndex = 1, lineMax = pageLines.size(); lineIndex < lineMax; lineIndex++) {
-                    float y1 = pageLines.get(lineIndex).getBounds().y;
-                    float y2 = pageLines.get(lineIndex - 1).getBounds().y;
-                    if (cursorLocation.y >= y1 && cursorLocation.y < y2){
-//                        java.util.List<WordText> words = pageLines.get(lineIndex).getWords();
-                        return new GlyphLocation(lineIndex, 0, 0);
+                if (lastGlyphEndLocation != null) {
+                    // find left most world.
+                    int lineIndex = lastGlyphEndLocation.line;
+                    for (; lineIndex > 0; lineIndex--) {
+                        float y1 = pageLines.get(lineIndex).getBounds().y;
+                        float y2 = pageLines.get(lineIndex - 1).getBounds().y;
+                        if (cursorLocation.y >= y1 && cursorLocation.y < y2) {
+                            return new GlyphLocation(lineIndex, 0, 0);
+                        }
                     }
-
                 }
             }
         }
         return null;
     }
 
-    public static void highLightGlyphs(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end,
-                                       boolean leftToRight, boolean isDown, boolean isRight) {
-        if (pageLines == null) return;
-        fillFirstLine(pageLines.get(start.line), start, end, isDown, isRight, leftToRight);
+    public static int highLightGlyphs(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end,
+                                      boolean leftToRight, boolean isDown, boolean isRight) {
+        if (pageLines == null) return 0;
+        int selectedCount = fillFirstLine(pageLines.get(start.line), start, end, isDown, isRight, leftToRight);
         // fill middle, if any
-        fillMiddleLines(pageLines, start, end);
+        selectedCount += fillMiddleLines(pageLines, start, end);
         // fill last line, last line if any
-        fillLastLine(pageLines.get(end.line), start, end, isDown, isRight, leftToRight);
+        selectedCount += fillLastLine(pageLines.get(end.line), start, end, isDown, isRight, leftToRight);
+        return selectedCount;
     }
 
 
-    public static void fillFirstLine(LineText pageLine, GlyphLocation start, GlyphLocation end,
-                                     boolean isDown, boolean isRight, boolean isLTR) {
+    public static int fillFirstLine(LineText pageLine, GlyphLocation start, GlyphLocation end,
+                                    boolean isDown, boolean isRight, boolean isLTR) {
         pageLine.setHasHighlight(true);
         java.util.List<WordText> lineWords = pageLine.getWords();
-
+        int selectedCount = 0;
         // last half of the first word
-        fillFirstWord(lineWords, start, end, isRight, isDown);
+        selectedCount += fillFirstWord(lineWords, start, end, isRight, isDown);
         // first half of the last word
-        fillLastWord(lineWords, start, end, isRight, isDown);
+        selectedCount += fillLastWord(lineWords, start, end, isRight, isDown);
 
         if (start.line == end.line) {
             if (isRight) {
                 // fill left to right
                 for (int wordIndex = start.word + 1; wordIndex <= end.word - 1; wordIndex++) {
                     lineWords.get(wordIndex).selectAll();
+                    selectedCount++;
                 }
             } else {
                 // fill right to left
                 for (int wordIndex = start.word - 1; wordIndex >= end.word + 1; wordIndex--) {
                     lineWords.get(wordIndex).selectAll();
+                    selectedCount++;
                 }
             }
         } else if ((isRight && isDown) || (!isRight && isDown)) {
             // fill right to end of line
             for (int wordIndex = start.word + 1; wordIndex < lineWords.size(); wordIndex++) {
                 lineWords.get(wordIndex).selectAll();
+                selectedCount++;
             }
-        } else if ((isRight && !isDown) || (!isRight && !isDown)){
+        } else {// if ((isRight && !isDown) || (!isRight && !isDown)){
             // fill left to start of line
             for (int wordIndex = start.word - 1; wordIndex >= 0; wordIndex--) {
                 lineWords.get(wordIndex).selectAll();
+                selectedCount++;
             }
         }
+        return selectedCount;
     }
 
-    public static void fillFirstWord(java.util.List<WordText> words, GlyphLocation start, GlyphLocation end,
-                                     boolean isRight, boolean isDown) {
+    public static int fillFirstWord(java.util.List<WordText> words, GlyphLocation start, GlyphLocation end,
+                                    boolean isRight, boolean isDown) {
+        int selectedCount = 0;
         if (end != null && start.line == end.line) {
             if (start.word == end.word) {
                 if (isRight) {
@@ -637,6 +665,7 @@ class GlyphLocation {
                     word.setHasSelected(true);
                     for (int glyphIndex = start.glyph; glyphIndex < end.glyph; glyphIndex++) {
                         word.getGlyphs().get(glyphIndex).setSelected(true);
+                        selectedCount++;
                     }
 
                 } else {
@@ -644,6 +673,7 @@ class GlyphLocation {
                     word.setHasSelected(true);
                     for (int glyphIndex = start.glyph; glyphIndex >= end.glyph; glyphIndex--) {
                         word.getGlyphs().get(glyphIndex).setSelected(true);
+                        selectedCount++;
                     }
                 }
             } else {
@@ -652,34 +682,38 @@ class GlyphLocation {
                     word.setHasSelected(true);
                     for (int glyphIndex = start.glyph; glyphIndex < word.getGlyphs().size(); glyphIndex++) {
                         word.getGlyphs().get(glyphIndex).setSelected(true);
+                        selectedCount++;
                     }
                 } else {
                     WordText word = words.get(start.word);
                     word.setHasSelected(true);
                     for (int glyphIndex = start.glyph; glyphIndex >= 0; glyphIndex--) {
                         word.getGlyphs().get(glyphIndex).setSelected(true);
+                        selectedCount++;
                     }
                 }
             }
-
         } else if ((isRight && isDown) || (!isRight && isDown)) {
             WordText word = words.get(start.word);
             word.setHasSelected(true);
             for (int glyphIndex = start.glyph; glyphIndex < word.getGlyphs().size(); glyphIndex++) {
                 word.getGlyphs().get(glyphIndex).setSelected(true);
+                selectedCount++;
             }
-        } else if ((isRight && !isDown) || (!isRight && !isDown)) {
+        } else {//if ((isRight && !isDown) || (!isRight && !isDown)) {
             WordText word = words.get(start.word);
             word.setHasSelected(true);
             for (int glyphIndex = start.glyph; glyphIndex >= 0; glyphIndex--) {
                 word.getGlyphs().get(glyphIndex).setSelected(true);
             }
         }
+        return selectedCount;
 
     }
 
-    public static void fillLastWord(java.util.List<WordText> words, GlyphLocation start, GlyphLocation end,
-                                    boolean isRight, boolean isDown) {
+    public static int fillLastWord(java.util.List<WordText> words, GlyphLocation start, GlyphLocation end,
+                                   boolean isRight, boolean isDown) {
+        int selectedCount = 0;
         if (isRight) {
             // same word so we move to select start->end.
             if (start.word == end.word && start.line == end.line) {
@@ -691,6 +725,7 @@ class GlyphLocation {
                 word.setHasSelected(true);
                 for (int glyphIndex = 0; glyphIndex <= end.glyph; glyphIndex++) {
                     word.getGlyphs().get(glyphIndex).setSelected(true);
+                    selectedCount++;
                 }
             }
         } else {
@@ -700,6 +735,7 @@ class GlyphLocation {
                 word.setHasSelected(true);
                 for (int glyphIndex = start.glyph; glyphIndex >= end.glyph; glyphIndex--) {
                     word.getGlyphs().get(glyphIndex).setSelected(true);
+                    selectedCount++;
                 }
             }
             // at least two words so we can do the last half of start and first half of end.
@@ -708,14 +744,17 @@ class GlyphLocation {
                 word.setHasSelected(true);
                 for (int glyphIndex = word.getGlyphs().size() - 1; glyphIndex >= end.glyph; glyphIndex--) {
                     word.getGlyphs().get(glyphIndex).setSelected(true);
+                    selectedCount++;
                 }
             }
         }
+        return selectedCount;
     }
 
-    public static void fillLastLine(LineText pageLine, GlyphLocation start, GlyphLocation end,
-                                    boolean isDown, boolean isRight, boolean isLTR) {
+    public static int fillLastLine(LineText pageLine, GlyphLocation start, GlyphLocation end,
+                                   boolean isDown, boolean isRight, boolean isLTR) {
         java.util.List<WordText> lineWords = pageLine.getWords();
+        int selectedCount = 0;
         if (start.line != end.line) {
             pageLine.setHasHighlight(true);
             if (isDown) {
@@ -723,21 +762,25 @@ class GlyphLocation {
                 word.setHasSelected(true);
                 for (int glyphIndex = 0; glyphIndex <= end.glyph; glyphIndex++) {
                     word.getGlyphs().get(glyphIndex).setSelected(true);
+                    selectedCount++;
                 }
-                for (int wordIndex = 0; wordIndex < end.word ; wordIndex++) {
+                for (int wordIndex = 0; wordIndex < end.word; wordIndex++) {
                     lineWords.get(wordIndex).selectAll();
+                    selectedCount++;
                 }
             } else {
-                fillFirstWord(lineWords, end, null, isRight, true);
+                selectedCount += fillFirstWord(lineWords, end, null, isRight, true);
                 //
                 for (int wordIndex = end.word + 1; wordIndex < lineWords.size(); wordIndex++) {
                     lineWords.get(wordIndex).selectAll();
+                    selectedCount++;
                 }
             }
         }
+        return selectedCount;
     }
 
-    public static void fillMiddleLines(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end) {
+    public static int fillMiddleLines(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end) {
         GlyphLocation startLocal = new GlyphLocation(start);
         GlyphLocation endLocal = new GlyphLocation(end);
         if (startLocal.line > endLocal.line) {
@@ -745,9 +788,12 @@ class GlyphLocation {
             startLocal = end;
             endLocal = tmp;
         }
+        int selectedCount = 0;
         for (int lineIndex = startLocal.line + 1; lineIndex < endLocal.line; lineIndex++) {
             pageLines.get(lineIndex).selectAll();
+            selectedCount++;
         }
+        return selectedCount;
     }
 
 }
