@@ -59,7 +59,7 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
         if (rectToDraw != null) {
             //Draw a rectangle on top of the image.
             oldColor = g.getColor();
-            gg.setColor(selectionBoxColour);
+//            gg.setColor(selectionBoxColour);
             gg.setStroke(stroke);
             gg.drawRect(rectToDraw.x, rectToDraw.y,
                     rectToDraw.width - 1, rectToDraw.height - 1);

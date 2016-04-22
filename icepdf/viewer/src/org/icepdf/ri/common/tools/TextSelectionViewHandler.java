@@ -171,7 +171,6 @@ public class TextSelectionViewHandler extends TextSelection
         if (pageComponent != null) {
             // assign the correct icon state for the cursor.
             MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
-            System.out.println(e.getPoint() + " " + modeEvent.getPoint());
             pageComponent.getTextSelectionPageHandler().selectionIcon(modeEvent.getPoint(), pageComponent);
         }
     }

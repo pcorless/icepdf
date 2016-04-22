@@ -98,7 +98,12 @@ public class TextSelectionPageHandler extends TextSelection
         updateSelectionSize(point.x, point.y, pageViewComponent);
         boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
+//        if (isMovingDown && lastMouseLocation != null){
+//            // double check we're actually moving down
+//            isMovingDown = lastMouseLocation.y <= e.getPoint().y;
+//        }
         selection(e.getPoint(), pageViewComponent, isMovingDown, isMovingRight);
+//        lastMouseLocation = point;
     }
 
     /**
@@ -140,6 +145,11 @@ public class TextSelectionPageHandler extends TextSelection
     }
 
     public void paintTool(Graphics g) {
-//        paintSelectionBox(g, rectToDraw);
+//        if (topMarginExclusion != null && bottomMarginExclusion != null) {
+//            g.setColor(Color.RED);
+//            paintSelectionBox(g, topMarginExclusion.getBounds());
+//            g.setColor(Color.BLUE);
+//            paintSelectionBox(g, bottomMarginExclusion.getBounds());
+//        }
     }
 }
