@@ -21,19 +21,19 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
+import java.awt.geom.*;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.icepdf.ri.common.tools.TextSelection.enableMarginExclusion;
 
 /**
  * TextSelection is a utility class that captures most of the work needed to do basic text, word and line selection.
@@ -58,11 +58,41 @@ public class TextSelection extends SelectionBoxHandler {
     private boolean leftToRight = true;
 
     // todo make configurable
-    private static int topMargin = 75;
-    private static int bottomMargin = 75;
-    private static boolean enableMarginExclusion;
-//    protected Shape topMarginExclusion;
-//    protected Shape bottomMarginExclusion;
+    private static int topMargin;
+    private static int bottomMargin;
+    protected static boolean enableMarginExclusion;
+    protected static boolean enableMarginExclusionBorder;
+    protected Rectangle2D topMarginExclusion;
+    protected Rectangle2D bottomMarginExclusion;
+
+    static {
+        try {
+            topMargin = Defs.intProperty(
+                    "org.icepdf.core.views.page.marginExclusion.top", 75);
+        } catch (NumberFormatException e) {
+            logger.warning("Error reading page top margin exclusion property.");
+        }
+
+        try {
+            bottomMargin = Defs.intProperty(
+                    "org.icepdf.core.views.page.marginExclusion.bottom", 75);
+        } catch (NumberFormatException e) {
+            logger.warning("Error reading page bottom margin exclusion property.");
+        }
+
+        try {
+            enableMarginExclusion = Defs.booleanProperty(
+                    "org.icepdf.core.views.page.marginExclusion.enabled", false);
+        } catch (NumberFormatException e) {
+            logger.warning("Error reading margin exclusion enabled property.");
+        }
+        try {
+            enableMarginExclusionBorder = Defs.booleanProperty(
+                    "org.icepdf.core.views.page.marginExclusionBorder.enabled", false);
+        } catch (NumberFormatException e) {
+            logger.warning("Error reading margin exclusion boarder enabled property.");
+        }
+    }
 
     // first page that was selected
     private boolean isFirst;
@@ -116,9 +146,13 @@ public class TextSelection extends SelectionBoxHandler {
                     documentViewModel.getViewRotation(),
                     documentViewModel.getViewZoom());
 
+            // create exclusion boxes
+            calculateTextSelectionExclusion(pageTransform);
+
             ArrayList<LineText> pageLines = pageText.getPageLines();
             Point2D.Float dragStartLocation = convertMouseToPageSpace(startPoint, pageTransform);
-            glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, false, null);
+            glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, false, null,
+                    topMarginExclusion, bottomMarginExclusion);
         }
 
         // text selection box.
@@ -129,7 +163,6 @@ public class TextSelection extends SelectionBoxHandler {
 
     /**
      * Selection ended so we want to stop record the position and update the selection.
-     *
      */
     public void selectionEnd(Point endPoint, AbstractPageViewComponent pageViewComponent) {
 
@@ -179,10 +212,10 @@ public class TextSelection extends SelectionBoxHandler {
                           boolean isDown, boolean isMovingRight) {
         if (pageViewComponent != null) {
             boolean isLocalDown;
-            if (lastMouseLocation != null){
+            if (lastMouseLocation != null) {
                 // double check we're actually moving down
                 isLocalDown = lastMouseLocation.y <= dragPoint.y;
-            }else{
+            } else {
                 isLocalDown = isDown;
             }
             multiLineSelectHandler(pageViewComponent, dragPoint, isDown, isLocalDown, isMovingRight);
@@ -206,19 +239,7 @@ public class TextSelection extends SelectionBoxHandler {
                         documentViewModel.getViewZoom());
 
                 // create exclusion boxes
-//                if (topMargin > 0) {
-//                    Rectangle2D.Float mediaBox = pageViewComponent.getPage().getMediaBox();
-//                    topMarginExclusion = pageTransform.createTransformedShape(
-//                            new Rectangle((int) mediaBox.x, (int) mediaBox.height - bottomMargin,
-//                                    (int) mediaBox.width, bottomMargin));
-//                }
-//                if (bottomMargin > 0) {
-//                    Rectangle2D.Float mediaBox = pageViewComponent.getPage().getMediaBox();
-//                    bottomMarginExclusion = pageTransform.createTransformedShape(
-//                            new Rectangle((int) mediaBox.x, (int) (mediaBox.height - mediaBox.y),
-//                                    (int) mediaBox.width, topMargin));
-//                }
-
+                calculateTextSelectionExclusion(pageTransform);
 
                 ArrayList<LineText> pageLines = pageText.getPageLines();
                 if (pageLines != null) {
@@ -228,8 +249,10 @@ public class TextSelection extends SelectionBoxHandler {
 
                     for (LineText pageLine : pageLines) {
                         // check for containment, if so break into words.
-                        if (pageLine.getBounds().contains(pageMouseLocation)) {
-                            //&& !topMarginExclusion.contains(pageMouseLocation) && !bottomMarginExclusion.contains(pageMouseLocation)) {
+                        if (pageLine.getBounds().contains(pageMouseLocation)
+                                && ((topMarginExclusion == null || bottomMarginExclusion == null)
+                                || (!topMarginExclusion.contains(pageMouseLocation)
+                                && !bottomMarginExclusion.contains(pageMouseLocation)))) {
                             found = true;
                             documentViewController.setViewCursor(
                                     DocumentViewController.CURSOR_TEXT_SELECTION);
@@ -242,6 +265,16 @@ public class TextSelection extends SelectionBoxHandler {
                     }
                 }
             }
+        }
+    }
+
+    protected void calculateTextSelectionExclusion(AffineTransform pageTransform){
+        if (enableMarginExclusion) {
+            Rectangle2D mediaBox = pageViewComponent.getPage().getCropBox();
+            topMarginExclusion =  new Rectangle2D.Float(0, (int)mediaBox.getHeight() - topMargin,
+                    (int)mediaBox.getWidth(), topMargin);
+            bottomMarginExclusion = new Rectangle2D.Float(0, 0,
+                            (int) mediaBox.getWidth(), bottomMargin);
         }
     }
 
@@ -401,36 +434,34 @@ public class TextSelection extends SelectionBoxHandler {
 
                 ArrayList<LineText> pageLines = pageText.getPageLines();
 
-                // check for exclusion zones.
-//                Point2D.Float pageMouseLocation =
-//                        convertMouseToPageSpace(mouseLocation, pageTransform);
-//                if ( topMarginExclusion.contains(pageMouseLocation) || bottomMarginExclusion.contains(pageMouseLocation)){
-//                    return;
-//                }
+                // create exclusion boxes
+                calculateTextSelectionExclusion(pageTransform);
 
                 Point2D.Float dragEndLocation = convertMouseToPageSpace(mouseLocation, pageTransform);
-                glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, dragEndLocation, isDown, isLocalDown, lastGlyphEndLocation);
+                glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, dragEndLocation, isDown, isLocalDown,
+                        lastGlyphEndLocation, topMarginExclusion, bottomMarginExclusion);
 
-                // moving to a new page,  so we need to setup the first word.
+                // moving to a new page, so we need to setup the first word.
                 if (glyphStartLocation == null) {
                     if (isFirst && glyphEndLocation != null) {
                         glyphStartLocation = new GlyphLocation(glyphEndLocation);
                     } else {
-                        glyphStartLocation = GlyphLocation.multiPageSelectGlyphLocation(pageLines, isDown, leftToRight);
+                        glyphStartLocation = GlyphLocation.multiPageSelectGlyphLocation(pageLines, isDown, leftToRight,
+                                topMarginExclusion, bottomMarginExclusion);
                         glyphEndLocation = new GlyphLocation(glyphStartLocation);
                     }
                 }
                 // normal page selection,  fill in the the highlight between start and end.
                 if (glyphStartLocation != null && glyphEndLocation != null) {
                     selectedCount = GlyphLocation.highLightGlyphs(pageLines, glyphStartLocation, glyphEndLocation, leftToRight,
-                            isDown, isLocalDown, isMovingRight);
+                            isDown, isLocalDown, isMovingRight, topMarginExclusion, bottomMarginExclusion);
                     lastGlyphStartLocation = glyphStartLocation;
                     lastGlyphEndLocation = glyphEndLocation;
                 }
                 // check if last draw are still around and draw them.
                 else if (lastGlyphStartLocation != null && lastGlyphEndLocation != null) {
                     selectedCount = GlyphLocation.highLightGlyphs(pageLines, lastGlyphStartLocation, lastGlyphEndLocation, leftToRight,
-                            isDown, isLocalDown, isMovingRight);
+                            isDown, isLocalDown, isMovingRight, topMarginExclusion, bottomMarginExclusion);
                 }
             }
             pageViewComponent.repaint();
@@ -569,33 +600,57 @@ class GlyphLocation {
         return pageLines.get(location.line).getWords().get(location.word).getGlyphs().get(location.glyph);
     }
 
-    public static GlyphLocation multiPageSelectGlyphLocation(ArrayList<LineText> pageLines, boolean isDown, boolean leftToRight) {
+    public static GlyphLocation multiPageSelectGlyphLocation(ArrayList<LineText> pageLines,
+                                                             boolean isDown, boolean leftToRight,
+                                                             Shape topMarginExclusion, Shape bottomMarginExclusion) {
         // find first glyph of first line
         if (isDown && leftToRight) {
-            return new GlyphLocation(0, 0, 0);
+            for(int i = 0, max = pageLines.size(); i < max; i++){
+                if (isLineTextIncluded(pageLines.get(i),topMarginExclusion, bottomMarginExclusion)){
+                    return new GlyphLocation(i, 0, 0);
+                }
+            }
         }
         // first line and last glyph
         else if (isDown) {
-            int lastWordIndex = pageLines.get(0).getWords().size() - 1;
-            WordText lastWord = pageLines.get(0).getWords().get(lastWordIndex);
-            return new GlyphLocation(0, lastWordIndex, lastWord.getGlyphs().size() - 1);
+            for(int i = 0, max = pageLines.size(); i < max; i++){
+                if (isLineTextIncluded(pageLines.get(i),topMarginExclusion, bottomMarginExclusion)){
+                    int lastWordIndex = pageLines.get(i).getWords().size() - 1;
+                    WordText lastWord = pageLines.get(i).getWords().get(lastWordIndex);
+                    return new GlyphLocation(i, lastWordIndex, lastWord.getGlyphs().size() - 1);
+                }
+            }
         }
         // going up is always right to left.
         else {
-            int lastWordIndex = pageLines.get(pageLines.size() - 1).getWords().size() - 1;
-            WordText lastWord = pageLines.get(pageLines.size() - 1).getWords().get(lastWordIndex);
-            return new GlyphLocation(pageLines.size() - 1, lastWordIndex, lastWord.getGlyphs().size() - 1);
+            for(int i = pageLines.size() - 1; i >=0; i--){
+                if (isLineTextIncluded(pageLines.get(i),topMarginExclusion, bottomMarginExclusion)){
+                    int lastWordIndex = pageLines.get(i).getWords().size() - 1;
+                    WordText lastWord = pageLines.get(i).getWords().get(lastWordIndex);
+                    return new GlyphLocation(i, lastWordIndex, lastWord.getGlyphs().size() - 1);
+                }
+            }
         }
+        return null;
+    }
+
+    public static boolean isLineTextIncluded(LineText lineText, Shape topMarginExclusion, Shape bottomMarginExclusion){
+        if (enableMarginExclusion){
+            return !(topMarginExclusion.contains(lineText.getBounds()) ||
+                    bottomMarginExclusion.contains(lineText.getBounds()));
+        }
+        return true;
     }
 
     public static GlyphLocation findGlyphLocation(ArrayList<LineText> pageLines, Point2D.Float cursorLocation,
-                                                  boolean isDown, boolean isLocalDown,  GlyphLocation lastGlyphEndLocation) {
+                                                  boolean isDown, boolean isLocalDown, GlyphLocation lastGlyphEndLocation,
+                                                  Shape topMarginExclusion, Shape bottomMarginExclusion) {
         if (pageLines != null) {
             LineText pageLine;
             // check for a direct intersection.
             for (int lineIndex = 0, lineMax = pageLines.size(); lineIndex < lineMax; lineIndex++) {
                 pageLine = pageLines.get(lineIndex);
-                if (pageLine.intersects(cursorLocation)) {
+                if (pageLine.intersects(cursorLocation) && isLineTextIncluded(pageLine, topMarginExclusion, bottomMarginExclusion) ) {
                     java.util.List<WordText> lineWords = pageLines.get(lineIndex).getWords();
                     WordText currentWord;
                     for (int wordIndex = 0, wordMax = lineWords.size(); wordIndex < wordMax; wordIndex++) {
@@ -623,9 +678,12 @@ class GlyphLocation {
                         float y1 = pageLines.get(lineIndex).getBounds().y;
                         float y2 = pageLines.get(lineIndex + 1).getBounds().y;
                         if (cursorLocation.y < y1 && cursorLocation.y >= y2) {
-                            java.util.List<WordText> words = pageLines.get(lineIndex + 1).getWords();
-                            return new GlyphLocation(lineIndex + 1, words.size() - 1,
-                                    words.get(words.size() - 1).getGlyphs().size() - 1);
+                            LineText lineText = pageLines.get(lineIndex + 1);
+                            if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
+                                java.util.List<WordText> words = lineText.getWords();
+                                return new GlyphLocation(lineIndex + 1, words.size() - 1,
+                                        words.get(words.size() - 1).getGlyphs().size() - 1);
+                            }
                         }
 
                     }
@@ -638,7 +696,10 @@ class GlyphLocation {
                         float y1 = pageLines.get(lineIndex).getBounds().y;
                         float y2 = pageLines.get(lineIndex - 1).getBounds().y;
                         if (cursorLocation.y >= y1 && cursorLocation.y < y2) {
-                            return new GlyphLocation(lineIndex-1, 0, 0);
+                            LineText lineText = pageLines.get(lineIndex - 1);
+                            if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
+                                return new GlyphLocation(lineIndex - 1, 0, 0);
+                            }
                         }
                     }
                 }
@@ -648,11 +709,12 @@ class GlyphLocation {
     }
 
     public static int highLightGlyphs(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end,
-                                      boolean leftToRight, boolean isDown, boolean isLocalDown, boolean isRight) {
+                                      boolean leftToRight, boolean isDown, boolean isLocalDown, boolean isRight,
+                                      Shape topMarginExclusion, Shape bottomMarginExclusion) {
         if (pageLines == null) return 0;
         int selectedCount = fillFirstLine(pageLines.get(start.line), start, end, isDown, isRight, leftToRight);
         // fill middle, if any
-        selectedCount += fillMiddleLines(pageLines, start, end);
+        selectedCount += fillMiddleLines(pageLines, start, end, topMarginExclusion, bottomMarginExclusion);
         // fill last line, last line if any
         selectedCount += fillLastLine(pageLines.get(end.line), start, end, isDown, isRight, leftToRight);
         return selectedCount;
@@ -825,7 +887,8 @@ class GlyphLocation {
         return selectedCount;
     }
 
-    public static int fillMiddleLines(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end) {
+    public static int fillMiddleLines(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end,
+                                      Shape topMarginExclusion, Shape bottomMarginExclusion) {
         GlyphLocation startLocal = new GlyphLocation(start);
         GlyphLocation endLocal = new GlyphLocation(end);
         if (startLocal.line > endLocal.line) {
@@ -835,8 +898,10 @@ class GlyphLocation {
         }
         int selectedCount = 0;
         for (int lineIndex = startLocal.line + 1; lineIndex < endLocal.line; lineIndex++) {
-            pageLines.get(lineIndex).selectAll();
-            selectedCount++;
+            if (isLineTextIncluded(pageLines.get(lineIndex), topMarginExclusion, bottomMarginExclusion)) {
+                pageLines.get(lineIndex).selectAll();
+                selectedCount++;
+            }
         }
         return selectedCount;
     }

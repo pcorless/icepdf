@@ -15,12 +15,14 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 
 /**
  * Handles Paint and mouse/keyboard logic around text selection and search
@@ -98,12 +100,7 @@ public class TextSelectionPageHandler extends TextSelection
         updateSelectionSize(point.x, point.y, pageViewComponent);
         boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
-//        if (isMovingDown && lastMouseLocation != null){
-//            // double check we're actually moving down
-//            isMovingDown = lastMouseLocation.y <= e.getPoint().y;
-//        }
         selection(e.getPoint(), pageViewComponent, isMovingDown, isMovingRight);
-//        lastMouseLocation = point;
     }
 
     /**
@@ -145,11 +142,19 @@ public class TextSelectionPageHandler extends TextSelection
     }
 
     public void paintTool(Graphics g) {
-//        if (topMarginExclusion != null && bottomMarginExclusion != null) {
-//            g.setColor(Color.RED);
-//            paintSelectionBox(g, topMarginExclusion.getBounds());
-//            g.setColor(Color.BLUE);
-//            paintSelectionBox(g, bottomMarginExclusion.getBounds());
-//        }
+        if (enableMarginExclusionBorder && topMarginExclusion != null && bottomMarginExclusion != null) {
+
+            Page currentPage = pageViewComponent.getPage();
+            AffineTransform at = currentPage.getPageTransform(
+                    documentViewModel.getPageBoundary(),
+                    documentViewModel.getViewRotation(),
+                    documentViewModel.getViewZoom());
+
+            ((Graphics2D)g).transform(at);
+            g.setColor(Color.RED);
+            paintSelectionBox(g, topMarginExclusion.getBounds());
+            g.setColor(Color.BLUE);
+            paintSelectionBox(g, bottomMarginExclusion.getBounds());
+        }
     }
 }
