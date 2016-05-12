@@ -97,7 +97,7 @@ public class WordText extends AbstractText implements TextSelect {
     }
 
     protected boolean detectSpace(GlyphText sprite) {
-        if (currentGlyph != null) {
+        if (currentGlyph != null && autoSpaceInsertion) {
             // last added glyph
             Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
             float spriteXCoord = sprite.getTextExtractionBounds().x;

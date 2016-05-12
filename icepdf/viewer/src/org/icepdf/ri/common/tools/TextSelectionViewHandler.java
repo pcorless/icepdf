@@ -156,7 +156,6 @@ public class TextSelectionViewHandler extends TextSelection
                     }else{
                         documentViewModel.removeSelectedPageText(page);
                         page.clearSelectedText();
-//                        page.getTextSelectionPageHandler().clearSelection();
                         page.repaint();
                     }
                 }

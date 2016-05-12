@@ -28,7 +28,10 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
-import java.awt.geom.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -153,6 +156,7 @@ public class TextSelection extends SelectionBoxHandler {
             Point2D.Float dragStartLocation = convertMouseToPageSpace(startPoint, pageTransform);
             glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, false, null,
                     topMarginExclusion, bottomMarginExclusion);
+            glyphEndLocation = null;
         }
 
         // text selection box.
@@ -268,13 +272,13 @@ public class TextSelection extends SelectionBoxHandler {
         }
     }
 
-    protected void calculateTextSelectionExclusion(AffineTransform pageTransform){
+    protected void calculateTextSelectionExclusion(AffineTransform pageTransform) {
         if (enableMarginExclusion) {
             Rectangle2D mediaBox = pageViewComponent.getPage().getCropBox();
-            topMarginExclusion =  new Rectangle2D.Float(0, (int)mediaBox.getHeight() - topMargin,
-                    (int)mediaBox.getWidth(), topMargin);
+            topMarginExclusion = new Rectangle2D.Float(0, (int) mediaBox.getHeight() - topMargin,
+                    (int) mediaBox.getWidth(), topMargin);
             bottomMarginExclusion = new Rectangle2D.Float(0, 0,
-                            (int) mediaBox.getWidth(), bottomMargin);
+                    (int) mediaBox.getWidth(), bottomMargin);
         }
     }
 
@@ -294,6 +298,7 @@ public class TextSelection extends SelectionBoxHandler {
         Color oldColor = gg.getColor();
         Stroke oldStroke = gg.getStroke();
         gg.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.MULTIPLY, 1.0f));
+//        gg.setComposite(AlphaComposite.Xor);
         gg.setColor(Page.selectionColor);
         gg.setStroke(new BasicStroke(1.0f));
 
@@ -437,20 +442,24 @@ public class TextSelection extends SelectionBoxHandler {
                 // create exclusion boxes
                 calculateTextSelectionExclusion(pageTransform);
 
-                Point2D.Float dragEndLocation = convertMouseToPageSpace(mouseLocation, pageTransform);
-                glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, dragEndLocation, isDown, isLocalDown,
-                        lastGlyphEndLocation, topMarginExclusion, bottomMarginExclusion);
+                // normalize the mouse coordinates to page space
+                Point2D.Float draggingMouseLocation = convertMouseToPageSpace(mouseLocation, pageTransform);
 
-                // moving to a new page, so we need to setup the first word.
+                // dragging mouse into a page or from white space, neither glyphStart or glyphEnd will be initialized.
                 if (glyphStartLocation == null) {
-                    if (isFirst && glyphEndLocation != null) {
-                        glyphStartLocation = new GlyphLocation(glyphEndLocation);
-                    } else {
-                        glyphStartLocation = GlyphLocation.multiPageSelectGlyphLocation(pageLines, isDown, leftToRight,
-                                topMarginExclusion, bottomMarginExclusion);
+                    glyphStartLocation = GlyphLocation.findFirstGlyphLocation(pageLines, draggingMouseLocation, isDown, isLocalDown,
+                            lastGlyphEndLocation, topMarginExclusion, bottomMarginExclusion);
+                    // if we're close to something mark the isFirst=false.
+                    if (glyphStartLocation != null) {
                         glyphEndLocation = new GlyphLocation(glyphStartLocation);
+                        isFirst = false;
                     }
+                } else if (glyphStartLocation != null) {
+                    // should already have start but no end.
+                    glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, draggingMouseLocation, isDown, isLocalDown,
+                            lastGlyphEndLocation, topMarginExclusion, bottomMarginExclusion);
                 }
+
                 // normal page selection,  fill in the the highlight between start and end.
                 if (glyphStartLocation != null && glyphEndLocation != null) {
                     selectedCount = GlyphLocation.highLightGlyphs(pageLines, glyphStartLocation, glyphEndLocation, leftToRight,
@@ -592,6 +601,15 @@ class GlyphLocation {
         this.glyph = glyphLocation.glyph;
     }
 
+    @Override
+    public String toString() {
+        return "GlyphLocation{" +
+                "line=" + line +
+                ", word=" + word +
+                ", glyph=" + glyph +
+                '}';
+    }
+
     public static WordText getWord(ArrayList<LineText> pageLines, GlyphLocation location) {
         return pageLines.get(location.line).getWords().get(location.word);
     }
@@ -601,20 +619,24 @@ class GlyphLocation {
     }
 
     public static GlyphLocation multiPageSelectGlyphLocation(ArrayList<LineText> pageLines,
+                                                             Point2D.Float mouseLocation,
                                                              boolean isDown, boolean leftToRight,
                                                              Shape topMarginExclusion, Shape bottomMarginExclusion) {
+        if (pageLines == null) return null;
         // find first glyph of first line
         if (isDown && leftToRight) {
-            for(int i = 0, max = pageLines.size(); i < max; i++){
-                if (isLineTextIncluded(pageLines.get(i),topMarginExclusion, bottomMarginExclusion)){
+            for (int i = 0, max = pageLines.size(); i < max; i++) {
+                if (isLineTextIncluded(pageLines.get(i), topMarginExclusion, bottomMarginExclusion) &&
+                        findMouseContainedWithInLine(mouseLocation, pageLines.get(i))) {
                     return new GlyphLocation(i, 0, 0);
                 }
             }
         }
         // first line and last glyph
         else if (isDown) {
-            for(int i = 0, max = pageLines.size(); i < max; i++){
-                if (isLineTextIncluded(pageLines.get(i),topMarginExclusion, bottomMarginExclusion)){
+            for (int i = 0, max = pageLines.size(); i < max; i++) {
+                if (isLineTextIncluded(pageLines.get(i), topMarginExclusion, bottomMarginExclusion) &&
+                        findMouseContainedWithInLine(mouseLocation, pageLines.get(i))) {
                     int lastWordIndex = pageLines.get(i).getWords().size() - 1;
                     WordText lastWord = pageLines.get(i).getWords().get(lastWordIndex);
                     return new GlyphLocation(i, lastWordIndex, lastWord.getGlyphs().size() - 1);
@@ -623,8 +645,9 @@ class GlyphLocation {
         }
         // going up is always right to left.
         else {
-            for(int i = pageLines.size() - 1; i >=0; i--){
-                if (isLineTextIncluded(pageLines.get(i),topMarginExclusion, bottomMarginExclusion)){
+            for (int i = pageLines.size() - 1; i >= 0; i--) {
+                if (isLineTextIncluded(pageLines.get(i), topMarginExclusion, bottomMarginExclusion)
+                        && findMouseContainedWithInLine(mouseLocation, pageLines.get(i))) {
                     int lastWordIndex = pageLines.get(i).getWords().size() - 1;
                     WordText lastWord = pageLines.get(i).getWords().get(lastWordIndex);
                     return new GlyphLocation(i, lastWordIndex, lastWord.getGlyphs().size() - 1);
@@ -634,8 +657,8 @@ class GlyphLocation {
         return null;
     }
 
-    public static boolean isLineTextIncluded(LineText lineText, Shape topMarginExclusion, Shape bottomMarginExclusion){
-        if (enableMarginExclusion){
+    public static boolean isLineTextIncluded(LineText lineText, Shape topMarginExclusion, Shape bottomMarginExclusion) {
+        if (enableMarginExclusion) {
             return !(topMarginExclusion.contains(lineText.getBounds()) ||
                     bottomMarginExclusion.contains(lineText.getBounds()));
         }
@@ -646,46 +669,39 @@ class GlyphLocation {
                                                   boolean isDown, boolean isLocalDown, GlyphLocation lastGlyphEndLocation,
                                                   Shape topMarginExclusion, Shape bottomMarginExclusion) {
         if (pageLines != null) {
-            LineText pageLine;
             // check for a direct intersection.
-            for (int lineIndex = 0, lineMax = pageLines.size(); lineIndex < lineMax; lineIndex++) {
-                pageLine = pageLines.get(lineIndex);
-                if (pageLine.intersects(cursorLocation) && isLineTextIncluded(pageLine, topMarginExclusion, bottomMarginExclusion) ) {
-                    java.util.List<WordText> lineWords = pageLines.get(lineIndex).getWords();
-                    WordText currentWord;
-                    for (int wordIndex = 0, wordMax = lineWords.size(); wordIndex < wordMax; wordIndex++) {
-                        currentWord = lineWords.get(wordIndex);
-                        if (currentWord.intersects(cursorLocation)) {
-                            ArrayList<GlyphText> glyphs = currentWord.getGlyphs();
-                            for (int glyphIndex = 0, glyphMax = glyphs.size(); glyphIndex < glyphMax; glyphIndex++) {
-                                GlyphText currentGlyph = glyphs.get(glyphIndex);
-                                if (currentGlyph.intersects(cursorLocation)) {
-                                    return new GlyphLocation(lineIndex, wordIndex, glyphIndex);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            GlyphLocation glyphLocation =
+                    findGlyphIntersection(pageLines, cursorLocation, topMarginExclusion, bottomMarginExclusion);
+            if (glyphLocation != null) return glyphLocation;
 
             // check mouse location against y-coordinate of a line  and grab the last line
             // this is buggy if the lines aren't sorted via !org.icepdf.core.views.page.text.preserveColumns.
             if ((isLocalDown && isDown) || isLocalDown) {
+                int lastGlyphEndLine = 0;
                 if (lastGlyphEndLocation != null) {
-                    // get the next line last word.
-                    int lineIndex = lastGlyphEndLocation.line;
-                    for (int lineMax = pageLines.size(); lineIndex < lineMax - 1; lineIndex++) {
-                        float y1 = pageLines.get(lineIndex).getBounds().y;
-                        float y2 = pageLines.get(lineIndex + 1).getBounds().y;
-                        if (cursorLocation.y < y1 && cursorLocation.y >= y2) {
-                            LineText lineText = pageLines.get(lineIndex + 1);
-                            if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
-                                java.util.List<WordText> words = lineText.getWords();
-                                return new GlyphLocation(lineIndex + 1, words.size() - 1,
-                                        words.get(words.size() - 1).getGlyphs().size() - 1);
-                            }
+                    lastGlyphEndLine = lastGlyphEndLocation.line;
+                }
+                // get the next line last word.
+                int lineIndex = lastGlyphEndLine;
+                for (int lineMax = pageLines.size(); lineIndex < lineMax - 1; lineIndex++) {
+                    float y1 = pageLines.get(lineIndex).getBounds().y;
+                    float y2 = pageLines.get(lineIndex + 1).getBounds().y;
+                    if (cursorLocation.y < y1 && cursorLocation.y >= y2) {
+                        LineText lineText = pageLines.get(lineIndex + 1);
+                        if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
+                            java.util.List<WordText> words = lineText.getWords();
+                            return new GlyphLocation(lineIndex + 1, words.size() - 1,
+                                    words.get(words.size() - 1).getGlyphs().size() - 1);
                         }
-
+                    }
+                }
+                // else fill the line
+                if (lastGlyphEndLine == pageLines.size() - 1) {
+                    LineText lineText = pageLines.get(lineIndex);
+                    if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
+                        java.util.List<WordText> words = lineText.getWords();
+                        return new GlyphLocation(lineIndex, words.size() - 1,
+                                words.get(words.size() - 1).getGlyphs().size() - 1);
                     }
                 }
             } else {
@@ -702,10 +718,90 @@ class GlyphLocation {
                             }
                         }
                     }
+                    // else fill the line
+                    if (lastGlyphEndLocation.line == 0) {
+                        LineText lineText = pageLines.get(lineIndex);
+                        if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
+                            return new GlyphLocation(lineIndex, 0, 0);
+                        }
+                    }
                 }
             }
         }
         return null;
+    }
+
+    public static GlyphLocation findGlyphIntersection(ArrayList<LineText> pageLines, Point2D.Float cursorLocation,
+                                                      Shape topMarginExclusion, Shape bottomMarginExclusion){
+        LineText pageLine;
+        // check for a direct intersection.
+        for (int lineIndex = 0, lineMax = pageLines.size(); lineIndex < lineMax; lineIndex++) {
+            pageLine = pageLines.get(lineIndex);
+            if (pageLine.intersects(cursorLocation) && isLineTextIncluded(pageLine, topMarginExclusion, bottomMarginExclusion)) {
+                java.util.List<WordText> lineWords = pageLines.get(lineIndex).getWords();
+                WordText currentWord;
+                for (int wordIndex = 0, wordMax = lineWords.size(); wordIndex < wordMax; wordIndex++) {
+                    currentWord = lineWords.get(wordIndex);
+                    if (currentWord.intersects(cursorLocation)) {
+                        ArrayList<GlyphText> glyphs = currentWord.getGlyphs();
+                        for (int glyphIndex = 0, glyphMax = glyphs.size(); glyphIndex < glyphMax; glyphIndex++) {
+                            GlyphText currentGlyph = glyphs.get(glyphIndex);
+                            if (currentGlyph.intersects(cursorLocation)) {
+                                return new GlyphLocation(lineIndex, wordIndex, glyphIndex);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public static GlyphLocation findFirstGlyphLocation(ArrayList<LineText> pageLines, Point2D.Float cursorLocation,
+                                                       boolean isDown, boolean isLocalDown, GlyphLocation lastGlyphEndLocation,
+                                                       Shape topMarginExclusion, Shape bottomMarginExclusion) {
+        if (pageLines != null) {
+            // check mouse location against y-coordinate of a line and depending on direction pick
+            // first or last world a line.
+            if (isDown) {
+                // find first word of first y line
+                int lineIndex = 0;
+                for (int lineMax = pageLines.size() - 1; lineIndex < lineMax; lineIndex++) {
+                    float y1 = pageLines.get(lineIndex).getBounds().y;
+                    float y2 = pageLines.get(lineIndex + 1).getBounds().y;
+                    if (cursorLocation.y < (y1 + pageLines.get(lineIndex).getBounds().height)
+                            && cursorLocation.y >= (y2 + pageLines.get(lineIndex + 1).getBounds().height)) {
+                        LineText lineText = pageLines.get(lineIndex);
+                        if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
+                            return new GlyphLocation(lineIndex , 0, 0);
+                        }
+                    }
+                }
+            }
+            // going up so check against y bottom up and then pick last work.
+            else {
+                // find left most world.
+                int lineIndex = pageLines.size() - 1;
+                for (; lineIndex > 0; lineIndex--) {
+                    float y1 = pageLines.get(lineIndex - 1).getBounds().y;
+                    float y2 = pageLines.get(lineIndex).getBounds().y;
+                    if (cursorLocation.y < (y1 + pageLines.get(lineIndex-1).getBounds().height)
+                            && cursorLocation.y >= (y2 + pageLines.get(lineIndex).getBounds().height)) {
+                        LineText lineText = pageLines.get(lineIndex);
+                        if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
+                            java.util.List<WordText> words = lineText.getWords();
+                            return new GlyphLocation(lineIndex, words.size() - 1,
+                                    words.get(words.size() - 1).getGlyphs().size() - 1);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public static boolean findMouseContainedWithInLine(Point2D.Float mouseLocation, LineText pageLines) {
+        return pageLines.getBounds().contains(mouseLocation);
     }
 
     public static int highLightGlyphs(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end,
@@ -732,7 +828,7 @@ class GlyphLocation {
         selectedCount += fillLastWord(lineWords, start, end, isRight, isDown);
 
         if (start.line == end.line) {
-            if (isRight) {
+            if (isRight && end.word > start.word ) {
                 // fill left to right
                 for (int wordIndex = start.word + 1; wordIndex <= end.word - 1; wordIndex++) {
                     lineWords.get(wordIndex).selectAll();
@@ -784,7 +880,7 @@ class GlyphLocation {
                     }
                 }
             } else {
-                if (isRight) {
+                if (isRight && end.word > start.word) {
                     WordText word = words.get(start.word);
                     word.setHasSelected(true);
                     for (int glyphIndex = start.glyph; glyphIndex < word.getGlyphs().size(); glyphIndex++) {
@@ -821,7 +917,7 @@ class GlyphLocation {
     public static int fillLastWord(java.util.List<WordText> words, GlyphLocation start, GlyphLocation end,
                                    boolean isRight, boolean isDown) {
         int selectedCount = 0;
-        if (isRight) {
+        if (isRight && end.word > start.word) {
             // same word so we move to select start->end.
             if (start.word == end.word && start.line == end.line) {
                 // nothing to do handled by the first word.
