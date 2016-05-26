@@ -86,7 +86,10 @@ public class ImageStream extends Stream {
 
     private static boolean isLevigoJBIG2ImageReaderClass;
 
-    private static boolean CHECK_PARENT_BLACK_IS_1;
+    /**
+     * Gets the value of the system property "org.icepdf.core.ccittfax.checkParentBlackIs1".
+     */
+    public static boolean CHECK_PARENT_BLACK_IS_1;
 
     static {
         // define alternate page size ration w/h, default Legal.
