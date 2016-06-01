@@ -171,11 +171,12 @@ public class DocumentViewControllerImpl
     /**
      * Initialize a DocumentViewModel implementation.  Can be over ridden to provide custom DocumentViewModel
      * implementation.
-     * @param document document that will be opened
+     *
+     * @param document               document that will be opened
      * @param documentViewScrollPane parent scrollPane of view.
      * @return DocumentViewModel for this view.
      */
-    protected DocumentViewModel createDocumentViewMode(Document document, JScrollPane documentViewScrollPane){
+    protected DocumentViewModel createDocumentViewMode(Document document, JScrollPane documentViewScrollPane) {
         return new DocumentViewModelImpl(document, documentViewScrollPane);
     }
 
@@ -1063,7 +1064,7 @@ public class DocumentViewControllerImpl
         return changed;
     }
 
-    private float calculateZoom(float zoom){
+    private float calculateZoom(float zoom) {
         if (zoomLevels != null) {
             if (zoom < zoomLevels[0])
                 zoom = zoomLevels[0];

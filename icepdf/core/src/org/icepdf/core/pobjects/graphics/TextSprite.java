@@ -92,7 +92,7 @@ public class TextSprite {
      * the current CTM</p>
      *
      * @param cid     cid to paint.
-     * @param unicode unicode represention of cid.
+     * @param unicode unicode representation of cid.
      * @param x       x-coordinate to paint.
      * @param y       y-coordinate to paint.
      * @param width   width of cid from font.

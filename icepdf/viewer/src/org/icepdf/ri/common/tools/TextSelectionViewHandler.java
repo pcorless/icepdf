@@ -23,6 +23,8 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -34,12 +36,14 @@ import java.util.logging.Logger;
  * @since 5.0
  */
 public class TextSelectionViewHandler extends TextSelection
-        implements ToolHandler {
+        implements ToolHandler, MouseWheelListener {
 
     private static final Logger logger =
             Logger.getLogger(TextSelectionViewHandler.class.toString());
 
     protected JComponent parentComponent;
+
+    protected boolean isDragging;
 
     public TextSelectionViewHandler(DocumentViewController documentViewController,
                                     DocumentViewModel documentViewModel,
@@ -62,7 +66,7 @@ public class TextSelectionViewHandler extends TextSelection
             // click word and line selection
             MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
             pageComponent.getTextSelectionPageHandler().wordLineSelection(
-                    modeEvent.getClickCount(), modeEvent.getPoint(),pageComponent);
+                    modeEvent.getClickCount(), modeEvent.getPoint(), pageComponent);
         }
     }
 
@@ -86,6 +90,8 @@ public class TextSelectionViewHandler extends TextSelection
     }
 
     public void mouseReleased(MouseEvent e) {
+
+        isDragging = false;
 
         // deselect rectangles on other selected pages.
         ArrayList<AbstractPageViewComponent> selectedPages =
@@ -121,12 +127,27 @@ public class TextSelectionViewHandler extends TextSelection
         clearRectangle(parentComponent);
     }
 
+    public void mouseWheelMoved(MouseWheelEvent e) {
+
+        if (isDragging) {
+            Component target = documentViewController.getViewPort().getView();
+            Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), target);
+            MouseEvent m = new MouseEvent(target,
+                    0, e.getWhen(), e.getModifiers(),
+                    p.x, p.y,
+                    e.getClickCount(), e.isPopupTrigger(), e.getButton());
+            mouseDragged(m);
+        }
+    }
+
     public void mouseDragged(MouseEvent e) {
 
         // handle text selection drags.
         if (documentViewController != null) {
+            isDragging = true;
+
             // update the currently parentComponent box
-            updateSelectionSize(e.getX(),e.getY(), parentComponent);
+            updateSelectionSize(e.getX(), e.getY(), parentComponent);
 
             // clear previously selected pages
             documentViewModel.clearSelectedPageText();
@@ -153,7 +174,7 @@ public class TextSelectionViewHandler extends TextSelection
                         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
                         page.getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
 
-                    }else{
+                    } else {
                         documentViewModel.removeSelectedPageText(page);
                         page.clearSelectedText();
                         page.repaint();
@@ -172,6 +193,7 @@ public class TextSelectionViewHandler extends TextSelection
             MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
             pageComponent.getTextSelectionPageHandler().selectionIcon(modeEvent.getPoint(), pageComponent);
         }
+
     }
 
     public void paintTool(Graphics g) {
