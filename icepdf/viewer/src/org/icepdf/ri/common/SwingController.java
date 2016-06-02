@@ -2593,26 +2593,6 @@ public class SwingController
      * save the file to, and what name to give it.
      */
     public void saveFile() {
-        // Ensure we actually CAN save the document in the first place
-        if (!havePermissionToModifyDocument()) {
-            org.icepdf.ri.util.Resources.showMessageDialog(
-                    viewer,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    messageBundle,
-                    "viewer.dialog.saveAs.noPermission.title",
-                    "viewer.dialog.saveAs.noPermission.msg");
-            return;
-        }
-
-        if (document.getStateManager().isChanged() &&
-                !Document.foundIncrementalUpdater) {
-            org.icepdf.ri.util.Resources.showMessageDialog(
-                    viewer,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    messageBundle,
-                    "viewer.dialog.saveAs.noUpdates.title",
-                    "viewer.dialog.saveAs.noUpdates.msg");
-        }
 
         // Create and display a file saving dialog
         final JFileChooser fileChooser = new JFileChooser();
@@ -2698,8 +2678,24 @@ public class SwingController
                     BufferedOutputStream buf = new BufferedOutputStream(
                             fileOutputStream, 4096 * 2);
 
-                    document.saveToOutputStream(buf);
-
+                    // We want 'save as' or 'save a copy to always occur
+                    if (document.getStateManager().isChanged() &&
+                            !Document.foundIncrementalUpdater) {
+                        org.icepdf.ri.util.Resources.showMessageDialog(
+                                viewer,
+                                JOptionPane.INFORMATION_MESSAGE,
+                                messageBundle,
+                                "viewer.dialog.saveAs.noUpdates.title",
+                                "viewer.dialog.saveAs.noUpdates.msg");
+                    } else {
+                        if (!document.getStateManager().isChanged()) {
+                            // save as copy
+                            document.writeToOutputStream(buf);
+                        } else {
+                            // save as will append changes.
+                            document.saveToOutputStream(buf);
+                        }
+                    }
                     buf.flush();
                     fileOutputStream.flush();
                     buf.close();
