@@ -357,7 +357,7 @@ public class TilingPattern extends Stream implements Pattern {
         int height = (int) Math.round(bBoxMod.getHeight());
 
         double baseScale = 1.0f;
-        if ((width < 115 || height < 115) && base.getScaleX() >= 1) {
+        if ((width < 150 || height < 150) && base.getScaleX() >= 1) {
             baseScale = base.getScaleX() * 2;
             if (baseScale > 25) {
                 baseScale = 25;
