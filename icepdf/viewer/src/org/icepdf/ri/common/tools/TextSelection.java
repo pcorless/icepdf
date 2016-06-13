@@ -60,28 +60,14 @@ public class TextSelection extends SelectionBoxHandler {
     private boolean leftToRight = true;
 
     // todo make configurable
-    private static int topMargin;
-    private static int bottomMargin;
+    protected int topMargin = 75;
+    protected int bottomMargin = 75;
     protected static boolean enableMarginExclusion;
     protected static boolean enableMarginExclusionBorder;
     protected Rectangle2D topMarginExclusion;
     protected Rectangle2D bottomMarginExclusion;
 
     static {
-        try {
-            topMargin = Defs.intProperty(
-                    "org.icepdf.core.views.page.marginExclusion.top", 75);
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading page top margin exclusion property.");
-        }
-
-        try {
-            bottomMargin = Defs.intProperty(
-                    "org.icepdf.core.views.page.marginExclusion.bottom", 75);
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading page bottom margin exclusion property.");
-        }
-
         try {
             enableMarginExclusion = Defs.booleanProperty(
                     "org.icepdf.core.views.page.marginExclusion.enabled", false);
@@ -579,6 +565,28 @@ public class TextSelection extends SelectionBoxHandler {
     @Override
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
     }
+
+    /**
+     * Sets the top margin used to define an exclusion zone for text selection.  For this value
+     * to be applied the system property -Dorg.icepdf.core.views.page.marginExclusion.enabled=true
+     * must be set.
+     *
+     * @param topMargin top margin height in pixels.
+     */
+    public void setTopMargin(int topMargin) {
+        this.topMargin = topMargin;
+    }
+
+    /**
+     * Sets the bottom margin used to define an exclusion zone for text selection.  For this value
+     * to be applied the system property -Dorg.icepdf.core.views.page.marginExclusion.enabled=true
+     * must be set.
+     *
+     * @param bottomMargin bottom margin height in pixels.
+     */
+    public void setBottomMargin(int bottomMargin) {
+        this.bottomMargin = bottomMargin;
+    }
 }
 
 class GlyphLocation {
@@ -729,7 +737,7 @@ class GlyphLocation {
     }
 
     public static GlyphLocation findGlyphIntersection(ArrayList<LineText> pageLines, Point2D.Float cursorLocation,
-                                                      Shape topMarginExclusion, Shape bottomMarginExclusion){
+                                                      Shape topMarginExclusion, Shape bottomMarginExclusion) {
         LineText pageLine;
         // check for a direct intersection.
         for (int lineIndex = 0, lineMax = pageLines.size(); lineIndex < lineMax; lineIndex++) {
@@ -770,7 +778,7 @@ class GlyphLocation {
                             && cursorLocation.y >= (y2 + pageLines.get(lineIndex + 1).getBounds().height)) {
                         LineText lineText = pageLines.get(lineIndex);
                         if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
-                            return new GlyphLocation(lineIndex , 0, 0);
+                            return new GlyphLocation(lineIndex, 0, 0);
                         }
                     }
                 }
@@ -782,7 +790,7 @@ class GlyphLocation {
                 for (; lineIndex > 0; lineIndex--) {
                     float y1 = pageLines.get(lineIndex - 1).getBounds().y;
                     float y2 = pageLines.get(lineIndex).getBounds().y;
-                    if (cursorLocation.y < (y1 + pageLines.get(lineIndex-1).getBounds().height)
+                    if (cursorLocation.y < (y1 + pageLines.get(lineIndex - 1).getBounds().height)
                             && cursorLocation.y >= (y2 + pageLines.get(lineIndex).getBounds().height)) {
                         LineText lineText = pageLines.get(lineIndex);
                         if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
@@ -825,7 +833,7 @@ class GlyphLocation {
         selectedCount += fillLastWord(lineWords, start, end, isRight, isDown);
 
         if (start.line == end.line) {
-            if (isRight && end.word > start.word ) {
+            if (isRight && end.word > start.word) {
                 // fill left to right
                 for (int wordIndex = start.word + 1; wordIndex <= end.word - 1; wordIndex++) {
                     lineWords.get(wordIndex).selectAll();

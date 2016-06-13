@@ -92,14 +92,14 @@ public class DocumentViewControllerImpl
      */
     public static final float ROTATION_FACTOR = 90F;
 
-    private float[] zoomLevels;
+    protected float[] zoomLevels;
 
-    private Document document;
+    protected Document document;
 
-    private DocumentViewModel documentViewModel;
-    private AbstractDocumentView documentView;
+    protected DocumentViewModel documentViewModel;
+    protected AbstractDocumentView documentView;
 
-    private JScrollPane documentViewScrollPane;
+    protected JScrollPane documentViewScrollPane;
 
     protected int viewportWidth, oldViewportWidth;
     protected int viewportHeight, oldViewportHeight;
@@ -508,7 +508,10 @@ public class DocumentViewControllerImpl
         setViewType(viewType);
     }
 
-    private void setViewType() {
+    /**
+     * Sets the view type, one column, two column, single page etc.
+     */
+    protected void setViewType() {
 
         // check if there is current view, if so dispose it
         if (documentView != null) {
@@ -522,6 +525,30 @@ public class DocumentViewControllerImpl
         }
 
         // create the desired view with the current viewModel.
+        createDocumentView(viewType);
+
+        // as it may have been inactive
+        // notify the view of the tool change
+        documentView.setToolMode(documentViewModel.getViewToolMode());
+
+        // add the new view the scroll pane
+        documentViewScrollPane.setViewportView(documentView);
+        documentViewScrollPane.validate();
+
+        // re-apply the fit mode
+        viewerController.setPageFitMode(viewportFitMode, true);
+
+        // set current page
+        setCurrentPageIndex(documentViewModel.getViewCurrentPageIndex());
+    }
+
+    /**
+     * Creates the specified view type used by the setVieType() call.  Can
+     * be over ridden to create new or custom views.
+     *
+     * @param viewType view type constant
+     */
+    protected void createDocumentView(int viewType) {
         if (viewType == ONE_COLUMN_VIEW) {
             documentView =
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
@@ -556,24 +583,7 @@ public class DocumentViewControllerImpl
             documentView =
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
         }
-
-        // as it may have been inactive
-        // notify the view of the tool change
-        documentView.setToolMode(documentViewModel.getViewToolMode());
-
-
-        // add the new view the scroll pane
-        documentViewScrollPane.setViewportView(documentView);
-        documentViewScrollPane.validate();
-
-        // re-apply the fit mode
-        viewerController.setPageFitMode(viewportFitMode, true);
-
-        // set current page
-        setCurrentPageIndex(documentViewModel.getViewCurrentPageIndex());
-
     }
-
 
     public boolean setFitMode(final int fitMode) {
 
