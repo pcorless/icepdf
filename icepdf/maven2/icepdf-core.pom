@@ -21,18 +21,25 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.icepdf.os</groupId>
     <artifactId>icepdf-core</artifactId>
-    <version>X.X.X</version>
+    <version>%VERSION!</version>
     <packaging>jar</packaging>
     <name>ICEpdf Core</name>
     <url>http://www.icepdf.org</url>
     <description>ICEpdf core rendering library.</description>
+    <licenses>
+      <license>
+        <name>Apache License, Version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
+    <scm>
+        <connection>scm:svn:http://http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf/</connection>
+        <developerConnection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf</developerConnection>
+        <url>http://anonsvn.icesoft.org/repo/icepdf/</url>
+        <tag>HEAD</tag>
+    </scm>
 
-    <repositories>
-        <repository>
-            <id>snapshots</id>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
 
     <dependencies>
 
@@ -55,11 +62,6 @@
             <version>1.54</version>
         </dependency>
 
-        <!--
-           JAI imageIO is not redistributable but need for JPEG2000 support
-           Can be downloaded here:
-               http://download.java.net/media/jai-imageio/builds/release/1.1/
-       -->
         <dependency>
             <groupId>javax.media</groupId>
             <artifactId>jai-core</artifactId>
