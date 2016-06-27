@@ -63,6 +63,24 @@
         <zip duplicate="fail" whenempty="fail"/>
     </presetdef>
 
+    <target name="maven.deploy" description="Build icepdf jars sources and javadocs and deploy to local m2 repo">
+      <ice:subant target="deploy-maven">
+            <fileset dir="./core" includes="build.xml"/>
+            <fileset dir="./viewer" includes="build.xml"/>
+        </ice:subant>
+        <ice:subant target="deploy">
+            <fileset dir="./maven2" includes="build.xml"/>
+        </ice:subant>
+    </target>
+    <target name="stage.nexus" description="Build icepdf jars sources and javadocs and upload to nexus staging repo">
+       <ice:subant target="deploy-maven">
+            <fileset dir="./core" includes="build.xml"/>
+            <fileset dir="./viewer" includes="build.xml"/>
+        </ice:subant>
+        <ice:subant target="stage">
+            <fileset dir="./maven2" includes="build.xml"/>
+        </ice:subant>
+    </target>
     <target name="build.all"
             description="Creates ICEpdf source and binary bundles.">
         <ice:subant target="build.all">

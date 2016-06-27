@@ -110,4 +110,8 @@
         </javadoc>
     </target>
 
+    <target name="deploy-maven" depends="src-jar, jar, javadoc-jar" description="prepare artifacts for maven central repo">
+
+    </target>
+
 </project>

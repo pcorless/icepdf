@@ -21,18 +21,31 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.icepdf.os</groupId>
     <artifactId>icepdf-viewer</artifactId>
-    <version>6.1.2</version>
+    <version>%VERSION!</version>
     <packaging>jar</packaging>
     <name>ICEpdf Viewer RI</name>
     <url>http://www.icefaces.org</url>
     <description>ICEpdf PDF Viewer Reference Implementation (RI)</description>
+    <licenses>
+      <license>
+        <name>Apache License, Version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
+    <scm>
+        <connection>scm:svn:http://http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf/</connection>
+        <developerConnection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf</developerConnection>
+        <url>http://anonsvn.icesoft.org/repo/icepdf/</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <dependencies>
 
         <dependency>
             <groupId>org.icepdf.os</groupId>
             <artifactId>icepdf-core</artifactId>
-            <version>6.1.2</version>
+            <version>X.X.X</version>
         </dependency>
 
         <dependency>
