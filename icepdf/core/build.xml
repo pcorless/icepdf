@@ -117,7 +117,7 @@
     <target name="javadoc">
 
         <delete dir="${build.dir}/javadocs"/>
-        <javadoc verbose="false" useexternalfile="true" failonerror="true"
+        <javadoc verbose="true" useexternalfile="true" failonerror="true"
                  encoding="utf8"
                  destdir="${build.dir}/javadocs" windowtitle="ICEpdf API"
                  additionalparam="-Xdoclint:none">
