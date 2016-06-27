@@ -119,8 +119,7 @@
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="true" useexternalfile="true" failonerror="true"
                  encoding="utf8"
-                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API"
-                 additionalparam="-Xdoclint:none">
+                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API" >
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/core/pobjects/fonts/afm/"/>
