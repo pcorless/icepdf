@@ -64,19 +64,19 @@
     </presetdef>
 
     <target name="maven.deploy" description="Build icepdf jars sources and javadocs and deploy to local m2 repo">
-      <!--  <ice:subant target="deploy-maven">
+        <ice:subant target="deploy-maven">
             <fileset dir="./core" includes="build.xml"/>
             <fileset dir="./viewer" includes="build.xml"/>
-        </ice:subant>-->
+        </ice:subant>
         <ice:subant target="deploy">
             <fileset dir="./maven2" includes="build.xml"/>
         </ice:subant>
     </target>
     <target name="stage.nexus" description="Build icepdf jars sources and javadocs and upload to nexus staging repo">
-       <!--<ice:subant target="deploy-maven">
+       <ice:subant target="deploy-maven">
             <fileset dir="./core" includes="build.xml"/>
             <fileset dir="./viewer" includes="build.xml"/>
-        </ice:subant>-->
+        </ice:subant>
         <ice:subant target="stage">
             <fileset dir="./maven2" includes="build.xml"/>
         </ice:subant>
