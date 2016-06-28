@@ -34,9 +34,8 @@
       </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf/</connection>
-        <developerConnection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf</developerConnection>
-        <url>http://anonsvn.icesoft.org/repo/icepdf/</url>
+        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/</connection>
+        <url>http://sventon.icesoft.org/svn/repos/repo/list/icepdf/</url>
         <tag>HEAD</tag>
     </scm>
 
