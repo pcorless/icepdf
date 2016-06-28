@@ -34,10 +34,10 @@
       </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf/</connection>
-        <developerConnection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/trunk/icepdf</developerConnection>
-        <url>http://anonsvn.icesoft.org/repo/icepdf/</url>
-        <tag>HEAD</tag>
+        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/tags</connection>
+        <developerConnection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/tags</developerConnection>
+        <url>http://anonsvn.icesoft.org/repo/icepdf/tags</url>
+        <tag>icepdf-6.1.2-maven</tag>
     </scm>
 
     <dependencies>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.icepdf.os</groupId>
             <artifactId>icepdf-core</artifactId>
-            <version>X.X.X</version>
+            <version>%VERSION!</version>
         </dependency>
 
         <dependency>
