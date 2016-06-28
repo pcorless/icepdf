@@ -30,14 +30,14 @@ public class ProductInfo {
     /**
      * The 3 levels of version identification, e.g. 1.0.0.
      */
-    public static String PRIMARY = "6";
-    public static String SECONDARY = "1";
-    public static String TERTIARY = "2";
+    public static String PRIMARY = "x";
+    public static String SECONDARY = "x";
+    public static String TERTIARY = "x";
 
     /**
      * The release type of the product (alpha, beta, production).
      */
-    public static String RELEASE_TYPE = "";
+    public static String RELEASE_TYPE = "x";
 
     /**
      * The build number.  Typically this would be tracked and maintained
