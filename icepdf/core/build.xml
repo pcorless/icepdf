@@ -18,10 +18,15 @@
 
     <import file="../examples/etc/build-common.xml"/>
 
+
     <property name="productinfo.src"
               location="conf/org/icepdf/core/application"/>
     <property name="productinfo.dest"
               location="src/org/icepdf/core/application"/>
+
+    <condition property="javadoc.verbose" value="true" else="false">
+          <isset property="docDebug"/>
+      </condition>
 
     <!-- core jar containing core and jbig2 library -->
     <target name="jar" depends="compile" description="Creates ICEpdf core jar.">
@@ -115,11 +120,10 @@
     </target>
 
     <target name="javadoc">
-
         <delete dir="${build.dir}/javadocs"/>
-        <javadoc verbose="true" useexternalfile="true" failonerror="true"
+        <javadoc verbose="${javadoc.verbose}" useexternalfile="true" failonerror="true"
                  encoding="utf8"
-                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API" >
+                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API">
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/core/pobjects/fonts/afm/"/>
