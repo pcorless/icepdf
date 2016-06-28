@@ -26,7 +26,7 @@
     <property name="core.source.dir" location="../core/build"/>
     <property name="viewer.source.dir" location="../viewer/build"/>
     <property name="view.jar" value="${lib.dir}/icepdf-view.jar"/>
-    <property name="pdf.version" value="${version.primary}.${version.secondary}.${version.tertiary}-${release.type}" />
+    <property name="pdf.version" value="${version.primary}.${version.secondary}.${version.tertiary}" />
     <property name="snapshot.repo" value="file://${user.home}/icefaces/local-test-repo/snapshots" />
 
     <!-- defined maven snapshots and staging repository id and url -->
