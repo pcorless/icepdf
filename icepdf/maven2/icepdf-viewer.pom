@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.icepdf.os</groupId>
             <artifactId>icepdf-core</artifactId>
-            <version>X.X.X</version>
+            <version>%VERSION!</version>
         </dependency>
 
         <dependency>
