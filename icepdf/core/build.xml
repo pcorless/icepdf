@@ -26,8 +26,13 @@
 
     <condition property="javadoc.verbose" value="true" else="false">
           <isset property="docDebug"/>
-      </condition>
-
+    </condition>
+    <condition
+      property="javadoc.doclint.none"
+      value=""
+      else="-Xdoclint:none">
+      <not><isset property="withDoclint"/></not>
+    </condition>
     <!-- core jar containing core and jbig2 library -->
     <target name="jar" depends="compile" description="Creates ICEpdf core jar.">
         <!-- jar file name -->
@@ -120,10 +125,12 @@
     </target>
 
     <target name="javadoc">
+        <echo message="additonalparam: ${javadoc.doclint.none}"/>
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="${javadoc.verbose}" useexternalfile="true" failonerror="true"
                  encoding="utf8"
-                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API">
+                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API"
+                 additionalparam="${javadoc.doclint.none}">
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/core/pobjects/fonts/afm/"/>
