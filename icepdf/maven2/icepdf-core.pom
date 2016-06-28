@@ -34,9 +34,8 @@
       </license>
     </licenses>
     <scm>
-        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/tags</connection>
-        <developerConnection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/tags</developerConnection>
-        <url>http://anonsvn.icesoft.org/repo/icepdf/tags</url>
+        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/</connection>
+        <url>http://sventon.icesoft.org/svn/repos/repo/list/icepdf/</url>
         <tag>icepdf-6.1.2-maven</tag>
     </scm>
 
