@@ -124,7 +124,10 @@
         </jar>
     </target>
 
-    <target name="javadoc">
+    <target name="javadoc" description="build javadocs. Note that command line property
+                   docDebug can be used for verbose option and withDoclint can be used when
+                   the optional parameter for turning off doclints is required and available  (Java 1.8)
+                   use:- ant -DwithDoclint=true etc...">
         <echo message="additonalparam: ${javadoc.doclint.none}"/>
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="${javadoc.verbose}" useexternalfile="true" failonerror="true"
