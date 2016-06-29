@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2006-2016 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2016 ICEsoft Technologies Canada Corp.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
@@ -26,7 +26,13 @@
     <name>ICEpdf Viewer RI</name>
     <url>http://www.icefaces.org</url>
     <description>ICEpdf PDF Viewer Reference Implementation (RI)</description>
-    <licenses>
+     <developers>
+        <developer>
+            <name>ICEsoft Technologies Canada Corp.</name>
+            <email>product.sales@icesoft.com</email>
+        </developer>
+    </developers>
+  <licenses>
       <license>
         <name>Apache License, Version 2.0</name>
         <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>

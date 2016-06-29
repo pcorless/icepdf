@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2006-2016 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2016 ICEsoft Technologies Canada Corp.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
@@ -26,6 +26,12 @@
     <name>ICEpdf Core</name>
     <url>http://www.icepdf.org</url>
     <description>ICEpdf core rendering library.</description>
+    <developers>
+        <developer>
+            <name>ICEsoft Technologies Canada Corp.</name>
+            <email>product.sales@icesoft.com</email>
+        </developer>
+    </developers>
     <licenses>
       <license>
         <name>Apache License, Version 2.0</name>
