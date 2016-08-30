@@ -19,7 +19,6 @@ import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.graphics.BlendComposite;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -955,7 +954,7 @@ public class Page extends Dictionary {
 
         // make sure annotations is in part of page.
         boolean found = false;
-        for (Reference ref : annotations) {
+        for (Object ref : annotations) {
             if (ref.equals(annotation.getPObjectReference())) {
                 found = true;
                 break;

@@ -236,7 +236,7 @@ public class MyAnnotationCallback implements AnnotationCallback {
                     annotationComp = annotationComponents.get(i);
                     compReference = annotationComp.getAnnotation().getPObjectReference();
                     // find the component and toggle it's visibility.
-                    if (compReference.equals(popupReference)) {
+                    if (compReference != null && compReference.equals(popupReference)) {
                         if (annotationComp instanceof PopupAnnotationComponent) {
                             PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComp);
                             pageComponent.removeAnnotation(popupComponent);
