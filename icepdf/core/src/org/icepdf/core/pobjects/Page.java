@@ -949,7 +949,7 @@ public class Page extends Dictionary {
 
         StateManager stateManager = library.getStateManager();
         // if we are doing an update we have at least on annot
-        List<Reference> annotations = (List)
+        List<Object> annotations = (List)
                 library.getObject(entries, ANNOTS_KEY);
 
         // make sure annotations is in part of page.
