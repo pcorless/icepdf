@@ -1218,6 +1218,7 @@ public abstract class Annotation extends Dictionary {
 
         AffineTransform oldAT = origG.getTransform();
         Shape oldClip = origG.getClip();
+        Composite oldComp = origG.getComposite();
 
         // Simply uncomment the //// lines to use a different Graphics object
         Graphics2D g = origG;
@@ -1282,6 +1283,7 @@ public abstract class Annotation extends Dictionary {
 
         g.setTransform(oldAT);
         g.setClip(oldClip);
+        g.setComposite(oldComp);
 
         ////g.dispose();
 
