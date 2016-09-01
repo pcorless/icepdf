@@ -90,12 +90,12 @@ public class HexStringObject implements StringObject {
      * @param securityManager security manager used ot encrypt the string.
      */
     public HexStringObject(String string, Reference reference,
-                               SecurityManager securityManager) {
+                           SecurityManager securityManager) {
         // append string data
         this.reference = reference;
         // decrypt the string.
         stringData = new StringBuilder(
-                encryption(Utils.convertByteArrayToHexString(string.getBytes(),false),
+                encryption(Utils.convertByteArrayToHexString(string.getBytes(), false),
                         false, securityManager));
     }
 
@@ -196,7 +196,7 @@ public class HexStringObject implements StringObject {
      *                   Composite and Simple font types respectively
      * @param font       font used to render the literal string data.
      * @return StringBuffer which contains all renderaable characters for the
-     *         given font.
+     * given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
         if (fontFormat == Font.SIMPLE_FORMAT) {
@@ -331,15 +331,7 @@ public class HexStringObject implements StringObject {
                 && (hh.charAt(1) == 'E' | hh.charAt(1) == 'e')
                 && (hh.charAt(2) == 'F' | hh.charAt(2) == 'f')
                 && (hh.charAt(3) == 'F') | hh.charAt(3) == 'f')) {
-            int length = hh.length();
-            sb = new StringBuilder(length / 2);
-            String subStr;
-
-            for (int i = 0; i < length; i = i + 2) {
-                subStr = hh.substring(i, i + 2);
-                sb.append((char) Integer.parseInt(subStr, 16));
-            }
-            return sb;
+            return getRawHexToString();
         }
         // otherwise, assume 4 byte character codes
         else {
@@ -353,6 +345,27 @@ public class HexStringObject implements StringObject {
             }
             return sb;
         }
+    }
+
+    /**
+     * Gets the raw string values not taking into account any special cases for FEFF byte
+     * marking.
+     *
+     * @return two byte hex string converted to plain string.
+     */
+    public StringBuilder getRawHexToString() {
+
+        StringBuilder sb;
+
+        int length = stringData.length();
+        sb = new StringBuilder(length / 2);
+        String subStr;
+
+        for (int i = 0; i < length; i = i + 2) {
+            subStr = stringData.substring(i, i + 2);
+            sb.append((char) Integer.parseInt(subStr, 16));
+        }
+        return sb;
     }
 
     /**

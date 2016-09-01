@@ -15,9 +15,7 @@
  */
 package org.icepdf.core.pobjects.security;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -425,8 +423,10 @@ public class EncryptionDictionary extends Dictionary {
      */
     public String getBigU() {
         Object tmp = library.getObject(entries, U_KEY);
-        if (tmp instanceof StringObject) {
+        if (tmp instanceof LiteralStringObject) {
             return ((StringObject) tmp).getLiteralString();
+        } else if (tmp instanceof HexStringObject) {
+            return ((HexStringObject) tmp).getRawHexToString().toString();
         } else {
             return null;
         }
