@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2006-2016 ICEsoft Technologies Inc.
+  ~ Copyright 2006-2016 ICEsoft Technologies Canada Corp.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the
@@ -21,18 +21,36 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.icepdf.os</groupId>
     <artifactId>icepdf-viewer</artifactId>
-    <version>6.1.0</version>
+    <version>%VERSION!</version>
     <packaging>jar</packaging>
     <name>ICEpdf Viewer RI</name>
     <url>http://www.icefaces.org</url>
     <description>ICEpdf PDF Viewer Reference Implementation (RI)</description>
+     <developers>
+        <developer>
+            <name>ICEsoft Technologies Canada Corp.</name>
+            <email>product.sales@icesoft.com</email>
+        </developer>
+    </developers>
+  <licenses>
+      <license>
+        <name>Apache License, Version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        <distribution>repo</distribution>
+      </license>
+    </licenses>
+    <scm>
+        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/</connection>
+        <url>http://sventon.icesoft.org/svn/repos/repo/list/icepdf/</url>
+        <tag>icepdf-6.1.2-maven</tag>
+    </scm>
 
     <dependencies>
 
         <dependency>
             <groupId>org.icepdf.os</groupId>
             <artifactId>icepdf-core</artifactId>
-            <version>6.1.0</version>
+            <version>%VERSION!</version>
         </dependency>
 
         <dependency>
