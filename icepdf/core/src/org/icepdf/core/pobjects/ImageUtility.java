@@ -693,6 +693,13 @@ public class ImageUtility {
                         | Math.max(0, redOut) << 16
                         | Math.max(0, greenOut) << 8
                         | Math.max(0, blueOut);
+//                if ((red >= 0 || green >= 0 || blue >= 0) && alpha != 0) {
+//                    srcBand[j] =  (Math.min(mAlpha, alpha) )<< 24
+////                    srcBand[j] = mAlpha << 24
+//                            | (redOut & 0xff) << 16
+//                            | (greenOut & 0xff) << 8
+//                            | (blueOut & 0xff);
+//                }
             }
             argbImage.setRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
         }
