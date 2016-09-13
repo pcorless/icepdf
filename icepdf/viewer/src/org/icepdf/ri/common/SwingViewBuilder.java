@@ -1824,10 +1824,18 @@ public class SwingViewBuilder {
             // Regardless we'll add the parent JPanel, to preserve the same layout behaviour
             if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
                     PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
-                viewPanel.add(buildPageViewSinglePageNonConToggleButton());
-                viewPanel.add(buildPageViewSinglePageConToggleButton());
-                viewPanel.add(buildPageViewFacingPageNonConToggleButton());
-                viewPanel.add(buildPageViewFacingPageConToggleButton());
+                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE))
+                    viewPanel.add(buildPageViewSinglePageNonConToggleButton());
+                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE_CONTINUOUS))
+                    viewPanel.add(buildPageViewSinglePageConToggleButton());
+                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE))
+                    viewPanel.add(buildPageViewFacingPageNonConToggleButton());
+                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                        PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE_CONTINUOUS))
+                    viewPanel.add(buildPageViewFacingPageConToggleButton());
             }
             statusPanel.add(viewPanel, BorderLayout.CENTER);
             viewPanel.setLayout(new ToolbarLayout(ToolbarLayout.RIGHT, 0, 1));

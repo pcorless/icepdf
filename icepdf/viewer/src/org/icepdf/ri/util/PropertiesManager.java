@@ -75,6 +75,10 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_STATUSBAR_STATUSLABEL = "application.statusbar.show.statuslabel";
     // properties used to hide/show status bar buttons
     public static final String PROPERTY_SHOW_STATUSBAR_VIEWMODE = "application.statusbar.show.viewmode";
+    public static final String PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE = "application.statusbar.show.viewmode.singlePage";
+    public static final String PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE_CONTINUOUS = "application.statusbar.show.viewmode.singlePageContinuous";
+    public static final String PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE = "application.statusbar.show.viewmode.doublePage";
+    public static final String PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE_CONTINUOUS = "application.statusbar.show.viewmode.doublePageContinuous";
     // properties used to hide/show the utility buttons (open, print, etc.)
     public static final String PROPERTY_SHOW_UTILITY_OPEN = "application.toolbar.show.utility.open";
     public static final String PROPERTY_SHOW_UTILITY_SAVE = "application.toolbar.show.utility.save";
