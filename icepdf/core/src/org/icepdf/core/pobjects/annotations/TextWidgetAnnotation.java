@@ -131,7 +131,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             // marked content which we will use to try and find some data points.
             markedContent = currentContentStream.substring(btStart, etEnd);
         } else {
-            preBt = currentContentStream + " /Tx BMC q BT ";
+            preBt = "/Tx BMC q BT ";
             postEt = " ET Q EMC ";
         }
 

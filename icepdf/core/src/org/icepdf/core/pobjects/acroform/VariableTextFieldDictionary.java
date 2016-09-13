@@ -179,7 +179,12 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             GraphicsState gs = cp.getGraphicsState();
             if (gs != null) {
                 if (gs.getFillColor() != null) color = gs.getFillColor();
-                if (gs.getTextState().tsize > 0) size = gs.getTextState().tsize;
+                if (gs.getTextState().tsize > 0) {
+                    size = gs.getTextState().tsize;
+                } else {
+                    // default to basic size, as last resort.
+                    size = 10;
+                }
                 if (gs.getTextState().font != null) font = gs.getTextState().font;
                 if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
             }
