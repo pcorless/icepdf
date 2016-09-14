@@ -25,6 +25,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -55,6 +56,20 @@ import java.util.logging.Level;
  * @since 5.0
  */
 public class HighLightAnnotationHandler extends TextSelectionPageHandler {
+
+    /**
+     * Property when enabled will set the /contents key value to the selected text of the markup annotation.
+     */
+    private static boolean enableHighlightContents;
+
+    static {
+        try {
+            enableHighlightContents = Defs.booleanProperty(
+                    "org.icepdf.core.views.page.annotation.highlightContent.enabled", false);
+        } catch (NumberFormatException e) {
+            logger.warning("Error reading highlight selection content enabled property.");
+        }
+    }
 
     protected Name highLightType;
 
@@ -109,6 +124,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         if (highlightBounds == null) {
             highlightBounds = getSelectedTextBounds();
         }
+        // grab the selected text
+        String contents = getSelectedText();
 
         // clear the selected text
         documentViewController.clearSelectedText();
@@ -134,7 +151,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                             tBbox);
 
             // pass outline shapes and bounds to create the highlight shapes
-            annotation.setContents(highLightType.toString());
+            annotation.setContents(contents != null && enableHighlightContents ? contents : highLightType.toString());
             annotation.setColor(annotation.getTextMarkupColor());
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
             annotation.setTitleText(System.getProperty("user.name"));
@@ -164,6 +181,11 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             }
         }
         pageViewComponent.repaint();
+    }
+
+    private String getSelectedText() {
+        Page currentPage = pageViewComponent.getPage();
+        return currentPage.getViewText().getSelected().toString();
     }
 
     private ArrayList<Shape> getSelectedTextBounds() {
