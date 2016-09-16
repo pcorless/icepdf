@@ -271,7 +271,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Object tmp = library.getObject(entries, RC_KEY);
         if (tmp != null && tmp instanceof StringObject) {
             StringObject tmpRichText = (StringObject) tmp;
-            richText = tmpRichText.getLiteralString();
+            richText = tmpRichText.getDecryptedLiteralString(library.getSecurityManager());
         }
 
         // default style string

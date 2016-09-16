@@ -194,7 +194,7 @@ public class LaunchAction extends Action {
             if (value instanceof StringObject) {
                 parameters =
                         ((StringObject) value)
-                                .getLiteralString();
+                                .getDecryptedLiteralString(library.getSecurityManager());
             }
         }
 
