@@ -1,4 +1,3 @@
-package org.icepdf.core.pobjects.graphics.commands;
 /*
  * Copyright 2006-2016 ICEsoft Technologies Inc.
  *
@@ -14,6 +13,8 @@ package org.icepdf.core.pobjects.graphics.commands;
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+package org.icepdf.core.pobjects.graphics.commands;
+
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.BlendComposite;
@@ -34,7 +35,7 @@ public class BlendCompositeDrawCmd extends AbstractDrawCmd {
 
     public BlendCompositeDrawCmd(Name blendComposite, float alpha) {
         // check for -1, value not set and default should be used.
-        if (alpha == -1){
+        if (alpha == -1) {
             alpha = 1;
         }
         this.blendComposite = BlendComposite.getInstance(blendComposite, alpha);

@@ -16,6 +16,8 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -198,8 +200,8 @@ public class InteractiveForm extends Dictionary {
                 if (fieldRef instanceof Reference) {
                     // add them all as we find them.
                     annotObj = library.getObject((Reference) fieldRef);
-                    if (annotObj instanceof HashMap){
-                        annotObj = FieldDictionaryFactory.buildField(library, (HashMap)annotObj);
+                    if (annotObj instanceof HashMap) {
+                        annotObj = FieldDictionaryFactory.buildField(library, (HashMap) annotObj);
                     }
                     if (annotObj != null) {
                         fields.add(annotObj);
@@ -219,7 +221,84 @@ public class InteractiveForm extends Dictionary {
     }
 
     /**
-     * A set of flags specifying various document-level characteristics related to signature fields
+     * Gets the signature fields associated with this form.  A new array that references the forms signature annotations.
+     * If no fields are found an empty list is returned.
+     *
+     * @return a list of form signature objects.
+     */
+    public ArrayList<SignatureWidgetAnnotation> getSignatureFields() {
+        // capture the document signatures.
+        ArrayList<SignatureWidgetAnnotation> signatures = new ArrayList<SignatureWidgetAnnotation>();
+        if (fields != null) {
+            for (Object field : fields) {
+                if (field instanceof SignatureWidgetAnnotation) {
+                    signatures.add((SignatureWidgetAnnotation) field);
+                }
+            }
+        }
+        return signatures;
+    }
+
+    /**
+     * Test the byte range of the signature in this form to see if they cover the document in it's entirety.  This
+     * should to be confused with validating a signature this just indicates that there are bytes that have been
+     * written to the file that aren't covered by one of the documents signature.
+     *
+     * @return true if signatures cover the length of the document or false if the signatures don't dover the document
+     * or there are no signatures.
+     */
+    public boolean isSignaturesCoverDocumentLength() {
+        SignatureWidgetAnnotation signatureWidgetAnnotation;
+        try {
+            if (fields != null) {
+                boolean isValidByteRange = false;
+                for (Object field : fields) {
+                    if (field instanceof SignatureWidgetAnnotation) {
+                        signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
+                        if (signatureWidgetAnnotation.getSignatureValidator() != null &&
+                                signatureWidgetAnnotation.getSignatureValidator().checkByteRange()) {
+                            isValidByteRange = true;
+                            break;
+                        }
+                    }
+                }
+                if (isValidByteRange) {
+                    for (Object field : fields) {
+                        if (field instanceof SignatureWidgetAnnotation) {
+                            signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
+                            signatureWidgetAnnotation.getSignatureValidator().setSignaturesCoverDocumentLength(true);
+                        }
+                    }
+                }
+            }
+        } catch (SignatureIntegrityException e) {
+            logger.warning("Signature validation error has occurred");
+        }
+        return false;
+    }
+
+    /**
+     * Checks to see if the fields list contains any signature anntoations.
+     *
+     * @return true if there are any signatures, otherwise false.
+     */
+    public boolean isSignatureFields() {
+        boolean foundSignature = false;
+        ArrayList<Object> fields = getFields();
+        if (fields != null) {
+            for (Object field : fields) {
+                if (field instanceof SignatureWidgetAnnotation) {
+                    foundSignature = true;
+                    break;
+                }
+            }
+        }
+        return foundSignature;
+    }
+
+    /**
+     * A set of flags specifying various document-level characteristics related to signature fields.  It should
+     * be noted that this filed is not used very often and {@see isSignatureFields} should be used instead.
      *
      * @return true if enabled, false otherwise.
      */

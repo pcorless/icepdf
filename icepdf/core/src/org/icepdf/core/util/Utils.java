@@ -379,7 +379,7 @@ public class Utils {
      */
     public static String convertStringObject(Library library, StringObject stringObject) {
         String convertedStringObject = null;
-        String titleText = stringObject.getDecryptedLiteralString(library.securityManager);
+        String titleText = stringObject.getDecryptedLiteralString(library.getSecurityManager());
         // If the title begins with 254 and 255 we are working with
         // Octal encoded strings. Check first to make sure that the
         // title string is not null, or is at least of length 2.

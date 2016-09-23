@@ -43,9 +43,14 @@
         <pathelement location="${build.classes.dir}"/>
         <fileset dir="${build.lib.dir}">
             <patternset refid="icepdf.lib.batik.jars"/>
+            <patternset refid="icepdf.lib.bouncy.jars"/>
             <patternset refid="icepdf.lib.core"/>
         </fileset>
     </path>
+
+    <condition property="javadoc.verbose" value="true" else="false">
+          <isset property="docDebug"/>
+      </condition>
 
     <target name="jar" depends="compile"
             description="Creates ICEpdf Viewer RI jar.">
@@ -96,8 +101,8 @@
 
     <target name="javadoc">
         <delete dir="${build.dir}/javadocs"/>
-        <javadoc verbose="false" useexternalfile="true" failonerror="true"
-                 encoding="utf8" additionalparam="-Xdoclint:none"
+        <javadoc verbose="${javadoc.verbose}" useexternalfile="true" failonerror="true"
+                 encoding="utf8"
                  destdir="${build.dir}/javadocs" windowtitle="ICEpdf Viewer RI">
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
@@ -107,6 +112,10 @@
             </fileset>
             <doctitle><![CDATA[<h2>ICEpdf Viewer RI</h2>]]></doctitle>
         </javadoc>
+    </target>
+
+    <target name="deploy-maven" depends="src-jar, jar, javadoc-jar" description="prepare artifacts for maven central repo">
+
     </target>
 
 </project>

@@ -15,39 +15,21 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
+import org.icepdf.ri.common.EscapeJDialog;
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 
 /**
  * Common abstract class for all annotation dialogs.
  *
  * @since 4.0
  */
-public abstract class AnnotationDialogAdapter extends JDialog
+public abstract class AnnotationDialogAdapter extends EscapeJDialog
         implements AnnotationProperties {
 
     protected AnnotationDialogAdapter(JFrame owner, boolean modal)
             throws HeadlessException {
         super(owner, modal);
-    }
-
-    /**
-     * Override createRootPane so that "escape" key can be used to
-     * close this window.
-     */
-    protected JRootPane createRootPane() {
-        ActionListener actionListener = new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                setVisible(false);
-                dispose();
-            }
-        };
-        JRootPane rootPane = new JRootPane();
-        KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-        rootPane.registerKeyboardAction(actionListener, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
-        return rootPane;
     }
 }

@@ -93,6 +93,15 @@ public class LineText extends AbstractText implements TextSelect {
         }
     }
 
+    public void clearCurrentWord(){
+        // make sure we don't insert a new line if the previous has no words.
+        if (currentWord != null &&
+                currentWord.size() == 0) {
+            return;
+        }
+        currentWord = null;
+    }
+
     /**
      * Adds the specified word to the end of the line collection and makes
      * the new word the currentWord reference.

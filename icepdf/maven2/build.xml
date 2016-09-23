@@ -20,16 +20,54 @@
          xsi:schemaLocation="antlib:org.apache.maven.artifact.ant ">
 
     <property file="./build.properties"/>
+    <property file="../build.properties"/>
     <property name="lib.dir" location="../lib"/>
+    <property name="core.jar" value="#{lib.dir}/icepdf-core.jar"/>
+    <property name="core.source.dir" location="../core/build"/>
+    <property name="viewer.source.dir" location="../viewer/build"/>
+    <property name="view.jar" value="${lib.dir}/icepdf-view.jar"/>
+    <property name="pdf.version" value="${version.primary}.${version.secondary}.${version.tertiary}" />
+    <property name="snapshot.repo" value="file://${user.home}/icepdf/local-test-repo/snapshots" />
 
+    <!-- defined maven snapshots and staging repository id and url -->
+      <property name="ossrh-snapshots-repository-url"
+        value="https://oss.sonatype.org/content/repositories/snapshots/" />
+      <property name="ossrh-staging-repository-url"
+        value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
+      <!-- there server id in the Maven settings.xml -->
+      <property name="ossrh-server-id" value="sonatype-nexus-staging" />
+
+    <!-- in order for deploy to be done from top level value for release.dir is maven2/release
+         if building from maven2 directly, needs to be ./release -->
+    <property name="release.dir" value="maven2/release"/>
 
     <path id="maven-ant-tasks.classpath"
           path="${lib.dir}/maven-ant-tasks-2.1.10.jar"/>
     <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
              uri="antlib:org.apache.maven.artifact.ant"
              classpathref="maven-ant-tasks.classpath"/>
+    <macrodef name="makePomFiles">
+        <attribute name="pdfPom"/>
+        <attribute name="version"/>
+        <sequential>
+            <copy tofile="release/@{pdfPom}.pom" filtering="true" overwrite="true">
+                <fileset dir=".">
+                    <include name="@{pdfPom}.pom"/>
+                </fileset>
+                <filterset begintoken="%" endtoken="!">
+                    <filter token="VERSION" value="@{version}" />
+                </filterset>
+           </copy>
+        </sequential>
+    </macrodef>
 
-    <target name="install" depends="get-maven">
+    <target name="versionPoms">
+        <mkdir dir="release"/>
+        <makePomFiles pdfPom="icepdf-core" version="${pdf.version}"/>
+        <makePomFiles pdfPom="icepdf-viewer" version="${pdf.version}"/>
+    </target>
+
+  <!--  <target name="install" depends="get-maven">
         <artifact:localRepository id="local.repository"
                                   path="${local.repository}" layout="default"/>
         <artifact:pom id="icepdfCorePom" file="icepdf-core.pom">
@@ -54,6 +92,119 @@
             <pom refid="icepdfViewerPom"/>
         </artifact:install>
 
+    </target>  -->
+
+    <target name="deploy" depends="versionPoms">
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
+            <arg value="-Durl=${snapshot.repo}"/>
+            <arg value="-DrepositoryId=${snapshot.repo.id}"/>
+            <arg value="-DpomFile=${release.dir}/icepdf-core.pom"/>
+            <arg value="-Dfile=${lib.dir}/icepdf-core.jar "/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
+            <arg value="-Durl=${snapshot.repo}"/>
+            <arg value="-DrepositoryId=${snapshot.repo.id}"/>
+            <arg value="-DpomFile=${release.dir}/icepdf-core.pom"/>
+            <arg value="-Dclassifier=sources" />
+            <arg value="-Dfile=${core.source.dir}/icepdf-core-sources.jar "/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
+            <arg value="-Durl=${snapshot.repo}"/>
+            <arg value="-DrepositoryId=${snapshot.repo.id}"/>
+            <arg value="-DpomFile=${release.dir}/icepdf-core.pom"/>
+            <arg value="-Dclassifier=javadoc" />
+            <arg value="-Dfile=${core.source.dir}/icepdf-core-javadoc.jar "/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
+            <arg value="-Durl=${snapshot.repo}"/>
+            <arg value="-DrepositoryId=${snapshot.repo.id}"/>
+            <arg value="-DpomFile=${release.dir}/icepdf-viewer.pom"/>
+            <arg value="-Dfile=${lib.dir}/icepdf-viewer.jar "/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
+            <arg value="-Durl=${snapshot.repo}"/>
+            <arg value="-DrepositoryId=${snapshot.repo.id}"/>
+            <arg value="-DpomFile=${release.dir}/icepdf-viewer.pom"/>
+            <arg value="-Dclassifier=sources" />
+            <arg value="-Dfile=${viewer.source.dir}/icepdf-viewer-sources.jar "/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file"/>
+            <arg value="-Durl=${snapshot.repo}"/>
+            <arg value="-DrepositoryId=${snapshot.repo.id}"/>
+            <arg value="-DpomFile=${release.dir}/icepdf-viewer.pom"/>
+            <arg value="-Dclassifier=javadoc" />
+            <arg value="-Dfile=${viewer.source.dir}/icepdf-viewer-javadoc.jar "/>
+        </artifact:mvn>
+    </target>
+
+    <target name="stage" depends="versionPoms" description="deploy release version to Maevn staging repo">
+         <artifact:mvn>
+             <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+             <arg value="-Durl=${ossrh-staging-repository-url}" />
+             <arg value="-DrepositoryId=${ossrh-server-id}" />
+             <arg value="-DpomFile=${release.dir}/icepdf-core.pom"/>
+             <arg value="-Dfile=${lib.dir}/icepdf-core.jar "/>
+             <arg value="-Pgpg"/>
+         </artifact:mvn>
+         <artifact:mvn>
+             <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+             <arg value="-Durl=${ossrh-staging-repository-url}" />
+             <arg value="-DrepositoryId=${ossrh-server-id}" />
+             <arg value="-DpomFile=${release.dir}/icepdf-core.pom"/>
+             <arg value="-Dclassifier=sources" />
+             <arg value="-Dfile=${core.source.dir}/icepdf-core-sources.jar "/>
+             <arg value="-Pgpg"/>
+         </artifact:mvn>
+         <artifact:mvn>
+             <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+             <arg value="-Durl=${ossrh-staging-repository-url}" />
+             <arg value="-DrepositoryId=${ossrh-server-id}" />
+            <arg value="-DpomFile=${release.dir}/icepdf-core.pom"/>
+            <arg value="-Dclassifier=javadoc" />
+            <arg value="-Dfile=${core.source.dir}/icepdf-core-javadoc.jar "/>
+            <arg value="-Pgpg"/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+            <arg value="-Durl=${ossrh-staging-repository-url}" />
+            <arg value="-DrepositoryId=${ossrh-server-id}" />
+            <arg value="-DpomFile=${release.dir}/icepdf-viewer.pom"/>
+            <arg value="-Dfile=${lib.dir}/icepdf-viewer.jar "/>
+            <arg value="-Pgpg"/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+            <arg value="-Durl=${ossrh-staging-repository-url}" />
+            <arg value="-DrepositoryId=${ossrh-server-id}" />  
+            <arg value="-DpomFile=${release.dir}/icepdf-viewer.pom"/>
+            <arg value="-Dclassifier=sources" />
+            <arg value="-Dfile=${viewer.source.dir}/icepdf-viewer-sources.jar "/>
+            <arg value="-Pgpg"/>
+        </artifact:mvn>
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+            <arg value="-Durl=${ossrh-staging-repository-url}" />
+            <arg value="-DrepositoryId=${ossrh-server-id}" />  
+            <arg value="-DpomFile=${release.dir}/icepdf-viewer.pom"/>
+            <arg value="-Dclassifier=sources" />
+            <arg value="-Dfile=${viewer.source.dir}/icepdf-viewer-sources.jar "/>
+            <arg value="-Pgpg"/>
+        </artifact:mvn>  
+        <artifact:mvn>
+            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
+            <arg value="-Durl=${ossrh-staging-repository-url}" />
+            <arg value="-DrepositoryId=${ossrh-server-id}" />  
+            <arg value="-DpomFile=${release.dir}/icepdf-viewer.pom"/>
+            <arg value="-Dclassifier=javadoc" />
+            <arg value="-Dfile=${viewer.source.dir}/icepdf-viewer-javadoc.jar "/>
+            <arg value="-Pgpg"/>
+        </artifact:mvn>                                                    
     </target>
 
     <target name="get-maven">

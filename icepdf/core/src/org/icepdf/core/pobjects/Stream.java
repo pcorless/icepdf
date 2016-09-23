@@ -224,7 +224,7 @@ public class Stream extends Dictionary {
 
         // Search for crypt dictionary entry and decode params so that
         // named filters can be assigned correctly.
-        if (library.securityManager != null) {
+        if (library.getSecurityManager() != null) {
             // check see of there is a decodeParams for a crypt filter.
             HashMap decodeParams = library.getDictionary(entries, DECODEPARAM_KEY);
             input = library.getSecurityManager().getEncryptionInputStream(

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2006-2016 ICEsoft Technologies Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package org.icepdf.core.pobjects.graphics;
 
 /*
@@ -108,33 +123,33 @@ public final class BlendComposite implements Composite {
     // todo consider composite cache.
     public static Composite getInstance(Name modeName, float alpha) {
         // check for -1, value not set and default should be used.
-        if (alpha == -1){
+        if (alpha == -1) {
             alpha = 1;
         }
-        if (modeName.equals(NORMAL_VALUE) || modeName.equals(COMPATIBLE_VALUE)){
+        if (modeName.equals(NORMAL_VALUE) || modeName.equals(COMPATIBLE_VALUE)) {
             return AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
 //            return new BlendComposite(BlendingMode.NORMAL, alpha);
-        }else if (modeName.equals(MULTIPLY_VALUE)){
+        } else if (modeName.equals(MULTIPLY_VALUE)) {
             return new BlendComposite(BlendingMode.MULTIPLY, alpha);
-        }else if (modeName.equals(SCREEN_VALUE)){
+        } else if (modeName.equals(SCREEN_VALUE)) {
             return new BlendComposite(BlendingMode.SCREEN, alpha);
-        }else if (modeName.equals(OVERLAY_VALUE)){
+        } else if (modeName.equals(OVERLAY_VALUE)) {
             return new BlendComposite(BlendingMode.OVERLAY, alpha);
-        }else if (modeName.equals(DARKEN_VALUE)){
+        } else if (modeName.equals(DARKEN_VALUE)) {
             return new BlendComposite(BlendingMode.DARKEN, alpha);
-        }else if (modeName.equals(LIGHTEN_VALUE)){
+        } else if (modeName.equals(LIGHTEN_VALUE)) {
             return new BlendComposite(BlendingMode.LIGHTEN, alpha);
-        }else if (modeName.equals(COLOR_DODGE_VALUE)){
+        } else if (modeName.equals(COLOR_DODGE_VALUE)) {
             return new BlendComposite(BlendingMode.SOFT_DODGE, alpha);
-        }else if (modeName.equals(COLOR_BURN_VALUE)){
+        } else if (modeName.equals(COLOR_BURN_VALUE)) {
             return new BlendComposite(BlendingMode.SOFT_BURN, alpha);
-        }else if (modeName.equals(HARD_LIGHT_VALUE)){
+        } else if (modeName.equals(HARD_LIGHT_VALUE)) {
             return new BlendComposite(BlendingMode.HARD_LIGHT, alpha);
-        }else if (modeName.equals(SOFT_LIGHT_VALUE)){
+        } else if (modeName.equals(SOFT_LIGHT_VALUE)) {
             return new BlendComposite(BlendingMode.SOFT_LIGHT, alpha);
-        }else if (modeName.equals(DIFFERENCE_VALUE)){
+        } else if (modeName.equals(DIFFERENCE_VALUE)) {
             return new BlendComposite(BlendingMode.DIFFERENCE, alpha);
-        }else if (modeName.equals(EXCLUSION_VALUE)){
+        } else if (modeName.equals(EXCLUSION_VALUE)) {
             return new BlendComposite(BlendingMode.EXCLUSION, alpha);
         }
 //        return new BlendComposite(BlendingMode.NORMAL, alpha);
@@ -251,9 +266,9 @@ public final class BlendComposite implements Composite {
                     // mixes the result with the opacity
                     dstPixels[x] =
                             ((int) (dstPixel[3] + (result[3] - dstPixel[3]) * alpha) & 0xFF) << 24 |
-                            ((int) (dstPixel[0] + (result[0] - dstPixel[0]) * alpha) & 0xFF) << 16 |
-                            ((int) (dstPixel[1] + (result[1] - dstPixel[1]) * alpha) & 0xFF) << 8 |
-                            (int) (dstPixel[2] + (result[2] - dstPixel[2]) * alpha) & 0xFF;
+                                    ((int) (dstPixel[0] + (result[0] - dstPixel[0]) * alpha) & 0xFF) << 16 |
+                                    ((int) (dstPixel[1] + (result[1] - dstPixel[1]) * alpha) & 0xFF) << 8 |
+                                    (int) (dstPixel[2] + (result[2] - dstPixel[2]) * alpha) & 0xFF;
                 }
                 dstOut.setDataElements(0, y, width, 1, dstPixels);
             }
@@ -376,7 +391,7 @@ public final class BlendComposite implements Composite {
                     return new Blender() {
                         @Override
                         public int[] blend(int[] src, int[] dst) {
-                            if (src[3] == 0){
+                            if (src[3] == 0) {
                                 return dst;
                             }
                             return src;
@@ -387,7 +402,7 @@ public final class BlendComposite implements Composite {
                         @Override
                         public int[] blend(int[] src, int[] dst) {
                             // white stays white.
-                            if (src[3] == 0   ){
+                            if (src[3] == 0) {
                                 return dst;
                             }
                             return new int[]{
@@ -556,7 +571,7 @@ public final class BlendComposite implements Composite {
                     return new Blender() {
                         @Override
                         public int[] blend(int[] src, int[] dst) {
-                            if (src[3] == 0   ){
+                            if (src[3] == 0) {
                                 return dst;
                             }
                             return new int[]{
@@ -674,7 +689,7 @@ public final class BlendComposite implements Composite {
                         @Override
                         public int[] blend(int[] src, int[] dst) {
                             // screening with black leaves the underlying colour unchanged.
-                            if (src[3] == 0  ){
+                            if (src[3] == 0) {
                                 return dst;
                             }
                             return new int[]{
@@ -734,17 +749,17 @@ public final class BlendComposite implements Composite {
                         @Override
                         public int[] blend(int[] src, int[] dst) {
                             // screening with black leaves the underlying colour unchanged.
-                            if ((src[0] == 0 && src[1] == 0 && src[2] == 0)  ){
+                            if ((src[0] == 0 && src[1] == 0 && src[2] == 0)) {
                                 return dst;
                             }
                             // screening any colour with white, produces white.
-                            if ((dst[0] != 255 && dst[1] != 255 && dst[2] != 255)  ){
-                                int[] value =  new  int[]{
-                                    255 - ((255 - src[0]) * (255 - dst[0]) >> 8),
-                                    255 - ((255 - src[1]) * (255 - dst[1]) >> 8),
-                                    255 - ((255 - src[2]) * (255 - dst[2]) >> 8),
-                                    Math.min(255, src[3] + (dst[3]))
-                                    };
+                            if ((dst[0] != 255 && dst[1] != 255 && dst[2] != 255)) {
+                                int[] value = new int[]{
+                                        255 - ((255 - src[0]) * (255 - dst[0]) >> 8),
+                                        255 - ((255 - src[1]) * (255 - dst[1]) >> 8),
+                                        255 - ((255 - src[2]) * (255 - dst[2]) >> 8),
+                                        Math.min(255, src[3] + (dst[3]))
+                                };
                                 return value;
                             }
                             return src;
@@ -775,7 +790,7 @@ public final class BlendComposite implements Composite {
                     return new Blender() {
                         @Override
                         public int[] blend(int[] src, int[] dst) {
-                            if (src[3] == 0   ){
+                            if (src[3] == 0) {
                                 return dst;
                             }
                             return new int[]{

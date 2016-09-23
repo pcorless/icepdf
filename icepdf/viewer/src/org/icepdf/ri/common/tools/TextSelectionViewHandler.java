@@ -23,7 +23,8 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.lang.ref.WeakReference;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -34,14 +35,15 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public class TextSelectionViewHandler extends SelectionBoxHandler
-        implements ToolHandler {
+public class TextSelectionViewHandler extends TextSelection
+        implements ToolHandler, MouseWheelListener {
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(TextSelectionViewHandler.class.toString());
 
-
     protected JComponent parentComponent;
+
+    protected boolean isDragging;
 
     public TextSelectionViewHandler(DocumentViewController documentViewController,
                                     DocumentViewModel documentViewModel,
@@ -51,25 +53,48 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (parentComponent != null) {
-            parentComponent.requestFocus();
+
+        // clear all selected text.
+        documentViewController.clearSelectedText();
+        clearSelectionState();
+
+        // check if we are over a page
+        AbstractPageViewComponent pageComponent = isOverPageComponent(parentComponent, e);
+
+        if (pageComponent != null) {
+            pageComponent.requestFocus();
+            // click word and line selection
+            MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
+            pageComponent.getTextSelectionPageHandler().wordLineSelection(
+                    modeEvent.getClickCount(), modeEvent.getPoint(), pageComponent);
         }
     }
 
     public void mousePressed(MouseEvent e) {
         // clear all selected text.
         documentViewController.clearSelectedText();
+        clearSelectionState();
+
+        lastMousePressedLocation = e.getPoint();
 
         // start selection box.
         resetRectangle(e.getX(), e.getY());
+
+        // check if we are over a page
+        AbstractPageViewComponent pageComponent = isOverPageComponent(parentComponent, e);
+        if (pageComponent != null) {
+            pageComponent.requestFocus();
+            MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
+            pageComponent.getTextSelectionPageHandler().selectionStart(modeEvent.getPoint(), pageComponent, true);
+        }
     }
 
     public void mouseReleased(MouseEvent e) {
-        // update selection rectangle
-        updateSelectionSize(e, parentComponent);
+
+        isDragging = false;
 
         // deselect rectangles on other selected pages.
-        ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
+        ArrayList<AbstractPageViewComponent> selectedPages =
                 documentViewModel.getSelectedPageText();
 
         // check if we are over a page
@@ -82,10 +107,11 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
 
             if (selectedPages != null &&
                     selectedPages.size() > 0) {
-                for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
-                    AbstractPageViewComponent pageComp = page.get();
+                AbstractPageViewComponent pageComp;
+                for (AbstractPageViewComponent selectedPage : selectedPages) {
+                    pageComp = selectedPage;
                     if (pageComp != null) {
-                        pageComp.dispatchEvent(modeEvent);
+                        pageComp.getTextSelectionPageHandler().selectionEnd(modeEvent.getPoint(), pageComp);
                     }
                 }
             }
@@ -96,38 +122,36 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
                     PropertyConstants.TEXT_SELECTED,
                     null, null);
         }
-        // clear the child rectangle
-        if (selectedPages != null &&
-                selectedPages.size() > 0) {
-            for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
-                AbstractPageViewComponent pageComp = page.get();
-                if (pageComp != null) {
-                    pageComp.clearSelectionRectangle();
-                }
-            }
-        }
 
         // clear the rectangle
         clearRectangle(parentComponent);
-
     }
 
-    public void mouseEntered(MouseEvent e) {
+    public void mouseWheelMoved(MouseWheelEvent e) {
 
-    }
-
-    public void mouseExited(MouseEvent e) {
-
+        if (isDragging) {
+            Component target = documentViewController.getViewPort().getView();
+            Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), target);
+            MouseEvent m = new MouseEvent(target,
+                    0, e.getWhen(), e.getModifiers(),
+                    p.x, p.y,
+                    e.getClickCount(), e.isPopupTrigger(), e.getButton());
+            mouseDragged(m);
+        }
     }
 
     public void mouseDragged(MouseEvent e) {
 
         // handle text selection drags.
         if (documentViewController != null) {
+            isDragging = true;
+
             // update the currently parentComponent box
-            updateSelectionSize(e, parentComponent);
+            updateSelectionSize(e.getX(), e.getY(), parentComponent);
+
             // clear previously selected pages
             documentViewModel.clearSelectedPageText();
+
             // add selection box to child pages
             if (documentViewModel != null) {
                 java.util.List<AbstractPageViewComponent> pages =
@@ -136,38 +160,44 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
                     Rectangle tmp = SwingUtilities.convertRectangle(
                             parentComponent, getRectToDraw(), page);
                     if (page.getBounds().intersects(tmp)) {
-
                         // add the page to the page as it is marked for selection
                         documentViewModel.addSelectedPageText(page);
 
-                        // convert the rectangle to the correct space
-                        Rectangle selectRec =
-                                SwingUtilities.convertRectangle(parentComponent,
-                                        rectToDraw,
-                                        page);
+                        Point modEvent = SwingUtilities.convertPoint(parentComponent,
+                                e.getPoint(), page);
+
                         // set the selected region.
-                        page.setSelectionRectangle(
-                                SwingUtilities.convertPoint(parentComponent,
-                                        e.getPoint(), page),
-                                selectRec);
+                        page.setSelectionRectangle(modEvent, tmp);
+
+                        // pass the selection movement on to the page.
+                        boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
+                        boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
+                        page.getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
+
+                    } else {
+                        documentViewModel.removeSelectedPageText(page);
+                        page.clearSelectedText();
+                        page.repaint();
                     }
                 }
             }
         }
+
     }
 
     public void mouseMoved(MouseEvent e) {
-        // check if we are over a page
-        AbstractPageViewComponent pageComponent =
-                isOverPageComponent(parentComponent, e);
+
+        AbstractPageViewComponent pageComponent = isOverPageComponent(parentComponent, e);
         if (pageComponent != null) {
-            pageComponent.dispatchEvent(SwingUtilities.convertMouseEvent(
-                    parentComponent, e, pageComponent));
+            // assign the correct icon state for the cursor.
+            MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
+            pageComponent.getTextSelectionPageHandler().selectionIcon(modeEvent.getPoint(), pageComponent);
         }
+
     }
 
     public void paintTool(Graphics g) {
-
+//        paintSelectionBox(g, rectToDraw);
     }
 
     @Override
@@ -180,6 +210,14 @@ public class TextSelectionViewHandler extends SelectionBoxHandler
     }
 
     public void uninstallTool() {
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    public void mouseExited(MouseEvent e) {
 
     }
 }

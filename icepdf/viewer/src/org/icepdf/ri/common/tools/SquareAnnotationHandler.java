@@ -94,7 +94,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
             }
         }
 
-        strokeWidth = (float)Defs.doubleProperty("org.icepdf.core.views.page.annotation.squareCircle.stroke.width",
+        strokeWidth = (float) Defs.doubleProperty("org.icepdf.core.views.page.annotation.squareCircle.stroke.width",
                 DEFAULT_STROKE_WIDTH);
 
         // need to make the stroke cap, thickness configurable. Or potentially
@@ -156,7 +156,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     }
 
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
         // convert the rectangle to page space
         rectangle = convertToPageSpace(rectangle);
@@ -180,7 +180,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         annotation.setColor(lineColor);
         if (annotation.isFillColor() || useInternalColor) {
             annotation.setFillColor(internalColor);
-            if (!annotation.isFillColor()){
+            if (!annotation.isFillColor()) {
                 annotation.setFillColor(true);
             }
         }
@@ -248,7 +248,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     }
 
     public void mouseDragged(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
         rectangle.setRect(rectToDraw);
         pageViewComponent.repaint();
     }
@@ -257,7 +257,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.
      *
-     * @return transformed bbox.
+     * @return transformed bBox.
      */
     protected Rectangle convertToPageSpace(Rectangle rect) {
         Page currentPage = pageViewComponent.getPage();

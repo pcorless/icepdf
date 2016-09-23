@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.Document;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -129,21 +128,27 @@ public interface DocumentViewModel {
     public Document getDocument();
 
     /**
-     * Gets a list of doucment pages that have selected text elements. The
+     * Gets a list of document pages that have selected text elements. The
      * pages are referenced so that they will be removed automatically if
      * the memory manage needs to dispose of a page.
      *
      * @return list Weakly referenced pages
      */
-    public ArrayList<WeakReference<AbstractPageViewComponent>> getSelectedPageText();
+    public ArrayList<AbstractPageViewComponent> getSelectedPageText();
 
     /**
      * Adds the specified page to the list of selected pages.
      *
-     * @param pageViewComponent pageview component to add to list.
+     * @param pageViewComponent pageView component to add to list.
      */
     public void addSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
+    /**
+     * Remove the specified page to the list of selected pages.
+     *
+     * @param pageViewComponent pageView component to add to list.
+     */
+    public void removeSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Returns true if all text in the document should be in a selected state.
@@ -202,7 +207,7 @@ public interface DocumentViewModel {
     public float getViewZoom();
 
     /**
-     * Sets the view rotaiton of this model.
+     * Sets the view rotation of this model.
      *
      * @param viewRotation rotation in degrees
      * @return true if the view rotation was set correctly, otherwise false.
@@ -265,7 +270,7 @@ public interface DocumentViewModel {
     public void setPageBoundary(final int pageBoundary);
 
     /**
-     * Gets the page boundry used to paint document pages.
+     * Gets the page boundary used to paint document pages.
      *
      * @return page boundary type as defined in the class Page.
      */
@@ -274,7 +279,7 @@ public interface DocumentViewModel {
     /**
      * Gets the currently selected annotation
      *
-     * @return currently selected annotaitons.
+     * @return currently selected annotations.
      */
     public AnnotationComponent getCurrentAnnotation();
 
@@ -288,7 +293,7 @@ public interface DocumentViewModel {
     /**
      * Adds memento state  to the care taker.
      *
-     * @param oldMementoState origional state.
+     * @param oldMementoState original state.
      * @param newMementoState new state.
      */
     public void addMemento(Memento oldMementoState,

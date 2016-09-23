@@ -271,12 +271,12 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         Object tmp = library.getObject(entries, RC_KEY);
         if (tmp != null && tmp instanceof StringObject) {
             StringObject tmpRichText = (StringObject) tmp;
-            richText = tmpRichText.getLiteralString();
+            richText = tmpRichText.getDecryptedLiteralString(library.getSecurityManager());
         }
 
         // default style string
         if (library.getObject(entries, DS_KEY) != null) {
-            defaultStylingString = library.getString(entries, DS_KEY);
+            defaultStylingString = getString(DS_KEY);
         }
 
         // set the default quadding value
@@ -402,8 +402,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         shapes.add(new TransformDrawCmd(af));
 
         // iterate over each line of text painting the strings.
-        if (content == null){
-            content = "";
+        if (content == null) {
+            setContents("");
         }
 
         // create the new font to draw with
@@ -566,7 +566,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         if (fontStyle == Font.PLAIN) {
             dsString.append("font-style:normal;");
         }
-        entries.put(DS_KEY, new LiteralStringObject(dsString.toString()));
+        setString(DS_KEY, dsString.toString());
 
         // write out the  color
         if (fillType) {
@@ -588,7 +588,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         }
 
         // write out the default content test.
-        entries.put(CONTENTS_KEY, new LiteralStringObject(content));
+        setContents(content);
 
         // build out the rich text string.
         Object[] colorArgument = new Object[]{dsString};
@@ -599,7 +599,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             rcString.append("<p>").append(line).append("</p>");
         }
         rcString.append(BODY_END);
-        entries.put(RC_KEY, new LiteralStringObject(rcString.toString()));
+        setString(RC_KEY, rcString.toString());
     }
 
     public String getDefaultStylingString() {

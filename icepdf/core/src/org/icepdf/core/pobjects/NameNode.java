@@ -141,7 +141,7 @@ public class NameNode extends Dictionary {
     private String decryptIfText(Object tmp) {
         if (tmp instanceof StringObject) {
             StringObject nameText = (StringObject) tmp;
-            return nameText.getDecryptedLiteralString(library.securityManager);
+            return nameText.getDecryptedLiteralString(library.getSecurityManager());
         } else if (tmp instanceof String) {
             return (String) tmp;
         }

@@ -200,17 +200,21 @@ public class ImageUtility {
         return bi;
     }
 
+    public static void writeImage(final BufferedImage bufferedImage, final String fileName,
+                                  String baseOutputPath){
+        try {
+            ImageIO.write(bufferedImage, "PNG",
+                    new File(baseOutputPath + fileName + ".png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void displayImage(final BufferedImage bufferedImage, final String title) {
 
         if (bufferedImage == null) {
             return;
         }
-        // write the image out.
-//        try {
-//            ImageIO.write(bufferedImage, "PNG", new File("D:\\java\\libraries\\BlendComposites\\src\\composite\\images\\" + title + ".png"));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -237,7 +241,7 @@ public class ImageUtility {
                 test.setPreferredSize(new Dimension(width, height));
                 JScrollPane tmp = new JScrollPane(image);
                 tmp.revalidate();
-                f.setSize(new Dimension(width < 250 ? 250 : width, height < 250 ? 250 : height));
+                f.setSize(new Dimension(width, height));
                 f.getContentPane().add(tmp);
                 f.validate();
                 f.setVisible(true);
@@ -689,6 +693,13 @@ public class ImageUtility {
                         | Math.max(0, redOut) << 16
                         | Math.max(0, greenOut) << 8
                         | Math.max(0, blueOut);
+//                if ((red >= 0 || green >= 0 || blue >= 0) && alpha != 0) {
+//                    srcBand[j] =  (Math.min(mAlpha, alpha) )<< 24
+////                    srcBand[j] = mAlpha << 24
+//                            | (redOut & 0xff) << 16
+//                            | (greenOut & 0xff) << 8
+//                            | (blueOut & 0xff);
+//                }
             }
             argbImage.setRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
         }
@@ -803,7 +814,7 @@ public class ImageUtility {
         DataBuffer db = wr.getDataBuffer();
 //        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
 //        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-        ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
+        ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
         img = new BufferedImage(cm, wr, false, null);
         return img;
     }

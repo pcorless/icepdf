@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -602,10 +603,8 @@ public abstract class Annotation extends Dictionary {
                     annot = new ChoiceWidgetAnnotation(library, hashMap);
                 } else if (FieldDictionaryFactory.TYPE_TEXT.equals(fieldType)) {
                     annot = new TextWidgetAnnotation(library, hashMap);
-                }
-                // todo signatures widget.
-                else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
-                    annot = new WidgetAnnotation(library, hashMap);
+                } else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
+                    annot = new SignatureWidgetAnnotation(library, hashMap);
                 } else {
                     annot = new WidgetAnnotation(library, hashMap);
                 }
@@ -630,7 +629,7 @@ public abstract class Annotation extends Dictionary {
 
         securityManager = library.getSecurityManager();
 
-        content = library.getString(entries, CONTENTS_KEY);
+        content = getContents();
 
         // no borders for the following types,  not really in the
         // spec for some reason, Acrobat doesn't render them.
@@ -740,8 +739,8 @@ public abstract class Annotation extends Dictionary {
             Appearance newAppearance = new Appearance();
             HashMap appearanceDictionary = new HashMap();
             Rectangle2D rect = getUserSpaceRectangle();
-            if (rect == null){
-                // we need a rect in order to render correctly,  bail if not found. PDF-964
+            if (rect == null) {
+                // we need a rect in order to render correctly, bail if not found.
                 throw new IllegalStateException("Annotation is missing required /rect value");
             }
             if (rect.getWidth() <= 1) {
@@ -1220,6 +1219,7 @@ public abstract class Annotation extends Dictionary {
 
         AffineTransform oldAT = origG.getTransform();
         Shape oldClip = origG.getClip();
+        Composite oldComp = origG.getComposite();
 
         // Simply uncomment the //// lines to use a different Graphics object
         Graphics2D g = origG;
@@ -1284,6 +1284,7 @@ public abstract class Annotation extends Dictionary {
 
         g.setTransform(oldAT);
         g.setClip(oldClip);
+        g.setComposite(oldComp);
 
         ////g.dispose();
 
@@ -1741,12 +1742,43 @@ public abstract class Annotation extends Dictionary {
 
 
     public String getContents() {
+        content = getString(CONTENTS_KEY);
         return content;
     }
 
     public void setContents(String content) {
-        this.content = content;
-        entries.put(CONTENTS_KEY, new LiteralStringObject(content));
+        this.content = setString(CONTENTS_KEY, content);
+    }
+
+    /**
+     * Gets a known string value from the annotation dictionary,  decryption will be applied as needed.
+     *
+     * @param key dictionary key value to fine.
+     * @return value of key if any,  empty string if null;
+     */
+    protected String getString(final Name key) {
+        Object value = library.getObject(entries, key);
+        if (value instanceof StringObject) {
+            StringObject text = (StringObject) value;
+            return Utils.convertStringObject(library, text);
+        } else if (value instanceof String) {
+            return (String) value;
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * Sets the dictionary key value, handling any encryption so dictionary can be written correctly.
+     *
+     * @param key   dictionary key
+     * @param value key value.
+     * @return string value of the newly set string which will always be decrypted.
+     */
+    protected String setString(final Name key, String value) {
+        // make sure we store an encrypted documents string as encrypted
+        entries.put(key, new LiteralStringObject(value, getPObjectReference(), library.getSecurityManager()));
+        return value;
     }
 
     public String toString() {
@@ -1760,7 +1792,7 @@ public abstract class Annotation extends Dictionary {
             if (value == null)
                 sb.append("null");
             else if (value instanceof StringObject)
-                sb.append(((StringObject) value).getDecryptedLiteralString(library.securityManager));
+                sb.append(((StringObject) value).getDecryptedLiteralString(library.getSecurityManager()));
             else
                 sb.append(value.toString());
             sb.append(',');

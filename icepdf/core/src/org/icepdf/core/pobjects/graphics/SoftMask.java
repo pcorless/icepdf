@@ -94,7 +94,7 @@ public class SoftMask extends Dictionary {
      * @return Xobject associated with G, null otherwise.
      */
     public Form getG() {
-        if (softMask != null){
+        if (softMask != null) {
             return softMask;
         }
         Object GKey = library.getObject(entries, G_KEY);

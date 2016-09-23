@@ -21,8 +21,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.NamedDestinations;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.core.util.ColorUtil;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
@@ -37,7 +35,6 @@ import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -95,33 +92,14 @@ public class DocumentViewControllerImpl
      */
     public static final float ROTATION_FACTOR = 90F;
 
-    // background colour
-    public static Color backgroundColor;
+    protected float[] zoomLevels;
 
-    static {
-        // sets the shadow colour of the decorator.
-        try {
-            String color = Defs.sysProperty(
-                    "org.icepdf.core.views.background.color", "#808080");
-            int colorValue = ColorUtil.convertColor(color);
-            backgroundColor =
-                    new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("808080", 16));
-        } catch (NumberFormatException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading page shadow colour");
-            }
-        }
-    }
+    protected Document document;
 
-    private float[] zoomLevels;
+    protected DocumentViewModel documentViewModel;
+    protected AbstractDocumentView documentView;
 
-    private Document document;
-
-    private DocumentViewModelImpl documentViewModel;
-    private AbstractDocumentView documentView;
-
-    private JScrollPane documentViewScrollPane;
+    protected JScrollPane documentViewScrollPane;
 
     protected int viewportWidth, oldViewportWidth;
     protected int viewportHeight, oldViewportHeight;
@@ -139,7 +117,7 @@ public class DocumentViewControllerImpl
         this.viewerController = viewerController;
 
         documentViewScrollPane = new JScrollPane();
-        documentViewScrollPane.getViewport().setBackground(backgroundColor);
+        documentViewScrollPane.getViewport().setBackground(AbstractDocumentView.BACKGROUND_COLOUR);
 
         // set scroll bar speeds
         documentViewScrollPane.getVerticalScrollBar().setUnitIncrement(20);
@@ -157,8 +135,8 @@ public class DocumentViewControllerImpl
         InputMap inputMap = documentViewScrollPane.getInputMap(
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
         inputMap.put(KeyStroke.getKeyStroke("DELETE"),
-                "removeSelecteAnnotation");
-        documentViewScrollPane.getActionMap().put("removeSelecteAnnotation",
+                "removeSelectedAnnotation");
+        documentViewScrollPane.getActionMap().put("removeSelectedAnnotation",
                 deleteAnnotation);
     }
 
@@ -180,7 +158,7 @@ public class DocumentViewControllerImpl
             documentViewModel.dispose();
             documentViewModel = null;
         }
-        documentViewModel = new DocumentViewModelImpl(document, documentViewScrollPane);
+        documentViewModel = createDocumentViewMode(document, documentViewScrollPane);
 
         // setup view type
         setViewType();
@@ -188,6 +166,18 @@ public class DocumentViewControllerImpl
         // remove re-size listener.
         documentViewScrollPane.addComponentListener(this);
         documentViewScrollPane.validate();
+    }
+
+    /**
+     * Initialize a DocumentViewModel implementation.  Can be over ridden to provide custom DocumentViewModel
+     * implementation.
+     *
+     * @param document               document that will be opened
+     * @param documentViewScrollPane parent scrollPane of view.
+     * @return DocumentViewModel for this view.
+     */
+    protected DocumentViewModel createDocumentViewMode(Document document, JScrollPane documentViewScrollPane) {
+        return new DocumentViewModelImpl(document, documentViewScrollPane);
     }
 
     // we should be resetting some view settings, mainly zoom, rotation, tool and current page
@@ -269,13 +259,12 @@ public class DocumentViewControllerImpl
      * Clear selected text in all pages that make up the current document
      */
     public void clearSelectedText() {
-        ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
+        ArrayList<AbstractPageViewComponent> selectedPages =
                 documentViewModel.getSelectedPageText();
         documentViewModel.setSelectAll(false);
         if (selectedPages != null &&
                 selectedPages.size() > 0) {
-            for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
-                PageViewComponent pageComp = page.get();
+            for (AbstractPageViewComponent pageComp : selectedPages) {
                 if (pageComp != null) {
                     pageComp.clearSelectedText();
                 }
@@ -301,7 +290,7 @@ public class DocumentViewControllerImpl
     }
 
     /**
-     * Sets the selectall status flag as true.  Text selection requires that
+     * Sets the selectAll status flag as true.  Text selection requires that
      * a pages content has been parsed and can be quite expensive for long
      * documents. The page component will pick up on this plag and paint the
      * selected state.  If the content is copied to the clipboard we go
@@ -318,12 +307,11 @@ public class DocumentViewControllerImpl
         try {
             // regular page selected by user mouse, keyboard or api
             if (!documentViewModel.isSelectAll()) {
-                ArrayList<WeakReference<AbstractPageViewComponent>> selectedPages =
+                ArrayList<AbstractPageViewComponent> selectedPages =
                         documentViewModel.getSelectedPageText();
                 if (selectedPages != null &&
                         selectedPages.size() > 0) {
-                    for (WeakReference<AbstractPageViewComponent> page : selectedPages) {
-                        AbstractPageViewComponent pageComp = page.get();
+                    for (AbstractPageViewComponent pageComp : selectedPages) {
                         if (pageComp != null) {
                             int pageIndex = pageComp.getPageIndex();
                             selectedText.append(document.getPageText(pageIndex).getSelected());
@@ -520,7 +508,10 @@ public class DocumentViewControllerImpl
         setViewType(viewType);
     }
 
-    private void setViewType() {
+    /**
+     * Sets the view type, one column, two column, single page etc.
+     */
+    protected void setViewType() {
 
         // check if there is current view, if so dispose it
         if (documentView != null) {
@@ -534,6 +525,30 @@ public class DocumentViewControllerImpl
         }
 
         // create the desired view with the current viewModel.
+        createDocumentView(viewType);
+
+        // as it may have been inactive
+        // notify the view of the tool change
+        documentView.setToolMode(documentViewModel.getViewToolMode());
+
+        // add the new view the scroll pane
+        documentViewScrollPane.setViewportView(documentView);
+        documentViewScrollPane.validate();
+
+        // re-apply the fit mode
+        viewerController.setPageFitMode(viewportFitMode, true);
+
+        // set current page
+        setCurrentPageIndex(documentViewModel.getViewCurrentPageIndex());
+    }
+
+    /**
+     * Creates the specified view type used by the setVieType() call.  Can
+     * be over ridden to create new or custom views.
+     *
+     * @param viewType view type constant
+     */
+    protected void createDocumentView(int viewType) {
         if (viewType == ONE_COLUMN_VIEW) {
             documentView =
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
@@ -568,24 +583,7 @@ public class DocumentViewControllerImpl
             documentView =
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
         }
-
-        // as it may have been inactive
-        // notify the view of the tool change
-        documentView.setToolMode(documentViewModel.getViewToolMode());
-
-
-        // add the new view the scroll pane
-        documentViewScrollPane.setViewportView(documentView);
-        documentViewScrollPane.validate();
-
-        // re-apply the fit mode
-        viewerController.setPageFitMode(viewportFitMode, true);
-
-        // set current page
-        setCurrentPageIndex(documentViewModel.getViewCurrentPageIndex());
-
     }
-
 
     public boolean setFitMode(final int fitMode) {
 
@@ -680,24 +678,24 @@ public class DocumentViewControllerImpl
         }
 
         // get location of page in view port
-        Rectangle perferedPageOffset = documentViewModel.getPageBounds(getCurrentPageIndex());
-        if (perferedPageOffset != null) {
+        Rectangle preferedPageOffset = documentViewModel.getPageBounds(getCurrentPageIndex());
+        if (preferedPageOffset != null) {
             // scroll the view port to the correct location
             Rectangle currentViewSize = documentView.getBounds();
 
-            // check to see of the perferedPageOffset will actually be possible.  If the
+            // check to see of the preferedPageOffset will actually be possible.  If the
             // pages is smaller then the view port we need to correct x,y coordinates.
-            if (perferedPageOffset.x + perferedPageOffset.width >
+            if (preferedPageOffset.x + preferedPageOffset.width >
                     currentViewSize.width) {
-                perferedPageOffset.x = currentViewSize.width - perferedPageOffset.width;
+                preferedPageOffset.x = currentViewSize.width - preferedPageOffset.width;
             }
 
-            if (perferedPageOffset.y + perferedPageOffset.height >
+            if (preferedPageOffset.y + preferedPageOffset.height >
                     currentViewSize.height) {
-                perferedPageOffset.y = currentViewSize.height - perferedPageOffset.height;
+                preferedPageOffset.y = currentViewSize.height - preferedPageOffset.height;
             }
 
-            documentViewScrollPane.getViewport().setViewPosition(perferedPageOffset.getLocation());
+            documentViewScrollPane.getViewport().setViewPosition(preferedPageOffset.getLocation());
             documentViewScrollPane.revalidate();
         }
         firePropertyChange(PropertyConstants.DOCUMENT_CURRENT_PAGE,
@@ -918,8 +916,8 @@ public class DocumentViewControllerImpl
         }
 
         Toolkit tk = Toolkit.getDefaultToolkit();
-        Dimension bestsize = tk.getBestCursorSize(24, 24);
-        if (bestsize.width != 0) {
+        Dimension bestSize = tk.getBestCursorSize(24, 24);
+        if (bestSize.width != 0) {
 
             Point cursorHotSpot = new Point(12, 12);
             try {
@@ -947,7 +945,7 @@ public class DocumentViewControllerImpl
     /**
      * Increases the current page visualization zoom factor by 20%.
      *
-     * @param p Recenter the scrollpane here
+     * @param p Recenter the scrollPane here
      */
     public boolean setZoomIn(Point p) {
         float zoom = getZoom() * ZOOM_FACTOR;
@@ -1044,12 +1042,7 @@ public class DocumentViewControllerImpl
             return false;
         }
         // make sure the zoom falls in between the zoom range
-        if (zoomLevels != null) {
-            if (zoom < zoomLevels[0])
-                zoom = zoomLevels[0];
-            else if (zoom > zoomLevels[zoomLevels.length - 1])
-                zoom = zoomLevels[zoomLevels.length - 1];
-        }
+        zoom = calculateZoom(zoom);
 
         // set a default centering point if null
         if (centeringPoint == null) {
@@ -1081,6 +1074,16 @@ public class DocumentViewControllerImpl
         return changed;
     }
 
+    private float calculateZoom(float zoom) {
+        if (zoomLevels != null) {
+            if (zoom < zoomLevels[0])
+                zoom = zoomLevels[0];
+            else if (zoom > zoomLevels[zoomLevels.length - 1])
+                zoom = zoomLevels[zoomLevels.length - 1];
+        }
+        return zoom;
+    }
+
     /**
      * Zoom to a new zoom level, the viewPort position is set by the addition
      * of the zoomPointDelta to the page bounds as defined by the view.
@@ -1097,12 +1100,7 @@ public class DocumentViewControllerImpl
             return false;
         }
         // make sure the zoom falls in between the zoom range
-        if (zoomLevels != null) {
-            if (zoom < zoomLevels[0])
-                zoom = zoomLevels[0];
-            else if (zoom > zoomLevels[zoomLevels.length - 1])
-                zoom = zoomLevels[zoomLevels.length - 1];
-        }
+        zoom = calculateZoom(zoom);
 
         // set a default centering point if null
         if (zoomPointDelta == null) {
@@ -1266,17 +1264,11 @@ public class DocumentViewControllerImpl
     }
 
     public void undo() {
-        // reloads the last modified annotations state.
-        documentViewModel.getAnnotationCareTaker().undo();
-
         // repaint the view.
         documentView.repaint();
     }
 
     public void redo() {
-        // tries to redo a previously undo command, may not do anything
-        documentViewModel.getAnnotationCareTaker().redo();
-
         // repaint the view.
         documentView.repaint();
     }

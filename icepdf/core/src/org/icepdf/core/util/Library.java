@@ -15,8 +15,10 @@
  */
 package org.icepdf.core.util;
 
+import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
+import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.graphics.ICCBased;
@@ -101,7 +103,16 @@ public class Library {
     //   a reference to the Catalog, which actually owns them
     private Catalog catalog;
 
-    public SecurityManager securityManager;
+    private SecurityManager securityManager;
+
+    // handles signature validation and signing.
+    private SignatureHandler signatureHandler;
+
+    // signature permissions
+    private Permissions permissions;
+
+    private SeekableInput documentInput;
+
 
     // state manager reference needed by most classes to properly managed state
     // changes and new object creation
@@ -253,7 +264,7 @@ public class Library {
      * Sets the document state manager so that all object can access the
      * state manager via the central library instance.
      *
-     * @param stateManager
+     * @param stateManager reference to the state change class
      */
     public void setStateManager(StateManager stateManager) {
         this.stateManager = stateManager;
@@ -570,8 +581,26 @@ public class Library {
     public Library() {
         // set Catalog memory Manager and cache manager.
         imagePool = new ImagePool();
+        signatureHandler = new SignatureHandler();
     }
 
+    /**
+     * Sets a pointer to the orginal document input stream
+     *
+     * @param documentInput seekable inputstream.
+     */
+    public void setDocumentInput(SeekableInput documentInput) {
+        this.documentInput = documentInput;
+    }
+
+    /**
+     * Gets the SeekableInput of the document underlying bytes.
+     *
+     * @return document bytes.
+     */
+    public SeekableInput getDocumentInput() {
+        return documentInput;
+    }
 
     /**
      * Gets the PDF object specified by the <code>key</code> in the dictionary
@@ -616,6 +645,29 @@ public class Library {
      */
     public SecurityManager getSecurityManager() {
         return securityManager;
+    }
+
+    public void setSecurityManager(SecurityManager securityManager) {
+        this.securityManager = securityManager;
+    }
+
+    public SignatureHandler getSignatureHandler() {
+        return signatureHandler;
+    }
+
+    /**
+     * Set a documents permissions for a given certificate of signature, optional.
+     * The permission should also be used with the encryption permissions if present
+     * to configure the viewer permissions.
+     *
+     * @return permission object if present, otherwise null.
+     */
+    public Permissions getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Permissions permissions) {
+        this.permissions = permissions;
     }
 
     /**
@@ -669,12 +721,13 @@ public class Library {
     /**
      * Checks the Catalog for an interactive Forms dictionary and if found the resources object
      * is used for a font lookup.
+     *
      * @param fontName font name to look for.
      * @return font font,  null otherwise.
      */
-    public Font getInteractiveFormFont(String fontName){
+    public Font getInteractiveFormFont(String fontName) {
         InteractiveForm form = getCatalog().getInteractiveForm();
-        if (form != null){
+        if (form != null) {
             Resources resources = form.getResources();
             return resources.getFont(new Name(fontName));
         }

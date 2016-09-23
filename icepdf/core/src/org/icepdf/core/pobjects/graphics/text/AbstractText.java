@@ -16,11 +16,12 @@
 package org.icepdf.core.pobjects.graphics.text;
 
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 /**
- * Abstarct text is the base class for all Text extraction data.  Its main
- * purpose to is hold common data for GeneralPath and Bounds and commong
+ * Abstract text is the base class for all Text extraction data.  Its main
+ * purpose to is hold common data for GeneralPath and Bounds and common
  * contains and intersect calculations.
  * <p/>
  * Some paintable properties are also defined here, such as selected, has selected
@@ -80,7 +81,19 @@ public abstract class AbstractText implements Text {
     }
 
     /**
-     * Is the AbstarctText selected, all of its children must also be selected.
+     * Tests if the point intersects the text bounds.
+     *
+     * @param point point to test for intersection.
+     * @return true if the point intersects the text bounds,  otherwise false.
+     */
+    public boolean intersects(Point2D.Float point) {
+        // bounds is lazy loaded so getBounds is need to get the value correctly.
+        GeneralPath shapePath = new GeneralPath(getBounds());
+        return shapePath.contains(point);
+    }
+
+    /**
+     * Is the AbstractText selected, all of its children must also be selected.
      *
      * @return true if selected false otherwise.
      */
@@ -99,7 +112,7 @@ public abstract class AbstractText implements Text {
     }
 
     /**
-     * Is the AbstarctText highlighted, all of its children must also be
+     * Is the AbstractText highlighted, all of its children must also be
      * highlighted.
      *
      * @return true if highlighted false otherwise.
@@ -123,7 +136,7 @@ public abstract class AbstractText implements Text {
      * is highlighted.
      *
      * @return true if one or more root or parent elements are in a highlighted
-     *         state.
+     * state.
      */
     public boolean hasHighligh() {
         return hasHighlight;
@@ -134,14 +147,14 @@ public abstract class AbstractText implements Text {
      * is selected.
      *
      * @return true if one or more root or parent elements are in a highlighted
-     *         state.
+     * state.
      */
     public boolean hasSelected() {
         return hasSelected;
     }
 
     /**
-     * Set the highlited state, meaning that this instance or one of the child
+     * Set the highlighted state, meaning that this instance or one of the child
      * AbstractText objects has a highlighted state.
      *
      * @param hasHighlight true to indicates a highlighted states.

@@ -63,7 +63,7 @@ public class Indexed extends PColorSpace {
         if (dictionary.get(3) instanceof StringObject) {
             // peel and decrypt the literal string
             StringObject tmpText = (StringObject) dictionary.get(3);
-            String tmp = tmpText.getDecryptedLiteralString(library.securityManager);
+            String tmp = tmpText.getDecryptedLiteralString(library.getSecurityManager());
             // build the colour lookup table.
             byte[] textBytes = new byte[colorSpace.getNumComponents() * (hival + 1)]; // m * (hival + 1)
             for (int i = 0; i < textBytes.length; i++) {

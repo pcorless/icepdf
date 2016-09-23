@@ -178,7 +178,8 @@ public class FontFactory {
             InputStream in = null;
             try {
                 in = fontStream.getDecodedByteArrayInputStream();
-                // disabling create font as it brings the JVM down a little too often. 
+                // make sure we try to load open type fonts as well, done as true type.
+                if (fontType == FONT_OPEN_TYPE) fontType = FONT_TRUE_TYPE;
                 java.awt.Font javaFont = java.awt.Font.createFont(fontType, in);
                 if (javaFont != null) {
                     // create instance of OFont.
@@ -208,7 +209,7 @@ public class FontFactory {
         try {
             return createFontFile(file.toURI().toURL(), fontType, fontSubType);
         } catch (Throwable e) {
-            logger.log(Level.FINE, "Could not create instance oof font file " + fontType, e);
+            logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
         }
         return null;
     }
@@ -227,11 +228,13 @@ public class FontFactory {
                     fontFile = (FontFile) fontClassConstructor.newInstance(fontUrl);
                 }
             } catch (Throwable e) {
-                logger.log(Level.FINE, "Could not create instance oof font file " + fontType, e);
+                logger.log(Level.FINE, "Could not create instance of font file " + fontType, e);
             }
         } else {
             // see if the font file can be loaded with Java Fonts
             try {
+                // make sure we try to load open type fonts as well, done as true type.
+                if (fontType == FONT_OPEN_TYPE) fontType = FONT_TRUE_TYPE;
                 java.awt.Font javaFont = java.awt.Font.createFont(fontType, url.openStream());
                 if (javaFont != null) {
 
@@ -243,7 +246,7 @@ public class FontFactory {
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.FINE, "Error ready font file with ", e);
+                logger.log(Level.FINE, "Error reading font file with ", e);
             }
         }
         return fontFile;
@@ -290,13 +293,13 @@ public class FontFactory {
         } else if (fontType == FONT_TYPE_3) {
             return "Type 3 Font";
         } else {
-            return "unkown font type: " + fontType;
+            return "unknown font type: " + fontType;
         }
     }
 
     /**
      * Test if font engine is available on the class path and it has been
-     * disabled with the proeprty awtFontSubstitution.
+     * disabled with the property awtFontSubstitution.
      *
      * @return true if font engine was found, false otherwise.
      */

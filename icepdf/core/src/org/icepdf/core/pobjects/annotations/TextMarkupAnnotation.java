@@ -250,7 +250,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         // check if we have anything to reset.
-        if (markupBounds == null){
+        if (markupBounds == null) {
             return;
         }
 

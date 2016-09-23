@@ -58,6 +58,7 @@ public class Catalog extends Dictionary {
     public static final Name ACRO_FORM_KEY = new Name("AcroForm");
     public static final Name COLLECTION_KEY = new Name("Collection");
     public static final Name METADATA_KEY = new Name("Metadata");
+    public static final Name PERMS_KEY = new Name("Perms");
 
     private PageTree pageTree;
     private Outlines outlines;
@@ -246,6 +247,20 @@ public class Catalog extends Dictionary {
             return (Stream) o;
         }
         return null;
+    }
+
+    /**
+     * Gets the permissions of the catalog if present. Perms key.
+     *
+     * @return permissions if present, otherwise false.
+     */
+    public Permissions getPermissions() {
+        HashMap hashMap = library.getDictionary(entries, PERMS_KEY);
+        if (hashMap != null) {
+            return new Permissions(library, hashMap);
+        } else {
+            return null;
+        }
     }
 
     /**

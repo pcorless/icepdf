@@ -412,9 +412,9 @@ public class Parser {
                                 }
                             }
                             obj = hashMap.get(Dictionary.TYPE_KEY);
-                            if (obj == null){
+                            if (obj == null) {
                                 // PDF-927,  incorrect /type def.
-                                obj =  hashMap.get(new Name("type"));
+                                obj = hashMap.get(new Name("type"));
                             }
                             // Process the know first level dictionaries.
                             if (obj != null && obj instanceof Name) {
@@ -1215,7 +1215,7 @@ public class Parser {
      */
     public static boolean isWhitespace(char c) {
         return ((c == ' ') || (c == '\t') || (c == '\r') ||
-                (c == '\n') || (c == '\f') || (c == 0 ) );
+                (c == '\n') || (c == '\f') || (c == 0));
     }
 
     private static boolean isDelimiter(char c) {

@@ -17,7 +17,6 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -33,8 +32,8 @@ import java.util.logging.Logger;
 
 /**
  * AnnotationComponentFactory is responsible for building an annotation component
- * for given Annotation object.  Generaly this factor is only used by the annotation
- * handlers during the creation of new annotatoins.  When a PageComponent is
+ * for given Annotation object.  Generally this factor is only used by the annotation
+ * handlers during the creation of new annotations.  When a PageComponent is
  * initialized a pages Annotation list is iterated over and this class is used
  * to generate the annotations components.
  *
@@ -51,6 +50,10 @@ public class AnnotationComponentFactory {
             "org.icepdf.core.pro.acroform.ChoiceFieldComponent";
     private static final String TEXT_FIELD_CLASS =
             "org.icepdf.core.pro.acroform.TextFieldComponent";
+    private static final String SIGNATURE_FIELD_CLASS =
+            "org.icepdf.ri.common.views.annotations.SignatureFieldComponent";
+    private static final String SIGNATURE_PRO_FIELD_CLASS =
+            "org.icepdf.core.pro.acroform.SignatureFieldComponent";
 
     private AnnotationComponentFactory() {
     }
@@ -106,7 +109,7 @@ public class AnnotationComponentFactory {
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_WIDGET.equals(subtype)) {
                 AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
-                Name fieldType = ((FieldDictionary) widgetAnnotation.getFieldDictionary()).getFieldType();
+                Name fieldType = widgetAnnotation.getFieldDictionary().getFieldType();
                 // load pro interactive annotation support.
                 if (Document.foundIncrementalUpdater) {
                     if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
@@ -122,14 +125,21 @@ public class AnnotationComponentFactory {
                                 documentViewController, pageViewComponent,
                                 documentViewModel);
                     } else if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
-                        return new WidgetAnnotationComponent(annotation, documentViewController,
-                                pageViewComponent, documentViewModel);
+                        return generatedWidgetField(SIGNATURE_PRO_FIELD_CLASS, annotation,
+                                documentViewController, pageViewComponent,
+                                documentViewModel);
                     }
                 }
                 // load basic widget support, selection, rendering.
                 else {
-                    return new WidgetAnnotationComponent(annotation, documentViewController,
-                            pageViewComponent, documentViewModel);
+                    if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(fieldType)) {
+                        return generatedWidgetField(SIGNATURE_FIELD_CLASS, annotation,
+                                documentViewController, pageViewComponent,
+                                documentViewModel);
+                    } else {
+                        return new WidgetAnnotationComponent(annotation, documentViewController,
+                                pageViewComponent, documentViewModel);
+                    }
                 }
             } else {
                 return new AbstractAnnotationComponent(annotation, documentViewController,

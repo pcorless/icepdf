@@ -82,7 +82,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
      * @param e mouse event.
      */
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
         // convert the rectangle to page space
         rectangle = convertToPageSpace(rectangle);

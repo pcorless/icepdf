@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
@@ -106,6 +107,11 @@ public class TextState {
      * Text Font size
      */
     public float tsize;
+
+    /**
+     * Font's named resource name.
+     */
+    public Name fontName;
     /**
      * Set the text rendering mode, Tmode, to render, which is an integer.
      * Initial value: 0.

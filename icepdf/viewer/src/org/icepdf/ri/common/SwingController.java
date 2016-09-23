@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
@@ -33,6 +34,7 @@ import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.search.SearchPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
@@ -90,7 +92,7 @@ public class SwingController
         TreeSelectionListener, WindowListener, DropTargetListener,
         KeyListener, PropertyChangeListener {
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(SwingController.class.toString());
 
     public static final int CURSOR_OPEN_HAND = 1;
@@ -101,7 +103,7 @@ public class SwingController
     public static final int CURSOR_SELECT = 7;
     public static final int CURSOR_DEFAULT = 8;
 
-    private static final int MAX_SELECT_ALL_PAGE_COUNT = 250;
+    protected static final int MAX_SELECT_ALL_PAGE_COUNT = 250;
 
     private JMenuItem openFileMenuItem;
     private JMenuItem openURLMenuItem;
@@ -191,31 +193,32 @@ public class SwingController
     private SearchPanel searchPanel;
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
+    private SignaturesPanel signaturesPanel;
     private AnnotationPanel annotationPanel;
     private JTabbedPane utilityTabbedPane;
     private JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
     private JLabel statusLabel;
     private JFrame viewer;
-    private WindowManagementCallback windowManagementCallback;
+    protected WindowManagementCallback windowManagementCallback;
     // simple model for swing controller, mainly printer and  file loading state.
-    private ViewModel viewModel;
+    protected ViewModel viewModel;
     // subcontroller for document view or document page views.
-    private DocumentViewControllerImpl documentViewController;
+    protected DocumentViewControllerImpl documentViewController;
 
     // subcontroller for document text searching.
-    private DocumentSearchController documentSearchController;
+    protected DocumentSearchController documentSearchController;
 
     // todo subcontroller for document annotations creation.
 
 
-    private Document document;
-    private boolean disposed;
+    protected Document document;
+    protected boolean disposed;
 
     // internationalization messages, loads message for default JVM locale.
-    private static ResourceBundle messageBundle = null;
+    protected static ResourceBundle messageBundle = null;
 
-    private PropertiesManager propertiesManager;
+    protected PropertiesManager propertiesManager;
 
     /**
      * Create a SwingController object, and its associated ViewerModel
@@ -243,6 +246,21 @@ public class SwingController
             this.messageBundle = ResourceBundle.getBundle(
                     PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
+    }
+
+    /**
+     * Sets a custom document view controller. Previously constructed documentView controllers are unregistered
+     * from the propertyChangeListener, the provided controller will be registered with the propertyChangeListener.
+     *
+     * @param documentViewController new document controller.
+     */
+    public void setDocumentViewController(DocumentViewControllerImpl documentViewController) {
+        if (this.documentViewController != null){
+            this.documentViewController.removePropertyChangeListener(this);
+        }
+        this.documentViewController = documentViewController;
+        // register Property change listeners, for zoom, rotation, current page changes
+        documentViewController.addPropertyChangeListener(this);
     }
 
     /**
@@ -947,6 +965,10 @@ public class SwingController
         layersPanel = tn;
     }
 
+    public void setSignaturesPanel(SignaturesPanel tn) {
+        signaturesPanel = tn;
+    }
+
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
@@ -1026,16 +1048,18 @@ public class SwingController
                 // check to see that at least one of the files is a PDF
                 NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
                 java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
-                Library library = catalog.getLibrary();
                 boolean found = false;
-                // check to see if at least one file is a PDF.
-                for (int i = 0, max = filePairs.size(); i < max; i += 2) {
-                    // get the name and document for
-                    // file name and file specification pairs.
-                    String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
-                    if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
-                        found = true;
-                        break;
+                if (filePairs != null) {
+                    Library library = catalog.getLibrary();
+                    // check to see if at least one file is a PDF.
+                    for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                        // get the name and document for
+                        // file name and file specification pairs.
+                        String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
+                        if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
                 return found;
@@ -1178,8 +1202,8 @@ public class SwingController
         }
     }
 
-    private boolean hasForms(){
-        if (document == null){
+    private boolean hasForms() {
+        if (document == null) {
             return false;
         }
         return !(document.getCatalog().getInteractiveForm() == null ||
@@ -1728,6 +1752,22 @@ public class SwingController
         }
     }
 
+    /**
+     * Setup the security handle if specified, if not then creates and uses the default implementation.
+     *
+     * @param document         document to set securityCallback on .
+     * @param securityCallback
+     */
+    protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
+            PDFException, PDFSecurityException {
+        // create default security callback is user has not created one
+        if (securityCallback == null) {
+            document.setSecurityCallback(
+                    new MyGUISecurityCallback(viewer, messageBundle));
+        } else {
+            document.setSecurityCallback(documentViewController.getSecurityCallback());
+        }
+    }
 
     /**
      * Open a file specified by the given path name.
@@ -1747,12 +1787,8 @@ public class SwingController
                 // load the document
                 document = new Document();
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setFile(pathname);
-
                 commonNewDocumentHandling(pathname);
             } catch (PDFException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -1864,12 +1900,6 @@ public class SwingController
 
             // load the document
             document = new Document();
-            // create default security callback is user has not created one
-            if (documentViewController.getSecurityCallback() == null) {
-                document.setSecurityCallback(
-                        new MyGUISecurityCallback(viewer, messageBundle));
-            }
-
             try {
                 // make a connection
                 final URLConnection urlConnection = location.openConnection();
@@ -1890,8 +1920,9 @@ public class SwingController
                             // Create a stream on the URL connection
                             in = new BufferedInputStream(progressMonitorInputStream);
                             String pathOrURL = location.toString();
-
                             document.setInputStream(in, pathOrURL);
+                            // create default security callback is user has not created one
+                            setupSecurityHandler(document, documentViewController.getSecurityCallback());
                             commonNewDocumentHandling(location.getPath());
                             setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
                         } catch (IOException ex) {
@@ -1982,10 +2013,7 @@ public class SwingController
                 // load the document
                 document = new Document();
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setInputStream(inputStream, pathOrURL);
 
                 commonNewDocumentHandling(description);
@@ -2044,10 +2072,7 @@ public class SwingController
                 // load the document
                 document = embeddedDocument;
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 commonNewDocumentHandling(fileName);
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -2090,10 +2115,7 @@ public class SwingController
                 // load the document
                 document = new Document();
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setByteArray(data, offset, length, pathOrURL);
 
                 commonNewDocumentHandling(description);
@@ -2200,6 +2222,10 @@ public class SwingController
             layersPanel.setDocument(document);
         }
 
+        if (signaturesPanel != null) {
+            signaturesPanel.setDocument(document);
+        }
+
         // Refresh the properties manager object if we don't already have one
         // This would be not null if the UI was constructed manually
         if ((propertiesManager == null) && (windowManagementCallback != null)) {
@@ -2285,6 +2311,24 @@ public class SwingController
                         true);
             }
         }
+        // check if there are signatures and enable/disable the tab as needed
+        boolean signaturesExist = document.getCatalog().getInteractiveForm() != null &&
+                document.getCatalog().getInteractiveForm().isSignatureFields();
+        if (signaturesPanel != null && utilityTabbedPane != null) {
+            if (signaturesExist) {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(signaturesPanel),
+                        true);
+                // shows the signature pain on load.
+//                setUtilityPaneVisible(true);
+//                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(signaturesPanel));
+
+            } else {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(signaturesPanel),
+                        false);
+            }
+        }
 
         // add to the main pdfContentPanel the document peer
         if (viewer != null) {
@@ -2330,6 +2374,10 @@ public class SwingController
             layersPanel.setDocument(null);
         }
 
+        if (signaturesPanel != null) {
+            signaturesPanel.setDocument(null);
+        }
+
         // set the default cursor.  
         documentViewController.closeDocument();
 
@@ -2357,6 +2405,7 @@ public class SwingController
         // update thew view to show no pages in the view
         updateDocumentView();
 
+        // tear down the outline tree.
         TreeModel treeModel = (outlinesTree != null) ? outlinesTree.getModel() : null;
         if (treeModel != null) {
             OutlineItemTreeNode root = (OutlineItemTreeNode) treeModel.getRoot();
@@ -2502,6 +2551,9 @@ public class SwingController
         if (layersPanel != null) {
             layersPanel.dispose();
         }
+        if (signaturesPanel != null) {
+            signaturesPanel.dispose();
+        }
         if (utilityTabbedPane != null) {
             utilityTabbedPane.removeAll();
             utilityTabbedPane = null;
@@ -2540,26 +2592,6 @@ public class SwingController
      * save the file to, and what name to give it.
      */
     public void saveFile() {
-        // Ensure we actually CAN save the document in the first place
-        if (!havePermissionToModifyDocument()) {
-            org.icepdf.ri.util.Resources.showMessageDialog(
-                    viewer,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    messageBundle,
-                    "viewer.dialog.saveAs.noPermission.title",
-                    "viewer.dialog.saveAs.noPermission.msg");
-            return;
-        }
-
-        if (document.getStateManager().isChanged() &&
-                !Document.foundIncrementalUpdater) {
-            org.icepdf.ri.util.Resources.showMessageDialog(
-                    viewer,
-                    JOptionPane.INFORMATION_MESSAGE,
-                    messageBundle,
-                    "viewer.dialog.saveAs.noUpdates.title",
-                    "viewer.dialog.saveAs.noUpdates.msg");
-        }
 
         // Create and display a file saving dialog
         final JFileChooser fileChooser = new JFileChooser();
@@ -2645,8 +2677,24 @@ public class SwingController
                     BufferedOutputStream buf = new BufferedOutputStream(
                             fileOutputStream, 4096 * 2);
 
-                    document.saveToOutputStream(buf);
-
+                    // We want 'save as' or 'save a copy to always occur
+                    if (document.getStateManager().isChanged() &&
+                            !Document.foundIncrementalUpdater) {
+                        org.icepdf.ri.util.Resources.showMessageDialog(
+                                viewer,
+                                JOptionPane.INFORMATION_MESSAGE,
+                                messageBundle,
+                                "viewer.dialog.saveAs.noUpdates.title",
+                                "viewer.dialog.saveAs.noUpdates.msg");
+                    } else {
+                        if (!document.getStateManager().isChanged()) {
+                            // save as copy
+                            document.writeToOutputStream(buf);
+                        } else {
+                            // save as will append changes.
+                            document.saveToOutputStream(buf);
+                        }
+                    }
                     buf.flush();
                     fileOutputStream.flush();
                     buf.close();
@@ -3573,7 +3621,7 @@ public class SwingController
         document.setFormHighlight(viewModel.isWidgetAnnotationHighlight());
 
         // repaint the page.
-        ((AbstractDocumentView)documentViewController.getDocumentView()).repaint();
+        ((AbstractDocumentView) documentViewController.getDocumentView()).repaint();
     }
 
     /**
@@ -3588,7 +3636,7 @@ public class SwingController
     /**
      * Flips the visibility of the form highlight functionality ot hte opposite of what it was.
      */
-    public void toggleFormHighlight(){
+    public void toggleFormHighlight() {
         viewModel.setIsWidgetAnnotationHighlight(!viewModel.isWidgetAnnotationHighlight());
         // write the property for next viewing.
         propertiesManager.setBoolean(PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT,

@@ -45,7 +45,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
      */
     public static final Name HIGHLIGHT_NONE = new Name("N");
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(AbstractWidgetAnnotation.class.toString());
 
     /**
@@ -97,8 +97,9 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             } else if (LinkAnnotation.HIGHLIGHT_PUSH.equals(name.getName())) {
                 highlightMode = LinkAnnotation.HIGHLIGHT_PUSH;
             }
+        } else {
+            highlightMode = LinkAnnotation.HIGHLIGHT_INVERT;
         }
-        highlightMode = LinkAnnotation.HIGHLIGHT_INVERT;
 
     }
 
@@ -234,7 +235,8 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     protected StringBuilder encodeLiteralString(StringBuilder content, String contents) {
         String[] lines = contents.split("\n|\r|\f");
         for (String line : lines) {
-            content.append('(').append(line.replaceAll("(?=[()\\\\])", "\\\\")).append(")' ");
+            content.append('(').append(line.replaceAll("(?=[()\\\\])", "\\\\")
+                    .replaceAll("ÿ", "")).append(")' ");
         }
         return content;
     }

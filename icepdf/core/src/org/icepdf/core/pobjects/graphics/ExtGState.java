@@ -22,7 +22,6 @@ import org.icepdf.core.util.Library;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -284,11 +283,11 @@ public class ExtGState extends Dictionary {
      */
     public Name getBlendingMode() {
         Object tmp = library.getObject(entries, BM_KEY);
-        if (tmp instanceof Name){
-            return (Name)tmp;
-        }else if (tmp instanceof List){
-            List list = (List)tmp;
-            return (Name)list.get(0);
+        if (tmp instanceof Name) {
+            return (Name) tmp;
+        } else if (tmp instanceof List) {
+            List list = (List) tmp;
+            return (Name) list.get(0);
         }
         return null;
     }
@@ -364,7 +363,7 @@ public class ExtGState extends Dictionary {
     public float getStrokingAlphConstant() {
         if (getNumber(CA_KEY) != null)
             return getFloat(CA_KEY);
-        else{
+        else {
             return -1;
         }
     }
@@ -378,7 +377,7 @@ public class ExtGState extends Dictionary {
     public float getNonStrokingAlphConstant() {
         if (getNumber(ca_KEY) != null)
             return getFloat(ca_KEY);
-        else{
+        else {
             return -1;
         }
     }
@@ -404,6 +403,7 @@ public class ExtGState extends Dictionary {
         }
         return null;
     }
+
     public Boolean isAlphaAShape() {
         Object o = getObject(AIS_KEY);
         if (o instanceof String)
@@ -440,19 +440,19 @@ public class ExtGState extends Dictionary {
         return getInt(OPM_KEY);
     }
 
-    public boolean hasOverPrintMode(){
+    public boolean hasOverPrintMode() {
         return library.getObject(entries, OPM_KEY) != null;
     }
 
-    public boolean hasAlphaIsShape(){
+    public boolean hasAlphaIsShape() {
         return library.getObject(entries, AIS_KEY) != null;
     }
 
-    public boolean hasHalfTone(){
+    public boolean hasHalfTone() {
         return library.getObject(entries, HT_KEY) != null;
     }
 
-    public boolean hasBG2Function(){
+    public boolean hasBG2Function() {
         return library.getObject(entries, BG2_KEY) != null;
     }
 

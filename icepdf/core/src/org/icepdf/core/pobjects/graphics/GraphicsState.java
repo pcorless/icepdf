@@ -453,7 +453,7 @@ public class GraphicsState {
      */
     public void concatenate(ExtGState extGState) {
         // keep a reference for our partial Transparency group support.
-        this.extGState =  new ExtGState(extGState.getLibrary(),
+        this.extGState = new ExtGState(extGState.getLibrary(),
                 extGState.getEntries());
 
         // Map over extGState attributes if present.
@@ -707,7 +707,7 @@ public class GraphicsState {
 
     public void setStrokeAlpha(float alpha) {
         if (alpha > 1.0f) {
-            alpha = alpha / 255.0f;
+            alpha = 1.0f;
         }
         strokeAlpha = alpha;
     }
@@ -718,7 +718,7 @@ public class GraphicsState {
 
     public void setFillAlpha(float alpha) {
         if (alpha > 1.0f) {
-            alpha = alpha / 255.0f;
+            alpha = 1.0f;
         }
         fillAlpha = alpha;
     }

@@ -60,7 +60,7 @@ public class CollectionDocumentView extends AbstractDocumentView {
         layout.setHgap(15);
         layout.setVgap(15);
         collectionDocumentPanel = new JPanel(layout);
-        collectionDocumentPanel.setBackground(backgroundColor);
+        collectionDocumentPanel.setBackground(BACKGROUND_COLOUR);
         this.setLayout(new BorderLayout());
         this.add(collectionDocumentPanel,
                 BorderLayout.CENTER);
@@ -105,7 +105,7 @@ public class CollectionDocumentView extends AbstractDocumentView {
             documentViewComponent = new DocumentViewComponent(library, fileName, fileRef);
             JPanel documentViewPanel = new JPanel();
             documentViewPanel.setLayout(new BoxLayout(documentViewPanel, BoxLayout.Y_AXIS));
-            documentViewPanel.setBackground(backgroundColor);
+            documentViewPanel.setBackground(BACKGROUND_COLOUR);
             PageViewDecorator pageViewComponent = new PageViewDecorator(documentViewComponent);
             pageViewComponent.setAlignmentX(Component.CENTER_ALIGNMENT);
             documentViewPanel.add(pageViewComponent);

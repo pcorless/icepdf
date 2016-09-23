@@ -126,6 +126,7 @@ public class DocumentCapture {
                         // create an output stream and pass it off the the cloud storage insert method.
                         InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
 //                        long byteCount = outputStream.size();
+
                         // make the insert call, https://cloud.google.com/storage/docs/json_api/v1/objects/insert
                         // insert(inputStream, byteCount, fileName);
 

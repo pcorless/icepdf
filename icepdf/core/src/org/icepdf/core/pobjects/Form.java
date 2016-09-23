@@ -87,7 +87,7 @@ public class Form extends Stream {
         }
     }
 
-    public HashMap getGroup(){
+    public HashMap getGroup() {
         return library.getDictionary(entries, GROUP_KEY);
     }
 
