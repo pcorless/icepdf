@@ -211,11 +211,27 @@ public class StandardSecurityHandler extends SecurityHandler {
         return algorithmType;
     }
 
-    public synchronized InputStream getEncryptionInputStream(
+    public InputStream decryptInputStream(
             Reference objectReference,
             byte[] encryptionKey,
             HashMap decodeParams,
             InputStream input) {
+        return getInputStream(objectReference, encryptionKey, decodeParams, input, false);
+    }
+
+    public InputStream encryptInputStream(
+            Reference objectReference,
+            byte[] encryptionKey,
+            HashMap decodeParams,
+            InputStream input) {
+        return getInputStream(objectReference, encryptionKey, decodeParams, input, true);
+    }
+
+    public InputStream getInputStream(
+            Reference objectReference,
+            byte[] encryptionKey,
+            HashMap decodeParams,
+            InputStream input, boolean encrypted) {
 
         // find the name of the crypt filter used in the CF dictionary
         CryptFilterEntry cryptFilter = null;
@@ -230,7 +246,6 @@ public class StandardSecurityHandler extends SecurityHandler {
                     // find the filter name in the encryption dictionary
                     cryptFilter = encryptionDictionary.
                             getCryptFilter().getCryptFilterByName(filterName);
-
                 }
             } else if (encryptionDictionary.getCryptFilter() != null) {
                 // corner case, some images treams also use the "decodeParams"
@@ -256,7 +271,7 @@ public class StandardSecurityHandler extends SecurityHandler {
         }
 
         return standardEncryption.generalEncryptionInputStream(
-                objectReference, encryptionKey, algorithmType, input);
+                objectReference, encryptionKey, algorithmType, input, encrypted);
     }
 
     public byte[] getEncryptionKey() {

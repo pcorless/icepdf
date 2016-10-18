@@ -86,7 +86,33 @@ public interface SecurityHandlerInterface {
                           byte[] encryptionKey,
                           byte[] data);
 
-    public InputStream getEncryptionInputStream(
+    /**
+     * Encrypt the PDF data byteStream.
+     *
+     * @param objectReference reference to PDF object being encrypted; this object
+     *                        contains the PDF object number and revision.
+     * @param encryptionKey   encryption key used by decryption algorithm.
+     * @param input           inputStream data to be decrypted;  either represents an object stream
+     *                        or string value.
+     * @return the ecrypted stream or string byte data
+     */
+    InputStream encryptInputStream(
+            Reference objectReference,
+            byte[] encryptionKey,
+            HashMap decodeParams,
+            InputStream input);
+
+    /**
+     * Decrypt the PDF data byteStream.
+     *
+     * @param objectReference reference to PDF object being encrypted; this object
+     *                        contains the PDF object number and revision.
+     * @param encryptionKey   encryption key used by decryption algorithm.
+     * @param input           inputStream data to be decrypted;  either represents an object stream
+     *                        or string value.
+     * @return the decrypted stream or string byte data
+     */
+    InputStream decryptInputStream(
             Reference objectReference,
             byte[] encryptionKey,
             HashMap decodeParams,

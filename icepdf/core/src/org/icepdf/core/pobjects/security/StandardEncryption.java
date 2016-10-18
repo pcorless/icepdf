@@ -22,6 +22,8 @@ import org.icepdf.core.util.Utils;
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
@@ -89,6 +91,9 @@ class StandardEncryption {
             (byte) 0x6C, // I
             (byte) 0x54  // T
     };
+
+    // block size of aes key.
+    private static final int BLOCK_SIZE = 16;
 
     // Stores data about encryption
     private EncryptionDictionary encryptionDictionary;
@@ -158,11 +163,11 @@ class StandardEncryption {
                 // Step 4: Use the first (n+5) byes, up to a max of 16 from the MD5
                 // hash
                 int n = encryptionKey.length;
-                rc4Key = new byte[Math.min(n + 5, 16)];
+                rc4Key = new byte[Math.min(n + 5, BLOCK_SIZE)];
                 System.arraycopy(step3Bytes, 0, rc4Key, 0, rc4Key.length);
             }
 
-            // shouldn't matter as both RC4 and AES are symmetric.
+            // if we are encrypting we need to properly pad the byte array.
             int encryptionMode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
 
             // Set up an RC4 cipher and try to decrypt:
@@ -183,22 +188,22 @@ class StandardEncryption {
                     // decrypt the data.
                     if (encryptionMode == Cipher.DECRYPT_MODE) {
                         // calculate 16 byte initialization vector.
-                        byte[] initialisationVector = new byte[16];
+                        byte[] initialisationVector = new byte[BLOCK_SIZE];
                         //  should never happen as it would mean a string that won't encrypted properly as it
                         // would be missing full length 16 byte public key.
-                        if (inputData.length < 16) {
-                            byte[] tmp = new byte[16];
+                        if (inputData.length < BLOCK_SIZE) {
+                            byte[] tmp = new byte[BLOCK_SIZE];
                             System.arraycopy(inputData, 0, tmp, 0, inputData.length);
                             inputData = tmp;
                         }
                         // grab the public key.
-                        System.arraycopy(inputData, 0, initialisationVector, 0, 16);
+                        System.arraycopy(inputData, 0, initialisationVector, 0, BLOCK_SIZE);
                         final IvParameterSpec iVParameterSpec =
                                 new IvParameterSpec(initialisationVector);
 
                         // trim the input, get rid of the key and expose the data to decrypt
-                        byte[] intermData = new byte[inputData.length - 16];
-                        System.arraycopy(inputData, 16, intermData, 0, intermData.length);
+                        byte[] intermData = new byte[inputData.length - BLOCK_SIZE];
+                        System.arraycopy(inputData, BLOCK_SIZE, intermData, 0, intermData.length);
 
                         // finally add the stream or string data
                         aes.init(encryptionMode, key, iVParameterSpec);
@@ -208,10 +213,11 @@ class StandardEncryption {
                         final IvParameterSpec iVParameterSpec = new IvParameterSpec(generateIv());
                         aes.init(encryptionMode, key, iVParameterSpec);
                         finalData = aes.doFinal(inputData);
+
                         // add randomness to the start
                         byte[] output = new byte[iVParameterSpec.getIV().length + finalData.length];
-                        System.arraycopy(iVParameterSpec.getIV(), 0, output, 0, 16);
-                        System.arraycopy(finalData, 0, output, 16, finalData.length);
+                        System.arraycopy(iVParameterSpec.getIV(), 0, output, 0, BLOCK_SIZE);
+                        System.arraycopy(finalData, 0, output, BLOCK_SIZE, finalData.length);
                         finalData = output;
                     }
                 }
@@ -243,18 +249,16 @@ class StandardEncryption {
             // number that is stored as the first 16 bytes of the encrypted
             // stream or string.
             try {
-                byte[] finalData = null;
-
                 SecretKeySpec key = new SecretKeySpec(encryptionKey, "AES");
                 Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
                 // calculate 16 byte initialization vector.
-                byte[] initialisationVector = new byte[16];
-                System.arraycopy(inputData, 0, initialisationVector, 0, 16);
+                byte[] initialisationVector = new byte[BLOCK_SIZE];
+                System.arraycopy(inputData, 0, initialisationVector, 0, BLOCK_SIZE);
 
                 // trim the input
-                byte[] intermData = new byte[inputData.length - 16];
-                System.arraycopy(inputData, 16, intermData, 0, intermData.length);
+                byte[] intermData = new byte[inputData.length - BLOCK_SIZE];
+                System.arraycopy(inputData, BLOCK_SIZE, intermData, 0, intermData.length);
 
                 final IvParameterSpec iVParameterSpec =
                         new IvParameterSpec(initialisationVector);
@@ -262,7 +266,7 @@ class StandardEncryption {
                 aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
 
                 // finally add the stream or string data
-                finalData = aes.doFinal(intermData);
+                byte[] finalData = aes.doFinal(intermData);
                 return finalData;
 
             } catch (NoSuchAlgorithmException ex) {
@@ -290,7 +294,7 @@ class StandardEncryption {
      */
     private byte[] generateIv() {
         SecureRandom random = new SecureRandom();
-        byte[] ivBytes = new byte[16];
+        byte[] ivBytes = new byte[BLOCK_SIZE];
         random.nextBytes(ivBytes);
         return ivBytes;
     }
@@ -303,7 +307,7 @@ class StandardEncryption {
             Reference objectReference,
             byte[] encryptionKey,
             final String algorithmType,
-            InputStream input) {
+            InputStream input, boolean encrypt) {
         if (objectReference == null || encryptionKey == null || input == null) {
             // throw security exception
             return null;
@@ -327,39 +331,62 @@ class StandardEncryption {
                 // Step 4: Use the first (n+5) byes, up to a max of 16 from the MD5
                 // hash
                 int n = encryptionKey.length;
-                rc4Key = new byte[Math.min(n + 5, 16)];
+                rc4Key = new byte[Math.min(n + 5, BLOCK_SIZE)];
                 System.arraycopy(step3Bytes, 0, rc4Key, 0, rc4Key.length);
             }
 
+            // if we are encrypting we need to properly pad the byte array.
+            int encryptionMode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
             // Set up an RC4 cipher and try to decrypt:
             try {
+                SecretKeySpec key = new SecretKeySpec(rc4Key, "AES");
+
                 // Use above as key for the RC4 encryption function.
                 if (isRc4) {
-                    SecretKeySpec key = new SecretKeySpec(rc4Key, "RC4");
                     Cipher rc4 = Cipher.getInstance("RC4");
                     rc4.init(Cipher.DECRYPT_MODE, key);
-
                     // finally add the stream or string data
                     CipherInputStream cin = new CipherInputStream(input, rc4);
                     return cin;
                 }
                 // use above a key for the AES encryption function.
                 else {
-                    SecretKeySpec key = new SecretKeySpec(rc4Key, "AES");
                     Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                    if (encryptionMode == Cipher.DECRYPT_MODE) {
+                        // calculate 16 byte initialization vector.
+                        byte[] initialisationVector = new byte[BLOCK_SIZE];
+                        input.read(initialisationVector);
+                        final IvParameterSpec iVParameterSpec = new IvParameterSpec(initialisationVector);
+                        aes.init(encryptionMode, key, iVParameterSpec);
+                        // finally add the stream or string data
+                        CipherInputStream cin = new CipherInputStream(input, aes);
+                        return cin;
+                    } else {
+                        final IvParameterSpec iVParameterSpec = new IvParameterSpec(generateIv());
+                        aes.init(encryptionMode, key, iVParameterSpec);
+                        ByteArrayOutputStream outputByteArray = new ByteArrayOutputStream();
+                        // finally add the stream or string data
+                        CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes);
+                        try {
+                            byte[] data = new byte[4096];
+                            int read;
+                            while ((read = input.read(data)) != -1) {
+                                cos.write(data, 0, read);
+                            }
+                        } finally {
+                            cos.close();
+                            input.close();
+                        }
+                        byte[] finalData = outputByteArray.toByteArray();
+                        // add randomness to the start
+                        byte[] output = new byte[iVParameterSpec.getIV().length + finalData.length];
+                        System.arraycopy(iVParameterSpec.getIV(), 0, output, 0, BLOCK_SIZE);
+                        System.arraycopy(finalData, 0, output, BLOCK_SIZE, finalData.length);
+                        finalData = output;
+                        return new ByteArrayInputStream(finalData);
 
-                    // calculate 16 byte initialization vector.
-                    byte[] initialisationVector = new byte[16];
-                    input.read(initialisationVector);
+                    }
 
-                    final IvParameterSpec iVParameterSpec =
-                            new IvParameterSpec(initialisationVector);
-
-                    aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
-
-                    // finally add the stream or string data
-                    CipherInputStream cin = new CipherInputStream(input, aes);
-                    return cin;
                 }
             } catch (NoSuchAlgorithmException ex) {
                 logger.log(Level.FINE, "NoSuchAlgorithmException.", ex);
@@ -389,7 +416,7 @@ class StandardEncryption {
                 Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
                 // calculate 16 byte initialization vector.
-                byte[] initialisationVector = new byte[16];
+                byte[] initialisationVector = new byte[BLOCK_SIZE];
                 input.read(initialisationVector);
 
                 final IvParameterSpec iVParameterSpec =
@@ -999,8 +1026,8 @@ class StandardEncryption {
             // the final invocation of the RC4 function and return the 32-byte
             // result as the value of the U entry.
             byte[] finalData = new byte[32];
-            System.arraycopy(encryptData, 0, finalData, 0, 16);
-            System.arraycopy(PADDING, 0, finalData, 16, 16);
+            System.arraycopy(encryptData, 0, finalData, 0, BLOCK_SIZE);
+            System.arraycopy(PADDING, 0, finalData, BLOCK_SIZE, BLOCK_SIZE);
 
             return finalData;
         } else {
@@ -1032,7 +1059,7 @@ class StandardEncryption {
         // truncate to first 16 bytes for R >= 3
         else if (encryptionDictionary.getRevisionNumber() >= 3 &&
                 encryptionDictionary.getRevisionNumber() < 5) {
-            trunkUValue = new byte[16];
+            trunkUValue = new byte[BLOCK_SIZE];
             System.arraycopy(tmpUValue, 0, trunkUValue, 0, trunkUValue.length);
         } else {
             return false;
@@ -1160,7 +1187,7 @@ class StandardEncryption {
             Cipher aes = Cipher.getInstance("AES/CBC/NoPadding");
             // empty initialization vector
             final IvParameterSpec iVParameterSpec =
-                    new IvParameterSpec(new byte[16]);
+                    new IvParameterSpec(new byte[BLOCK_SIZE]);
             // go!
             aes.init(Cipher.DECRYPT_MODE, key, iVParameterSpec);
             // finally add the stream or string data
