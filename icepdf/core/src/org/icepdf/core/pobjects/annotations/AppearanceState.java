@@ -66,6 +66,9 @@ public class AppearanceState extends Dictionary {
             Stream stream = (Stream) streamOrDictionary;
             resources = library.getResources(stream.getEntries(), Annotation.RESOURCES_VALUE);
             bbox = library.getRectangle(stream.getEntries(), Annotation.BBOX_VALUE);
+            if (bbox == null) {
+                bbox = library.getRectangle(entries, Annotation.RECTANGLE_KEY);
+            }
             matrix = new AffineTransform();
             originalContentStream = new String(stream.getDecodedStreamBytes());
             try {
