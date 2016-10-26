@@ -106,9 +106,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         try {
 			
             image = futureTask.get();
-			
-			notify();
-			
+
         } catch (InterruptedException e) {
             logger.warning("Image loading interrupted");
         } catch (ExecutionException e) {
