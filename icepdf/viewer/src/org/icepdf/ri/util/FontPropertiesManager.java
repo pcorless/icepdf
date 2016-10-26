@@ -48,12 +48,15 @@ public class FontPropertiesManager {
     private static final String LOCK_FILE = "_syslock";
     private final static String USER_FILENAME = "pdfviewerfontcache.properties";
 
+    // format version number
+    private final static String FORMAT_VERSION = "6.0";
+
     private FontManager fontManager;
 
     private Properties sysProps;
     private PropertiesManager props;
 
-    File userHome;
+    private File userHome;
 
     //the swingri home directory
     private File dataDir;
@@ -116,7 +119,7 @@ public class FontPropertiesManager {
     /**
      * Create a new instance of the FontPropertiesManager class.  This constructor will not scan
      * the system for fonts.  The users must call one of the following methods to scan for fonts;
-     * {@ling #readFontPaths} or {@ling #readSystemFonts}
+     * {@link #readFontPaths} or {@link #readDefaulFontPaths(String[])}
      *
      * <p/>
      * Typical usage would look like this:<br />
@@ -259,7 +262,7 @@ public class FontPropertiesManager {
                 FileOutputStream out = new FileOutputStream(propertyFile);
                 try {
                     Properties fontProps = fontManager.getFontProperties();
-                    fontProps.store(out, "-- ICEpf Font properties --");
+                    fontProps.store(out, "-- ICEpdf Font properties --\n " + FORMAT_VERSION);
                 } finally {
                     out.close();
                 }
