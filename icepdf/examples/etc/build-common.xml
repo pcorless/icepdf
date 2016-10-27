@@ -116,6 +116,7 @@
 
     <macrodef name="build.jar">
         <attribute name="jar.file.name" default="${ant.project.name}.jar"/>
+        <attribute name="jar.section.name" />
 
         <element name="add.jar.src.includes" optional="true"/>
         <element name="add.manifest.elements" optional="true"/>
@@ -131,11 +132,11 @@
                 <manifest>
                     <add.manifest.elements/>
                     <!-- ICEpdf version information -->
-                    <section name="org.icepdf.pdf">
+                    <section name="@{jar.section.name}">
                         <attribute name="Implementation-Title"
                                    value="${product}"/>
                         <attribute name="Implementation-Version"
-                                   value="${release.type} ${version.primary}.${version.secondary}.${version.tertiary}_${build.number}"/>
+                                   value="${version.primary}.${version.secondary}.${version.tertiary}_${build.number} ${release.type}"/>
                         <attribute name="Implementation-Vendor"
                                    value="${company}"/>
                     </section>
