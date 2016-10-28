@@ -1173,7 +1173,8 @@ public class Page extends Dictionary {
     }
 
     /**
-     * Utility method for applying the page boundary rules.
+     * Utility method for applying the page boundary rules. If no matching specifiedBox type is found then
+     * the BOUNDARY_CROPBOX bound will be returned.
      *
      * @param specifiedBox page boundary constant
      * @return bounds of page after the chain of rules have been applied.
@@ -1202,7 +1203,7 @@ public class Page extends Dictionary {
         }
         // encase of bad usage, default to crop box
         else {
-            userSpecifiedBox = (PRectangle) getMediaBox();
+            userSpecifiedBox = (PRectangle) getCropBox();
         }
 
         // just in case, make sure we return a non null boundary, and the
