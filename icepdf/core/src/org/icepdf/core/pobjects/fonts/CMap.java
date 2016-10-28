@@ -74,4 +74,11 @@ public interface CMap {
      * @return true if the cid should be considered as having a mixed byte length.
      */
     public boolean isMixedByte();
+
+    /**
+     * Utility method ot check if a CMap contain s any data, specifically usable toUnicode data.
+     *
+     * @return true if the mapping contains at least one entry.
+     */
+    public boolean isEmptyMapping();
 }
