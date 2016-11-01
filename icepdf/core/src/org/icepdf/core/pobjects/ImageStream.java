@@ -597,7 +597,7 @@ public class ImageStream extends Stream {
                 reader = iter.next();
                 if (reader.canReadRaster()) {
                     if (logger.isLoggable(Level.FINER)) {
-                        logger.finer("DCTDecode Image reader: " + reader);
+                        logger.finer("DCTDecode Image reader: " + reader + " " + width + "x" + height);
                     }
                     break;
                 }
@@ -617,7 +617,8 @@ public class ImageStream extends Stream {
                 tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
             } else if (jpegEncoding == ImageUtility.JPEG_ENC_CMYK && bitspercomponent == 8) {
                 tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
-            } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCbCr && bitspercomponent == 8) {
+            } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCbCr && bitspercomponent == 8 &&
+                    !(colourSpace instanceof Indexed)) {
                 tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
             } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCCK && bitspercomponent == 8) {
                 // YCCK to RGB works better if an CMYK intermediate is used, but slower.
@@ -645,6 +646,9 @@ public class ImageStream extends Stream {
                     }
                 }
             } else {
+                if (colourSpace instanceof Indexed) {
+                    return ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
+                }
                 // assume gray based jpeg.
                 if (wr.getNumBands() == 1) {
                     tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
