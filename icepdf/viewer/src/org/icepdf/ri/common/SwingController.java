@@ -321,6 +321,13 @@ public class SwingController
     }
 
     /**
+     * Gets an instance of the PropertiesManager so that other builders can use the properties manager.
+     */
+    public PropertiesManager getPropertiesManager() {
+        return propertiesManager;
+    }
+
+    /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
     public void setOpenFileMenuItem(JMenuItem mi) {
