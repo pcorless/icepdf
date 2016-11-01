@@ -28,6 +28,7 @@ import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
@@ -189,8 +190,10 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                 if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
             }
         } catch (Throwable e) {
-            logger.warning("Could not validate default appearance, defaulting.");
-            e.printStackTrace();
+            logger.warning("Could not generate default appearance stream.");
+            if (logger.isLoggable(Level.FINEST)){
+                logger.log(Level.FINEST, "Error parsing text feld content stream", e);
+            }
         }
         return color.getRed() / 255.0f + " " + color.getGreen() / 255.0f + " " + color.getBlue() / 255.0f + " rg " +
                 "/" + fontName + " " +

@@ -284,8 +284,11 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             String fontSize = toker.nextToken();
             Appearance appearance1 = appearances.get(currentAppearance);
             AppearanceState appearanceState = appearance1.getSelectedAppearanceState();
+            org.icepdf.core.pobjects.fonts.Font font = null;
             Resources resources = appearanceState.getResources();
-            org.icepdf.core.pobjects.fonts.Font font = resources.getFont(new Name(fontName));
+            if (resources != null) {
+                font = resources.getFont(new Name(fontName));
+            }
             return !(font == null || library.getInteractiveFormFont(fontName) == null ||
                     fontSize.equals("0"));
         }
