@@ -50,7 +50,7 @@
         <!-- jar file name, name collision, replacing with static name -->
         <!--<property name="jar.file.name" value="icepdf-core.jar"/>-->
 
-        <build.jar jar.file.name="icepdf-core.jar">
+        <build.jar jar.file.name="icepdf-core.jar" jar.section.name="org/icepdf/core/">
             <add.jar.src.includes>
                 <include name="org/icepdf/core/pobjects/fonts/afm/"/>
                 <include name="org/icepdf/core/pobjects/graphics/res/"/>
@@ -69,7 +69,7 @@
         <!-- jar file name, name collision, replacing with static name  -->
         <!--<property name="jar.file.name" value="icepdf-extra.jar"/>-->
 
-        <build.jar jar.file.name="icepdf-extra.jar">
+        <build.jar jar.file.name="icepdf-extra.jar" jar.section.name="org/icepdf/core/">
             <add.jar.src.includes>
                 <exclude name="org/icepdf/"/>
             </add.jar.src.includes>
