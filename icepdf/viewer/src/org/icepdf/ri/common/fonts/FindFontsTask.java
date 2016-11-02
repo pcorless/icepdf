@@ -168,7 +168,7 @@ public class FindFontsTask {
                                     if (!fontCache.containsKey(fontReference)) {
                                         fontObject = library.getObject(fontReference);
                                         if (fontObject instanceof org.icepdf.core.pobjects.fonts.Font) {
-                                            Font font = (Font) fontObject;
+                                            final Font font = (Font) fontObject;
                                             font.init();
                                             fontCache.put(fontReference, font);
                                             SwingUtilities.invokeLater(new Runnable() {
