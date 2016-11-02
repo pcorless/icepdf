@@ -131,6 +131,9 @@ public abstract class Font extends Dictionary {
     // The font subtype, type 0, 1, 2 etc.
     protected Name subtype;
 
+    // the encoding name associated with font.
+    protected Name encoding;
+
     /**
      * <p>Indicates that the font used to render this String object is in the
      * Simple Font family and thus each glyph is represented by one byte.</p>
@@ -244,6 +247,8 @@ public abstract class Font extends Dictionary {
         // Type of the font, type 0, 1, 2, 3 etc.
         subtype = library.getName(entries, SUBTYPE_KEY);
 
+        encoding = library.getName(entries, ENCODING_KEY);
+
         // figure out type
         if (subtype != null) {
             subTypeFormat = (subtype.getName().toLowerCase().equals("type0") ||
@@ -326,6 +331,15 @@ public abstract class Font extends Dictionary {
      */
     public int getSubTypeFormat() {
         return subTypeFormat;
+    }
+
+    /**
+     * Gets the font encoding name.
+     *
+     * @return font encoding name.
+     */
+    public Name getEncoding() {
+        return encoding;
     }
 
     /**

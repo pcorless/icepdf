@@ -29,6 +29,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
+import org.icepdf.ri.common.fonts.FontDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
@@ -113,6 +114,7 @@ public class SwingController
     private JMenuItem exportSVGMenuItem;
     private JMenuItem permissionsMenuItem;
     private JMenuItem informationMenuItem;
+    private JMenuItem fontInformationMenuItem;
     private JMenuItem printSetupMenuItem;
     private JMenuItem printMenuItem;
     private JMenuItem exitMenuItem;
@@ -255,7 +257,7 @@ public class SwingController
      * @param documentViewController new document controller.
      */
     public void setDocumentViewController(DocumentViewControllerImpl documentViewController) {
-        if (this.documentViewController != null){
+        if (this.documentViewController != null) {
             this.documentViewController.removePropertyChangeListener(this);
         }
         this.documentViewController = documentViewController;
@@ -388,6 +390,14 @@ public class SwingController
      */
     public void setInformationMenuItem(JMenuItem mi) {
         informationMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setFontInformationMenuItem(JMenuItem mi) {
+        fontInformationMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1101,6 +1111,7 @@ public class SwingController
         setEnabled(exportSVGMenuItem, opened && canPrint && !pdfCollection);
         setEnabled(permissionsMenuItem, opened);
         setEnabled(informationMenuItem, opened);
+        setEnabled(fontInformationMenuItem, opened);
         // Printer setup is global to all PDFs, so don't limit it by this one PDF
         setEnabled(printSetupMenuItem, opened && canPrint && !pdfCollection);
         setEnabled(printMenuItem, opened && canPrint && !pdfCollection);
@@ -3967,6 +3978,8 @@ public class SwingController
                 SwingUtilities.invokeLater(doSwingWork);
             } else if (source == aboutMenuItem) {
                 showAboutDialog();
+            } else if (source == fontInformationMenuItem) {
+                new FontDialog(viewer, this, true).setVisible(true);
             } else if (document != null) {
                 // get document previous icon
                 int documentIcon = getDocumentViewToolMode();
