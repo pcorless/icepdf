@@ -177,7 +177,6 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         return false;
     }
 
-    @Override
     public boolean isEmptyMapping() {
         return false;
     }
