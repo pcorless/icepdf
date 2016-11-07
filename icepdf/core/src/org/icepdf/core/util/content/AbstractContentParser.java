@@ -611,10 +611,6 @@ public abstract class AbstractContentParser implements ContentParser {
                 // by just adding the objects to the shapes stack.
                 else {
                     shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
-                    if (graphicState.getExtGState() != null) {
-                        // update the parent alpha cache, so we can minimize the number of alpha's that are applied.
-                        shapes.setAlpha(formXObject.getExtGState().getNonStrokingAlphConstant());
-                    }
                 }
                 // update text sprites with geometric path state
                 if (formXObject.getShapes() != null &&
@@ -664,8 +660,8 @@ public abstract class AbstractContentParser implements ContentParser {
                             new AffineTransform(graphicState.getCTM());
                     graphicState.scale(1, -1);
                     graphicState.translate(0, -1);
-                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
+//                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
+//                            graphicState.getFillAlpha());
                     // add the image
                     shapes.add(new ImageDrawCmd(imageReference));
                     graphicState.set(af);
@@ -698,7 +694,7 @@ public abstract class AbstractContentParser implements ContentParser {
                         // java has a hard time with painting dash array with values < 1.
                         // we have a few examples where converting the value to user space
                         // correct the problem PDF-966.
-                        if (dash < 0.5f) {
+                        if (dash < 0.5f){
                             dash = dash * 1000;
                         }
                         dashArray[i] = dash;
@@ -784,7 +780,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 float alpha = graphicState.getExtGState().getNonStrokingAlphConstant();
                 shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(),
                         alpha));
-            } else {
+            }else{
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
             }
         }
@@ -1550,7 +1546,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 currentY = advanceY + lasty;
             }
 
-            // get normalized from from text spritet
+            // get normalized from from text sprite
             GlyphText glyphText = textSprites.addText(
                     String.valueOf(currentChar), // cid
                     textState.currentfont.toUnicode(currentChar), // unicode value
