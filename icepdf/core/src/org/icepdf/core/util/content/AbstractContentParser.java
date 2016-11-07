@@ -1546,7 +1546,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 currentY = advanceY + lasty;
             }
 
-            // get normalized from from text sprite
+            // get normalized from from text spritet
             GlyphText glyphText = textSprites.addText(
                     String.valueOf(currentChar), // cid
                     textState.currentfont.toUnicode(currentChar), // unicode value
