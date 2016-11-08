@@ -158,7 +158,7 @@ public class DocumentViewControllerImpl
             documentViewModel.dispose();
             documentViewModel = null;
         }
-        documentViewModel = new DocumentViewModelImpl(document, documentViewScrollPane);
+        documentViewModel = createDocumentViewMode(document, documentViewScrollPane);
 
         // setup view type
         setViewType();
@@ -166,6 +166,18 @@ public class DocumentViewControllerImpl
         // remove re-size listener.
         documentViewScrollPane.addComponentListener(this);
         documentViewScrollPane.validate();
+    }
+
+    /**
+     * Initialize a DocumentViewModel implementation.  Can be over ridden to provide custom DocumentViewModel
+     * implementation.
+     *
+     * @param document               document that will be opened
+     * @param documentViewScrollPane parent scrollPane of view.
+     * @return DocumentViewModel for this view.
+     */
+    protected DocumentViewModel createDocumentViewMode(Document document, JScrollPane documentViewScrollPane) {
+        return new DocumentViewModelImpl(document, documentViewScrollPane);
     }
 
     // we should be resetting some view settings, mainly zoom, rotation, tool and current page
@@ -1052,7 +1064,7 @@ public class DocumentViewControllerImpl
         return changed;
     }
 
-    private float calculateZoom(float zoom) {
+    private float calculateZoom(float zoom){
         if (zoomLevels != null) {
             if (zoom < zoomLevels[0])
                 zoom = zoomLevels[0];

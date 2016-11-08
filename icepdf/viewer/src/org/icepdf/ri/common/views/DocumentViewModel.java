@@ -82,34 +82,64 @@ public interface DocumentViewModel {
     public int DISPLAY_TOOL_LINE_ANNOTATION = 12;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new line with arrow annotation.
      */
     public int DISPLAY_TOOL_LINE_ARROW_ANNOTATION = 13;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new square annotation.
      */
     public int DISPLAY_TOOL_SQUARE_ANNOTATION = 14;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new circle annotation.
      */
     public int DISPLAY_TOOL_CIRCLE_ANNOTATION = 15;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new ink annotation.
      */
     public int DISPLAY_TOOL_INK_ANNOTATION = 16;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new free text annotation.
      */
     public int DISPLAY_TOOL_FREE_TEXT_ANNOTATION = 17;
 
     /**
-     * Display tool constant for creating new line  annotation.
+     * Display tool constant for creating new text annotation.
      */
     public int DISPLAY_TOOL_TEXT_ANNOTATION = 18;
+
+    /**
+     * Display tool constant for creating new text field acroform annotation.
+     */
+    public int DISPLAY_TOOL_TEXT_FIELD_ANNOTATION = 19;
+
+    /**
+     * Display tool constant for creating new radio button field acroform annotation.
+     */
+    public int DISPLAY_TOOL_BUTTON_RADIO_FIELD_ANNOTATION = 20;
+
+    /**
+     * Display tool constant for creating new checkbox button field acroform annotation.
+     */
+    public int DISPLAY_TOOL_BUTTON_CHECKBOX_FIELD_ANNOTATION = 21;
+
+    /**
+     * Display tool constant for creating new button field acroform annotation.
+     */
+    public int DISPLAY_TOOL_BUTTON_FIELD_ANNOTATION = 22;
+
+    /**
+     * Display tool constant for creating new signature field acroform annotation.
+     */
+    public int DISPLAY_TOOL_SIGNATURE_FIELD_ANNOTATION = 23;
+
+    /**
+     * Display tool constant for creating new choice field acroform annotation.
+     */
+    public int DISPLAY_TOOL_CHOICE_FIELD_ANNOTATION = 24;
 
     /**
      * Display tool constant for setting no tools
@@ -139,16 +169,10 @@ public interface DocumentViewModel {
     /**
      * Adds the specified page to the list of selected pages.
      *
-     * @param pageViewComponent pageView component to add to list.
+     * @param pageViewComponent pageview component to add to list.
      */
     public void addSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
-    /**
-     * Remove the specified page to the list of selected pages.
-     *
-     * @param pageViewComponent pageView component to add to list.
-     */
-    public void removeSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Returns true if all text in the document should be in a selected state.
