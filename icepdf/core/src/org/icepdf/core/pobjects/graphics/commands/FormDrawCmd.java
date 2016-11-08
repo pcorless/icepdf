@@ -45,11 +45,17 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
     private static boolean disableXObjectSMask;
 
+    // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
+    // realistically we seldom have enough memory to load anythign bigger then 8000px.  4k+ image are big!
+    private static int MAX_IMAGE_SIZE = 17000; // Short.MAX_VALUE
+
     static {
         // decide if large images will be scaled
         disableXObjectSMask =
                 Defs.sysPropertyBoolean("org.icepdf.core.disableXObjectSMask",
                         false);
+
+        MAX_IMAGE_SIZE = Defs.sysPropertyInt("org.icepdf.core.maxSmaskImageSize", 17000);
     }
 
     public FormDrawCmd(Form xForm) {
@@ -217,12 +223,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // corner cases where some bBoxes don't have a dimension.
         if (width == 0) {
             width = 1;
-        } else if (width >= Short.MAX_VALUE) {
+        } else if (width >= MAX_IMAGE_SIZE) {
             width = xFormBuffer.getWidth();
         }
         if (height == 0) {
             height = 1;
-        } else if (height >= Short.MAX_VALUE) {
+        } else if (height >= MAX_IMAGE_SIZE) {
             height = xFormBuffer.getHeight();
         }
         // create the new image to write too.
