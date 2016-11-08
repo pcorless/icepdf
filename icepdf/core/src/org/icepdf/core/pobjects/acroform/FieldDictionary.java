@@ -16,7 +16,10 @@
 
 package org.icepdf.core.pobjects.acroform;
 
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -192,6 +195,9 @@ public class FieldDictionary extends Dictionary {
             exportMappingName = (String) value;
         }
 
+        // value field
+//        getFieldValue();
+        // todo default value, see 12.7.5.3, Reset-Form Action.
         value = library.getObject(entries, DV_KEY);
         if (value != null) {
             defaultFieldValue = value;
@@ -218,7 +224,7 @@ public class FieldDictionary extends Dictionary {
             Object value = library.getObject(entries, KIDS_KEY);
             if (value != null && value instanceof List) {
                 List<Reference> children = (List<Reference>) value;
-                kids = new ArrayList<Object>(children.size());
+                kids = new ArrayList(children.size());
                 Object tmp;
                 for (Reference aChildren : children) {
                     tmp = library.getObject(aChildren);
@@ -373,7 +379,7 @@ public class FieldDictionary extends Dictionary {
         this.fieldValue = fieldValue;
         if (fieldValue instanceof String) {
             // make sure we store an encrypted documents string as encrypted
-            entries.put(V_KEY, new LiteralStringObject((String) fieldValue, parentReference, library.getSecurityManager()));
+            setString(V_KEY, (String) fieldValue);
         } else {
             entries.put(V_KEY, fieldValue);
         }

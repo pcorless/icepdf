@@ -51,10 +51,16 @@ public abstract class SecurityHandler implements SecurityHandlerInterface {
                                    byte[] encryptionKey,
                                    byte[] data);
 
-    public abstract InputStream getEncryptionInputStream(
+    public abstract InputStream encryptInputStream(
             Reference objectReference,
             byte[] encryptionKey,
-            HashMap decodeparams,
+            HashMap decodeParams,
+            InputStream input);
+
+    public abstract InputStream decryptInputStream(
+            Reference objectReference,
+            byte[] encryptionKey,
+            HashMap decodeParams,
             InputStream input);
 
     public abstract byte[] getEncryptionKey();

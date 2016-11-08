@@ -337,12 +337,12 @@ public class TextAnnotation extends MarkupAnnotation {
 
     public void setState(String state) {
         this.state = state;
-        entries.put(STATE_KEY, new LiteralStringObject(state));
+        setString(STATE_KEY, state);
     }
 
     public void setStateModel(String stateModel) {
         this.stateModel = stateModel;
-        entries.put(STATE_MODEL_KEY, new LiteralStringObject(stateModel));
+        setString(STATE_KEY, stateModel);
     }
 
     // comment name streams.

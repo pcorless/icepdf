@@ -15,10 +15,7 @@
  */
 package org.icepdf.core.pobjects.actions;
 
-import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
 import java.util.HashMap;
@@ -76,7 +73,8 @@ public class ActionFactory {
                 entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
                 entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_URI);
                 // add a null uri string entry
-                entries.put(URIAction.URI_KEY, "");
+                Reference pObjectReference = stateManager.getNewReferencNumber();
+                entries.put(URIAction.URI_KEY, new LiteralStringObject("", pObjectReference, library.getSecurityManager()));
                 URIAction action = new URIAction(library, entries);
                 action.setPObjectReference(stateManager.getNewReferencNumber());
                 return action;
@@ -86,7 +84,8 @@ public class ActionFactory {
                 entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
                 entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_LAUNCH);
                 // add a null file string entry
-                entries.put(LaunchAction.FILE_KEY, "");
+                Reference pObjectReference = stateManager.getNewReferencNumber();
+                entries.put(LaunchAction.FILE_KEY, new LiteralStringObject("", pObjectReference, library.getSecurityManager()));
                 LaunchAction action = new LaunchAction(library, entries);
                 action.setPObjectReference(stateManager.getNewReferencNumber());
                 return action;
@@ -96,7 +95,8 @@ public class ActionFactory {
                 entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
                 entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_GOTO_REMOTE);
                 // The file in which the destination shall be located.
-                entries.put(GoToRAction.F_KEY, "");
+                Reference pObjectReference = stateManager.getNewReferencNumber();
+                entries.put(GoToRAction.F_KEY, new LiteralStringObject("", pObjectReference, library.getSecurityManager()));
                 GoToRAction action = new GoToRAction(library, entries);
                 action.setPObjectReference(stateManager.getNewReferencNumber());
                 return action;
@@ -115,8 +115,6 @@ public class ActionFactory {
                 // set default named action values.
                 entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
                 entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_NAMED);
-                // The file in which the destination shall be located.
-                entries.put(GoToRAction.F_KEY, "");
                 NamedAction action = new NamedAction(library, entries);
                 action.setPObjectReference(stateManager.getNewReferencNumber());
                 return action;
@@ -125,8 +123,6 @@ public class ActionFactory {
                 // set default submit form action values.
                 entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
                 entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_SUBMIT_SUBMIT);
-                // The file in which the destination shall be located.
-                entries.put(GoToRAction.F_KEY, "");
                 SubmitFormAction action = new SubmitFormAction(library, entries);
                 action.setPObjectReference(stateManager.getNewReferencNumber());
                 return action;
@@ -135,8 +131,6 @@ public class ActionFactory {
                 // set default reset form action values.
                 entries.put(Dictionary.TYPE_KEY, Action.ACTION_TYPE);
                 entries.put(Action.ACTION_TYPE_KEY, Action.ACTION_TYPE_RESET_SUBMIT);
-                // The file in which the destination shall be located.
-                entries.put(GoToRAction.F_KEY, "");
                 ResetFormAction action = new ResetFormAction(library, entries);
                 action.setPObjectReference(stateManager.getNewReferencNumber());
                 return action;
