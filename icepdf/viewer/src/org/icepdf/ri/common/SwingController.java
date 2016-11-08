@@ -30,6 +30,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
+import org.icepdf.ri.common.fonts.FontDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.acroform.AcroFormPanel;
 import org.icepdf.ri.common.utility.acroform.AcroFormPropertiesPanel;
@@ -116,6 +117,7 @@ public class SwingController
     private JMenuItem exportSVGMenuItem;
     private JMenuItem permissionsMenuItem;
     private JMenuItem informationMenuItem;
+    private JMenuItem fontInformationMenuItem;
     private JMenuItem printSetupMenuItem;
     private JMenuItem printMenuItem;
     private JMenuItem exitMenuItem;
@@ -405,6 +407,14 @@ public class SwingController
      */
     public void setInformationMenuItem(JMenuItem mi) {
         informationMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setFontInformationMenuItem(JMenuItem mi) {
+        fontInformationMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1173,6 +1183,7 @@ public class SwingController
         setEnabled(exportSVGMenuItem, opened && canPrint && !pdfCollection);
         setEnabled(permissionsMenuItem, opened);
         setEnabled(informationMenuItem, opened);
+        setEnabled(fontInformationMenuItem, opened);
         // Printer setup is global to all PDFs, so don't limit it by this one PDF
         setEnabled(printSetupMenuItem, opened && canPrint && !pdfCollection);
         setEnabled(printMenuItem, opened && canPrint && !pdfCollection);
@@ -4199,6 +4210,8 @@ public class SwingController
                 SwingUtilities.invokeLater(doSwingWork);
             } else if (source == aboutMenuItem) {
                 showAboutDialog();
+            } else if (source == fontInformationMenuItem) {
+                new FontDialog(viewer, this, true).setVisible(true);
             } else if (document != null) {
                 // get document previous icon
                 int documentIcon = getDocumentViewToolMode();
@@ -4957,7 +4970,7 @@ public class SwingController
                         annotationComponent.getAnnotation() != null) {
                     // set the annotationPane with the new annotation component
                     if (logger.isLoggable(Level.FINE)) {
-                        logger.fine(propertyName + " " + annotationComponent);
+                        logger.fine("selected annotation " + annotationComponent);
                     }
                     if (annotationComponent.getAnnotation() instanceof AbstractWidgetAnnotation) {
                         showWidgetAnnotationPanel(annotationComponent);

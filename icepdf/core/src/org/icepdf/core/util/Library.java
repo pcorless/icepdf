@@ -59,9 +59,9 @@ public class Library {
     static {
         try {
             commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 5);
+                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 2);
             if (commonPoolThreads < 1) {
-                commonPoolThreads = 5;
+                commonPoolThreads = 4;
             }
         } catch (NumberFormatException e) {
             log.warning("Error reading buffered scale factor");
@@ -79,9 +79,9 @@ public class Library {
 
         try {
             imagePoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.imageThreadPoolSize", 10);
+                    Defs.intProperty("org.icepdf.core.library.imageThreadPoolSize", 4);
             if (imagePoolThreads < 1) {
-                imagePoolThreads = 10;
+                imagePoolThreads = 4;
             }
         } catch (NumberFormatException e) {
             log.warning("Error reading buffered scale factor");
@@ -727,7 +727,7 @@ public class Library {
      */
     public Font getInteractiveFormFont(String fontName) {
         InteractiveForm form = getCatalog().getInteractiveForm();
-        if (form != null) {
+        if (form != null && form.getResources() != null) {
             Resources resources = form.getResources();
             return resources.getFont(new Name(fontName));
         }

@@ -240,7 +240,7 @@ public class Page extends Dictionary {
         }
     }
 
-    private void initPageResources() throws InterruptedException {
+    public void initPageResources() throws InterruptedException {
         Resources res = library.getResources(entries, RESOURCES_KEY);
         PageTree pageTree;
         if (res == null) {

@@ -590,6 +590,7 @@ public class SwingViewBuilder {
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildPermissionsMenuItem());
         addToMenu(fileMenu, buildInformationMenuItem());
+        addToMenu(fileMenu, buildFontInformationMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildPrintSetupMenuItem());
         addToMenu(fileMenu, buildPrintMenuItem());
@@ -675,6 +676,14 @@ public class SwingViewBuilder {
                 messageBundle.getString("viewer.menu.documentInformation.label"), null, null, null);
         if (viewerController != null && mi != null)
             viewerController.setInformationMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildFontInformationMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.documentFonts.label"), null, null, null);
+        if (viewerController != null && mi != null)
+            viewerController.setFontInformationMenuItem(mi);
         return mi;
     }
 
