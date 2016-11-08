@@ -777,14 +777,16 @@ public abstract class AbstractContentParser implements ContentParser {
             if (extGState != null) {
                 graphicState.concatenate(extGState);
             }
+            float alpha = graphicState.getFillAlpha();
             if (graphicState.getExtGState() != null
                     && graphicState.getExtGState().getBlendingMode() != null // && graphicState.getExtGState().getOverprintMode() == 1
                     ) {
                 // BlendComposite is still having trouble with alpha values < 1.0.
-                shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(), 1.0f));
+                shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(), alpha));
             }
             // apply the alpha as it's own composite
-            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+            if (alpha > 0 && alpha < 1.0)
+                setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
     }
 
