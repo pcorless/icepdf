@@ -125,7 +125,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             highlightBounds = getSelectedTextBounds();
         }
         // grab the selected text
-        String contents = getSelectedText();
+        String contents = enableHighlightContents && highlightBounds != null ? getSelectedText() : "";
 
         // clear the selected text
         documentViewController.clearSelectedText();
