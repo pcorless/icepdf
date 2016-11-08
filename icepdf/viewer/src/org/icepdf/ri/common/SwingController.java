@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.io.SizeInputStream;
@@ -1889,6 +1890,22 @@ public class SwingController
         }
     }
 
+    /**
+     * Setup the security handle if specified, if not then creates and uses the default implementation.
+     *
+     * @param document         document to set securityCallback on .
+     * @param securityCallback
+     */
+    protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
+            PDFException, PDFSecurityException {
+        // create default security callback is user has not created one
+        if (securityCallback == null) {
+            document.setSecurityCallback(
+                    new MyGUISecurityCallback(viewer, messageBundle));
+        } else {
+            document.setSecurityCallback(documentViewController.getSecurityCallback());
+        }
+    }
 
     /**
      * Open a file specified by the given path name.
@@ -1908,12 +1925,8 @@ public class SwingController
                 // load the document
                 document = new Document();
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setFile(pathname);
-
                 commonNewDocumentHandling(pathname);
             } catch (PDFException e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -2025,12 +2038,6 @@ public class SwingController
 
             // load the document
             document = new Document();
-            // create default security callback is user has not created one
-            if (documentViewController.getSecurityCallback() == null) {
-                document.setSecurityCallback(
-                        new MyGUISecurityCallback(viewer, messageBundle));
-            }
-
             try {
                 // make a connection
                 final URLConnection urlConnection = location.openConnection();
@@ -2051,8 +2058,9 @@ public class SwingController
                             // Create a stream on the URL connection
                             in = new BufferedInputStream(progressMonitorInputStream);
                             String pathOrURL = location.toString();
-
                             document.setInputStream(in, pathOrURL);
+                            // create default security callback is user has not created one
+                            setupSecurityHandler(document, documentViewController.getSecurityCallback());
                             commonNewDocumentHandling(location.getPath());
                             setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_PAN);
                         } catch (IOException ex) {
@@ -2143,10 +2151,7 @@ public class SwingController
                 // load the document
                 document = new Document();
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setInputStream(inputStream, pathOrURL);
 
                 commonNewDocumentHandling(description);
@@ -2205,10 +2210,7 @@ public class SwingController
                 // load the document
                 document = embeddedDocument;
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 commonNewDocumentHandling(fileName);
             } catch (Exception e) {
                 org.icepdf.ri.util.Resources.showMessageDialog(
@@ -2251,10 +2253,7 @@ public class SwingController
                 // load the document
                 document = new Document();
                 // create default security callback is user has not created one
-                if (documentViewController.getSecurityCallback() == null) {
-                    document.setSecurityCallback(
-                            new MyGUISecurityCallback(viewer, messageBundle));
-                }
+                setupSecurityHandler(document, documentViewController.getSecurityCallback());
                 document.setByteArray(data, offset, length, pathOrURL);
 
                 commonNewDocumentHandling(description);
