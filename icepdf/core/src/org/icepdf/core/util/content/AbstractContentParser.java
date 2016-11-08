@@ -790,7 +790,8 @@ public abstract class AbstractContentParser implements ContentParser {
         float size = ((Number) stack.pop()).floatValue();
         Name name2 = (Name) stack.pop();
         // build the new font and initialize it.
-
+        graphicState.getTextState().tsize = size;
+        graphicState.getTextState().fontName = name2;
         graphicState.getTextState().font = resources.getFont(name2);
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
@@ -809,6 +810,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 Resources res = page.getResources();
                 // try and get a font off the first page.
                 Object pageFonts = res.getEntries().get(Resources.FONT_KEY);
+                // check for an indirect reference
+                if (pageFonts instanceof Reference) {
+                    pageFonts = resources.getLibrary().getObject((Reference) pageFonts);
+                }
                 if (pageFonts instanceof HashMap) {
                     // get first font
                     Reference fontRef = (Reference) ((HashMap) pageFonts).get(name2);

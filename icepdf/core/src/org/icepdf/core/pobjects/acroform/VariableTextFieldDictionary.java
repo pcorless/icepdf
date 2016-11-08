@@ -16,20 +16,21 @@
 package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.StringObject;
-import org.icepdf.core.pobjects.graphics.DeviceCMYK;
-import org.icepdf.core.pobjects.graphics.PColorSpace;
+import org.icepdf.core.pobjects.fonts.Font;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Library;
-import org.icepdf.core.util.Parser;
 import org.icepdf.core.util.Utils;
+import org.icepdf.core.util.content.ContentParser;
+import org.icepdf.core.util.content.ContentParserFactory;
 
 import java.awt.*;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.Stack;
 import java.util.logging.Logger;
+
+import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
 
 /**
  * When the contents and properties of a field are known in advance, its visual
@@ -84,8 +85,9 @@ public class VariableTextFieldDictionary extends FieldDictionary {
     public static final Name RV_KEY = new Name("RV");
 
     protected Quadding quadding = Quadding.LEFT_JUSTIFIED;
-    protected int size = 12;
-    protected String fontName = "Helvetic";
+    protected float size = 12;
+    protected Name fontName = new Name("Helv");
+    protected Font font = null;
     protected Color color = Color.BLACK;
 
     public VariableTextFieldDictionary(Library library, HashMap entries) {
@@ -110,16 +112,16 @@ public class VariableTextFieldDictionary extends FieldDictionary {
         }
         // get the default style string
         Object tmp = library.getObject(entries, DS_KEY);
-        if (tmp != null){
+        if (tmp != null) {
             defaultStyle = Utils.convertStringObject(library, (StringObject) tmp);
         }
 
         tmp = library.getObject(entries, RV_KEY);
-        if (tmp != null){
+        if (tmp != null) {
             if (tmp instanceof StringObject) {
                 defaultStyle = Utils.convertStringObject(library, (StringObject) tmp);
-            }else if (tmp instanceof Stream){
-                defaultStyle =  new String(((Stream)tmp).getDecodedStreamBytes());
+            } else if (tmp instanceof Stream) {
+                defaultStyle = new String(((Stream) tmp).getDecodedStreamBytes());
             }
         }
 
@@ -128,71 +130,86 @@ public class VariableTextFieldDictionary extends FieldDictionary {
         tmp = library.getObject(entries, DA_KEY);
         if (tmp instanceof StringObject) {
             defaultAppearance = Utils.convertStringObject(library, (StringObject) tmp);
-            Parser parser = new Parser(new ByteArrayInputStream(defaultAppearance.getBytes()));
-            try {
-                for (Object token = parser.getToken(); token != null; token = parser.getToken()) {
-                    if (token instanceof Name) {
-                        fontName = ((Name) token).getName();
-                    } else if (token instanceof Number) {
-                        size = ((Number) token).intValue();
-                        // double check for zero as we have many test cases that default to zero.
-                        if (size == 0) size = 12;
-                    } else if (token instanceof String) {
-                        // we have the Tj, try to get the color
-                        token = parser.getToken();
-                        Stack<Object> stack = new Stack<Object>();
-                        while (token instanceof Number) {
-                            stack.push(token);
-                            token = parser.getToken();
-                        }
-                        // derive color
-                        if (stack.size() == 1) {
-                            float gray = ((Number) stack.pop()).floatValue();
-                            gray = gray > 1 ? gray / 255.0f : gray;
-                            // Stroke Color Gray
-                            color = new Color(gray, gray, gray);
-                        } else if (stack.size() == 3) {
-                            float b = ((Number) stack.pop()).floatValue();
-                            float gg = ((Number) stack.pop()).floatValue();
-                            float r = ((Number) stack.pop()).floatValue();
-                            b = Math.max(0.0f, Math.min(1.0f, b));
-                            gg = Math.max(0.0f, Math.min(1.0f, gg));
-                            r = Math.max(0.0f, Math.min(1.0f, r));
-                            color = new Color(r, gg, b);
-                        } else if (stack.size() == 4) {
-                            float k = ((Number) stack.pop()).floatValue();
-                            float y = ((Number) stack.pop()).floatValue();
-                            float m = ((Number) stack.pop()).floatValue();
-                            float c = ((Number) stack.pop()).floatValue();
-
-                            PColorSpace pColorSpace =
-                                    PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
-                            // set stroke colour
-                            color = pColorSpace.getColor(
-                                    PColorSpace.reverse(new float[]{c, m, y, k}), true);
-                        }
+            Resources resources = library.getResources(entries, DR_KEY);
+            // use the DA and DR dictionary to get a valid graphics state and thus the
+            // the font and colour information we need to generate a new content stream
+            if (resources != null) {
+                try {
+                    ContentParser cp = ContentParserFactory.getInstance()
+                            .getContentParser(library, resources);
+                    cp.parseTextBlocks(new byte[][]{defaultAppearance.getBytes()});
+                    GraphicsState gs = cp.getGraphicsState();
+                    if (gs != null) {
+                        color = gs.getFillColor();
+                        size = gs.getTextState().tsize;
+                        font = gs.getTextState().font;
+                        fontName = gs.getTextState().fontName;
                     }
+                } catch (Throwable e) {
+                    logger.warning("Could not validate default appearance, defaulting.");
                 }
-            } catch (IOException e) {
-                // silent end of string parse.
             }
         }
+
     }
 
-    public int getSize() {
+    /**
+     * If the DA key is present the appearance stream is generated as is,  however if not then the content
+     * is pased and we try to pull the color, size, font, and font name.
+     *
+     * @param content
+     * @return
+     */
+    public String generateDefaultAppearance(String content, Resources resources) {
+        try {
+            String possibleContent;
+            if (library.getObject(entries, DA_KEY) != null) {
+                possibleContent = library.getString(entries, DA_KEY);
+            } else if (parentField != null && library.getObject(parentField.getEntries(), DA_KEY) != null) {
+                possibleContent = library.getString(parentField.getEntries(), DA_KEY);
+            } else {
+                possibleContent = content;
+            }
+            if (resources == null) {
+                resources = library.getCatalog().getInteractiveForm().getResources();
+            }
+            ContentParser cp = ContentParserFactory.getInstance()
+                    .getContentParser(library, resources);
+            cp.parseTextBlocks(new byte[][]{possibleContent.getBytes()});
+            GraphicsState gs = cp.getGraphicsState();
+            if (gs != null) {
+                if (gs.getFillColor() != null) color = gs.getFillColor();
+                if (gs.getTextState().tsize > 0) size = gs.getTextState().tsize;
+                if (gs.getTextState().font != null) font = gs.getTextState().font;
+                if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
+            }
+        } catch (Throwable e) {
+            logger.warning("Could not validate default appearance, defaulting.");
+            e.printStackTrace();
+        }
+        return color.getRed() / 255.0f + " " + color.getGreen() / 255.0f + " " + color.getBlue() / 255.0f + " rg " +
+                "/" + fontName + " " +
+                size + " Tf ";
+    }
+
+    public String getDefaultAppearance() {
+        return defaultAppearance;
+    }
+
+    public float getDefaultFontSize() {
         return size;
     }
 
-    public String getFontName() {
+    public Name getFontName() {
         return fontName;
     }
 
-    public void setSize(int size) {
-        this.size = size;
+    public float getSize() {
+        return size;
     }
 
-    public void setFontName(String fontName) {
-        this.fontName = fontName;
+    public Font getFont() {
+        return font;
     }
 
     public Color getColor() {
@@ -201,10 +218,6 @@ public class VariableTextFieldDictionary extends FieldDictionary {
 
     public Quadding getQuadding() {
         return quadding;
-    }
-
-    public String getDefaultAppearance() {
-        return defaultAppearance;
     }
 
     public String getDefaultStyle() {

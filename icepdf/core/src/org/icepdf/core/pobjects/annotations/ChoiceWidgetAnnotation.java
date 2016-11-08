@@ -191,13 +191,18 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             fieldDictionary.setOptions(choices);
         }
         String selectedField = (String) fieldDictionary.getFieldValue();
-        int bmcStart = currentContentStream.indexOf("BT") + 2;
-        int bmcEnd = currentContentStream.lastIndexOf("ET");
+        int btStart = currentContentStream.indexOf("BT");
+        int btEnd = currentContentStream.lastIndexOf("ET");
+        int bmcStart = currentContentStream.indexOf("BMC");
+        int bmcEnd = currentContentStream.lastIndexOf("EMC");
         // grab the pre post marked content postscript.
-        String preBmc = currentContentStream.substring(0, bmcStart);
-        String postEmc = currentContentStream.substring(bmcEnd);
+        String preBmc = btStart >= 0 ? currentContentStream.substring(0, btStart + 2) :
+                currentContentStream.substring(0, bmcStart + 3);
+        String postEmc = btEnd >= 0 ? currentContentStream.substring(btEnd) :
+                currentContentStream.substring(0, bmcEnd + 3);
+        ;
         // marked content which we will use to try and find some data points.
-        String markedContent = currentContentStream.substring(bmcStart, bmcEnd);
+        //String markedContent = currentContentStream.substring(bmcStart, bmcEnd);
 
         // check for a bounding box definition
         //Rectangle2D.Float bounds = findBoundRectangle(markedContent);
@@ -215,7 +220,11 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         // print out text
         content.append('(').append(selectedField).append(") Tj ");
         // build the final content stream.
-        currentContentStream = preBmc + "\n" + content + "\n" + postEmc;
+        if (btStart >= 0) {
+            currentContentStream = preBmc + "\n" + content + "\n" + postEmc;
+        } else {
+            currentContentStream = preBmc + " BT\n" + content + "\n ET EMC";
+        }
 
         return currentContentStream;
     }

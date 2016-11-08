@@ -346,7 +346,8 @@ public class HexStringObject implements StringObject {
             int length = hh.length();
             sb = new StringBuilder(length / 4);
             String subStr;
-            for (int i = 0; i < length; i = i + 4) {
+            // make sure to skip the marker
+            for (int i = 4; i < length; i = i + 4) {
                 subStr = hh.substring(i, i + 4);
                 sb.append((char) Integer.parseInt(subStr, 16));
             }

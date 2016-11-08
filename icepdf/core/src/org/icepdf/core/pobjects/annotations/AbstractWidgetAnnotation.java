@@ -97,8 +97,9 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             } else if (LinkAnnotation.HIGHLIGHT_PUSH.equals(name.getName())) {
                 highlightMode = LinkAnnotation.HIGHLIGHT_PUSH;
             }
+        } else {
+            highlightMode = LinkAnnotation.HIGHLIGHT_INVERT;
         }
-        highlightMode = LinkAnnotation.HIGHLIGHT_INVERT;
 
     }
 
