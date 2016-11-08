@@ -172,10 +172,11 @@ public class ICCBased extends PColorSpace {
             toCopy = fLength;
         }
         for (int i = 0; i < toCopy; i++) {
-            float curr = f[fLength - 1 - i];
-            if (curr < 0.0f) {
+            int j = fLength - 1 - i;
+            float curr = f[j];
+            if (curr < colorSpace.getMinValue(j)) {
                 curr = 0.0f;
-            } else if (curr > 1.0f) {
+            } else if (curr > colorSpace.getMaxValue(j)) {
                 curr = 1.0f;
             }
             fvalue[i] = curr;
