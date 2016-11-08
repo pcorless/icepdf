@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.*;
 import org.icepdf.ri.common.tools.SelectionBoxHandler;
+import org.icepdf.ri.common.tools.TextSelection;
 import org.icepdf.ri.common.tools.TextSelectionPageHandler;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
@@ -183,7 +184,7 @@ public class PageViewComponentImpl extends
                                  PageTree pageTree, int pageNumber,
                                  JScrollPane parentScrollPane,
                                  int width, int height) {
-        // removed focasable until we can build our own focus manager
+        // removed focusable until we can build our own focus manager
         // for moving though a large number of pages.
         setFocusable(true);
         // add focus listener
@@ -196,6 +197,9 @@ public class PageViewComponentImpl extends
 
         // page loading progress
         pageLoadingListener = new DefaultPageViewLoadingListener(this, documentViewController);
+
+        // text selection handler
+        textSelectionPageHandler = new TextSelectionPageHandler(documentViewController, this, documentViewModel);
 
         // needed to propagate mouse events.
         this.documentViewModel = documentViewModel;
@@ -341,6 +345,7 @@ public class PageViewComponentImpl extends
         this.parentDocumentView = parentDocumentView;
         documentViewController = this.parentDocumentView.getParentViewController();
         pageLoadingListener.setDocumentViewController(documentViewController);
+        textSelectionPageHandler.setDocumentViewController(documentViewController);
     }
 
     public int getPageIndex() {
@@ -499,12 +504,15 @@ public class PageViewComponentImpl extends
                         pageText.selectAll();
                     }
                     // paint selected text.
-                    TextSelectionPageHandler.paintSelectedText(g, this, documentViewModel);
+                    TextSelection.paintSelectedText(g, this, documentViewModel);
                 }
             }
             // paint annotation handler effect if any.
             if (currentToolHandler != null) {
                 currentToolHandler.paintTool(g);
+            }
+            if (documentViewModel.getViewToolMode() == DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION) {
+                textSelectionPageHandler.paintTool(g);
             }
         }
     }
@@ -560,7 +568,7 @@ public class PageViewComponentImpl extends
         // on mouse click clear the currently selected sprints
         Page currentPage = getPage();
         // clear selected text.
-        if (currentPage.getViewText() != null) {
+        if (currentPage.isInitiated() && currentPage.getViewText() != null) {
             currentPage.getViewText().clearSelected();
         }
 
@@ -570,6 +578,9 @@ public class PageViewComponentImpl extends
         if (currentToolHandler instanceof SelectionBoxHandler) {
             ((SelectionBoxHandler) currentToolHandler).setSelectionRectangle(
                     cursorLocation, selection);
+        }
+        if (textSelectionPageHandler != null) {
+            textSelectionPageHandler.setSelectionRectangle(cursorLocation, selection);
         }
     }
 
@@ -1017,20 +1028,6 @@ public class PageViewComponentImpl extends
             // initiate the repaint
             SwingUtilities.invokeLater(doSwingWork);
         }
-    }
-
-    /**
-     * Gets a list of the annotation components used in this page view.
-     *
-     * @return list of annotation components, can be null.
-     */
-    public ArrayList<AbstractAnnotationComponent> getSynchronousAnnotationComponents() {
-        init();
-        while (!(pageInitializer.hasBeenQueued() || pageInitializer.isRunning())) {
-            pageInitializer.run();
-            break;
-        }
-        return annotationComponents;
     }
 
     public class PagePainter implements Runnable {

@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.Document;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,64 +82,34 @@ public interface DocumentViewModel {
     public int DISPLAY_TOOL_LINE_ANNOTATION = 12;
 
     /**
-     * Display tool constant for creating new line with arrow annotation.
+     * Display tool constant for creating new line  annotation.
      */
     public int DISPLAY_TOOL_LINE_ARROW_ANNOTATION = 13;
 
     /**
-     * Display tool constant for creating new square annotation.
+     * Display tool constant for creating new line  annotation.
      */
     public int DISPLAY_TOOL_SQUARE_ANNOTATION = 14;
 
     /**
-     * Display tool constant for creating new circle annotation.
+     * Display tool constant for creating new line  annotation.
      */
     public int DISPLAY_TOOL_CIRCLE_ANNOTATION = 15;
 
     /**
-     * Display tool constant for creating new ink annotation.
+     * Display tool constant for creating new line  annotation.
      */
     public int DISPLAY_TOOL_INK_ANNOTATION = 16;
 
     /**
-     * Display tool constant for creating new free text annotation.
+     * Display tool constant for creating new line  annotation.
      */
     public int DISPLAY_TOOL_FREE_TEXT_ANNOTATION = 17;
 
     /**
-     * Display tool constant for creating new text annotation.
+     * Display tool constant for creating new line  annotation.
      */
     public int DISPLAY_TOOL_TEXT_ANNOTATION = 18;
-
-    /**
-     * Display tool constant for creating new text field acroform annotation.
-     */
-    public int DISPLAY_TOOL_TEXT_FIELD_ANNOTATION = 19;
-
-    /**
-     * Display tool constant for creating new radio button field acroform annotation.
-     */
-    public int DISPLAY_TOOL_BUTTON_RADIO_FIELD_ANNOTATION = 20;
-
-    /**
-     * Display tool constant for creating new checkbox button field acroform annotation.
-     */
-    public int DISPLAY_TOOL_BUTTON_CHECKBOX_FIELD_ANNOTATION = 21;
-
-    /**
-     * Display tool constant for creating new button field acroform annotation.
-     */
-    public int DISPLAY_TOOL_BUTTON_FIELD_ANNOTATION = 22;
-
-    /**
-     * Display tool constant for creating new signature field acroform annotation.
-     */
-    public int DISPLAY_TOOL_SIGNATURE_FIELD_ANNOTATION = 23;
-
-    /**
-     * Display tool constant for creating new choice field acroform annotation.
-     */
-    public int DISPLAY_TOOL_CHOICE_FIELD_ANNOTATION = 24;
 
     /**
      * Display tool constant for setting no tools
@@ -159,21 +128,27 @@ public interface DocumentViewModel {
     public Document getDocument();
 
     /**
-     * Gets a list of doucment pages that have selected text elements. The
+     * Gets a list of document pages that have selected text elements. The
      * pages are referenced so that they will be removed automatically if
      * the memory manage needs to dispose of a page.
      *
      * @return list Weakly referenced pages
      */
-    public ArrayList<WeakReference<AbstractPageViewComponent>> getSelectedPageText();
+    public ArrayList<AbstractPageViewComponent> getSelectedPageText();
 
     /**
      * Adds the specified page to the list of selected pages.
      *
-     * @param pageViewComponent pageview component to add to list.
+     * @param pageViewComponent pageView component to add to list.
      */
     public void addSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
+    /**
+     * Remove the specified page to the list of selected pages.
+     *
+     * @param pageViewComponent pageView component to add to list.
+     */
+    public void removeSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Returns true if all text in the document should be in a selected state.
@@ -232,7 +207,7 @@ public interface DocumentViewModel {
     public float getViewZoom();
 
     /**
-     * Sets the view rotaiton of this model.
+     * Sets the view rotation of this model.
      *
      * @param viewRotation rotation in degrees
      * @return true if the view rotation was set correctly, otherwise false.
@@ -295,7 +270,7 @@ public interface DocumentViewModel {
     public void setPageBoundary(final int pageBoundary);
 
     /**
-     * Gets the page boundry used to paint document pages.
+     * Gets the page boundary used to paint document pages.
      *
      * @return page boundary type as defined in the class Page.
      */
@@ -304,7 +279,7 @@ public interface DocumentViewModel {
     /**
      * Gets the currently selected annotation
      *
-     * @return currently selected annotaitons.
+     * @return currently selected annotations.
      */
     public AnnotationComponent getCurrentAnnotation();
 
@@ -318,7 +293,7 @@ public interface DocumentViewModel {
     /**
      * Adds memento state  to the care taker.
      *
-     * @param oldMementoState origional state.
+     * @param oldMementoState original state.
      * @param newMementoState new state.
      */
     public void addMemento(Memento oldMementoState,

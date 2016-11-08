@@ -100,7 +100,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         }
     }
 
-
     protected static Name startLineEnding = LineAnnotation.LINE_END_NONE;
     protected static Name endLineEnding = LineAnnotation.LINE_END_NONE;
 
@@ -152,7 +151,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
     public void mouseReleased(MouseEvent e) {
         endOfLine = e.getPoint();
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
 
         // check to make sure the bbox isn't zero height or width
         rectToDraw.setRect(rectToDraw.getX() - 8, rectToDraw.getY() - 8,
@@ -185,7 +184,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setBBox(tBbox);
         annotation.resetAppearanceStream(getPageTransform());
 
-
         // create the annotation object.
         AbstractAnnotationComponent comp =
                 AnnotationComponentFactory.buildAnnotationComponent(
@@ -216,7 +214,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     public void mouseDragged(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
         endOfLine = e.getPoint();
         pageViewComponent.repaint();
     }
@@ -225,7 +223,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.
      *
-     * @return transformed bbox.
+     * @return transformed bBox.
      */
     protected Rectangle convertToPageSpace() {
         Page currentPage = pageViewComponent.getPage();

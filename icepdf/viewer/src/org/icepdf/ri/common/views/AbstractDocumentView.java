@@ -48,7 +48,7 @@ public abstract class AbstractDocumentView
             Logger.getLogger(AbstractDocumentView.class.toString());
 
     // background colour
-    public static Color backgroundColor;
+    public static Color BACKGROUND_COLOUR;
 
     static {
         // sets the shadow colour of the decorator.
@@ -56,7 +56,7 @@ public abstract class AbstractDocumentView
             String color = Defs.sysProperty(
                     "org.icepdf.core.views.background.color", "#808080");
             int colorValue = ColorUtil.convertColor(color);
-            backgroundColor =
+            BACKGROUND_COLOUR =
                     new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("808080", 16));
         } catch (NumberFormatException e) {

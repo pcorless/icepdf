@@ -156,7 +156,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     }
 
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
 
         // convert the rectangle to page space
         rectangle = convertToPageSpace(rectangle);
@@ -248,7 +248,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
     }
 
     public void mouseDragged(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
         rectangle.setRect(rectToDraw);
         pageViewComponent.repaint();
     }
@@ -257,7 +257,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
      * Convert the shapes that make up the annotation to page space so that
      * they will scale correctly at different zooms.
      *
-     * @return transformed bbox.
+     * @return transformed bBox.
      */
     protected Rectangle convertToPageSpace(Rectangle rect) {
         Page currentPage = pageViewComponent.getPage();

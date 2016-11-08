@@ -24,6 +24,7 @@ import org.icepdf.core.util.Library;
 import java.util.HashMap;
 
 /**
+ * Trigger Events (A.K.A).
  * An annotation, page object, or (beginning with PDF 1.3) interactive form field may include an entry named AA that
  * specifies an additional-actions dictionary (PDF 1.2) that extends the set of events that can trigger the execution
  * of an action. In PDF 1.4, the document catalogue dictionary (see 7.7.2, “Document Catalog”) may also contain an AA

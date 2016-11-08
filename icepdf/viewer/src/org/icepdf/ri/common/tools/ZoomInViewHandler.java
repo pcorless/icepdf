@@ -52,7 +52,7 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
         // handle text selection drags.
         if (documentViewController != null) {
             // update the currently selected box
-            updateSelectionSize(e, parentComponent);
+            updateSelectionSize(e.getX(), e.getY(), parentComponent);
 
             // add selection box to child pages
             if (documentViewModel != null) {
@@ -101,7 +101,7 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
     public void mouseReleased(MouseEvent e) {
         if (documentViewController != null) {
             // update selection rectangle
-            updateSelectionSize(e, parentComponent);
+            updateSelectionSize(e.getX(), e.getY(), parentComponent);
 
             if (documentViewController.getViewPort() != null &&
                     rectToDraw.getWidth() > 0 &&

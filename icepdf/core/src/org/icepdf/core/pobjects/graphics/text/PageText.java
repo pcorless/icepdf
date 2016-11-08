@@ -193,9 +193,14 @@ public class PageText implements TextSelect {
     public void setTextTransform(AffineTransform affineTransform){
         // look to see if we have shear and thus text that has been rotated, if so we insert a page break
         if (previousTextTransform != null && currentLine != null){
-            if (previousTextTransform.getShearX() != affineTransform.getShearX() ||
-                    previousTextTransform.getShearY() != affineTransform.getShearY())
-            currentLine.newWord();
+            // hard round as we're just looking for a 90 degree shift in writing direction.
+            // if found we clear the current work so we can start a new word.
+            if ((previousTextTransform.getShearX() < 0 && (int) affineTransform.getShearX() > 0) ||
+                    (previousTextTransform.getShearX() > 0 && (int) affineTransform.getShearX() < 0) ||
+                    (previousTextTransform.getShearY() < 0 && (int) affineTransform.getShearY() > 0) ||
+                    (previousTextTransform.getShearY() > 0 && (int) affineTransform.getShearY() < 0)) {
+                currentLine.clearCurrentWord();
+            }
         }
         previousTextTransform = affineTransform;
     }
@@ -230,7 +235,7 @@ public class PageText implements TextSelect {
      * Utility method to normalize text created in a Xform content stream
      * and is only called from the contentParser when parsing 'Do' token.
      *
-     * @param transform do matrix tranform
+     * @param transform do matrix transform
      */
     public void applyXObjectTransform(AffineTransform transform) {
         for (LineText lineText : pageLines) {
@@ -351,13 +356,13 @@ public class PageText implements TextSelect {
                 // all page words will be on one line
                 java.util.List<WordText> words = pageLine.getWords();
                 if (words != null && words.size() > 0) {
-                    if (!preserveColumns) {
-                        Collections.sort(words, new LinePositionComparator());
-                    }
+//                    if (!preserveColumns) {
+//                        Collections.sort(words, new LinePositionComparator());
+//                    }
                     // break the words into lines on every change of y
                     double lastY = Math.round(words.get(0).getTextExtractionBounds().y);
                     int start = 0, end = 0;
-                    double currentY, diff;
+                    double currentY = 0, diff;
                     for (WordText word : words) {
                         currentY = Math.round(word.getTextExtractionBounds().getY());
                         // little bit of tolerance for detecting a line,  basically anything that is
@@ -419,6 +424,12 @@ public class PageText implements TextSelect {
                 for (LineText lineText : sortedPageLines) {
                     lineText.getBounds();
                 }
+            }
+
+            // sort the lines
+            if (sortedPageLines.size() > 0 && !preserveColumns) {
+                Collections.sort(sortedPageLines,
+                        new LinePositionComparator());
             }
             // assign back the sorted lines.
             this.sortedPageLines = sortedPageLines;

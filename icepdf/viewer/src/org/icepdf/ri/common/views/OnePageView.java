@@ -77,12 +77,12 @@ public class OnePageView extends AbstractDocumentView {
     private void buildGUI() {
         // add all page components to gridlayout panel
         pagesPanel = new JPanel();
-        pagesPanel.setBackground(backgroundColor);
+        pagesPanel.setBackground(BACKGROUND_COLOUR);
         // one column equals single page view continuous
         GridLayout gridLayout = new GridLayout(0, 1, horizontalSpace, verticalSpace);
         pagesPanel.setLayout(gridLayout);
 
-        // use a gridbag to center the page component panel
+        // use a gridBag to center the page component panel
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.weighty = 1.0;                  // allows vertical resizing
         gbc.weightx = 1.0;                  // allows horizontal resizing
@@ -194,7 +194,7 @@ public class OnePageView extends AbstractDocumentView {
     public void paintComponent(Graphics g) {
         Rectangle clipBounds = g.getClipBounds();
         // paint background gray
-        g.setColor(backgroundColor);
+        g.setColor(BACKGROUND_COLOUR);
         g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
         // paint selection box
         super.paintComponent(g);

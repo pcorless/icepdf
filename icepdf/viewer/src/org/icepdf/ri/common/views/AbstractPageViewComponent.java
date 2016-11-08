@@ -40,6 +40,10 @@ public abstract class AbstractPageViewComponent
     // currently selected tool
     protected ToolHandler currentToolHandler;
 
+    // we always keep around a page selection tool, it's only called from the parent view
+    // component, this allows for multiple page selection.
+    protected TextSelectionPageHandler textSelectionPageHandler;
+
     // annotations component for this pageViewComp.
     protected ArrayList<AbstractAnnotationComponent> annotationComponents;
 
@@ -58,17 +62,12 @@ public abstract class AbstractPageViewComponent
             currentToolHandler.uninstallTool();
             removeMouseListener(currentToolHandler);
             removeMouseMotionListener(currentToolHandler);
+            currentToolHandler = null;
         }
         // assign the correct tool handler
         switch (viewToolMode) {
             case DocumentViewModel.DISPLAY_TOOL_ZOOM_IN:
                 currentToolHandler = new ZoomInPageHandler(
-                        documentViewController,
-                        this,
-                        documentViewModel);
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION:
-                currentToolHandler = new TextSelectionPageHandler(
                         documentViewController,
                         this,
                         documentViewModel);
@@ -164,24 +163,6 @@ public abstract class AbstractPageViewComponent
                         documentViewModel);
                 documentViewController.clearSelectedText();
                 break;
-            case DocumentViewModel.DISPLAY_TOOL_TEXT_FIELD_ANNOTATION:
-//               // todo text field handler
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_BUTTON_CHECKBOX_FIELD_ANNOTATION:
-//                // todo checkbox handler.
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_BUTTON_RADIO_FIELD_ANNOTATION:
-//                // todo radio handler.
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_BUTTON_FIELD_ANNOTATION:
-//                // todo button handler.
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_SIGNATURE_FIELD_ANNOTATION:
-//                // todo signature handler.
-                break;
-            case DocumentViewModel.DISPLAY_TOOL_CHOICE_FIELD_ANNOTATION:
-//                // todo choicei handler.
-                break;
             default:
                 currentToolHandler = null;
         }
@@ -190,6 +171,20 @@ public abstract class AbstractPageViewComponent
             addMouseListener(currentToolHandler);
             addMouseMotionListener(currentToolHandler);
         }
+    }
+
+    /**
+     * Gets the page components TextSelectionPageHandler.  Each page has one and it directly accessed by the
+     * TextSelectionViewHandler.  All other tools are created/disposed as the tools are selected.
+     *
+     * @return page's instance of the text selection handler.
+     */
+    public TextSelectionPageHandler getTextSelectionPageHandler() {
+        return textSelectionPageHandler;
+    }
+
+    public ToolHandler getCurrentToolHandler() {
+        return currentToolHandler;
     }
 
     public void refreshAnnotationComponents(Page page) {

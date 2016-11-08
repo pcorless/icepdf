@@ -23,18 +23,19 @@ import org.icepdf.ri.common.UndoCaretaker;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * <p>The AbstractDocumentViewModel is responsible for keeping the state of the
- * documetn view.  The AbstractDocumentViewModel also stores an list of
- * PageViewComponetnts who's state is update as the model changes.  The
+ * document view.  The AbstractDocumentViewModel also stores an list of
+ * PageViewComponents who's state is update as the model changes.  The
  * AbstractDocumentViewModel can be swapped into different page views quickly
- * and efficently.</p>
+ * and efficiently.</p>
  *
  * @see org.icepdf.ri.common.views.DocumentViewModelImpl
  * @since 2.5
@@ -62,7 +63,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     // Pages that have selected text.
-    private ArrayList<WeakReference<AbstractPageViewComponent>> selectedPageText;
+    private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
     // select all state flag, optimization for painting select all state lazily
     private boolean selectAll;
     protected List<AbstractPageViewComponent> pageComponents;
@@ -114,17 +115,26 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Gets the list of components that have a selected state.  The
-     * WeakReference must be checkt o make sure the page was not disposed of
-     * for for some reason by the the memeory manager.
+     * WeakReference must be check to make sure the page was not disposed of
+     * for for some reason by the the memory manager.
      *
      * @return list of pages that are in a selected state.
      */
-    public ArrayList<WeakReference<AbstractPageViewComponent>> getSelectedPageText() {
-        return selectedPageText;
+    public ArrayList<AbstractPageViewComponent> getSelectedPageText() {
+        if (selectedPageText != null) {
+            Set<Integer> keySet = selectedPageText.keySet();
+            ArrayList<AbstractPageViewComponent> selectedPages = new ArrayList<AbstractPageViewComponent>(keySet.size());
+            for (Integer pageIndex : keySet) {
+                selectedPages.add(selectedPageText.get(pageIndex));
+            }
+            return selectedPages;
+        } else {
+            return null;
+        }
     }
 
     /**
-     * Gets the selected all state of the doucment pages view.
+     * Gets the selected all state of the document pages view.
      *
      * @return true if all pages are ina  selected state, false otherwise.
      */
@@ -137,7 +147,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * document text is all selected; otherwise, false. This is only a flag
      * and must be interpreted by the pages and page view components.
      *
-     * @param selectAll to to specify all text is selected, false to sepcify
+     * @param selectAll to to specify all text is selected, false to specify
      *                  no text is selected
      */
     public void setSelectAll(boolean selectAll) {
@@ -149,15 +159,27 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * to make sure of selected text.  The caches is used as an optimization
      * to make sure selected text can be cleared quickly.
      *
-     * @param pageViewComponent pageview component to add to list.
+     * @param pageViewComponent pageView component to add to list.
      */
     public void addSelectedPageText(AbstractPageViewComponent pageViewComponent) {
         if (selectedPageText == null) {
-            selectedPageText =
-                    new ArrayList<WeakReference<AbstractPageViewComponent>>();
+            selectedPageText = new HashMap<Integer, AbstractPageViewComponent>();
         }
-        selectedPageText.add(
-                new WeakReference<AbstractPageViewComponent>(pageViewComponent));
+        selectedPageText.put(pageViewComponent.getPageIndex(), pageViewComponent);
+    }
+
+    /**
+     * Removes the specified page to selected page cache.  No checking is done
+     * to make sure of selected text.  The caches is used as an optimization
+     * to make sure selected text can be cleared quickly.
+     *
+     * @param pageViewComponent pageView component to add to list.
+     */
+    public void removeSelectedPageText(AbstractPageViewComponent pageViewComponent) {
+        if (selectedPageText == null) {
+            selectedPageText = new HashMap<Integer, AbstractPageViewComponent>();
+        }
+        selectedPageText.remove(pageViewComponent.getPageIndex());
     }
 
     /**
@@ -253,7 +275,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     /**
-     * Sets the page boundtry used to paint a page.
+     * Sets the page boundary used to paint a page.
      *
      * @param pageBoundary page bounds
      */
@@ -311,7 +333,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     }
 
     /**
-     * Sets the current annotation.  This is manily called by the UI tools
+     * Sets the current annotation.  This is mainly called by the UI tools
      * when editing and selecting page annotations.
      *
      * @param currentAnnotation annotation to make current.
@@ -331,9 +353,9 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     /**
      * Gets annotation caretaker responsible for saving states as defined
-     * by the momento pattern.
+     * by the memento pattern.
      *
-     * @return document leve annotation care taker.
+     * @return document level annotation care taker.
      */
     public UndoCaretaker getAnnotationCareTaker() {
         return undoCaretaker;

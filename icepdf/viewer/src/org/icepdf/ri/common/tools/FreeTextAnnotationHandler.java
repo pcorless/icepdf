@@ -49,7 +49,6 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     private static final Logger logger =
             Logger.getLogger(LineAnnotationHandler.class.toString());
 
-
     /**
      * New Text selection handler.  Make sure to correctly and and remove
      * this mouse and text listeners.
@@ -83,7 +82,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
 
         // check the bounds on rectToDraw to try and avoid creating
         // an annotation that is very small.
@@ -143,7 +142,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseDragged(MouseEvent e) {
-        updateSelectionSize(e, pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
     }
 
     public void mouseMoved(MouseEvent e) {
@@ -157,6 +156,5 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     public void uninstallTool() {
 
     }
-
 
 }
