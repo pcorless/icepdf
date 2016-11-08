@@ -26,6 +26,7 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 
 /**
@@ -71,7 +72,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
             // finally create the shapes from the altered stream.
             if (currentContentStream != null) {
-                appearanceState.setContentStream(currentContentStream.getBytes());
+                appearanceState.setContentStream(currentContentStream.getBytes(Charset.forName("UTF-8")));
             }
 
             // some widgets don't have AP dictionaries in such a case we need to create the form object
@@ -80,7 +81,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
             if (appearanceStream != null) {
                 // update the content stream with the new stream data.
-                appearanceStream.setRawBytes(currentContentStream.getBytes());
+                appearanceStream.setRawBytes(currentContentStream.getBytes(Charset.forName("UTF-8")));
                 // add the appearance stream
                 StateManager stateManager = library.getStateManager();
                 stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
@@ -165,7 +166,8 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             content.append(2).append(' ').append(2).append(" Td ");
         }
         // encode the text so it can be properly encoded in PDF string format
-        content = encodeLiteralString(content, contents);
+        // hex encode the text so that we better handle character codes > 127
+        content = encodeHexString(content, contents);
 
         // build the final content stream.
         currentContentStream = preBt + content + postEt;
