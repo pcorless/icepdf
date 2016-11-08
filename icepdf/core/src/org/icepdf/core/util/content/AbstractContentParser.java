@@ -697,7 +697,7 @@ public abstract class AbstractContentParser implements ContentParser {
                         if (dash < 0.5f){
                             dash = dash * 1000;
                         }
-                        dashArray[i] = dash;
+                        dashArray[i] = Math.round(dash);
 
                     }
                 }
