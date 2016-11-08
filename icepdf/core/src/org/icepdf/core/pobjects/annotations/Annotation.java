@@ -1036,17 +1036,10 @@ public abstract class Annotation extends Dictionary {
                 stateManager.addChange(new PObject(currentAction,
                         currentAction.getPObjectReference()));
             }
-            // we have an indirect object that needs to updated.
-            if (action.getPObjectReference() != null) {
-                // add the action to the annotation
-                getEntries().put(ACTION_KEY, action.getPObjectReference());
-                stateManager.addChange(new PObject(action,
-                        action.getPObjectReference()));
-            }else{
-                // we have an inline dictionary and we need to save the annotation.
-                getEntries().put(ACTION_KEY, action.getEntries());
-                stateManager.addChange(new PObject(this, this.getPObjectReference()));
-            }
+            // add the action to the annotation
+            getEntries().put(ACTION_KEY, action.getPObjectReference());
+            stateManager.addChange(new PObject(action,
+                    action.getPObjectReference()));
 
             return true;
         }
@@ -1225,6 +1218,7 @@ public abstract class Annotation extends Dictionary {
 
         AffineTransform oldAT = origG.getTransform();
         Shape oldClip = origG.getClip();
+        Composite oldComp = origG.getComposite();
 
         // Simply uncomment the //// lines to use a different Graphics object
         Graphics2D g = origG;
@@ -1289,6 +1283,7 @@ public abstract class Annotation extends Dictionary {
 
         g.setTransform(oldAT);
         g.setClip(oldClip);
+        g.setComposite(oldComp);
 
         ////g.dispose();
 
