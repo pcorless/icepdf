@@ -173,6 +173,12 @@ public interface DocumentViewModel {
      */
     public void addSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
+    /**
+     * Remove the specified page to the list of selected pages.
+     *
+     * @param pageViewComponent pageView component to add to list.
+     */
+    public void removeSelectedPageText(AbstractPageViewComponent pageViewComponent);
 
     /**
      * Returns true if all text in the document should be in a selected state.
