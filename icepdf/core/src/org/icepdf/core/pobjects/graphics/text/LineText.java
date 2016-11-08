@@ -93,14 +93,13 @@ public class LineText extends AbstractText implements TextSelect {
         }
     }
 
-    public void newWord(){
+    public void clearCurrentWord() {
         // make sure we don't insert a new line if the previous has no words.
         if (currentWord != null &&
                 currentWord.size() == 0) {
             return;
         }
-        currentWord = new WordText();
-        words.add(currentWord);
+        currentWord = null;
     }
 
     /**
