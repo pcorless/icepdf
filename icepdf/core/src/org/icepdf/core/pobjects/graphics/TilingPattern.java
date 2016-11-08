@@ -51,6 +51,9 @@ public class TilingPattern extends Stream implements Pattern {
     private static final Logger logger =
             Logger.getLogger(TilingPattern.class.toString());
 
+    // max x or y dimension of an image tile.
+    public static final int MAX_BUFFER_SIZE = 9000;
+
     public static final Name PATTERNTYPE_KEY = new Name("PatternType");
     public static final Name PAINTTYPE_KEY = new Name("PaintType");
     public static final Name TILINGTYPE_KEY = new Name("TilingType");
@@ -384,6 +387,14 @@ public class TilingPattern extends Stream implements Pattern {
         // corner cases where some bBoxes don't have a dimension.
         double imageWidth = width * baseScale;
         double imageHeight = height * baseScale;
+
+        // make sure we don't have too big an image.
+        if (imageWidth > MAX_BUFFER_SIZE) {
+            imageWidth = bBox.getWidth();
+        }
+        if (imageHeight > MAX_BUFFER_SIZE) {
+            imageHeight = bBox.getHeight();
+        }
 
         // create the new image to write too.
         final BufferedImage bi = ImageUtility.createTranslucentCompatibleImage((int) Math.round(imageWidth), (int) Math.round(imageHeight));
