@@ -92,7 +92,7 @@ public class TextSprite {
      * the current CTM</p>
      *
      * @param cid     cid to paint.
-     * @param unicode unicode represention of cid.
+     * @param unicode unicode representation of cid.
      * @param x       x-coordinate to paint.
      * @param y       y-coordinate to paint.
      * @param width   width of cid from font.
@@ -118,10 +118,11 @@ public class TextSprite {
         // we generally get here if the font.getAscent is zero and as a result must compensate.
         if (h <= 0.0f) {
             Rectangle2D bounds = font.getEstringBounds(cid, 0, 1);
-            if (bounds != null) {
-                h = (float) font.getEstringBounds(cid, 0, 1).getHeight();
+            if (bounds != null && bounds.getHeight() > 0) {
+                h = (float) bounds.getHeight();
             } else {
-                h = 1.0f;
+                // match the width, as it will make text selection work a bit better.
+                h = w;//1.0f;
             }
             if (ascent == 0) {
                 ascent = h;
