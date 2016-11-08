@@ -45,6 +45,7 @@ public class TextSelection extends SelectionBoxHandler {
     public int selectedCount;
 
     protected Point lastMousePressedLocation;
+    protected Point lastMouseLocation;
 
     private GlyphLocation glyphStartLocation;
     private GlyphLocation glyphEndLocation;
@@ -54,6 +55,13 @@ public class TextSelection extends SelectionBoxHandler {
 
     // todo configurable system property to switch to rightToLeft.
     private boolean leftToRight = true;
+
+    // todo make configurable
+    private static int topMargin = 75;
+    private static int bottomMargin = 75;
+    private static boolean enableMarginExclusion;
+//    protected Shape topMarginExclusion;
+//    protected Shape bottomMarginExclusion;
 
     // first page that was selected
     private boolean isFirst;
@@ -109,7 +117,7 @@ public class TextSelection extends SelectionBoxHandler {
 
             ArrayList<LineText> pageLines = pageText.getPageLines();
             Point2D.Float dragStartLocation = convertMouseToPageSpace(startPoint, pageTransform);
-            glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, null);
+            glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, false, null);
         }
 
         // text selection box.
@@ -118,6 +126,9 @@ public class TextSelection extends SelectionBoxHandler {
         pageViewComponent.repaint();
     }
 
+    /**
+     * Selection ended so we want to stop record the position and update the selection.
+     */
     public void selectionEnd(Point endPoint, AbstractPageViewComponent pageViewComponent) {
 
         // write out selected text.
@@ -165,7 +176,16 @@ public class TextSelection extends SelectionBoxHandler {
     public void selection(Point dragPoint, AbstractPageViewComponent pageViewComponent,
                           boolean isDown, boolean isMovingRight) {
         if (pageViewComponent != null) {
-            multiLineSelectHandler(pageViewComponent, dragPoint, isDown, isMovingRight);
+            boolean isLocalDown;
+            if (lastMouseLocation != null) {
+                // double check we're actually moving down
+                isLocalDown = lastMouseLocation.y <= dragPoint.y;
+            } else {
+                isLocalDown = isDown;
+            }
+            multiLineSelectHandler(pageViewComponent, dragPoint, isDown, isLocalDown, isMovingRight);
+
+            lastMouseLocation = dragPoint;
         }
     }
 
@@ -183,14 +203,31 @@ public class TextSelection extends SelectionBoxHandler {
                         documentViewModel.getViewRotation(),
                         documentViewModel.getViewZoom());
 
+                // create exclusion boxes
+//                if (topMargin > 0) {
+//                    Rectangle2D.Float mediaBox = pageViewComponent.getPage().getMediaBox();
+//                    topMarginExclusion = pageTransform.createTransformedShape(
+//                            new Rectangle((int) mediaBox.x, (int) mediaBox.height - bottomMargin,
+//                                    (int) mediaBox.width, bottomMargin));
+//                }
+//                if (bottomMargin > 0) {
+//                    Rectangle2D.Float mediaBox = pageViewComponent.getPage().getMediaBox();
+//                    bottomMarginExclusion = pageTransform.createTransformedShape(
+//                            new Rectangle((int) mediaBox.x, (int) (mediaBox.height - mediaBox.y),
+//                                    (int) mediaBox.width, topMargin));
+//                }
+
+
                 ArrayList<LineText> pageLines = pageText.getPageLines();
                 if (pageLines != null) {
                     boolean found = false;
                     Point2D.Float pageMouseLocation =
                             convertMouseToPageSpace(mouseLocation, pageTransform);
+
                     for (LineText pageLine : pageLines) {
                         // check for containment, if so break into words.
                         if (pageLine.getBounds().contains(pageMouseLocation)) {
+                            //&& !topMarginExclusion.contains(pageMouseLocation) && !bottomMarginExclusion.contains(pageMouseLocation)) {
                             found = true;
                             documentViewController.setViewCursor(
                                     DocumentViewController.CURSOR_TEXT_SELECTION);
@@ -341,7 +378,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param isMovingRight     general selection trent is right, if alse it's left.
      */
     protected void multiLineSelectHandler(AbstractPageViewComponent pageViewComponent, Point mouseLocation,
-                                          boolean isDown, boolean isMovingRight) {
+                                          boolean isDown, boolean isLocalDown, boolean isMovingRight) {
         Page currentPage = pageViewComponent.getPage();
         selectedCount = 0;
 
@@ -362,8 +399,15 @@ public class TextSelection extends SelectionBoxHandler {
 
                 ArrayList<LineText> pageLines = pageText.getPageLines();
 
+                // check for exclusion zones.
+//                Point2D.Float pageMouseLocation =
+//                        convertMouseToPageSpace(mouseLocation, pageTransform);
+//                if ( topMarginExclusion.contains(pageMouseLocation) || bottomMarginExclusion.contains(pageMouseLocation)){
+//                    return;
+//                }
+
                 Point2D.Float dragEndLocation = convertMouseToPageSpace(mouseLocation, pageTransform);
-                glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, dragEndLocation, isDown, lastGlyphEndLocation);
+                glyphEndLocation = GlyphLocation.findGlyphLocation(pageLines, dragEndLocation, isDown, isLocalDown, lastGlyphEndLocation);
 
                 // moving to a new page,  so we need to setup the first word.
                 if (glyphStartLocation == null) {
@@ -377,14 +421,14 @@ public class TextSelection extends SelectionBoxHandler {
                 // normal page selection,  fill in the the highlight between start and end.
                 if (glyphStartLocation != null && glyphEndLocation != null) {
                     selectedCount = GlyphLocation.highLightGlyphs(pageLines, glyphStartLocation, glyphEndLocation, leftToRight,
-                            isDown, isMovingRight);
+                            isDown, isLocalDown, isMovingRight);
                     lastGlyphStartLocation = glyphStartLocation;
                     lastGlyphEndLocation = glyphEndLocation;
                 }
                 // check if last draw are still around and draw them.
                 else if (lastGlyphStartLocation != null && lastGlyphEndLocation != null) {
                     selectedCount = GlyphLocation.highLightGlyphs(pageLines, lastGlyphStartLocation, lastGlyphEndLocation, leftToRight,
-                            isDown, isMovingRight);
+                            isDown, isLocalDown, isMovingRight);
                 }
             }
             pageViewComponent.repaint();
@@ -543,7 +587,7 @@ class GlyphLocation {
     }
 
     public static GlyphLocation findGlyphLocation(ArrayList<LineText> pageLines, Point2D.Float cursorLocation,
-                                                  boolean isDown, GlyphLocation lastGlyphEndLocation) {
+                                                  boolean isDown, boolean isLocalDown, GlyphLocation lastGlyphEndLocation) {
         if (pageLines != null) {
             LineText pageLine;
             // check for a direct intersection.
@@ -566,11 +610,10 @@ class GlyphLocation {
                     }
                 }
             }
-            // todo check against optional header and footer limits.
 
             // check mouse location against y-coordinate of a line  and grab the last line
             // this is buggy if the lines aren't sorted via !org.icepdf.core.views.page.text.preserveColumns.
-            if (isDown) {
+            if ((isLocalDown && isDown) || isLocalDown) {
                 if (lastGlyphEndLocation != null) {
                     // get the next line last word.
                     int lineIndex = lastGlyphEndLocation.line;
@@ -578,8 +621,8 @@ class GlyphLocation {
                         float y1 = pageLines.get(lineIndex).getBounds().y;
                         float y2 = pageLines.get(lineIndex + 1).getBounds().y;
                         if (cursorLocation.y < y1 && cursorLocation.y >= y2) {
-                            java.util.List<WordText> words = pageLines.get(lineIndex).getWords();
-                            return new GlyphLocation(lineIndex, words.size() - 1,
+                            java.util.List<WordText> words = pageLines.get(lineIndex + 1).getWords();
+                            return new GlyphLocation(lineIndex + 1, words.size() - 1,
                                     words.get(words.size() - 1).getGlyphs().size() - 1);
                         }
 
@@ -593,7 +636,7 @@ class GlyphLocation {
                         float y1 = pageLines.get(lineIndex).getBounds().y;
                         float y2 = pageLines.get(lineIndex - 1).getBounds().y;
                         if (cursorLocation.y >= y1 && cursorLocation.y < y2) {
-                            return new GlyphLocation(lineIndex, 0, 0);
+                            return new GlyphLocation(lineIndex - 1, 0, 0);
                         }
                     }
                 }
@@ -603,7 +646,7 @@ class GlyphLocation {
     }
 
     public static int highLightGlyphs(ArrayList<LineText> pageLines, GlyphLocation start, GlyphLocation end,
-                                      boolean leftToRight, boolean isDown, boolean isRight) {
+                                      boolean leftToRight, boolean isDown, boolean isLocalDown, boolean isRight) {
         if (pageLines == null) return 0;
         int selectedCount = fillFirstLine(pageLines.get(start.line), start, end, isDown, isRight, leftToRight);
         // fill middle, if any
