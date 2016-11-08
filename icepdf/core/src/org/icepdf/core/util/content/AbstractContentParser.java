@@ -1702,8 +1702,8 @@ public abstract class AbstractContentParser implements ContentParser {
         // set the line width for the glyph
         float lineWidth = graphicState.getLineWidth();
         double scale = textState.tmatrix.getScaleX();
-        // double check for a near zero value as it will really mess up the division result.
-        if (scale > 0.0001) {
+        // double check for a near zero value as it will really mess up the division result, zero is just fine.
+        if (scale > 0.0001 || scale == 0) {
             lineWidth /= scale;
             graphicState.setLineWidth(lineWidth);
         }
