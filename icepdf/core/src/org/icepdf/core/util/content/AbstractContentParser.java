@@ -198,31 +198,35 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static void consume_rg(GraphicsState graphicState, Stack stack,
                                      Library library) {
-        float b = ((Number) stack.pop()).floatValue();
-        float gg = ((Number) stack.pop()).floatValue();
-        float r = ((Number) stack.pop()).floatValue();
-        b = Math.max(0.0f, Math.min(1.0f, b));
-        gg = Math.max(0.0f, Math.min(1.0f, gg));
-        r = Math.max(0.0f, Math.min(1.0f, r));
-        // set fill colour
-        graphicState.setFillColorSpace(
-                PColorSpace.getColorSpace(library, DeviceRGB.DEVICERGB_KEY));
-        graphicState.setFillColor(new Color(r, gg, b));
+        if (stack.size() >= 3) {
+            float b = ((Number) stack.pop()).floatValue();
+            float gg = ((Number) stack.pop()).floatValue();
+            float r = ((Number) stack.pop()).floatValue();
+            b = Math.max(0.0f, Math.min(1.0f, b));
+            gg = Math.max(0.0f, Math.min(1.0f, gg));
+            r = Math.max(0.0f, Math.min(1.0f, r));
+            // set fill colour
+            graphicState.setFillColorSpace(
+                    PColorSpace.getColorSpace(library, DeviceRGB.DEVICERGB_KEY));
+            graphicState.setFillColor(new Color(r, gg, b));
+        }
     }
 
     protected static void consume_K(GraphicsState graphicState, Stack stack,
                                     Library library) {
-        float k = ((Number) stack.pop()).floatValue();
-        float y = ((Number) stack.pop()).floatValue();
-        float m = ((Number) stack.pop()).floatValue();
-        float c = ((Number) stack.pop()).floatValue();
+        if (stack.size() >= 4) {
+            float k = ((Number) stack.pop()).floatValue();
+            float y = ((Number) stack.pop()).floatValue();
+            float m = ((Number) stack.pop()).floatValue();
+            float c = ((Number) stack.pop()).floatValue();
 
-        PColorSpace pColorSpace =
-                PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
-        // set stroke colour
-        graphicState.setStrokeColorSpace(pColorSpace);
-        graphicState.setStrokeColor(pColorSpace.getColor(
-                new float[]{k, y, m, c}, true));
+            PColorSpace pColorSpace =
+                    PColorSpace.getColorSpace(library, DeviceCMYK.DEVICECMYK_KEY);
+            // set stroke colour
+            graphicState.setStrokeColorSpace(pColorSpace);
+            graphicState.setStrokeColor(pColorSpace.getColor(
+                    new float[]{k, y, m, c}, true));
+        }
     }
 
     protected static void consume_k(GraphicsState graphicState, Stack stack,
@@ -475,7 +479,9 @@ public abstract class AbstractContentParser implements ContentParser {
     }
 
     protected static void consume_i(Stack stack) {
-        stack.pop();
+        if (stack.size() >= 1) {
+            stack.pop();
+        }
     }
 
     protected static void consume_J(GraphicsState graphicState, Stack stack, Shapes shapes) {
@@ -1038,9 +1044,11 @@ public abstract class AbstractContentParser implements ContentParser {
         if (geometricPath == null) {
             geometricPath = new GeneralPath();
         }
-        float y = ((Number) stack.pop()).floatValue();
-        float x = ((Number) stack.pop()).floatValue();
-        geometricPath.moveTo(x, y);
+        if (stack.size() >= 2) {
+            float y = ((Number) stack.pop()).floatValue();
+            float x = ((Number) stack.pop()).floatValue();
+            geometricPath.moveTo(x, y);
+        }
         return geometricPath;
     }
 
