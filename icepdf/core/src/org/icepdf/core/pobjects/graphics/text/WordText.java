@@ -100,14 +100,17 @@ public class WordText extends AbstractText implements TextSelect {
         if (currentGlyph != null && autoSpaceInsertion) {
             // last added glyph
             Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
-            float spriteXCoord = sprite.getTextExtractionBounds().x;
-            float spriteYCoord = sprite.getTextExtractionBounds().y;
+            float currentXCoord = sprite.getTextExtractionBounds().x;
+            float currentYCoord = sprite.getTextExtractionBounds().y;
+            float previousXCoord = currentGlyph.getTextExtractionBounds().x;
+            float previousYCoord = currentGlyph.getTextExtractionBounds().y;
             // spaces can be negative if we have a LTR layout.
-            float space = Math.abs(spriteXCoord - (bounds1.x + bounds1.width));
+            float space = Math.abs(currentXCoord - (previousXCoord + bounds1.width));
             // half previous glyph width will be used to determine a space
             float tolerance = bounds1.width / spaceFraction;
             // checking the y coordinate as well as any shift normall means a new work, this might need to get fuzzy later.
-            return space > tolerance || spriteYCoord != bounds1.y;
+            float ydiff = Math.abs(currentYCoord - previousYCoord);
+            return space > tolerance || ydiff > tolerance;
         } else {
             return false;
         }

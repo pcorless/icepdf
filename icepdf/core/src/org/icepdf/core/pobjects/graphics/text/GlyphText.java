@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 /**
  * Glyph Sprite contains glyph bound and textual information for drawing
  * and text extraction.  The Object is used as a child of TextSprite
- * for painting and as a child of TextWord for text extaction and selection.
+ * for painting and as a child of TextWord for text extraction and selection.
  *
  * @since 4.0
  */
@@ -68,12 +68,12 @@ public class GlyphText extends AbstractText {
         // running on the y-axis.  The reason for this is Tm that specifies
         // a -1 shear which is basically a 90 degree rotation.  Which breaks
         // our left to right top down text extraction logic (PDF-854).
-        if (af1 != null && af1.getShearX() < 0) {
+        if (af1 != null && af1.getShearX() < -1) {
             // adjust of the rotation, move the text back to a normal layout.
             generalPath = new GeneralPath(bounds);
             generalPath.transform(new AffineTransform(0, -1, 1, 0, 0, 0));
             textExtractionBounds = (Rectangle2D.Float) generalPath.getBounds2D();
-        } else if (af1 != null && af1.getShearY() < 0) {
+        } else if (af1 != null && af1.getShearY() < -1) {
             // adjust of the rotation, move the text back to a normal layout.
             generalPath = new GeneralPath(bounds);
             generalPath.transform(new AffineTransform(0, 1, -1, 0, 0, 0));
