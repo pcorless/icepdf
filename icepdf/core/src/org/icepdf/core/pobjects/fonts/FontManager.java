@@ -326,7 +326,7 @@ public class FontManager {
         }
 
 
-        ArrayList<String> fontDirectories = new ArrayList<>();
+        ArrayList<String> fontDirectories = new ArrayList<String>();
         // load the appropriate font set for the OS.
         if (!skipSystemFonts) {
             String operationSystem = System.getProperty("os.name");

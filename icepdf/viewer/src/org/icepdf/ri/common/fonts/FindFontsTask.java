@@ -20,7 +20,7 @@ import java.util.Set;
  * This class is a utility for finding and reporting all font types in a document.  Each page in the document
  * is checked for valid font resources, if found the fonts are added to the calling FontDialog for addition to
  * a JTree of know document fonts.
- * <p>
+ *
  * {@link org.icepdf.ri.common.fonts.FontDialog}
  *
  * @since 6.1.3
@@ -168,7 +168,7 @@ public class FindFontsTask {
                                     if (!fontCache.containsKey(fontReference)) {
                                         fontObject = library.getObject(fontReference);
                                         if (fontObject instanceof org.icepdf.core.pobjects.fonts.Font) {
-                                            Font font = (Font) fontObject;
+                                            final Font font = (Font) fontObject;
                                             font.init();
                                             fontCache.put(fontReference, font);
                                             SwingUtilities.invokeLater(new Runnable() {
