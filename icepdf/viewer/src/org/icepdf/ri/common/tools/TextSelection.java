@@ -138,8 +138,7 @@ public class TextSelection extends SelectionBoxHandler {
     public void selectionStart(Point startPoint, AbstractPageViewComponent pageViewComponent, boolean isFirst) {
         Page currentPage = pageViewComponent.getPage();
         this.isFirst = isFirst;
-        if (currentPage != null &&
-                currentPage.isInitiated()) {
+        if (currentPage != null) {
             // get page text
             PageText pageText = currentPage.getViewText();
             // get page transform, same for all calculations
@@ -229,8 +228,7 @@ public class TextSelection extends SelectionBoxHandler {
 
     public void selectionIcon(Point mouseLocation, AbstractPageViewComponent pageViewComponent) {
         Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null &&
-                currentPage.isInitiated()) {
+        if (currentPage != null) {
             // get page text
             PageText pageText = currentPage.getViewText();
             if (pageText != null) {
@@ -304,7 +302,7 @@ public class TextSelection extends SelectionBoxHandler {
         gg.setStroke(new BasicStroke(1.0f));
 
         Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null && currentPage.isInitiated()) {
+        if (currentPage != null) {
             PageText pageText = currentPage.getViewText();
             if (pageText != null) {
                 // get page transformation
@@ -423,8 +421,7 @@ public class TextSelection extends SelectionBoxHandler {
         Page currentPage = pageViewComponent.getPage();
         selectedCount = 0;
 
-        if (currentPage != null &&
-                currentPage.isInitiated()) {
+        if (currentPage != null) {
             // get page text
             PageText pageText = currentPage.getViewText();
             if (pageText != null) {
@@ -490,8 +487,7 @@ public class TextSelection extends SelectionBoxHandler {
      */
     protected void wordSelectHandler(Page currentPage, Point mouseLocation) {
 
-        if (currentPage != null &&
-                currentPage.isInitiated()) {
+        if (currentPage != null) {
             // get page text
             PageText pageText = currentPage.getViewText();
             if (pageText != null) {
@@ -542,8 +538,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param mouseLocation location of mouse
      */
     protected void lineSelectHandler(Page currentPage, Point mouseLocation) {
-        if (currentPage != null &&
-                currentPage.isInitiated()) {
+        if (currentPage != null) {
             // get page text
             PageText pageText = currentPage.getViewText();
             if (pageText != null) {
@@ -697,11 +692,11 @@ class GlyphLocation {
                     }
                 }
                 // else fill the line
-                if (lastGlyphEndLine == pageLines.size() - 1) {
-                    LineText lineText = pageLines.get(lineIndex);
+                if (lastGlyphEndLine < pageLines.size() && lastGlyphEndLine > pageLines.size() - 5) {
+                    LineText lineText = pageLines.get(lastGlyphEndLine);
                     if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
                         java.util.List<WordText> words = lineText.getWords();
-                        return new GlyphLocation(lineIndex, words.size() - 1,
+                        return new GlyphLocation(lastGlyphEndLine, words.size() - 1,
                                 words.get(words.size() - 1).getGlyphs().size() - 1);
                     }
                 }
@@ -720,10 +715,11 @@ class GlyphLocation {
                         }
                     }
                     // else fill the line
-                    if (lastGlyphEndLocation.line == 0) {
-                        LineText lineText = pageLines.get(lineIndex);
+                    // todo setup loop to find line closed to the exclusion, not just the first line.
+                    if (lastGlyphEndLocation.line < 5) {
+                        LineText lineText = pageLines.get(lastGlyphEndLocation.line);
                         if (isLineTextIncluded(lineText, topMarginExclusion, bottomMarginExclusion)) {
-                            return new GlyphLocation(lineIndex, 0, 0);
+                            return new GlyphLocation(lastGlyphEndLocation.line, 0, 0);
                         }
                     }
                 }

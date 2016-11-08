@@ -1,5 +1,6 @@
 package org.icepdf.ri.common.views.listeners;
 
+import org.icepdf.core.events.PageImageEvent;
 import org.icepdf.core.events.PageInitializingEvent;
 import org.icepdf.core.events.PageLoadingEvent;
 import org.icepdf.core.events.PagePaintingEvent;
@@ -29,22 +30,63 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     }
 
     public void pageLoadingStarted(PageLoadingEvent event) {
-        pageComponent.setCursor(documentViewController.getViewCursor(
-                DocumentViewController.CURSOR_WAIT));
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                pageComponent.setCursor(documentViewController.getViewCursor(
+                        DocumentViewController.CURSOR_WAIT));
+            }
+        });
     }
 
     public void pageInitializationStarted(PageInitializingEvent event) {
-        pageComponent.setCursor(documentViewController.getViewCursor(
-                DocumentViewController.CURSOR_WAIT));
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                pageComponent.setCursor(documentViewController.getViewCursor(
+                        DocumentViewController.CURSOR_WAIT));
+            }
+        });
     }
 
     public void pagePaintingStarted(PagePaintingEvent event) {
-        pageComponent.setCursor(documentViewController.getViewCursor(
-                DocumentViewController.CURSOR_WAIT));
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                pageComponent.setCursor(documentViewController.getViewCursor(
+                        DocumentViewController.CURSOR_WAIT));
+            }
+        });
+    }
+
+    @Override
+    public void pageInitializationEnded(PageInitializingEvent event) {
+        // null will make the parent view icon be the default.
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                pageComponent.setCursor(null);
+            }
+        });
+    }
+
+    @Override
+    public void pageImageLoaded(PageImageEvent event) {
+        super.pageImageLoaded(event);
+    }
+
+    @Override
+    public void pagePaintingEnded(PagePaintingEvent event) {
+        // null will make the parent view icon be the default.
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                pageComponent.setCursor(null);
+            }
+        });
     }
 
     public void pageLoadingEnded(PageLoadingEvent event) {
         // null will make the parent view icon be the default.
-        pageComponent.setCursor(null);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                pageComponent.setCursor(null);
+            }
+        });
     }
 }

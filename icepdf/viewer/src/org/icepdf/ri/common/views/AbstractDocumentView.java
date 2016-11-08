@@ -200,6 +200,9 @@ public abstract class AbstractDocumentView
             currentTool.uninstallTool();
             removeMouseListener(currentTool);
             removeMouseMotionListener(currentTool);
+            if (currentTool instanceof TextSelectionViewHandler) {
+                documentScrollpane.removeMouseWheelListener((TextSelectionViewHandler) currentTool);
+            }
         }
         return currentTool;
     }
@@ -236,6 +239,7 @@ public abstract class AbstractDocumentView
             case DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION:
                 currentTool = new TextSelectionViewHandler(documentViewController,
                         documentViewModel, this);
+                documentScrollpane.addMouseWheelListener((TextSelectionViewHandler) currentTool);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_SELECTION:
                 currentTool = new AnnotationSelectionHandler(

@@ -1921,7 +1921,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * write operand occurs, otherwise a call to Tm seems to break text
      * positioning.
      * <p>
-     * Scalling is special as it can be negative and thus apply a horizontal
+     * Scaling is special as it can be negative and thus apply a horizontal
      * flip on the graphic state.
      *
      * @param graphicState current graphics state.
@@ -1933,10 +1933,10 @@ public abstract class AbstractContentParser implements ContentParser {
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
         AffineTransform oldHScaling = new AffineTransform(graphicState.getCTM());
-        float hScalling = graphicState.getTextState().hScalling;
+        float hScaling = graphicState.getTextState().hScalling;
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
-                        af.getScaleX() * hScalling,
+                        af.getScaleX() * hScaling,
                         af.getShearY(),
                         af.getShearX(),
                         af.getScaleY(),

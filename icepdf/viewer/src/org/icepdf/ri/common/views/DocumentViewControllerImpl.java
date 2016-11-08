@@ -1064,7 +1064,7 @@ public class DocumentViewControllerImpl
         return changed;
     }
 
-    private float calculateZoom(float zoom){
+    private float calculateZoom(float zoom) {
         if (zoomLevels != null) {
             if (zoom < zoomLevels[0])
                 zoom = zoomLevels[0];
