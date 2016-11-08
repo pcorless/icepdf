@@ -19,7 +19,6 @@ import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.graphics.BlendComposite;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -83,7 +82,7 @@ public class Page extends Dictionary {
         // sets the shadow colour of the decorator.
         try {
             String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.selectionColor", "#99c1da");
+                    "org.icepdf.core.views.page.text.selectionColor", "#0077FF"); //#99c1da
             int colorValue = ColorUtil.convertColor(color);
             selectionColor =
                     new Color(colorValue >= 0 ? colorValue :
@@ -102,7 +101,7 @@ public class Page extends Dictionary {
         // sets the shadow colour of the decorator.
         try {
             String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.text.highlightColor", "#ff99ff");
+                    "org.icepdf.core.views.page.text.highlightColor", "#CC00FF");//ff99ff
             int colorValue = ColorUtil.convertColor(color);
             highlightColor =
                     new Color(colorValue >= 0 ? colorValue :
@@ -615,7 +614,10 @@ public class Page extends Dictionary {
         if (paintSearchHighlight) {
             PageText pageText = getViewText();
             if (pageText != null) {
-                g2.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.MULTIPLY, 1.0f));
+                //g2.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.MULTIPLY, 1.0f));
+                g2.setComposite(AlphaComposite.getInstance(
+                        AlphaComposite.SRC_OVER,
+                        SELECTION_ALPHA));
                 // paint the sprites
                 GeneralPath textPath;
                 // iterate over the data structure.
@@ -641,7 +643,7 @@ public class Page extends Dictionary {
                         }
                     }
                 }
-                g2.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.NORMAL, 1.0f));
+                //g2.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.NORMAL, 1.0f));
             }
         }
         pagePainted = true;

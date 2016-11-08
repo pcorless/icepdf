@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.BlendComposite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -297,8 +296,10 @@ public class TextSelection extends SelectionBoxHandler {
         AffineTransform prePaintTransform = gg.getTransform();
         Color oldColor = gg.getColor();
         Stroke oldStroke = gg.getStroke();
-        gg.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.MULTIPLY, 1.0f));
-//        gg.setComposite(AlphaComposite.Xor);
+//        gg.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.MULTIPLY, 1.0f));
+        gg.setComposite(AlphaComposite.getInstance(
+                AlphaComposite.SRC_OVER,
+                Page.SELECTION_ALPHA));
         gg.setColor(Page.selectionColor);
         gg.setStroke(new BasicStroke(1.0f));
 
@@ -347,7 +348,7 @@ public class TextSelection extends SelectionBoxHandler {
                 }
             }
         }
-        gg.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.NORMAL, 1.0f));
+//        gg.setComposite(BlendComposite.getInstance(BlendComposite.BlendingMode.NORMAL, 1.0f));
         // restore graphics state to where we left it.
         gg.setTransform(prePaintTransform);
         gg.setStroke(oldStroke);
