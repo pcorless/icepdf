@@ -132,25 +132,25 @@ public class PageText implements TextSelect {
      *
      * @return list of all visible lineText.
      */
-    private ArrayList<LineText> getVisiblePageLines() {
-        ArrayList<LineText> visiblePageLines = new ArrayList<LineText>(pageLines);
+    private ArrayList<LineText> getVisiblePageLines(boolean skip) {
+        ArrayList<LineText> visiblePageLines = skip ? new ArrayList<LineText>() : new ArrayList<LineText>(pageLines);
         // add optional content text that is visible.
         // check optional content.
         if (optionalPageLines != null) {
             // iterate over optional content keys and extract text from visible groups
             Set<OptionalContents> keys = optionalPageLines.keySet();
-            LineText currentLine = new LineText();
-            visiblePageLines.add(currentLine);
             for (OptionalContents key : keys) {
                 if (key != null && key.isVisible()) {
-                    ArrayList<LineText> pageLines = optionalPageLines.get(key).getVisiblePageLines();
+                    ArrayList<LineText> pageLines = optionalPageLines.get(key).getVisiblePageLines(false);
+                    LineText currentLine = new LineText();
+                    visiblePageLines.add(currentLine);
                     for (LineText lineText : pageLines) {
                         currentLine.addAll(lineText.getWords());
+                        // recalculate the bounds.
+                        currentLine.getBounds();
                     }
                 }
             }
-            // recalculate the bounds.
-            currentLine.getBounds();
         }
         return visiblePageLines;
     }
@@ -166,7 +166,7 @@ public class PageText implements TextSelect {
             visiblePageLines.add(currentLine);
             for (OptionalContents key : keys) {
                 if (key != null) {
-                    ArrayList<LineText> pageLines = optionalPageLines.get(key).getVisiblePageLines();
+                    ArrayList<LineText> pageLines = optionalPageLines.get(key).getVisiblePageLines(true);
                     for (LineText lineText : pageLines) {
                         currentLine.addAll(lineText.getWords());
                     }
@@ -190,9 +190,9 @@ public class PageText implements TextSelect {
         }
     }
 
-    public void setTextTransform(AffineTransform affineTransform){
+    public void setTextTransform(AffineTransform affineTransform) {
         // look to see if we have shear and thus text that has been rotated, if so we insert a page break
-        if (previousTextTransform != null && currentLine != null){
+        if (previousTextTransform != null && currentLine != null) {
             // hard round as we're just looking for a 90 degree shift in writing direction.
             // if found we clear the current work so we can start a new word.
             if ((previousTextTransform.getShearX() < 0 && (int) affineTransform.getShearX() > 0) ||
@@ -340,100 +340,142 @@ public class PageText implements TextSelect {
     }
 
     /**
+     * Sorts the given pageLines vertically (y coordinate) in page space. .
+     *
+     * @param pageLines page lines to sort, not directly sorted, new array is created for sorted data.
+     * @return new array of sorted pages lines
+     */
+    private ArrayList<LineText> sortLinesVertically(ArrayList<LineText> pageLines) {
+        ArrayList<LineText> sortedPageLines = new ArrayList<LineText>(64);
+        // move over all
+        for (LineText pageLine : pageLines) {
+            // all page words will be on one line
+            java.util.List<WordText> words = pageLine.getWords();
+            if (words != null && words.size() > 0) {
+                // break the words into lines on every change of y
+                double lastY = Math.round(words.get(0).getTextExtractionBounds().y);
+                int start = 0, end = 0;
+                double currentY, diff;
+                for (WordText word : words) {
+                    currentY = Math.round(word.getTextExtractionBounds().getY());
+                    // little bit of tolerance for detecting a line,  basically anything that is
+                    // >  then half the current word height / 2 will be marked as a break.
+                    // this works well enough sub and super script and inconsistencies
+                    // on table base text.
+                    diff = Math.abs(currentY - lastY);
+                    if (diff != 0 && diff > word.getTextExtractionBounds().getHeight() / 2) {
+                        LineText lineText = new LineText();
+                        lineText.addAll(words.subList(start, end));
+                        sortedPageLines.add(lineText);
+                        start = end;
+                    }
+                    end++;
+                    lastY = currentY;
+                }
+                if (start < end) {
+                    LineText lineText = new LineText();
+                    lineText.addAll(words.subList(start, end));
+                    sortedPageLines.add(lineText);
+                }
+            }
+        }
+        return sortedPageLines;
+    }
+
+    /**
+     * Insert optional content into the main LineText array, basically we are trying to consolidate all the
+     * visible text in the document.
+     *
+     * @param sortedPageLines List of LineText to add visible optional content to.
+     */
+    private void insertOptionalLines(ArrayList<LineText> sortedPageLines) {
+        ArrayList<LineText> optionalPageLines = getVisiblePageLines(true);
+        if (optionalPageLines != null) {
+            for (LineText optionalPageLine : optionalPageLines) {
+                float yOptional = optionalPageLine.getBounds().y;
+                boolean found = false;
+                for (LineText sortedPageLine : sortedPageLines) {
+                    float height = sortedPageLine.getBounds().height;
+                    float y = sortedPageLine.getBounds().y;
+                    float diff = Math.abs(yOptional - y);
+                    // corner case inclusion of a word and a space which is out of order from the
+                    // rest of the text in the document.
+                    if (diff < height && optionalPageLine.getWords().size() <= 5) {
+                        sortedPageLine.addAll(optionalPageLine.getWords());
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    sortedPageLines.add(optionalPageLine);
+                }
+            }
+        }
+    }
+
+    /**
      * Takes the raw page lines represented as one continuous line and sorts the
      * text by the y access of the word bounds.  The words are then sliced into
      * separate lines base on y changes.  And finally each newly sorted line is
      * sorted once more by each words x coordinate.
      */
     public void sortAndFormatText() {
-        ArrayList<LineText> visiblePageLines = getVisiblePageLines();
-        if (visiblePageLines != null && visiblePageLines.size() > 0 &&
-                visiblePageLines.get(0) != null) {
-            // create new array for storing the sorted lines
-            ArrayList<LineText> sortedPageLines = new ArrayList<LineText>(64);
-            // move over all
-            for (LineText pageLine : visiblePageLines) {
-                // all page words will be on one line
-                java.util.List<WordText> words = pageLine.getWords();
-                if (words != null && words.size() > 0) {
-//                    if (!preserveColumns) {
-//                        Collections.sort(words, new LinePositionComparator());
-//                    }
-                    // break the words into lines on every change of y
-                    double lastY = Math.round(words.get(0).getTextExtractionBounds().y);
-                    int start = 0, end = 0;
-                    double currentY = 0, diff;
-                    for (WordText word : words) {
-                        currentY = Math.round(word.getTextExtractionBounds().getY());
-                        // little bit of tolerance for detecting a line,  basically anything that is
-                        // >  then half the current word height / 2 will be marked as a break.
-                        // this works well enough sub and super script and inconsistencies
-                        // on table base text.
-                        diff = Math.abs(currentY - lastY);
-                        if (diff != 0 && diff > word.getTextExtractionBounds().getHeight() / 2) {
-                            LineText lineText = new LineText();
-                            lineText.addAll(words.subList(start, end));
-                            sortedPageLines.add(lineText);
-                            start = end;
-                        }
-                        end++;
-                        lastY = currentY;
-                    }
-                    if (start < end) {
-                        LineText lineText = new LineText();
-                        lineText.addAll(words.subList(start, end));
-                        sortedPageLines.add(lineText);
-                    }
-                }
-            }
-
-            // do a rough check for duplicate strings that are sometimes generated
-            // by Chrystal Reports.  Enable with
-            // -Dorg.icepdf.core.views.page.text.trim.duplicates=true
-            if (checkForDuplicates) {
-                for (int k = 0, maxLines = sortedPageLines.size(); k < maxLines; k++) {
-                    final LineText lineText = sortedPageLines.get(k);
-                    final List<WordText> words = lineText.getWords();
-                    if (words.size() > 0) {
-                        final List<WordText> trimmedWords = new ArrayList<WordText>();
-                        final Set<String> refs = new HashSet<String>();
-                        for (final WordText wordText : words) {
-                            final String key = wordText.getText() + wordText.getBounds();
-                            if (refs.add(key)) {
-                                trimmedWords.add(wordText);
-                            }
-                        }
-                        lineText.setWords(trimmedWords);
-                    }
-
-                }
-
-            }
-
-
-            // sort each line by x coordinate.
-            if (sortedPageLines.size() > 0) {
-                for (LineText lineText : sortedPageLines) {
-                    Collections.sort(lineText.getWords(),
-                            new WordPositionComparator());
-                }
-            }
-
-            // recalculate the line bounds.
-            if (sortedPageLines.size() > 0) {
-                for (LineText lineText : sortedPageLines) {
-                    lineText.getBounds();
-                }
-            }
-
-            // sort the lines
-            if (sortedPageLines.size() > 0 && !preserveColumns) {
-                Collections.sort(sortedPageLines,
-                        new LinePositionComparator());
-            }
-            // assign back the sorted lines.
-            this.sortedPageLines = sortedPageLines;
+        ArrayList<LineText> visiblePageLines = new ArrayList<LineText>(pageLines);
+        // create new array for storing the sorted lines
+        ArrayList<LineText> sortedPageLines = sortLinesVertically(visiblePageLines);
+        // try and insert the option words on existing lines
+        if (sortedPageLines.size() == 0) {
+            sortedPageLines = getVisiblePageLines(true);
+        } else {
+            insertOptionalLines(sortedPageLines);
         }
+
+        // sort again
+        sortedPageLines = sortLinesVertically(sortedPageLines);
+
+        // do a rough check for duplicate strings that are sometimes generated
+        // by Chrystal Reports.  Enable with
+        // -Dorg.icepdf.core.views.page.text.trim.duplicates=true
+        if (checkForDuplicates) {
+            for (final LineText lineText : sortedPageLines) {
+                final List<WordText> words = lineText.getWords();
+                if (words.size() > 0) {
+                    final List<WordText> trimmedWords = new ArrayList<WordText>();
+                    final Set<String> refs = new HashSet<String>();
+                    for (final WordText wordText : words) {
+                        final String key = wordText.getText() + wordText.getBounds();
+                        if (refs.add(key)) {
+                            trimmedWords.add(wordText);
+                        }
+                    }
+                    lineText.setWords(trimmedWords);
+                }
+
+            }
+        }
+
+        // sort each line by x coordinate.
+        if (sortedPageLines.size() > 0) {
+            for (LineText lineText : sortedPageLines) {
+                Collections.sort(lineText.getWords(),
+                        new WordPositionComparator());
+            }
+        }
+
+        // recalculate the line bounds.
+        if (sortedPageLines.size() > 0) {
+            for (LineText lineText : sortedPageLines) {
+                lineText.getBounds();
+            }
+        }
+
+        // sort the lines
+        if (sortedPageLines.size() > 0 && !preserveColumns) {
+            Collections.sort(sortedPageLines,
+                    new LinePositionComparator());
+        }
+        // assign back the sorted lines.
+        this.sortedPageLines = sortedPageLines;
 
     }
 
