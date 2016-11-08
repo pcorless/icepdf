@@ -93,9 +93,13 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                         (float) bbox.getWidth(), (float) bbox.getHeight());
                 appearanceStream.setAppearance(null, matrix, formBbox);
                 // add link to resources on forum, if no resources exist.
-                if (library.getResources(appearanceStream.getEntries(), Form.RESOURCES_KEY) == null) {
+                if (library.getResources(appearanceStream.getEntries(), Form.RESOURCES_KEY) == null &&
+                        library.getCatalog().getInteractiveForm().getResources() != null) {
                     appearanceStream.getEntries().put(Form.RESOURCES_KEY,
                             library.getCatalog().getInteractiveForm().getResources().getEntries());
+                } else {
+                    // need to find some resources, try adding the parent page.
+                    appearanceStream.getEntries().put(Form.RESOURCES_KEY, getPage().getResources().getEntries());
                 }
                 // add the annotation as changed as T entry has also been updated to reflect teh changed content.
                 stateManager.addChange(new PObject(this, this.getPObjectReference()));
@@ -149,7 +153,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         double lineHeight = getLineHeight(fieldDictionary.getDefaultAppearance());
 
         // apply the default appearance.
-        content.append(generateDefaultAppearance(markedContent, null, fieldDictionary));
+        content.append(generateDefaultAppearance(markedContent, getPage().getResources(), fieldDictionary));
         if (fieldDictionary.getDefaultAppearance() == null) {
             lineHeight = getFontSize(markedContent);
         }
