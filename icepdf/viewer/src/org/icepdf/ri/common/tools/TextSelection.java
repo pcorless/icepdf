@@ -60,28 +60,14 @@ public class TextSelection extends SelectionBoxHandler {
     private boolean leftToRight = true;
 
     // todo make configurable
-    private static int topMargin;
-    private static int bottomMargin;
+    protected int topMargin = 75;
+    protected int bottomMargin = 75;
     protected static boolean enableMarginExclusion;
     protected static boolean enableMarginExclusionBorder;
     protected Rectangle2D topMarginExclusion;
     protected Rectangle2D bottomMarginExclusion;
 
     static {
-        try {
-            topMargin = Defs.intProperty(
-                    "org.icepdf.core.views.page.marginExclusion.top", 75);
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading page top margin exclusion property.");
-        }
-
-        try {
-            bottomMargin = Defs.intProperty(
-                    "org.icepdf.core.views.page.marginExclusion.bottom", 75);
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading page bottom margin exclusion property.");
-        }
-
         try {
             enableMarginExclusion = Defs.booleanProperty(
                     "org.icepdf.core.views.page.marginExclusion.enabled", false);
@@ -578,6 +564,28 @@ public class TextSelection extends SelectionBoxHandler {
 
     @Override
     public void setSelectionRectangle(Point cursorLocation, Rectangle selection) {
+    }
+
+    /**
+     * Sets the top margin used to define an exclusion zone for text selection.  For this value
+     * to be applied the system property -Dorg.icepdf.core.views.page.marginExclusion.enabled=true
+     * must be set.
+     *
+     * @param topMargin top margin height in pixels.
+     */
+    public void setTopMargin(int topMargin) {
+        this.topMargin = topMargin;
+    }
+
+    /**
+     * Sets the bottom margin used to define an exclusion zone for text selection.  For this value
+     * to be applied the system property -Dorg.icepdf.core.views.page.marginExclusion.enabled=true
+     * must be set.
+     *
+     * @param bottomMargin bottom margin height in pixels.
+     */
+    public void setBottomMargin(int bottomMargin) {
+        this.bottomMargin = bottomMargin;
     }
 }
 

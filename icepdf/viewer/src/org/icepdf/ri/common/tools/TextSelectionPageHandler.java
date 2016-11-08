@@ -98,8 +98,12 @@ public class TextSelectionPageHandler extends TextSelection
     public void mouseDragged(MouseEvent e) {
         Point point = e.getPoint();
         updateSelectionSize(point.x, point.y, pageViewComponent);
-        boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
-        boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
+        boolean isMovingDown = true;
+        boolean isMovingRight = true;
+        if (lastMousePressedLocation != null) {
+            isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
+            isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
+        }
         selection(e.getPoint(), pageViewComponent, isMovingDown, isMovingRight);
     }
 

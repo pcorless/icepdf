@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class TextSelectionViewHandler extends TextSelection
         implements ToolHandler, MouseWheelListener {
 
-    private static final Logger logger =
+    protected static final Logger logger =
             Logger.getLogger(TextSelectionViewHandler.class.toString());
 
     protected JComponent parentComponent;
