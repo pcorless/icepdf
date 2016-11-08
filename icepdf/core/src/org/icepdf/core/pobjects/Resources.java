@@ -363,7 +363,10 @@ public class Resources extends Dictionary {
      */
     public OptionalContents getPropertyEntry(Name key) {
         if (properties != null) {
-            return (OptionalContents) library.getObject(properties.get(key));
+            Object object = library.getObject(properties.get(key));
+            if (object instanceof OptionalContents) {
+                return (OptionalContents) library.getObject(properties.get(key));
+            }
         }
         return null;
     }
