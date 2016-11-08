@@ -88,8 +88,8 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                     Reference popupReference = popup.getPObjectReference();
                     for (AnnotationComponent annotationComponent : annotationComponents) {
                         compReference = annotationComponent.getAnnotation().getPObjectReference();
-                        // find the component and toggle it's visibility.
-                        if (compReference.equals(popupReference)) {
+                        // find the component and toggle it's visibility, null check just encase compRef is direct.
+                        if (compReference != null && compReference.equals(popupReference)) {
                             if (annotationComponent instanceof PopupAnnotationComponent) {
                                 PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComponent);
                                 popupComponent.setVisible(popup.isOpen());
