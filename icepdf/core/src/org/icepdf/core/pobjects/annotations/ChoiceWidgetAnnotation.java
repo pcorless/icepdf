@@ -26,7 +26,6 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.StringTokenizer;
@@ -111,7 +110,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         }
         // finally create the shapes from the altered stream.
         if (currentContentStream != null) {
-            appearanceState.setContentStream(currentContentStream.getBytes(Charset.forName("UTF-8")));
+            appearanceState.setContentStream(currentContentStream.getBytes());
         }
 
         // some widgets don't have AP dictionaries in such a case we need to create the form object
@@ -120,7 +119,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
 
         if (appearanceStream != null) {
             // update the content stream with the new stream data.
-            appearanceStream.setRawBytes(currentContentStream.getBytes(Charset.forName("UTF-8")));
+            appearanceStream.setRawBytes(currentContentStream.getBytes());
             // add the appearance stream
             StateManager stateManager = library.getStateManager();
             stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
