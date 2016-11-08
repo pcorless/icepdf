@@ -28,9 +28,8 @@ import java.util.ResourceBundle;
  * build a tree view of the all the fonts.  This font view is primarily for debug purposes to make it easier to track
  * font substitution results.  The dialog also provides an easy way to refresh the
  * "\.icesoft\icepdf-viewer\pdfviewerfontcache.properties' with out manually deleting the file and restarted the viewer.
- * <p>
- * {@link org.icepdf.ri.common.fonts.FindFontsTask}
  *
+ * {@link org.icepdf.ri.common.fonts.FindFontsTask}
  * @since 6.1.3
  */
 @SuppressWarnings("serial")
@@ -248,10 +247,9 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
 
     /**
      * Utility to aid in the creation of a new font properties node.
-     *
-     * @param label         label for node.
+     * @param label label for node.
      * @param messageFormat message formatter
-     * @param parent        parent node.
+     * @param parent parent node.
      */
     private void insertNode(Object label, MessageFormat messageFormat, DefaultMutableTreeNode parent) {
         if (label != null) {
@@ -392,37 +390,30 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
     }
 
 
-    @Override
     public void windowOpened(WindowEvent e) {
 
     }
 
-    @Override
     public void windowClosing(WindowEvent e) {
         closeWindowOperations();
     }
 
-    @Override
     public void windowClosed(WindowEvent e) {
         closeWindowOperations();
     }
 
-    @Override
     public void windowIconified(WindowEvent e) {
 
     }
 
-    @Override
     public void windowDeiconified(WindowEvent e) {
 
     }
 
-    @Override
     public void windowActivated(WindowEvent e) {
 
     }
 
-    @Override
     public void windowDeactivated(WindowEvent e) {
 
     }
