@@ -1423,9 +1423,18 @@ public class SwingViewBuilder {
     public JToolBar buildAnnotationlToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
-        addToToolBar(toolbar, buildSelectToolButton(Images.SIZE_LARGE));
-        addToToolBar(toolbar, buildHighlightAnnotationToolButton(Images.SIZE_LARGE));
-        addToToolBar(toolbar, buildTextAnnotationToolButton(Images.SIZE_LARGE));
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION)) {
+            addToToolBar(toolbar, buildSelectToolButton(Images.SIZE_LARGE));
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT)) {
+            addToToolBar(toolbar, buildHighlightAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
+            addToToolBar(toolbar, buildTextAnnotationToolButton(Images.SIZE_LARGE));
+        }
         return toolbar;
     }
 
@@ -1439,19 +1448,53 @@ public class SwingViewBuilder {
     public JToolBar buildAnnotationUtilityToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, true);
-        addToToolBar(toolbar, buildHighlightAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
-        addToToolBar(toolbar, buildStrikeOutAnnotationToolButton());
-        addToToolBar(toolbar, buildUnderlineAnnotationToolButton());
-        addToToolBar(toolbar, buildLineAnnotationToolButton());
-        addToToolBar(toolbar, buildLinkAnnotationToolButton());
-        addToToolBar(toolbar, buildLineArrowAnnotationToolButton());
-        addToToolBar(toolbar, buildSquareAnnotationToolButton());
-        addToToolBar(toolbar, buildCircleAnnotationToolButton());
-        addToToolBar(toolbar, buildInkAnnotationToolButton());
-        addToToolBar(toolbar, buildFreeTextAnnotationToolButton());
-        addToToolBar(toolbar, buildTextAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_HIGHLIGHT)) {
+            addToToolBar(toolbar, buildHighlightAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_STRIKE_OUT)) {
+            addToToolBar(toolbar, buildStrikeOutAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_UNDERLINE)) {
+            addToToolBar(toolbar, buildUnderlineAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_LINE)) {
+            addToToolBar(toolbar, buildLineAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_LINK)) {
+            addToToolBar(toolbar, buildLinkAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_ARROW)) {
+            addToToolBar(toolbar, buildLineArrowAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_RECTANGLE)) {
+            addToToolBar(toolbar, buildSquareAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_CIRCLE)) {
+            addToToolBar(toolbar, buildCircleAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_INK)) {
+            addToToolBar(toolbar, buildInkAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_FREE_TEXT)) {
+            addToToolBar(toolbar, buildFreeTextAnnotationToolButton());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_TEXT)) {
+            addToToolBar(toolbar, buildTextAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
+        }
         return toolbar;
     }
+
 
     public JToolBar buildAcroFormUtilityToolBar() {
         JToolBar toolbar = new JToolBar();

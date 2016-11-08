@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -273,8 +274,19 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         ResourceBundle messages =
                 documentViewController.getParentController().getMessageBundle();
-        replyMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.reply.label"));
+        PropertiesManager propertiesManager = documentViewController.getParentController().getPropertiesManager();
+
+        //Create the popup menu.
+        contextMenu = new JPopupMenu();
+
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
+            replyMenuItem = new JMenuItem(
+                    messages.getString("viewer.annotation.popup.reply.label"));
+            // build out reply and delete
+            replyMenuItem.addActionListener(this);
+            contextMenu.add(replyMenuItem);
+        }
         deleteMenuItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.delete.label"));
         // status change commands.
@@ -294,37 +306,35 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         minimizeAllMenuItem = new JMenuItem(
                 messages.getString("viewer.annotation.popup.minimizeAll.label"));
 
-        //Create the popup menu.
-        contextMenu = new JPopupMenu();
-
-        // build out reply and delete
-        replyMenuItem.addActionListener(this);
-        contextMenu.add(replyMenuItem);
+        // build out delete
         deleteMenuItem.addActionListener(this);
         contextMenu.add(deleteMenuItem);
         contextMenu.addSeparator();
 
-        // addition of set status menu
-        JMenu submenu = new JMenu(
-                messages.getString("viewer.annotation.popup.status.label"));
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS)) {
+            // addition of set status menu
+            JMenu submenu = new JMenu(
+                    messages.getString("viewer.annotation.popup.status.label"));
 //        ButtonGroup group = new ButtonGroup();
-        statusNoneMenuItem.addActionListener(this);
+            statusNoneMenuItem.addActionListener(this);
 //        group.add(statusNoneMenuItem);
-        submenu.add(statusNoneMenuItem);
-        statusAcceptedItem.addActionListener(this);
+            submenu.add(statusNoneMenuItem);
+            statusAcceptedItem.addActionListener(this);
 //        group.add(statusAcceptedItem);
-        submenu.add(statusAcceptedItem);
-        statusCancelledMenuItem.addActionListener(this);
+            submenu.add(statusAcceptedItem);
+            statusCancelledMenuItem.addActionListener(this);
 //        group.add(statusCancelledMenuItem);
-        submenu.add(statusCancelledMenuItem);
-        statusCompletedMenuItem.addActionListener(this);
+            submenu.add(statusCancelledMenuItem);
+            statusCompletedMenuItem.addActionListener(this);
 //        group.add(statusCompletedMenuItem);
-        submenu.add(statusCompletedMenuItem);
-        statusRejectedMenuItem.addActionListener(this);
+            submenu.add(statusCompletedMenuItem);
+            statusRejectedMenuItem.addActionListener(this);
 //        group.add(statusRejectedMenuItem);
-        submenu.add(statusRejectedMenuItem);
-        contextMenu.add(submenu);
-        contextMenu.addSeparator();
+            submenu.add(statusRejectedMenuItem);
+            contextMenu.add(submenu);
+            contextMenu.addSeparator();
+        }
 
         // generic commands, open/minimize all
         openAllMenuItem.addActionListener(this);
