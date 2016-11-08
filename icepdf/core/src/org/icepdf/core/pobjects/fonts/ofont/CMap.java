@@ -177,6 +177,11 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
         return false;
     }
 
+    @Override
+    public boolean isEmptyMapping() {
+        return false;
+    }
+
     /**
      * Start the parsing of the CMap file.  Once completed, all necessary data
      * should be captured from the CMap file.
