@@ -1701,8 +1701,12 @@ public abstract class AbstractContentParser implements ContentParser {
 
         // set the line width for the glyph
         float lineWidth = graphicState.getLineWidth();
-        lineWidth /= textState.tmatrix.getScaleX();
-        graphicState.setLineWidth(lineWidth);
+        double scale = textState.tmatrix.getScaleX();
+        // double check for a near zero value as it will really mess up the division result.
+        if (scale > 0.0001) {
+            lineWidth /= scale;
+            graphicState.setLineWidth(lineWidth);
+        }
         // update the stroke and add the text to shapes
         setStroke(shapes, graphicState);
         shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
