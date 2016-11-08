@@ -98,7 +98,7 @@ public class TextSelectionPageHandler extends TextSelection
         updateSelectionSize(point.x, point.y, pageViewComponent);
         boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
-        selection(e.getPoint(), pageViewComponent, isMovingDown, isMovingRight, 1);
+        selection(e.getPoint(), pageViewComponent, isMovingDown, isMovingRight);
     }
 
     /**

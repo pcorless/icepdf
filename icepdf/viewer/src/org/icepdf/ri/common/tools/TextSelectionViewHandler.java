@@ -102,8 +102,8 @@ public class TextSelectionViewHandler extends TextSelection
             if (selectedPages != null &&
                     selectedPages.size() > 0) {
                 AbstractPageViewComponent pageComp;
-                for (int i = 0; i < selectedPages.size(); i++) {
-                    pageComp = selectedPages.get(i);
+                for (AbstractPageViewComponent selectedPage : selectedPages) {
+                    pageComp = selectedPage;
                     if (pageComp != null) {
                         pageComp.getTextSelectionPageHandler().selectionEnd(modeEvent.getPoint(), pageComp);
                     }
@@ -135,12 +135,10 @@ public class TextSelectionViewHandler extends TextSelection
             if (documentViewModel != null) {
                 java.util.List<AbstractPageViewComponent> pages =
                         documentViewModel.getPageComponents();
-                int pageCount = 0;
                 for (AbstractPageViewComponent page : pages) {
                     Rectangle tmp = SwingUtilities.convertRectangle(
                             parentComponent, getRectToDraw(), page);
                     if (page.getBounds().intersects(tmp)) {
-                        pageCount++;
                         // add the page to the page as it is marked for selection
                         documentViewModel.addSelectedPageText(page);
 
@@ -153,7 +151,7 @@ public class TextSelectionViewHandler extends TextSelection
                         // pass the selection movement on to the page.
                         boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
                         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
-                        page.getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight, pageCount);
+                        page.getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
 
                     } else {
                         documentViewModel.removeSelectedPageText(page);
@@ -173,6 +171,7 @@ public class TextSelectionViewHandler extends TextSelection
         if (pageComponent != null) {
             // assign the correct icon state for the cursor.
             MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
+            System.out.println(e.getPoint() + " " + modeEvent.getPoint());
             pageComponent.getTextSelectionPageHandler().selectionIcon(modeEvent.getPoint(), pageComponent);
         }
     }
