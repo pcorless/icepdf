@@ -871,7 +871,7 @@ class GlyphLocation {
                     // same word so we move to select start->end.
                     WordText word = words.get(start.word);
                     word.setHasSelected(true);
-                    for (int glyphIndex = start.glyph; glyphIndex < end.glyph; glyphIndex++) {
+                    for (int glyphIndex = start.glyph; glyphIndex <= end.glyph; glyphIndex++) {
                         word.getGlyphs().get(glyphIndex).setSelected(true);
                         selectedCount++;
                     }
