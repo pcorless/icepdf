@@ -409,11 +409,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public String getBigO() {
         Object tmp = library.getObject(entries, O_KEY);
-        if (tmp instanceof StringObject) {
-            return ((StringObject) tmp).getLiteralString();
-        } else {
-            return null;
-        }
+        return getLiteralString(tmp);
     }
 
     /**
@@ -423,13 +419,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public String getBigU() {
         Object tmp = library.getObject(entries, U_KEY);
-        if (tmp instanceof LiteralStringObject) {
-            return ((StringObject) tmp).getLiteralString();
-        } else if (tmp instanceof HexStringObject) {
-            return ((HexStringObject) tmp).getRawHexToString().toString();
-        } else {
-            return null;
-        }
+        return getLiteralString(tmp);
     }
 
     /**
@@ -541,11 +531,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public String getBigOE() {
         Object tmp = library.getObject(entries, OE_KEY);
-        if (tmp instanceof StringObject) {
-            return ((StringObject) tmp).getLiteralString();
-        } else {
-            return null;
-        }
+        return getLiteralString(tmp);
     }
 
     /**
@@ -556,11 +542,7 @@ public class EncryptionDictionary extends Dictionary {
      */
     public String getBigUE() {
         Object tmp = library.getObject(entries, UE_KEY);
-        if (tmp instanceof StringObject) {
-            return ((StringObject) tmp).getLiteralString();
-        } else {
-            return null;
-        }
+        return getLiteralString(tmp);
     }
 
     /**
@@ -571,8 +553,14 @@ public class EncryptionDictionary extends Dictionary {
      */
     public String getPerms() {
         Object tmp = library.getObject(entries, PERMS_KEY);
-        if (tmp instanceof StringObject) {
-            return ((StringObject) tmp).getLiteralString();
+        return getLiteralString(tmp);
+    }
+
+    public String getLiteralString(Object value) {
+        if (value instanceof LiteralStringObject) {
+            return ((StringObject) value).getLiteralString();
+        } else if (value instanceof HexStringObject) {
+            return ((HexStringObject) value).getRawHexToString().toString();
         } else {
             return null;
         }
