@@ -155,14 +155,14 @@ public class Library {
         Object ob;
         while (true) {
             WeakReference<Object> obRef = refs.get(reference);
-            ob = obRef != null ? obRef.get() : null;
             // check stateManager first to allow for annotations to be injected
             // from a separate file.
-            if (ob == null && stateManager != null) {
+            if (stateManager != null) {
                 if (stateManager.contains(reference)) {
                     return stateManager.getChange(reference);
                 }
             }
+            ob = obRef != null ? obRef.get() : null;
             if (ob == null && lazyObjectLoader != null) {
                 ob = lazyObjectLoader.loadObject(reference);
             }
