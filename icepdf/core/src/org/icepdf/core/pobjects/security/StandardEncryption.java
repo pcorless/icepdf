@@ -16,7 +16,6 @@
 package org.icepdf.core.pobjects.security;
 
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Utils;
 
 import javax.crypto.*;
@@ -551,8 +550,7 @@ class StandardEncryption {
             }
 
             // Step 5: Pass in the first element of the file's file identifies array
-            String firstFileID =
-                    ((StringObject) encryptionDictionary.getFileID().get(0)).getLiteralString();
+            String firstFileID = encryptionDictionary.getLiteralString(encryptionDictionary.getFileID().get(0));
             byte[] fileID = Utils.convertByteCharSequenceToByteArray(firstFileID);
             md5.update(fileID);
 
@@ -972,7 +970,7 @@ class StandardEncryption {
 
             // Step 3: Pass the first element of the files identify array to the
             // hash function and finish the hash.
-            String firstFileID = ((StringObject) encryptionDictionary.getFileID().get(0)).getLiteralString();
+            String firstFileID = encryptionDictionary.getLiteralString(encryptionDictionary.getFileID().get(0));
             byte[] fileID = Utils.convertByteCharSequenceToByteArray(firstFileID);
             byte[] encryptData = md5.digest(fileID);
 
