@@ -158,7 +158,11 @@ public class Library {
             // from a separate file.
             if (stateManager != null) {
                 if (stateManager.contains(reference)) {
-                    return stateManager.getChange(reference);
+                    ob = stateManager.getChange(reference);
+                    if (ob instanceof PObject) {
+                        return ((PObject) ob).getObject();
+                    }
+                    return ob;
                 }
             }
             ob = obRef != null ? obRef.get() : null;

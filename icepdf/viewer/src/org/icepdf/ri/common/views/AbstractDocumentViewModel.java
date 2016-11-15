@@ -342,13 +342,13 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         // clear the previously selected state.
         if (this.currentAnnotation != null) {
             this.currentAnnotation.setSelected(false);
-            this.currentAnnotation.repaint();
         }
         this.currentAnnotation = currentAnnotation;
         // select the new selection if valid
         if (this.currentAnnotation != null) {
             this.currentAnnotation.setSelected(true);
         }
+        this.currentAnnotation.repaint();
     }
 
     /**

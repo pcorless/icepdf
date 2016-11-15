@@ -1593,7 +1593,7 @@ public abstract class Annotation extends Dictionary {
     /**
      * @return Whether this annotation may be shown in any way to the user
      */
-    protected boolean allowScreenOrPrintRenderingOrInteraction() {
+    public boolean allowScreenOrPrintRenderingOrInteraction() {
         // Based off of the annotation flags' Invisible and Hidden values
         if (getFlagHidden())
             return false;

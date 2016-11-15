@@ -151,35 +151,38 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         isMovable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
         isResizable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
 
-        addMouseListener(this);
-        addMouseMotionListener(this);
+        if (annotation.allowScreenOrPrintRenderingOrInteraction()) {
+            addMouseListener(this);
+            addMouseMotionListener(this);
 
-        // disabled focus until we are ready to implement our own handler.
-        setFocusable(true);
-        addFocusListener(this);
+            // disabled focus until we are ready to implement our own handler.
+            setFocusable(true);
+            addFocusListener(this);
 
-        // setup a resizable border.
-        setLayout(new BorderLayout());
-        setBorder(resizableBorder);
+            // setup a resizable border.
+            setLayout(new BorderLayout());
+            setBorder(resizableBorder);
 
-        // set component location and original size.
-        Page currentPage = pageViewComponent.getPage();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        final Rectangle location =
-                at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                setBounds(location);
-            }
-        });
+            // set component location and original size.
+            Page currentPage = pageViewComponent.getPage();
+            AffineTransform at = currentPage.getPageTransform(
+                    documentViewModel.getPageBoundary(),
+                    documentViewModel.getViewRotation(),
+                    documentViewModel.getViewZoom());
+            final Rectangle location =
+                    at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    setBounds(location);
+                }
+            });
 
-        // update zoom and rotation state
-        currentRotation = documentViewModel.getViewRotation();
-        currentZoom = documentViewModel.getViewZoom();
-        resizableBorder.setZoom(currentZoom);
+
+            // update zoom and rotation state
+            currentRotation = documentViewModel.getViewRotation();
+            currentZoom = documentViewModel.getViewZoom();
+            resizableBorder.setZoom(currentZoom);
+        }
 
     }
 

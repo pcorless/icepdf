@@ -35,13 +35,22 @@ public class WidgetAnnotationComponent extends AbstractAnnotationComponent imple
     public WidgetAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-        isShowInvisibleBorder = true;
-        isResizable = true;
-        isMovable = true;
-
-        // assign property change listener so we can notification of annotation value change, via the
-        // edit panel or form reset action.
-        annotation.addPropertyChangeListener(this);
+        if (annotation.allowScreenOrPrintRenderingOrInteraction()) {
+            isShowInvisibleBorder = true;
+            isResizable = true;
+            isMovable = true;
+            // assign property change listener so we can notification of annotation value change, via the
+            // edit panel or form reset action.
+            annotation.addPropertyChangeListener(this);
+        } else {
+            // border state flags.
+            isEditable = false;
+            isRollover = false;
+            isMovable = false;
+            isResizable = false;
+            isShowInvisibleBorder = false;
+        }
+        isSelected = false;
 
     }
 
