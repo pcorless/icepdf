@@ -96,9 +96,11 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                         library.getCatalog().getInteractiveForm().getResources() != null) {
                     appearanceStream.getEntries().put(Form.RESOURCES_KEY,
                             library.getCatalog().getInteractiveForm().getResources().getEntries());
-                }else{
+                } else {
                     // need to find some resources, try adding the parent page.
-                    appearanceStream.getEntries().put(Form.RESOURCES_KEY, getPage().getResources().getEntries());
+                    Page page = getPage();
+                    appearanceStream.getEntries().put(Form.RESOURCES_KEY,
+                            page != null? page.getResources().getEntries():null);
                 }
                 // add the annotation as changed as T entry has also been updated to reflect teh changed content.
                 stateManager.addChange(new PObject(this, this.getPObjectReference()));
@@ -152,7 +154,9 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         double lineHeight = getLineHeight(fieldDictionary.getDefaultAppearance());
 
         // apply the default appearance.
-        content.append(generateDefaultAppearance(markedContent, getPage().getResources(), fieldDictionary));
+        Page parentPage = getPage();
+        content.append(generateDefaultAppearance(markedContent,
+                parentPage != null?parentPage.getResources():null, fieldDictionary));
         if (fieldDictionary.getDefaultAppearance() == null) {
             lineHeight = getFontSize(markedContent);
         }
@@ -190,7 +194,9 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             // otherwise we remove the key
             fieldDictionary.getEntries().remove(FieldDictionary.V_KEY);
             fieldDictionary.setFieldValue("", getPObjectReference());
-            changeSupport.firePropertyChange("valueFieldReset", oldValue, "");
+            if (changeSupport != null) {
+                changeSupport.firePropertyChange("valueFieldReset", oldValue, "");
+            }
         }
     }
 

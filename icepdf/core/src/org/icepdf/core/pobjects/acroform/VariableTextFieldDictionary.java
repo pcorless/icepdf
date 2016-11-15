@@ -156,7 +156,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
 
     /**
      * If the DA key is present the appearance stream is generated as is,  however if not then the content
-     * is pased and we try to pull the color, size, font, and font name.
+     * is passed and we try to pull the color, size, font, and font name.
      *
      * @param content
      * @return
@@ -191,7 +191,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             }
         } catch (Throwable e) {
             logger.warning("Could not generate default appearance stream.");
-            if (logger.isLoggable(Level.FINEST)){
+            if (logger.isLoggable(Level.FINEST)) {
                 logger.log(Level.FINEST, "Error parsing text feld content stream", e);
             }
         }
