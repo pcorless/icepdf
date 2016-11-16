@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.acroform.AdditionalActionsDictionary;
-import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -454,10 +453,9 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                 // get the A and AA entries.
                 if (annotation instanceof AbstractWidgetAnnotation) {
                     AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
-                    FieldDictionary fieldDictionary = (FieldDictionary) widgetAnnotation.getFieldDictionary();
-                    if (fieldDictionary != null) {
+                    if (widgetAnnotation != null) {
                         AdditionalActionsDictionary additionalActionsDictionary =
-                                fieldDictionary.getAdditionalActionsDictionary();
+                                widgetAnnotation.getAdditionalActionsDictionary();
                         if (additionalActionsDictionary != null &&
                                 additionalActionsDictionary.isAnnotationValue(additionalActionKey)) {
                             documentViewController.getAnnotationCallback()

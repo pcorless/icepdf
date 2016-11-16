@@ -16,8 +16,10 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.acroform.AdditionalActionsDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
@@ -40,13 +42,29 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extends Annotation {
 
-    /**
-     * Indicates that the annotation has no highlight effect.
-     */
-    public static final Name HIGHLIGHT_NONE = new Name("N");
-
     protected static final Logger logger =
             Logger.getLogger(AbstractWidgetAnnotation.class.toString());
+
+    // additional entries specific to a widget annotations.
+
+    /**
+     * Toggle, ame as P(push), which is preferred.
+     */
+    public static final Name HIGHLIGHT_TOGGLE = new Name("T");
+
+    /**
+     * (Optional; PDF 1.2) An additional-actions dictionary defining the field’s
+     * behaviour in response to various trigger events (see 12.6.3, “Trigger Events”).
+     * This entry has exactly the same meaning as the AA entry in an annotation
+     * dictionary (see 12.5.2, “Annotation Dictionaries”).
+     */
+    public static final Name AA_KEY = new Name("AA");
+
+    /**
+     * (Optional) An appearance characteristics dictionary (see Table 189) that shall be used in constructing a dynamic
+     * appearance stream specifying the annotation’s visual presentation on the page.
+     */
+    public static final Name MK_KEY = new Name("MK");
 
     /**
      * Transparency value used to simulate text highlighting.
@@ -83,13 +101,18 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         }
     }
 
+    protected AdditionalActionsDictionary additionalActionsDictionary;
+    // todo: build out into full isntance
+    protected Dictionary appearanceDictionary;
+
     protected Name highlightMode;
+
 
     public AbstractWidgetAnnotation(Library l, HashMap h) {
         super(l, h);
-        Object possibleName = getObject(LinkAnnotation.HIGHLIGHT_MODE_KEY);
-        if (possibleName instanceof Name) {
-            Name name = (Name) possibleName;
+        Object possibleValue = getObject(HIGHLIGHT_MODE_KEY);
+        if (possibleValue instanceof Name) {
+            Name name = (Name) possibleValue;
             if (HIGHLIGHT_NONE.equals(name.getName())) {
                 highlightMode = HIGHLIGHT_NONE;
             } else if (LinkAnnotation.HIGHLIGHT_OUTLINE.equals(name.getName())) {
@@ -101,6 +124,18 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             highlightMode = LinkAnnotation.HIGHLIGHT_INVERT;
         }
 
+        // additional actions dictionary, main source of actions for widgets.
+        possibleValue = library.getObject(entries, AA_KEY);
+        if (possibleValue != null && possibleValue instanceof HashMap) {
+            additionalActionsDictionary = new AdditionalActionsDictionary(library, (HashMap) possibleValue);
+        }
+
+        // the MK dictionary stores data on appearance characteristics of the form element.
+        // We don't use it as of yet but might become more useful for improving our regeneration of content streams.
+        possibleValue = library.getObject(entries, MK_KEY);
+        if (possibleValue != null && possibleValue instanceof HashMap) {
+            appearanceDictionary = new AdditionalActionsDictionary(library, (HashMap) possibleValue);
+        }
     }
 
     public abstract void reset();
@@ -390,5 +425,14 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
      */
     public boolean isEnableHighlightedWidget() {
         return enableHighlightedWidget;
+    }
+
+    /**
+     * An action that shall be performed when the annotation is activated
+     *
+     * @return additional actions dictionary.
+     */
+    public AdditionalActionsDictionary getAdditionalActionsDictionary() {
+        return additionalActionsDictionary;
     }
 }

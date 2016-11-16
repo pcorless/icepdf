@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.acroform;
+package org.icepdf.ri.common.utility.annotation.acroform;
 
 import org.icepdf.core.pobjects.acroform.ButtonFieldDictionary;
 import org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation;

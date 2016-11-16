@@ -124,15 +124,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * shall be less than the width of Rect.
      */
     public static final Name RD_KEY = new Name("RD");
-    /**
-     * (Optional; PDF 1.6) A border style dictionary (see Table 166) specifying
-     * the line width and dash pattern that shall be used in drawing the
-     * annotation’s border.
-     * <p/>
-     * The annotation dictionary’s AP entry, if present, takes precedence over
-     * the BS entry; see Table 164 and 12.5.5, “Appearance Streams”.
-     */
-    public static final Name BS_KEY = new Name("BS");
+
     /**
      * (Optional; meaningful only if CL is present; PDF 1.6) A name specifying
      * the line ending style that shall be used in drawing the callout line

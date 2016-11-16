@@ -17,9 +17,9 @@ package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.utility.acroform.AcroFormPanel;
-import org.icepdf.ri.common.utility.acroform.AcroFormPropertiesPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.acroform.AcroFormPanel;
+import org.icepdf.ri.common.utility.annotation.acroform.AcroFormPropertiesPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;

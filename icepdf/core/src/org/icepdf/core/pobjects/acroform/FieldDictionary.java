@@ -122,13 +122,7 @@ public class FieldDictionary extends Dictionary {
      * format of this value is the same as that of V.
      */
     public static final Name DV_KEY = new Name("DV");
-    /**
-     * (Optional; PDF 1.2) An additional-actions dictionary defining the field’s
-     * behaviour in response to various trigger events (see 12.6.3, “Trigger Events”).
-     * This entry has exactly the same meaning as the AA entry in an annotation
-     * dictionary (see 12.5.2, “Annotation Dictionaries”).
-     */
-    public static final Name AA_KEY = new Name("AA");
+
 
     /** general field flags **/
 
@@ -161,7 +155,7 @@ public class FieldDictionary extends Dictionary {
     private int flags;
     protected Object fieldValue;
     protected Object defaultFieldValue;
-    protected AdditionalActionsDictionary additionalActionsDictionary;
+
 
     @SuppressWarnings("unchecked")
     public FieldDictionary(Library library, HashMap entries) {
@@ -198,11 +192,6 @@ public class FieldDictionary extends Dictionary {
         value = library.getObject(entries, DV_KEY);
         if (value != null) {
             defaultFieldValue = value;
-        }
-
-        value = library.getObject(entries, AA_KEY);
-        if (value != null && value instanceof HashMap) {
-            additionalActionsDictionary = new AdditionalActionsDictionary(library, (HashMap)value);
         }
 
     }
@@ -390,7 +379,4 @@ public class FieldDictionary extends Dictionary {
         return defaultFieldValue;
     }
 
-    public AdditionalActionsDictionary getAdditionalActionsDictionary() {
-        return additionalActionsDictionary;
-    }
 }

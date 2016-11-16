@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.acroform;
+package org.icepdf.ri.common.utility.annotation.acroform;
 
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanelAdapter;
@@ -24,13 +24,12 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 
 /**
- * Properties pane for the editing of the choice widget annotation.
+ * Properties pane for the editing of the text widget annotations.
  */
 @SuppressWarnings("serial")
-public class ChoiceWidgetAnnotationPanel extends AnnotationPanelAdapter {
+public class TextWidgetAnnotationPanel extends AnnotationPanelAdapter {
 
-
-    public ChoiceWidgetAnnotationPanel(SwingController controller) {
+    public TextWidgetAnnotationPanel(SwingController controller) {
         super(controller);
         setLayout(new GridLayout(1, 2, 5, 2));
 
@@ -62,7 +61,7 @@ public class ChoiceWidgetAnnotationPanel extends AnnotationPanelAdapter {
     private void createGUI() {
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
-                messageBundle.getString("viewer.utilityPane.annotation.choicefield.appearance.title"),
+                messageBundle.getString("viewer.utilityPane.annotation.textfield.appearance.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
     }

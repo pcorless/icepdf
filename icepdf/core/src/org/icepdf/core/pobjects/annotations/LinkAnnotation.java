@@ -62,37 +62,10 @@ import java.util.HashMap;
 public class LinkAnnotation extends Annotation {
 
     /**
-     * Key used to indcate highlight mode.
+     * (Optional; not permitted if an A entry is present) A destination that shall be displayed when the annotation
+     * is activated (see 12.3.2, “Destinations”).
      */
     public static final Name DESTINATION_KEY = new Name("Dest");
-
-    /**
-     * Key used to indcate highlight mode.
-     */
-    public static final Name HIGHLIGHT_MODE_KEY = new Name("H");
-
-    /**
-     * Indicates that the annotation has no highlight effect.
-     */
-    public static final Name HIGHLIGHT_NONE = new Name("N");
-
-    /**
-     * Indicates that the annotation rectangle colours should be inverted for
-     * its highlight effect.
-     */
-    public static final Name HIGHLIGHT_INVERT = new Name("I");
-
-    /**
-     * Indicates that the annotation rectangle border should be inverted for its
-     * highlight effect.
-     */
-    public static final Name HIGHLIGHT_OUTLINE = new Name("O");
-
-    /**
-     * Indicates that the annotation rectangle border should be pushed below the
-     * surface of th page.
-     */
-    public static final Name HIGHLIGHT_PUSH = new Name("P");
 
     /**
      * Creates a new instance of a LinkAnnotation.

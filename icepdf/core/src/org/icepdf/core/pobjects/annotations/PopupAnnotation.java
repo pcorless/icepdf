@@ -49,15 +49,6 @@ public class PopupAnnotation extends Annotation {
             Logger.getLogger(PopupAnnotation.class.toString());
 
     /**
-     * (Optional; shall be an indirect reference) The parent annotation with
-     * which this pop-up annotation shall be associated.
-     * <p/>
-     * If this entry is present, the parent annotation’s Contents, M, C, and T
-     * entries (see Table 168) shall override those of the pop-up annotation
-     * itself.
-     */
-    public static final Name PARENT_KEY = new Name("Parent");
-    /**
      * (Optional) A flag specifying whether the pop-up annotation shall
      * initially be displayed open. Default value: false (closed).
      */
@@ -130,6 +121,14 @@ public class PopupAnnotation extends Annotation {
         entries.put(OPEN_KEY, open);
     }
 
+    /**
+     * (Optional; shall be an indirect reference) The parent annotation with
+     * which this pop-up annotation shall be associated.
+     * <p/>
+     * If this entry is present, the parent annotation’s Contents, M, C, and T
+     * entries (see Table 168) shall override those of the pop-up annotation
+     * itself.
+     */
     public MarkupAnnotation getParent() {
         Object tmp = library.getObject(entries, PARENT_KEY);
         // should normally be a text annotation type.
