@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
+import org.icepdf.ri.common.utility.annotation.AbstractAnnotationTreeNode;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -77,7 +78,7 @@ public class AcroFormCellRender extends DefaultTreeCellRenderer {
                 hasFocus);
         Object currentUserObject = null;
         if (value instanceof AcroFormTreeNode) {
-            currentUserObject = ((AcroFormTreeNode) value).getWidgetAnnotation();
+            currentUserObject = ((AbstractAnnotationTreeNode) value).getAnnotation();
         }
         // check user object for type and assign the appropriate icon.
         if (currentUserObject instanceof TextWidgetAnnotation) {

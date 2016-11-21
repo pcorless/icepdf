@@ -17,7 +17,7 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 
@@ -26,7 +26,6 @@ import java.util.ArrayList;
 /**
  * Utility for locating an AnnotationComponent on a page and setup up focus within int he context of the
  * DocumentView.
- * todo:  some concurrency issue need some further thought.
  */
 public class AnnotationSelector {
 
@@ -37,7 +36,7 @@ public class AnnotationSelector {
      * @param widgetAnnotation annotation to do search for wrapping component.
      * @return true if component could be found, false otherwise.
      */
-    public static boolean SelectAnnotationComponent(SwingController controller, AbstractWidgetAnnotation widgetAnnotation) {
+    public static boolean SelectAnnotationComponent(SwingController controller, Annotation widgetAnnotation) {
         // turn out the parent is seldom used correctly and generally just points to page zero.
         // so we need to do a deep search for the annotation.
         Document document = controller.getDocument();
@@ -67,10 +66,6 @@ public class AnnotationSelector {
         if (found) {
             AbstractPageViewComponent pageViewComponent = pageViewComponentList.get(pageIndex);
             pageViewComponent.init();
-            // still need to work our some concurrency issue with regard to page init. as a result
-            // annotation Components may be null and user will have ot double click again
-            // todo need to figure out a better scheme.
-//                            ((PageViewComponentImpl)pageViewComponent).getSynchronousAnnotationComponents();
             ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
             if (annotationComponents != null) {
                 for (AbstractAnnotationComponent annotationComponent : annotationComponents) {

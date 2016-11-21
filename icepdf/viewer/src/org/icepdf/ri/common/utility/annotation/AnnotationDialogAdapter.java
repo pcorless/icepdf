@@ -25,6 +25,7 @@ import java.awt.*;
  *
  * @since 4.0
  */
+@SuppressWarnings("serial")
 public abstract class AnnotationDialogAdapter extends EscapeJDialog
         implements AnnotationProperties {
 

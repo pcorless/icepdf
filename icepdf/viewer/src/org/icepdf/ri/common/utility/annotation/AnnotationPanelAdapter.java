@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
  *
  * @since 4.0
  */
+@SuppressWarnings("serial")
 public abstract class AnnotationPanelAdapter extends JPanel
         implements AnnotationProperties {
 

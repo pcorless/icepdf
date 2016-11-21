@@ -17,13 +17,13 @@ package org.icepdf.ri.common;
 
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
-import org.icepdf.ri.common.utility.annotation.acroform.AcroFormPanel;
-import org.icepdf.ri.common.utility.annotation.acroform.AcroFormPropertiesPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationHandlerPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesPanel;
+import org.icepdf.ri.common.utility.annotation.acroform.AcroFormHandlerPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;
-import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -1805,7 +1805,7 @@ public class SwingViewBuilder {
         documentAndPropertiesPane.getActionMap().getParent().remove("toggleFocus");
 
         documentAndPropertiesPane.setLeftComponent(mainDocumentSplitPane);
-        documentAndPropertiesPane.setRightComponent(buildAcroFormPropertiesPanel());
+        documentAndPropertiesPane.setRightComponent(buildAnnotationPropertiesPanel());
 
         // apply previously set divider location, default is -1
         int dividerLocation = PropertiesManager.checkAndStoreIntegerProperty(
@@ -1899,13 +1899,13 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
-                    buildAnnotationPanel());
+                    buildAnnotationHandlerPanel());
         }
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ACROFORM)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.acroform.tab.title"),
-                    buildAcroFormPanel());
+                    buildAcroFormHandlerPanel());
         }
 
         // Ensure something was added to the utility pane, otherwise reset it to null
@@ -1946,11 +1946,11 @@ public class SwingViewBuilder {
     }
 
     public JComponent buildSignatureComponents() {
-        SignaturesPanel signaturesPanel = new SignaturesPanel(viewerController);
+        SignaturesHandlerPanel signaturesHandlerPanel = new SignaturesHandlerPanel(viewerController);
         if (viewerController != null) {
-            viewerController.setSignaturesPanel(signaturesPanel);
+            viewerController.setSignaturesHandlerPanel(signaturesHandlerPanel);
         }
-        return signaturesPanel;
+        return signaturesHandlerPanel;
     }
 
     public SearchPanel buildSearchPanel() {
@@ -1960,29 +1960,29 @@ public class SwingViewBuilder {
         return searchPanel;
     }
 
-    public AnnotationPanel buildAnnotationPanel() {
-        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, propertiesManager);
-        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationUtilityToolBar());
+    public AnnotationHandlerPanel buildAnnotationHandlerPanel() {
+        AnnotationHandlerPanel annotationHandlerPanel = new AnnotationHandlerPanel(viewerController);
+        annotationHandlerPanel.setAnnotationUtilityToolbar(buildAnnotationUtilityToolBar());
         if (viewerController != null)
-            viewerController.setAnnotationPanel(annotationPanel);
-        return annotationPanel;
+            viewerController.setAnnotationHandlerPanel(annotationHandlerPanel);
+        return annotationHandlerPanel;
     }
 
-    public JComponent buildAcroFormPanel(){
-        AcroFormPanel acroFormPanel = new AcroFormPanel(viewerController);
-        acroFormPanel.setAcroFromUtilityToolbar(buildAcroFormUtilityToolBar());
+    public JComponent buildAcroFormHandlerPanel() {
+        AcroFormHandlerPanel acroFormHandlerPanelPanel = new AcroFormHandlerPanel(viewerController);
+        acroFormHandlerPanelPanel.setAnnotationUtilityToolbar(buildAcroFormUtilityToolBar());
         if (viewerController != null) {
-            viewerController.setAcroFormPanel(acroFormPanel);
+            viewerController.setAcroFormHandlerPanel(acroFormHandlerPanelPanel);
         }
-        return acroFormPanel;
+        return acroFormHandlerPanelPanel;
     }
 
-    public JComponent buildAcroFormPropertiesPanel() {
-        AcroFormPropertiesPanel acroFormPropertiesPanel = new AcroFormPropertiesPanel(viewerController);
+    public JComponent buildAnnotationPropertiesPanel() {
+        AnnotationPropertiesPanel annotationPropertiesPanel = new AnnotationPropertiesPanel(viewerController);
         if (viewerController != null) {
-            viewerController.setAcroFormPropertiesPanel(acroFormPropertiesPanel);
+            viewerController.setAnnotationPropertiesPanel(annotationPropertiesPanel);
         }
-        return acroFormPropertiesPanel;
+        return annotationPropertiesPanel;
     }
 
     /**

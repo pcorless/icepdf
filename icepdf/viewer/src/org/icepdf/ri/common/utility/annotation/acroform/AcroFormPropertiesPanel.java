@@ -17,8 +17,8 @@ package org.icepdf.ri.common.utility.annotation.acroform;
 
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.utility.annotation.ActionsPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanelAdapter;
+import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesPanel;
 import org.icepdf.ri.common.utility.annotation.BorderPanel;
 import org.icepdf.ri.common.utility.annotation.FlagsPanel;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -46,7 +46,7 @@ public class AcroFormPropertiesPanel extends AnnotationPanelAdapter {
 
     private JPanel annotationPanel;
     private AnnotationPanelAdapter annotationPropertyPanel;
-    private ActionsPanel actionsPanel;
+    private AnnotationPropertiesPanel actionsPanel;
     private BorderPanel borderPanel;
     private FlagsPanel flagsPanel;
 
@@ -124,7 +124,7 @@ public class AcroFormPropertiesPanel extends AnnotationPanelAdapter {
 
         // add everything back again.
         annotationPropertyPanel = buildAnnotationPropertyPanel(null);
-        actionsPanel = new ActionsPanel(controller);
+        actionsPanel = new AnnotationPropertiesPanel(controller);
         borderPanel = new BorderPanel(controller);
 
         if (propertiesManager == null ||

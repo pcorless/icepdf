@@ -33,7 +33,7 @@ import java.awt.*;
  * factory nature of this class
  */
 @SuppressWarnings("serial")
-public class AnnotationPanel extends AnnotationPanelAdapter {
+public class AnnotationPropertiesPanel extends AnnotationPanelAdapter {
 
     // layouts constraint
     private GridBagConstraints constraints;
@@ -46,11 +46,11 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
     private BorderPanel borderPanel;
     private FlagsPanel flagsPanel;
 
-    public AnnotationPanel(SwingController controller) {
+    public AnnotationPropertiesPanel(SwingController controller) {
         this(controller, null);
     }
 
-    public AnnotationPanel(SwingController controller, PropertiesManager propertiesManager) {
+    public AnnotationPropertiesPanel(SwingController controller, PropertiesManager propertiesManager) {
         super(controller);
         setLayout(new BorderLayout());
         this.propertiesManager = propertiesManager;

@@ -23,7 +23,6 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.URIAction;
-import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.search.DocumentSearchController;
@@ -32,16 +31,17 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.fonts.FontDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
-import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
-import org.icepdf.ri.common.utility.annotation.acroform.AcroFormPanel;
-import org.icepdf.ri.common.utility.annotation.acroform.AcroFormPropertiesPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationHandlerPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesPanel;
+import org.icepdf.ri.common.utility.annotation.acroform.AcroFormHandlerPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.search.SearchPanel;
-import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
+import org.icepdf.ri.common.views.annotations.WidgetAnnotationComponent;
 import org.icepdf.ri.util.*;
 
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -144,7 +144,7 @@ public class SwingController
     private JMenuItem goToPageMenuItem;
     private JMenuItem minimiseAllMenuItem;
     private JMenuItem bringAllToFrontMenuItem;
-    private List windowListMenuItems;
+    private List<JMenuItem> windowListMenuItems;
     private JMenuItem aboutMenuItem;
     private JButton openFileButton;
     private JButton saveAsFileButton;
@@ -208,10 +208,10 @@ public class SwingController
     private SearchPanel searchPanel;
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
-    private SignaturesPanel signaturesPanel;
-    private AnnotationPanel annotationPanel;
-    private AcroFormPanel acroFormPanel;
-    private AcroFormPropertiesPanel acroFormPropertiesPanel;
+    private SignaturesHandlerPanel signaturesHandlerPanel;
+    private AnnotationHandlerPanel annotationHandlerPanel;
+    private AcroFormHandlerPanel acroFormHandlerPanel;
+    private AnnotationPropertiesPanel annotationPropertiesPanel;
     private JTabbedPane utilityTabbedPane;
     private JSplitPane utilityAndDocumentSplitPane;
     private JSplitPane documentAndPropertiesSplitPane;
@@ -260,9 +260,9 @@ public class SwingController
 
         // load the resource bundle using the default local
         if (messageBundle != null) {
-            this.messageBundle = messageBundle;
+            SwingController.messageBundle = messageBundle;
         } else {
-            this.messageBundle = ResourceBundle.getBundle(
+            SwingController.messageBundle = ResourceBundle.getBundle(
                     PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
     }
@@ -629,11 +629,11 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setWindowListMenuItems(List menuItems) {
+    public void setWindowListMenuItems(List<JMenuItem> menuItems) {
         windowListMenuItems = menuItems;
         int count = (windowListMenuItems != null) ? windowListMenuItems.size() : 0;
         for (int i = 0; i < count; i++) {
-            JMenuItem mi = (JMenuItem) windowListMenuItems.get(i);
+            JMenuItem mi = windowListMenuItems.get(i);
             mi.addActionListener(this);
         }
     }
@@ -1034,23 +1034,23 @@ public class SwingController
         layersPanel = tn;
     }
 
-    public void setSignaturesPanel(SignaturesPanel tn) {
-        signaturesPanel = tn;
+    public void setSignaturesHandlerPanel(SignaturesHandlerPanel tn) {
+        signaturesHandlerPanel = tn;
     }
 
-    public void setAcroFormPanel(AcroFormPanel acroFormPanel) {
-        this.acroFormPanel = acroFormPanel;
+    public void setAcroFormHandlerPanel(AcroFormHandlerPanel acroFormHandlerPanel) {
+        this.acroFormHandlerPanel = acroFormHandlerPanel;
     }
 
-    public void setAcroFormPropertiesPanel(AcroFormPropertiesPanel acroFormPropertiesPanel) {
-        this.acroFormPropertiesPanel = acroFormPropertiesPanel;
+    public void setAnnotationPropertiesPanel(AnnotationPropertiesPanel annotationPropertiesPanel) {
+        this.annotationPropertiesPanel = annotationPropertiesPanel;
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setAnnotationPanel(AnnotationPanel lp) {
-        annotationPanel = lp;
+    public void setAnnotationHandlerPanel(AnnotationHandlerPanel lp) {
+        annotationHandlerPanel = lp;
     }
 
     /**
@@ -1456,7 +1456,7 @@ public class SwingController
                     zoomComboBox.setSelectedItem(NumberFormat.getPercentInstance().format(zoom));
                 }
             }
-            // upatdate the page fit values if they are in the correct zoom range
+            // update the page fit values if they are in the correct zoom range
 //            if( viewModel.fitPageFlag == .PAGE_FIT_NONE ) {
 //                float fitActualZoom = calcZoomForFitActualSize();
 //                if( fitActualZoom >= belowZoom && fitActualZoom <= aboveZoom )
@@ -1530,7 +1530,9 @@ public class SwingController
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_SELECT);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
-            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
+            }
+            // general annotation creation tools.
+            else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
@@ -1585,7 +1587,9 @@ public class SwingController
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                 setCursorOnComponents(DocumentViewController.CURSOR_DEFAULT);
-            } else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_FIELD_ANNOTATION) {
+            }
+            // widget annotation tools.
+            else if (argToolName == DocumentViewModelImpl.DISPLAY_TOOL_TEXT_FIELD_ANNOTATION) {
                 actualToolMayHaveChanged =
                         documentViewController.setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_FIELD_ANNOTATION);
                 documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
@@ -1637,8 +1641,8 @@ public class SwingController
             }
 
             // disabled the annotation edit panels, selection will activate them again.
-            if (annotationPanel != null) {
-                annotationPanel.setEnabled(false);
+            if (annotationHandlerPanel != null) {
+                annotationHandlerPanel.setEnabled(false);
             }
 
             // repaint the page views.
@@ -2378,12 +2382,16 @@ public class SwingController
             layersPanel.setDocument(document);
         }
 
-        if (signaturesPanel != null) {
-            signaturesPanel.setDocument(document);
+        if (signaturesHandlerPanel != null) {
+            signaturesHandlerPanel.setDocument(document);
         }
 
-        if (acroFormPanel != null) {
-            acroFormPanel.setDocument(document);
+        if (annotationHandlerPanel != null) {
+            annotationHandlerPanel.setDocument(document);
+        }
+
+        if (acroFormHandlerPanel != null) {
+            acroFormHandlerPanel.setDocument(document);
         }
 
         // Refresh the properties manager object if we don't already have one
@@ -2435,8 +2443,8 @@ public class SwingController
 
             // Try to select the search panel
             if (!safelySelectUtilityPanel(searchPanel)) {
-                // If that fails, try to select the annotationPanel
-                safelySelectUtilityPanel(annotationPanel);
+                // If that fails, try to select the annotationHandlerPanel
+                safelySelectUtilityPanel(annotationHandlerPanel);
             }
         }
 
@@ -2475,36 +2483,36 @@ public class SwingController
         // check if there are signatures and enable/disable the tab as needed
         boolean signaturesExist = document.getCatalog().getInteractiveForm() != null &&
                 document.getCatalog().getInteractiveForm().isSignatureFields();
-        if (signaturesPanel != null && utilityTabbedPane != null) {
+        if (signaturesHandlerPanel != null && utilityTabbedPane != null) {
             if (signaturesExist) {
                 utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(signaturesPanel),
+                        utilityTabbedPane.indexOfComponent(signaturesHandlerPanel),
                         true);
                 // shows the signature pain on load.
 //                setUtilityPaneVisible(true);
-//                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(signaturesPanel));
+//                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(signaturesHandlerPanel));
 
             } else {
                 utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(signaturesPanel),
+                        utilityTabbedPane.indexOfComponent(signaturesHandlerPanel),
                         false);
             }
         }
         // check to see if
         boolean acroFormsExist = document.getCatalog().getInteractiveForm() != null &&
                 document.getCatalog().getInteractiveForm().getFields() != null;
-        if (acroFormPanel != null && utilityTabbedPane != null) {
+        if (acroFormHandlerPanel != null && utilityTabbedPane != null) {
             if (acroFormsExist) {
                 utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(acroFormPanel),
+                        utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
                         true);
                 // shows the signature pain on load.
                 setUtilityPaneVisible(true);
-                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(acroFormPanel));
+                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(acroFormHandlerPanel));
 
             } else {
                 utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(acroFormPanel),
+                        utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
                         false);
             }
         }
@@ -2519,8 +2527,8 @@ public class SwingController
         }
 
         // disable the annotation properties panel by default
-        if (annotationPanel != null) {
-            annotationPanel.setEnabled(false);
+        if (annotationHandlerPanel != null) {
+            annotationHandlerPanel.setEnabled(false);
         }
 
         // set the go to page combo box in the mainToolbar
@@ -2553,12 +2561,16 @@ public class SwingController
             layersPanel.setDocument(null);
         }
 
-        if (signaturesPanel != null) {
-            signaturesPanel.setDocument(null);
+        if (signaturesHandlerPanel != null) {
+            signaturesHandlerPanel.setDocument(null);
         }
 
-        if (acroFormPanel != null) {
-            acroFormPanel.setDocument(null);
+        if (annotationHandlerPanel != null) {
+            annotationHandlerPanel.setDocument(null);
+        }
+
+        if (acroFormHandlerPanel != null) {
+            acroFormHandlerPanel.setDocument(null);
         }
 
         // set the default cursor.  
@@ -2736,8 +2748,11 @@ public class SwingController
         if (layersPanel != null) {
             layersPanel.dispose();
         }
-        if (signaturesPanel != null) {
-            signaturesPanel.dispose();
+        if (signaturesHandlerPanel != null) {
+            signaturesHandlerPanel.dispose();
+        }
+        if (annotationHandlerPanel != null) {
+            annotationHandlerPanel.dispose();
         }
         if (utilityTabbedPane != null) {
             utilityTabbedPane.removeAll();
@@ -3484,7 +3499,7 @@ public class SwingController
                             ((URIAction) action).getURI());
                 } else {
                     Library library = action.getLibrary();
-                    HashMap entries = action.getEntries();
+                    HashMap<Object, Object> entries = action.getEntries();
                     dest = new Destination(library, library.getObject(entries, Destination.D_KEY));
                 }
             } else if (dest.getNamedDestination() != null) {
@@ -3771,7 +3786,7 @@ public class SwingController
      * @return true if pane is visible false otherwise.
      */
     public boolean isPropertiesPaneVisible() {
-        return (acroFormPropertiesPanel != null) && acroFormPropertiesPanel.isVisible();
+        return (annotationPropertiesPanel != null) && annotationPropertiesPanel.isVisible();
     }
 
     /**
@@ -3795,8 +3810,8 @@ public class SwingController
      *                invisible.
      */
     public void setPropertiesPaneVisible(boolean visible) {
-        if (acroFormPropertiesPanel != null) {
-            acroFormPropertiesPanel.setVisible(visible);
+        if (annotationPropertiesPanel != null) {
+            annotationPropertiesPanel.setVisible(visible);
         }
         setSplitPaneVisible(documentAndPropertiesSplitPane,
                 documentAndPropertiesSplitPaneLastDividerLocation, visible);
@@ -3920,45 +3935,43 @@ public class SwingController
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showAnnotationPanel(AnnotationComponent selectedAnnotation) {
-        if (utilityTabbedPane != null && annotationPanel != null) {
-            // Pass the selected annotation to the link panel
-            if (selectedAnnotation != null) {
-                annotationPanel.setEnabled(true);
-                annotationPanel.setAnnotationComponent(selectedAnnotation);
-            }
+        if (utilityTabbedPane != null && annotationHandlerPanel != null) {
             setUtilityPaneVisible(true);
-
-            // select the annotationPanel tab
-            if (utilityTabbedPane.getSelectedComponent() != annotationPanel) {
-                safelySelectUtilityPanel(annotationPanel);
+            // select the annotationHandler based on the annotation type.
+            if (selectedAnnotation != null) {
+                if (selectedAnnotation instanceof WidgetAnnotationComponent) {
+                    if (utilityTabbedPane.getSelectedComponent() != acroFormHandlerPanel) {
+                        safelySelectUtilityPanel(acroFormHandlerPanel);
+                    }
+                    // select the annotation in tree view.
+                    acroFormHandlerPanel.selectTreeNodeUserObject(selectedAnnotation);
+                } else if (selectedAnnotation instanceof AnnotationComponent) {
+                    if (utilityTabbedPane.getSelectedComponent() != annotationHandlerPanel) {
+                        safelySelectUtilityPanel(annotationHandlerPanel);
+                    }
+                    // select the annotation in tree view.
+                    annotationHandlerPanel.selectTreeNodeUserObject(selectedAnnotation);
+                }
             }
-
         }
     }
 
     /**
-     * Make the widget Annotation Panel visible as well as the properties pane.
+     * Make the  Annotation Panel visible for properties editing. This panel is shown on the
+     * right hand side of the viewer.
      *
      * @param selectedAnnotation the annotation to show in the panel
-     * @see #setUtilityPaneVisible(boolean)
      */
-    public void showWidgetAnnotationPanel(AnnotationComponent selectedAnnotation) {
-        if (utilityTabbedPane != null && acroFormPanel != null) {
+    public void showAnnotationPropertiesPanel(AnnotationComponent selectedAnnotation) {
+        if (utilityTabbedPane != null && acroFormHandlerPanel != null) {
             // Pass the selected annotation so we can show the
             if (selectedAnnotation != null) {
-                acroFormPanel.setEnabled(true);
                 // we need to pass the selected component reference to properties pane.
-                acroFormPropertiesPanel.setAnnotationComponent(selectedAnnotation);
-                acroFormPropertiesPanel.setEnabled(true);
+                annotationPropertiesPanel.setAnnotationComponent(selectedAnnotation);
+                annotationPropertiesPanel.setEnabled(true);
             }
             if (!utilityTabbedPane.isVisible()) setUtilityPaneVisible(true);
-            if (!acroFormPropertiesPanel.isVisible()) setPropertiesPaneVisible(true);
-
-            // select the annotationPanel tab
-            if (utilityTabbedPane.getSelectedComponent() != acroFormPanel) {
-                safelySelectUtilityPanel(acroFormPanel);
-            }
-
+            if (!annotationPropertiesPanel.isVisible()) setPropertiesPaneVisible(true);
         }
     }
 
@@ -4972,13 +4985,10 @@ public class SwingController
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine("selected annotation " + annotationComponent);
                     }
-                    if (annotationComponent.getAnnotation() instanceof AbstractWidgetAnnotation) {
-                        showWidgetAnnotationPanel(annotationComponent);
-                        annotationPanel.setEnabled(false);
-                    } else {
-                        showAnnotationPanel(annotationComponent);
-                        acroFormPropertiesPanel.setEnabled(false);
-                    }
+                    // show the main editing panel
+                    showAnnotationPropertiesPanel(annotationComponent);
+                    // then select the appropriate annotation or form tab.
+                    showAnnotationPanel(annotationComponent);
                 }
             }
         }
@@ -4991,11 +5001,11 @@ public class SwingController
                 }
                 // disable the delete menu
                 setEnabled(deleteMenuItem, false);
-                if (annotationPanel != null) {
-                    annotationPanel.setEnabled(false);
+                if (annotationHandlerPanel != null) {
+                    annotationHandlerPanel.setEnabled(false);
                 }
-                if (acroFormPropertiesPanel != null) {
-                    acroFormPropertiesPanel.setEnabled(false);
+                if (annotationPropertiesPanel != null) {
+                    annotationPropertiesPanel.setEnabled(false);
                 }
             }
         }

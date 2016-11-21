@@ -17,8 +17,6 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.ri.common.SwingController;
 
-import javax.swing.event.ListSelectionListener;
-import java.awt.event.ActionListener;
 import java.util.logging.Logger;
 
 /**
@@ -38,7 +36,7 @@ import java.util.logging.Logger;
  * @since 6.0
  */
 @SuppressWarnings("serial")
-public class AdditionalActionsPanel extends ActionsPanel {
+public class AdditionalActionsPanel extends AnnotationPropertiesPanel {
 
     private static final Logger logger =
             Logger.getLogger(AdditionalActionsPanel.class.toString());

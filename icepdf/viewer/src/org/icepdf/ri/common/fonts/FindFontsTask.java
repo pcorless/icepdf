@@ -8,6 +8,7 @@ import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
+import org.icepdf.ri.util.AbstractTask;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,46 +26,37 @@ import java.util.Set;
  *
  * @since 6.1.3
  */
-public class FindFontsTask {
-    // total length of task, we keep track of the total number of pages processed.
-    private int lengthOfTask;
-    // current progress, used for the progress bar
-    private int current = 0;
-    // message displayed to user of progress made
-    private String dialogMessage;
+public class FindFontsTask extends AbstractTask {
+
     // canned internationalized messages.
     private MessageFormat searchingMessageForm;
-
-    // flags for threading
-    private boolean done = false;
-    private boolean canceled = false;
-
-    // parent swing controller
-    private SwingController controller;
-
     // append nodes for found fonts.
-    private FontDialog fontDialog;
-
-    private boolean currentlySearching;
+    private FontHandlerPanel fontHandlerPanel;
 
     private Container viewContainer;
 
     /**
      * Creates a new instance of the SearchTextTask.
      *
-     * @param fontDialog    parent search panel that start this task via an action
+     * @param fontHandlerPanel    parent search panel that start this task via an action
      * @param controller    root controller object
      * @param messageBundle message bundle used for dialog text.
      */
-    public FindFontsTask(FontDialog fontDialog,
+    public FindFontsTask(FontHandlerPanel fontHandlerPanel,
                          SwingController controller,
                          ResourceBundle messageBundle) {
+        super(controller, messageBundle, controller.getDocument().getNumberOfPages());
         this.controller = controller;
-        this.fontDialog = fontDialog;
+        this.fontHandlerPanel = fontHandlerPanel;
         lengthOfTask = controller.getDocument().getNumberOfPages();
         this.viewContainer = controller.getDocumentViewController().getViewContainer();
         // setup searching format format.
         searchingMessageForm = new MessageFormat(messageBundle.getString("viewer.dialog.fonts.searching.label"));
+    }
+
+    @Override
+    public FindFontsTask getTask() {
+        return this;
     }
 
     /**
@@ -76,52 +68,12 @@ public class FindFontsTask {
                 current = 0;
                 done = false;
                 canceled = false;
-                dialogMessage = null;
+                taskStatusMessage = null;
                 return new FindFontsTask.ActualTask();
             }
         };
         worker.setThreadPriority(Thread.NORM_PRIORITY);
         worker.start();
-    }
-
-    /**
-     * Gets the page that is currently being searched by this task.
-     *
-     * @return current page being processed.
-     */
-    public int getCurrent() {
-        return current;
-    }
-
-    /**
-     * Stop the task.
-     */
-    public void stop() {
-        canceled = true;
-        dialogMessage = null;
-    }
-
-    /**
-     * Find out if the task has completed.
-     *
-     * @return true if task is done, false otherwise.
-     */
-    public boolean isDone() {
-        return done;
-    }
-
-    public boolean isCurrentlySearching() {
-        return currentlySearching;
-    }
-
-    /**
-     * Returns the most recent dialog message, or null
-     * if there is no current dialog message.
-     *
-     * @return current message dialog text.
-     */
-    public String getMessage() {
-        return dialogMessage;
     }
 
     /**
@@ -131,7 +83,7 @@ public class FindFontsTask {
         ActualTask() {
 
             try {
-                currentlySearching = true;
+                taskRunning = true;
                 current = 0;
                 // little cache of fonts by reference so we don't load a font more then once.
                 HashMap<Reference, Font> fontCache = new HashMap<Reference, Font>();
@@ -141,7 +93,7 @@ public class FindFontsTask {
                 for (int i = 0; i < document.getNumberOfPages(); i++) {
                     // break if needed
                     if (canceled || done) {
-                        resetDialogMessage();
+                        taskStatusMessage = "";
                         break;
                     }
                     // Update task information
@@ -150,7 +102,7 @@ public class FindFontsTask {
                     // update search message in results pane.
                     int percent = (int) ((i / (float) lengthOfTask) * 100);
                     Object[] messageArguments = {String.valueOf(percent)};
-                    dialogMessage = searchingMessageForm.format(messageArguments);
+                    taskStatusMessage = searchingMessageForm.format(messageArguments);
 
                     Library library = document.getCatalog().getLibrary();
                     Page page = document.getPageTree().getPage(i);
@@ -174,9 +126,9 @@ public class FindFontsTask {
                                             SwingUtilities.invokeLater(new Runnable() {
                                                 public void run() {
                                                     // add the node
-                                                    fontDialog.addFoundEntry(font);
+                                                    fontHandlerPanel.addFoundEntry(font);
                                                     // try repainting the container
-                                                    fontDialog.expandAllNodes();
+                                                    fontHandlerPanel.expandAllNodes();
                                                     viewContainer.repaint();
                                                 }
                                             });
@@ -190,13 +142,13 @@ public class FindFontsTask {
                     Thread.yield();
                 }
                 // update the dialog and end the task
-                resetDialogMessage();
+                taskStatusMessage = "";
 
                 done = true;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {
-                currentlySearching = false;
+                taskRunning = false;
             }
 
             // repaint the view container
@@ -206,13 +158,5 @@ public class FindFontsTask {
                 }
             });
         }
-    }
-
-
-    /**
-     * Utility method for setting the dialog message.
-     */
-    private void resetDialogMessage() {
-        dialogMessage = "";
     }
 }

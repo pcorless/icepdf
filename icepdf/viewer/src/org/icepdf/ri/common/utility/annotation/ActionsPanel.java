@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 
 /**
  * Actions panel manages an annotations actions as annotation can have zero
- * or more annotations.  The pannel allows a user  add, edit and remove
+ * or more annotations.  The panel allows a user  add, edit and remove
  * actions for the selected annotation.
  *
  * @since 4.0

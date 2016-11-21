@@ -20,21 +20,21 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.ri.common.utility.annotation.AbstractAnnotationTreeNode;
 import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
 
 import javax.security.auth.x500.X500Principal;
-import javax.swing.tree.DefaultMutableTreeNode;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
- * AcroformTreeNode is a simple wrapper used to extract the correct DefaultMutableTreeNode label for the the
+ * AcroFormTreeNode is a simple wrapper used to extract the correct DefaultMutableTreeNode label for the the
  * given FieldDictionary implementation.
  */
 @SuppressWarnings("serial")
-public class AcroFormTreeNode extends DefaultMutableTreeNode {
+public class AcroFormTreeNode extends AbstractAnnotationTreeNode<AbstractWidgetAnnotation> {
 
     private static final Logger logger =
             Logger.getLogger(AcroFormTreeNode.class.toString());
@@ -77,7 +77,6 @@ public class AcroFormTreeNode extends DefaultMutableTreeNode {
                     commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
                     emailAddress = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
                 }
-
                 MessageFormat formatter = new MessageFormat(messageBundle.getString(
                         "viewer.utilityPane.acroform.tab.tree.signature.label"));
                 message = formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
@@ -98,7 +97,8 @@ public class AcroFormTreeNode extends DefaultMutableTreeNode {
         return text;
     }
 
-    public AbstractWidgetAnnotation getWidgetAnnotation() {
+    public AbstractWidgetAnnotation getAnnotation() {
         return widgetAnnotation;
     }
+
 }
