@@ -95,7 +95,6 @@ public abstract class AbstractWorkerPanel extends JPanel {
         progressLabel = new JLabel("");
         progressLabel.setVisible(false);
         timer = new Timer(REFRESH_TIME, new ActionListener() {
-            @Override
             public void actionPerformed(ActionEvent e) {
                 timerActionPerformed(e);
             }

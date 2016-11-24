@@ -12,6 +12,7 @@ import java.awt.*;
  * AnnotationCellRender takes care of building a tree node's appearance for annotation nodes.  If an annotation type
  * is not supported by the editing tools an icon for the note is set to null.
  */
+@SuppressWarnings("serial")
 public class AnnotationCellRender extends DefaultTreeCellRenderer {
 
     /**

@@ -95,9 +95,10 @@ public class AnnotationLoaderTask extends AbstractTask<AnnotationLoaderTask> {
                                 ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
                                 if (annotationReferences != null && annotationReferences.size() > 0) {
                                     // insert page node
+                                    final String label = pageLabel;
                                     SwingUtilities.invokeLater(new Runnable() {
                                         public void run() {
-                                            annotationHandlerPanel.addPageGroup(pageLabel);
+                                            annotationHandlerPanel.addPageGroup(label);
                                             // try repainting the container
                                             annotationHandlerPanel.repaint();
                                         }

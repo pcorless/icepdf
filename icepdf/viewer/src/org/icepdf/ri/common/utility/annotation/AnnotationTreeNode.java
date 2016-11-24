@@ -10,6 +10,7 @@ import java.util.logging.Logger;
  * AnnotationTreeNode is used by the annotation utility tab tree.  The class is pretty straight forward and is
  * mainly used to set the label of a node based on the annotation subtype.
  */
+@SuppressWarnings("serial")
 public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
 
     private static final Logger logger =

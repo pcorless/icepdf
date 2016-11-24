@@ -10,6 +10,7 @@ import java.awt.*;
  * DefaultTreeCellRenderer for the a Font tree node.
  * Usage can be found in {@link org.icepdf.ri.common.fonts.FontDialog}.
  */
+@SuppressWarnings("serial")
 public class FontCellRender extends DefaultTreeCellRenderer {
 
     public Component getTreeCellRendererComponent(
