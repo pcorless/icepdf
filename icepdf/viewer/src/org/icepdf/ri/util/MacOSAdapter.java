@@ -14,7 +14,7 @@
  * governing permissions and limitations under the License.
  */
 
-package apple.dts.samplecode.osxadapter;
+package org.icepdf.ri.util;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -23,21 +23,23 @@ import java.lang.reflect.Proxy;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
-public class OSXAdapter implements InvocationHandler {
+/**
+ * MacOSAdapter helps setup the viewer to look look and feel like a native macOS application.
+ */
+public class MacOSAdapter implements InvocationHandler {
     private static final Logger logger =
-            Logger.getLogger(OSXAdapter.class.toString());
+            Logger.getLogger(MacOSAdapter.class.toString());
 
     protected Object targetObject;
     protected Method targetMethod;
     protected String proxySignature;
 
-    static Object macOSXApplication;
+    protected static Object macOSXApplication;
 
     // Pass this method an Object and Method equipped to perform application shutdown logic
     // The method passed should return a boolean stating whether or not the quit should occur
     public static void setQuitHandler(Object target, Method quitHandler) {
-        setHandler(new OSXAdapter("handleQuit", target, quitHandler));
+        setHandler(new MacOSAdapter("handleQuit", target, quitHandler));
     }
 
     // Pass this method an Object and Method equipped to display application info
@@ -45,15 +47,15 @@ public class OSXAdapter implements InvocationHandler {
     public static void setAboutHandler(Object target, Method aboutHandler) {
         boolean enableAboutMenu = (target != null && aboutHandler != null);
         if (enableAboutMenu) {
-            setHandler(new OSXAdapter("handleAbout", target, aboutHandler));
+            setHandler(new MacOSAdapter("handleAbout", target, aboutHandler));
         }
         // If we're setting a handler, enable the About menu item by calling
         // com.apple.eawt.Application reflectively
         try {
-            Method enableAboutMethod = macOSXApplication.getClass().getDeclaredMethod("setEnabledAboutMenu", new Class[]{boolean.class});
+            Method enableAboutMethod = macOSXApplication.getClass().getDeclaredMethod("setEnabledAboutMenu", boolean.class);
             enableAboutMethod.invoke(macOSXApplication, enableAboutMenu);
         } catch (Exception ex) {
-            logger.log(Level.FINE, "OSXAdapter could not access the About Menu", ex);
+            logger.log(Level.FINE, "MacOSAdapter could not access the About Menu", ex);
         }
     }
 
@@ -62,15 +64,15 @@ public class OSXAdapter implements InvocationHandler {
     public static void setPreferencesHandler(Object target, Method prefsHandler) {
         boolean enablePrefsMenu = (target != null && prefsHandler != null);
         if (enablePrefsMenu) {
-            setHandler(new OSXAdapter("handlePreferences", target, prefsHandler));
+            setHandler(new MacOSAdapter("handlePreferences", target, prefsHandler));
         }
         // If we're setting a handler, enable the Preferences menu item by calling
         // com.apple.eawt.Application reflectively
         try {
-            Method enablePrefsMethod = macOSXApplication.getClass().getDeclaredMethod("setEnabledPreferencesMenu", new Class[]{boolean.class});
+            Method enablePrefsMethod = macOSXApplication.getClass().getDeclaredMethod("setEnabledPreferencesMenu", boolean.class);
             enablePrefsMethod.invoke(macOSXApplication, enablePrefsMenu);
         } catch (Exception ex) {
-            logger.log(Level.FINE, "OSXAdapter could not access the About Menu", ex);
+            logger.log(Level.FINE, "MacOSAdapter could not access the About Menu", ex);
         }
     }
 
@@ -78,8 +80,8 @@ public class OSXAdapter implements InvocationHandler {
     // Documents are registered with the Finder via the CFBundleDocumentTypes dictionary in the 
     // application bundle's Info.plist
     public static void setFileHandler(Object target, Method fileHandler) {
-        setHandler(new OSXAdapter("handleOpenFile", target, fileHandler) {
-            // Override OSXAdapter.callTarget to send information on the
+        setHandler(new MacOSAdapter("handleOpenFile", target, fileHandler) {
+            // Override MacOSAdapter.callTarget to send information on the
             // file to be opened
             public boolean callTarget(Object appleEvent) {
                 if (appleEvent != null) {
@@ -96,17 +98,17 @@ public class OSXAdapter implements InvocationHandler {
         });
     }
 
-    // setHandler creates a Proxy object from the passed OSXAdapter and adds it as an ApplicationListener
-    public static void setHandler(OSXAdapter adapter) {
+    // setHandler creates a Proxy object from the passed MacOSAdapter and adds it as an ApplicationListener
+    public static void setHandler(MacOSAdapter adapter) {
         try {
             Class<?> applicationClass = Class.forName("com.apple.eawt.Application");
             if (macOSXApplication == null) {
                 macOSXApplication = applicationClass.getConstructor((Class[]) null).newInstance((Object[]) null);
             }
             Class applicationListenerClass = Class.forName("com.apple.eawt.ApplicationListener");
-            Method addListenerMethod = applicationClass.getDeclaredMethod("addApplicationListener", new Class[]{applicationListenerClass});
+            Method addListenerMethod = applicationClass.getDeclaredMethod("addApplicationListener", applicationListenerClass);
             // Create a proxy object around this handler that can be reflectively added as an Apple ApplicationListener
-            Object osxAdapterProxy = Proxy.newProxyInstance(OSXAdapter.class.getClassLoader(), new Class[]{applicationListenerClass}, adapter);
+            Object osxAdapterProxy = Proxy.newProxyInstance(MacOSAdapter.class.getClassLoader(), new Class[]{applicationListenerClass}, adapter);
             addListenerMethod.invoke(macOSXApplication, osxAdapterProxy);
         } catch (ClassNotFoundException cnfe) {
             System.err.println("This version of Mac OS X does not support the Apple EAWT.  ApplicationEvent handling has been disabled (" + cnfe + ")");
@@ -115,9 +117,9 @@ public class OSXAdapter implements InvocationHandler {
         }
     }
 
-    // Each OSXAdapter has the name of the EAWT method it intends to listen for (handleAbout, for example),
+    // Each MacOSAdapter has the name of the EAWT method it intends to listen for (handleAbout, for example),
     // the Object that will ultimately perform the task, and the Method to be called on that Object
-    protected OSXAdapter(String proxySignature, Object target, Method handler) {
+    protected MacOSAdapter(String proxySignature, Object target, Method handler) {
         this.proxySignature = proxySignature;
         this.targetObject = target;
         this.targetMethod = handler;
@@ -145,7 +147,7 @@ public class OSXAdapter implements InvocationHandler {
         return null;
     }
 
-    // Compare the method that was called to the intended method when the OSXAdapter instance was created
+    // Compare the method that was called to the intended method when the MacOSAdapter instance was created
     // (e.g. handleAbout, handleQuit, handleOpenFile, etc.)
     protected boolean isCorrectMethod(Method method, Object[] args) {
         return (targetMethod != null && proxySignature.equals(method.getName()) && args.length == 1);
@@ -156,11 +158,11 @@ public class OSXAdapter implements InvocationHandler {
     protected void setApplicationEventHandled(Object event, boolean handled) {
         if (event != null) {
             try {
-                Method setHandledMethod = event.getClass().getDeclaredMethod("setHandled", new Class[]{boolean.class});
+                Method setHandledMethod = event.getClass().getDeclaredMethod("setHandled", boolean.class);
                 // If the target method returns a boolean, use that as a hint
                 setHandledMethod.invoke(event, handled);
             } catch (Exception ex) {
-                logger.log(Level.FINE, "OSXAdapter was unable to handle an ApplicationEvent", ex);
+                logger.log(Level.FINE, "MacOSAdapter was unable to handle an ApplicationEvent", ex);
             }
         }
     }

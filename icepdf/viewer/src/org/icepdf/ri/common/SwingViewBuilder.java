@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common;
 
-import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.utility.annotation.AnnotationHandlerPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesPanel;
@@ -28,6 +27,7 @@ import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
+import org.icepdf.ri.util.MacOSAdapter;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -507,12 +507,12 @@ public class SwingViewBuilder {
         // If running on MacOS, setup the native app. menu item handlers
         if (isMacOs) {
             try {
-                // Generate and register the OSXAdapter, passing it a hash of all the methods we wish to
+                // Generate and register the MacOSAdapter, passing it a hash of all the methods we wish to
                 // use as delegates for various com.apple.eawt.ApplicationListener methods
-                OSXAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[]) null));
-                OSXAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[]) null));
+                MacOSAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[]) null));
+                MacOSAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[]) null));
             } catch (Exception e) {
-                logger.log(Level.FINE, "Error occurred while loading the OSXAdapter:", e);
+                logger.log(Level.FINE, "Error occurred while loading the MacOSAdapter:", e);
             }
         }
 
