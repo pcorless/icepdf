@@ -35,17 +35,6 @@
     <property name="revision" value="x"/>
     <property name="build.number" value="x"/>
 
-    <patternset id="icepdf.lib.batik.jars"
-                includes="
-                batik-awt-util.jar
-                batik-dom.jar
-                batik-svg-dom.jar
-                batik-svggen.jar
-                batik-util.jar
-                batik-xml.jar
-                "
-            />
-
     <patternset id="icepdf.lib.bouncy.jars"
                 includes="
                 bcprov-jdk15on.jar
@@ -74,9 +63,6 @@
 
     <path id="compile.run.classpath">
         <pathelement location="${build.classes.dir}"/>
-        <fileset dir="${build.lib.dir}">
-            <patternset refid="icepdf.lib.batik.jars"/>
-        </fileset>
         <fileset dir="${build.lib.dir}">
             <patternset refid="icepdf.lib.bouncy.jars"/>
         </fileset>

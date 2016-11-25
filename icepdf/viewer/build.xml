@@ -42,7 +42,6 @@
     <path id="compile.run.classpath">
         <pathelement location="${build.classes.dir}"/>
         <fileset dir="${build.lib.dir}">
-            <patternset refid="icepdf.lib.batik.jars"/>
             <patternset refid="icepdf.lib.bouncy.jars"/>
             <patternset refid="icepdf.lib.core"/>
         </fileset>
