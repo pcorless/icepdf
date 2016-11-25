@@ -586,7 +586,6 @@ public class SwingViewBuilder {
         addToMenu(fileMenu, buildCloseMenuItem());
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
         addToMenu(fileMenu, buildExportTextMenuItem());
-        addToMenu(fileMenu, buildExportSVGMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildPermissionsMenuItem());
         addToMenu(fileMenu, buildInformationMenuItem());
@@ -644,22 +643,6 @@ public class SwingViewBuilder {
                 messageBundle.getString("viewer.menu.exportText.label"), null, null, null);
         if (viewerController != null && mi != null)
             viewerController.setExportTextMenuItem(mi);
-        return mi;
-    }
-
-    public JMenuItem buildExportSVGMenuItem() {
-        JMenuItem mi = null;
-        // Check to make sure SVG libraries are available
-        try {
-            Class.forName("org.apache.batik.dom.GenericDOMImplementation");
-
-            mi = makeMenuItem(
-                    messageBundle.getString("viewer.menu.exportSVG.label"), null, null, null);
-            if (viewerController != null && mi != null)
-                viewerController.setExportSVGMenuItem(mi);
-        } catch (ClassNotFoundException e) {
-            logger.warning("SVG Support Not Found");
-        }
         return mi;
     }
 
