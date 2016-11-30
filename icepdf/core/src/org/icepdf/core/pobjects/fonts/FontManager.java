@@ -846,17 +846,17 @@ public class FontManager {
         if ((fontPath.endsWith(".ttf") || fontPath.endsWith(".TTF")) ||
                 (fontPath.endsWith(".dfont") || fontPath.endsWith(".DFONT")) ||
                 (fontPath.endsWith(".ttc") || fontPath.endsWith(".TTC"))) {
-            font = fontFactory.createFontFile(fontFile, FontFactory.FONT_TRUE_TYPE, null);
+            font = fontFactory.createFontFile(fontFile, FontFactory.FONT_TRUE_TYPE);
         }
         // found Type 1 font
         else if ((fontPath.endsWith(".pfa") || fontPath.endsWith(".PFA")) ||
                 (fontPath.endsWith(".pfb") || fontPath.endsWith(".PFB"))) {
-            font = fontFactory.createFontFile(fontFile, FontFactory.FONT_TYPE_1, null);
+            font = fontFactory.createFontFile(fontFile, FontFactory.FONT_TYPE_1);
         }
         // found OpenType font
         else if ((fontPath.endsWith(".otf") || fontPath.endsWith(".OTF")) ||
                 (fontPath.endsWith(".otc") || fontPath.endsWith(".OTC"))) {
-            font = fontFactory.createFontFile(fontFile, FontFactory.FONT_OPEN_TYPE, null);
+            font = fontFactory.createFontFile(fontFile, FontFactory.FONT_OPEN_TYPE);
         }
         return font;
     }
@@ -870,17 +870,17 @@ public class FontManager {
             if ((fontPath.endsWith(".ttf") || fontPath.endsWith(".TTF")) ||
                     (fontPath.endsWith(".dfont") || fontPath.endsWith(".DFONT")) ||
                     (fontPath.endsWith(".ttc") || fontPath.endsWith(".TTC"))) {
-                font = fontFactory.createFontFile(fontUri, FontFactory.FONT_TRUE_TYPE, null);
+                font = fontFactory.createFontFile(fontUri, FontFactory.FONT_TRUE_TYPE);
             }
             // found Type 1 font
             else if ((fontPath.endsWith(".pfa") || fontPath.endsWith(".PFA")) ||
                     (fontPath.endsWith(".pfb") || fontPath.endsWith(".PFB"))) {
-                font = fontFactory.createFontFile(fontUri, FontFactory.FONT_TYPE_1, null);
+                font = fontFactory.createFontFile(fontUri, FontFactory.FONT_TYPE_1);
             }
             // found OpenType font
             else if ((fontPath.endsWith(".otf") || fontPath.endsWith(".OTF")) ||
                     (fontPath.endsWith(".otc") || fontPath.endsWith(".OTC"))) {
-                font = fontFactory.createFontFile(fontUri, FontFactory.FONT_OPEN_TYPE, null);
+                font = fontFactory.createFontFile(fontUri, FontFactory.FONT_OPEN_TYPE);
             }
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error reading font program.", e);
