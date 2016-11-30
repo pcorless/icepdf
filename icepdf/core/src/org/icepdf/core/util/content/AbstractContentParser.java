@@ -522,6 +522,7 @@ public abstract class AbstractContentParser implements ContentParser {
                                               boolean viewParse, // events
                                               AtomicInteger imageIndex, Page page) {
         Name xobjectName = (Name) stack.pop();
+        if (resources == null) return graphicState;
         // Form XObject
         if (resources != null && resources.isForm(xobjectName)) {
             // Do operator steps:
@@ -610,8 +611,10 @@ public abstract class AbstractContentParser implements ContentParser {
                 if (formXObject.getShapes() != null &&
                         formXObject.getShapes().getPageText() != null) {
                     // normalize each sprite.
+                    AffineTransform pageSpace = graphicState.getCTM();
+                    pageSpace.concatenate(formXObject.getMatrix());
                     formXObject.getShapes().getPageText()
-                            .applyXObjectTransform(graphicState.getCTM());
+                            .applyXObjectTransform(pageSpace);
                     // add the text to the current shapes for extraction and
                     // selection purposes.
                     PageText pageText = formXObject.getShapes().getPageText();
@@ -680,8 +683,17 @@ public abstract class AbstractContentParser implements ContentParser {
                 Object tmp;
                 for (int i = 0; i < sz; i++) {
                     tmp = dashVector.get(i);
+                    float dash;
                     if (tmp != null && tmp instanceof Number) {
-                        dashArray[i] = Math.abs(((Number) dashVector.get(i)).floatValue());
+                        dash = Math.abs(((Number) dashVector.get(i)).floatValue());
+                        // java has a hard time with painting dash array with values < 1.
+                        // we have a few examples where converting the value to user space
+                        // correct the problem PDF-966.
+                        if (dash < 0.5f){
+                            dash = dash * 1000;
+                        }
+                        dashArray[i] = dash;
+
                     }
                 }
                 // corner case check to see if the dash array contains a first element
@@ -1129,7 +1141,7 @@ public abstract class AbstractContentParser implements ContentParser {
                                       Resources resources) {
         Object properties = stack.pop();// properties
         // try and process the Optional content.
-        if (properties instanceof Name) {
+        if (properties instanceof Name && resources != null) {
             OptionalContents optionalContents =
                     resources.getPropertyEntry((Name) properties);
             // make sure the reference is valid, no point
@@ -1908,7 +1920,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static void setAlpha(Shapes shapes, int rule, float alpha) {
         // Build the alpha composite object and add it to the shapes but only
         // if it hash changed.
-        if (shapes.getAlpha() != alpha || shapes.getRule() != rule) {
+        if (shapes != null && (shapes.getAlpha() != alpha || shapes.getRule() != rule)) {
             AlphaComposite alphaComposite =
                     AlphaComposite.getInstance(rule,
                             alpha);
