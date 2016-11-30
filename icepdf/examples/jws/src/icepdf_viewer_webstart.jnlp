@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2004-2011 ICEsoft Technologies Canada Corp. (c)
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions an
+  ~ limitations under the License.
+  -->
+<jnlp spec="6.0+"
+      codebase="http://res.icesoft.org/demo/jws/"
+      href="icepdf_viewer_webstart.jnlp">
+    <information>
+        <title>ICEpdf Viewer Demo</title>
+        <vendor>ICEsoft Technologies</vendor>
+        <homepage>http://www.icepdf.org</homepage>
+        <description>ICEpdf Viewer Demo</description>
+        <description kind="one-line">ICEsoft's ICEpdf Viewer</description>
+        <description kind="short">A reference implementation of ICEsoft's ICEpdf.</description>
+        <description kind="tooltip">ICEsoft's ICEpdf</description>
+        <offline-allowed/>
+    </information>
+    <security>
+        <all-permissions/>
+    </security>
+    <resources>
+        <j2se version="1.5+" initial-heap-size="128m" max-heap-size="768m"/>
+        <property name="sun.java2d.d3d" value="true"/>
+        <property name="org.icepdf.core.nfont.truetype.hinting" value="true"/>
+        <jar href="lib/icepdf-core.jar" main="false"/>
+        <jar href="lib/icepdf-viewer.jar" main="false"/>
+        <jar href="lib/bcprov-jdk15on.jar" main="false"/>
+        <jar href="lib/bcprov-ext-jdk15on.jar" main="false"/>
+        <jar href="lib/bcpkix-jdk15on.jar" main="false"/>
+        <jar href="ICEpdfViewerDemo.jar" main="true"/>
+    </resources>
+    <application-desc
+            ame="ICEpdf Viewer Demo Application"
+            main-class="org.icepdf.os.examples.WebStart">
+        <argument>-loadurl</argument>
+        <argument>
+            http://res.icesoft.org/demo/examples/EV-FD-M760_M760-E-2270.pdf
+        </argument>
+    </application-desc>
+    <update check="background"/>
+</jnlp>
