@@ -174,24 +174,5 @@ public class AcroFormPropertiesPanel extends AnnotationPanelAdapter {
         }
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
-    private void addGB(JPanel layout, Component component,
-                       int x, int y,
-                       int rowSpan, int colSpan) {
-        constraints.gridx = x;
-        constraints.gridy = y;
-        constraints.gridwidth = rowSpan;
-        constraints.gridheight = colSpan;
-        layout.add(component, constraints);
-    }
-
 }
 

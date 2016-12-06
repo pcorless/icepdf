@@ -23,6 +23,10 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.NoninvertibleTransformException;
+import java.util.ArrayList;
+import java.util.logging.Level;
 
 /**
  * Handles Paint and mouse/keyboard logic around text selection and search
@@ -160,5 +164,41 @@ public class TextSelectionPageHandler extends TextSelection
             g.setColor(Color.BLUE);
             paintSelectionBox(g, bottomMarginExclusion.getBounds());
         }
+    }
+
+    /**
+     * Convert the shapes that make up the annotation to page space so that
+     * they will scale correctly at different zooms.
+     *
+     * @return transformed bBox.
+     */
+    protected Rectangle convertToPageSpace(ArrayList<Shape> bounds,
+                                           GeneralPath path) {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space.", e);
+        }
+        // convert the two points as well as the bbox.
+        Rectangle tBbox = at.createTransformedShape(path).getBounds();
+
+        // convert the points
+        Shape bound;
+        for (int i = 0; i < bounds.size(); i++) {
+            bound = bounds.get(i);
+            bound = at.createTransformedShape(bound);
+            bounds.set(i, bound);
+//            bound.setRect(tBound.getX(), tBound.getY(),
+//                    tBound.getWidth(), tBound.getHeight());
+        }
+
+        path.transform(at);
+
+        return tBbox;
     }
 }

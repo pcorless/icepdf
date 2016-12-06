@@ -24,6 +24,8 @@ import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,7 +40,7 @@ import java.awt.event.ItemListener;
  */
 @SuppressWarnings("serial")
 public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
-        ActionListener {
+        ActionListener, ChangeListener {
 
     // default list values.
     private static final int DEFAULT_FONT_SIZE = 5;
@@ -75,9 +77,13 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     private JComboBox strokeStyleBox;
     private JButton strokeColorButton;
 
+    // annotation transparency/opacity
+    private JSlider transparencySlider;
+
     public FreeTextAnnotationPanel(SwingController controller) {
         super(controller);
-        setLayout(new GridLayout(9, 2, 5, 2));
+
+        setLayout(new GridBagLayout());
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -119,17 +125,18 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         // font comps
         applySelectedValue(fontNameBox, freeTextAnnotation.getFontName());
         applySelectedValue(fontSizeBox, freeTextAnnotation.getFontSize());
-        fontColorButton.setBackground(freeTextAnnotation.getFontColor());
+        setButtonBackgroundColor(fontColorButton, freeTextAnnotation.getFontColor());
 
         // border comps.
         applySelectedValue(strokeTypeBox, freeTextAnnotation.isStrokeType());
         applySelectedValue(strokeStyleBox, freeTextAnnotation.getBorderStyle().getBorderStyle());
         applySelectedValue(strokeThicknessBox, freeTextAnnotation.getBorderStyle().getStrokeWidth());
-        strokeColorButton.setBackground(freeTextAnnotation.getColor());
+        setButtonBackgroundColor(strokeColorButton, freeTextAnnotation.getColor());
+        transparencySlider.setValue(Math.round(freeTextAnnotation.getOpacity() * 255));
 
         // fill comps.
         applySelectedValue(fillTypeBox, freeTextAnnotation.isFillType());
-        fillColorButton.setBackground(freeTextAnnotation.getFillColor());
+        setButtonBackgroundColor(fillColorButton, freeTextAnnotation.getFillColor());
 
         safeEnable(fontNameBox, true);
         safeEnable(fontSizeBox, true);
@@ -142,6 +149,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
         safeEnable(fillTypeBox, true);
         safeEnable(fillColorButton, true);
+        safeEnable(transparencySlider, true);
 
         // set visibility based on fill and stroke type.
         disableInvisibleFields();
@@ -239,26 +247,43 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         currentAnnotationComponent.repaint();
     }
 
+    public void stateChanged(ChangeEvent e) {
+        alphaSliderChange(e, freeTextAnnotation);
+    }
+
     /**
      * Method to create link annotation GUI.
      */
     private void createGUI() {
 
-        // font styles.
+        // font styles - core java font names and respective labels.  All Java JRE should have these fonts, these
+        // fonts also have huge number of glyphs support many different languages.
         if (FONT_NAMES_LIST == null) {
             FONT_NAMES_LIST = new ValueLabelItem[]{
-                    new ValueLabelItem("Helvetica", "Helvetica"),
-                    new ValueLabelItem("Helvetica-Oblique", "Helvetica-Oblique"),
-                    new ValueLabelItem("Helvetica-Bold", "Helvetica-Bold"),
-                    new ValueLabelItem("Helvetica-BoldOblique", "Helvetica-BoldOblique"),
-                    new ValueLabelItem("Times-Italic", "Times-Italic"),
-                    new ValueLabelItem("Times-Bold", "Times-Bold"),
-                    new ValueLabelItem("Times-BoldItalic", "Times-BoldItalic"),
-                    new ValueLabelItem("Times-Roman", "Times-Roman"), new ValueLabelItem("Courier", "Courier"),
-                    new ValueLabelItem("Courier-Oblique", "Courier-Oblique"),
-                    new ValueLabelItem("Courier-BoldOblique", "Courier-BoldOblique"),
-                    new ValueLabelItem("Courier-Bold", "Courier-Bold"),
-                    new ValueLabelItem("Courier-Bold", "Courier-Bold")};
+                    new ValueLabelItem("Helvetica",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helvetica")),
+                    new ValueLabelItem("Helvetica-Oblique",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helveticaOblique")),
+                    new ValueLabelItem("Helvetica-Bold",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helveticaBold")),
+                    new ValueLabelItem("Helvetica-BoldOblique",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.HelveticaBoldOblique")),
+                    new ValueLabelItem("Times-Italic",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesItalic")),
+                    new ValueLabelItem("Times-Bold",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesBold")),
+                    new ValueLabelItem("Times-BoldItalic",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesBoldItalic")),
+                    new ValueLabelItem("Times-Roman",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesRoman")),
+                    new ValueLabelItem("Courier",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courier")),
+                    new ValueLabelItem("Courier-Oblique",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierOblique")),
+                    new ValueLabelItem("Courier-BoldOblique",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierBoldOblique")),
+                    new ValueLabelItem("Courier-Bold",
+                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierBold"))};
         }
 
         // Font size.
@@ -284,68 +309,96 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
 
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.weightx = 1.0;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(1, 2, 1, 2);
+
         // Font name
         fontNameBox = new JComboBox(FONT_NAMES_LIST);
         fontNameBox.setSelectedIndex(DEFAULT_FONT_FAMILY);
         fontNameBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name")));
-        add(fontNameBox);
+        JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name"));
+        addGB(this, label, 0, 0, 1, 1);
+        addGB(this, fontNameBox, 1, 0, 1, 1);
+
         // border style
         fontSizeBox = new JComboBox(FONT_SIZES_LIST);
         fontSizeBox.setSelectedIndex(DEFAULT_FONT_SIZE);
         fontSizeBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.size")));
-        add(fontSizeBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.size"));
+        addGB(this, label, 0, 1, 1, 1);
+        addGB(this, fontSizeBox, 1, 1, 1, 1);
+
         // border colour
-        fontColorButton = new JButton();
+        fontColorButton = new JButton(" ");
         fontColorButton.addActionListener(this);
         fontColorButton.setOpaque(true);
         fontColorButton.setBackground(DEFAULT_FONT_COLOR);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.freeText.font.color")));
-        add(fontColorButton);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.color"));
+        addGB(this, label, 0, 2, 1, 1);
+        addGB(this, fontColorButton, 1, 2, 1, 1);
 
         // stroke type
         strokeTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
         strokeTypeBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeTypeBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.type")));
-        add(strokeTypeBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.type"));
+        addGB(this, label, 0, 3, 1, 1);
+        addGB(this, strokeTypeBox, 1, 3, 1, 1);
+
         // border thickness
         strokeThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         strokeThicknessBox.setSelectedIndex(DEFAULT_STROKE_THICKNESS_STYLE);
         strokeThicknessBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.thickness")));
-        add(strokeThicknessBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.thickness"));
+        addGB(this, label, 0, 4, 1, 1);
+        addGB(this, strokeThicknessBox, 1, 4, 1, 1);
+
         // border style
         strokeStyleBox = new JComboBox(LINE_STYLE_LIST);
         strokeStyleBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeStyleBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.style")));
-        add(strokeStyleBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.style"));
+        addGB(this, label, 0, 5, 1, 1);
+        addGB(this, strokeStyleBox, 1, 5, 1, 1);
+
         // border colour
-        strokeColorButton = new JButton();
+        strokeColorButton = new JButton(" ");
         strokeColorButton.addActionListener(this);
         strokeColorButton.setOpaque(true);
         strokeColorButton.setBackground(DEFAULT_BORDER_COLOR);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.freeText.border.color")));
-        add(strokeColorButton);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.color"));
+        addGB(this, label, 0, 6, 1, 1);
+        addGB(this, strokeColorButton, 1, 6, 1, 1);
 
         // fill type
         fillTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
         fillTypeBox.setSelectedIndex(DEFAULT_FILL_STYLE);
         fillTypeBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.type")));
-        add(fillTypeBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.type"));
+        addGB(this, label, 0, 7, 1, 1);
+        addGB(this, fillTypeBox, 1, 7, 1, 1);
+
         // fill colour
-        fillColorButton = new JButton();
+        fillColorButton = new JButton(" ");
         fillColorButton.addActionListener(this);
         fillColorButton.setOpaque(true);
         fillColorButton.setBackground(DEFAULT_STROKE_COLOR);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.color")));
-        add(fillColorButton);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.color"));
+        addGB(this, label, 0, 8, 1, 1);
+        addGB(this, fillColorButton, 1, 8, 1, 1);
+
+        // transparency slider
+        transparencySlider = buildAlphaSlider();
+        transparencySlider.setMajorTickSpacing(255);
+        transparencySlider.setPaintLabels(true);
+        transparencySlider.addChangeListener(this);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.transparencyLabel"));
+        addGB(this, label, 0, 9, 1, 1);
+        addGB(this, transparencySlider, 1, 9, 1, 1);
     }
 
     @Override

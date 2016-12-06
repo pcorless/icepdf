@@ -1777,6 +1777,55 @@ public abstract class Annotation extends Dictionary {
         return form;
     }
 
+    /**
+     * Create or update a Form's content stream.
+     *
+     * @param shapes   shapes to associate with the appearance stream.
+     * @param bbox     bound box.
+     * @param matrix   form space.
+     * @param rawBytes raw bytes of string data making up the content stream.
+     * @return
+     */
+    public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes) {
+        // update the appearance stream
+        // create/update the appearance stream of the xObject.
+        StateManager stateManager = library.getStateManager();
+        Form form;
+        if (hasAppearanceStream()) {
+            form = (Form) getAppearanceStream();
+            // else a stream, we won't support this for annotations.
+        } else {
+            // create a new xobject/form object
+            HashMap<Object, Object> formEntries = new HashMap<Object, Object>();
+            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
+            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
+            form = new Form(library, formEntries, null);
+            form.setPObjectReference(stateManager.getNewReferencNumber());
+            library.addObject(form, form.getPObjectReference());
+        }
+
+        if (form != null && shapes != null && rawBytes != null) {
+            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
+                    (float) bbox.getWidth(), (float) bbox.getHeight());
+            form.setAppearance(shapes, matrix, formBbox);
+
+            stateManager.addChange(new PObject(form, form.getPObjectReference()));
+            // update the AP's stream bytes so contents can be written out
+            form.setRawBytes(rawBytes);
+            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
+            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
+            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+
+            // compress the form object stream.
+            if (compressAppearanceStream) {
+                form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+            } else {
+                form.getEntries().remove(Stream.FILTER_KEY);
+            }
+        }
+        return form;
+    }
+
 
     public String getContents() {
         content = getString(CONTENTS_KEY);

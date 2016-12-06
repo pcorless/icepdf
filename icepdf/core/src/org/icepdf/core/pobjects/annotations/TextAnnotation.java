@@ -257,14 +257,16 @@ public class TextAnnotation extends MarkupAnnotation {
                 .append(compArray[1]).append(" ")
                 .append(compArray[2]);
         // apply the colour
-        Object[] colorArgument = new Object[]{colorString};
+        Object[] colorArgument = new Object[]{EXT_GSTATE_NAME, colorString};
         MessageFormat formatter = new MessageFormat(iconContentString);
         iconContentString = formatter.format(colorArgument);
 
+        Form form = updateAppearanceStream(null, bbox, matrix, null);
+        generateExternalGraphicsState(form, opacity);
         // parse the shapes and assign to this instance
         try {
-            ContentParser cp = ContentParserFactory.getInstance()
-                    .getContentParser(library, null);
+            Resources resources = form.getResources();
+            ContentParser cp = ContentParserFactory.getInstance().getContentParser(library, resources);
             shapes = cp.parse(new byte[][]{iconContentString.getBytes()}, null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
@@ -273,39 +275,9 @@ public class TextAnnotation extends MarkupAnnotation {
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
-        StateManager stateManager = library.getStateManager();
-        Form form;
-        if (hasAppearanceStream()) {
-            form = (Form) getAppearanceStream();
-            // else a stream, we won't support this for annotations.
-        } else {
-            // create a new xobject/form object
-            HashMap<Object, Object> formEntries = new HashMap<Object, Object>();
-            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
-            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
-            form.setPObjectReference(stateManager.getNewReferencNumber());
-            library.addObject(form, form.getPObjectReference());
-        }
-
+        form = updateAppearanceStream(shapes, bbox, matrix, iconContentString.getBytes());
         if (form != null) {
-            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
-                    (float) bbox.getWidth(), (float) bbox.getHeight());
-            form.setAppearance(shapes, matrix, formBbox);
             appearanceState.setShapes(shapes);
-            stateManager.addChange(new PObject(form, form.getPObjectReference()));
-            // update the AP's stream bytes so contents can be written out
-            form.setRawBytes(iconContentString.getBytes());
-            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
-            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
-            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
-
-            // compress the form object stream.
-            if (compressAppearanceStream) {
-                form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
-            } else {
-                form.getEntries().remove(Stream.FILTER_KEY);
-            }
         }
     }
 

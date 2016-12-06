@@ -176,6 +176,9 @@ public class SquareAnnotation extends MarkupAnnotation {
         }
 
         shapes.add(new TransformDrawCmd(af));
+        shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
         shapes.add(new StrokeDrawCmd(stroke));
         shapes.add(new ShapeDrawCmd(rectangleToDraw));
         if (isFillColor) {
@@ -186,43 +189,14 @@ public class SquareAnnotation extends MarkupAnnotation {
             shapes.add(new ColorDrawCmd(color));
             shapes.add(new DrawDrawCmd());
         }
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
-        StateManager stateManager = library.getStateManager();
-        Form form;
-        if (hasAppearanceStream()) {
-            form = (Form) getAppearanceStream();
-            // else a stream, we won't support this for annotations.
-        } else {
-            // create a new xobject/form object
-            HashMap<Object, Object> formEntries = new HashMap<Object, Object>();
-            formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
-            formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
-            form.setPObjectReference(stateManager.getNewReferencNumber());
-            library.addObject(form, form.getPObjectReference());
-        }
-
-        if (form != null) {
-            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
-                    (float) bbox.getWidth(), (float) bbox.getHeight());
-            form.setAppearance(shapes, matrix, formBbox);
-            stateManager.addChange(new PObject(form, form.getPObjectReference()));
-            // update the AP's stream bytes so contents can be written out
-            form.setRawBytes(
-                    PostScriptEncoder.generatePostScript(shapes.getShapes()));
-            HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
-            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
-            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
-
-            // compress the form object stream.
-            if (compressAppearanceStream) {
-                form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
-            } else {
-                form.getEntries().remove(Stream.FILTER_KEY);
-            }
-        }
+        Form form = updateAppearanceStream(shapes, bbox, matrix,
+                PostScriptEncoder.generatePostScript(shapes.getShapes()));
+        generateExternalGraphicsState(form, opacity);
     }
 
     public Color getFillColor() {

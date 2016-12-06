@@ -205,7 +205,7 @@ public class Form extends Stream {
 
     public Resources getResources() {
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
-        if (resources == null) {
+        if (leafResources == null) {
             leafResources = new Resources(library, new HashMap());
         }
         return leafResources;

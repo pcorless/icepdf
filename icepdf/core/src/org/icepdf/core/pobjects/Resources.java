@@ -335,7 +335,7 @@ public class Resources extends Dictionary {
      * Returns the ExtGState object which has the specified reference name.
      *
      * @param namedReference name of ExtGState object to try and find.
-     * @return ExtGState which contains the named references ExtGState attrbutes,
+     * @return ExtGState which contains the named references ExtGState attributes,
      * if the namedReference could not be found null is returned.
      */
     public ExtGState getExtGState(Name namedReference) {
@@ -351,7 +351,6 @@ public class Resources extends Dictionary {
             }
         }
         return gsState;
-
     }
 
     /**
