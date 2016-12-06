@@ -195,9 +195,6 @@ public class InkAnnotation extends MarkupAnnotation {
         entries.put(INK_LIST_KEY,
                 convertPathToArray(inkPath));
 
-        // we dont' write an ap stream but there might already be one so null it
-        entries.remove(APPEARANCE_STREAM_KEY);
-
         // save the stroke.
         Stroke stroke = getBorderStyleStroke();
 
@@ -206,10 +203,20 @@ public class InkAnnotation extends MarkupAnnotation {
         af.translate(-bbox.getMinX(), -bbox.getMinY());
 
         shapes.add(new TransformDrawCmd(af));
+        shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
         shapes.add(new StrokeDrawCmd(stroke));
         shapes.add(new ColorDrawCmd(color));
         shapes.add(new ShapeDrawCmd(inkPath));
         shapes.add(new DrawDrawCmd());
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
+
+        // remove appearance stream if it exists on an existing edit.
+        entries.remove(APPEARANCE_STREAM_KEY);
+
+        // we don't write out an appearance stream for ink annotation, we just regenerate it from properties
     }
 
     public Shape getInkPath() {

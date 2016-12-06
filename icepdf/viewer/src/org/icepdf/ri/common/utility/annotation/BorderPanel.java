@@ -99,7 +99,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         }
         applySelectedValue(lineThicknessBox, annotation.getLineThickness());
         applySelectedValue(lineStyleBox, annotation.getLineStyle());
-        colorButton.setBackground(annotation.getColor());
+        setButtonBackgroundColor(colorButton, annotation.getColor());
 
         // disable appearance input if we have a invisible rectangle
         enableAppearanceInputComponents(annotation.getBorderType() == Annotation.VISIBLE_RECTANGLE);
@@ -206,7 +206,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
                 messageBundle.getString("viewer.utilityPane.annotation.border.lineStyle")));
         add(lineStyleBox);
         // border colour
-        colorButton = new JButton();
+        colorButton = new JButton(" ");
         colorButton.addActionListener(this);
         colorButton.setOpaque(true);
         colorButton.setBackground(DEFAULT_BORDER_COLOR);

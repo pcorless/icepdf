@@ -23,6 +23,8 @@ import org.icepdf.ri.common.views.AnnotationComponent;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,7 +39,7 @@ import java.awt.event.ItemListener;
  */
 @SuppressWarnings("serial")
 public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
-        ActionListener {
+        ActionListener, ChangeListener {
 
     // default list values.
     private static final int DEFAULT_START_END_TYPE = 0;
@@ -57,12 +59,14 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private JComboBox lineStyleBox;
     private JButton colorButton;
     private JButton internalColorButton;
+    private JSlider transparencySlider;
 
     private LineAnnotation annotation;
 
     public LineAnnotationPanel(SwingController controller) {
         super(controller);
-        setLayout(new GridLayout(6, 2, 5, 2));
+
+        setLayout(new GridBagLayout());
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -103,8 +107,9 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         applySelectedValue(endEndTypeBox, annotation.getEndArrow());
         applySelectedValue(lineThicknessBox, annotation.getLineThickness());
         applySelectedValue(lineStyleBox, annotation.getLineStyle());
-        colorButton.setBackground(annotation.getColor());
-        internalColorButton.setBackground(annotation.getInteriorColor());
+        setButtonBackgroundColor(colorButton, annotation.getColor());
+        setButtonBackgroundColor(internalColorButton, annotation.getInteriorColor());
+        transparencySlider.setValue(Math.round(annotation.getOpacity() * 255));
 
         // disable appearance input if we have a invisible rectangle
         safeEnable(startEndTypeBox, true);
@@ -113,6 +118,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         safeEnable(lineStyleBox, true);
         safeEnable(colorButton, true);
         safeEnable(internalColorButton, true);
+        safeEnable(transparencySlider, true);
     }
 
     public void itemStateChanged(ItemEvent e) {
@@ -171,6 +177,10 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
 
     }
 
+    public void stateChanged(ChangeEvent e) {
+        alphaSliderChange(e, annotation);
+    }
+
     /**
      * Method to create link annotation GUI.
      */
@@ -197,46 +207,68 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 messageBundle.getString("viewer.utilityPane.annotation.line.appearance.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.weightx = 1.0;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(1, 2, 1, 2);
+
         // Line start type
         startEndTypeBox = new JComboBox(END_TYPE_LIST);
         startEndTypeBox.setSelectedIndex(DEFAULT_START_END_TYPE);
         startEndTypeBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.startStyle")));
-        add(startEndTypeBox);
+        JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.startStyle"));
+        addGB(this, label, 0, 0, 1, 1);
+        addGB(this, startEndTypeBox, 1, 0, 1, 1);
         // Line end type
         endEndTypeBox = new JComboBox(END_TYPE_LIST);
         endEndTypeBox.setSelectedIndex(DEFAULT_END_END_TYPE);
         endEndTypeBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.endStyle")));
-        add(endEndTypeBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.endStyle"));
+        addGB(this, label, 0, 1, 1, 1);
+        addGB(this, endEndTypeBox, 1, 1, 1, 1);
         // Line thickness
         lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineThickness")));
-        add(lineThicknessBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineThickness"));
+        addGB(this, label, 0, 2, 1, 1);
+        addGB(this, lineThicknessBox, 1, 2, 1, 1);
         // Line style
         lineStyleBox = new JComboBox(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineStyle")));
-        add(lineStyleBox);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineStyle"));
+        addGB(this, label, 0, 3, 1, 1);
+        addGB(this, lineStyleBox, 1, 3, 1, 1);
+
         // border colour
-        colorButton = new JButton();
+        colorButton = new JButton(" ");
         colorButton.addActionListener(this);
         colorButton.setOpaque(true);
         colorButton.setBackground(DEFAULT_BORDER_COLOR);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.line.colorLabel")));
-        add(colorButton);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.colorLabel"));
+        addGB(this, label, 0, 4, 1, 1);
+        addGB(this, colorButton, 1, 4, 1, 1);
         // line colour
-        internalColorButton = new JButton();
+        internalColorButton = new JButton(" ");
         internalColorButton.addActionListener(this);
         internalColorButton.setOpaque(true);
         internalColorButton.setBackground(DEFAULT_FILL_COLOR);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.line.colorInternalLabel")));
-        add(internalColorButton);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.colorInternalLabel"));
+        addGB(this, label, 0, 5, 1, 1);
+        addGB(this, internalColorButton, 1, 5, 1, 1);
+
+        // transparency slider
+        transparencySlider = buildAlphaSlider();
+        transparencySlider.setMajorTickSpacing(255);
+        transparencySlider.setPaintLabels(true);
+        transparencySlider.addChangeListener(this);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.transparencyLabel"));
+        addGB(this, label, 0, 6, 1, 1);
+        addGB(this, transparencySlider, 1, 6, 1, 1);
     }
 
     @Override
@@ -249,6 +281,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         safeEnable(lineStyleBox, enabled);
         safeEnable(colorButton, enabled);
         safeEnable(internalColorButton, enabled);
+        safeEnable(transparencySlider, enabled);
     }
 
     /**

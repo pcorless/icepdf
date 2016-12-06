@@ -16,11 +16,14 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.annotations.BorderStyle;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import java.awt.*;
 import java.util.ResourceBundle;
 
 /**
@@ -31,6 +34,9 @@ import java.util.ResourceBundle;
  */
 public abstract class AnnotationPanelAdapter extends JPanel
         implements AnnotationProperties {
+
+    // layouts constraint
+    protected GridBagConstraints constraints;
 
     // action instance that is being edited
     protected AnnotationComponent currentAnnotationComponent;
@@ -44,6 +50,10 @@ public abstract class AnnotationPanelAdapter extends JPanel
     protected static ValueLabelItem[] LINE_THICKNESS_LIST;
     // line styles.
     protected static ValueLabelItem[] LINE_STYLE_LIST;
+
+    protected static final int TRANSPARENCY_MIN = 0;
+    protected static final int TRANSPARENCY_MAX = 255;
+    protected static final int TRANSPARENCY_INIT = 255;
 
     protected AnnotationPanelAdapter(
             SwingController controller) {
@@ -99,5 +109,71 @@ public abstract class AnnotationPanelAdapter extends JPanel
             documentViewController.getAnnotationCallback()
                     .updateAnnotation(currentAnnotationComponent);
         }
+    }
+
+    /**
+     * Utility to build the transparency bar slider for changing a markup annotations stroking and non-stroking
+     * alpha values (/CA, /ca).
+     *
+     * @return new instance of a jSlider ranging from TRANSPARENCY_MIN to TRANSPARENCY_MAX.
+     */
+    protected JSlider buildAlphaSlider() {
+        return new JSlider(JSlider.HORIZONTAL,
+                TRANSPARENCY_MIN, TRANSPARENCY_MAX, TRANSPARENCY_INIT);
+    }
+
+    /**
+     * Handler for the alpha value update for an annotation's opacity updated.
+     * @param e change event.
+     * @param annotation annotation to apply the opacity value to.
+     */
+    protected void alphaSliderChange(ChangeEvent e, MarkupAnnotation annotation){
+        JSlider source = (JSlider)e.getSource();
+        if (!source.getValueIsAdjusting()) {
+            int alpha = source.getValue();
+            // set the annotation value
+            annotation.setOpacity(alpha);
+            // send update to callback
+            updateCurrentAnnotation();
+            // reset the appearance stream.
+            currentAnnotationComponent.resetAppearanceShapes();
+            currentAnnotationComponent.repaint();
+        }
+    }
+
+    /**
+     * Set the background colour of the various buttons that are used to show the colour picker as well as show
+     * the selected colour.
+     * @param button button to set colour of.
+     * @param color color ot set the buttons background.
+     */
+    protected void setButtonBackgroundColor(JButton button, Color color){
+        if (color != null) {
+            if (color.getAlpha() < 255) {
+                color = new Color(color.getRGB());
+            }
+            button.setBackground(color);
+            button.setContentAreaFilled(false);
+            button.setOpaque(true);
+        }
+    }
+
+    /**
+     * Gridbag constructor helper
+     *
+     * @param component component to add to grid
+     * @param x         row
+     * @param y         col
+     * @param rowSpan
+     * @param colSpan
+     */
+    protected void addGB(JPanel layout, Component component,
+                       int x, int y,
+                       int rowSpan, int colSpan) {
+        constraints.gridx = x;
+        constraints.gridy = y;
+        constraints.gridwidth = rowSpan;
+        constraints.gridheight = colSpan;
+        layout.add(component, constraints);
     }
 }

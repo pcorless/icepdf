@@ -37,10 +37,8 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.geom.NoninvertibleTransformException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Level;
 
 /**
  * HighLightAnnotationHandler tool extends TextSelectionPageHandler which
@@ -151,6 +149,9 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                             tBbox);
 
             // pass outline shapes and bounds to create the highlight shapes
+            if (TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(highLightType)) {
+                annotation.setOpacity(TextMarkupAnnotation.HIGHLIGHT_ALPHA);
+            }
             annotation.setContents(contents != null && enableHighlightContents ? contents : highLightType.toString());
             annotation.setColor(annotation.getTextMarkupColor());
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
@@ -240,41 +241,5 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             }
         }
         return highlightBounds;
-    }
-
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bBox.
-     */
-    protected Rectangle convertToPageSpace(ArrayList<Shape> bounds,
-                                           GeneralPath path) {
-        Page currentPage = pageViewComponent.getPage();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space.", e);
-        }
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = at.createTransformedShape(path).getBounds();
-
-        // convert the points
-        Shape bound;
-        for (int i = 0; i < bounds.size(); i++) {
-            bound = bounds.get(i);
-            bound = at.createTransformedShape(bound);
-            bounds.set(i, bound);
-//            bound.setRect(tBound.getX(), tBound.getY(),
-//                    tBound.getWidth(), tBound.getHeight());
-        }
-
-        path.transform(at);
-
-        return tBbox;
     }
 }

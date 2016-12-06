@@ -467,6 +467,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             stroke = new BasicStroke(borderStyle.getStrokeWidth());
         }
 
+        // apply opacity graphics state.
+        shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
+
         // background colour
         shapes.add(new ShapeDrawCmd(new Rectangle2D.Double(bbox.getX(), bbox.getY() + 10,
                 bbox.getWidth() - 10, bbox.getHeight() - 10)));
@@ -484,10 +489,15 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         shapes.add(new ColorDrawCmd(fontColor));
         shapes.add(new TextSpriteDrawCmd(textSprites));
 
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
+
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
-        Form form = getOrGenerateAppearanceForm();
+        Form form = updateAppearanceStream(shapes, bbox, matrix,
+                PostScriptEncoder.generatePostScript(shapes.getShapes()));
+        generateExternalGraphicsState(form, opacity);
 
         if (form != null) {
             Rectangle2D formBbox = new Rectangle2D.Float(0, 0,

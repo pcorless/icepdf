@@ -615,6 +615,9 @@ public class LineAnnotation extends MarkupAnnotation {
         line.lineTo((float) endOfLine.getX(), (float) endOfLine.getY());
         line.closePath();
         shapes.add(new TransformDrawCmd(af));
+//        shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
         shapes.add(new ShapeDrawCmd(line));
         shapes.add(new StrokeDrawCmd(stroke));
         shapes.add(new ColorDrawCmd(color));
@@ -654,9 +657,13 @@ public class LineAnnotation extends MarkupAnnotation {
             squareDrawOps(
                     shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
         }
+        shapes.add(new AlphaDrawCmd(
+                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
 
         // remove appearance stream if it exists on an existing edit.
         entries.remove(APPEARANCE_STREAM_KEY);
+
+        // we don't write out an appearance stream for line annotation, we just regenerate it from properties
     }
 
     public Point2D getStartOfLine() {
