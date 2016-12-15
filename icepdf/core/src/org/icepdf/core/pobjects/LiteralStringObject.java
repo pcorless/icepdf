@@ -77,7 +77,8 @@ public class LiteralStringObject implements StringObject {
      * value is assumed to be unencrypted and will be encrypted.  The
      * method #LiteralStringObject(String string) should be used if the string
      * is all ready encrypted. This method is used for creating new
-     * LiteralStringObject's that are created post document parse. </p>
+     * LiteralStringObject's that are created post document parse, like annotation
+     * property values. </p>
      *
      * @param string          the initial contents of the literal string object,
      *                        unencrypted.
@@ -88,8 +89,9 @@ public class LiteralStringObject implements StringObject {
                                SecurityManager securityManager) {
         // append string data
         this.reference = reference;
+        // convert string to octal encoded.
+        string = Utils.convertStringToOctal(string);
         // decrypt the string.
-//        stringData = new StringBuilder(string.replaceAll("(?=[()\\\\])", "\\\\"));
         stringData = new StringBuilder(
                 encryption(string, false, securityManager));
     }
@@ -201,7 +203,7 @@ public class LiteralStringObject implements StringObject {
      *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
      *                   Composite and Simple font types respectively
      * @param font       font used to render the the literal string data.
-     * @return StringBuffer which contains all renderaable characters for the
+     * @return StringBuffer which contains all renderable characters for the
      *         given font.
      */
     public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {

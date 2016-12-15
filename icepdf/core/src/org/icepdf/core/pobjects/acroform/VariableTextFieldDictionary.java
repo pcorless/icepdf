@@ -169,7 +169,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             } else if (parentField != null && library.getObject(parentField.getEntries(), DA_KEY) != null) {
                 possibleContent = library.getString(parentField.getEntries(), DA_KEY);
             } else {
-                possibleContent = content;
+                possibleContent = content != null ? content : "";
             }
             if (resources == null) {
                 resources = library.getCatalog().getInteractiveForm().getResources();

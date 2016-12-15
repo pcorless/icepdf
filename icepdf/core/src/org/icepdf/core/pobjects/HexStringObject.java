@@ -93,10 +93,36 @@ public class HexStringObject implements StringObject {
                            SecurityManager securityManager) {
         // append string data
         this.reference = reference;
-        // decrypt the string.
-        stringData = new StringBuilder(
-                encryption(Utils.convertByteArrayToHexString(string.getBytes(), false),
-                        false, securityManager));
+        // convert string data to hex encoded
+        stringData = encodeHexString(string);
+        // save and encrypt the hex value.  TODO: encryption still not working correctly, likely a -> byte[] error.
+        stringData = new StringBuilder(encryption(stringData.toString(), false, securityManager));
+    }
+
+    /**
+     * Encodes the given contents string into a 4 byte hex string.  This allows us to easily account for
+     * mixed encoding of 2-byte and 4 byte string content.
+     *
+     * @param contents string to be encoded into hex format.
+     * @return original content stream with contents encoded in the hex string format.
+     */
+    private StringBuilder encodeHexString(String contents) {
+        StringBuilder hex = new StringBuilder();
+        if (contents != null && contents.length() > 0) {
+            char[] chars = contents.toCharArray();
+            hex.append("FEFF");
+            String hexCode;
+            for (char aChar : chars) {
+                hexCode = Integer.toHexString((int) aChar);
+                if (hexCode.length() == 2) {
+                    hexCode = "00" + hexCode;
+                } else if (hexCode.length() == 1) {
+                    hexCode = "000" + hexCode;
+                }
+                hex.append(hexCode);
+            }
+        }
+        return hex;
     }
 
     /**
