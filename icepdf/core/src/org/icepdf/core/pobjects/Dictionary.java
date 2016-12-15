@@ -214,6 +214,19 @@ public class Dictionary {
     }
 
     /**
+     * Sets the dictionary key value, handling any encryption so dictionary can be written correctly.
+     *
+     * @param key   dictionary key
+     * @param value key value.
+     * @return string value of the newly set string which will always be decrypted.
+     */
+    protected String setHexString(final Name key, String value) {
+        // make sure we store an encrypted documents string as encrypted
+        entries.put(key, new HexStringObject(value, getPObjectReference(), library.getSecurityManager()));
+        return value;
+    }
+
+    /**
      * Returns a summary of the dictionary entries.
      *
      * @return dictionary values.

@@ -243,7 +243,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         String[] lines = contents.split("\n|\r|\f");
         for (String line : lines) {
             content.append('(').append(line.replaceAll("(?=[()\\\\])", "\\\\")
-                    .replaceAll("ÿ", "")).append(")' ");
+                    .replaceAll("Ã¿", "")).append(")' ");
         }
         return content;
     }
@@ -260,7 +260,6 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         for (String line : lines) {
             char[] chars = line.toCharArray();
             StringBuffer hex = new StringBuffer();
-//            hex.append("FEFF");
             for (int i = 0; i < chars.length; i++) {
                 hex.append(Integer.toHexString((int) chars[i]));
             }
