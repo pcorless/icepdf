@@ -228,7 +228,7 @@ public abstract class MarkupAnnotation extends Annotation {
         return popupAnnotation;
     }
 
-    protected static void generateExternalGraphicsState(Form form, float opacity){
+    protected static void generateExternalGraphicsState(Form form, float opacity) {
         // add the transparency graphic context settings.
         if (form != null) {
             Resources resources = form.getResources();
@@ -242,13 +242,36 @@ public abstract class MarkupAnnotation extends Annotation {
         }
     }
 
+    /**
+     * Gets the opacity value for a markup annotation.  This value can be optionally used to apply a global
+     * opacity value when painting or regenerating the contentStream.
+     *
+     * @return current opacity value in the range of 0.0 ... 1.0
+     */
     public float getOpacity() {
         return opacity;
     }
 
-    public void setOpacity(int opacity){
-        if (this.opacity >= 0 && this.opacity <= 255){
-            this.opacity = Math.round(opacity / 2.55f)/100.0f;
+    /**
+     * Set the opacity value of the /CA key in the markup annotation dictionary.
+     *
+     * @param opacity opacity in the range of 0.0 ... 1.0.
+     */
+    public void setOpacity(float opacity) {
+        if (this.opacity >= 0 && this.opacity <= 1.0) {
+            this.opacity = opacity;
+            entries.put(CA_KEY, this.opacity);
+        }
+    }
+
+    /**
+     * Set the opacity value of the /CA key in the markup annotation dictionary.
+     *
+     * @param opacity opacity in the range of 0 ... 255.
+     */
+    public void setOpacity(int opacity) {
+        if (this.opacity >= 0 && this.opacity <= 255) {
+            this.opacity = Math.round(opacity / 2.55f) / 100.0f;
             entries.put(CA_KEY, this.opacity);
         }
     }
