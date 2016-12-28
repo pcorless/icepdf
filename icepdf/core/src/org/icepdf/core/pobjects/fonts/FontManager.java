@@ -199,16 +199,16 @@ public class FontManager {
     }
 
     /**
-     * <p>Initializes the fontList by reading the system fonts paths via readFonts()
+     * <p>Initializes the fontList by reading the system fonts paths via readSystemFonts()
      * but only if the fontList is null or is empty.  Generally the fontManager
-     * is used
+     * is used with the {@link org.icepdf.ri.util.FontPropertiesManager }
      * </p>
      *
      * @return instance of the singleton fontManager.
      */
     public FontManager initialize() {
         if (fontList == null || fontList.size() == 0) {
-            readFonts(null);
+            readSystemFonts(null);
         }
         return fontManager;
     }
