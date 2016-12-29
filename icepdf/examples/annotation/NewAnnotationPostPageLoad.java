@@ -115,7 +115,7 @@ public class NewAnnotationPostPageLoad {
                     applicationFrame.pack();
                     applicationFrame.setVisible(true);
 
-                    /**
+                    /*
                      * Start of a simple search for the loaded file and collect word
                      * data for annotation creation.
                      */
@@ -135,8 +135,7 @@ public class NewAnnotationPostPageLoad {
                         pageCount = document.getNumberOfPages();
                     }
 
-
-                    /**
+                    /*
                      * Apply the search -> annotation resulst after the gui is build
                      */
                     // new annotation look and feel

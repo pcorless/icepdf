@@ -112,7 +112,7 @@ public class MultiPageCapture {
         }
 
         try {
-            // save page caputres to file.
+            // save page captures to file.
             File file = new File("imageCapture.tif");
             ImageOutputStream ios = ImageIO.createImageOutputStream(file);
             ImageWriter writer = ImageIO.getImageWritersByFormatName("tiff").next();
@@ -185,6 +185,8 @@ public class MultiPageCapture {
             writer.dispose();
         } catch (IOException e) {
             System.out.println("Error saving file  " + e);
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 

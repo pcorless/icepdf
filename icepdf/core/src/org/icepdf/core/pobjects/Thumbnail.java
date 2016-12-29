@@ -66,14 +66,13 @@ public class Thumbnail extends Dictionary {
         }
     }
 
-
-    public void init() {
+    public void init() throws InterruptedException {
         Resources resource = new Resources(library, thumbStream.entries);
         image = thumbStream.getImage(null, resource);
         initialized = true;
     }
 
-    public BufferedImage getImage() {
+    public BufferedImage getImage() throws InterruptedException {
         if (!initialized) {
             init();
         }

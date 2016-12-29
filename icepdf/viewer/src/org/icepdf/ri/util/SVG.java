@@ -80,6 +80,9 @@ public class SVG {
             }
         } catch (org.apache.batik.svggen.SVGGraphics2DIOException e) {
             logger.log(Level.SEVERE, "Error creating svg document.", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.SEVERE, "Error creating svg document.", e);
         }
     }
 }

@@ -82,7 +82,7 @@ public interface ContentParser {
      * @return Shapes object which contains the extract PageText object.
      * @throws UnsupportedEncodingException encoding error.
      */
-    Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException;
+    Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException, InterruptedException;
 
     /**
      * Sets the scale factor used by some graphic state parameters so that the

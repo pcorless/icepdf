@@ -185,6 +185,8 @@ public interface DocumentViewController {
 
     public DocumentViewModel getDocumentViewModel();
 
+    public DocumentView getDocumentView();
+
     public void clearSelectedText();
 
     public void clearHighlightedText();

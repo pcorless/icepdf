@@ -18,17 +18,15 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.util.Defs;
+import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.ri.common.UndoCaretaker;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -48,20 +46,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     // document that model is associated.
     protected Document currentDocument;
-
-    // page dirty repaint timer
-    private Timer isDirtyTimer;
-    // dirty refresh timer call interval
-    private static int dirtyTimerInterval = 5;
-    static {
-        try {
-            dirtyTimerInterval =
-                    Defs.intProperty("org.icepdf.core.views.dirtytimer.interval",
-                            dirtyTimerInterval);
-        } catch (NumberFormatException e) {
-            log.log(Level.FINE, "Error reading dirty timer interval");
-        }
-    }
 
     // Pages that have selected text.
     private HashMap<Integer, AbstractPageViewComponent> selectedPageText;
@@ -88,12 +72,12 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
         this.currentDocument = currentDocument;
         // create new instance of the undoCaretaker
         undoCaretaker = new UndoCaretaker();
-
-        // timer will dictate when buffer repaints can take place
-        isDirtyTimer = new Timer(dirtyTimerInterval, null);
-        isDirtyTimer.setInitialDelay(0);
-        isDirtyTimer.start();
     }
+
+    protected abstract AbstractPageViewComponent buildPageViewComponent(DocumentViewModel documentViewModel,
+                                                                        PageTree pageTree, final int pageIndex,
+                                                                        JScrollPane parentScrollPane,
+                                                                        int width, int height);
 
     public Document getDocument() {
         return currentDocument;
@@ -129,7 +113,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
                 selectedPages.add(selectedPageText.get(pageIndex));
             }
             return selectedPages;
-        }else{
+        } else {
             return null;
         }
     }
@@ -160,13 +144,13 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * to make sure of selected text.  The caches is used as an optimization
      * to make sure selected text can be cleared quickly.
      *
-     * @param pageViewComponent pageView component to add to list.
+     * @param pageComponent pageView component to add to list.
      */
-    public void addSelectedPageText(AbstractPageViewComponent pageViewComponent) {
+    public void addSelectedPageText(AbstractPageViewComponent pageComponent) {
         if (selectedPageText == null) {
             selectedPageText = new HashMap<Integer, AbstractPageViewComponent>();
         }
-        selectedPageText.put(pageViewComponent.getPageIndex(), pageViewComponent);
+        selectedPageText.put(pageComponent.getPageIndex(), pageComponent);
     }
 
     /**
@@ -174,13 +158,13 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      * to make sure of selected text.  The caches is used as an optimization
      * to make sure selected text can be cleared quickly.
      *
-     * @param pageViewComponent pageView component to add to list.
+     * @param pageComponent pageView component to add to list.
      */
-    public void removeSelectedPageText(AbstractPageViewComponent pageViewComponent) {
+    public void removeSelectedPageText(AbstractPageViewComponent pageComponent) {
         if (selectedPageText == null) {
             selectedPageText = new HashMap<Integer, AbstractPageViewComponent>();
         }
-        selectedPageText.remove(pageViewComponent.getPageIndex());
+        selectedPageText.remove(pageComponent.getPageIndex());
     }
 
     /**
@@ -207,23 +191,8 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             // apply the change
             oldUserZoom = userZoom;
             userZoom = viewZoom;
-            // propagate the changes to the sub components.
-            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
-                if (pageViewComponent != null) {
-                    pageViewComponent.invalidate();
-                }
-            }
         }
         return changed;
-    }
-
-    /**
-     * Invalidate the underlying Document Page models.
-     */
-    public void invalidate() {
-        for (AbstractPageViewComponent pageViewComponent : pageComponents) {
-            pageViewComponent.invalidatePage();
-        }
     }
 
     public float getViewZoom() {
@@ -236,12 +205,6 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
             // apply the change
             oldUserRotation = userRotation;
             userRotation = viewRotation;
-            // propagate the changes to the sub components.
-            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
-                if (pageViewComponent != null) {
-                    pageViewComponent.invalidate();
-                }
-            }
         }
         return changed;
     }
@@ -310,17 +273,12 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public void dispose() {
 
         if (pageComponents != null) {
-            for (AbstractPageViewComponent pageViewComponent : pageComponents) {
-                if (pageViewComponent != null) {
-                    pageViewComponent.dispose();
+            for (AbstractPageViewComponent pageComponent : pageComponents) {
+                if (pageComponent != null) {
+                    pageComponent.dispose();
                 }
             }
             pageComponents.clear();
-
-            // stop the timer
-            if (isDirtyTimer != null && isDirtyTimer.isRunning()) {
-                isDirtyTimer.stop();
-            }
         }
     }
 
@@ -364,9 +322,5 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
 
     public void addMemento(Memento oldMementoState, Memento newMementoState) {
         undoCaretaker.addState(oldMementoState, newMementoState);
-    }
-
-    public Timer getDirtyTimer() {
-        return isDirtyTimer;
     }
 }

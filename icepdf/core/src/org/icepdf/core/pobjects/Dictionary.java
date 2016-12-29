@@ -119,7 +119,7 @@ public class Dictionary {
     /**
      * Initiate the Dictionary. Retrieve any needed attributes.
      */
-    public void init() {
+    public void init() throws InterruptedException {
     }
 
     /**

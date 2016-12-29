@@ -21,6 +21,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 
 /**
@@ -61,8 +62,11 @@ import java.util.HashMap;
  */
 public class LinkAnnotation extends Annotation {
 
+    private static final Logger logger =
+            Logger.getLogger(LinkAnnotation.class.toString());
+
     /**
-     * Key used to indcate highlight mode.
+     * Key used to indicate highlight mode.
      */
     public static final Name DESTINATION_KEY = new Name("Dest");
 
@@ -132,21 +136,27 @@ public class LinkAnnotation extends Annotation {
         entries.put(HIGHLIGHT_MODE_KEY, HIGHLIGHT_INVERT);
 
         // create the new instance
-        LinkAnnotation linkAnnotation = new LinkAnnotation(library, entries);
-        linkAnnotation.init();
-        linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        linkAnnotation.setNew(true);
+        LinkAnnotation linkAnnotation = null;
+        try {
+            linkAnnotation = new LinkAnnotation(library, entries);
+            linkAnnotation.init();
+            linkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            linkAnnotation.setNew(true);
 
-        // set default flags.
-        linkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        linkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
-        linkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-        linkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+            // set default flags.
+            linkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+            linkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+            linkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+            linkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Link annotation instance creation was interrupted");
+        }
 
         return linkAnnotation;
     }
 
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
         // try and generate an appearance stream.
         resetNullAppearanceStream();

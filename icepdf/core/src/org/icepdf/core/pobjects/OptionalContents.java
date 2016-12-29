@@ -26,5 +26,5 @@ public interface OptionalContents {
 
     public boolean isOCG();
 
-    public void init();
+    public void init() throws InterruptedException;
 }

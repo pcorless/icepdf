@@ -235,8 +235,12 @@ public class DocumentState implements Serializable {
                     pageCursor = document.getPageTree().getNumberOfPages();
                 }
 
-                return document.getPageImage(pageCursor - 1, GraphicsRenderingHints.SCREEN,
-                        Page.BOUNDARY_CROPBOX, rotation, zoom);
+                try {
+                    return document.getPageImage(pageCursor - 1, GraphicsRenderingHints.SCREEN,
+                            Page.BOUNDARY_CROPBOX, rotation, zoom);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             return null;
         }
@@ -248,10 +252,14 @@ public class DocumentState implements Serializable {
      */
     public void calculatePageImageSize() {
         synchronized (documentLock) {
-            if (document != null && document.getCatalog() != null) {
-                pageSize = document.getPageDimension(pageCursor - 1, rotation, zoom);
-            } else {
-                pageSize = new PDimension(1f, 1f);
+            try {
+                if (document != null && document.getCatalog() != null) {
+                    pageSize = document.getPageDimension(pageCursor - 1, rotation, zoom);
+                } else {
+                    pageSize = new PDimension(1f, 1f);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

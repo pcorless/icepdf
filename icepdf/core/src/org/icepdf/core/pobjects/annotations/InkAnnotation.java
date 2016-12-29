@@ -60,7 +60,7 @@ public class InkAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() {
+    public void init() throws InterruptedException{
         super.init();
         // look for an ink list
         List<List<Number>> inkLists = library.getArray(entries, INK_LIST_KEY);
@@ -154,16 +154,22 @@ public class InkAnnotation extends MarkupAnnotation {
         }
 
         // create the new instance
-        InkAnnotation inkAnnotation = new InkAnnotation(library, entries);
-        inkAnnotation.init();
-        inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        inkAnnotation.setNew(true);
+        InkAnnotation inkAnnotation = null;
+        try {
+            inkAnnotation = new InkAnnotation(library, entries);
+            inkAnnotation.init();
+            inkAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            inkAnnotation.setNew(true);
 
-        // set default flags.
-        inkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        inkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
-        inkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-        inkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+            // set default flags.
+            inkAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+            inkAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+            inkAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+            inkAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Ink annotation instance creation was interrupted");
+        }
 
 
         return inkAnnotation;

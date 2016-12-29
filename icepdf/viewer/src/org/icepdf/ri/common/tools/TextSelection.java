@@ -25,6 +25,7 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -67,6 +68,10 @@ public class TextSelection extends SelectionBoxHandler {
     protected Rectangle2D topMarginExclusion;
     protected Rectangle2D bottomMarginExclusion;
 
+    // Pointer to make sure the GC doesn't collect a page while selection state is present
+    protected Page pageLock;
+
+
     static {
         try {
             enableMarginExclusion = Defs.booleanProperty(
@@ -98,21 +103,25 @@ public class TextSelection extends SelectionBoxHandler {
      */
     public void wordLineSelection(int clickCount, Point clickPoint, AbstractPageViewComponent pageViewComponent) {
         // double click we select the whole line.
-        if (clickCount == 3) {
-            Page currentPage = pageViewComponent.getPage();
-            // handle text selection mouse coordinates
-            Point mouseLocation = (Point) clickPoint.clone();
-            lineSelectHandler(currentPage, mouseLocation);
-        }
-        // single click we select word that was clicked.
-        else if (clickCount == 2) {
-            Page currentPage = pageViewComponent.getPage();
-            // handle text selection mouse coordinates
-            Point mouseLocation = (Point) clickPoint.clone();
-            wordSelectHandler(currentPage, mouseLocation);
-        }
-        if (pageViewComponent != null) {
-            pageViewComponent.requestFocus();
+        try {
+            if (clickCount == 3) {
+                Page currentPage = pageViewComponent.getPage();
+                // handle text selection mouse coordinates
+                Point mouseLocation = (Point) clickPoint.clone();
+                lineSelectHandler(currentPage, mouseLocation);
+            }
+            // single click we select word that was clicked.
+            else if (clickCount == 2) {
+                Page currentPage = pageViewComponent.getPage();
+                // handle text selection mouse coordinates
+                Point mouseLocation = (Point) clickPoint.clone();
+                wordSelectHandler(currentPage, mouseLocation);
+            }
+            if (pageViewComponent != null) {
+                pageViewComponent.requestFocus();
+            }
+        } catch (InterruptedException e) {
+            logger.fine("Text selection page access interrupted");
         }
     }
 
@@ -122,31 +131,35 @@ public class TextSelection extends SelectionBoxHandler {
      * @param startPoint starting selection position.
      */
     public void selectionStart(Point startPoint, AbstractPageViewComponent pageViewComponent, boolean isFirst) {
-        Page currentPage = pageViewComponent.getPage();
-        this.isFirst = isFirst;
-        if (currentPage != null) {
-            // get page text
-            PageText pageText = currentPage.getViewText();
-            // get page transform, same for all calculations
-            AffineTransform pageTransform = currentPage.getPageTransform(
-                    documentViewModel.getPageBoundary(),
-                    documentViewModel.getViewRotation(),
-                    documentViewModel.getViewZoom());
+        try {
+            Page currentPage = pageViewComponent.getPage();
+            this.isFirst = isFirst;
+            if (currentPage != null) {
+                // get page text
+                PageText pageText = currentPage.getViewText();
+                // get page transform, same for all calculations
+                AffineTransform pageTransform = currentPage.getPageTransform(
+                        documentViewModel.getPageBoundary(),
+                        documentViewModel.getViewRotation(),
+                        documentViewModel.getViewZoom());
 
-            // create exclusion boxes
-            calculateTextSelectionExclusion(pageTransform);
+                // create exclusion boxes
+                calculateTextSelectionExclusion(pageTransform);
 
-            ArrayList<LineText> pageLines = pageText.getPageLines();
-            Point2D.Float dragStartLocation = convertMouseToPageSpace(startPoint, pageTransform);
-            glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, false, null,
-                    topMarginExclusion, bottomMarginExclusion);
-            glyphEndLocation = null;
+                ArrayList<LineText> pageLines = pageText.getPageLines();
+                Point2D.Float dragStartLocation = convertMouseToPageSpace(startPoint, pageTransform);
+                glyphStartLocation = GlyphLocation.findGlyphLocation(pageLines, dragStartLocation, true, false, null,
+                        topMarginExclusion, bottomMarginExclusion);
+                glyphEndLocation = null;
+            }
+
+            // text selection box.
+            currentRect = new Rectangle(startPoint.x, startPoint.y, 0, 0);
+            updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
+            pageViewComponent.repaint();
+        } catch (InterruptedException e) {
+            logger.fine("Text selection page access interrupted");
         }
-
-        // text selection box.
-        currentRect = new Rectangle(startPoint.x, startPoint.y, 0, 0);
-        updateDrawableRect(pageViewComponent.getWidth(), pageViewComponent.getHeight());
-        pageViewComponent.repaint();
     }
 
     /**
@@ -154,32 +167,41 @@ public class TextSelection extends SelectionBoxHandler {
      */
     public void selectionEnd(Point endPoint, AbstractPageViewComponent pageViewComponent) {
 
-        // write out selected text.
-        if (pageViewComponent != null && logger.isLoggable(Level.FINE)) {
-            Page currentPage = pageViewComponent.getPage();
-            // handle text selection mouse coordinates
-            if (currentPage.getViewText() != null) {
-                logger.fine(currentPage.getViewText().getSelected().toString());
+        try {
+            // write out selected text.
+            if (pageViewComponent != null && logger.isLoggable(Level.FINE)) {
+                Page currentPage = pageViewComponent.getPage();
+                // handle text selection mouse coordinates
+                if (currentPage.getViewText() != null) {
+                    logger.fine(currentPage.getViewText().getSelected().toString());
+                }
             }
-        }
 
-        if (selectedCount > 0) {
-            // add the page to the page as it is marked for selection
-            documentViewModel.addSelectedPageText(pageViewComponent);
-            documentViewController.firePropertyChange(
-                    PropertyConstants.TEXT_SELECTED,
-                    null, null);
-        }
+            if (selectedCount > 0) {
 
-        // clear the rectangle
-        clearRectangle(pageViewComponent);
+                // add the page to the page as it is marked for selection
+                documentViewModel.addSelectedPageText(pageViewComponent);
+                documentViewController.firePropertyChange(
+                        PropertyConstants.TEXT_SELECTED,
+                        null, null);
+            }
 
-        if (pageViewComponent != null) {
-            pageViewComponent.repaint();
+            // clear the rectangle
+            clearRectangle(pageViewComponent);
+
+            if (pageViewComponent != null) {
+                pageViewComponent.repaint();
+            }
+        } catch (InterruptedException e) {
+            logger.fine("Text selection page access interrupted");
         }
     }
 
     public void clearSelection() {
+
+        // release the page lock so the Reference API can take care of collecting the page post selection.
+        pageLock = null;
+
         lastGlyphStartLocation = null;
         lastGlyphEndLocation = null;
 
@@ -192,66 +214,78 @@ public class TextSelection extends SelectionBoxHandler {
     public void clearSelectionState() {
         java.util.List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
         for (AbstractPageViewComponent page : pages) {
-            page.getTextSelectionPageHandler().clearSelection();
+            ((PageViewComponentImpl)page).getTextSelectionPageHandler().clearSelection();
         }
     }
 
     public void selection(Point dragPoint, AbstractPageViewComponent pageViewComponent,
                           boolean isDown, boolean isMovingRight) {
-        if (pageViewComponent != null) {
-            boolean isLocalDown;
-            if (lastMouseLocation != null) {
-                // double check we're actually moving down
-                isLocalDown = lastMouseLocation.y <= dragPoint.y;
-            } else {
-                isLocalDown = isDown;
-            }
-            multiLineSelectHandler(pageViewComponent, dragPoint, isDown, isLocalDown, isMovingRight);
+        try {
+            if (pageViewComponent != null) {
 
-            lastMouseLocation = dragPoint;
+                // acquire a page lock.
+                pageLock = pageViewComponent.getPage();
+
+                boolean isLocalDown;
+                if (lastMouseLocation != null) {
+                    // double check we're actually moving down
+                    isLocalDown = lastMouseLocation.y <= dragPoint.y;
+                } else {
+                    isLocalDown = isDown;
+                }
+                multiLineSelectHandler(pageViewComponent, dragPoint, isDown, isLocalDown, isMovingRight);
+
+                lastMouseLocation = dragPoint;
+            }
+        } catch (InterruptedException e) {
+            logger.fine("Text selection page access interrupted");
         }
     }
 
     public void selectionIcon(Point mouseLocation, AbstractPageViewComponent pageViewComponent) {
-        Page currentPage = pageViewComponent.getPage();
-        if (currentPage != null) {
-            // get page text
-            PageText pageText = currentPage.getViewText();
-            if (pageText != null) {
+        try {
+            Page currentPage = pageViewComponent.getPage();
+            if (currentPage != null) {
+                // get page text
+                PageText pageText = currentPage.getViewText();
+                if (pageText != null) {
 
-                // get page transform, same for all calculations
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        Page.BOUNDARY_CROPBOX,
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
+                    // get page transform, same for all calculations
+                    AffineTransform pageTransform = currentPage.getPageTransform(
+                            Page.BOUNDARY_CROPBOX,
+                            documentViewModel.getViewRotation(),
+                            documentViewModel.getViewZoom());
 
-                // create exclusion boxes
-                calculateTextSelectionExclusion(pageTransform);
+                    // create exclusion boxes
+                    calculateTextSelectionExclusion(pageTransform);
 
-                ArrayList<LineText> pageLines = pageText.getPageLines();
-                if (pageLines != null) {
-                    boolean found = false;
-                    Point2D.Float pageMouseLocation =
-                            convertMouseToPageSpace(mouseLocation, pageTransform);
+                    ArrayList<LineText> pageLines = pageText.getPageLines();
+                    if (pageLines != null) {
+                        boolean found = false;
+                        Point2D.Float pageMouseLocation =
+                                convertMouseToPageSpace(mouseLocation, pageTransform);
 
-                    for (LineText pageLine : pageLines) {
-                        // check for containment, if so break into words.
-                        if (pageLine.getBounds().contains(pageMouseLocation)
-                                && ((topMarginExclusion == null || bottomMarginExclusion == null)
-                                || (!topMarginExclusion.contains(pageMouseLocation)
-                                && !bottomMarginExclusion.contains(pageMouseLocation)))) {
-                            found = true;
-                            documentViewController.setViewCursor(
-                                    DocumentViewController.CURSOR_TEXT_SELECTION);
-                            break;
+                        for (LineText pageLine : pageLines) {
+                            // check for containment, if so break into words.
+                            if (pageLine.getBounds().contains(pageMouseLocation)
+                                    && ((topMarginExclusion == null || bottomMarginExclusion == null)
+                                    || (!topMarginExclusion.contains(pageMouseLocation)
+                                    && !bottomMarginExclusion.contains(pageMouseLocation)))) {
+                                found = true;
+                                documentViewController.setViewCursor(
+                                        DocumentViewController.CURSOR_TEXT_SELECTION);
+                                break;
+                            }
                         }
-                    }
-                    if (!found) {
-                        documentViewController.setViewCursor(
-                                DocumentViewController.CURSOR_SELECT);
+                        if (!found) {
+                            documentViewController.setViewCursor(
+                                    DocumentViewController.CURSOR_SELECT);
+                        }
                     }
                 }
             }
+        } catch (InterruptedException e) {
+            logger.fine("Text selection page access interrupted");
         }
     }
 
@@ -274,7 +308,7 @@ public class TextSelection extends SelectionBoxHandler {
      */
     public static void paintSelectedText(Graphics g,
                                          AbstractPageViewComponent pageViewComponent,
-                                         DocumentViewModel documentViewModel) {
+                                         DocumentViewModel documentViewModel) throws InterruptedException{
         // ready outline paint
         Graphics2D gg = (Graphics2D) g;
         AffineTransform prePaintTransform = gg.getTransform();
@@ -348,7 +382,7 @@ public class TextSelection extends SelectionBoxHandler {
      *
      * @param g graphics context to paint to.
      */
-    protected void paintTextBounds(Graphics g) {
+    protected void paintTextBounds(Graphics g) throws InterruptedException{
         Page currentPage = pageViewComponent.getPage();
         // get page transformation
         AffineTransform pageTransform = currentPage.getPageTransform(
@@ -403,7 +437,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param isMovingRight     general selection trent is right, if alse it's left.
      */
     protected void multiLineSelectHandler(AbstractPageViewComponent pageViewComponent, Point mouseLocation,
-                                          boolean isDown, boolean isLocalDown, boolean isMovingRight) {
+                                          boolean isDown, boolean isLocalDown, boolean isMovingRight) throws InterruptedException{
         Page currentPage = pageViewComponent.getPage();
         selectedCount = 0;
 
@@ -471,7 +505,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param currentPage   page to looking for text intersection on.
      * @param mouseLocation location of mouse.
      */
-    protected void wordSelectHandler(Page currentPage, Point mouseLocation) {
+    protected void wordSelectHandler(Page currentPage, Point mouseLocation) throws InterruptedException {
 
         if (currentPage != null) {
             // get page text
@@ -523,7 +557,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param currentPage   page to select
      * @param mouseLocation location of mouse
      */
-    protected void lineSelectHandler(Page currentPage, Point mouseLocation) {
+    protected void lineSelectHandler(Page currentPage, Point mouseLocation) throws InterruptedException {
         if (currentPage != null) {
             // get page text
             PageText pageText = currentPage.getViewText();

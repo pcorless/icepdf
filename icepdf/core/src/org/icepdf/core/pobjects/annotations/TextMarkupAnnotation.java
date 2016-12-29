@@ -141,7 +141,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
         // collect the quad points.
         List<Number> quadPoints = library.getArray(entries, KEY_QUAD_POINTS);
@@ -221,13 +221,19 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         }
 
         TextMarkupAnnotation textMarkupAnnotation =
-                new TextMarkupAnnotation(library, entries);
-        textMarkupAnnotation.init();
-        entries.put(NM_KEY,
-                new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
-        textMarkupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        textMarkupAnnotation.setNew(true);
-        textMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+                null;
+        try {
+            textMarkupAnnotation = new TextMarkupAnnotation(library, entries);
+            textMarkupAnnotation.init();
+            entries.put(NM_KEY,
+                    new LiteralStringObject(String.valueOf(textMarkupAnnotation.hashCode())));
+            textMarkupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            textMarkupAnnotation.setNew(true);
+            textMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Text markup annotation instance creation was interrupted");
+        }
         return textMarkupAnnotation;
     }
 

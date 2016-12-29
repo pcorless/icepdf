@@ -75,7 +75,7 @@ public class PageCapture {
             // create a list of callables.
             int pages = document.getNumberOfPages();
             java.util.List<Callable<Void>> callables = new ArrayList<Callable<Void>>(pages);
-            for (int i = 0; i <= pages; i++) {
+            for (int i = 0; i < pages; i++) {
                 callables.add(new CapturePage(document, i));
             }
             executorService.invokeAll(callables);
@@ -112,31 +112,34 @@ public class PageCapture {
         }
 
         public Void call() {
-            Page page = document.getPageTree().getPage(pageNumber);
-            page.init();
-            PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
-
-            int pageWidth = (int) sz.getWidth();
-            int pageHeight = (int) sz.getHeight();
-
-            BufferedImage image = new BufferedImage(pageWidth,
-                    pageHeight,
-                    BufferedImage.TYPE_INT_RGB);
-            Graphics g = image.createGraphics();
-
-            page.paint(g, GraphicsRenderingHints.PRINT,
-                    Page.BOUNDARY_CROPBOX, rotation, scale);
-            g.dispose();
-            // capture the page image to file
             try {
+                Page page = document.getPageTree().getPage(pageNumber);
+                page.init();
+                PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+
+                int pageWidth = (int) sz.getWidth();
+                int pageHeight = (int) sz.getHeight();
+
+                BufferedImage image = new BufferedImage(pageWidth,
+                        pageHeight,
+                        BufferedImage.TYPE_INT_RGB);
+                Graphics g = image.createGraphics();
+
+                page.paint(g, GraphicsRenderingHints.PRINT,
+                        Page.BOUNDARY_CROPBOX, rotation, scale);
+                g.dispose();
+                // capture the page image to file
+
                 System.out.println("Capturing page " + pageNumber);
                 File file = new File("imageCapture_" + pageNumber + ".png");
                 ImageIO.write(image, "png", file);
 
+                image.flush();
+
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            image.flush();
+
             return null;
         }
     }

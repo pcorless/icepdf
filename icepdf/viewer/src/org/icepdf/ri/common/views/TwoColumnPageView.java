@@ -36,12 +36,6 @@ import java.awt.event.MouseEvent;
 @SuppressWarnings("serial")
 public class TwoColumnPageView extends AbstractDocumentView {
 
-    protected JScrollPane documentScrollpane;
-
-    protected boolean disposing;
-
-    protected JPanel pagesPanel;
-
     protected int viewAlignment;
 
     // specialized listeners for different gui operations
@@ -78,7 +72,6 @@ public class TwoColumnPageView extends AbstractDocumentView {
                             this.documentScrollpane, this, currentPageChanger);
         }
     }
-
 
     private void buildGUI() {
         // add all page components to gridlayout panel

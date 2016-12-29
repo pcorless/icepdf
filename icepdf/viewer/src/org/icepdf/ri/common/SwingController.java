@@ -1725,9 +1725,6 @@ public class SwingController
                     if (viewer != null) {
                         viewer.toFront();
                         viewer.requestFocus();
-                        Graphics g = viewer.getGraphics();
-                        if (g != null)
-                            viewer.paint(g);
                     }
                     openFileInSomeViewer(file);
                 } else {
@@ -1876,9 +1873,6 @@ public class SwingController
                 if (viewer != null) {
                     viewer.toFront();
                     viewer.requestFocus();
-                    Graphics g = viewer.getGraphics();
-                    if (g != null)
-                        viewer.paint(g);
                 }
                 openURLInSomeViewer(urlAccess.url);
             }
@@ -4193,7 +4187,8 @@ public class SwingController
                     // get instance of the font factory
                     FontFactory.getInstance().toggleAwtFontSubstitution();
                     // refresh the document, refresh will happen by the component.
-                    documentViewController.getDocumentView().getViewModel().invalidate();
+                    ((AbstractDocumentView)documentViewController.getDocumentView()).firePropertyChange(
+                            PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE, false, true);
                     doSetFocus = true;
                 }
             }

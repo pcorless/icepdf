@@ -32,8 +32,9 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     public void pageLoadingStarted(PageLoadingEvent event) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                pageComponent.setCursor(documentViewController.getViewCursor(
-                        DocumentViewController.CURSOR_WAIT));
+                if (documentViewController != null)
+                    pageComponent.setCursor(documentViewController.getViewCursor(
+                            DocumentViewController.CURSOR_WAIT));
             }
         });
     }
@@ -41,8 +42,9 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     public void pageInitializationStarted(PageInitializingEvent event) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                pageComponent.setCursor(documentViewController.getViewCursor(
-                        DocumentViewController.CURSOR_WAIT));
+                if (documentViewController != null)
+                    pageComponent.setCursor(documentViewController.getViewCursor(
+                            DocumentViewController.CURSOR_WAIT));
             }
         });
     }
@@ -50,8 +52,9 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     public void pagePaintingStarted(PagePaintingEvent event) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                pageComponent.setCursor(documentViewController.getViewCursor(
-                        DocumentViewController.CURSOR_WAIT));
+                if (documentViewController != null)
+                    pageComponent.setCursor(documentViewController.getViewCursor(
+                            DocumentViewController.CURSOR_WAIT));
             }
         });
     }
@@ -59,6 +62,7 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     @Override
     public void pageInitializationEnded(PageInitializingEvent event) {
         // null will make the parent view icon be the default.
+
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 pageComponent.setCursor(null);

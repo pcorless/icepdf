@@ -36,12 +36,6 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class OneColumnPageView extends AbstractDocumentView {
 
-    protected JScrollPane documentScrollpane;
-
-    protected boolean disposing;
-
-    protected JPanel pagesPanel;
-
     // specialized listeners for different gui operations
     protected CurrentPageChanger currentPageChanger;
 

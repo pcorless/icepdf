@@ -622,7 +622,7 @@ public abstract class Annotation extends Dictionary {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() {
+    public void init() throws InterruptedException{
         super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
@@ -1331,7 +1331,12 @@ public abstract class Annotation extends Dictionary {
             g.transform(tAs);
 
             // regular paint
-            appearanceState.getShapes().paint(g);
+            try {
+                appearanceState.getShapes().paint(g);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.fine("Page Annotation Painting interrupted.");
+            }
         }
 
     }
@@ -1753,7 +1758,7 @@ public abstract class Annotation extends Dictionary {
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
         Form form;
-        if (hasAppearanceStream()) {
+        if (hasAppearanceStream() && getAppearanceStream() instanceof Form) {
             form = (Form) getAppearanceStream();
             // else a stream, we won't support this for annotations.
         } else {

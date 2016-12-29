@@ -51,60 +51,58 @@ public class SearchControllerHeadless {
         Document document = new Document();
         try {
             document.setFile(filePath);
+
+            // get the search controller
+            DocumentSearchController searchController =
+                    new DocumentSearchControllerImpl(document);
+            // add a specified search terms.
+            searchController.addSearchTerm("PDF", true, false);
+            searchController.addSearchTerm("Part", true, false);
+            searchController.addSearchTerm("Contents", true, false);
+
+            // Paint each pages content to an image and write the image to file
+            for (int i = 0; i < 5; i++) {
+
+                Page page = document.getPageTree().getPage(i);
+                // initialize the page so we are using the same  WordText object
+                // thar are used to paint the page.
+                page.init();
+
+                // search the page
+                searchController.searchPage(i);
+
+                // build the image for capture.
+                PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+                int pageWidth = (int) sz.getWidth();
+                int pageHeight = (int) sz.getHeight();
+                BufferedImage image = new BufferedImage(pageWidth,
+                        pageHeight,
+                        BufferedImage.TYPE_INT_RGB);
+                Graphics g = image.createGraphics();
+                Graphics2D g2d = (Graphics2D) g;
+
+                // capture current transform for graphics context.
+                page.paint(g, GraphicsRenderingHints.SCREEN,
+                        Page.BOUNDARY_CROPBOX, rotation, scale, true, true);
+                g2d.dispose();
+
+                // capture the page image to file
+                File file = new File("imageCapture1_" + i + ".png");
+                ImageIO.write(image, "png", file);
+                image.flush();
+            }
+            // clean up resources
+            document.dispose();
+
         } catch (PDFException e) {
             e.printStackTrace();
         } catch (PDFSecurityException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
-        // get the search controller
-        DocumentSearchController searchController =
-                new DocumentSearchControllerImpl(document);
-        // add a specified search terms.
-        searchController.addSearchTerm("PDF", true, false);
-        searchController.addSearchTerm("Part", true, false);
-        searchController.addSearchTerm("Contents", true, false);
-
-        // Paint each pages content to an image and write the image to file
-        for (int i = 0; i < 5; i++) {
-
-            Page page = document.getPageTree().getPage(i);
-            // initialize the page so we are using the same  WordText object
-            // thar are used to paint the page.
-            page.init();
-
-            // search the page
-            searchController.searchPage(i);
-
-            // build the image for capture.
-            PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
-            int pageWidth = (int) sz.getWidth();
-            int pageHeight = (int) sz.getHeight();
-            BufferedImage image = new BufferedImage(pageWidth,
-                    pageHeight,
-                    BufferedImage.TYPE_INT_RGB);
-            Graphics g = image.createGraphics();
-            Graphics2D g2d = (Graphics2D) g;
-
-            // capture current transform for graphics context.
-            page.paint(g, GraphicsRenderingHints.SCREEN,
-                    Page.BOUNDARY_CROPBOX, rotation, scale, true, true);
-            g2d.dispose();
-
-            // capture the page image to file
-            try {
-                File file = new File("imageCapture1_" + i + ".png");
-                ImageIO.write(image, "png", file);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            image.flush();
-        }
-        // clean up resources
-        document.dispose();
     }
 
 }

@@ -415,7 +415,12 @@ public class TilingPattern extends Stream implements Pattern {
         canvas.setClip(0, 0, (int) imageWidth, (int) imageHeight);
 
         // paint the pattern
-        paintPattern(canvas, tilingShapes, matrix, originalPageSpace, baseScale);
+        try {
+            paintPattern(canvas, tilingShapes, matrix, originalPageSpace, baseScale);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.FINE, "Error painting tiling pattern.", e);
+        }
 
         // show it in a frame
 //        final JFrame f = new JFrame(this.toString());
@@ -442,7 +447,7 @@ public class TilingPattern extends Stream implements Pattern {
     }
 
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,
-                              double scale) {
+                              double scale) throws InterruptedException {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();

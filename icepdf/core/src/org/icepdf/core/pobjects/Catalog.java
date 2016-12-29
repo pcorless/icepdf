@@ -94,7 +94,7 @@ public class Catalog extends Dictionary {
     /**
      * Initiate the PageTree.
      */
-    public synchronized void init() {
+    public synchronized void init() throws InterruptedException {
         Object tmp = library.getObject(entries, PAGES_KEY);
         pageTree = null;
         if (tmp instanceof PageTree) {
@@ -105,7 +105,7 @@ public class Catalog extends Dictionary {
         else if (tmp instanceof HashMap) {
             pageTree = new PageTree(library, (HashMap) tmp);
         }
-        // malformed cornercase, just have a page object, instead of tree.
+        // malformed corner case, just have a page object, instead of tree.
         else if (tmp instanceof Page) {
             Page tmpPage = (Page) tmp;
             HashMap<String, Object> tmpPages = new HashMap<String, Object>();

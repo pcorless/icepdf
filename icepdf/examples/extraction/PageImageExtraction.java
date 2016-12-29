@@ -117,6 +117,8 @@ public class PageImageExtraction {
                 images.clear();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
             return null;
         }

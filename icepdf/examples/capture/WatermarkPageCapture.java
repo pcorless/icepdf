@@ -156,31 +156,32 @@ public class WatermarkPageCapture {
         }
 
         public Void call() {
-            Page page = document.getPageTree().getPage(pageNumber);
-            page.init();
-            PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
-
-            int pageWidth = (int) sz.getWidth();
-            int pageHeight = (int) sz.getHeight();
-
-            BufferedImage image = new BufferedImage(pageWidth,
-                    pageHeight,
-                    BufferedImage.TYPE_INT_RGB);
-            Graphics g = image.createGraphics();
-
-            page.paint(g, GraphicsRenderingHints.PRINT,
-                    Page.BOUNDARY_CROPBOX, rotation, scale);
-            g.dispose();
-            // capture the page image to file
             try {
+                Page page = document.getPageTree().getPage(pageNumber);
+                page.init();
+                PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+
+                int pageWidth = (int) sz.getWidth();
+                int pageHeight = (int) sz.getHeight();
+
+                BufferedImage image = new BufferedImage(pageWidth,
+                        pageHeight,
+                        BufferedImage.TYPE_INT_RGB);
+                Graphics g = image.createGraphics();
+
+                page.paint(g, GraphicsRenderingHints.PRINT,
+                        Page.BOUNDARY_CROPBOX, rotation, scale);
+                g.dispose();
+                // capture the page image to file
+
                 System.out.println("Capturing page " + pageNumber);
                 File file = new File("imageCapture_" + pageNumber + ".png");
                 ImageIO.write(image, "png", file);
-
+                image.flush();
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            image.flush();
+
             return null;
         }
     }

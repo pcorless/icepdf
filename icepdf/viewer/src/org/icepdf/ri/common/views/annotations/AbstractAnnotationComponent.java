@@ -103,7 +103,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected static ResizableBorder resizableBorder =
             new ResizableBorder(resizeBoxSize);
 
-    protected AbstractPageViewComponent pageViewComponent;
+    protected PageViewComponentImpl pageViewComponent;
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
 
@@ -137,7 +137,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                                        DocumentViewController documentViewController,
                                        AbstractPageViewComponent pageViewComponent,
                                        DocumentViewModel documentViewModel) {
-        this.pageViewComponent = pageViewComponent;
+        this.pageViewComponent = (PageViewComponentImpl) pageViewComponent;
         this.documentViewModel = documentViewModel;
         this.documentViewController = documentViewController;
         this.annotation = annotation;
@@ -385,7 +385,6 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         // on mouse enter pass event to annotation callback if we are in normal viewing
         // mode. A and AA dictionaries are taken into consideration.
         //additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_E_KEY, e);
-
         repaint();
     }
 
@@ -395,7 +394,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         isMousePressed = true;
         int x = 0, y = 0;
         Point point = new Point();
-        if (e != null){
+        if (e != null) {
             x = e.getX();
             y = e.getY();
             point = e.getPoint();

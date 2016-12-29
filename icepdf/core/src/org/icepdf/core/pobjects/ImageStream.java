@@ -165,7 +165,7 @@ public class ImageStream extends Stream {
      */
     // was synchronized, not think it is needed?
     @SuppressWarnings("unchecked")
-    public synchronized BufferedImage getImage(GraphicsState graphicsState, Resources resources) {
+    public synchronized BufferedImage getImage(GraphicsState graphicsState, Resources resources) throws InterruptedException {
         // check the pool encase we already parse this image.
 
         if (pObjectReference != null) {

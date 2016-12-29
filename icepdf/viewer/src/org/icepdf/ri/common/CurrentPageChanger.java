@@ -105,7 +105,7 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
                     new ArrayList<PageViewComponent>(10);
             Rectangle pageBounds;
             int pageCount = 0;
-            for (PageViewComponent pageComponent : pageComponents) {
+            for (AbstractPageViewComponent pageComponent : pageComponents) {
                 if (pageComponent != null) {
                     pageBounds = documentViewModel.getPageBounds(pageCount);
                     if (pageBounds != null &&

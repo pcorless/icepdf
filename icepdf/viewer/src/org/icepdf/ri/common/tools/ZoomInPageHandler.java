@@ -87,9 +87,8 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
             // adjust the starting position of rectToDraw to match the actual
             // view position of the rectangle as the mouseEven position is
             // is relative to the page and now the view.
-            Point pageOffset = documentViewModel.getPageBounds(
-                    pageViewComponent.getPageIndex()).getLocation();
-
+            int pageIndex = pageViewComponent.getPageIndex();
+            Rectangle pageOffset = documentViewModel.getPageBounds(pageIndex);
             Rectangle absoluteRectToDraw = new Rectangle(
                     pageOffset.x + rectToDraw.x,
                     pageOffset.y + rectToDraw.y,
@@ -103,11 +102,9 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
                         absoluteRectToDraw, documentViewModel);
 
                 // calculate the delta relative to current page position
-                int pageIndex = pageViewComponent.getPageIndex();
-                Rectangle location = documentViewModel.getPageBounds(pageIndex);
                 Point delta = new Point(
-                        absoluteRectToDraw.x - location.x,
-                        absoluteRectToDraw.y - location.y);
+                        absoluteRectToDraw.x - pageOffset.x,
+                        absoluteRectToDraw.y - pageOffset.y);
                 documentViewController.setZoomToViewPort(zoom, delta, pageIndex, true);
             }
             // clear the rectangle

@@ -34,12 +34,6 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class OnePageView extends AbstractDocumentView {
 
-    protected JScrollPane documentScrollpane;
-
-    protected boolean disposing;
-
-    protected JPanel pagesPanel;
-
     protected Object pageChangerListener;
 
     protected KeyListenerPageChanger keyListenerPageChanger;
@@ -70,9 +64,7 @@ public class OnePageView extends AbstractDocumentView {
                             this.documentScrollpane, this);
         }
 
-
     }
-
 
     private void buildGUI() {
         // add all page components to gridlayout panel

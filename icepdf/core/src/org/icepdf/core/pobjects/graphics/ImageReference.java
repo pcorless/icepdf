@@ -119,7 +119,8 @@ public abstract class ImageReference implements Callable<BufferedImage> {
             }
             notify();
         } catch (InterruptedException e) {
-            logger.warning("Image loading interrupted");
+            Thread.currentThread().interrupt();
+            logger.fine("Image loading interrupted");
         } catch (Exception e) {
             logger.log(Level.FINE, "Image loading execution exception", e);
         }

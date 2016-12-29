@@ -125,7 +125,7 @@ public class Shapes {
      *
      * @param g graphics context to paint to.
      */
-    public void paint(Graphics2D g) {
+    public void paint(Graphics2D g) throws InterruptedException{
         try {
             interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());
@@ -140,23 +140,31 @@ public class Shapes {
                 // try and minimize interrupted checks, costly.
                 if (interrupted || (i % 1000 == 0 && Thread.currentThread().isInterrupted())) {
                     interrupted = false;
-                    logger.log(Level.FINE, "Page painting interrupted");
-                    break;
+                    throw new InterruptedException("Page painting thread interrupted");
                 }
 
                 nextShape = shapes.get(i);
                 previousShape = nextShape.paintOperand(g, parentPage,
                         previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
             }
+        }
+        catch (InterruptedException e){
+            throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
             logger.log(Level.FINE, "Error painting shapes.", e);
         }
     }
 
+    /**
+     * @deprecated use Thread.interrupt() instead.
+     */
     public void interruptPaint() {
         interrupted = true;
     }
 
+    /**
+     * @deprecated use Thread.interrupt() instead.
+     */
     public boolean isInterrupted() {
         return interrupted;
     }

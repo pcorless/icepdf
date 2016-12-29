@@ -64,6 +64,10 @@ public class SecurityManager {
     // flag for detecting JCE
     private static boolean foundJCE = false;
 
+    // key caches, fairly expensive calculation
+    private byte[] encryptionKey;
+    private byte[] decryptionKey;
+
     // Add security provider of choice before Sun RSA provider (if any)
     static {
         // Load security handler from system property if possible
@@ -173,7 +177,10 @@ public class SecurityManager {
      * @return encryption key used to encrypt the data
      */
     public byte[] getEncryptionKey() {
-        return securityHandler.getEncryptionKey();
+        if (encryptionKey == null) {
+            encryptionKey = securityHandler.getEncryptionKey();
+        }
+        return encryptionKey;
     }
 
     /**
@@ -182,7 +189,10 @@ public class SecurityManager {
      * @return decryption key used to encrypt the data
      */
     public byte[] getDecryptionKey() {
-        return securityHandler.getDecryptionKey();
+        if (decryptionKey == null) {
+            decryptionKey = securityHandler.getDecryptionKey();
+        }
+        return decryptionKey;
     }
 
     /**

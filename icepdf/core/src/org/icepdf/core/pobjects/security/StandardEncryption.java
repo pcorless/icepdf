@@ -301,8 +301,10 @@ class StandardEncryption {
     /**
      * General encryption algorithm 3.1 for encryption of data using an
      * encryption key.
+     *
+     * Must be synchronized for stream decoding.
      */
-    public InputStream generalEncryptionInputStream(
+    public synchronized InputStream generalEncryptionInputStream(
             Reference objectReference,
             byte[] encryptionKey,
             final String algorithmType,

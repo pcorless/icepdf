@@ -186,51 +186,59 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
     private String getSelectedText() {
         Page currentPage = pageViewComponent.getPage();
-        return currentPage.getViewText().getSelected().toString();
+        String selectedText = null;
+        try {
+            selectedText =  currentPage.getViewText().getSelected().toString();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("HighLightAnnotation initialization interrupted.");
+        }
+        return selectedText;
     }
 
     private ArrayList<Shape> getSelectedTextBounds() {
         Page currentPage = pageViewComponent.getPage();
         ArrayList<Shape> highlightBounds = null;
         if (currentPage != null && currentPage.isInitiated()) {
-            PageText pageText = currentPage.getViewText();
-            if (pageText != null) {
-                // get page transformation
-                AffineTransform pageTransform = currentPage.getPageTransform(
-                        documentViewModel.getPageBoundary(),
-                        documentViewModel.getViewRotation(),
-                        documentViewModel.getViewZoom());
-                // paint the sprites
-                GeneralPath textPath;
-                ArrayList<LineText> pageLines = pageText.getPageLines();
-                if (pageLines != null) {
-                    for (LineText lineText : pageLines) {
-                        java.util.List<WordText> words = lineText.getWords();
-                        if (words != null) {
-                            for (WordText wordText : words) {
-                                // paint whole word
-                                if (wordText.isSelected() || wordText.isHighlighted()) {
-                                    textPath = new GeneralPath(wordText.getBounds());
-                                    textPath.transform(pageTransform);
-                                    // paint highlight over any selected
-                                    if (wordText.isSelected()) {
-                                        if (highlightBounds == null) {
-                                            highlightBounds = new ArrayList<Shape>();
-                                        }
-                                        highlightBounds.add(textPath.getBounds2D());
-                                    }
-
-                                }
-                                // check children
-                                else {
-                                    for (GlyphText glyph : wordText.getGlyphs()) {
-                                        if (glyph.isSelected()) {
-                                            textPath = new GeneralPath(glyph.getBounds());
-                                            textPath.transform(pageTransform);
+            try {
+                PageText pageText = currentPage.getViewText();
+                if (pageText != null) {
+                    // get page transformation
+                    AffineTransform pageTransform = currentPage.getPageTransform(
+                            documentViewModel.getPageBoundary(),
+                            documentViewModel.getViewRotation(),
+                            documentViewModel.getViewZoom());
+                    // paint the sprites
+                    GeneralPath textPath;
+                    ArrayList<LineText> pageLines = pageText.getPageLines();
+                    if (pageLines != null) {
+                        for (LineText lineText : pageLines) {
+                            java.util.List<WordText> words = lineText.getWords();
+                            if (words != null) {
+                                for (WordText wordText : words) {
+                                    // paint whole word
+                                    if (wordText.isSelected() || wordText.isHighlighted()) {
+                                        textPath = new GeneralPath(wordText.getBounds());
+                                        textPath.transform(pageTransform);
+                                        // paint highlight over any selected
+                                        if (wordText.isSelected()) {
                                             if (highlightBounds == null) {
                                                 highlightBounds = new ArrayList<Shape>();
                                             }
                                             highlightBounds.add(textPath.getBounds2D());
+                                        }
+                                    }
+                                    // check children
+                                    else {
+                                        for (GlyphText glyph : wordText.getGlyphs()) {
+                                            if (glyph.isSelected()) {
+                                                textPath = new GeneralPath(glyph.getBounds());
+                                                textPath.transform(pageTransform);
+                                                if (highlightBounds == null) {
+                                                    highlightBounds = new ArrayList<Shape>();
+                                                }
+                                                highlightBounds.add(textPath.getBounds2D());
+                                            }
                                         }
                                     }
                                 }
@@ -238,6 +246,9 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                         }
                     }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.fine("HighLightAnnotation selected text bounds calculation interrupted.");
             }
         }
         return highlightBounds;

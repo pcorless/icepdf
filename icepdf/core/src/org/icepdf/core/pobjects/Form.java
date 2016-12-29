@@ -93,6 +93,7 @@ public class Form extends Stream {
 
     @SuppressWarnings("unchecked")
     public void setAppearance(Shapes shapes, AffineTransform matrix, Rectangle2D bbox) {
+        inited = false;
         this.shapes = shapes;
         this.matrix = matrix;
         this.bbox = bbox;

@@ -144,14 +144,19 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
      * @return SignatureWidgetAnnotation for the instance annotation object.
      */
     private SignatureWidgetAnnotation getSignatureWidgetAnnotation() {
-        SignatureWidgetAnnotation widget;
+        SignatureWidgetAnnotation widget = null;
         if (annotation instanceof SignatureWidgetAnnotation) {
             widget = (SignatureWidgetAnnotation) annotation;
         } else {
             // corner case for PDF that aren't well formed
-            widget = new SignatureWidgetAnnotation(annotation);
-            widget.init();
-            annotation = widget;
+            try {
+                widget = new SignatureWidgetAnnotation(annotation);
+                widget.init();
+                annotation = widget;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.fine("Signature component annotation instance creation was interrupted");
+            }
         }
         return widget;
     }

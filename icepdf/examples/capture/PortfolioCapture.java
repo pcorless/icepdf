@@ -166,37 +166,39 @@ public class PortfolioCapture {
         }
 
         public Void call() {
-            PageTree pageTree = document.getPageTree();
-            // iterate over the document pages.
-            for (int j = 0, maxPage = pageTree.getNumberOfPages(); j < maxPage; j++) {
-                // initialize the page.
-                Page page = document.getPageTree().getPage(j);
-                page.init();
-                PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
-                int pageWidth = (int) sz.getWidth();
-                int pageHeight = (int) sz.getHeight();
+            try {
+                PageTree pageTree = document.getPageTree();
+                // iterate over the document pages.
+                for (int j = 0, maxPage = pageTree.getNumberOfPages(); j < maxPage; j++) {
+                    // initialize the page.
+                    Page page = document.getPageTree().getPage(j);
+                    page.init();
+                    PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+                    int pageWidth = (int) sz.getWidth();
+                    int pageHeight = (int) sz.getHeight();
 
-                // prep the page capture
-                BufferedImage image = new BufferedImage(pageWidth,
-                        pageHeight,
-                        BufferedImage.TYPE_INT_RGB);
-                Graphics g = image.createGraphics();
-                page.paint(g, GraphicsRenderingHints.PRINT,
-                        Page.BOUNDARY_CROPBOX, rotation, scale);
-                g.dispose();
+                    // prep the page capture
+                    BufferedImage image = new BufferedImage(pageWidth,
+                            pageHeight,
+                            BufferedImage.TYPE_INT_RGB);
+                    Graphics g = image.createGraphics();
+                    page.paint(g, GraphicsRenderingHints.PRINT,
+                            Page.BOUNDARY_CROPBOX, rotation, scale);
+                    g.dispose();
 
-                // capture the page image to file
-                try {
+                    // capture the page image to file
+
                     String imageFileName = "imageCapture_" + fileIndex + "_" + j + ".png";
                     System.out.println("Page image capture: " + imageFileName);
                     File file = new File(imageFileName);
                     ImageIO.write(image, "png", file);
-                } catch (Throwable e) {
-                    e.printStackTrace();
+
+                    image.flush();
                 }
-                image.flush();
+                document.dispose();
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
-            document.dispose();
             return null;
         }
     }

@@ -33,6 +33,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings("serial")
 public class DocumentViewControllerImpl
-        implements DocumentViewController, ComponentListener {
+        implements DocumentViewController, ComponentListener, PropertyChangeListener {
 
     private static final Logger logger =
             Logger.getLogger(DocumentViewControllerImpl.class.toString());
@@ -265,7 +266,7 @@ public class DocumentViewControllerImpl
         if (selectedPages != null &&
                 selectedPages.size() > 0) {
             for (AbstractPageViewComponent pageComp : selectedPages) {
-                if (pageComp != null) {
+                if (pageComp != null && pageComp instanceof PageViewComponentImpl) {
                     pageComp.clearSelectedText();
                 }
             }
@@ -412,11 +413,13 @@ public class DocumentViewControllerImpl
                 // Process top destination coordinate
                 Rectangle viewportBounds = documentView.getBounds();
                 Rectangle viewportRect = documentViewport.getViewRect();
-//                System.out.println("viewPort bounds " + viewportBounds);
-//                System.out.println("viewPort rect " + viewportRect);
-//                System.out.println("page bounds " + pageBounds);
-//                System.out.println("page " + pageNumber);
-//                System.out.println("top/left " + destination.getTop() + " " + destination.getLeft());
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("viewPort bounds " + viewportBounds);
+                    logger.finer("viewPort rect " + viewportRect);
+                    logger.finer("page bounds " + pageBounds);
+                    logger.finer("page " + pageNumber);
+                    logger.finer("top/left " + destination.getTop() + " " + destination.getLeft());
+                }
                 if (destination.getTop() != null && destination.getTop() != 0) {
                     // calculate potential new y value
                     newViewPosition.y = pageBounds.y + pageBounds.height - (int) (destination.getTop() * zoom);
@@ -582,6 +585,28 @@ public class DocumentViewControllerImpl
         } else {
             documentView =
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
+        }
+
+        documentView.addPropertyChangeListener(this);
+
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (documentView != null) {
+            String prop = evt.getPropertyName();
+            Object newValue = evt.getNewValue();
+            Object oldValue = evt.getOldValue();
+            // propagate the even to each page.
+            if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(prop) ||
+                    PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(prop) ||
+                    PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(prop) ||
+                    PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(prop)) {
+                List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
+                for (AbstractPageViewComponent pageViewComponent : pageComponents) {
+                    // pass in zoom, rotation etc, or get form model....
+                    pageViewComponent.updateView(prop, oldValue, newValue);
+                }
+            }
         }
     }
 
@@ -802,10 +827,9 @@ public class DocumentViewControllerImpl
         }
         float viewRotation = documentViewModel.getViewRotation();
         viewRotation -= ROTATION_FACTOR;
-        if (viewRotation < -0)
+        if (viewRotation < 0)
             viewRotation += 360;
-        documentViewModel.setViewRotation(viewRotation);
-        documentViewScrollPane.revalidate();
+        setRotation(viewRotation);
         return viewRotation;
     }
 
@@ -816,8 +840,7 @@ public class DocumentViewControllerImpl
         float viewRotation = documentViewModel.getViewRotation();
         viewRotation += ROTATION_FACTOR;
         viewRotation %= 360;
-        documentViewModel.setViewRotation(viewRotation);
-        documentViewScrollPane.revalidate();
+        setRotation(viewRotation);
         return viewRotation;
     }
 
@@ -825,17 +848,17 @@ public class DocumentViewControllerImpl
         if (documentViewModel == null) {
             return false;
         }
+        float oldRotation = documentViewModel.getViewRotation();
         boolean changed = documentViewModel.setViewRotation(viewRotation);
-        documentViewModel.setViewRotation(viewRotation);
-        documentViewScrollPane.revalidate();
+        if (changed) {
+            // send out the property change event.
+            documentView.invalidate();
+            documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE, oldRotation, viewRotation);
+            documentView.revalidate();
+        }
         return changed;
 
     }
-
-//    public void updateDocumentView(){
-//        if (documentView != null)
-//            documentView.updateDocumentView();
-//    }
 
     public boolean setToolMode(final int viewToolMode) {
 
@@ -852,7 +875,7 @@ public class DocumentViewControllerImpl
                 List<AbstractPageViewComponent> pageComponents =
                         documentViewModel.getPageComponents();
                 for (AbstractPageViewComponent page : pageComponents) {
-                    page.setToolMode(viewToolMode);
+                    ((PageViewComponentImpl) page).setToolMode(viewToolMode);
                 }
             }
             return changed;
@@ -967,7 +990,7 @@ public class DocumentViewControllerImpl
      *
      * @param centeringPoint which the view is to be centered on.
      */
-    private void zoomCenter(Point centeringPoint) {
+    private void zoomCenter(Point centeringPoint, float previousZoom, float zoom) {
         // make sure the point is not null
         if (centeringPoint == null) {
             centeringPoint = getCenteringPoint();
@@ -1052,10 +1075,16 @@ public class DocumentViewControllerImpl
         float previousZoom = getZoom();
 
         // apply zoom
+        float oldZoom = documentViewModel.getViewZoom();
         boolean changed = documentViewModel.setViewZoom(zoom);
-        // get the view port validate the viewport and shift the components
-        documentViewScrollPane.validate();
 
+        if (changed) {
+            documentView.invalidate();
+            // send out the property change event.
+            documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
+            // get the view port validate the viewport and shift the components
+            documentView.revalidate();
+        }
         // center zoom calculation, find current center and pass
         // it along to zoomCenter function.
         if (changed && centeringPoint != null) {
@@ -1064,7 +1093,7 @@ public class DocumentViewControllerImpl
                     (centeringPoint.y / previousZoom) * zoom);
         }
         // still center on click
-        zoomCenter(centeringPoint);
+        zoomCenter(centeringPoint, previousZoom, zoom);
 
         // update the UI controls
         if (viewerController != null) {
@@ -1111,7 +1140,11 @@ public class DocumentViewControllerImpl
 
         // apply zoom
         boolean changed = documentViewModel.setViewZoom(zoom);
-        documentViewScrollPane.validate();
+        if (changed) {
+            documentViewScrollPane.invalidate();
+            documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
+            documentViewScrollPane.validate();
+        }
 
         // center zoom calculation, find current center and pass
         // it along to zoomCenter function.

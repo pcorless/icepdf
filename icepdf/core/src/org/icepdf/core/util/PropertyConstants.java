@@ -20,12 +20,16 @@ public class PropertyConstants {
     // property change event names
 
     public final static String
-
             DOCUMENT_CURRENT_PAGE = "documentCurrentPage",
 
+    DOCUMENT_VIEW_ZOOM_CHANGE = "documentViewZoomChange",
+    DOCUMENT_VIEW_ROTATION_CHANGE = "documentViewRotationChange",
+    DOCUMENT_VIEW_REFRESH_CHANGE = "documentViewRefreshChange",
+    DOCUMENT_VIEW_DEMO_MODE_CHANGE = "documentViewDemoChange",
+
     DOCUMENT_TOOL_PAN = "documentToolRotation",
-            DOCUMENT_TOOL_ZOOM_IN = "documentToolZoomIn",
-            DOCUMENT_TOOL_ZOOM_OUT = "documentToolZoomOut",
+    DOCUMENT_TOOL_ZOOM_IN = "documentToolZoomIn",
+    DOCUMENT_TOOL_ZOOM_OUT = "documentToolZoomOut",
 //           DOCUMENT_TOOL_DYNAMIC_ROTATION   = "documentToolDynamicRotation",
 //           DOCUMENT_TOOL_DYNAMIC_ZOOM       = "documentToolDynamicZoom",
 
