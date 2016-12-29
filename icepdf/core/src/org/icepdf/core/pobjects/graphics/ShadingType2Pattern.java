@@ -149,17 +149,21 @@ public class ShadingType2Pattern extends ShadingPattern {
         }
 
         // calculate colour based on points that make up the line, 10 is a good
-        // number for speed and gradient quality. 
-        int numberOfPoints = 10;
-        Color[] colors = calculateColorPoints(numberOfPoints, startPoint, endPoint, t0, t1);
-        float[] dist = calculateDomainEntries(numberOfPoints, t0, t1);
+        // number for speed and gradient quality.
+        try {
+            int numberOfPoints = 10;
+            Color[] colors = calculateColorPoints(numberOfPoints, startPoint, endPoint, t0, t1);
+            float[] dist = calculateDomainEntries(numberOfPoints, t0, t1);
 
-        linearGradientPaint = new LinearGradientPaint(
-                startPoint, endPoint, dist, colors,
-                MultipleGradientPaint.NO_CYCLE,
-                MultipleGradientPaint.LINEAR_RGB,
-                matrix);
-        inited = true;
+            linearGradientPaint = new LinearGradientPaint(
+                    startPoint, endPoint, dist, colors,
+                    MultipleGradientPaint.NO_CYCLE,
+                    MultipleGradientPaint.LINEAR_RGB,
+                    matrix);
+            inited = true;
+        } catch (Exception e) {
+            logger.finer("Failed ot initialize gradient paint type 2.");
+        }
     }
 
     /**

@@ -151,30 +151,34 @@ public class ShadingType3Pattern extends ShadingPattern {
             radius = radius2;
         }
 
-        // get the number off components in the colour
-        Color color1 = calculateColour(colorSpace, s[0], t0, t1);
-        Color color2 = calculateColour(colorSpace, s[1], t0, t1);
-        Color color3 = calculateColour(colorSpace, s[2], t0, t1);
-        Color color4 = calculateColour(colorSpace, s[3], t0, t1);
-        Color color5 = calculateColour(colorSpace, s[4], t0, t1);
+        try {
+            // get the number off components in the colour
+            Color color1 = calculateColour(colorSpace, s[0], t0, t1);
+            Color color2 = calculateColour(colorSpace, s[1], t0, t1);
+            Color color3 = calculateColour(colorSpace, s[2], t0, t1);
+            Color color4 = calculateColour(colorSpace, s[3], t0, t1);
+            Color color5 = calculateColour(colorSpace, s[4], t0, t1);
 
-        if (color1 == null || color2 == null) {
-            return;
+            if (color1 == null || color2 == null) {
+                return;
+            }
+            // Construct a LinearGradientPaint object to be use by java2D
+            Color[] colors = {color1, color2, color3, color4, color5};
+
+            radialGradientPaint = new RadialGradientPaint(
+                    center, radius,
+                    focus,
+                    s,
+                    colors,
+                    MultipleGradientPaint.NO_CYCLE,
+                    MultipleGradientPaint.LINEAR_RGB,
+                    matrix);
+
+            // get type 3 specific data.
+            inited = true;
+        } catch (Exception e) {
+            logger.finer("Failed ot initialize gradient paint type 3.");
         }
-        // Construct a LinearGradientPaint object to be use by java2D
-        Color[] colors = {color1, color2, color3, color4, color5};
-
-        radialGradientPaint = new RadialGradientPaint(
-                center, radius,
-                focus,
-                s,
-                colors,
-                MultipleGradientPaint.NO_CYCLE,
-                MultipleGradientPaint.LINEAR_RGB,
-                matrix);
-
-        // get type 3 specific data.
-        inited = true;
     }
 
     private Color calculateColour(PColorSpace colorSpace, float s,

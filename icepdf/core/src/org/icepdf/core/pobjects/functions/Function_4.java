@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.functions.postscript.Lexer;
 import org.icepdf.core.util.Utils;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Stack;
@@ -60,7 +59,7 @@ public class Function_4 extends Function {
             Stream functionStream = (Stream) d;
             functionContent = functionStream.getDecodedStreamBytes(0);
             if (logger.isLoggable(Level.FINER)) {
-                logger.finest("Function 4: " + Utils.convertByteArrayToByteString(functionContent));
+                logger.finer("Function 4: " + Utils.convertByteArrayToByteString(functionContent));
             }
 
         } else {
@@ -93,7 +92,7 @@ public class Function_4 extends Function {
         // parse/evaluate the type 4 functions with the input value(s) x.
         try {
             lex.parse(x);
-        } catch (IOException e) {
+        } catch (Throwable e) {
             logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
         }
 
