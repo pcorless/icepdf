@@ -62,7 +62,7 @@ public class PopupAnnotation extends Annotation {
         super(l, h);
     }
 
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
         open = library.getBoolean(entries, OPEN_KEY);
     }
@@ -93,16 +93,22 @@ public class PopupAnnotation extends Annotation {
         }
 
         // create the new instance
-        PopupAnnotation popupAnnotation = new PopupAnnotation(library, entries);
-        popupAnnotation.init();
-        popupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        popupAnnotation.setNew(true);
+        PopupAnnotation popupAnnotation = null;
+        try {
+            popupAnnotation = new PopupAnnotation(library, entries);
+            popupAnnotation.init();
+            popupAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            popupAnnotation.setNew(true);
 
-        // set default flags.
-        popupAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        popupAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
-        popupAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-        popupAnnotation.setFlag(Annotation.FLAG_PRINT, false);
+            // set default flags.
+            popupAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+            popupAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+            popupAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+            popupAnnotation.setFlag(Annotation.FLAG_PRINT, false);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.finer("Popup Annotation initialization was interrupted");
+        }
 
         return popupAnnotation;
     }

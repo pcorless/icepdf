@@ -798,24 +798,29 @@ public class ImageUtility {
      */
     protected static BufferedImage applyIndexColourModel(
             WritableRaster wr, PColorSpace colourSpace, int bitsPerComponent) {
-        BufferedImage img;
-        colourSpace.init();
-        // build out the colour table.
-        Color[] colors = ((Indexed) colourSpace).accessColorTable();
-        int colorsLength = (colors == null) ? 0 : colors.length;
-        int[] cmap = new int[256];
-        for (int i = 0; i < colorsLength; i++) {
-            cmap[i] = colors[i].getRGB();
+        BufferedImage img = null;
+        try {
+            colourSpace.init();
+            // build out the colour table.
+            Color[] colors = ((Indexed) colourSpace).accessColorTable();
+            int colorsLength = (colors == null) ? 0 : colors.length;
+            int[] cmap = new int[256];
+            for (int i = 0; i < colorsLength; i++) {
+                cmap[i] = colors[i].getRGB();
+            }
+            for (int i = colorsLength; i < cmap.length; i++) {
+                cmap[i] = 0xFF000000;
+            }
+            // build a new buffer with indexed colour model.
+            DataBuffer db = wr.getDataBuffer();
+            //        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+            //        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
+            ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
+            img = new BufferedImage(cm, wr, false, null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Indexed colour model initialization interrupted.");
         }
-        for (int i = colorsLength; i < cmap.length; i++) {
-            cmap[i] = 0xFF000000;
-        }
-        // build a new buffer with indexed colour model.
-        DataBuffer db = wr.getDataBuffer();
-//        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
-//        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
-        ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
-        img = new BufferedImage(cm, wr, false, null);
         return img;
     }
 
@@ -1265,7 +1270,11 @@ public class ImageUtility {
             }
         } else if (colourSpace instanceof Indexed) {
             if (bitsPerComponent == 1 || bitsPerComponent == 2 || bitsPerComponent == 4) {
-                colourSpace.init();
+                try {
+                    colourSpace.init();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
                 Color[] colors = ((Indexed) colourSpace).accessColorTable();
                 int[] cmap = new int[(colors == null) ? 0 : colors.length];
                 for (int i = 0; i < cmap.length; i++) {
@@ -1293,7 +1302,11 @@ public class ImageUtility {
                     img = new BufferedImage(cm, wr, false, null);
                 }
             } else if (bitsPerComponent == 8) {
-                colourSpace.init();
+                try {
+                    colourSpace.init();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
                 Color[] colors = ((Indexed) colourSpace).accessColorTable();
                 int colorsLength = (colors == null) ? 0 : colors.length;
                 int[] cmap = new int[256];

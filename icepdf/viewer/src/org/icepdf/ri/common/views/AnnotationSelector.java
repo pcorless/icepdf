@@ -64,8 +64,7 @@ public class AnnotationSelector {
         }
         // the trick now is to init only the pageComponent that contains the clicked on annotation.
         if (found) {
-            AbstractPageViewComponent pageViewComponent = pageViewComponentList.get(pageIndex);
-            pageViewComponent.init();
+            PageViewComponentImpl pageViewComponent = (PageViewComponentImpl) pageViewComponentList.get(pageIndex);
             ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
             if (annotationComponents != null) {
                 for (AbstractAnnotationComponent annotationComponent : annotationComponents) {

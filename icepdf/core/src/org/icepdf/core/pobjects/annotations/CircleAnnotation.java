@@ -70,7 +70,7 @@ public class CircleAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
         // parse out interior colour, specific to link annotations.
         fillColor = Color.WHITE; // we default to black but probably should be null
@@ -116,16 +116,22 @@ public class CircleAnnotation extends MarkupAnnotation {
         }
 
         // create the new instance
-        CircleAnnotation circleAnnotation = new CircleAnnotation(library, entries);
-        circleAnnotation.init();
-        circleAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        circleAnnotation.setNew(true);
+        CircleAnnotation circleAnnotation = null;
+        try {
+            circleAnnotation = new CircleAnnotation(library, entries);
+            circleAnnotation.init();
+            circleAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            circleAnnotation.setNew(true);
 
-        // set default flags.
-        circleAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        circleAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
-        circleAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-        circleAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+            // set default flags.
+            circleAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+            circleAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+            circleAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+            circleAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("CircletAnnotation initialization interrupted.");
+        }
 
         return circleAnnotation;
     }

@@ -232,7 +232,7 @@ public class ShadingType3Pattern extends ShadingPattern {
         return t0 + ((t1 - t0) * linearMapping);
     }
 
-    public Paint getPaint() {
+    public Paint getPaint() throws InterruptedException {
         init();
         return radialGradientPaint;
     }

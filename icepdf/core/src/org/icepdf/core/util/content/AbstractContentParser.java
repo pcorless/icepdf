@@ -46,6 +46,7 @@ public abstract class AbstractContentParser implements ContentParser {
             Logger.getLogger(AbstractContentParser.class.toString());
     private static boolean disableTransparencyGroups;
     private static boolean enabledOverPrint;
+
     static {
         // decide if large images will be scaled
         disableTransparencyGroups =
@@ -162,7 +163,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param source content stream source.
      * @return vector where each entry is the text extracted from a text block.
      */
-    public abstract Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException;
+    public abstract Shapes parseTextBlocks(byte[][] source) throws UnsupportedEncodingException, InterruptedException;
 
     protected static void consume_G(GraphicsState graphicState, Stack stack,
                                     Library library) {
@@ -1071,7 +1072,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static GeneralPath consume_S(GraphicsState graphicState,
                                            Shapes shapes,
-                                           GeneralPath geometricPath) {
+                                           GeneralPath geometricPath) throws InterruptedException {
         if (geometricPath != null) {
             commonStroke(graphicState, shapes, geometricPath);
             geometricPath = null;
@@ -1082,7 +1083,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_F(GraphicsState graphicState,
                                            Shapes shapes,
                                            GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             commonFill(shapes, graphicState, geometricPath);
@@ -1094,7 +1095,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_f(GraphicsState graphicState,
                                            Shapes shapes,
                                            GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             commonFill(shapes, graphicState, geometricPath);
@@ -1129,7 +1130,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static void consume_BDC(Stack stack,
                                       Shapes shapes,
                                       LinkedList<OptionalContents> oCGs,
-                                      Resources resources) {
+                                      Resources resources) throws InterruptedException {
         Object properties = stack.pop();// properties
         Name tag = (Name) stack.pop();// tag
         OptionalContents optionalContents = null;
@@ -1177,7 +1178,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static void consume_BMC(Stack stack,
                                       Shapes shapes,
                                       LinkedList<OptionalContents> oCGs,
-                                      Resources resources) {
+                                      Resources resources) throws InterruptedException {
         Object properties = stack.pop();// properties
         // try and process the Optional content.
         if (properties instanceof Name && resources != null) {
@@ -1202,7 +1203,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_f_star(GraphicsState graphicState,
                                                 Shapes shapes,
                                                 GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
         if (geometricPath != null) {
             // need to apply pattern..
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
@@ -1215,7 +1216,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_b(GraphicsState graphicState,
                                            Shapes shapes,
                                            GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             geometricPath.closePath();
@@ -1268,7 +1269,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_B(GraphicsState graphicState,
                                            Shapes shapes,
                                            GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_NON_ZERO);
             commonFill(shapes, graphicState, geometricPath);
@@ -1291,7 +1292,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
     protected static GeneralPath consume_s(GraphicsState graphicState,
                                            Shapes shapes,
-                                           GeneralPath geometricPath) {
+                                           GeneralPath geometricPath) throws InterruptedException {
         if (geometricPath != null) {
             geometricPath.closePath();
             commonStroke(graphicState, shapes, geometricPath);
@@ -1303,7 +1304,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_b_star(GraphicsState graphicState,
                                                 Shapes shapes,
                                                 GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
             geometricPath.closePath();
@@ -1336,7 +1337,7 @@ public abstract class AbstractContentParser implements ContentParser {
     protected static GeneralPath consume_B_star(GraphicsState graphicState,
                                                 Shapes shapes,
                                                 GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
         if (geometricPath != null) {
             geometricPath.setWindingRule(GeneralPath.WIND_EVEN_ODD);
             commonStroke(graphicState, shapes, geometricPath);
@@ -1366,7 +1367,7 @@ public abstract class AbstractContentParser implements ContentParser {
 
     public static void consume_sh(GraphicsState graphicState, Stack stack,
                                   Shapes shapes,
-                                  Resources resources) {
+                                  Resources resources) throws InterruptedException {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
@@ -1724,7 +1725,8 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param shapes        current shapes stack
      * @param geometricPath current path.
      */
-    protected static void commonStroke(GraphicsState graphicState, Shapes shapes, GeneralPath geometricPath) {
+    protected static void commonStroke(GraphicsState graphicState, Shapes shapes, GeneralPath geometricPath)
+            throws InterruptedException {
 
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintStroking()) {
@@ -1832,7 +1834,7 @@ public abstract class AbstractContentParser implements ContentParser {
      * @param geometricPath current path.
      */
     protected static void commonFill(Shapes shapes, GraphicsState graphicState, GeneralPath geometricPath)
-            throws NoninvertibleTransformException {
+            throws NoninvertibleTransformException, InterruptedException {
 
         // get current fill alpha and concatenate with overprinting if present
         if (graphicState.isOverprintOther()) {

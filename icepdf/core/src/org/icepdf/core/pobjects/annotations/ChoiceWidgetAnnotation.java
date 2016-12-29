@@ -146,6 +146,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             } else {
                 appearanceStream.getEntries().remove(Stream.FILTER_KEY);
             }
+            appearanceStream.init();
         }
     }
 

@@ -75,6 +75,8 @@ public abstract class AbstractDocumentView
     protected DocumentViewController documentViewController;
 
     protected JScrollPane documentScrollpane;
+    protected JPanel pagesPanel;
+    protected boolean disposing;
 
     protected Document currentDocument;
 
@@ -163,6 +165,11 @@ public abstract class AbstractDocumentView
 
     public DocumentViewModel getViewModel() {
         return documentViewModel;
+    }
+
+    public void invalidate() {
+        super.invalidate();
+        pagesPanel.invalidate();
     }
 
     public void dispose() {

@@ -67,7 +67,7 @@ public class SquareAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
         // parse out interior colour, specific to link annotations.
         fillColor = Color.WHITE; // we default to black but probably should be null
@@ -114,16 +114,22 @@ public class SquareAnnotation extends MarkupAnnotation {
         }
 
         // create the new instance
-        SquareAnnotation squareAnnotation = new SquareAnnotation(library, entries);
-        squareAnnotation.init();
-        squareAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        squareAnnotation.setNew(true);
+        SquareAnnotation squareAnnotation = null;
+        try {
+            squareAnnotation = new SquareAnnotation(library, entries);
+            squareAnnotation.init();
+            squareAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            squareAnnotation.setNew(true);
 
-        // set default flags.
-        squareAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        squareAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
-        squareAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-        squareAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+            // set default flags.
+            squareAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+            squareAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+            squareAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+            squareAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Square annotation instance creation was interrupted");
+        }
 
         return squareAnnotation;
     }

@@ -66,7 +66,7 @@ public interface Pattern {
 
     void init(GraphicsState graphicsState);
 
-    public Paint getPaint();
+    public Paint getPaint() throws InterruptedException;
 
     public void setParentGraphicState(GraphicsState graphicsState);
 

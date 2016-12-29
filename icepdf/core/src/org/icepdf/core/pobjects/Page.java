@@ -341,17 +341,13 @@ public class Page extends Dictionary {
      * Initialize the Page object.  This method triggers the parsing of a page's
      * child elements.  Once a page has been initialized, it can be painted.
      */
-    public synchronized void init() {
+    public synchronized void init() throws InterruptedException {
         try {
             // make sure we are not revisiting this method
             if (inited) {
                 return;
             }
             pageInitialized = false;
-            // set the initiated flag, first as there are couple corner
-            // cases where the content parsing can call page.init() again
-            // from the same thread.
-            inited = true;
 
             // get pages resources
             initPageResources();
@@ -402,21 +398,28 @@ public class Page extends Dictionary {
                     if (streams.length > 0) {
                         shapes = cp.parse(streams, this).getShapes();
                     }
+                    // set the initiated flag, first as there are couple corner
+                    // cases where the content parsing can call page.init() again
+                    // from the same thread.
+                    inited = true;
 
+                } catch (InterruptedException e) {
+                    throw new InterruptedException(e.getMessage());
                 } catch (Exception e) {
                     shapes = new Shapes();
-                    logger.log(Level.FINE, "Error initializing Page.", e);
+                    logger.log(Level.WARNING, "Error initializing Page.", e);
                 }
             }
             // empty page, nothing to do.
             else {
                 shapes = new Shapes();
+                logger.log(Level.WARNING, "Error initializing Page, no page content.");
             }
         } catch (InterruptedException e) {
             // keeps shapes vector so we can paint what we have but make init state as false
             // so we can try to re parse it later.
             inited = false;
-            logger.log(Level.SEVERE, "Page initializing thread interrupted.", e);
+            throw new InterruptedException(e.getMessage());
         }
         notifyPageInitializationEnded(inited);
     }
@@ -468,7 +471,7 @@ public class Page extends Dictionary {
      * @param userZoom       Zoom factor to be applied to the rendered page
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
-                      float userRotation, float userZoom) {
+                      float userRotation, float userZoom) throws InterruptedException {
         paint(g, renderHintType, boundary, userRotation, userZoom, true, true);
     }
 
@@ -493,7 +496,7 @@ public class Page extends Dictionary {
      */
     public void paint(Graphics g, int renderHintType, final int boundary,
                       float userRotation, float userZoom,
-                      boolean paintAnnotations, boolean paintSearchHighlight) {
+                      boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         if (!inited) {
             // make sure we don't do a page init on the awt thread in the viewer
             // ri, let the
@@ -575,7 +578,8 @@ public class Page extends Dictionary {
      *                             be used to easily search and add highlighted state
      *                             for search terms.
      */
-    public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) {
+    public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom,
+                                 boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         if (!inited) {
             init();
         }
@@ -583,7 +587,8 @@ public class Page extends Dictionary {
         paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);
     }
 
-    private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom, boolean paintAnnotations, boolean paintSearchHighlight) {
+    private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom,
+                                  boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         // draw page content
         if (shapes != null) {
             pagePainted = false;
@@ -694,45 +699,50 @@ public class Page extends Dictionary {
         float totalRotation = getTotalRotation(userRotation);
         PRectangle pageBoundary = getPageBoundary(boundary);
 
-        if (totalRotation == 0) {
-            // do nothing
-        } else if (totalRotation == 90) {
-            at.translate(pageBoundary.height, 0);
-        } else if (totalRotation == 180) {
-            at.translate(pageBoundary.width, pageBoundary.height);
-        } else if (totalRotation == 270) {
-            at.translate(0, pageBoundary.width);
-        } else {
-            if (totalRotation > 0 && totalRotation < 90) {
-                double xShift = pageBoundary.height * Math.cos(Math.toRadians(90 - totalRotation));
-                at.translate(xShift, 0);
-            } else if (totalRotation > 90 && totalRotation < 180) {
-                double rad = Math.toRadians(180 - totalRotation);
-                double cosRad = Math.cos(rad);
-                double sinRad = Math.sin(rad);
-                double xShift = pageBoundary.height * sinRad + pageBoundary.width * cosRad;
-                double yShift = pageBoundary.height * cosRad;
-                at.translate(xShift, yShift);
-            } else if (totalRotation > 180 && totalRotation < 270) {
-                double rad = Math.toRadians(totalRotation - 180);
-                double cosRad = Math.cos(rad);
-                double sinRad = Math.sin(rad);
-                double xShift = pageBoundary.width * cosRad;
-                double yShift = pageBoundary.width * sinRad + pageBoundary.height * cosRad;
-                at.translate(xShift, yShift);
-            } else if (totalRotation > 270 && totalRotation < 360) {
-                double yShift = pageBoundary.width * Math.cos(Math.toRadians(totalRotation - 270));
-                at.translate(0, yShift);
-            }
-        }
-
-        // apply rotation on canvas, convert to Radians
-        at.rotate(totalRotation * Math.PI / 180.0);
+        at = Page.getPageRotation(at, totalRotation, pageBoundary.width, pageBoundary.height);
 
         // translate crop lower left corner back to where media box corner was
         float x = 0 - pageBoundary.x;
         float y = 0 - (pageBoundary.y - pageBoundary.height);
         at.translate(x, y);
+
+        return at;
+    }
+
+    public static AffineTransform getPageRotation(AffineTransform at, double totalRotation, float width, float height) {
+        if (totalRotation == 0) {
+            // do nothing
+        } else if (totalRotation == 90) {
+            at.translate(height, 0);
+        } else if (totalRotation == 180) {
+            at.translate(width, height);
+        } else if (totalRotation == 270) {
+            at.translate(0, width);
+        } else {
+            if (totalRotation > 0 && totalRotation < 90) {
+                double xShift = width * Math.cos(Math.toRadians(90 - totalRotation));
+                at.translate(xShift, 0);
+            } else if (totalRotation > 90 && totalRotation < 180) {
+                double rad = Math.toRadians(180 - totalRotation);
+                double cosRad = Math.cos(rad);
+                double sinRad = Math.sin(rad);
+                double xShift = height * sinRad + width * cosRad;
+                double yShift = height * cosRad;
+                at.translate(xShift, yShift);
+            } else if (totalRotation > 180 && totalRotation < 270) {
+                double rad = Math.toRadians(totalRotation - 180);
+                double cosRad = Math.cos(rad);
+                double sinRad = Math.sin(rad);
+                double xShift = width * cosRad;
+                double yShift = width * sinRad + height * cosRad;
+                at.translate(xShift, yShift);
+            } else if (totalRotation > 270 && totalRotation < 360) {
+                double yShift = width * Math.cos(Math.toRadians(totalRotation - 270));
+                at.translate(0, yShift);
+            }
+        }
+        // apply rotation on canvas, convert to Radians
+        at.rotate(totalRotation * Math.PI / 180.0);
 
         return at;
     }
@@ -1494,7 +1504,7 @@ public class Page extends Dictionary {
      *
      * @return list of text sprites for the given page.
      */
-    public PageText getViewText() {
+    public PageText getViewText() throws InterruptedException {
         if (!inited) {
             init();
         }
@@ -1632,7 +1642,7 @@ public class Page extends Dictionary {
      *
      * @return vector of Images inside the current page
      */
-    public synchronized List<Image> getImages() {
+    public synchronized List<Image> getImages() throws InterruptedException {
         if (!inited) {
             init();
         }

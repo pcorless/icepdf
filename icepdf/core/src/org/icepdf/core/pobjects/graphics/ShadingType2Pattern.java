@@ -329,9 +329,12 @@ public class ShadingType2Pattern extends ShadingPattern {
     }
 
     public Paint getPaint() {
-
-        init();
-
+        try {
+            init();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("ShadingType2Pattern initialization interrupted");
+        }
         return linearGradientPaint;
     }
 

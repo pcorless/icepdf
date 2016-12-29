@@ -24,8 +24,10 @@ import org.icepdf.ri.common.views.listeners.MetricsPageLoadingListener;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.icepdf.ri.util.PropertiesManager;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -111,34 +113,33 @@ public class PageLoadingEvents {
         }
 
         public Void call() {
-            Page page = document.getPageTree().getPage(pageNumber);
-            // assign a metrics page loading listener
-            page.addPageProcessingListener(new MetricsPageLoadingListener(
-                    document.getNumberOfPages()));
-            page.init();
-            PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+            try {
+                Page page = document.getPageTree().getPage(pageNumber);
+                // assign a metrics page loading listener
+                page.addPageProcessingListener(new MetricsPageLoadingListener(
+                        document.getNumberOfPages()));
+                page.init();
+                PDimension sz = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
 
-            int pageWidth = (int) sz.getWidth();
-            int pageHeight = (int) sz.getHeight();
+                int pageWidth = (int) sz.getWidth();
+                int pageHeight = (int) sz.getHeight();
 
-            BufferedImage image = new BufferedImage(pageWidth,
-                    pageHeight,
-                    BufferedImage.TYPE_INT_RGB);
-            Graphics g = image.createGraphics();
+                BufferedImage image = new BufferedImage(pageWidth,
+                        pageHeight,
+                        BufferedImage.TYPE_INT_RGB);
+                Graphics g = image.createGraphics();
 
-            page.paint(g, GraphicsRenderingHints.PRINT,
-                    Page.BOUNDARY_CROPBOX, rotation, scale);
-            g.dispose();
-            // capture the page image to file
-//            try {
-//                System.out.println("Capturing page " + pageNumber);
-//                File file = new File("imageCapture_" + pageNumber + ".png");
-//                ImageIO.write(image, "png", file);
-//
-//            } catch (Throwable e) {
-//                e.printStackTrace();
-//            }
-            image.flush();
+                page.paint(g, GraphicsRenderingHints.PRINT,
+                        Page.BOUNDARY_CROPBOX, rotation, scale);
+                g.dispose();
+                // capture the page image to file
+                System.out.println("Capturing page " + pageNumber);
+                File file = new File("imageCapture_" + pageNumber + ".png");
+                ImageIO.write(image, "png", file);
+                image.flush();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
             return null;
         }
     }

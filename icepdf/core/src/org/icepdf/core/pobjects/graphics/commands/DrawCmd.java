@@ -56,5 +56,5 @@ public interface DrawCmd {
                               AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha,
-                              PaintTimer paintTimer);
+                              PaintTimer paintTimer) throws InterruptedException;
 }

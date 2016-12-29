@@ -88,33 +88,38 @@ public class Resources extends Dictionary {
             return null;
         }
 
-        Object tmp;
-        // every resource has a color space entry and o can be tmp in it.
-        if (colorspaces != null && colorspaces.get(o) != null) {
-            tmp = colorspaces.get(o);
-            PColorSpace cs = PColorSpace.getColorSpace(library, tmp);
-            if (cs != null) {
-                cs.init();
+        try {
+            Object tmp;
+            // every resource has a color space entry and o can be tmp in it.
+            if (colorspaces != null && colorspaces.get(o) != null) {
+                tmp = colorspaces.get(o);
+                PColorSpace cs = PColorSpace.getColorSpace(library, tmp);
+                if (cs != null) {
+                    cs.init();
+                }
+                return cs;
             }
-            return cs;
-        }
-        // look for our name in the pattern dictionary
-        if (patterns != null && patterns.get(o) != null) {
-            tmp = patterns.get(o);
-            PColorSpace cs = PColorSpace.getColorSpace(library, tmp);
-            if (cs != null) {
-                cs.init();
+            // look for our name in the pattern dictionary
+            if (patterns != null && patterns.get(o) != null) {
+                tmp = patterns.get(o);
+                PColorSpace cs = PColorSpace.getColorSpace(library, tmp);
+                if (cs != null) {
+                    cs.init();
+                }
+                return cs;
             }
-            return cs;
-        }
 
-        // if its not in color spaces or pattern then its a plain old
-        // named colour space.  
-        PColorSpace cs = PColorSpace.getColorSpace(library, o);
-        if (cs != null) {
-            cs.init();
+            // if its not in color spaces or pattern then its a plain old
+            // named colour space.
+            PColorSpace cs = PColorSpace.getColorSpace(library, o);
+            if (cs != null) {
+                cs.init();
+            }
+            return cs;
+        } catch (InterruptedException e) {
+            logger.fine("Colorspace parsing was interrupted");
         }
-        return cs;
+        return null;
 
     }
 

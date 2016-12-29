@@ -131,13 +131,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int hitCount = 0;
 
         // get our our page text reference
-        PageText pageText = null;
-        if (viewerController != null) {
-            // get access to currently open document instance.
-            pageText = viewerController.getDocument().getPageViewText(pageIndex);
-        } else if (document != null) {
-            pageText = document.getPageViewText(pageIndex);
-        }
+        PageText pageText = getPageText(pageIndex);
 
         // some pages just don't have any text. 
         if (pageText == null) {
@@ -265,13 +259,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<LineText> searchHits = new ArrayList<LineText>();
 
         // get our our page text reference
-        PageText pageText = null;
-        if (viewerController != null) {
-            // get access to currently open document.
-            pageText = viewerController.getDocument().getPageViewText(pageIndex);
-        } else if (document != null) {
-            pageText = document.getPageViewText(pageIndex);
-        }
+        PageText pageText = getPageText(pageIndex);
 
         // some pages just don't have any text.
         if (pageText == null) {
@@ -504,6 +492,28 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public void dispose() {
         searchModel.clearSearchResults();
+    }
+
+    /**
+     * Gest teh page text for the given page index.
+     *
+     * @param pageIndex page index of page to extract text.
+     * @return page's page text,  can be null.
+     */
+    protected PageText getPageText(int pageIndex) {
+        PageText pageText = null;
+        try {
+            if (viewerController != null) {
+                // get access to currently open document instance.
+                pageText = viewerController.getDocument().getPageViewText(pageIndex);
+            } else if (document != null) {
+                pageText = document.getPageViewText(pageIndex);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("PageText extraction thread was interrupted.");
+        }
+        return pageText;
     }
 
     /**

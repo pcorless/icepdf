@@ -204,13 +204,16 @@ public class LineAnnotation extends MarkupAnnotation {
         } else {
             entries.put(Annotation.RECTANGLE_KEY, new Rectangle(10, 10, 50, 100));
         }
-
         // create the new instance
-        LineAnnotation lineAnnotation = new LineAnnotation(library, entries);
-        lineAnnotation.init();
-        lineAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        lineAnnotation.setNew(true);
-
+        LineAnnotation lineAnnotation = null;
+        try {
+            lineAnnotation = new LineAnnotation(library, entries);
+            lineAnnotation.init();
+            lineAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            lineAnnotation.setNew(true);
+        } catch (InterruptedException e) {
+            logger.fine("Line annotation instance creation was interrupted");
+        }
         return lineAnnotation;
     }
 
@@ -221,7 +224,6 @@ public class LineAnnotation extends MarkupAnnotation {
     public static void drawLineStart(Graphics2D g, Name lineEnding,
                                      Point2D startOfLine, Point2D endOfLine,
                                      Color lineColor, Color interiorColor) {
-
         if (lineEnding.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
             drawOpenArrowStart(g, startOfLine, endOfLine, lineColor, interiorColor);
         } else if (lineEnding.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
@@ -522,7 +524,7 @@ public class LineAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
         // line points
         List<Number> value = library.getArray(entries, L_KEY);

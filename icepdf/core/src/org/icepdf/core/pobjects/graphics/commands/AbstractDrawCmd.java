@@ -57,5 +57,5 @@ public abstract class AbstractDrawCmd implements DrawCmd {
                                        Shape currentShape, Shape clip,
                                        AffineTransform base,
                                        OptionalContentState optionalContentState,
-                                       boolean paintAlpha, PaintTimer paintTimer);
+                                       boolean paintAlpha, PaintTimer paintTimer) throws InterruptedException;
 }

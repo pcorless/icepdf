@@ -67,7 +67,7 @@ public class AnnotationComponentFactory {
      * @param documentViewModel      document view model.
      * @return annotation component of the type specified by annotation subtype
      */
-    public static AbstractAnnotationComponent buildAnnotationComponent(
+    public synchronized static AbstractAnnotationComponent buildAnnotationComponent(
             Annotation annotation,
             DocumentViewController documentViewController,
             AbstractPageViewComponent pageViewComponent,

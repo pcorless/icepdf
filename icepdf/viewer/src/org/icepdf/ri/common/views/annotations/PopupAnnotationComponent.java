@@ -103,7 +103,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         if (annotation instanceof PopupAnnotation) {
             popupAnnotation = (PopupAnnotation) annotation;
-            popupAnnotation.init();
+            try {
+                popupAnnotation.init();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.fine("Popup annotation component instance creation was interrupted");
+            }
         }
 
         boolean isVisible = popupAnnotation.isOpen();

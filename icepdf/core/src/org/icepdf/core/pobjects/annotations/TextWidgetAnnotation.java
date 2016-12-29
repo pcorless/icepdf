@@ -50,7 +50,8 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         fieldDictionary = new TextFieldDictionary(library, entries);
         fontFile = fieldDictionary.getFont() != null ? fieldDictionary.getFont().getFont() : null;
         if (fontFile == null) {
-            FontManager.getInstance().initialize().getInstance(fieldDictionary.getFontName().toString(), 0);
+            fontFile = FontManager.getInstance().initialize().getInstance(
+                    fieldDictionary.getFontName().toString(), 0);
         }
     }
 
@@ -99,8 +100,9 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 } else {
                     // need to find some resources, try adding the parent page.
                     Page page = getPage();
-                    appearanceStream.getEntries().put(Form.RESOURCES_KEY,
-                            page != null ? page.getResources().getEntries() : null);
+                    if (page != null && page.getResources() != null) {
+                        appearanceStream.getEntries().put(Form.RESOURCES_KEY, page.getResources().getEntries());
+                    }
                 }
                 // add the annotation as changed as T entry has also been updated to reflect teh changed content.
                 stateManager.addChange(new PObject(this, this.getPObjectReference()));
@@ -111,6 +113,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 } else {
                     appearanceStream.getEntries().remove(Stream.FILTER_KEY);
                 }
+                appearanceStream.init();
             }
         }
     }

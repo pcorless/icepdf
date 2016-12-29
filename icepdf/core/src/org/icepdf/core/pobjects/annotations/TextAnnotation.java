@@ -119,7 +119,7 @@ public class TextAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
         // open state
         open = library.getBoolean(entries, OPEN_KEY);
@@ -180,16 +180,22 @@ public class TextAnnotation extends MarkupAnnotation {
         }
 
         // create the new instance
-        TextAnnotation textAnnotation = new TextAnnotation(library, entries);
-        textAnnotation.init();
-        textAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        textAnnotation.setNew(true);
+        TextAnnotation textAnnotation = null;
+        try {
+            textAnnotation = new TextAnnotation(library, entries);
+            textAnnotation.init();
+            textAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            textAnnotation.setNew(true);
 
-        // set default flags.
-        textAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        textAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, true);
-        textAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, true);
-        textAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+            // set default flags.
+            textAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+            textAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, true);
+            textAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, true);
+            textAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Text annotation instance creation was interrupted");
+        }
 
         return textAnnotation;
     }

@@ -222,7 +222,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         super(l, h);
     }
 
-    public void init() {
+    public void init() throws InterruptedException {
         super.init();
 
         Appearance appearance = appearances.get(APPEARANCE_STREAM_NORMAL_KEY);
@@ -341,17 +341,22 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         }
 
         // create the new instance
-        FreeTextAnnotation freeTextAnnotation = new FreeTextAnnotation(library, entries);
-        freeTextAnnotation.init();
-        freeTextAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
-        freeTextAnnotation.setNew(true);
+        FreeTextAnnotation freeTextAnnotation = null;
+        try {
+            freeTextAnnotation = new FreeTextAnnotation(library, entries);
+            freeTextAnnotation.init();
+            freeTextAnnotation.setPObjectReference(stateManager.getNewReferencNumber());
+            freeTextAnnotation.setNew(true);
 
-        // set default flags.
-        freeTextAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
-        freeTextAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
-        freeTextAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
-        freeTextAnnotation.setFlag(Annotation.FLAG_PRINT, true);
-
+            // set default flags.
+            freeTextAnnotation.setFlag(Annotation.FLAG_READ_ONLY, false);
+            freeTextAnnotation.setFlag(Annotation.FLAG_NO_ROTATE, false);
+            freeTextAnnotation.setFlag(Annotation.FLAG_NO_ZOOM, false);
+            freeTextAnnotation.setFlag(Annotation.FLAG_PRINT, true);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("FreeTextAnnotation initialization interrupted.");
+        }
         return freeTextAnnotation;
     }
 

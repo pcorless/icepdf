@@ -18,6 +18,7 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -186,11 +187,11 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
      * @param e mouse event in this coordinates space
      * @return component that mouse event is over or null if not over a page.
      */
-    protected AbstractPageViewComponent isOverPageComponent(Container container, MouseEvent e) {
+    protected PageViewComponentImpl isOverPageComponent(Container container, MouseEvent e) {
         // mouse -> page  broadcast .
         Component comp = container.findComponentAt(e.getPoint());
-        if (comp instanceof AbstractPageViewComponent) {
-            return (AbstractPageViewComponent) comp;
+        if (comp instanceof PageViewComponentImpl) {
+            return (PageViewComponentImpl) comp;
         } else {
             return null;
         }

@@ -252,30 +252,35 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // copy over the rendering hints
         canvas.setRenderingHints(renderingHints);
         // get shapes and paint them.
-        Shapes xFormShapes = xForm.getShapes();
-        if (xFormShapes != null) {
-            xFormShapes.setPageParent(parentPage);
-            // translate the coordinate system as we'll paint the g
-            // graphic at the correctly location later.
-            if (!xForm.isShading()) {
-                canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
-                canvas.setClip(bBox);
-                xFormShapes.paint(canvas);
-                xFormShapes.setPageParent(null);
-            }
-            // basic support for gradient fills,  still have a few corners cases to work on.
-            else {
-                for (DrawCmd cmd : xFormShapes.getShapes()) {
-                    if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
-                        Rectangle2D bounds = bBox.getBounds2D();
-                        ((ShapeDrawCmd) cmd).setShape(bounds);
-                    }
+        try {
+            Shapes xFormShapes = xForm.getShapes();
+            if (xFormShapes != null) {
+                xFormShapes.setPageParent(parentPage);
+                // translate the coordinate system as we'll paint the g
+                // graphic at the correctly location later.
+                if (!xForm.isShading()) {
+                    canvas.translate(-(int) bBox.getX(), -(int) bBox.getY());
+                    canvas.setClip(bBox);
+                    xFormShapes.paint(canvas);
+                    xFormShapes.setPageParent(null);
                 }
-                canvas.translate(-x, -y);
-                canvas.setClip(bBox.getBounds2D());
-                xFormShapes.paint(canvas);
-                xFormShapes.setPageParent(null);
+                // basic support for gradient fills,  still have a few corners cases to work on.
+                else {
+                    for (DrawCmd cmd : xFormShapes.getShapes()) {
+                        if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
+                            Rectangle2D bounds = bBox.getBounds2D();
+                            ((ShapeDrawCmd) cmd).setShape(bounds);
+                        }
+                    }
+                    canvas.translate(-x, -y);
+                    canvas.setClip(bBox.getBounds2D());
+                    xFormShapes.paint(canvas);
+                    xFormShapes.setPageParent(null);
+                }
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Form draw thread interrupted.");
         }
         canvas.dispose();
         return bi;

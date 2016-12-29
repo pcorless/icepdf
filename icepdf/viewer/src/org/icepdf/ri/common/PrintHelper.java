@@ -341,69 +341,74 @@ public class PrintHelper implements Printable {
         if (pageIndex < 0 || pageIndex >= pageTree.getNumberOfPages()) {
             return Printable.NO_SUCH_PAGE;
         }
+        try {
 
-        // Initiate the Page to print, not adding to the pageTree cache purposely,
-        // after we finish using it we'll dispose it.
-        Page currentPage = pageTree.getPage(pageIndex);
-        currentPage.init();
-        PDimension pageDim = currentPage.getSize(userRotation);
+            // Initiate the Page to print, not adding to the pageTree cache purposely,
+            // after we finish using it we'll dispose it.
+            Page currentPage = pageTree.getPage(pageIndex);
+            currentPage.init();
+            PDimension pageDim = currentPage.getSize(userRotation);
 
-        // Grab default page width and height
-        float pageWidth = (float) pageDim.getWidth();
-        float pageHeight = (float) pageDim.getHeight();
+            // Grab default page width and height
+            float pageWidth = (float) pageDim.getWidth();
+            float pageHeight = (float) pageDim.getHeight();
 
-        // Default zoom factor
-        float zoomFactor = 1.0f;
+            // Default zoom factor
+            float zoomFactor = 1.0f;
 
-        Point imageablePrintLocation = new Point();
+            Point imageablePrintLocation = new Point();
 
-        // detect if page is being drawn in landscape, if so then we should
-        // should be rotating the page so that it prints correctly
-        float rotation = userRotation;
-        boolean isDefaultRotation = true;
-        if ((pageWidth > pageHeight &&
-                pageFormat.getOrientation() == PageFormat.PORTRAIT)
-            // auto rotation for landscape.
+            // detect if page is being drawn in landscape, if so then we should
+            // should be rotating the page so that it prints correctly
+            float rotation = userRotation;
+            boolean isDefaultRotation = true;
+            if ((pageWidth > pageHeight &&
+                    pageFormat.getOrientation() == PageFormat.PORTRAIT)
+                // auto rotation for landscape.
 //            (pageHeight > pageFormat.getImageableWidth() &&
 //                pageFormat.getOrientation() == PageFormat.LANDSCAPE )
-                ) {
-            // rotate clockwise 90 degrees
-            isDefaultRotation = false;
-            rotation -= 90;
-        }
-
-        // if true, we want to shrink out page to the new area.
-        if (printFitToMargin) {
-
-            // Get location of imageable area from PageFormat object
-            Dimension imageablePrintSize;
-            // correct scale to fit calculation for a possible automatic
-            // rotation.
-            if (isDefaultRotation) {
-                imageablePrintSize = new Dimension(
-                        (int) pageFormat.getImageableWidth(),
-                        (int) pageFormat.getImageableHeight());
-            } else {
-                imageablePrintSize = new Dimension(
-                        (int) pageFormat.getImageableHeight(),
-                        (int) pageFormat.getImageableWidth());
-
+                    ) {
+                // rotate clockwise 90 degrees
+                isDefaultRotation = false;
+                rotation -= 90;
             }
-            float zw = imageablePrintSize.width / pageWidth;
-            float zh = imageablePrintSize.height / pageHeight;
-            zoomFactor = Math.min(zw, zh);
-            imageablePrintLocation.x = (int) pageFormat.getImageableX();
-            imageablePrintLocation.y = (int) pageFormat.getImageableY();
-        }
-        // apply imageablePrintLocation, normally (0,0)
-        printGraphics.translate(imageablePrintLocation.x,
-                imageablePrintLocation.y);
 
-        // Paint the page content
-        currentPage.paint(printGraphics,
-                GraphicsRenderingHints.PRINT,
-                Page.BOUNDARY_CROPBOX,
-                rotation, zoomFactor, paintAnnotation, paintSearchHighlight);
+            // if true, we want to shrink out page to the new area.
+            if (printFitToMargin) {
+
+                // Get location of imageable area from PageFormat object
+                Dimension imageablePrintSize;
+                // correct scale to fit calculation for a possible automatic
+                // rotation.
+                if (isDefaultRotation) {
+                    imageablePrintSize = new Dimension(
+                            (int) pageFormat.getImageableWidth(),
+                            (int) pageFormat.getImageableHeight());
+                } else {
+                    imageablePrintSize = new Dimension(
+                            (int) pageFormat.getImageableHeight(),
+                            (int) pageFormat.getImageableWidth());
+
+                }
+                float zw = imageablePrintSize.width / pageWidth;
+                float zh = imageablePrintSize.height / pageHeight;
+                zoomFactor = Math.min(zw, zh);
+                imageablePrintLocation.x = (int) pageFormat.getImageableX();
+                imageablePrintLocation.y = (int) pageFormat.getImageableY();
+            }
+            // apply imageablePrintLocation, normally (0,0)
+            printGraphics.translate(imageablePrintLocation.x,
+                    imageablePrintLocation.y);
+
+            // Paint the page content
+            currentPage.paint(printGraphics,
+                    GraphicsRenderingHints.PRINT,
+                    Page.BOUNDARY_CROPBOX,
+                    rotation, zoomFactor, paintAnnotation, paintSearchHighlight);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.SEVERE, "Printing: Page initialization and painting was interrupted", e);
+        }
 
         // Paint content to page buffer to reduce spool size but quality will suffer.
 //        Image image = viewController.getDocument().getPageImage(pageIndex,

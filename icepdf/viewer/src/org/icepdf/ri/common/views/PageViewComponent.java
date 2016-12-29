@@ -15,10 +15,10 @@
  */
 package org.icepdf.ri.common.views;
 
-import java.awt.*;
+import org.icepdf.core.pobjects.Page;
 
 /**
- * <p>The <code>PageViewComponent</code> interaces should be used by any page view
+ * <p>The <code>PageViewComponent</code> interfaces should be used by any page view
  * implementation to represent a single page view.  The methods defined in this
  * interface are the most commonly used methods and are used by the
  * <code>AbstractDocumentView</code> and <code>AbstractDocumentViewModel</code>.</p>
@@ -29,86 +29,52 @@ import java.awt.*;
 public interface PageViewComponent {
 
     /**
-     * Set the parent Document View class which is resbonsible for drawing and
+     * Set the parent Document View class which is responsible for drawing and
      * the general management of PageViewComponents for a particular view.
      *
      * @param parentDocumentView type of view, single page, continuous, etc.
      */
-    public void setDocumentViewCallback(DocumentView parentDocumentView);
+    void setDocumentViewCallback(DocumentView parentDocumentView);
 
     /**
      * Gets the page index which this PageViewComponent is drawing.
      *
      * @return zero pages page index of the page drawn by this component.
      */
-    public int getPageIndex();
-
-    /**
-     * Called to initialize resources used by this class.
-     */
-    public void init();
-
-    /**
-     * Invalidates the underling document page and resepctive resources.
-     * Subsiquent page calls will reinitialize the page data.
-     */
-    public void invalidatePage();
-
-    /**
-     * Invalidates the page buffer used for bufferer paints forcing a clean
-     * repaint of the pge. .
-     */
-    public void invalidatePageBuffer();
+    int getPageIndex();
 
     /**
      * Called to free resources used by this component.
      */
-    public void dispose();
+    void dispose();
 
     /**
-     * Called to invalidate the component.
-     */
-    public void invalidate();
-
-    /**
-     * Indicates that the page is showing;
+     * Called from parent controls when a UI control has manipulated the view, property
+     * change is picked up and the view is updated accordingly.  If the worker is currently working
+     * it should be canceled with an interrupt.
      *
-     * @return true if the page is showing, otherwise; false.
+     * @param propertyConstant document view change property.
+     * @param oldValue         old value
+     * @param newValue         new value
      */
-    public boolean isShowing();
+    void updateView(String propertyConstant, Object oldValue, Object newValue);
 
     /**
-     * Clear any internal data structures that represent selected text and
-     * repaint the component.
-     */
-    public void clearSelectedText();
-
-
-    /**
-     * Sets the text that is contained in the specified recttangle and the
-     * given mouse pointer.  The cursor and selection rectangel must be in
-     * in page space.
+     * This callback is called when the page is successfully initialized at which point an implementation may
+     * like to work with the page object before the parent method turns.  This method should return as quickly
+     * as possible.
      *
-     * @param cursorLocation location of cursor or mouse.
-     * @param selection      rectangle of text to include in selection.
+     * @param page page that was just initialized.
      */
-    public void setSelectionRectangle(Point cursorLocation, Rectangle selection);
+    void pageInitializedCallback(Page page);
 
-    public void clearSelectionRectangle();
 
     /**
-     * Add a new annotation object to this page view comnponent.
-     *
-     * @param annotation annotation to add.
+     * This callback is called when a page is scheduled for dispose.  This generally only happens when the page
+     * goes out of view and it and it's resources are no longer needed. This method may execute on the AWT thread
+     * so it is important that work is kept to a minimal.
      */
-    public void addAnnotation(AnnotationComponent annotation);
+    void pageTeardownCallback();
 
-    /**
-     * Remove the specified annotation from this page view.
-     *
-     * @param annotationComp annotation to be removed.
-     */
-    public void removeAnnotation(AnnotationComponent annotationComp);
 
-    public void setToolMode(final int viewToolMode);
 }

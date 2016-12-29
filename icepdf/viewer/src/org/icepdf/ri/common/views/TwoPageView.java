@@ -36,13 +36,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class TwoPageView extends AbstractDocumentView {
 
-    protected JScrollPane documentScrollpane;
-
-    protected boolean disposing;
-
     protected int viewAlignment;
-
-    protected JPanel pagesPanel;
 
     // specialized listeners for different gui operations
     protected Object pageChangerListener;
@@ -118,7 +112,7 @@ public class TwoPageView extends AbstractDocumentView {
             // remove old component
             pagesPanel.removeAll();
             pagesPanel.validate();
-            PageViewComponent pageViewComponent;
+            AbstractPageViewComponent pageViewComponent;
             int count = 0;
             int index = documentViewModel.getViewCurrentPageIndex();
             int docLength = pageComponents.size();
@@ -140,9 +134,9 @@ public class TwoPageView extends AbstractDocumentView {
                 if (pageViewComponent != null) {
                     pageViewComponent.setDocumentViewCallback(this);
                     // add component to layout
-                    pagesPanel.add(new PageViewDecorator((JComponent) pageViewComponent));
+                    pagesPanel.add(new PageViewDecorator(pageViewComponent));
                     pageViewComponent.invalidate();
-                    ((JComponent) pageViewComponent).validate();
+                    pageViewComponent.validate();
                     count++;
                 }
             }

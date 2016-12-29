@@ -30,6 +30,7 @@ import java.awt.*;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * The CollectionDocumentView is used for documents that specify a PDF Package.
@@ -43,7 +44,6 @@ public class CollectionDocumentView extends AbstractDocumentView {
 
     private static final long serialVersionUID = 7220521612114533227L;
 
-    private JPanel collectionDocumentPanel;
 
     public CollectionDocumentView(DocumentViewController documentViewController,
                                   JScrollPane documentScrollpane, DocumentViewModel documentViewModel) {
@@ -59,17 +59,17 @@ public class CollectionDocumentView extends AbstractDocumentView {
         final ModifiedFlowLayout layout = new ModifiedFlowLayout();
         layout.setHgap(15);
         layout.setVgap(15);
-        collectionDocumentPanel = new JPanel(layout);
-        collectionDocumentPanel.setBackground(BACKGROUND_COLOUR);
+        pagesPanel = new JPanel(layout);
+        pagesPanel.setBackground(BACKGROUND_COLOUR);
         this.setLayout(new BorderLayout());
-        this.add(collectionDocumentPanel,
+        this.add(pagesPanel,
                 BorderLayout.CENTER);
 
         documentScrollpane.getViewport().addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 JViewport tmp = (JViewport) e.getSource();
-                Dimension dim = layout.computeSize(tmp.getWidth(), collectionDocumentPanel);
-                collectionDocumentPanel.setPreferredSize(dim);
+                Dimension dim = layout.computeSize(tmp.getWidth(), pagesPanel);
+                pagesPanel.setPreferredSize(dim);
             }
         });
 
@@ -86,7 +86,7 @@ public class CollectionDocumentView extends AbstractDocumentView {
         DocumentViewComponent documentViewComponent;
         Library library = currentDocument.getCatalog().getLibrary();
         NameTree embeddedFilesNameTree = currentDocument.getCatalog().getNames().getEmbeddedFilesNameTree();
-        java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
+        List filePairs = embeddedFilesNameTree.getNamesAndValues();
 
         // add components for every page in the document
         for (int i = 0, max = filePairs.size(); i < max; i += 2) {
@@ -112,9 +112,9 @@ public class CollectionDocumentView extends AbstractDocumentView {
             JLabel fileNameLabel = new JLabel(fileName);
             fileNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             documentViewPanel.add(fileNameLabel);
-            collectionDocumentPanel.add(documentViewPanel);
+            pagesPanel.add(documentViewPanel);
         }
-        collectionDocumentPanel.revalidate();
+        pagesPanel.revalidate();
         documentScrollpane.validate();
     }
 
@@ -122,7 +122,7 @@ public class CollectionDocumentView extends AbstractDocumentView {
     public void dispose() {
         super.dispose();
         this.removeMouseListener(this);
-        collectionDocumentPanel.removeAll();
+        pagesPanel.removeAll();
     }
 
     @Override

@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views;
 import org.icepdf.core.Memento;
 import org.icepdf.core.pobjects.Document;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -169,16 +168,16 @@ public interface DocumentViewModel {
     /**
      * Adds the specified page to the list of selected pages.
      *
-     * @param pageViewComponent pageview component to add to list.
+     * @param pageComponent pageView component to add to list.
      */
-    public void addSelectedPageText(AbstractPageViewComponent pageViewComponent);
+    public void addSelectedPageText(AbstractPageViewComponent pageComponent);
 
     /**
      * Remove the specified page to the list of selected pages.
      *
-     * @param pageViewComponent pageView component to add to list.
+     * @param pageComponent pageView component to add to list.
      */
-    public void removeSelectedPageText(AbstractPageViewComponent pageViewComponent);
+    public void removeSelectedPageText(AbstractPageViewComponent pageComponent);
 
     /**
      * Returns true if all text in the document should be in a selected state.
@@ -250,11 +249,6 @@ public interface DocumentViewModel {
      * @return view rotation of the model
      */
     public float getViewRotation();
-
-    /**
-     * Invalidate the underlying Document Page models.
-     */
-    public void invalidate();
 
     /**
      * Sets the view tool mode.
@@ -329,10 +323,4 @@ public interface DocumentViewModel {
     public void addMemento(Memento oldMementoState,
                            Memento newMementoState);
 
-    /**
-     * Get an instance of the dirty Timer use by all child PageComponents.
-     *
-     * @return instance of Swing Timer
-     */
-    public Timer getDirtyTimer();
 }

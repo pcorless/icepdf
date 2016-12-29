@@ -37,6 +37,13 @@ import java.util.logging.Logger;
  * be deleted to trigger this class to re-read the System fonts and re-create
  * a new "pdfviewerfontcache.properties" properites file.
  *
+ * // read/store the font cache.
+ * ResourceBundle messageBundle = ResourceBundle.getBundle(
+ * PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+ * PropertiesManager properties = new PropertiesManager(System.getProperties(),
+ * ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+ * new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+ *
  * @since 2.0
  */
 public class FontPropertiesManager {

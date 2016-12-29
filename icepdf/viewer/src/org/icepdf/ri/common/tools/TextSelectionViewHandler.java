@@ -19,6 +19,7 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import javax.swing.*;
 import java.awt.*;
@@ -59,7 +60,7 @@ public class TextSelectionViewHandler extends TextSelection
         clearSelectionState();
 
         // check if we are over a page
-        AbstractPageViewComponent pageComponent = isOverPageComponent(parentComponent, e);
+        PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
 
         if (pageComponent != null) {
             pageComponent.requestFocus();
@@ -81,7 +82,7 @@ public class TextSelectionViewHandler extends TextSelection
         resetRectangle(e.getX(), e.getY());
 
         // check if we are over a page
-        AbstractPageViewComponent pageComponent = isOverPageComponent(parentComponent, e);
+        PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
         if (pageComponent != null) {
             pageComponent.requestFocus();
             MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
@@ -107,9 +108,9 @@ public class TextSelectionViewHandler extends TextSelection
 
             if (selectedPages != null &&
                     selectedPages.size() > 0) {
-                AbstractPageViewComponent pageComp;
+                PageViewComponentImpl pageComp;
                 for (AbstractPageViewComponent selectedPage : selectedPages) {
-                    pageComp = selectedPage;
+                    pageComp = (PageViewComponentImpl) selectedPage;
                     if (pageComp != null) {
                         pageComp.getTextSelectionPageHandler().selectionEnd(modeEvent.getPoint(), pageComp);
                     }
@@ -172,7 +173,7 @@ public class TextSelectionViewHandler extends TextSelection
                         // pass the selection movement on to the page.
                         boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
                         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
-                        page.getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
+                        ((PageViewComponentImpl) page).getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
 
                     } else {
                         documentViewModel.removeSelectedPageText(page);
@@ -187,7 +188,7 @@ public class TextSelectionViewHandler extends TextSelection
 
     public void mouseMoved(MouseEvent e) {
 
-        AbstractPageViewComponent pageComponent = isOverPageComponent(parentComponent, e);
+        PageViewComponentImpl pageComponent = isOverPageComponent(parentComponent, e);
         if (pageComponent != null) {
             // assign the correct icon state for the cursor.
             MouseEvent modeEvent = SwingUtilities.convertMouseEvent(parentComponent, e, pageComponent);
