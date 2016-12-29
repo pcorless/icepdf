@@ -25,11 +25,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- *
- *
- * @since 2.5 first version
  * @since 6.2 heavily modified behaviour for cpu and memory enhancements.
  */
+@SuppressWarnings("serial")
 public class PageViewComponentImpl extends AbstractPageViewComponent implements FocusListener {
 
     private static final Logger logger =
@@ -84,7 +82,6 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         g2d.dispose();
     }
 
-    @Override
     public void dispose() {
         // remove annotation listeners.
         removeMouseMotionListener(currentToolHandler);
@@ -382,7 +379,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         refreshAnnotationComponents(page);
     }
 
-    public void pageTeardownCallback(){
+    public void pageTeardownCallback() {
         annotationComponents = null;
     }
 
