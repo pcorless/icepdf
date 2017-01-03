@@ -46,8 +46,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private static boolean disableXObjectSMask;
 
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
-    // realistically we seldom have enough memory to load anythign bigger then 8000px.  4k+ image are big!
-    private static int MAX_IMAGE_SIZE = 17000; // Short.MAX_VALUE
+    // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
+    public static int MAX_IMAGE_SIZE = 8000; // Short.MAX_VALUE
 
     static {
         // decide if large images will be scaled
@@ -55,7 +55,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 Defs.sysPropertyBoolean("org.icepdf.core.disableXObjectSMask",
                         false);
 
-        MAX_IMAGE_SIZE = Defs.sysPropertyInt("org.icepdf.core.maxSmaskImageSize", 17000);
+        MAX_IMAGE_SIZE = Defs.sysPropertyInt("org.icepdf.core.maxSmaskImageSize", MAX_IMAGE_SIZE);
     }
 
     public FormDrawCmd(Form xForm) {
@@ -174,7 +174,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 BufferedImage shape = createBufferXObject(parentPage, xForm, null, renderingHints, true);
                 xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, shape);
             }
-//            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference());
+//            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
+//                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
         }
         g.drawImage(xFormBuffer, null, x, y);
         return currentShape;

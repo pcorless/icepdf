@@ -602,8 +602,8 @@ public abstract class AbstractContentParser implements ContentParser {
                 // need to capture the alpha which is only possible
                 // by paint the xObject to an image.
                 if (!disableTransparencyGroups &&
-                        ((formXObject.getBBox().getWidth() < Short.MAX_VALUE && formXObject.getBBox().getWidth() > 1) &&
-                                (formXObject.getBBox().getHeight() < Short.MAX_VALUE && formXObject.getBBox().getHeight() > 1)
+                        ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
+                                (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
                                 && (formXObject.getExtGState() != null &&
                                 (formXObject.getExtGState().getSMask() != null || formXObject.getExtGState().getBlendingMode() != null
                                         || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
