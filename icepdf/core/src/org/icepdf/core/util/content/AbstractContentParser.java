@@ -701,19 +701,32 @@ public abstract class AbstractContentParser implements ContentParser {
                         dash = Math.abs(((Number) dashVector.get(i)).floatValue());
                         // java has a hard time with painting dash array with values < 0.05.
                         // null the dash array as we can't pain it PDF-966.
-                        if (dash < 0.05f) {
-                            nullArray = true;
-                        }
+                        if (dash < 0.05f) nullArray = true;
                         dashArray[i] = dash;
                     }
                 }
                 // corner case check to see if the dash array contains a first element
                 // that is very different then second which is likely the result of
-                // a MS office bug where the first element of the array isn't scaled to
+                // a itext/MS office bug where a dash element of the array isn't scaled to
                 // user space.
-                if (dashArray.length > 1 && dashArray[0] != 0 &&
-                        dashArray[0] < dashArray[1] / 10000) {
-                    dashArray[0] = dashArray[1];
+                if (dashArray.length > 1 && dashArray[0] != 0) {
+                    boolean isOffice = false;
+                    int spread = 10000;
+                    for (int i = 0, max = dashArray.length - 1; i < max; i++) {
+                        float diff = dashArray[i] - dashArray[i + 1];
+                        if (diff > spread || diff < -spread) {
+                            isOffice = true;
+                            break;
+                        }
+                    }
+                    if (isOffice) {
+                        for (int i = 0, max = dashArray.length; i < max; i++) {
+                            if (dashArray[i] < 10) {
+                                // scale to PDF space.
+                                dashArray[i] = dashArray[i] * 1000;
+                            }
+                        }
+                    }
                 }
                 // null the dash array if one of the dash values was less then 0.05.
                 if (nullArray) {
