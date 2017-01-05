@@ -40,14 +40,6 @@ public class ShadingType3Pattern extends ShadingPattern {
     private static final Logger logger =
             Logger.getLogger(ShadingType3Pattern.class.toString());
 
-    // A 1-in, n-out function or an array of n 1-in, 1-out functions (where n
-    // is the number of colour components in the shading dictionary's colour
-    // space).  The function(s) are called with values of the parametric variables
-    // t in the domain defined by the domain entry.  Each function's domain must
-    // be a superset of that of the shading dictionary.  If the return value
-    // is out of range it is adjusted to the nearest value.
-    protected Function[] function;
-
     // An array of two numbers [t0, t1] specifying the limiting values of a
     // parametric variable t. The variable is considered to vary linearly between
     // these two values as the colour gradient varies between the starting and
@@ -80,35 +72,35 @@ public class ShadingType3Pattern extends ShadingPattern {
             return;
         }
 
-        // shading dictionary
-        if (shading == null) {
-            shading = library.getDictionary(entries, SHADING_KEY);
+        // shadingDictionary dictionary
+        if (shadingDictionary == null) {
+            shadingDictionary = library.getDictionary(entries, SHADING_KEY);
         }
 
-        shadingType = library.getInt(shading, SHADING_TYPE_KEY);
-        bBox = library.getRectangle(shading, BBOX_KEY);
+        shadingType = library.getInt(shadingDictionary, SHADING_TYPE_KEY);
+        bBox = library.getRectangle(shadingDictionary, BBOX_KEY);
         colorSpace = PColorSpace.getColorSpace(library,
-                library.getObject(shading, COLORSPACE_KEY));
-        if (library.getObject(shading, BACKGROUND_KEY) != null &&
-                library.getObject(shading, BACKGROUND_KEY) instanceof List) {
-            background = (List) library.getObject(shading, BACKGROUND_KEY);
+                library.getObject(shadingDictionary, COLORSPACE_KEY));
+        if (library.getObject(shadingDictionary, BACKGROUND_KEY) != null &&
+                library.getObject(shadingDictionary, BACKGROUND_KEY) instanceof List) {
+            background = (List) library.getObject(shadingDictionary, BACKGROUND_KEY);
         }
-        antiAlias = library.getBoolean(shading, ANTIALIAS_KEY);
+        antiAlias = library.getBoolean(shadingDictionary, ANTIALIAS_KEY);
 
         // get type 2 specific data.
-        Object tmp = library.getObject(shading, DOMAIN_KEY);
+        Object tmp = library.getObject(shadingDictionary, DOMAIN_KEY);
         if (tmp instanceof List) {
             domain = (List<Number>) tmp;
         } else {
             domain = new ArrayList<Number>(2);
-            domain.add(new Float(0.0));
-            domain.add(new Float(1.0));
+            domain.add(0.0f);
+            domain.add(1.0f);
         }
-        tmp = library.getObject(shading, COORDS_KEY);
+        tmp = library.getObject(shadingDictionary, COORDS_KEY);
         if (tmp instanceof List) {
             coords = (List) tmp;
         }
-        tmp = library.getObject(shading, EXTEND_KEY);
+        tmp = library.getObject(shadingDictionary, EXTEND_KEY);
         if (tmp instanceof List) {
             extend = (List) tmp;
         } else {
@@ -116,7 +108,7 @@ public class ShadingType3Pattern extends ShadingPattern {
             extend.add(false);
             extend.add(false);
         }
-        tmp = library.getObject(shading, FUNCTION_KEY);
+        tmp = library.getObject(shadingDictionary, FUNCTION_KEY);
         if (tmp != null) {
             if (!(tmp instanceof List)) {
                 function = new Function[]{Function.getFunction(library,
@@ -189,22 +181,8 @@ public class ShadingType3Pattern extends ShadingPattern {
         // find colour at point 
         float[] input = new float[1];
         input[0] = t;
-
         if (function != null) {
-
-            float[] output;
-            int length = function.length;
-            // simple 1 in N out function
-            if (length == 1) {
-                output = function[0].calculate(input);
-            } else {
-                // vector of function for each colour component, 1 in 1 out.
-                output = new float[length];
-                for (int i = 0; i < length; i++) {
-                    output[i] = function[i].calculate(input)[0];
-                }
-            }
-
+            float[] output = calculateValues(input);
             if (output != null) {
                 if (!(colorSpace instanceof DeviceN)) {
                     output = PColorSpace.reverse(output);
@@ -213,12 +191,10 @@ public class ShadingType3Pattern extends ShadingPattern {
             } else {
                 return null;
             }
-
         } else {
             logger.fine("Error processing Shading Type 3 Pattern.");
             return null;
         }
-
     }
 
     /**

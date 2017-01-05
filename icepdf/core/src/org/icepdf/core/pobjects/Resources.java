@@ -325,13 +325,10 @@ public class Resources extends Dictionary {
             if (shadingDictionary != null && shadingDictionary instanceof HashMap) {
                 return ShadingPattern.getShadingPattern(library, entries,
                         (HashMap) shadingDictionary);
+            } else if (shadingDictionary != null && shadingDictionary instanceof Stream) {
+                return ShadingPattern.getShadingPattern(library, null,
+                        (Stream) shadingDictionary);
             }
-//            else if (shadingDictionary != null && shadingDictionary instanceof Stream) {
-//                System.out.println("Found Type 6 shading pattern.... returning empty pattern data. ");
-            // todo: alter parser to take into account stream shading types...
-//                return new ShadingType6Pattern(library, null);
-//                return null;
-//            }
         }
         return null;
     }
