@@ -75,27 +75,27 @@ public class ShadingType1Pattern extends ShadingType2Pattern {
         }
 
         // shading dictionary
-        if (shading == null) {
-            shading = library.getDictionary(entries, SHADING_KEY);
+        if (shadingDictionary == null) {
+            shadingDictionary = library.getDictionary(entries, SHADING_KEY);
         }
 
         colorSpace = PColorSpace.getColorSpace(library,
-                library.getObject(shading, COLORSPACE_KEY));
+                library.getObject(shadingDictionary, COLORSPACE_KEY));
 
         // get type 2 specific data.
-        Object tmp = library.getObject(shading, DOMAIN_KEY);
+        Object tmp = library.getObject(shadingDictionary, DOMAIN_KEY);
         if (tmp instanceof java.util.List) {
             domain = (List<Number>) tmp;
         } else {
             domain = new ArrayList<Number>(2);
-            domain.add(new Float(0.0));
-            domain.add(new Float(1.0));
-            domain.add(new Float(0.0));
-            domain.add(new Float(1.0));
+            domain.add(0.0f);
+            domain.add(1.0f);
+            domain.add(0.0f);
+            domain.add(1.0f);
         }
 
         // functions
-        tmp = library.getObject(shading, FUNCTION_KEY);
+        tmp = library.getObject(shadingDictionary, FUNCTION_KEY);
         if (tmp != null) {
             if (!(tmp instanceof java.util.List)) {
                 function = new Function[]{Function.getFunction(library,
