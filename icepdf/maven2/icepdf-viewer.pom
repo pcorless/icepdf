@@ -109,7 +109,17 @@
 
     </dependencies>
     
-	<plugins>
+    <profiles>
+        <profile>
+            <id>sign-artifacts</id>
+            <activation>
+                <!--<activeByDefault>true</activeByDefault>-->
+                <property>
+                    <name>signArtifacts</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
@@ -128,6 +138,9 @@
             				</execution>
                         </executions>
                     </plugin>
-	</plugins>    
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     
 </project>
