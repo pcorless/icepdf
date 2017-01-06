@@ -1143,9 +1143,9 @@ public class DocumentViewControllerImpl
         if (changed) {
             documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
             documentViewScrollPane.invalidate();
-            documentViewScrollPane.revalidate();
+            documentViewScrollPane.validate();
             documentViewScrollPane.getViewport().getView().invalidate();
-            documentViewScrollPane.getViewport().getView().revalidate();
+            documentViewScrollPane.getViewport().getView().validate();
         }
 
         // center zoom calculation, find current center and pass
