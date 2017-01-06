@@ -109,11 +109,10 @@
 
     </dependencies>
     
-    <profiles>
+  <!--   <profiles>
         <profile>
             <id>sign-artifacts</id>
             <activation>
-                <!--<activeByDefault>true</activeByDefault>-->
                 <property>
                     <name>signArtifacts</name>
                 </property>
@@ -141,6 +140,6 @@
                 </plugins>
             </build>
         </profile>
-    </profiles>
+    </profiles>   -->
     
 </project>
