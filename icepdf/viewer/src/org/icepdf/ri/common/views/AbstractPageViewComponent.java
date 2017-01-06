@@ -394,7 +394,13 @@ public abstract class AbstractPageViewComponent
 
         public Object call() throws Exception {
             if (!isPageIntersectViewport()) {
-                pageTeardownCallback();
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        // we're cleaning up the page which may involve awt component manipulations o we queue
+                        // callback on the awt thread so we don't try and paint something we just removed
+                        pageTeardownCallback();
+                    }
+                });
                 return null;
             }
             // paint page.

@@ -1049,6 +1049,7 @@ public class DocumentViewControllerImpl
         }
         // not sure why, but have to set twice for reliable results
         documentViewScrollPane.getViewport().setViewPosition(centeringPoint);
+        documentViewScrollPane.getViewport().setViewPosition(centeringPoint);
     }
 
 
@@ -1137,13 +1138,14 @@ public class DocumentViewControllerImpl
         }
         // grab previous zoom so that zoom factor can be calculated
         float previousZoom = getZoom();
-
         // apply zoom
         boolean changed = documentViewModel.setViewZoom(zoom);
         if (changed) {
-            documentViewScrollPane.invalidate();
             documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
-            documentViewScrollPane.validate();
+            documentViewScrollPane.invalidate();
+            documentViewScrollPane.revalidate();
+            documentViewScrollPane.getViewport().getView().invalidate();
+            documentViewScrollPane.getViewport().getView().revalidate();
         }
 
         // center zoom calculation, find current center and pass
@@ -1155,6 +1157,8 @@ public class DocumentViewControllerImpl
                     (zoomPointDelta.y / previousZoom) * zoom);
             zoomPointDelta.setLocation(bounds.x + zoomPointDelta.x,
                     bounds.y + zoomPointDelta.y);
+            // view hasn't been update yet so we double set the position to make it take effect.
+            getViewPort().setViewPosition(zoomPointDelta);
             getViewPort().setViewPosition(zoomPointDelta);
         }
 
