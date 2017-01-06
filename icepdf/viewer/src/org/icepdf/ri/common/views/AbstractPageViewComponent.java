@@ -211,13 +211,11 @@ public abstract class AbstractPageViewComponent
         }
         if (PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE.equals(propertyConstant)) {
             pageRotation = (Float) newValue;
-        }
-        else if (PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(propertyConstant)) {
+        } else if (PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE.equals(propertyConstant)) {
             pageZoom = (Float) newValue;
-        }
-        else if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(propertyConstant)) {
+        } else if (PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE.equals(propertyConstant)) {
             // nothing to do but repaint
-        }else if (PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(propertyConstant)) {
+        } else if (PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE.equals(propertyConstant)) {
             // re-initialized the page.
             pageBufferStore.setDirty(true);
             Page page = getPage();
@@ -394,13 +392,7 @@ public abstract class AbstractPageViewComponent
 
         public Object call() throws Exception {
             if (!isPageIntersectViewport()) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        // we're cleaning up the page which may involve awt component manipulations o we queue
-                        // callback on the awt thread so we don't try and paint something we just removed
-                        pageTeardownCallback();
-                    }
-                });
+                pageTeardownCallback();
                 return null;
             }
             // paint page.

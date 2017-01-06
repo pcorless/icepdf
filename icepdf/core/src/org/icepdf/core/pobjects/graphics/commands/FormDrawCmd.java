@@ -47,7 +47,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
     // Used to use Max_value but we have a few corner cases where the dimension is +-5 of Short.MAX_VALUE, but
     // realistically we seldom have enough memory to load anything bigger then 8000px.  4k+ image are big!
-    public static int MAX_IMAGE_SIZE = 8000; // Short.MAX_VALUE
+    public static int MAX_IMAGE_SIZE = 2000; // Short.MAX_VALUE
 
     static {
         // decide if large images will be scaled
