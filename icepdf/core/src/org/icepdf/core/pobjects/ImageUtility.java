@@ -139,6 +139,9 @@ public class ImageUtility {
      */
     public static BufferedImage createTranslucentCompatibleImage(int width, int height) {
         if (configuration != null) {
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer("Creating translucent image buffer " + width + "x" + height);
+            }
             return configuration.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
         } else {
             return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -530,7 +533,14 @@ public class ImageUtility {
         baseWidth = baseImage.getWidth();
         baseHeight = baseImage.getHeight();
 
-        BufferedImage argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
+        BufferedImage argbImage;
+        if (hasAlpha) {
+            argbImage = baseImage;
+        } else {
+            // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        }
         int[] srcBand = new int[baseWidth];
         int[] maskBnd = new int[baseWidth];
         // iterate over each band to apply the mask
@@ -564,17 +574,19 @@ public class ImageUtility {
      */
     public static BufferedImage applyBlendingMode(BufferedImage baseImage, Name blendingMode, Color blendColor) {
 
-//        extGState.getBlendingMode().equals("Multiply")
-
-
-        // check to make sure the mask and the image are the same size.
-
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
-        BufferedImage argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
+        BufferedImage argbImage;
+        if (hasAlpha) {
+            argbImage = baseImage;
+        } else {
+            // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        }
         int[] srcBand = new int[baseWidth];
         int[] blendBand = new int[baseWidth];
         int blendColorValue = blendColor.getRGB();
@@ -626,10 +638,14 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
+        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-        argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
-
+        if (hasAlpha) {
+            argbImage = baseImage;
+        } else {
+            // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        }
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
         // iterate over each band to apply the mask
@@ -665,9 +681,14 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
+        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-        argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        if (hasAlpha) {
+            argbImage = baseImage;
+        } else {
+            // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        }
 
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
@@ -720,9 +741,14 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
+        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-        argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        if (hasAlpha) {
+            argbImage = baseImage;
+        } else {
+            // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
+            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+        }
 
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
