@@ -380,44 +380,52 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     }
 
     public void pageTeardownCallback() {
-        annotationComponents = null;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                // we're cleaning up the page which may involve awt component manipulations o we queue
+                // callback on the awt thread so we don't try and paint something we just removed
+                annotationComponents = null;
+            }
+        });
     }
 
     public void refreshAnnotationComponents(Page page) {
         if (page != null) {
             List<Annotation> annotations = page.getAnnotations();
+            final AbstractPageViewComponent parent = this;
             if (annotations != null && annotations.size() > 0) {
                 // we don't want to re-initialize the component as we'll
                 // get duplicates if the page has be gc'd
-                if (annotationComponents == null) {
-                    annotationComponents = new ArrayList<AbstractAnnotationComponent>(annotations.size());
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        if (annotationComponents == null) {
+                            annotationComponents = new ArrayList<AbstractAnnotationComponent>(annotations.size());
 
-                    for (Annotation annotation : annotations) {
-                        // parser can sometimes return an empty array depending on the PDF syntax being used.
-                        if (annotation != null) {
-                            final AbstractAnnotationComponent comp =
-                                    AnnotationComponentFactory.buildAnnotationComponent(
-                                            annotation, documentViewController,
-                                            this, documentViewModel);
-                            if (comp != null) {
-                                // add for painting
-                                annotationComponents.add(comp);
-                                // add to layout
-                                final JComponent parent = this;
-                                SwingUtilities.invokeLater(new Runnable() {
-                                    public void run() {
+                            for (Annotation annotation : annotations) {
+                                // parser can sometimes return an empty array depending on the PDF syntax being used.
+                                if (annotation != null) {
+                                    final AbstractAnnotationComponent comp =
+                                            AnnotationComponentFactory.buildAnnotationComponent(
+                                                    annotation, documentViewController,
+                                                    parent, documentViewModel);
+                                    if (comp != null) {
+                                        // add for painting
+                                        annotationComponents.add(comp);
+                                        // add to layout
                                         if (comp instanceof PopupAnnotationComponent) {
                                             parent.add(comp, JLayeredPane.POPUP_LAYER);
                                         } else {
                                             parent.add(comp, JLayeredPane.DEFAULT_LAYER);
                                         }
                                     }
-                                });
+
+                                }
                             }
                         }
                     }
-                }
+                });
             }
         }
     }
+
 }

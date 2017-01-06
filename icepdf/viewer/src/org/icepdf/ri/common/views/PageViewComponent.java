@@ -71,8 +71,8 @@ public interface PageViewComponent {
 
     /**
      * This callback is called when a page is scheduled for dispose.  This generally only happens when the page
-     * goes out of view and it and it's resources are no longer needed. This method may execute on the AWT thread
-     * so it is important that work is kept to a minimal.
+     * goes out of view and it and it's resources are no longer needed. This method in the default implementation
+     * is executed on a worker thread.  Any AWT work should be queued to run on the AWT thread.
      */
     void pageTeardownCallback();
 
