@@ -391,7 +391,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
     public void refreshAnnotationComponents(Page page) {
         if (page != null) {
-            List<Annotation> annotations = page.getAnnotations();
+            final List<Annotation> annotations = page.getAnnotations();
             final AbstractPageViewComponent parent = this;
             if (annotations != null && annotations.size() > 0) {
                 // we don't want to re-initialize the component as we'll
