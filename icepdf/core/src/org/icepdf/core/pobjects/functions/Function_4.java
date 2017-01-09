@@ -22,8 +22,8 @@ import org.icepdf.core.util.Utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,7 +50,7 @@ public class Function_4 extends Function {
     private byte[] functionContent;
 
     // cache for calculated colour values
-    private HashMap<Integer, float[]> resultCache;
+    private ConcurrentHashMap<Integer, float[]> resultCache;
 
     public Function_4(Dictionary d) {
         super(d);
@@ -66,7 +66,7 @@ public class Function_4 extends Function {
             logger.warning("Type 4 function operands could not be found.");
         }
         // cache for type 4 function results.
-        resultCache = new HashMap<Integer, float[]>();
+        resultCache = new ConcurrentHashMap<Integer, float[]>();
     }
 
     /**

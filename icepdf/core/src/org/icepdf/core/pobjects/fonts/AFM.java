@@ -156,7 +156,7 @@ public class AFM {
     };
 
 
-    public static HashMap<String, AFM> AFMs = new HashMap<String, AFM>(14);
+    public static final HashMap<String, AFM> AFMs = new HashMap<String, AFM>(14);
 
 
     private String fontName;
