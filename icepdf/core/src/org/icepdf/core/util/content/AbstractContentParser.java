@@ -830,7 +830,7 @@ public abstract class AbstractContentParser implements ContentParser {
                 // corner cases:
                 // get the first pages resources, no need to lock the page, already locked.
                 Page page = resources.getLibrary().getCatalog().getPageTree().getPage(0);
-                page.init();
+                page.initPageResources();
                 Resources res = page.getResources();
                 // try and get a font off the first page.
                 Object pageFonts = res.getEntries().get(Resources.FONT_KEY);
