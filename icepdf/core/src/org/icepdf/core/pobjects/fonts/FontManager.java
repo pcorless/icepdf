@@ -405,9 +405,9 @@ public class FontManager {
                 }
             }
         } catch (AccessControlException e) {
-            logger.log(Level.FINER, "SecurityException: failed to load fonts from directory: ", e);
+            logger.log(Level.WARNING, "SecurityException: failed to load fonts from directory: ", e);
         } catch (Throwable e) {
-            logger.log(Level.FINER, "Failed to load fonts from directory: ", e);
+            logger.log(Level.FINE, "Failed to load fonts from directory: ", e);
         }
     }
 
