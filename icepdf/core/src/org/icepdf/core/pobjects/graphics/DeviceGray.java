@@ -21,6 +21,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @since 1.0
@@ -31,7 +32,7 @@ public class DeviceGray extends PColorSpace {
     public static final Name G_KEY = new Name("G");
     private static final ColorSpace RGB_COLOR_SPACE = ColorSpace.getInstance(ColorSpace.CS_sRGB);
 
-    private static HashMap<Float, Color> colorHashMap = new HashMap<Float, Color>(255);
+    private static ConcurrentHashMap<Float, Color> colorHashMap = new ConcurrentHashMap<Float, Color>(255);
 
     public DeviceGray(Library l, HashMap h) {
         super(l, h);

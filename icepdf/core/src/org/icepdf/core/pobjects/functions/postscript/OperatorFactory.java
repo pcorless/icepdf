@@ -15,8 +15,8 @@
  */
 package org.icepdf.core.pobjects.functions.postscript;
 
-import java.util.HashMap;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Operator factory takes a operand char offset and quickly returns a Operator
@@ -28,8 +28,8 @@ import java.util.Stack;
  */
 public class OperatorFactory {
 
-    private static HashMap<Integer, Operator> operatorCache =
-            new HashMap<Integer, Operator>();
+    private static ConcurrentHashMap<Integer, Operator> operatorCache =
+            new ConcurrentHashMap<Integer, Operator>();
 
     @SuppressWarnings(value = "unchecked")
     public static Operator getOperator(char ch[], int offset, int length) {
