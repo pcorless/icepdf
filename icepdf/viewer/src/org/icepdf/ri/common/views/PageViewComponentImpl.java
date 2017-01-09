@@ -403,12 +403,13 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
                             for (Annotation annotation : annotations) {
                                 // parser can sometimes return an empty array depending on the PDF syntax being used.
-                                if (annotation != null) {
+                                if (annotation != null
+                                        && annotation.allowScreenOrPrintRenderingOrInteraction()) {
                                     final AbstractAnnotationComponent comp =
                                             AnnotationComponentFactory.buildAnnotationComponent(
                                                     annotation, documentViewController,
                                                     parent, documentViewModel);
-                                    if (comp != null) {
+                                    if (comp != null ) {
                                         // add for painting
                                         annotationComponents.add(comp);
                                         // add to layout
