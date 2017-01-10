@@ -15,9 +15,9 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
+import org.icepdf.core.pobjects.FileSpecification;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.actions.ActionFactory;
-import org.icepdf.core.pobjects.actions.FileSpecification;
 import org.icepdf.core.pobjects.actions.SubmitFormAction;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;

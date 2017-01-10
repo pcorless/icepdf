@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.FileSpecification;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;

@@ -34,6 +34,7 @@ import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.annotation.AnnotationHandlerPanel;
 import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesPanel;
 import org.icepdf.ri.common.utility.annotation.acroform.AcroFormHandlerPanel;
+import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.search.SearchPanel;
@@ -208,6 +209,7 @@ public class SwingController
     private JTree outlinesTree;
     private JScrollPane outlinesScrollPane;
     private SearchPanel searchPanel;
+    private AttachmentPanel attachmentPanel;
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
     private SignaturesHandlerPanel signaturesHandlerPanel;
@@ -1017,6 +1019,13 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
+    public void setAttachmentPanel(AttachmentPanel sp) {
+        attachmentPanel = sp;
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
     public void setThumbnailsPanel(ThumbnailsPanel tn) {
         thumbnailsPanel = tn;
     }
@@ -1117,18 +1126,18 @@ public class SwingController
     }
 
     /**
-     * Tests to see if the PDF document is a collection and should be treaded as such.
+     * Tests to see if the PDF document is a collection and should be treated as such.
      *
      * @return true if PDF collection otherwise false.
      */
     public boolean isPdfCollection() {
         Catalog catalog = document.getCatalog();
-        if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
-                && catalog.getNames().getEmbeddedFilesNameTree().getRoot() != null) {
+        HashMap collection = catalog.getCollection();
+        if (collection != null) {
             // one final check as some docs will have meta data but will specify a page mode.
-            if (catalog.getObject(Catalog.PAGEMODE_KEY) == null ||
-                    ((Name) catalog.getObject(Catalog.PAGEMODE_KEY)).getName().equalsIgnoreCase("UseAttachments")) {
-                // check to see that at least one of the files is a PDF
+            // check to see that at least one of the files is a PDF
+            if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null &&
+                    catalog.getNames().getEmbeddedFilesNameTree().getRoot() != null) {
                 NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
                 java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
                 boolean found = false;
@@ -1221,14 +1230,14 @@ public class SwingController
                             messageBundle.getString("viewer.toolbar.hideUtilityPane.label") :
                             messageBundle.getString("viewer.toolbar.showUtilityPane.label"));
         }
-        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null && !pdfCollection);
+        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
         setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
         setEnabled(saveAsFileButton, opened);
         setEnabled(printButton, opened && canPrint && !pdfCollection);
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
-        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null && !pdfCollection);
+        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(currentPageNumberTextField, opened && nPages > 1 && !pdfCollection);
         if (numberOfPagesLabel != null) {
 
@@ -2351,12 +2360,27 @@ public class SwingController
         if (utilityTabbedPane != null) {
             // Page mode by default is UseNone, where other options are, UseOutlines,
             // UseThumbs, FullScreen (ignore), UseOC(ignore), Use Attachements(ignore);
-            tmp = catalog.getObject(Catalog.PAGEMODE_KEY);
-            if (tmp != null && tmp instanceof Name) {
-                String pageMode = ((Name) tmp).getName();
-                showUtilityPane = pageMode.equalsIgnoreCase("UseOutlines") ||
-                        pageMode.equalsIgnoreCase("UseOC") ||
-                        pageMode.equalsIgnoreCase("UseThumbs");
+            Name pageMode = catalog.getPageMode();
+            showUtilityPane = pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) ||
+                    pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) ||
+                    pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE) ||
+                    pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE);
+        }
+
+        // selected the utility tab defined by the page mode key
+        if (showUtilityPane) {
+            Name pageMode = catalog.getPageMode();
+            if (pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE)) {
+                utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
+            } else if (pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE)) {
+                utilityTabbedPane.setSelectedComponent(layersPanel);
+            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE)) {
+                utilityTabbedPane.setSelectedComponent(attachmentPanel);
+            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE)) {
+                utilityTabbedPane.setSelectedComponent(thumbnailsPanel);
+            } else {
+                // Catalog.PAGE_MODE_USE_NONE_VALUE
+                showUtilityPane = false;
             }
         }
 
@@ -2369,6 +2393,10 @@ public class SwingController
 
         if (signaturesHandlerPanel != null) {
             signaturesHandlerPanel.setDocument(document);
+        }
+
+        if (attachmentPanel != null) {
+            attachmentPanel.setDocument(document);
         }
 
         if (annotationHandlerPanel != null) {
@@ -2414,7 +2442,6 @@ public class SwingController
                     utilityTabbedPane.setEnabledAt(
                             utilityTabbedPane.indexOfComponent(outlinesScrollPane),
                             true);
-                    utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
                 }
             }
         } else {
@@ -2424,12 +2451,6 @@ public class SwingController
                             utilityTabbedPane.indexOfComponent(outlinesScrollPane),
                             false);
                 }
-            }
-
-            // Try to select the search panel
-            if (!safelySelectUtilityPanel(searchPanel)) {
-                // If that fails, try to select the annotationHandlerPanel
-                safelySelectUtilityPanel(annotationHandlerPanel);
             }
         }
 
@@ -2444,7 +2465,6 @@ public class SwingController
         } else {
             setUtilityPaneVisible(showUtilityPane);
         }
-        setPropertiesPaneVisible(false);
 
         // apply state value for whether form highlight is being used or not.
         boolean showFormHighlight = PropertiesManager.checkAndStoreBooleanProperty(
@@ -2465,25 +2485,21 @@ public class SwingController
                         true);
             }
         }
-        // check if there are signatures and enable/disable the tab as needed
-        boolean signaturesExist = document.getCatalog().getInteractiveForm() != null &&
-                document.getCatalog().getInteractiveForm().isSignatureFields();
-        if (signaturesHandlerPanel != null && utilityTabbedPane != null) {
-            if (signaturesExist) {
+        // check if there are any attachments and enable/disable the tab as needed
+        if (layersPanel != null && utilityTabbedPane != null &&
+                catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null) {
+            NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
+            if (embeddedFilesNameTree != null &&
+                    embeddedFilesNameTree.getRoot() != null) {
                 utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(signaturesHandlerPanel),
+                        utilityTabbedPane.indexOfComponent(attachmentPanel),
                         true);
-                // shows the signature pain on load.
-//                setUtilityPaneVisible(true);
-//                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(signaturesHandlerPanel));
-
-            } else {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(signaturesHandlerPanel),
-                        false);
             }
+        } else {
+            utilityTabbedPane.setEnabledAt(
+                    utilityTabbedPane.indexOfComponent(attachmentPanel),
+                    false);
         }
-        // check to see if
         boolean acroFormsExist = document.getCatalog().getInteractiveForm() != null &&
                 document.getCatalog().getInteractiveForm().getFields() != null;
         if (acroFormHandlerPanel != null && utilityTabbedPane != null) {
@@ -2491,10 +2507,6 @@ public class SwingController
                 utilityTabbedPane.setEnabledAt(
                         utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
                         true);
-                // shows the signature pain on load.
-                setUtilityPaneVisible(true);
-                utilityTabbedPane.setSelectedIndex(utilityTabbedPane.indexOfComponent(acroFormHandlerPanel));
-
             } else {
                 utilityTabbedPane.setEnabledAt(
                         utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
@@ -2544,6 +2556,10 @@ public class SwingController
 
         if (layersPanel != null) {
             layersPanel.setDocument(null);
+        }
+
+        if (attachmentPanel != null) {
+            attachmentPanel.setDocument(null);
         }
 
         if (signaturesHandlerPanel != null) {
@@ -2731,6 +2747,9 @@ public class SwingController
         }
         if (layersPanel != null) {
             layersPanel.dispose();
+        }
+        if (attachmentPanel != null) {
+            attachmentPanel.dispose();
         }
         if (signaturesHandlerPanel != null) {
             signaturesHandlerPanel.dispose();

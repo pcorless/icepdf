@@ -13,20 +13,17 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.core.pobjects.actions;
+package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.util.HashMap;
 
 /**
  * <p>The File Specification diction provides more flexibility then the string
  * form.  allowing different files to be specified for different file systems or
- * platforms, or for file system othere than the standard ones (DOS/Windows, Mac
+ * platforms, or for file system other than the standard ones (DOS/Windows, Mac
  * OS, and Unix).</p>
  *
  * @author ICEsoft Technologies, Inc.
@@ -195,9 +192,7 @@ public class FileSpecification extends Dictionary {
     public String getFileSpecification() {
         Object tmp = library.getObject(entries, F_KEY);
         if (tmp instanceof StringObject) {
-            return ((StringObject) tmp)
-                    .getDecryptedLiteralString(
-                            library.getSecurityManager());
+            return Utils.convertStringObject(library, (StringObject) tmp);
         } else {
             return null;
         }
@@ -220,9 +215,7 @@ public class FileSpecification extends Dictionary {
     public String getUnicodeFileSpecification() {
         Object tmp = library.getObject(entries, UF_KEY);
         if (tmp instanceof StringObject) {
-            return ((StringObject) tmp)
-                    .getDecryptedLiteralString(
-                            library.getSecurityManager());
+            return Utils.convertStringObject(library, (StringObject) tmp);
         } else {
             return null;
         }
@@ -313,6 +306,25 @@ public class FileSpecification extends Dictionary {
     }
 
     /**
+     * Gets the full file specification if present. If null is returned then the file specification is simple
+     * and a call should be made to dos, mac or unix, however these are obsolescent and likely won't be
+     * encountered.
+     *
+     * @return associated EmbeddedFileStream object if present, null otherwise.
+     */
+    public EmbeddedFileStream getEmbeddedFileStream() {
+        HashMap fileDictionary = getEmbeddedFileDictionary();
+        Reference fileRef = (Reference) fileDictionary.get(FileSpecification.F_KEY);
+        if (fileRef != null) {
+            Stream fileStream = (Stream) library.getObject(fileRef);
+            if (fileStream != null) {
+                return new EmbeddedFileStream(library, fileStream);
+            }
+        }
+        return null;
+    }
+
+    /**
      * Gets a dictionary with the same structure as the EF dectionary, which
      * must also b present.  EAch key in the RF dictionary must also be present
      * in the EF diciontary.  Each value is a related file array identifying
@@ -332,8 +344,7 @@ public class FileSpecification extends Dictionary {
     public String getDescription() {
         Object description = library.getObject(entries, DESC_KEY);
         if (description instanceof StringObject) {
-            StringObject tmp = (StringObject) description;
-            return tmp.getDecryptedLiteralString(library.getSecurityManager());
+            return Utils.convertStringObject(library, (StringObject) description);
         } else if (description instanceof String) {
             return description.toString();
         } else {
