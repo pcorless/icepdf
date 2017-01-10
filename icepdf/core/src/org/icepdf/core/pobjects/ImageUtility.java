@@ -139,8 +139,8 @@ public class ImageUtility {
      */
     public static BufferedImage createTranslucentCompatibleImage(int width, int height) {
         if (configuration != null) {
-            if (logger.isLoggable(Level.FINER)){
-                logger.finer("Creating translucent image buffer " + width + "x" +height);
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer("Creating translucent image buffer " + width + "x" + height);
             }
             return configuration.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
         } else {
@@ -204,7 +204,7 @@ public class ImageUtility {
     }
 
     public static void writeImage(final BufferedImage bufferedImage, final String fileName,
-                                  String baseOutputPath){
+                                  String baseOutputPath) {
         try {
             ImageIO.write(bufferedImage, "PNG",
                     new File(baseOutputPath + fileName + ".png"));
@@ -535,9 +535,9 @@ public class ImageUtility {
 
         boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        if (hasAlpha){
+        if (hasAlpha) {
             argbImage = baseImage;
-        }else {
+        } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
             argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
@@ -581,9 +581,9 @@ public class ImageUtility {
 
         boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        if (hasAlpha){
+        if (hasAlpha) {
             argbImage = baseImage;
-        }else {
+        } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
             argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
@@ -640,9 +640,9 @@ public class ImageUtility {
 
         boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        if (hasAlpha){
+        if (hasAlpha) {
             argbImage = baseImage;
-        }else {
+        } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
             argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
@@ -683,9 +683,9 @@ public class ImageUtility {
 
         boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        if (hasAlpha){
+        if (hasAlpha) {
             argbImage = baseImage;
-        }else {
+        } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
             argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
@@ -743,9 +743,9 @@ public class ImageUtility {
 
         boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
         BufferedImage argbImage;
-        if (hasAlpha){
+        if (hasAlpha) {
             argbImage = baseImage;
-        }else {
+        } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
             argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
@@ -839,8 +839,8 @@ public class ImageUtility {
             }
             // build a new buffer with indexed colour model.
             DataBuffer db = wr.getDataBuffer();
-    //        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
-    //        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
+            //        SampleModel sm = new PixelInterleavedSampleModel(db.getDataType(), width, height, 1, width, new int[]{0});
+            //        WritableRaster wr = Raster.createWritableRaster(sm, db, new Point(0, 0));
             ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
             img = new BufferedImage(cm, wr, false, null);
         } catch (InterruptedException e) {
@@ -856,63 +856,66 @@ public class ImageUtility {
             throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, IOException, ClassNotFoundException, InstantiationException {
         BufferedImage tmpImage;
 
-        // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
-        // can comply with levigo's open source licence.
-        Class<?> levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-        Class<?> jbig2ImageReaderSpiClass = Class.forName("com.levigo.jbig2.JBIG2ImageReaderSpi");
-        Class<?> jbig2GlobalsClass = Class.forName("com.levigo.jbig2.JBIG2Globals");
-        Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
-        Constructor levigoJbig2DecoderClassConstructor =
-                levigoJBIG2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);
-        Object levigoJbig2Reader = levigoJbig2DecoderClassConstructor.newInstance(jbig2ImageReaderSpi);
-        // set the input
-        Class partypes[] = new Class[1];
-        partypes[0] = Object.class;
-        Object arglist[] = new Object[1];
-        arglist[0] = imageInputStream;
-        Method setInput =
-                levigoJBIG2ImageReaderClass.getMethod("setInput", partypes);
-        setInput.invoke(levigoJbig2Reader, arglist);
-        // apply deocde params if any.
-        if (decodeParms != null) {
-            if (globalsStream != null) {
-                byte[] globals = globalsStream.getDecodedStreamBytes(0);
-                if (globals != null && globals.length > 0) {
-                    partypes = new Class[1];
-                    partypes[0] = javax.imageio.stream.ImageInputStream.class;
-                    arglist = new Object[1];
-                    arglist[0] = ImageIO.createImageInputStream(new ByteArrayInputStream(globals));
-                    Method processGlobals =
-                            levigoJBIG2ImageReaderClass.getMethod("processGlobals", partypes);
-                    Object globalSegments = processGlobals.invoke(levigoJbig2Reader, arglist);
-                    if (globalSegments != null) {
-                        // invoked encoder.setGlobalData(globals);
+        try {
+            // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
+            // can comply with levigo's open source licence.
+            Class<?> levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+            Class<?> jbig2ImageReaderSpiClass = Class.forName("com.levigo.jbig2.JBIG2ImageReaderSpi");
+            Class<?> jbig2GlobalsClass = Class.forName("com.levigo.jbig2.JBIG2Globals");
+            Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
+            Constructor levigoJbig2DecoderClassConstructor =
+                    levigoJBIG2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);
+            Object levigoJbig2Reader = levigoJbig2DecoderClassConstructor.newInstance(jbig2ImageReaderSpi);
+            // set the input
+            Class partypes[] = new Class[1];
+            partypes[0] = Object.class;
+            Object arglist[] = new Object[1];
+            arglist[0] = imageInputStream;
+            Method setInput =
+                    levigoJBIG2ImageReaderClass.getMethod("setInput", partypes);
+            setInput.invoke(levigoJbig2Reader, arglist);
+            // apply deocde params if any.
+            if (decodeParms != null) {
+                if (globalsStream != null) {
+                    byte[] globals = globalsStream.getDecodedStreamBytes(0);
+                    if (globals != null && globals.length > 0) {
                         partypes = new Class[1];
-                        partypes[0] = jbig2GlobalsClass;
+                        partypes[0] = ImageInputStream.class;
                         arglist = new Object[1];
-                        arglist[0] = globalSegments;
-                        // pass the segment data back into the decoder.
-                        Method setGlobalData =
-                                levigoJBIG2ImageReaderClass.getMethod("setGlobals", partypes);
-                        setGlobalData.invoke(levigoJbig2Reader, arglist);
+                        arglist[0] = ImageIO.createImageInputStream(new ByteArrayInputStream(globals));
+                        Method processGlobals =
+                                levigoJBIG2ImageReaderClass.getMethod("processGlobals", partypes);
+                        Object globalSegments = processGlobals.invoke(levigoJbig2Reader, arglist);
+                        if (globalSegments != null) {
+                            // invoked encoder.setGlobalData(globals);
+                            partypes = new Class[1];
+                            partypes[0] = jbig2GlobalsClass;
+                            arglist = new Object[1];
+                            arglist[0] = globalSegments;
+                            // pass the segment data back into the decoder.
+                            Method setGlobalData =
+                                    levigoJBIG2ImageReaderClass.getMethod("setGlobals", partypes);
+                            setGlobalData.invoke(levigoJbig2Reader, arglist);
+                        }
                     }
                 }
             }
-        }
-        partypes = new Class[1];
-        partypes[0] = int.class;
-        arglist = new Object[1];
-        arglist[0] = 0;
-        Method read =
-                levigoJBIG2ImageReaderClass.getMethod("read", partypes);
-        tmpImage = (BufferedImage) read.invoke(levigoJbig2Reader, arglist);
-        // call dispose on the reader
-        Method dispose =
-                levigoJBIG2ImageReaderClass.getMethod("dispose", (Class<?>[]) null);
-        dispose.invoke(levigoJbig2Reader);
-        // dispose the stream
-        if (imageInputStream != null) {
-            imageInputStream.close();
+            partypes = new Class[1];
+            partypes[0] = int.class;
+            arglist = new Object[1];
+            arglist[0] = 0;
+            Method read =
+                    levigoJBIG2ImageReaderClass.getMethod("read", partypes);
+            tmpImage = (BufferedImage) read.invoke(levigoJbig2Reader, arglist);
+            // call dispose on the reader
+            Method dispose =
+                    levigoJBIG2ImageReaderClass.getMethod("dispose", (Class<?>[]) null);
+            dispose.invoke(levigoJbig2Reader);
+        } finally {
+            // dispose the stream
+            if (imageInputStream != null) {
+                imageInputStream.close();
+            }
         }
         return tmpImage;
     }
