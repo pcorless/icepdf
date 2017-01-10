@@ -210,6 +210,24 @@ public class Catalog extends Dictionary {
     }
 
     /**
+     * Gets the Names object's embedded files name tree if present.  The root node is also check to make sure
+     * the tree has values.
+     *
+     * @return A name tree mapping name strings to file specifications for embedded
+     * file streams.
+     */
+    public NameTree getEmbeddedFilesNameTree() {
+        if (names != null) {
+            NameTree nameTree = names.getEmbeddedFilesNameTree();
+            if (nameTree != null && nameTree.getRoot() != null) {
+                return nameTree;
+            }
+        }
+        return null;
+    }
+
+
+    /**
      * Gets a dictionary of names and corresponding destinations.
      *
      * @return A Dictionary of Destinations; if none, null is returned.
