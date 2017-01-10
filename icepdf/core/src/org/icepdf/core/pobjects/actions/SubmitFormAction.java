@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.FileSpecification;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;

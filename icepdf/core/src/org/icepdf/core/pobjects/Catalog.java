@@ -60,6 +60,13 @@ public class Catalog extends Dictionary {
     public static final Name METADATA_KEY = new Name("Metadata");
     public static final Name PERMS_KEY = new Name("Perms");
 
+    public static final Name PAGE_MODE_USE_NONE_VALUE = new Name("UseNone");
+    public static final Name PAGE_MODE_USE_OUTLINES_VALUE = new Name("UseOutlines");
+    public static final Name PAGE_MODE_USE_THUMBS_VALUE = new Name("UseThumbs");
+    public static final Name PAGE_MODE_FULL_SCREEN_VALUE = new Name("FullScreen");
+    public static final Name PAGE_MODE_OPTIONAL_CONTENT_VALUE = new Name("UseOC");
+    public static final Name PAGE_MODE_USE_ATTACHMENTS_VALUE = new Name("UseAttachments");
+
     private PageTree pageTree;
     private Outlines outlines;
     private Names names;
@@ -164,6 +171,30 @@ public class Catalog extends Dictionary {
                 outlines = new Outlines(library, (HashMap) o);
         }
         return outlines;
+    }
+
+    /**
+     * A collection dictionary that a conforming reader shall use to enhance the presentation of file attachments
+     * stored in the PDF document.
+     *
+     * @return collection dictionary.
+     */
+    public HashMap getCollection() {
+        return library.getDictionary(entries, COLLECTION_KEY);
+    }
+
+    /**
+     * A name object specifying how the document shall be displayed when opened:
+     *
+     * @return one of the PageMode value contants,  default is Default value: UseNone.
+     */
+    public Name getPageMode() {
+        Name name = library.getName(entries, PAGEMODE_KEY);
+        if (name == null) {
+            return PAGE_MODE_USE_NONE_VALUE;
+        } else {
+            return name;
+        }
     }
 
     /**

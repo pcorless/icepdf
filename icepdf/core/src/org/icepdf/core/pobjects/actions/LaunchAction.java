@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.actions;
 
+import org.icepdf.core.pobjects.FileSpecification;
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.StringObject;

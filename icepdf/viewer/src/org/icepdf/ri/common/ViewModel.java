@@ -44,7 +44,7 @@ public class ViewModel {
 
     private boolean isWidgetAnnotationHighlight;
 
-    static File getDefaultFile() {
+    public static File getDefaultFile() {
         return defaultFile;
     }
 
@@ -58,7 +58,7 @@ public class ViewModel {
         return defaultURL;
     }
 
-    static void setDefaultFile(File f) {
+    public static void setDefaultFile(File f) {
         defaultFile = f;
     }
 

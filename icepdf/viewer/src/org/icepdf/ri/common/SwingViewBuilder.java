@@ -18,6 +18,7 @@ package org.icepdf.ri.common;
 import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
+import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;
@@ -1749,6 +1750,12 @@ public class SwingViewBuilder {
                     buildOutlineComponents());
         }
         if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ATTACHMENTS)) {
+            utilityTabbedPane.add(
+                    messageBundle.getString("viewer.utilityPane.attachments.tab.title"),
+                    buildAttachmentPanle());
+        }
+        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
@@ -1829,6 +1836,13 @@ public class SwingViewBuilder {
         if (viewerController != null)
             viewerController.setSearchPanel(searchPanel);
         return searchPanel;
+    }
+
+    public AttachmentPanel buildAttachmentPanle(){
+        AttachmentPanel attachmentPanel = new AttachmentPanel(viewerController);
+        if (viewerController != null)
+            viewerController.setAttachmentPanel(attachmentPanel);
+        return attachmentPanel;
     }
 
     public AnnotationPanel buildAnnotationPanel() {

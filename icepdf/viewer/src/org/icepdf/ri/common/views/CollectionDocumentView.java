@@ -16,10 +16,10 @@
 
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.pobjects.FileSpecification;
 import org.icepdf.core.pobjects.NameTree;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
-import org.icepdf.core.pobjects.actions.FileSpecification;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
