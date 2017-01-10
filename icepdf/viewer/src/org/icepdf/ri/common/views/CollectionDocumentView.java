@@ -85,37 +85,39 @@ public class CollectionDocumentView extends AbstractDocumentView {
         // load the page components into the layout
         DocumentViewComponent documentViewComponent;
         Library library = currentDocument.getCatalog().getLibrary();
-        NameTree embeddedFilesNameTree = currentDocument.getCatalog().getNames().getEmbeddedFilesNameTree();
-        List filePairs = embeddedFilesNameTree.getNamesAndValues();
+        NameTree embeddedFilesNameTree = currentDocument.getCatalog().getEmbeddedFilesNameTree();
+        if (embeddedFilesNameTree != null) {
+            List filePairs = embeddedFilesNameTree.getNamesAndValues();
 
-        // add components for every page in the document
-        for (int i = 0, max = filePairs.size(); i < max; i += 2) {
-            // get the name and document for
-            // file name and file specification pairs.
-            String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
-            HashMap tmp = (HashMap) library.getObject((Reference) filePairs.get(i + 1));
+            // add components for every page in the document
+            for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                // get the name and document for
+                // file name and file specification pairs.
+                String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
+                HashMap tmp = (HashMap) library.getObject((Reference) filePairs.get(i + 1));
 
-            // file specification has the document stream
-            FileSpecification fileSpec = new FileSpecification(library, tmp);
-            tmp = fileSpec.getEmbeddedFileDictionary();
+                // file specification has the document stream
+                FileSpecification fileSpec = new FileSpecification(library, tmp);
+                tmp = fileSpec.getEmbeddedFileDictionary();
 
-            // create the stream instance from the embedded file streams File entry.
-            Reference fileRef = (Reference) tmp.get(FileSpecification.F_KEY);
+                // create the stream instance from the embedded file streams File entry.
+                Reference fileRef = (Reference) tmp.get(FileSpecification.F_KEY);
 
-            documentViewComponent = new DocumentViewComponent(library, fileName, fileRef);
-            JPanel documentViewPanel = new JPanel();
-            documentViewPanel.setLayout(new BoxLayout(documentViewPanel, BoxLayout.Y_AXIS));
-            documentViewPanel.setBackground(BACKGROUND_COLOUR);
-            PageViewDecorator pageViewComponent = new PageViewDecorator(documentViewComponent);
-            pageViewComponent.setAlignmentX(Component.CENTER_ALIGNMENT);
-            documentViewPanel.add(pageViewComponent);
-            JLabel fileNameLabel = new JLabel(fileName);
-            fileNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-            documentViewPanel.add(fileNameLabel);
-            pagesPanel.add(documentViewPanel);
+                documentViewComponent = new DocumentViewComponent(library, fileName, fileRef);
+                JPanel documentViewPanel = new JPanel();
+                documentViewPanel.setLayout(new BoxLayout(documentViewPanel, BoxLayout.Y_AXIS));
+                documentViewPanel.setBackground(BACKGROUND_COLOUR);
+                PageViewDecorator pageViewComponent = new PageViewDecorator(documentViewComponent);
+                pageViewComponent.setAlignmentX(Component.CENTER_ALIGNMENT);
+                documentViewPanel.add(pageViewComponent);
+                JLabel fileNameLabel = new JLabel(fileName);
+                fileNameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                documentViewPanel.add(fileNameLabel);
+                pagesPanel.add(documentViewPanel);
+            }
+            pagesPanel.revalidate();
+            documentScrollpane.validate();
         }
-        pagesPanel.revalidate();
-        documentScrollpane.validate();
     }
 
     @Override

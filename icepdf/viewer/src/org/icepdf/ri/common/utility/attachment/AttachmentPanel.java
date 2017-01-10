@@ -132,9 +132,8 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         if (this.currentDocument != null) {
             Catalog catalog = document.getCatalog();
             // grab each file pair and build out the FileSpecification objects.
-            if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null &&
-                    catalog.getNames().getEmbeddedFilesNameTree().getRoot() != null) {
-                NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
+            if (catalog.getEmbeddedFilesNameTree() != null) {
+                NameTree embeddedFilesNameTree = catalog.getEmbeddedFilesNameTree();
                 java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
                 if (filePairs != null) {
                     Library library = catalog.getLibrary();

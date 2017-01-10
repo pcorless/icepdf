@@ -1070,9 +1070,8 @@ public class SwingController
         if (collection != null ) {
             // one final check as some docs will have meta data but will specify a page mode.
             // check to see that at least one of the files is a PDF
-            if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null &&
-                    catalog.getNames().getEmbeddedFilesNameTree().getRoot() != null) {
-                NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
+            if (catalog.getEmbeddedFilesNameTree() != null) {
+                NameTree embeddedFilesNameTree = catalog.getEmbeddedFilesNameTree();
                 java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
                 boolean found = false;
                 if (filePairs != null) {
@@ -2345,9 +2344,8 @@ public class SwingController
             }
         }
         // check if there are any attachments and enable/disable the tab as needed
-        if (layersPanel != null && utilityTabbedPane != null &&
-                catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null) {
-            NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
+        if (layersPanel != null && utilityTabbedPane != null && catalog.getEmbeddedFilesNameTree() != null) {
+            NameTree embeddedFilesNameTree = catalog.getEmbeddedFilesNameTree();
             if (embeddedFilesNameTree != null &&
                     embeddedFilesNameTree.getRoot() != null) {
                 utilityTabbedPane.setEnabledAt(

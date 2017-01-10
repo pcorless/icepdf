@@ -28,6 +28,9 @@ import java.util.concurrent.Executors;
  * captures to disk when the file in question is a PDF that contains collections
  * or in other words a PDF Portfolio or package.
  * <p/>
+ * A portfolio as well as regular document can have document attachments.  These attachments can be of any file
+ * type so the file list should be correctly filtered.
+ * <p/>
  * A file specified at the command line is opened and every embedded portfolio
  * file it iterated over and every page is captured as an image and saved to disk
  * as a PNG graphic file.
@@ -61,42 +64,65 @@ public class PortfolioCapture {
         ExecutorService executorService = Executors.newFixedThreadPool(8);
         try {
             document.setFile(filePath);
-            // A fileNames tree indicates that we have a portfolio.
-            if (isPdfCollection(document)) {
-                NameTree embeddedFilesNameTree = document.getCatalog().getNames().getEmbeddedFilesNameTree();
-                if (embeddedFilesNameTree.getRoot() != null) {
-                    Library library = document.getCatalog().getLibrary();
-                    List filePairs = embeddedFilesNameTree.getNamesAndValues();
-                    if (filePairs != null) {
-                        List<Callable<Void>> callables =
-                                new ArrayList<Callable<Void>>(filePairs.size() / 2);
-                        // queue up the embedded documents
-                        for (int i = 0, max = filePairs.size(); i < max; i += 2) {
-                            // file name and file specification pairs.
-                            String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
-                            HashMap tmp = (HashMap) library.getObject((Reference) filePairs.get(i + 1));
 
+            // executable list to capture.
+            List<Callable<Void>> callables = new ArrayList<Callable<Void>>();
+
+            /**
+             * If we have a collection the PDF won't have any content we want to capture, the page is generally just
+             * a placeholder letting the end user know that the document is a collection.
+             * If it isn't a collection then we want to capture the document's page before moving on to the
+             * embedded files.
+             */
+            if (!(document.getCatalog().getCollection() != null &&
+                    document.getCatalog().getCollection().size() > 0)) {
+                System.out.println("Loading root document file "+ document.getDocumentOrigin());
+                callables.add(new CaptureDocument(document, 0, document.getDocumentOrigin()));
+            }
+
+            // Capture any embedded files that have a file name that ends in '.pdf'.
+            if (document.getCatalog().getEmbeddedFilesNameTree() != null) {
+                NameTree embeddedFilesNameTree = document.getCatalog().getEmbeddedFilesNameTree();
+                Library library = document.getCatalog().getLibrary();
+                List filePairs = embeddedFilesNameTree.getNamesAndValues();
+                if (filePairs != null) {
+
+                    // queue up the embedded documents
+                    for (int i = 0, max = filePairs.size(); i < max; i += 2) {
+                        // file name and file specification pairs.
+                        Object rawFileName = library.getObject(filePairs.get(i));
+                        Object rawFileProperties = library.getObject(filePairs.get(i + 1));
+                        if (rawFileName != null && rawFileName instanceof LiteralStringObject &&
+                                rawFileProperties != null && rawFileProperties instanceof HashMap) {
+                            String fileAttachmentName = Utils.convertStringObject(library, (LiteralStringObject) rawFileName);
                             // file specification has the document stream
-                            FileSpecification fileSpec = new FileSpecification(library, tmp);
-                            tmp = fileSpec.getEmbeddedFileDictionary();
+                            FileSpecification fileSpecification = new FileSpecification(library, (HashMap) rawFileProperties);
 
                             // create the stream instance from the embedded file streams File entry.
-                            Reference fileRef = (Reference) tmp.get(FileSpecification.F_KEY);
-                            Stream fileStream = (Stream) library.getObject(fileRef);
-                            InputStream fileInputStream = fileStream.getDecodedByteArrayInputStream();
+                            EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
+                            InputStream fileInputStream = embeddedFileStream.getDecodedStreamData();
+
+                            String fileName = fileSpecification.getUnicodeFileSpecification() != null ?
+                                    fileSpecification.getUnicodeFileSpecification() :
+                                    fileSpecification.getFileSpecification() != null ?
+                                    fileSpecification.getFileSpecification() : "";
 
                             // queue the embedded document for page capture
-                            System.out.println("Loading embedded file: " + fileName);
-                            Document embeddedDocument = new Document();
-                            embeddedDocument.setInputStream(fileInputStream, fileName);
-                            callables.add(new CaptureDocument(embeddedDocument, i, fileName));
+                            System.out.println("Loading embedded file "+ fileAttachmentName + " : " + fileName);
+                            if (fileName.toLowerCase().endsWith(".pdf")) {
+                                Document embeddedDocument = new Document();
+                                embeddedDocument.setInputStream(fileInputStream, fileAttachmentName);
+                                int index = (int)Math.round((i/2.0)+ 1.0);
+                                callables.add(new CaptureDocument(embeddedDocument, index, fileAttachmentName));
+                            }
                         }
-                        executorService.invokeAll(callables);
-                        executorService.submit(new DocumentCloser(document)).get();
                     }
                 }
             }
-            // else we can do document capture as per usual.
+
+            // execute the page captures.
+            executorService.invokeAll(callables);
+            executorService.submit(new DocumentCloser(document)).get();
 
         } catch (PDFException ex) {
             System.out.println("Error parsing PDF document " + ex);
@@ -112,40 +138,6 @@ public class PortfolioCapture {
             System.out.println("Error parsing PDF document " + e);
         }
         executorService.shutdown();
-    }
-
-    /**
-     * Check to see if we have a collection.  There are many corners cases and
-     * or malformed documents that can make detection a bit trickier.
-     *
-     * @param document document to check for collections
-     * @return true if collections are present, false otherwise.
-     */
-    public boolean isPdfCollection(Document document) {
-        Catalog catalog = document.getCatalog();
-        if (catalog.getNames() != null && catalog.getNames().getEmbeddedFilesNameTree() != null
-                && catalog.getNames().getEmbeddedFilesNameTree().getRoot() != null) {
-            // one final check as some docs will have meta data but will specify a page mode.
-            if (catalog.getObject(Catalog.PAGEMODE_KEY) == null ||
-                    ((Name) catalog.getObject(Catalog.PAGEMODE_KEY)).getName().equalsIgnoreCase("UseAttachments")) {
-                // check to see that at least one of the files is a PDF
-                NameTree embeddedFilesNameTree = catalog.getNames().getEmbeddedFilesNameTree();
-                java.util.List filePairs = embeddedFilesNameTree.getNamesAndValues();
-                Library library = catalog.getLibrary();
-                boolean found = false;
-                for (int i = 0, max = filePairs.size(); i < max; i += 2) {
-                    // get the name and document for
-                    // file name and file specification pairs.
-                    String fileName = Utils.convertStringObject(library, (StringObject) filePairs.get(i));
-                    if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
-                        found = true;
-                        break;
-                    }
-                }
-                return found;
-            }
-        }
-        return false;
     }
 
     /**
