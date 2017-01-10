@@ -32,6 +32,7 @@ import static org.icepdf.ri.common.utility.attachment.FileTableModel.*;
  *
  * @since 6.2
  */
+@SuppressWarnings("serial")
 public class AttachmentPanel extends JPanel implements MouseListener, ActionListener {
 
     private static final Logger logger =
@@ -164,8 +165,8 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
             Object value = fileTableModel.getValueAt(selectedRow, DATA_COLUMN);
             if (value != null && value instanceof FileSpecification) {
                 FileSpecification fileSpecification = (FileSpecification) value;
-                EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
-                String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
+                final EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
+                final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
                 // already on awt thread but still nice to play by the rules.
                 Runnable doSwingWork = new Runnable() {
                     public void run() {
