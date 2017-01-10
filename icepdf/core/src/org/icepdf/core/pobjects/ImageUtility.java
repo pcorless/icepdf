@@ -693,6 +693,7 @@ public class ImageUtility {
                 imageInputStream.close();
             }
         }
+		return tmpImage;
     }
 
     protected static BufferedImage jbig2Decode(byte[] data,
