@@ -15,6 +15,7 @@ import java.util.Set;
  *
  * @since 6.2
  */
+@SuppressWarnings("serial")
 public class FileTableModel extends AbstractTableModel {
 
     public static final int NAME_COLUMN = 0;
