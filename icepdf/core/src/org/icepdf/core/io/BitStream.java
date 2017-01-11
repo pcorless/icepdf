@@ -97,7 +97,7 @@ public class BitStream {
      * @throws java.io.IOException
      */
     public int getBits(int count) throws IOException {
-        if (count < 8) {
+        if (count < 32) {
             while (bits_left < count) {
                 int r = in.read();
                 if (r < 0) {
@@ -110,17 +110,8 @@ public class BitStream {
             }
             bits_left -= count;
             return (bits >> bits_left) & masks[count];
-        } else {
-            bits_left = 0;
-            if (count == 8) {
-                return in.read();
-            } else if (count == 16) {
-                return (in.read() << 8) | in.read();
-            } else if (count == 24) {
-                return (in.read() << 16) | (in.read() << 8) | in.read();
-            } else if (count == 32) {
-                return (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
-            }
+        } else if (count == 32) {
+            return (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
         }
         return 0;
     }
