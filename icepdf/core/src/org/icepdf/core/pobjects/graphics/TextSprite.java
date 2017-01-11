@@ -99,13 +99,14 @@ public class TextSprite {
      */
     public GlyphText addText(String cid, String unicode, float x, float y, float width) {
 
-        // keep track of the text total bound, important for shapes painting.
+        // x,y must not chance as it will affect painting of the glyph,
+        // we can change the bounds of glyphBounds as this is what needs to be normalized
+        // to page space
         // IMPORTANT: where working in Java Coordinates with any of the Font bounds
-
         float w = width;//(float)stringBounds.getWidth();
-
         float h = (float) (font.getAscent() + font.getDescent());
 
+        double descent = font.getDescent();
         double ascent = font.getAscent();
 
         if (h <= 0.0f) {
@@ -122,17 +123,20 @@ public class TextSprite {
                 h = (float) bounds.getHeight();
             } else {
                 // match the width, as it will make text selection work a bit better.
-                h = w;//1.0f;
+                h = font.getSize();
             }
             if (ascent == 0) {
                 ascent = h;
             }
         }
-        if (w <= 0.0f) {
-            w = 1.0f;
+
+        Rectangle2D.Float glyphBounds;
+        // irregular negative layout of text,  need to create the bbox appropriately.
+        if (w < 0.0f || font.getSize() < 0) {
+            glyphBounds = new Rectangle2D.Float(x + width, y - (float) descent, -w, h);
+        } else {
+            glyphBounds = new Rectangle2D.Float(x, y - (float) ascent, w, h);
         }
-        Rectangle2D.Float glyphBounds =
-                new Rectangle2D.Float(x, y - (float) ascent, w, h);
 
         // add bounds to total text bounds.
         bounds.add(glyphBounds);
