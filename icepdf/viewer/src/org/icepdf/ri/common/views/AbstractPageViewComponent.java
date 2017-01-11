@@ -424,7 +424,7 @@ public abstract class AbstractPageViewComponent
                 g2d.setClip(0, 0, imageLocation.width, imageLocation.height);
                 g2d.translate(-imageLocation.x, -imageLocation.y);
                 // paint page interruptible
-                page.paint(g2d, GraphicsRenderingHints.SCREEN, Page.BOUNDARY_CROPBOX, rotation, zoom,
+                page.paint(g2d, GraphicsRenderingHints.SCREEN, pageBoundaryBox, rotation, zoom,
                         paintAnnotations, paintSearchHighlight);
                 g2d.dispose();
                 // init and paint thread went under interrupted, we can move the back pageBufferPadding to the front.
