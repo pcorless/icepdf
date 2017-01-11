@@ -443,14 +443,14 @@ public class PageText implements TextSelect {
                     final List<WordText> trimmedWords = new ArrayList<WordText>();
                     final Set<String> refs = new HashSet<String>();
                     for (final WordText wordText : words) {
-                        final String key = wordText.getText() + wordText.getBounds();
+                        // use regular rectangle so get a little rounding.
+                        final String key = wordText.getText() + wordText.getBounds().getBounds();
                         if (refs.add(key)) {
                             trimmedWords.add(wordText);
                         }
                     }
                     lineText.setWords(trimmedWords);
                 }
-
             }
         }
 
