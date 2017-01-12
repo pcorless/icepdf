@@ -3722,8 +3722,10 @@ public class SwingController
      */
     public void showSearchPanel() {
         if (utilityTabbedPane != null && searchPanel != null) {
-            // toggle the utility pane visibility
-            toggleUtilityPaneVisibility();
+            // make sure the utility pane is visible
+            if (!utilityTabbedPane.isVisible()){
+                setUtilityPaneVisible(true);
+            }
 
             // if utility pane is shown then select the search tab and request focus
             if (isUtilityPaneVisible()) {
