@@ -276,6 +276,12 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             } catch (InterruptedException e) {
                 logger.fine("Interrupt exception during view text fetch.");
             }
+        } else if (currentPage != null && !currentPage.isInitiated()) {
+            // there is good chance a page has been disposed on a large document, but if we have search hit we need
+            // to repaint the page, setting the buffer to dirty will reinitialize the page on the next paint cycle.
+            if (searchController.isSearchHighlightRefreshNeeded(pageIndex, null)) {
+                pageBufferStore.setDirty(true);
+            }
         }
     }
 
