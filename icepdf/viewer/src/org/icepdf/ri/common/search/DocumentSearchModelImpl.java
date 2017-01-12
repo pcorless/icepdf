@@ -29,12 +29,12 @@ import java.util.Set;
  * cache search results.  PDF document in general can be to big to keep all
  * data in memory at once.  ICEpdf uses a dispose/initialization on Page data
  * as memory is needed.  When this happens the selected text data will be lost
- * and we have to research the page in quesiton the next time it is viewed.
+ * and we have to research the page in question the next time it is viewed.
  * <p/>
  * This model can be used in two ways; the first is to store search terms and
  * the second is to keep a record of page indexes that have search results.  The
  * later uses weak references to make sure we don't leak any memory.  If the
- * page has no data available in its weak referenct then we can get it.  If
+ * page has no data available in its weak reference then we can get it.  If
  * a there is no value for a given page index then we know the page had no
  * search hits and we can ignore it.
  *
@@ -51,7 +51,7 @@ public class DocumentSearchModelImpl {
     private ArrayList<SearchTerm> searchTerms;
 
     /**
-     * Creates a new instance with empty searchterms and search result caches.
+     * Creates a new instance with empty search terms and search result caches.
      */
     public DocumentSearchModelImpl() {
         searchResultCache = new HashMap<Integer, WeakReference<PageText>>(256);
@@ -100,7 +100,7 @@ public class DocumentSearchModelImpl {
     /**
      * Gets a set of page hit page indexes.  That is to say a list of all page
      * indexes that have search hits.  This list can be used to clear searches
-     * or to iterate more quickly of the resutls set.
+     * or to iterate more quickly of the results set.
      *
      * @return set of page indexes that have a least one search result hit.
      */
@@ -129,19 +129,19 @@ public class DocumentSearchModelImpl {
 
     /**
      * When we know a page has a hit but aren't sure if pageText is still in a
-     * highlighted state we can use this method to check. If the weekreference
-     * for the pageIndex exists we can compare it aginst the paramate pageText.
+     * highlighted state we can use this method to check. If the weak reference
+     * for the pageIndex exists we can compare it against the parameter pageText.
      * If the objects are equal there is no need to search again.  If reference
      * is null or not equal then we have to do the search again to get the
      * highlight state back.  Pages searches in general are extremely fast and
      * performs better then trying to keep everything in memory.
      * <p/>
      *
-     * @param pageIndex page indext to look at PageText results
+     * @param pageIndex page index to look at PageText results
      * @param pageText  current Page objects PageText object we want to check
      *                  against whats in the cache.
      * @return false if the search for this page should be done again, otherwise
-     *         true then we should be ok and don't need to refresht the text state.
+     *         true then we should be ok and don't need to refresh the text state.
      */
     public boolean isPageTextMatch(int pageIndex, PageText pageText) {
         WeakReference<PageText> ref = searchResultCache.get(pageIndex);
@@ -159,7 +159,7 @@ public class DocumentSearchModelImpl {
      * @param page page index to clear search results from.
      */
     public void clearSearchResults(int page) {
-        // clear highlighted state for this page index. 
+        // clear highlighted state for this page index.
         WeakReference<PageText> pageReference = searchResultCache.get(page);
         if (pageReference != null) {
             PageText currentPageText = pageReference.get();
@@ -173,7 +173,7 @@ public class DocumentSearchModelImpl {
 
     /**
      * Clears all search results and highlight states found in the research
-     * results cache. This method is especially usefull for large documents.
+     * results cache. This method is especially useful for large documents.
      */
     public void clearSearchResults() {
 

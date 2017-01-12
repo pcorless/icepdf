@@ -88,8 +88,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * If the text state is no longer present then the search should be executed
      * again.
      * <p/>
-     * This method cleasr the serach results for the page before it searches. If
-     * you wich to have cumligive search results then searches terms should
+     * This method clears the search results for the page before it searches. If
+     * you wish to have cumulative search results then searches terms should
      * be added with {@link #addSearchTerm(String, boolean, boolean)} and the
      * method {@link #searchPage(int)} should be called after each term is
      * added or after all have been added.
@@ -116,8 +116,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * hits where detected then the Page's PageText is added to the cache.
      * <p/>
      * This method represent the core search algorithm for this
-     * DocumentSearchController implmentation.  This method can be overriden
-     * if a different search algorithm or functinality is needed.
+     * DocumentSearchController implementation.  This method can be over riden
+     * if a different search algorithm or functionality is needed.
      *
      * @param pageIndex page index to search
      * @return number of hits found for this page.
@@ -133,7 +133,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = getPageText(pageIndex);
 
-        // some pages just don't have any text. 
+        // some pages just don't have any text.
         if (pageText == null) {
             return 0;
         }
@@ -237,19 +237,19 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * hits where detected then the Page's PageText is added to the cache.
      * <p/>
      * This class differences from {@link #searchHighlightPage(int)} in that
-     * is returns a list of lineText fragements for each hit but the LinText
+     * is returns a list of lineText fragments for each hit but the LinText
      * is padded by pre and post words that surround the hit in the page
      * context.
      * <p/>
      * This method represent the core search algorithm for this
-     * DocumentSearchController implmentation.  This method can be overriden
-     * if a different search algorithm or functinality is needed.
+     * DocumentSearchController implementation.  This method can be over riden
+     * if a different search algorithm or functionality is needed.
      *
      * @param pageIndex   page index to search
      * @param wordPadding word padding on either side of hit to give context
-     *                    to found woords in the returned LineText
-     * @return list of contectual hits for the give page.  If no hits an empty
-     *         list is returned.
+     *                    to found words in the returned LineText
+     * @return list of contextual hits for the give page.  If no hits an empty
+     * list is returned.
      */
     public ArrayList<LineText> searchHighlightPage(int pageIndex, int wordPadding) {
         // get search terms from model and search for each occurrence.
@@ -382,7 +382,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * from the found words.
      *
      * @param pageIndex page to search
-     * @return list of words that match the term and search properites.
+     * @return list of words that match the term and search properties.
      */
     public ArrayList<WordText> searchPage(int pageIndex) {
 
@@ -417,9 +417,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * <p/>
      * A new search needs to be executed for this change to take place.
      *
-     * @param term          single word or phrace to search for.
+     * @param term          single word or phrase to search for.
      * @param caseSensitive is search case sensitive.
-     * @param wholeWord     is search whole word senstive.
+     * @param wholeWord     is search whole word sensitive.
      * @return searchTerm newly create search term.
      */
     public SearchTerm addSearchTerm(String term, boolean caseSensitive,
@@ -457,7 +457,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param pageIndex page indext to clear
      */
     public void clearSearchHighlight(int pageIndex) {
-        // clear cache and terms list 
+        // clear cache and terms list
         searchModel.clearSearchResults(pageIndex);
     }
 
@@ -495,7 +495,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     /**
-     * Gest teh page text for the given page index.
+     * Gets teh page text for the given page index.
      *
      * @param pageIndex page index of page to extract text.
      * @return page's page text,  can be null.
