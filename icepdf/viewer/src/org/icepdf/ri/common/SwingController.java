@@ -4063,8 +4063,8 @@ public class SwingController
                             // get the text.
                             StringSelection stringSelection = new StringSelection(
                                     documentViewController.getSelectedText());
-                            Toolkit.getDefaultToolkit().getSystemClipboard().
-                                    setContents(stringSelection, null);
+                            Toolkit.getDefaultToolkit().getSystemClipboard()
+                                    .setContents(stringSelection, stringSelection);
                         } else {
                             Runnable doSwingWork = new Runnable() {
                                 public void run() {
