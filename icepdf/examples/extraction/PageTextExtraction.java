@@ -17,12 +17,17 @@
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.ri.util.FontPropertiesManager;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.ResourceBundle;
 
 /**
  * The <code>PageTextExtraction</code> class is an example of how to extract
@@ -36,6 +41,13 @@ public class PageTextExtraction {
 
         // Get a file from the command line to open
         String filePath = args[0];
+
+        // read/store the font cache.
+        ResourceBundle messageBundle = ResourceBundle.getBundle(
+                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+        PropertiesManager properties = new PropertiesManager(System.getProperties(),
+                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
 
         // open the url
         Document document = new Document();
@@ -53,7 +65,7 @@ public class PageTextExtraction {
 
         try {
             // create a file to write the extracted text to
-            File file = new File("extractedtext.txt");
+            File file = new File("extracted_text.txt");
             FileWriter fileWriter = new FileWriter(file);
 
             // Get text from the first page of the document, assuming that there
@@ -63,7 +75,11 @@ public class PageTextExtraction {
                 PageText pageText = document.getPageText(pageNumber);
                 System.out.println("Extracting page text: " + pageNumber);
                 if (pageText != null && pageText.getPageLines() != null) {
-                    fileWriter.write(pageText.toString());
+                    ArrayList<LineText> pageLines = pageText.getPageLines();
+                    for (LineText lineText : pageLines) {
+                        fileWriter.write(lineText.toString());
+                        fileWriter.write('\n');
+                    }
                 }
             }
 
