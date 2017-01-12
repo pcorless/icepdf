@@ -18,9 +18,12 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PInfo;
+import org.icepdf.ri.util.FontPropertiesManager;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 /**
  * The <code>PageMetaDataExtraction</code> class is an example of how to extract
@@ -34,6 +37,13 @@ public class PageMetaDataExtraction {
 
         // Get a file from the command line to open
         String filePath = args[0];
+
+        // read/store the font cache.
+        ResourceBundle messageBundle = ResourceBundle.getBundle(
+                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
+        PropertiesManager properties = new PropertiesManager(System.getProperties(),
+                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
 
         // open the url
         Document document = new Document();
