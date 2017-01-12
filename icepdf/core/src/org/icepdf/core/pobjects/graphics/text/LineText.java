@@ -194,9 +194,6 @@ public class LineText extends AbstractText implements TextSelect {
         for (WordText word : words) {
             selectedText.append(word.getSelected());
         }
-        if (hasSelected) {
-            selectedText.append('\n');
-        }
         return selectedText;
     }
 

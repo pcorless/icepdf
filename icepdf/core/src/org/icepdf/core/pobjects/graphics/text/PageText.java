@@ -18,8 +18,10 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.pobjects.OptionalContents;
 import org.icepdf.core.util.Defs;
 
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.*;
+import java.util.List;
 
 /**
  * Page text represents the root element of a page's text hierarchy which
@@ -117,7 +119,7 @@ public class PageText implements TextSelect {
      * is set to True by default.
      *
      * @return list of page lines that are in the main content stream and any
-     *         visible layers.
+     * visible layers.
      */
     public ArrayList<LineText> getPageLines() {
         if (sortedPageLines == null) {
@@ -305,8 +307,13 @@ public class PageText implements TextSelect {
         StringBuilder selectedText = new StringBuilder();
         ArrayList<LineText> pageLines = getPageLines();
         if (pageLines != null) {
+            StringBuilder selectedLineText;
             for (LineText lineText : pageLines) {
-                selectedText.append(lineText.getSelected());
+                selectedLineText = lineText.getSelected();
+                if (selectedLineText != null && selectedLineText.length() > 0) {
+                    selectedText.append(selectedLineText);
+                    selectedText.append("\n");
+                }
             }
         }
         return selectedText;
@@ -395,12 +402,13 @@ public class PageText implements TextSelect {
                 float yOptional = optionalPageLine.getBounds().y;
                 boolean found = false;
                 for (LineText sortedPageLine : sortedPageLines) {
-                    float height = sortedPageLine.getBounds().height;
-                    float y = sortedPageLine.getBounds().y;
+                    Rectangle sortedBounds = sortedPageLine.getBounds().getBounds();
+                    float height = sortedBounds.height;
+                    float y = sortedBounds.y;
                     float diff = Math.abs(yOptional - y);
                     // corner case inclusion of a word and a space which is out of order from the
                     // rest of the text in the document.
-                    if (diff < height && optionalPageLine.getWords().size() <= 5) {
+                    if (diff < height) {
                         sortedPageLine.addAll(optionalPageLine.getWords());
                         found = true;
                         break;
@@ -443,6 +451,7 @@ public class PageText implements TextSelect {
                     final List<WordText> trimmedWords = new ArrayList<WordText>();
                     final Set<String> refs = new HashSet<String>();
                     for (final WordText wordText : words) {
+                        // use regular rectangle so get a little rounding.
                         final String key = wordText.getText() + wordText.getBounds().getBounds();
                         if (refs.add(key)) {
                             trimmedWords.add(wordText);
