@@ -206,7 +206,9 @@ public class InkAnnotation extends MarkupAnnotation {
 
         // setup the space for the AP content stream.
         af = new AffineTransform();
-        af.translate(-bbox.getMinX(), -bbox.getMinY());
+        if (contentInAnnotSpace) {
+            af.translate(-bbox.getMinX(), -bbox.getMinY());
+        }
 
         shapes.add(new TransformDrawCmd(af));
         shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));

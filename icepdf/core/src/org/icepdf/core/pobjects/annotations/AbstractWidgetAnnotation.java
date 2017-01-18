@@ -159,12 +159,9 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         // the widgets on a page.
         if (enableHighlightedWidget) {
             AffineTransform preHighLightTransform = g.getTransform();
-
             g.setColor(highlightColor);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, highlightAlpha));
-            Rectangle2D bbox = userSpaceRectangle;
-            g.fillRect(0, 0, (int) bbox.getWidth(), (int) bbox.getHeight());
-
+            g.fill(deriveDrawingRectangle());
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g.setTransform(preHighLightTransform);
         }
