@@ -1865,8 +1865,6 @@ public abstract class AbstractContentParser implements ContentParser {
         // composite to source.
         else if (graphicState.isKnockOut()) {
             setAlpha(shapes, graphicState, AlphaComposite.SRC, graphicState.getFillAlpha());
-        } else {
-            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
 
         // found a PatternColor
