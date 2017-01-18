@@ -162,15 +162,13 @@ public class SquareAnnotation extends MarkupAnnotation {
 
         int strokeWidth = (int) borderStyle.getStrokeWidth();
         Rectangle rectangleToDraw = new Rectangle(
-                (int) rectangle.getX() + strokeWidth,
-                (int) rectangle.getY() + strokeWidth,
+                strokeWidth,
+                strokeWidth,
                 (int) rectangle.getWidth() - strokeWidth * 2,
                 (int) rectangle.getHeight() - strokeWidth * 2);
 
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
-        af.scale(1, -1);
-        af.translate(-bbox.getMinX(), -bbox.getMaxY());
 
         BasicStroke stroke;
         if (borderStyle.isStyleDashed()) {

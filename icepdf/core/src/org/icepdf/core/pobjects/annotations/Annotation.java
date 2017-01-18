@@ -21,6 +21,8 @@ import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.ShapeDrawCmd;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
@@ -532,6 +534,7 @@ public abstract class Annotation extends Dictionary {
     protected Name subtype;
     // content flag
     protected String content;
+    protected boolean contentInAnnotSpace = true;
     // borders style of the annotation, can be null
     protected BorderStyle borderStyle;
     // border defined by vector
@@ -622,7 +625,7 @@ public abstract class Annotation extends Dictionary {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException{
+    public void init() throws InterruptedException {
         super.init();
         // type of Annotation
         subtype = (Name) getObject(SUBTYPE_KEY);
@@ -757,6 +760,23 @@ public abstract class Annotation extends Dictionary {
             currentAppearance = APPEARANCE_STREAM_NORMAL_KEY;
         }
 
+        // check to see if we have an annotation that is likely painted in page space and as a result we
+        // don't need to to the rectangle translation.
+        Shapes shapes = getShapes();
+        Rectangle2D.Float rect = getUserSpaceRectangle();
+        Rectangle2D bounds = null;
+        if (shapes != null) {
+            ArrayList<DrawCmd> drawCmds = getShapes().getShapes();
+            if (drawCmds != null) {
+                for (DrawCmd drawCmd : drawCmds) {
+                    if (drawCmd instanceof ShapeDrawCmd)
+                        bounds = ((ShapeDrawCmd) drawCmd).getShape().getBounds2D();
+                }
+                if (bounds != null && rect.contains(bounds)) {
+                    contentInAnnotSpace = false;
+                }
+            }
+        }
     }
 
     private Appearance parseAppearanceDictionary(Name appearanceDictionary,
@@ -1227,8 +1247,9 @@ public abstract class Annotation extends Dictionary {
 
         AffineTransform at = new AffineTransform(oldAT);
 
-        // move canvas to paint annotation for page rendering only.
-        at.translate(rect.getMinX(), rect.getMinY());
+        if (contentInAnnotSpace) {
+            at.translate(rect.getMinX(), rect.getMinY());
+        }
 
         boolean noRotate = getFlagNoRotate();
         if (noRotate) {
@@ -1578,8 +1599,10 @@ public abstract class Annotation extends Dictionary {
         Rectangle2D.Float origRect = getUserSpaceRectangle();
         Rectangle2D.Float jrect = new Rectangle2D.Float(origRect.x, origRect.y,
                 origRect.width, origRect.height);
-        jrect.x = 0.0f;
-        jrect.y = 0.0f;
+        if (contentInAnnotSpace) {
+            jrect.x = 0.0f;
+            jrect.y = 0.0f;
+        }
         return jrect;
     }
 
@@ -1747,9 +1770,10 @@ public abstract class Annotation extends Dictionary {
 
     /**
      * Create or update a Form's content stream.
-     * @param shapes shapes to associate with the appearance stream.
-     * @param bbox bound box.
-     * @param matrix form space.
+     *
+     * @param shapes   shapes to associate with the appearance stream.
+     * @param bbox     bound box.
+     * @param matrix   form space.
      * @param rawBytes raw bytes of string data making up the content stream.
      * @return
      */
@@ -1868,8 +1892,13 @@ public abstract class Annotation extends Dictionary {
 
     public Shapes getShapes() {
         Appearance appearance = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-        return appearanceState.getShapes();
+        if (appearance != null) {
+            AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+            if (appearanceState != null) {
+                return appearanceState.getShapes();
+            }
+        }
+        return null;
     }
 
     public HashMap<Name, Appearance> getAppearances() {
