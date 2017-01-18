@@ -143,8 +143,10 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                     if (gs != null) {
                         color = gs.getFillColor();
                         size = gs.getTextState().tsize;
-                        font = gs.getTextState().font;
-                        fontName = gs.getTextState().fontName;
+                        if (font != null && font.getSubTypeFormat() != Font.CID_FORMAT) {
+                            font = gs.getTextState().font;
+                            fontName = gs.getTextState().fontName;
+                        }
                     }
                 } catch (Throwable e) {
                     logger.warning("Could not validate default appearance, defaulting.");
@@ -186,8 +188,12 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                     // default to basic size, as last resort.
                     size = 10;
                 }
-                if (gs.getTextState().font != null) font = gs.getTextState().font;
-                if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
+                // further work is needed here to add font mapping support when CID fonts are detected,
+                // this may also be a fix for our asian font write support problem.
+                if (font != null && font.getSubTypeFormat() != Font.CID_FORMAT) {
+                    if (gs.getTextState().font != null) font = gs.getTextState().font;
+                    if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
+                }
             }
         } catch (Throwable e) {
             logger.warning("Could not generate default appearance stream.");
