@@ -926,9 +926,8 @@ public class Document {
      * @return page dimension for the specified page number
      * @see #getPageDimension(int, float, float)
      */
-    public PDimension getPageDimension(int pageNumber, float userRotation) throws InterruptedException {
+    public PDimension getPageDimension(int pageNumber, float userRotation) {
         Page page = catalog.getPageTree().getPage(pageNumber);
-        page.init();
         return page.getSize(userRotation);
     }
 
@@ -945,10 +944,9 @@ public class Document {
      * @return page dimension for the specified page number.
      * @see #getPageDimension(int, float)
      */
-    public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom) throws InterruptedException {
+    public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom) {
         Page page = catalog.getPageTree().getPage(pageNumber);
         if (page != null) {
-            page.init();
             return page.getSize(userRotation, userZoom);
         } else {
             return new PDimension(0, 0);
