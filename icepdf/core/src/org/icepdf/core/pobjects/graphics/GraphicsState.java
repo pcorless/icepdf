@@ -557,6 +557,16 @@ public class GraphicsState {
             // restore the fill color of the last paint
             parentGraphicState.shapes.add(new ColorDrawCmd(parentGraphicState.getFillColor()));
 
+            // apply the old alpha fill
+            if (fillAlpha != parentGraphicState.getFillAlpha()) {
+                parentGraphicState.shapes.add(new AlphaDrawCmd(
+                        AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getFillAlpha())));
+            }
+
+            if (strokeAlpha != parentGraphicState.getStrokeAlpha()) {
+                parentGraphicState.shapes.add(new AlphaDrawCmd(
+                        AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getStrokeAlpha())));
+            }
             // stroke Color
 //            parentGraphicState.shapes.add(parentGraphicState.getStrokeColor());
         }

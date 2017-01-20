@@ -667,8 +667,6 @@ public abstract class AbstractContentParser implements ContentParser {
                             new AffineTransform(graphicState.getCTM());
                     graphicState.scale(1, -1);
                     graphicState.translate(0, -1);
-                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
-                            graphicState.getFillAlpha());
                     // add the image
                     shapes.add(new ImageDrawCmd(imageReference));
                     graphicState.set(af);
@@ -1865,6 +1863,8 @@ public abstract class AbstractContentParser implements ContentParser {
         // composite to source.
         else if (graphicState.isKnockOut()) {
             setAlpha(shapes, graphicState, AlphaComposite.SRC, graphicState.getFillAlpha());
+        } else if (graphicState.getExtGState() == null || graphicState.getExtGState().getBlendingMode() == null) {
+            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
 
         // found a PatternColor
