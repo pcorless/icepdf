@@ -381,7 +381,12 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+        appearanceState.setMatrix(new AffineTransform());
+        appearanceState.setShapes(new Shapes());
+
         Rectangle2D bbox = appearanceState.getBbox();
+        bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
+
         AffineTransform matrix = appearanceState.getMatrix();
         Shapes shapes = appearanceState.getShapes();
 
@@ -399,7 +404,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // setup the space for the AP content stream.
         AffineTransform af = new AffineTransform();
         af.scale(1, -1);
-        af.translate(-bbox.getMinX(), -bbox.getMaxY());
+        af.translate(0, -bbox.getHeight());
         // adjust of the border offset, offset is define in viewer,
         // so we can't use the constant because of dependency issues.
         double insets = 5 * pageTransform.getScaleX();

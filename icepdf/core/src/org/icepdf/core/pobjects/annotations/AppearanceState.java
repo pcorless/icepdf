@@ -115,6 +115,7 @@ public class AppearanceState extends Dictionary {
 
     public void setBbox(Rectangle2D bbox) {
         this.bbox = bbox;
+        entries.put(Annotation.BBOX_VALUE, PRectangle.getPRectangleVector(bbox));
     }
 
     public Resources getResources() {

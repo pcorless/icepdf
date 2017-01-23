@@ -110,7 +110,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         textAnnotation.setColor(defaultFillColor);
 
         // set the content stream
-        textAnnotation.setBBox(bbox);
+        textAnnotation.setBBox(new Rectangle(0, 0, bbox.width, bbox.height));
         textAnnotation.resetAppearanceStream(pageSpace);
 
         return textAnnotation;
@@ -152,10 +152,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                 (int) Math.abs(ICON_SIZE.width * pageInverseTransform.getScaleX()),
                 (int) Math.abs(ICON_SIZE.height * pageInverseTransform.getScaleY()));
 
-
         // convert bbox and start and end line points.
         Rectangle bBox = new Rectangle(e.getX(), e.getY(), scaledSize.width, scaledSize.height);
-
         Rectangle tBbox = convertToPageSpace(bBox).getBounds();
 
         // text annotation are special as the annotation has fixed size.

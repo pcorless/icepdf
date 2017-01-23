@@ -183,34 +183,30 @@ public class InkAnnotation extends MarkupAnnotation {
         // setup clean shapes
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-
         appearanceState.setMatrix(new AffineTransform());
         appearanceState.setShapes(new Shapes());
-
-        Rectangle2D bbox = appearanceState.getBbox();
-        AffineTransform matrix = appearanceState.getMatrix();
-        Shapes shapes = appearanceState.getShapes();
-
-        // setup the AP stream.
-        setModifiedDate(PDate.formatDateTime(new Date()));
 
         // update the circle for any dx/dy moves.
         AffineTransform af = new AffineTransform();
         af.setToTranslation(dx * pageSpace.getScaleX(), -dy * pageSpace.getScaleY());
         inkPath = af.createTransformedShape(inkPath);
-        entries.put(INK_LIST_KEY,
-                convertPathToArray(inkPath));
+        entries.put(INK_LIST_KEY, convertPathToArray(inkPath));
+
+        Rectangle2D bbox = appearanceState.getBbox();
+        bbox.setRect(userSpaceRectangle.x, userSpaceRectangle.y, userSpaceRectangle.width, userSpaceRectangle.height);
+        setUserSpaceRectangle(userSpaceRectangle);
+
+        // setup the AP stream.
+        setModifiedDate(PDate.formatDateTime(new Date()));
 
         // save the stroke.
+        if (borderStyle.getStrokeWidth() == 0) {
+            borderStyle.setStrokeWidth(1);
+        }
         Stroke stroke = getBorderStyleStroke();
 
+        Shapes shapes = appearanceState.getShapes();
         // setup the space for the AP content stream.
-        af = new AffineTransform();
-        if (contentInAnnotSpace) {
-            af.translate(-bbox.getMinX(), -bbox.getMinY());
-        }
-
-        shapes.add(new TransformDrawCmd(af));
         shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
         shapes.add(new AlphaDrawCmd(
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
@@ -225,6 +221,11 @@ public class InkAnnotation extends MarkupAnnotation {
         entries.remove(APPEARANCE_STREAM_KEY);
 
         // we don't write out an appearance stream for ink annotation, we just regenerate it from properties
+
+        // mark the change.
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(this, this.getPObjectReference()));
+
     }
 
     public Shape getInkPath() {

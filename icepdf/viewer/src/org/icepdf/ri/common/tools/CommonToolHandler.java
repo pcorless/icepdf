@@ -102,6 +102,23 @@ public class CommonToolHandler {
 
     }
 
+    protected Point2D[] convertToPageSpace(Point2D start, Point2D end) {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space", e);
+        }
+        at.transform(start, start);
+        at.transform(end, end);
+
+        return new Point2D[]{start, end};
+    }
+
     /**
      * Convert the mouse coordinates to the space specified by the pageTransform
      * matrix.  This is a utility method for converting the mouse coordinates

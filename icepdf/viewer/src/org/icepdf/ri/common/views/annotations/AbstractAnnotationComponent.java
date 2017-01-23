@@ -123,6 +123,10 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected boolean isShowInvisibleBorder;
     protected boolean isSelected;
 
+    // drag offset
+    protected int dx = 0;
+    protected int dy = 0;
+
     // selection, move and resize handling.
     protected int cursor;
     protected Point startPos;
@@ -493,8 +497,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             int w = getWidth();
             int h = getHeight();
 
-            int dx = me.getX() - startPos.x;
-            int dy = me.getY() - startPos.y;
+            dx = me.getX() - startPos.x;
+            dy = me.getY() - startPos.y;
 
             if (endOfMousePress != null) {
                 endOfMousePress.setLocation(endOfMousePress.x + dx, endOfMousePress.y + dy);

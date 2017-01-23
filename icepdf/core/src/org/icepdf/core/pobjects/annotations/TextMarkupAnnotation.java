@@ -257,24 +257,14 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
 
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-
-        appearanceState.setMatrix(new AffineTransform());
         appearanceState.setShapes(new Shapes());
 
         Rectangle2D bbox = appearanceState.getBbox();
         AffineTransform matrix = appearanceState.getMatrix();
         Shapes shapes = appearanceState.getShapes();
 
-        // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
-        if (userSpaceRectangle == null) {
-            userSpaceRectangle = getUserSpaceRectangle();
-        }
-        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
-
         // setup the stroke from the border settings.
         BasicStroke stroke = new BasicStroke(1f);
-        shapes.add(new TransformDrawCmd(af));
         shapes.add(new StrokeDrawCmd(stroke));
         shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
         shapes.add(new AlphaDrawCmd(

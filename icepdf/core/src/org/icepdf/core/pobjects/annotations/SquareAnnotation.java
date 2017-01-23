@@ -138,48 +138,37 @@ public class SquareAnnotation extends MarkupAnnotation {
      * Resets the annotations appearance stream.
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
-
+        // grab the current appearance stream as we'll be updating the shapes.
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-
+        // clean identity matrix (nothing fancy) and new empty shapes.
         appearanceState.setMatrix(new AffineTransform());
         appearanceState.setShapes(new Shapes());
-
-        Rectangle2D bbox = appearanceState.getBbox();
+        // grab references so so we can bass them to the update appearance method.
         AffineTransform matrix = appearanceState.getMatrix();
         Shapes shapes = appearanceState.getShapes();
-
+        // we paint everything in annotation space which is relative to the bbox.
+        Rectangle2D bbox = appearanceState.getBbox();
+        bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
         // setup the AP stream.
         setModifiedDate(PDate.formatDateTime(new Date()));
-        // refresh rectangle
+        // refresh /rect entry to match bbox of the appearance stream.
         rectangle = getUserSpaceRectangle().getBounds();
+        // check the stroke width
+        if (borderStyle.getStrokeWidth() == 0) {
+            borderStyle.setStrokeWidth(1);
+        }
 
-        entries.put(Annotation.RECTANGLE_KEY,
-                PRectangle.getPRectangleVector(rectangle));
-        userSpaceRectangle = new Rectangle2D.Float(
-                (float) rectangle.getX(), (float) rectangle.getY(),
-                (float) rectangle.getWidth(), (float) rectangle.getHeight());
+        BasicStroke stroke = getBorderStyleStroke();
+        int strokeWidth = (int) stroke.getLineWidth();
 
-        int strokeWidth = (int) borderStyle.getStrokeWidth();
+        // setup the space for the AP content stream.
         Rectangle rectangleToDraw = new Rectangle(
                 strokeWidth,
                 strokeWidth,
-                (int) rectangle.getWidth() - strokeWidth * 2,
-                (int) rectangle.getHeight() - strokeWidth * 2);
+                (int) bbox.getWidth() - strokeWidth * 2,
+                (int) bbox.getHeight() - strokeWidth * 2);
 
-        // setup the space for the AP content stream.
-        AffineTransform af = new AffineTransform();
-
-        BasicStroke stroke;
-        if (borderStyle.isStyleDashed()) {
-            stroke = new BasicStroke(
-                    borderStyle.getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                    borderStyle.getStrokeWidth() * 2.0f, borderStyle.getDashArray(), 0.0f);
-        } else {
-            stroke = new BasicStroke(borderStyle.getStrokeWidth());
-        }
-
-        shapes.add(new TransformDrawCmd(af));
         shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
         shapes.add(new AlphaDrawCmd(
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
