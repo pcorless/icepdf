@@ -2475,13 +2475,17 @@ public class SwingController
         OptionalContent optionalContent = document.getCatalog().getOptionalContent();
         if (layersPanel != null && utilityTabbedPane != null) {
             if (optionalContent == null || optionalContent.getOrder() == null) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(layersPanel),
-                        false);
+                if (utilityTabbedPane.indexOfComponent(layersPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(layersPanel),
+                            false);
+                }
             } else {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(layersPanel),
-                        true);
+                if (utilityTabbedPane.indexOfComponent(layersPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(layersPanel),
+                            true);
+                }
             }
         }
         // check if there are any attachments and enable/disable the tab as needed
@@ -2489,26 +2493,34 @@ public class SwingController
             NameTree embeddedFilesNameTree = catalog.getEmbeddedFilesNameTree();
             if (embeddedFilesNameTree != null &&
                     embeddedFilesNameTree.getRoot() != null) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(attachmentPanel),
-                        true);
+                if (utilityTabbedPane.indexOfComponent(attachmentPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(attachmentPanel),
+                            true);
+                }
             }
         } else {
-            utilityTabbedPane.setEnabledAt(
-                    utilityTabbedPane.indexOfComponent(attachmentPanel),
-                    false);
+            if (utilityTabbedPane.indexOfComponent(attachmentPanel) > -1) {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(attachmentPanel),
+                        false);
+            }
         }
         boolean acroFormsExist = document.getCatalog().getInteractiveForm() != null &&
                 document.getCatalog().getInteractiveForm().getFields() != null;
         if (acroFormHandlerPanel != null && utilityTabbedPane != null) {
             if (acroFormsExist) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
-                        true);
+                if (utilityTabbedPane.indexOfComponent(acroFormHandlerPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
+                            true);
+                }
             } else {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
-                        false);
+                if (utilityTabbedPane.indexOfComponent(acroFormHandlerPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(acroFormHandlerPanel),
+                            false);
+                }
             }
         }
 
