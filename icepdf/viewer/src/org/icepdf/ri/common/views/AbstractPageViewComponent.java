@@ -113,10 +113,6 @@ public abstract class AbstractPageViewComponent
             pageBoundaryBox = PAGE_BOUNDARY_BOX;
         }
 
-        // grab a reference to the graphics configuration via the AWT thread,  if we get it on the worker thread
-        // it sometimes return null.
-        graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();
-
         // setup the store for the pageBufferPadding and current clip
         pageBufferStore = new PageBufferStore();
 
@@ -288,6 +284,11 @@ public abstract class AbstractPageViewComponent
      * is deemed dirty. The Parent scrollpane viewport is taken into account to setup the clipping.
      */
     protected void calculateBufferLocation() {
+
+        // grab a reference to the graphics configuration via the AWT thread,  if we get it on the worker thread
+        // it sometimes return null.
+        graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();
+
         // page location in the the entire view.
         Rectangle pageLocation = documentViewModel != null ?
                 documentViewModel.getPageBounds(pageIndex) : new Rectangle(pageSize);
