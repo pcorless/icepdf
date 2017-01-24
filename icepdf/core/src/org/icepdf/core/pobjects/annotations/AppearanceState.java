@@ -68,6 +68,7 @@ public class AppearanceState extends Dictionary {
             bbox = library.getRectangle(stream.getEntries(), Annotation.BBOX_VALUE);
             if (bbox == null) {
                 bbox = library.getRectangle(entries, Annotation.RECTANGLE_KEY);
+                bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
             }
             matrix = new AffineTransform();
             originalContentStream = new String(stream.getDecodedStreamBytes());

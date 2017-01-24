@@ -2334,13 +2334,17 @@ public class SwingController
         OptionalContent optionalContent = document.getCatalog().getOptionalContent();
         if (layersPanel != null && utilityTabbedPane != null) {
             if (optionalContent == null || optionalContent.getOrder() == null) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(layersPanel),
-                        false);
+                if (utilityTabbedPane.indexOfComponent(layersPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(layersPanel),
+                            false);
+                }
             } else {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(layersPanel),
-                        true);
+                if (utilityTabbedPane.indexOfComponent(layersPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(layersPanel),
+                            true);
+                }
             }
         }
         // check if there are any attachments and enable/disable the tab as needed
@@ -2348,27 +2352,35 @@ public class SwingController
             NameTree embeddedFilesNameTree = catalog.getEmbeddedFilesNameTree();
             if (embeddedFilesNameTree != null &&
                     embeddedFilesNameTree.getRoot() != null) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(attachmentPanel),
-                        true);
+                if (utilityTabbedPane.indexOfComponent(attachmentPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(attachmentPanel),
+                            true);
+                }
             }
         }else {
-            utilityTabbedPane.setEnabledAt(
-                    utilityTabbedPane.indexOfComponent(attachmentPanel),
-                    false);
+            if (utilityTabbedPane.indexOfComponent(attachmentPanel) > -1) {
+                utilityTabbedPane.setEnabledAt(
+                        utilityTabbedPane.indexOfComponent(attachmentPanel),
+                        false);
+            }
         }
         // check if there are signatures and enable/disable the tab as needed
         boolean signaturesExist = document.getCatalog().getInteractiveForm() != null &&
                 document.getCatalog().getInteractiveForm().isSignatureFields();
         if (signaturesPanel != null && utilityTabbedPane != null) {
             if (signaturesExist) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(signaturesPanel),
-                        true);
+                if (utilityTabbedPane.indexOfComponent(signaturesPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(signaturesPanel),
+                            true);
+                }
             } else {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(signaturesPanel),
-                        false);
+                if (utilityTabbedPane.indexOfComponent(signaturesPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(signaturesPanel),
+                            false);
+                }
             }
         }
 

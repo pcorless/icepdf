@@ -749,7 +749,8 @@ public abstract class Annotation extends Dictionary {
             if (rect.getHeight() <= 1) {
                 rect.setRect(rect.getX(), rect.getY(), rect.getWidth(), 15);
             }
-            appearanceDictionary.put(BBOX_VALUE, rect);
+            appearanceDictionary.put(BBOX_VALUE, new Rectangle2D.Float(
+                    0, 0, (float) rect.getWidth(), (float) rect.getHeight()));
 
             newAppearance.addAppearance(APPEARANCE_STREAM_NORMAL_KEY,
                     new AppearanceState(library, appearanceDictionary));
@@ -838,8 +839,13 @@ public abstract class Annotation extends Dictionary {
 
     public Rectangle2D getBbox() {
         Appearance appearance = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-        return appearanceState.getBbox();
+        if (appearance != null) {
+            AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+            if (appearanceState != null) {
+                return appearanceState.getBbox();
+            }
+        }
+        return null;
     }
 
     protected void resetNullAppearanceStream() {
@@ -1318,22 +1324,22 @@ public abstract class Annotation extends Dictionary {
                     (rect.getHeight() / tBbox.getHeight()));
 
             // check for identity transformation
-            if (matrix.isIdentity()) {
-                // we have to be careful in such as case as the coordinates of the annotation may actually
-                // be in page space.  If the rectangle in page pace is more or less the same location
-                // as the tbbox then we know the annotation coordinate space must also be in page space.
-                // Thus we shift back to page space.
-                if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
-                    tAs.setToTranslation(-rect.getX(), -rect.getY());
-                }
+            // we have to be careful in such as case as the coordinates of the annotation may actually
+            // be in page space.  If the rectangle in page pace is more or less the same location
+            // as the tbbox then we know the annotation coordinate space must also be in page space.
+            // Thus we shift back to page space.
+            if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
+                tAs.setToTranslation(-rect.getX(), -rect.getY());
+            } else {
+                tAs.setToTranslation(-tBbox.getX(), -tBbox.getY());
             }
-
             // Step 3. matrix is concatenated with A to form a matrix AA
             // that maps from the appearance's coordinate system to the
             // annotation's rectangle in default user space.
             tAs.concatenate(matrix);
             g.transform(tAs);
 
+            AffineTransform preAf = g.getTransform();
             // regular paint
             try {
                 appearanceState.getShapes().paint(g);
@@ -1341,6 +1347,8 @@ public abstract class Annotation extends Dictionary {
                 Thread.currentThread().interrupt();
                 logger.fine("Page Annotation Painting interrupted.");
             }
+
+            g.setTransform(preAf);
         }
 
     }

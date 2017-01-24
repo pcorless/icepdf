@@ -159,8 +159,6 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
                         pageViewComponent, documentViewModel);
         // set the bounds and refresh the userSpace rectangle
         comp.setBounds(bBox);
-        // resets user space rectangle to match bbox converted to page space
-        comp.refreshAnnotationRect();
 
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
