@@ -112,6 +112,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         if (interactiveForm != null && interactiveForm.needAppearances()) {
             resetAppearanceStream(new AffineTransform());
         }
+        // todo check if we have content value but no appearance stream.
     }
 
     public abstract void reset();
