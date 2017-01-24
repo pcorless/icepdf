@@ -143,7 +143,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                     if (gs != null) {
                         color = gs.getFillColor();
                         size = gs.getTextState().tsize;
-                        if (font != null && font.getSubTypeFormat() != Font.CID_FORMAT) {
+                        if (gs.getTextState().font != null &&
+                                gs.getTextState().font.getSubTypeFormat() != Font.CID_FORMAT) {
                             font = gs.getTextState().font;
                             fontName = gs.getTextState().fontName;
                         }
@@ -190,7 +191,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                 }
                 // further work is needed here to add font mapping support when CID fonts are detected,
                 // this may also be a fix for our asian font write support problem.
-                if (font != null && font.getSubTypeFormat() != Font.CID_FORMAT) {
+                if (gs.getTextState().font != null &&
+                        gs.getTextState().font.getSubTypeFormat() != Font.CID_FORMAT) {
                     if (gs.getTextState().font != null) font = gs.getTextState().font;
                     if (gs.getTextState().fontName != null) fontName = gs.getTextState().fontName;
                 }

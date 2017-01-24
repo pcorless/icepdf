@@ -19,6 +19,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -103,6 +104,16 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     }
 
+    @Override
+    public void init() throws InterruptedException {
+        super.init();
+        // check to make sure the field value matches the content stream.
+        InteractiveForm interactiveForm = library.getCatalog().getInteractiveForm();
+        if (interactiveForm != null && interactiveForm.needAppearances()) {
+            resetAppearanceStream(new AffineTransform());
+        }
+    }
+
     public abstract void reset();
 
     @Override
@@ -126,10 +137,17 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             AffineTransform preHighLightTransform = g.getTransform();
             g.setColor(highlightColor);
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, highlightAlpha));
-            g.fill(deriveDrawingRectangle());
+            g.fill(getBbox() != null ? getBbox() : getRectangle());
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             g.setTransform(preHighLightTransform);
         }
+    }
+
+    private Rectangle2D getRectangle() {
+        Rectangle2D origRect = getBbox() != null ? getBbox() : getUserSpaceRectangle();
+        Rectangle2D.Float jrect = new Rectangle2D.Float(0, 0,
+                (float) origRect.getWidth(), (float) origRect.getHeight());
+        return jrect;
     }
 
     public abstract T getFieldDictionary();

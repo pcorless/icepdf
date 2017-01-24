@@ -195,9 +195,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         Rectangle bbox = new Rectangle(rectToDraw.x, rectToDraw.y,
                 rectToDraw.width, rectToDraw.height);
         comp.setBounds(bbox);
-        // resets user space rectangle to match bbox converted to page space
-        comp.refreshAnnotationRect();
-
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =

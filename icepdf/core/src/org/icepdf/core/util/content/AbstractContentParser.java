@@ -1455,32 +1455,28 @@ public abstract class AbstractContentParser implements ContentParser {
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs) {
-        Object tjValue = stack.pop();
-        StringObject stringObject;
-        TextState textState;
-        if (tjValue instanceof StringObject) {
-            stringObject = (StringObject) tjValue;
-            textState = graphicState.getTextState();
-            // apply scaling
-            AffineTransform tmp = applyTextScaling(graphicState);
-            // apply transparency
-            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-            // draw string will take care of text pageText construction
-            drawString(stringObject.getLiteralStringBuffer(
-                    textState.font.getSubTypeFormat(),
-                    textState.font.getFont()),
-                    textMetrics,
-                    graphicState.getTextState(),
-                    shapes,
-                    glyphOutlineClip,
-                    graphicState, oCGs);
-            graphicState.set(tmp);
-//            graphicState.translate(textMetrics.getAdvance().x, 0);
-//            float shift = textMetrics.getShift();
-//            shift += textMetrics.getAdvance().x;
-//            textMetrics.setShift(shift);
-//            textMetrics.setPreviousAdvance(0);
-//            textMetrics.getAdvance().setLocation(0, 0);
+        if (stack.size() != 0) {
+            Object tjValue = stack.pop();
+            StringObject stringObject;
+            TextState textState;
+            if (tjValue instanceof StringObject) {
+                stringObject = (StringObject) tjValue;
+                textState = graphicState.getTextState();
+                // apply scaling
+                AffineTransform tmp = applyTextScaling(graphicState);
+                // apply transparency
+                setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+                // draw string will take care of text pageText construction
+                drawString(stringObject.getLiteralStringBuffer(
+                        textState.font.getSubTypeFormat(),
+                        textState.font.getFont()),
+                        textMetrics,
+                        graphicState.getTextState(),
+                        shapes,
+                        glyphOutlineClip,
+                        graphicState, oCGs);
+                graphicState.set(tmp);
+            }
         }
     }
 

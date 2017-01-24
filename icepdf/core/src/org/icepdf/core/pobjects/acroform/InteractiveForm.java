@@ -150,13 +150,10 @@ public class InteractiveForm extends Dictionary {
     public void init() {
 
         // load the resources
-        Object tmp = library.getObject(entries, NEEDS_APPEARANCES_KEY);
-        if (tmp instanceof HashMap) {
-            needAppearances = library.getBoolean(entries, NEEDS_APPEARANCES_KEY);
-        }
+        needAppearances = library.getBoolean(entries, NEEDS_APPEARANCES_KEY);
 
         // sig flags.
-        tmp = library.getObject(entries, SIG_FLAGS_KEY);
+        Object tmp = library.getObject(entries, SIG_FLAGS_KEY);
         if (tmp instanceof HashMap) {
             sigFlags = library.getInt(entries, SIG_FLAGS_KEY);
         }
