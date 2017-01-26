@@ -2236,13 +2236,17 @@ public class SwingController
         // selected the utility tab defined by the page mode key
         if (showUtilityPane){
             Name pageMode = catalog.getPageMode();
-            if (pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE)){
+            if (pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(outlinesScrollPane) > 0) {
                 utilityTabbedPane.setSelectedComponent(outlinesScrollPane);
-            }else if (pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE)){
+            } else if (pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(layersPanel) > 0) {
                 utilityTabbedPane.setSelectedComponent(layersPanel);
-            }else if (pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE) ){
+            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(attachmentPanel) > 0) {
                 utilityTabbedPane.setSelectedComponent(attachmentPanel);
-            }else if (pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE)){
+            } else if (pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE) &&
+                    utilityTabbedPane.indexOfComponent(thumbnailsPanel) > 0) {
                 utilityTabbedPane.setSelectedComponent(thumbnailsPanel);
             }else{
                 // Catalog.PAGE_MODE_USE_NONE_VALUE
@@ -2348,21 +2352,20 @@ public class SwingController
             }
         }
         // check if there are any attachments and enable/disable the tab as needed
-        if (layersPanel != null && utilityTabbedPane != null && catalog.getEmbeddedFilesNameTree() != null) {
-            NameTree embeddedFilesNameTree = catalog.getEmbeddedFilesNameTree();
-            if (embeddedFilesNameTree != null &&
-                    embeddedFilesNameTree.getRoot() != null) {
+        if (attachmentPanel != null && utilityTabbedPane != null) {
+            if (catalog.getEmbeddedFilesNameTree() != null &&
+                    catalog.getEmbeddedFilesNameTree().getRoot() != null) {
                 if (utilityTabbedPane.indexOfComponent(attachmentPanel) > -1) {
                     utilityTabbedPane.setEnabledAt(
                             utilityTabbedPane.indexOfComponent(attachmentPanel),
                             true);
                 }
-            }
-        }else {
-            if (utilityTabbedPane.indexOfComponent(attachmentPanel) > -1) {
-                utilityTabbedPane.setEnabledAt(
-                        utilityTabbedPane.indexOfComponent(attachmentPanel),
-                        false);
+            } else {
+                if (utilityTabbedPane.indexOfComponent(attachmentPanel) > -1) {
+                    utilityTabbedPane.setEnabledAt(
+                            utilityTabbedPane.indexOfComponent(attachmentPanel),
+                            false);
+                }
             }
         }
         // check if there are signatures and enable/disable the tab as needed
