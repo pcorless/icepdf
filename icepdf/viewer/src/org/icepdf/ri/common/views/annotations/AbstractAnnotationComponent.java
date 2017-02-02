@@ -154,8 +154,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         isResizable = !(annotation.getFlagReadOnly() || annotation.getFlagLocked());
 
         // lock UI controls.
-        if (isInteractiveAnnotationsEnabled &&
-                annotation.allowScreenOrPrintRenderingOrInteraction()) {
+        if (isInteractiveAnnotationsEnabled) {
             addMouseListener(this);
             addMouseMotionListener(this);
 

@@ -409,8 +409,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
 
                             for (Annotation annotation : annotations) {
                                 // parser can sometimes return an empty array depending on the PDF syntax being used.
-                                if (annotation != null
-                                        && annotation.allowScreenOrPrintRenderingOrInteraction()) {
+                                if (annotation != null) {
                                     final AbstractAnnotationComponent comp =
                                             AnnotationComponentFactory.buildAnnotationComponent(
                                                     annotation, documentViewController,
@@ -424,6 +423,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                                         } else {
                                             parent.add(comp, JLayeredPane.DEFAULT_LAYER);
                                         }
+                                        comp.revalidate();
+                                        comp.repaint();
                                     }
 
                                 }
