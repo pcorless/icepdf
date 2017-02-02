@@ -1329,9 +1329,11 @@ public abstract class Annotation extends Dictionary {
             // as the tbbox then we know the annotation coordinate space must also be in page space.
             // Thus we shift back to page space.
             if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
-                tAs.setToTranslation(-rect.getX(), -rect.getY());
+                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                        tAs.getScaleY(), -rect.getX(), -rect.getY());
             } else {
-                tAs.setToTranslation(-tBbox.getX(), -tBbox.getY());
+                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                        tAs.getScaleY(), -tBbox.getX(), -tBbox.getY());
             }
             // Step 3. matrix is concatenated with A to form a matrix AA
             // that maps from the appearance's coordinate system to the
