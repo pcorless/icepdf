@@ -50,8 +50,8 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     public static final int DEFAULT_STROKE_THICKNESS_STYLE = 0;
     public static final int DEFAULT_STROKE_STYLE = 0;
     public static final int DEFAULT_FILL_STYLE = 0;
-    private static final Color DEFAULT_BORDER_COLOR = Color.LIGHT_GRAY;
-    private static final Color DEFAULT_STROKE_COLOR = new Color(1, 1, 1);
+    private static final Color DEFAULT_BORDER_COLOR = FreeTextAnnotation.defaultBorderColor;
+    private static final Color DEFAULT_STROKE_COLOR = FreeTextAnnotation.defaultFillColor;
 
     // font styles.
     private static ValueLabelItem[] FONT_NAMES_LIST;
@@ -184,6 +184,8 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                     // set teh default stroke.
                     freeTextAnnotation.getBorderStyle().setBorderStyle(
                             (Name) ((ValueLabelItem) strokeStyleBox.getSelectedItem()).getValue());
+                    // apply the default colour
+                    freeTextAnnotation.setColor(strokeColorButton.getBackground());
                 } else {
                     freeTextAnnotation.getBorderStyle().setStrokeWidth(0);
                 }
@@ -215,7 +217,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                             strokeColorButton.getBackground());
             if (chosenColor != null) {
                 // change the colour of the button background
-                strokeColorButton.setBackground(chosenColor);
+                setButtonBackgroundColor(strokeColorButton, chosenColor);
                 freeTextAnnotation.setColor(chosenColor);
             }
         } else if (e.getSource() == fillColorButton) {
@@ -226,7 +228,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                             fillColorButton.getBackground());
             if (chosenColor != null) {
                 // change the colour of the button background
-                fillColorButton.setBackground(chosenColor);
+                setButtonBackgroundColor(fillColorButton, chosenColor);
                 freeTextAnnotation.setFillColor(chosenColor);
             }
         } else if (e.getSource() == fontColorButton) {
@@ -237,7 +239,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                             fontColorButton.getBackground());
             if (chosenColor != null) {
                 // change the colour of the button background
-                fontColorButton.setBackground(chosenColor);
+                setButtonBackgroundColor(fontColorButton, chosenColor);
                 freeTextAnnotation.setFontColor(chosenColor);
             }
         }
@@ -369,7 +371,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         strokeColorButton = new JButton(" ");
         strokeColorButton.addActionListener(this);
         strokeColorButton.setOpaque(true);
-        strokeColorButton.setBackground(DEFAULT_BORDER_COLOR);
+        setButtonBackgroundColor(strokeColorButton, DEFAULT_BORDER_COLOR);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.color"));
         addGB(this, label, 0, 6, 1, 1);
         addGB(this, strokeColorButton, 1, 6, 1, 1);
@@ -386,7 +388,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         fillColorButton = new JButton(" ");
         fillColorButton.addActionListener(this);
         fillColorButton.setOpaque(true);
-        fillColorButton.setBackground(DEFAULT_STROKE_COLOR);
+        setButtonBackgroundColor(fillColorButton, DEFAULT_STROKE_COLOR);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.color"));
         addGB(this, label, 0, 8, 1, 1);
         addGB(this, fillColorButton, 1, 8, 1, 1);
