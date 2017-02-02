@@ -289,6 +289,9 @@ public abstract class AbstractPageViewComponent
         // it sometimes return null.
         graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();
 
+        // update page size as we may have a page that's larger then the average document size.
+        calculatePageSize(pageSize, pageRotation, pageZoom);
+
         // page location in the the entire view.
         Rectangle pageLocation = documentViewModel != null ?
                 documentViewModel.getPageBounds(pageIndex) : new Rectangle(pageSize);
@@ -406,8 +409,6 @@ public abstract class AbstractPageViewComponent
                 // page init, interruptible
                 page.init();
                 pageInitializedCallback(page);
-                Rectangle pageSize = new Rectangle();
-                calculatePageSize(pageSize, rotation, zoom);
 
                 BufferedImage pageBufferImage = graphicsConfiguration.createCompatibleImage(
                         imageLocation.width, imageLocation.height,
