@@ -414,7 +414,13 @@ public class Utils {
             Encoding enc = Encoding.getPDFDoc();
             for (int i = 0; i < titleText.length(); i++) {
 //                sb.append(titleText.charAt(i));
-                sb.append(enc.get(titleText.charAt(i)));
+                // pdf encoding maps char < 24 to '?' or 63. so we'll skip this map.
+                char character = enc.get(titleText.charAt(i));
+                if (i > 23) {
+                    sb.append(character);
+                } else {
+                    sb.append(titleText.charAt(i));
+                }
             }
             convertedStringObject = sb.toString();
         }
