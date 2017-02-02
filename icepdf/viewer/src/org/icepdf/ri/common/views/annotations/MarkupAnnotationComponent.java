@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.*;
 
@@ -57,6 +58,14 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
     private static final Logger logger =
             Logger.getLogger(TextAnnotationComponent.class.toString());
 
+    protected static boolean isInteractivePopupAnnotationsEnabled;
+
+    static {
+        isInteractivePopupAnnotationsEnabled =
+                Defs.sysPropertyBoolean(
+                        "org.icepdf.core.annotations.interactive.popup.enabled", true);
+    }
+
     protected MarkupAnnotation markupAnnotation;
 
     public MarkupAnnotationComponent(Annotation annotation,
@@ -74,7 +83,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
     public void mouseClicked(MouseEvent e) {
         super.mouseClicked(e);
         // on double click toggle the visibility of the popup component.
-        if (e.getClickCount() == 2) {
+        if (isInteractivePopupAnnotationsEnabled && e.getClickCount() == 2) {
             // we have an annotation so toggle it's visibility
             if (markupAnnotation != null) {
                 PopupAnnotation popup = markupAnnotation.getPopupAnnotation();
