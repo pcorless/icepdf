@@ -157,9 +157,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     public static final int QUADDING_RIGHT_JUSTIFIED = 2;
     public static final Name EMBEDDED_FONT_NAME = new Name("ice1");
 
-    protected static Color defaultFontColor;
-    protected static Color defaultFillColor;
-    protected static int defaultFontSize;
+    public static Color defaultFontColor;
+    public static Color defaultFillColor;
+    public static Color defaultBorderColor;
+    public static int defaultFontSize;
     static {
 
         // sets annotation free text font colour
@@ -192,6 +193,20 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // sets annotation free text fill colour
         try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.freeText.border.color", "#cccccc");
+            int colorValue = ColorUtil.convertColor(color);
+            defaultBorderColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("000000", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading free text annotation fill colour");
+            }
+        }
+
+        // sets annotation free text fill colour
+        try {
             defaultFontSize = Defs.sysPropertyInt(
                     "org.icepdf.core.views.page.annotation.freeText.font.size", 24);
         } catch (NumberFormatException e) {
@@ -199,6 +214,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 logger.warning("Error reading free text annotation fill colour");
             }
         }
+
     }
     protected String defaultAppearance;
     protected int quadding = QUADDING_LEFT_JUSTIFIED;
@@ -239,8 +255,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             AppearanceState appearanceState = appearance.getSelectedAppearanceState();
             shapes = appearanceState.getShapes();
         }
-
-        // reget colour so we can check for a null entry
+        // re-get colour so we can check for a null entry
         if (library.getObject(entries, COLOR_KEY) != null &&
                 getObject(APPEARANCE_STREAM_KEY) != null) {
             // iterate over shapes and try and find the fill and stroke colors.
@@ -407,8 +422,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         af.translate(0, -bbox.getHeight());
         // adjust of the border offset, offset is define in viewer,
         // so we can't use the constant because of dependency issues.
-        double insets = 5 * pageTransform.getScaleX();
-        af.translate(insets, -insets);
+        double insets = 5;// * pageTransform.getScaleX();
+        af.translate(insets, insets);
         shapes.add(new TransformDrawCmd(af));
 
         // iterate over each line of text painting the strings.
@@ -436,13 +451,15 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // iterate over each line of text painting the strings.
         StringBuilder contents = new StringBuilder(content);
 
-        float lineHeight = (float) (fontFile.getAscent() + fontFile.getDescent());
+        float lineHeight = (float) (Math.floor(fontFile.getAscent()) + Math.floor(fontFile.getDescent()));
 
+        // is generally going to be zero, and af takes care of the offset for inset.
         float advanceX = (float) bbox.getMinX();
         float advanceY = (float) bbox.getMinY();
 
         float currentX;
-        float currentY = advanceY + lineHeight;
+        // we don't want to shift the whole line width just the ascent
+        float currentY = advanceY + (float) fontFile.getAscent();
 
         float lastx = 0;
         float newAdvanceX;
