@@ -224,6 +224,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                     ((ScalableTextArea) freeText).setActive(false);
                 }
             }
+            repaint();
         } else if ("focusOwner".equals(prop) &&
                 newValue instanceof JTextArea) {
             JTextArea freeText = (JTextArea) newValue;
@@ -233,6 +234,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                     ((ScalableTextArea) freeText).setActive(true);
                 }
             }
+            repaint();
         }
     }
 
