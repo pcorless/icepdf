@@ -172,8 +172,8 @@ public class CircleAnnotation extends MarkupAnnotation {
         Rectangle rectangleToDraw = new Rectangle(
                 strokeWidth,
                 strokeWidth,
-                (int) bbox.getWidth() - strokeWidth * 2,
-                (int) bbox.getHeight() - strokeWidth * 2);
+                (int) userSpaceRectangle.getWidth() - strokeWidth * 2,
+                (int) userSpaceRectangle.getHeight() - strokeWidth * 2);
 
         Ellipse2D.Double circle = new Ellipse2D.Double(
                 strokeWidth, strokeWidth,

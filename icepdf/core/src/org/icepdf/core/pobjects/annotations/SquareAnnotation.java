@@ -166,8 +166,11 @@ public class SquareAnnotation extends MarkupAnnotation {
         Rectangle rectangleToDraw = new Rectangle(
                 strokeWidth,
                 strokeWidth,
-                (int) bbox.getWidth() - strokeWidth * 2,
-                (int) bbox.getHeight() - strokeWidth * 2);
+                (int) userSpaceRectangle.getWidth() - strokeWidth * 2,
+                (int) userSpaceRectangle.getHeight() - strokeWidth * 2);
+
+        System.out.println(bbox);
+        System.out.println(userSpaceRectangle);
 
         shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
         shapes.add(new AlphaDrawCmd(
