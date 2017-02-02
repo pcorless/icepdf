@@ -253,6 +253,15 @@ public abstract class MarkupAnnotation extends Annotation {
     }
 
     /**
+     * Get the opacity value in the range of 0 ... 255.
+     *
+     * @return current opacity value in the range of 0 ... 255.
+     */
+    public int getOpacityNormalized() {
+        return Math.round(opacity * 255);
+    }
+
+    /**
      * Set the opacity value of the /CA key in the markup annotation dictionary.
      *
      * @param opacity opacity in the range of 0.0 ... 1.0.

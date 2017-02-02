@@ -129,8 +129,8 @@ public abstract class AnnotationPanelAdapter extends JPanel
      */
     protected void alphaSliderChange(ChangeEvent e, MarkupAnnotation annotation){
         JSlider source = (JSlider)e.getSource();
-        if (!source.getValueIsAdjusting()) {
-            int alpha = source.getValue();
+        int alpha = source.getValue();
+        if (!source.getValueIsAdjusting() && alpha != annotation.getOpacityNormalized()) {
             // set the annotation value
             annotation.setOpacity(alpha);
             // send update to callback
