@@ -1676,9 +1676,17 @@ public abstract class AbstractContentParser implements ContentParser {
         float old = graphicState.getLineWidth();
 
         // set the line width for the glyph
-        float lineWidth = graphicState.getLineWidth() / 10000;
-        lineWidth /= textState.tmatrix.getScaleX();
-        graphicState.setLineWidth(lineWidth);
+        float lineWidth = graphicState.getLineWidth();
+        double scale = textState.tmatrix.getScaleX();
+        // double check for a near zero value as it will really mess up the division result, zero is just fine.
+        if (scale > 0.001 || scale == 0) {
+            lineWidth /= scale;
+            graphicState.setLineWidth(lineWidth);
+        } else {
+            // corner case stroke adjustment,  still can't find anything in spec about this.
+            lineWidth *= scale * 100;
+            graphicState.setLineWidth(lineWidth);
+        }
         // update the stroke and add the text to shapes
         setStroke(shapes, graphicState);
         shapes.add(new ColorDrawCmd(graphicState.getStrokeColor()));
