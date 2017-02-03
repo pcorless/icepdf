@@ -396,6 +396,10 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         this.markupPath = markupPath;
     }
 
+    public GeneralPath getMarkupPath() {
+        return markupPath;
+    }
+
     public void setMarkupBounds(ArrayList<Shape> markupBounds) {
         this.markupBounds = markupBounds;
     }
