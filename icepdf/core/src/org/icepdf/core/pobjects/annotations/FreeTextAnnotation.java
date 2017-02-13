@@ -453,9 +453,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         float lineHeight = (float) (Math.floor(fontFile.getAscent()) + Math.floor(fontFile.getDescent()));
 
+        float borderOffsetX = borderStyle.getStrokeWidth() / 2 + 1;  // 1 pixel padding
+        float borderOffsetY = borderStyle.getStrokeWidth() / 2;
         // is generally going to be zero, and af takes care of the offset for inset.
-        float advanceX = (float) bbox.getMinX();
-        float advanceY = (float) bbox.getMinY();
+        float advanceX = (float) bbox.getMinX() + borderOffsetX;
+        float advanceY = (float) bbox.getMinY() + borderOffsetY;
 
         float currentX;
         // we don't want to shift the whole line width just the ascent
@@ -481,7 +483,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
             } else {
                 // move back to start of next line
                 currentY += lineHeight;
-                advanceX = (float) bbox.getMinX();
+                advanceX = (float) bbox.getMinX() + borderOffsetX;
                 lastx = 0;
             }
         }
@@ -500,8 +502,8 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
 
         // background colour
-        shapes.add(new ShapeDrawCmd(new Rectangle2D.Double(bbox.getX(), bbox.getY() + 10,
-                bbox.getWidth() - 10, bbox.getHeight() - 10)));
+        shapes.add(new ShapeDrawCmd(new Rectangle2D.Double(bbox.getX(), bbox.getY(),
+                bbox.getWidth() - insets * 2, bbox.getHeight() - insets * 2)));
         if (fillType) {
             shapes.add(new ColorDrawCmd(fillColor));
             shapes.add(new FillDrawCmd());
