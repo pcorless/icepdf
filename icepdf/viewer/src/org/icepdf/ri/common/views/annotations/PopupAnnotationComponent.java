@@ -743,7 +743,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         for (AnnotationComponent annotationComponent : annotationComponents) {
             compReference = annotationComponent.getAnnotation().getPObjectReference();
             // find the component and toggle it's visibility.
-            if (compReference.equals(annotationReference)) {
+            if (compReference != null && compReference.equals(annotationReference)) {
                 return annotationComponent;
             }
         }
