@@ -271,7 +271,8 @@ public class HexStringObject implements StringObject {
                     }
                 } else {
                     charValue = getUnsignedInt(i, 4);
-                    if (font.canDisplayEchar((char) charValue)) {
+                    // should never have a 4 digit zero value.
+                    if (font.canDisplayEchar((char) charValue) && charValue != 0) {
                         tmp.append((char) charValue);
                         i += 2;
                     }

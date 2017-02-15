@@ -999,7 +999,6 @@ public abstract class AbstractContentParser implements ContentParser {
                                      LinkedList<OptionalContents> oCGs) {
         float y = ((Number) stack.pop()).floatValue();
         float x = ((Number) stack.pop()).floatValue();
-        double oldY = graphicState.getCTM().getTranslateY();
         graphicState.translate(-textMetrics.getShift(), 0);
         textMetrics.setShift(0);
         textMetrics.setPreviousAdvance(0);
@@ -1007,9 +1006,9 @@ public abstract class AbstractContentParser implements ContentParser {
         // x,y are expressed in unscaled but we don't scale until
         // a text showing operator is called.
         graphicState.translate(x, -y);
-        float newY = (float) graphicState.getCTM().getTranslateY();
         // capture x coord of BT y offset, tm, Td, TD.
         if (textMetrics.isYstart()) {
+            float newY = (float) graphicState.getCTM().getTranslateY();
             textMetrics.setyBTStart(newY);
             textMetrics.setYstart(false);
         }
