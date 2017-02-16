@@ -17,6 +17,7 @@ package org.icepdf.core.util.content;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -1545,6 +1546,13 @@ public abstract class AbstractContentParser implements ContentParser {
         // Iterate through displayText to calculate the the new advanceX value
         for (int i = 0; i < textLength; i++) {
             currentChar = displayText.charAt(i);
+
+            boolean display = currentFont.canDisplayEchar(currentChar);
+            // slow display test, but allows us to fall back on a different font if needed.
+            if (!display) {
+                FontFile fontFile = FontManager.getInstance().getInstance(currentFont.getName(), 0);
+                textSprites.setFont(fontFile);
+            }
 
             // Position of the specified glyph relative to the origin of glyphVector
             // advance is handled by the particular font implementation.

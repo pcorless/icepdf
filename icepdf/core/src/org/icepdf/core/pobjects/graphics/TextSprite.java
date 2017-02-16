@@ -316,6 +316,10 @@ public class TextSprite {
         gg.setStroke(oldStroke);
     }
     */
+
+    public void setFont(FontFile font) {
+        this.font = font;
+    }
     /*
     private void drawGyphBox(Graphics2D gg, GlyphText glyphSprite) {
 
@@ -340,6 +344,8 @@ public class TextSprite {
         gg.setStroke(oldStroke);
 
     }
+
+
     */
 
     /**
