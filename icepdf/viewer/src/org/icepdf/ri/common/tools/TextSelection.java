@@ -292,9 +292,13 @@ public class TextSelection extends SelectionBoxHandler {
     protected void calculateTextSelectionExclusion(AffineTransform pageTransform) {
         if (enableMarginExclusion) {
             Rectangle2D mediaBox = pageViewComponent.getPage().getCropBox();
-            topMarginExclusion = new Rectangle2D.Float(0, (int) mediaBox.getHeight() - topMargin,
+            topMarginExclusion = new Rectangle2D.Float(
+                    (int) mediaBox.getX(),
+                    (int) mediaBox.getY() - topMargin,
                     (int) mediaBox.getWidth(), topMargin);
-            bottomMarginExclusion = new Rectangle2D.Float(0, 0,
+            bottomMarginExclusion = new Rectangle2D.Float(
+                    (int) mediaBox.getX(),
+                    (int) (mediaBox.getY() - mediaBox.getHeight()),
                     (int) mediaBox.getWidth(), bottomMargin);
         }
     }
