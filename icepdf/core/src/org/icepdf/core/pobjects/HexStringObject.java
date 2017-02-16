@@ -272,7 +272,7 @@ public class HexStringObject implements StringObject {
                 } else {
                     charValue = getUnsignedInt(i, 4);
                     // should never have a 4 digit zero value.
-                    if (font.canDisplayEchar((char) charValue) && charValue != 0) {
+                    if (font.canDisplayEchar((char) charValue)) {
                         tmp.append((char) charValue);
                         i += 2;
                     }
@@ -312,14 +312,14 @@ public class HexStringObject implements StringObject {
         }
         length = hex.length();
         if (step == 2) {
-            // add 0's to uneven length
+            // pre append 0's to uneven length, be careful as the 0020 isn't the same as 2000
             if (length % 2 != 0) {
-                hex.append('0');
+                hex = new StringBuilder("0").append(hex);
             }
         }
         if (step == 4) {
             if (length % 4 != 0) {
-                hex.append("00");
+                hex = new StringBuilder("00").append(hex);
             }
         }
         return hex;
