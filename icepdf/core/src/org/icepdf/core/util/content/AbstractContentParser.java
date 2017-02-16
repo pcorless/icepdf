@@ -47,6 +47,7 @@ public abstract class AbstractContentParser implements ContentParser {
             Logger.getLogger(AbstractContentParser.class.toString());
     private static boolean disableTransparencyGroups;
     private static boolean enabledOverPrint;
+    private static boolean enabledFontFallback;
 
     static {
         // decide if large images will be scaled
@@ -58,6 +59,10 @@ public abstract class AbstractContentParser implements ContentParser {
         enabledOverPrint =
                 Defs.sysPropertyBoolean("org.icepdf.core.enabledOverPrint",
                         true);
+
+        enabledFontFallback =
+                Defs.sysPropertyBoolean("org.icepdf.core.enabledFontFallback",
+                        false);
     }
 
     public static final float OVERPAINT_ALPHA = 0.4f;
@@ -1547,11 +1552,13 @@ public abstract class AbstractContentParser implements ContentParser {
         for (int i = 0; i < textLength; i++) {
             currentChar = displayText.charAt(i);
 
-            boolean display = currentFont.canDisplayEchar(currentChar);
-            // slow display test, but allows us to fall back on a different font if needed.
-            if (!display) {
-                FontFile fontFile = FontManager.getInstance().getInstance(currentFont.getName(), 0);
-                textSprites.setFont(fontFile);
+            if (enabledFontFallback) {
+                boolean display = currentFont.canDisplayEchar(currentChar);
+                // slow display test, but allows us to fall back on a different font if needed.
+                if (!display) {
+                    FontFile fontFile = FontManager.getInstance().getInstance(currentFont.getName(), 0);
+                    textSprites.setFont(fontFile);
+                }
             }
 
             // Position of the specified glyph relative to the origin of glyphVector
