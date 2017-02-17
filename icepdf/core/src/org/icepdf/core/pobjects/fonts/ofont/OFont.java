@@ -284,6 +284,9 @@ public class OFont implements FontFile {
         return false;
     }
 
+    public void setIsCid() {
+    }
+
     public int getNumGlyphs() {
         return awtFont.getNumGlyphs();
     }
