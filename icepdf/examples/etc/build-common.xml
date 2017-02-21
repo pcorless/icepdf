@@ -101,7 +101,7 @@
             <mkdir dir="${build.classes.dir}"/>
 
             <javac destdir="${build.classes.dir}" sourcepath="" encoding="UTF-8"
-                   includeantruntime="false"
+                   includeantruntime="false" source="1.5" target="1.5"
                    debug="${compile.debug}" failonerror="@{failonerror}">
                 <compilerarg value="-Xlint"/>
                 <src location="${src.dir}"/>
