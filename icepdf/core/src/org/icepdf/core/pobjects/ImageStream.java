@@ -646,12 +646,20 @@ public class ImageStream extends Stream {
                     }
                 }
             } else {
+                // no header data detected so use a combination of current colour space and some yet to be explained
+                // or reproduced corner cases.
                 if (colourSpace instanceof Indexed) {
                     return ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
                 }
                 // assume gray based jpeg.
-                if (wr.getNumBands() == 1) {
+                else if (wr.getNumBands() == 1) {
                     tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                } else if (colourSpace instanceof DeviceRGB) {
+                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                } else if (colourSpace instanceof DeviceCMYK) {
+                    tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                } else if (colourSpace instanceof Indexed) {
+                    tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
                 }
                 // otherwise assume YCbCr bands = 3.
                 else {
