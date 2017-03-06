@@ -253,14 +253,12 @@ public class LineAnnotation extends MarkupAnnotation {
         }
     }
 
-    public static void circleDrawOps(Shapes shapes, AffineTransform at,
+    public static void circleDrawOps(Shapes shapes,
                                      Point2D point, Point2D start,
                                      Point2D end, Color lineColor,
                                      Color internalColor) {
         AffineTransform af = createRotation(point, start, end);
-        at = new AffineTransform(at);
-        at.concatenate(af);
-        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new TransformDrawCmd(af));
         shapes.add(new ColorDrawCmd(lineColor));
         shapes.add(new ShapeDrawCmd(createCircleEnd()));
         shapes.add(new FillDrawCmd());
@@ -283,7 +281,7 @@ public class LineAnnotation extends MarkupAnnotation {
         g.setTransform(oldAf);
     }
 
-    public static void diamondDrawOps(Shapes shapes, AffineTransform at,
+    public static void diamondDrawOps(Shapes shapes,
                                       Point2D point, Point2D start,
                                       Point2D end, Color lineColor,
                                       Color internalColor) {
@@ -295,9 +293,7 @@ public class LineAnnotation extends MarkupAnnotation {
         tx.rotate(angle - (Math.PI / 4));
 
         AffineTransform af = createRotation(point, start, end);
-        at = new AffineTransform(at);
-        at.concatenate(tx);
-        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new TransformDrawCmd(af));
         shapes.add(new ColorDrawCmd(lineColor));
         shapes.add(new ShapeDrawCmd(createSquareEnd()));
         shapes.add(new FillDrawCmd());
@@ -322,14 +318,12 @@ public class LineAnnotation extends MarkupAnnotation {
         g.setTransform(oldAf);
     }
 
-    public static void squareDrawOps(Shapes shapes, AffineTransform at,
+    public static void squareDrawOps(Shapes shapes,
                                      Point2D point, Point2D start,
                                      Point2D end, Color lineColor,
                                      Color internalColor) {
         AffineTransform af = createRotation(point, start, end);
-        at = new AffineTransform(at);
-        at.concatenate(af);
-        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new TransformDrawCmd(af));
         shapes.add(new ColorDrawCmd(lineColor));
         shapes.add(new ShapeDrawCmd(createSquareEnd()));
         shapes.add(new FillDrawCmd());
@@ -352,13 +346,11 @@ public class LineAnnotation extends MarkupAnnotation {
         g.setTransform(oldAf);
     }
 
-    public static void openArrowEndDrawOps(Shapes shapes, AffineTransform at,
+    public static void openArrowEndDrawOps(Shapes shapes,
                                            Point2D start, Point2D end,
                                            Color lineColor, Color internalColor) {
         AffineTransform af = createRotation(end, start, end);
-        at = new AffineTransform(at);
-        at.concatenate(af);
-        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new TransformDrawCmd(af));
         shapes.add(new ColorDrawCmd(lineColor));
         shapes.add(new ShapeDrawCmd(createOpenArrowEnd()));
         shapes.add(new DrawDrawCmd());
@@ -388,13 +380,11 @@ public class LineAnnotation extends MarkupAnnotation {
         g.setTransform(oldAf);
     }
 
-    public static void openArrowStartDrawOps(Shapes shapes, AffineTransform at,
+    public static void openArrowStartDrawOps(Shapes shapes,
                                              Point2D start, Point2D end,
                                              Color lineColor, Color internalColor) {
         AffineTransform af = createRotation(start, start, end);
-        at = new AffineTransform(at);
-        at.concatenate(af);
-        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new TransformDrawCmd(af));
         shapes.add(new ColorDrawCmd(lineColor));
         shapes.add(new ShapeDrawCmd(createOpenArrowStart()));
         shapes.add(new DrawDrawCmd());
@@ -424,13 +414,11 @@ public class LineAnnotation extends MarkupAnnotation {
         g.setTransform(oldAf);
     }
 
-    public static void closedArrowStartDrawOps(Shapes shapes, AffineTransform at,
+    public static void closedArrowStartDrawOps(Shapes shapes,
                                                Point2D start, Point2D end,
                                                Color lineColor, Color internalColor) {
         AffineTransform af = createRotation(start, start, end);
-        at = new AffineTransform(at);
-        at.concatenate(af);
-        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new TransformDrawCmd(af));
         if (internalColor != null) {
             shapes.add(new ColorDrawCmd(internalColor));
             shapes.add(new ShapeDrawCmd(createClosedArrowStart()));
@@ -467,14 +455,11 @@ public class LineAnnotation extends MarkupAnnotation {
         g.setTransform(oldAf);
     }
 
-    public static void closedArrowEndDrawOps(Shapes shapes, AffineTransform at,
+    public static void closedArrowEndDrawOps(Shapes shapes,
                                              Point2D start, Point2D end,
                                              Color lineColor, Color internalColor) {
         AffineTransform af = createRotation(end, start, end);
-        at = new AffineTransform(at);
-        at.concatenate(af);
-
-        shapes.add(new TransformDrawCmd(at));
+        shapes.add(new TransformDrawCmd(af));
         if (internalColor != null) {
             shapes.add(new ColorDrawCmd(internalColor));
             shapes.add(new ShapeDrawCmd(createClosedArrowEnd()));
@@ -581,6 +566,13 @@ public class LineAnnotation extends MarkupAnnotation {
             return;
         }
 
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+        AffineTransform matrix = appearanceState.getMatrix();
+        // reset transform and shapes.
+        appearanceState.setMatrix(new AffineTransform());
+        appearanceState.setShapes(new Shapes());
+
         // adjust the line's start and end points for any potential move
         AffineTransform af = new AffineTransform();
         af.setToTranslation(dx * pageTransform.getScaleX(), -dy * pageTransform.getScaleY());
@@ -589,26 +581,11 @@ public class LineAnnotation extends MarkupAnnotation {
         setStartOfLine(startOfLine);
         setEndOfLine(endOfLine);
 
-        // setup the AP stream.
-        setModifiedDate(PDate.formatDateTime(new Date()));
-
-        Appearance appearance = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-
-        // reset transform and shapes.
-        appearanceState.setMatrix(new AffineTransform());
-        appearanceState.setShapes(new Shapes());
-
         Rectangle2D bbox = appearanceState.getBbox();
-        AffineTransform matrix = appearanceState.getMatrix();
-        Shapes shapes = appearanceState.getShapes();
+        bbox.setRect(userSpaceRectangle.x, userSpaceRectangle.y, userSpaceRectangle.width, userSpaceRectangle.height);
+        setUserSpaceRectangle(userSpaceRectangle);
 
-        // setup the space for the AP content stream.
-        af = new AffineTransform();
-        if (userSpaceRectangle == null) {
-            userSpaceRectangle = getUserSpaceRectangle();
-        }
-        af.translate(-this.userSpaceRectangle.getMinX(), -this.userSpaceRectangle.getMinY());
+        setModifiedDate(PDate.formatDateTime(new Date()));
 
         // draw the basic line.
         Stroke stroke = getBorderStyleStroke();
@@ -616,7 +593,8 @@ public class LineAnnotation extends MarkupAnnotation {
         line.moveTo((float) startOfLine.getX(), (float) startOfLine.getY());
         line.lineTo((float) endOfLine.getX(), (float) endOfLine.getY());
         line.closePath();
-        shapes.add(new TransformDrawCmd(af));
+
+        Shapes shapes = appearanceState.getShapes();
 //        shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
         shapes.add(new AlphaDrawCmd(
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
@@ -628,36 +606,36 @@ public class LineAnnotation extends MarkupAnnotation {
         // check for a ending end cap.
         if (startArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
             openArrowStartDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+                    shapes, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
             closedArrowStartDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+                    shapes, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
             circleDrawOps(
-                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
+                    shapes, startOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
             diamondDrawOps(
-                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
+                    shapes, startOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (startArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
             squareDrawOps(
-                    shapes, af, startOfLine, startOfLine, endOfLine, color, interiorColor);
+                    shapes, startOfLine, startOfLine, endOfLine, color, interiorColor);
         }
         // check for a starting end cap.
         if (endArrow.equals(LineAnnotation.LINE_END_OPEN_ARROW)) {
             openArrowEndDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+                    shapes, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_CLOSED_ARROW)) {
             closedArrowEndDrawOps(
-                    shapes, af, startOfLine, endOfLine, color, interiorColor);
+                    shapes, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_CIRCLE)) {
             circleDrawOps(
-                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
+                    shapes, endOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_DIAMOND)) {
             diamondDrawOps(
-                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
+                    shapes, endOfLine, startOfLine, endOfLine, color, interiorColor);
         } else if (endArrow.equals(LineAnnotation.LINE_END_SQUARE)) {
             squareDrawOps(
-                    shapes, af, endOfLine, startOfLine, endOfLine, color, interiorColor);
+                    shapes, endOfLine, startOfLine, endOfLine, color, interiorColor);
         }
         shapes.add(new AlphaDrawCmd(
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
@@ -666,6 +644,10 @@ public class LineAnnotation extends MarkupAnnotation {
         entries.remove(APPEARANCE_STREAM_KEY);
 
         // we don't write out an appearance stream for line annotation, we just regenerate it from properties
+
+        // mark the change.
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(this, this.getPObjectReference()));
     }
 
     public Point2D getStartOfLine() {

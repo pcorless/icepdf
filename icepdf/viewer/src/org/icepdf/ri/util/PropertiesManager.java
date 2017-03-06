@@ -51,8 +51,7 @@ public class PropertiesManager {
     private static final String PROPERTY_DEFAULT_URL = "application.defaultURL";
 
     // window properties
-    public static final String PROPERTY_UTILITY_DIVIDER_LOCATION = "application.divider.location";
-    public static final String PROPERTY_DIVIDER_LOCATION = "application.properties.divider.location";
+    public static final String PROPERTY_DIVIDER_LOCATION = "application.divider.location";
     // default page fit mode
     public static final String PROPERTY_DEFAULT_PAGEFIT = "document.pagefitMode";
     // default print media size.
@@ -96,7 +95,6 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION = "application.utilitypane.show.annotation";
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS = "application.utilitypane.show.annotation.flags";
     public static final String PROPERTY_SHOW_UTILITYPANE_SIGNATURES = "application.utilitypane.show.signatures";
-    public static final String PROPERTY_SHOW_UTILITYPANE_ACROFORM = "application.utilitypane.show.acroform";
     // default utility pane thumbnail zoom size for non-embedded files
     public static final String PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM = "application.utilitypane.thumbnail.zoom";
     // properties used for default zoom levels

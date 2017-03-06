@@ -765,6 +765,7 @@ public class FontManager {
                     // just look and feel issues with them.
                     if (baseName.equals("opensymbol") ||
                             baseName.equals("starsymbol")
+                            || baseName.equals("symbolmt")
                             || baseName.equals("arial-black")
                             || baseName.equals("arial-blackitalic")
                             || baseName.equals("new")

@@ -42,6 +42,7 @@
     <path id="compile.run.classpath">
         <pathelement location="${build.classes.dir}"/>
         <fileset dir="${build.lib.dir}">
+            <patternset refid="icepdf.lib.batik.jars"/>
             <patternset refid="icepdf.lib.bouncy.jars"/>
             <patternset refid="icepdf.lib.core"/>
         </fileset>
@@ -49,13 +50,8 @@
 
     <condition property="javadoc.verbose" value="true" else="false">
           <isset property="docDebug"/>
-    </condition>
-    <condition
-      property="javadoc.doclint.none"
-      value=""
-      else="-Xdoclint:none">
-      <not><isset property="withDoclint"/></not>
-    </condition>
+      </condition>
+
     <target name="jar" depends="compile"
             description="Creates ICEpdf Viewer RI jar.">
         <!-- jar file name -->
@@ -103,15 +99,11 @@
         </jar>
     </target>
 
-    <target name="javadoc" description="build javadocs. Note that command line property
-               docDebug can be used for verbose option and withDoclint can be used when
-               the optional parameter for turning off doclints is required and available  (Java 1.8)
-               use:- ant -DwithDoclint=true etc...">
+    <target name="javadoc">
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="${javadoc.verbose}" useexternalfile="true" failonerror="true"
                  encoding="utf8"
-                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf Viewer RI"
-                 additionalparam="${javadoc.doclint.none}">
+                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf Viewer RI">
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/ri/resources/"/>

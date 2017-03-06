@@ -66,7 +66,8 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
             Appearance appearance = appearances.get(currentAppearance);
             AppearanceState appearanceState = appearance.getSelectedAppearanceState();
             Rectangle2D bbox = appearanceState.getBbox();
-            AffineTransform matrix = appearanceState.getMatrix();
+            //  putting in identity, as we a trump any cm in the annotation stream.
+            AffineTransform matrix = new AffineTransform();//appearanceState.getMatrix();
             String currentContentStream = appearanceState.getOriginalContentStream();
             currentContentStream = buildTextWidgetContents(currentContentStream);
 
@@ -89,8 +90,8 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 HashMap<Object, Object> appearanceRefs = new HashMap<Object, Object>();
                 appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
                 entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
-                Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
-                        (float) bbox.getWidth(), (float) bbox.getHeight());
+                Rectangle2D formBbox = new Rectangle2D.Float(
+                        (float) bbox.getX(), (float) bbox.getY(), (float) bbox.getWidth(), (float) bbox.getHeight());
                 appearanceStream.setAppearance(null, matrix, formBbox);
                 // add link to resources on forum, if no resources exist.
                 if (library.getResources(appearanceStream.getEntries(), Form.RESOURCES_KEY) == null &&
@@ -100,7 +101,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 } else {
                     // need to find some resources, try adding the parent page.
                     Page page = getPage();
-                    if (page != null && page.getResources() != null) {
+                    if (page != null &&  page.getResources() != null) {
                         appearanceStream.getEntries().put(Form.RESOURCES_KEY, page.getResources().getEntries());
                     }
                 }
@@ -159,7 +160,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         // apply the default appearance.
         Page parentPage = getPage();
         content.append(generateDefaultAppearance(markedContent,
-                parentPage != null ? parentPage.getResources() : null, fieldDictionary));
+                parentPage != null?parentPage.getResources():null, fieldDictionary));
         if (fieldDictionary.getDefaultAppearance() == null) {
             lineHeight = getFontSize(markedContent);
         }
@@ -168,10 +169,10 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         if (!isfourthQuadrant) {
             double height = getBbox().getHeight();
             double size = fieldDictionary.getSize();
-            content.append((int) (size * 100) / 100.0f).append(" TL ");
+            content.append(lineHeight).append(" TL ");
             // todo rework taking into account multi line height.
-            double hOffset = size + ((height - size));
-            content.append(2).append(' ').append((int) (hOffset * 100) / 100.0f).append(" Td ");
+            double hOffset = Math.ceil(size + (height - size));
+            content.append(2).append(' ').append(hOffset).append(" Td ");
         } else {
             content.append(2).append(' ').append(2).append(" Td ");
         }

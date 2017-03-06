@@ -403,7 +403,7 @@ public class Page extends Dictionary {
                     // from the same thread.
                     inited = true;
 
-                } catch (InterruptedException e) {
+                }catch(InterruptedException e){
                     throw new InterruptedException(e.getMessage());
                 } catch (Exception e) {
                     shapes = new Shapes();
@@ -579,7 +579,7 @@ public class Page extends Dictionary {
      *                             for search terms.
      */
     public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom,
-                                 boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
+                                 boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException  {
         if (!inited) {
             init();
         }
@@ -709,7 +709,7 @@ public class Page extends Dictionary {
         return at;
     }
 
-    public static AffineTransform getPageRotation(AffineTransform at, double totalRotation, float width, float height) {
+    public static AffineTransform getPageRotation(AffineTransform at, double totalRotation, float width, float height){
         if (totalRotation == 0) {
             // do nothing
         } else if (totalRotation == 90) {

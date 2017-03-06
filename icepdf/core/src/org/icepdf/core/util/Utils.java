@@ -142,7 +142,7 @@ public class Utils {
         int unit = si ? 1000 : 1024;
         if (bytes < unit) return bytes + " B";
         int exp = (int) (Math.log(bytes) / Math.log(unit));
-        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
     }
 
@@ -414,7 +414,13 @@ public class Utils {
             Encoding enc = Encoding.getPDFDoc();
             for (int i = 0; i < titleText.length(); i++) {
 //                sb.append(titleText.charAt(i));
-                sb.append(enc.get(titleText.charAt(i)));
+                // pdf encoding maps char < 24 to '?' or 63. so we'll skip this map.
+                char character = titleText.charAt(i);
+                if (character > 23) {
+                    sb.append(enc.get(character));
+                } else {
+                    sb.append(titleText.charAt(i));
+                }
             }
             convertedStringObject = sb.toString();
         }

@@ -57,6 +57,8 @@ public interface FontFile {
      */
     public boolean canDisplayEchar(char ech);
 
+    public void setIsCid();
+
     /**
      * Creates nfont a new <var>pointsize</var>, assuming 72 ppi.
      * Note to subclassers: you must make a complete independent instance of the nfont here,

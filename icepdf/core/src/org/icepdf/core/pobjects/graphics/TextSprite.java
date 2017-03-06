@@ -134,7 +134,7 @@ public class TextSprite {
         // irregular negative layout of text,  need to create the bbox appropriately.
         if (w < 0.0f || font.getSize() < 0) {
             glyphBounds = new Rectangle2D.Float(x + width, y - (float) descent, -w, h);
-        } else {
+        }else{
             glyphBounds = new Rectangle2D.Float(x, y - (float) ascent, w, h);
         }
 
@@ -316,6 +316,10 @@ public class TextSprite {
         gg.setStroke(oldStroke);
     }
     */
+
+    public void setFont(FontFile font) {
+        this.font = font;
+    }
     /*
     private void drawGyphBox(Graphics2D gg, GlyphText glyphSprite) {
 
@@ -340,6 +344,8 @@ public class TextSprite {
         gg.setStroke(oldStroke);
 
     }
+
+
     */
 
     /**
@@ -352,7 +358,7 @@ public class TextSprite {
      */
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
-        return !(optimizedDrawingEnabled) ||
+        return !(optimizedDrawingEnabled)||
                 (shape != null && shape.intersects(bounds));
     }
 }

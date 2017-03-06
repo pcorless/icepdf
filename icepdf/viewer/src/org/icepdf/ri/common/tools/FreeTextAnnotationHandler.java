@@ -82,7 +82,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
         // check the bounds on rectToDraw to try and avoid creating
         // an annotation that is very small.
@@ -142,7 +142,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseDragged(MouseEvent e) {
-        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
     }
 
     public void mouseMoved(MouseEvent e) {

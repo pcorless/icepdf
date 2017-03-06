@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 /**
  * Lattice-Form Gouraud-shaded Triangle Meshes support.
- * <p>
+ *
  * Note: currently only parsing data and returning the first colour of the first vertex.
  *
  * @since 6.2

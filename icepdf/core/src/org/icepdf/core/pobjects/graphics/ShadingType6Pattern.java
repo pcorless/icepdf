@@ -12,12 +12,12 @@ import java.util.logging.Logger;
 
 /**
  * Coons Patch Meshes support.
- * <p>
+ *
  * Note: currently only parsing data and returning the first colour of the first vertex.
  *
  * @since 6.2
  */
-public class ShadingType6Pattern extends ShadingMeshPattern {
+public class ShadingType6Pattern  extends ShadingMeshPattern {
 
     private static final Logger logger =
             Logger.getLogger(ShadingType6Pattern.class.toString());

@@ -325,7 +325,8 @@ public class Resources extends Dictionary {
             if (shadingDictionary != null && shadingDictionary instanceof HashMap) {
                 return ShadingPattern.getShadingPattern(library, entries,
                         (HashMap) shadingDictionary);
-            } else if (shadingDictionary != null && shadingDictionary instanceof Stream) {
+            }
+            else if (shadingDictionary != null && shadingDictionary instanceof Stream) {
                 return ShadingPattern.getShadingPattern(library, null,
                         (Stream) shadingDictionary);
             }

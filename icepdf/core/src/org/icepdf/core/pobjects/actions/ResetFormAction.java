@@ -110,4 +110,11 @@ public class ResetFormAction extends FormAction {
 
         }
     }
+
+    /**
+     * @see #INCLUDE_EXCLUDE_BIT
+     */
+    public boolean isIncludeExclude() {
+        return (getFlags() & INCLUDE_EXCLUDE_BIT) == INCLUDE_EXCLUDE_BIT;
+    }
 }

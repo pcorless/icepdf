@@ -198,7 +198,6 @@ public class SeedValueDictionary extends Dictionary {
      * @return filter array or null.
      * @see #FILTER_KEY
      */
-    @SuppressWarnings("unchecked")
     public List<Names> getSubFilter() {
         List tmp = library.getArray(entries, FILTER_KEY);
         if (tmp != null) {
@@ -211,7 +210,6 @@ public class SeedValueDictionary extends Dictionary {
      * @return digest methods or null.
      * @see #DIGEST_METHOD_KEY
      */
-    @SuppressWarnings("unchecked")
     public List<Names> getDigestMethod() {
         List tmp = library.getArray(entries, FILTER_KEY);
         if (tmp != null) {
@@ -245,7 +243,6 @@ public class SeedValueDictionary extends Dictionary {
      * @return an array of text strings the specify possible reasons for singing.
      * @see #REASONS_KEY
      */
-    @SuppressWarnings("unchecked")
     public List<StringObject> getReasons() {
         List tmp = library.getArray(entries, REASONS_KEY);
         if (tmp != null) {
@@ -286,7 +283,6 @@ public class SeedValueDictionary extends Dictionary {
      * @return an array of text strings the specify possible legal attestations.
      * @see #LEGAL_ATTESTATION_KEY
      */
-    @SuppressWarnings("unchecked")
     public List<StringObject> getLegalAttestation() {
         List tmp = library.getArray(entries, LEGAL_ATTESTATION_KEY);
         if (tmp != null) {

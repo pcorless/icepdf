@@ -42,7 +42,7 @@ public class WidgetAnnotationComponent extends AbstractAnnotationComponent imple
             // assign property change listener so we can notification of annotation value change, via the
             // edit panel or form reset action.
             annotation.addPropertyChangeListener(this);
-        } else {
+        }else{
             // border state flags.
             isEditable = false;
             isRollover = false;

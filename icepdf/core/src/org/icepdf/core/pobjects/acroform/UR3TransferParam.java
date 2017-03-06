@@ -196,7 +196,6 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      *
      * @return array of named documents rights.
      */
-    @SuppressWarnings("unchecked")
     public ArrayList<Name> getDocumentRights() {
         return (ArrayList) library.getArray(entries, DOCUMENT_KEY);
     }
@@ -234,7 +233,6 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      *
      * @return Array of annotation rights names, null if not set.
      */
-    @SuppressWarnings("unchecked")
     public ArrayList<Name> getAnnotationRights() {
         return (ArrayList) library.getArray(entries, ANNOTATION_KEY);
     }
@@ -244,7 +242,6 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      *
      * @return Array of forms rights names, null if not set.
      */
-    @SuppressWarnings("unchecked")
     public ArrayList<Name> getFormRights() {
         return (ArrayList) library.getArray(entries, FORM_KEY);
     }
@@ -254,7 +251,6 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      *
      * @return if the value if isn't Modify, will will be null.
      */
-    @SuppressWarnings("unchecked")
     public ArrayList<Name> getSignatureRights() {
         return (ArrayList) library.getArray(entries, SIGNATURE_KEY);
     }
@@ -264,7 +260,6 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      *
      * @return list of EMBEDDED_FILES_* names or null if not set.
      */
-    @SuppressWarnings("unchecked")
     public ArrayList<Name> getEmbeddedFilesRights() {
         return (ArrayList) library.getArray(entries, EMBEDDED_FILES_KEY);
     }

@@ -637,11 +637,11 @@ public class ImageStream extends Stream {
                         tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                     }
                 } else {
-                    if (colourSpace instanceof Indexed) {
+                    if (colourSpace instanceof Indexed){
                         tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
                     } else if (wr.getNumBands() == 1) {
                         tmpImage = ImageUtility.makeGrayBufferedImage(wr);
-                    } else {
+                    }else {
                         tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
                     }
                 }

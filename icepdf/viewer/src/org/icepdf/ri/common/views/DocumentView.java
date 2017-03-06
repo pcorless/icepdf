@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.ri.common.tools.ToolHandler;
+
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.FocusListener;
@@ -95,4 +97,23 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      * @param viewToolMode tool mode type.
      */
     public void setToolMode(final int viewToolMode);
+
+    /**
+     * Uninstalls the current tool Handler.
+     *
+     * @return tool handler taht was removed.
+     */
+    public ToolHandler uninstallCurrentTool();
+
+    /**
+     * Installs the current tool handler.
+     *
+     * @param currentTool tool ot install.
+     */
+    public void installCurrentTool(ToolHandler currentTool);
+
+    /**
+     * Component repaint call.
+     */
+    public void repaint();
 }

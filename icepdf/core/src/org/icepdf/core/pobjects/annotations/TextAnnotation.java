@@ -25,6 +25,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.text.MessageFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -212,6 +213,10 @@ public class TextAnnotation extends MarkupAnnotation {
         appearanceState.setShapes(new Shapes());
 
         Rectangle2D bbox = appearanceState.getBbox();
+        bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
+        // setup the AP stream.
+        setModifiedDate(PDate.formatDateTime(new Date()));
+
         AffineTransform matrix = appearanceState.getMatrix();
         Shapes shapes;
 

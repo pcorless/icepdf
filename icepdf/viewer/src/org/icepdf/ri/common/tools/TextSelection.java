@@ -214,7 +214,7 @@ public class TextSelection extends SelectionBoxHandler {
     public void clearSelectionState() {
         java.util.List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
         for (AbstractPageViewComponent page : pages) {
-            ((PageViewComponentImpl) page).getTextSelectionPageHandler().clearSelection();
+            ((PageViewComponentImpl)page).getTextSelectionPageHandler().clearSelection();
         }
     }
 
@@ -292,9 +292,13 @@ public class TextSelection extends SelectionBoxHandler {
     protected void calculateTextSelectionExclusion(AffineTransform pageTransform) {
         if (enableMarginExclusion) {
             Rectangle2D mediaBox = pageViewComponent.getPage().getCropBox();
-            topMarginExclusion = new Rectangle2D.Float(0, (int) mediaBox.getHeight() - topMargin,
+            topMarginExclusion = new Rectangle2D.Float(
+                    (int) mediaBox.getX(),
+                    (int) mediaBox.getY() - topMargin,
                     (int) mediaBox.getWidth(), topMargin);
-            bottomMarginExclusion = new Rectangle2D.Float(0, 0,
+            bottomMarginExclusion = new Rectangle2D.Float(
+                    (int) mediaBox.getX(),
+                    (int) (mediaBox.getY() - mediaBox.getHeight()),
                     (int) mediaBox.getWidth(), bottomMargin);
         }
     }
@@ -308,7 +312,7 @@ public class TextSelection extends SelectionBoxHandler {
      */
     public static void paintSelectedText(Graphics g,
                                          AbstractPageViewComponent pageViewComponent,
-                                         DocumentViewModel documentViewModel) throws InterruptedException {
+                                         DocumentViewModel documentViewModel) throws InterruptedException{
         // ready outline paint
         Graphics2D gg = (Graphics2D) g;
         AffineTransform prePaintTransform = gg.getTransform();
@@ -382,7 +386,7 @@ public class TextSelection extends SelectionBoxHandler {
      *
      * @param g graphics context to paint to.
      */
-    protected void paintTextBounds(Graphics g) throws InterruptedException {
+    protected void paintTextBounds(Graphics g) throws InterruptedException{
         Page currentPage = pageViewComponent.getPage();
         // get page transformation
         AffineTransform pageTransform = currentPage.getPageTransform(
@@ -437,7 +441,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param isMovingRight     general selection trent is right, if alse it's left.
      */
     protected void multiLineSelectHandler(AbstractPageViewComponent pageViewComponent, Point mouseLocation,
-                                          boolean isDown, boolean isLocalDown, boolean isMovingRight) throws InterruptedException {
+                                          boolean isDown, boolean isLocalDown, boolean isMovingRight) throws InterruptedException{
         Page currentPage = pageViewComponent.getPage();
         selectedCount = 0;
 

@@ -221,7 +221,6 @@ public class SignatureDictionary extends Dictionary {
         return library.getObject(entries, CERT_KEY) instanceof StringObject;
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<StringObject> getCertArray() {
         Object tmp = library.getObject(entries, CERT_KEY);
         if (tmp instanceof List) {
@@ -244,7 +243,6 @@ public class SignatureDictionary extends Dictionary {
         entries.put(CERT_KEY, cert);
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<Integer> getByteRange() {
         Object tmp = library.getObject(entries, BYTE_RANGE_KEY);
         if (tmp instanceof List) {
@@ -258,7 +256,6 @@ public class SignatureDictionary extends Dictionary {
         entries.put(BYTE_RANGE_KEY, range);
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<SignatureReferenceDictionary> getReferences() {
         List<HashMap> tmp = library.getArray(entries, REFERENCE_KEY);
         if (tmp != null && tmp.size() > 0) {
@@ -272,7 +269,6 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<Integer> getChanges() {
         Object tmp = library.getArray(entries, CHANGES_KEY);
         if (tmp instanceof ArrayList) {

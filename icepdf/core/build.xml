@@ -26,13 +26,7 @@
 
     <condition property="javadoc.verbose" value="true" else="false">
           <isset property="docDebug"/>
-    </condition>
-    <condition
-      property="javadoc.doclint.none"
-      value=""
-      else="-Xdoclint:none">
-      <not><isset property="withDoclint"/></not>
-    </condition>
+      </condition>
 
     <!-- core jar containing core and jbig2 library -->
     <target name="jar" depends="compile" description="Creates ICEpdf core jar.">
@@ -125,16 +119,11 @@
         </jar>
     </target>
 
-    <target name="javadoc" description="build javadocs. Note that command line property
-                   docDebug can be used for verbose option and withDoclint can be used when
-                   the optional parameter for turning off doclints is required and available  (Java 1.8)
-                   use:- ant -DwithDoclint=true etc...">
-        <echo message="additonalparam: ${javadoc.doclint.none}"/>
+    <target name="javadoc">
         <delete dir="${build.dir}/javadocs"/>
         <javadoc verbose="${javadoc.verbose}" useexternalfile="true" failonerror="true"
                  encoding="utf8"
-                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API"
-                 additionalparam="${javadoc.doclint.none}">
+                 destdir="${build.dir}/javadocs" windowtitle="ICEpdf API">
             <classpath refid="compile.run.classpath"/>
             <fileset dir="${src.dir}">
                 <exclude name="org/icepdf/core/pobjects/fonts/afm/"/>

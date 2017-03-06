@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 /**
  * SignatureCertTreeNode object type is used to enable/show the
  */
-@SuppressWarnings("serial")
 public class SignatureCertTreeNode extends DefaultMutableTreeNode {
 
     private static final Logger logger =

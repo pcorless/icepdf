@@ -22,9 +22,9 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrity
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
-import org.icepdf.ri.util.AbstractTask;
 
 import javax.swing.*;
+import java.awt.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
@@ -36,32 +36,49 @@ import java.util.logging.Logger;
  * VerifyAllSignatures and VerifySignature.  The RI uses both of these methods for validating all signatures and
  * refreshing an individual signature annotation state.
  */
-public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
+public class SigVerificationTask {
 
     private static final Logger logger =
             Logger.getLogger(SigVerificationTask.class.toString());
 
+    // total number of signatures to process.
+    private int lengthOfTask;
+    // current progress, used for the progress bar
+    private int current = 0;
+    // message displayed on progress bar
+    private String dialogMessage;
+    // flags for threading
+    private boolean done = false;
+    private boolean canceled = false;
+
+    // parent swing controller
+    SwingController controller;
+
     // append nodes for found text.
-    private SignaturesHandlerPanel signaturesHandlerPanel;
+    private SignaturesPanel signaturesPanel;
+
+    // message bundle for internationalization
+    private ResourceBundle messageBundle;
+
+    private boolean currentlyVerifying;
+
+    private Container viewContainer;
 
     /**
      * Creates a new instance of the SigVerificationTask.
      *
-     * @param signaturesHandlerPanel parent signature panel that start this task via an action
-     * @param controller             root controller object
-     * @param messageBundle          message bundle used for dialog text.
+     * @param signaturesPanel parent signature panel that start this task via an action
+     * @param controller      root controller object
+     * @param messageBundle   message bundle used for dialog text.
      */
-    public SigVerificationTask(SignaturesHandlerPanel signaturesHandlerPanel,
+    public SigVerificationTask(SignaturesPanel signaturesPanel,
                                SwingController controller,
                                ResourceBundle messageBundle) {
-        super(controller, messageBundle,
-                controller.getDocument().getCatalog().getInteractiveForm().getSignatureFields().size());
-        this.signaturesHandlerPanel = signaturesHandlerPanel;
-    }
-
-    @Override
-    public SigVerificationTask getTask() {
-        return this;
+        this.controller = controller;
+        this.signaturesPanel = signaturesPanel;
+        lengthOfTask = controller.getDocument().getCatalog().getInteractiveForm().getSignatureFields().size();
+        this.messageBundle = messageBundle;
+        this.viewContainer = controller.getDocumentViewController().getViewContainer();
     }
 
     /**
@@ -73,7 +90,7 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                 current = 0;
                 done = false;
                 canceled = false;
-                taskStatusMessage = null;
+                dialogMessage = null;
                 return new VerifyAllSignatures();
             }
         };
@@ -91,12 +108,51 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                 current = 0;
                 done = false;
                 canceled = false;
-                taskStatusMessage = null;
+                dialogMessage = null;
                 return new VerifySignature(signatureWidgetAnnotation, signatureTreeNode);
             }
         };
         worker.setThreadPriority(Thread.NORM_PRIORITY);
         worker.start();
+    }
+
+    /**
+     * Number of signatures that has tobe validated.
+     *
+     * @return returns max number of signatures that need validation.
+     */
+    public int getLengthOfTask() {
+        return lengthOfTask;
+    }
+
+    /**
+     * Gets the signature number that is currently being validated by this task.
+     *
+     * @return current page being processed.
+     */
+    public int getCurrent() {
+        return current;
+    }
+
+    /**
+     * Stop the task.
+     */
+    public void stop() {
+        canceled = true;
+        dialogMessage = null;
+    }
+
+    /**
+     * Find out if the task has completed.
+     *
+     * @return true if task is done, false otherwise.
+     */
+    public boolean isDone() {
+        return done;
+    }
+
+    public boolean isCurrentlyVerifying() {
+        return currentlyVerifying;
     }
 
     /**
@@ -106,7 +162,7 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
      * @return current message dialog text.
      */
     public String getMessage() {
-        return taskStatusMessage;
+        return dialogMessage;
     }
 
     /**
@@ -114,7 +170,7 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
      */
     class VerifyAllSignatures {
         VerifyAllSignatures() {
-            taskRunning = true;
+            currentlyVerifying = true;
             MessageFormat messageFormat = new MessageFormat(
                     messageBundle.getString("viewer.utilityPane.signatures.verify.initializingMessage.label"));
             try {
@@ -137,7 +193,7 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                             // Update task information
                             current = i;
 
-                            taskStatusMessage = messageFormat.format(new Object[]{i + 1, signatures.size()});
+                            dialogMessage = messageFormat.format(new Object[]{i + 1, signatures.size()});
 
                             final SignatureWidgetAnnotation signatureWidgetAnnotation = signatures.get(i);
                             SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
@@ -154,9 +210,9 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                                 SwingUtilities.invokeLater(new Runnable() {
                                     public void run() {
                                         // add the node
-                                        signaturesHandlerPanel.addSignature(signatureWidgetAnnotation);
+                                        signaturesPanel.addSignature(signatureWidgetAnnotation);
                                         // try repainting the container
-                                        signaturesHandlerPanel.repaint();
+                                        viewContainer.repaint();
                                     }
                                 });
                             } else {
@@ -169,25 +225,25 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                         if (unsignedFields) {
                             SwingUtilities.invokeLater(new Runnable() {
                                 public void run() {
-                                    signaturesHandlerPanel.addUnsignedSignatures(signatures);
-                                    signaturesHandlerPanel.repaint();
+                                    signaturesPanel.addUnsignedSignatures(signatures);
+                                    viewContainer.repaint();
                                 }
                             });
                         }
                     }
                     // update the dialog and end the task
-                    taskStatusMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.completeMessage.label");
+                    dialogMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.completeMessage.label");
                     done = true;
                 } catch (Exception e) {
                     logger.log(Level.FINER, "Error verifying signatures.", e);
                 }
             } finally {
-                taskRunning = false;
+                currentlyVerifying = false;
             }
             // repaint the view container
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    signaturesHandlerPanel.validate();
+                    viewContainer.validate();
                 }
             });
         }
@@ -206,34 +262,34 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
         VerifySignature(final SignatureWidgetAnnotation signatureWidgetAnnotation,
                         final SignatureTreeNode signatureTreeNode) {
             try {
-                taskRunning = true;
+                currentlyVerifying = true;
                 current = 0;
                 try {
-                    taskStatusMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.validating.label");
-                    signaturesHandlerPanel.updateSignature(signatureWidgetAnnotation, signatureTreeNode);
+                    dialogMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.validating.label");
+                    signaturesPanel.updateSignature(signatureWidgetAnnotation, signatureTreeNode);
                     // add the node to the signature panel tree but on the
                     // awt thread.
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             // add the node
-                            signaturesHandlerPanel.showSignatureValidationDialog(signatureWidgetAnnotation);
+                            signaturesPanel.showSignatureValidationDialog(signatureWidgetAnnotation);
                             // try repainting the container
-                            signaturesHandlerPanel.repaint();
+                            viewContainer.repaint();
                         }
                     });
                     // update the dialog and end the task
-                    taskStatusMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.completeMessage.label");
+                    dialogMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.completeMessage.label");
                     done = true;
                 } catch (Exception e) {
                     logger.log(Level.FINER, "Error verifying signature.", e);
                 }
             } finally {
-                taskRunning = false;
+                currentlyVerifying = false;
             }
             // repaint the view container
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    signaturesHandlerPanel.validate();
+                    viewContainer.validate();
                 }
             });
         }

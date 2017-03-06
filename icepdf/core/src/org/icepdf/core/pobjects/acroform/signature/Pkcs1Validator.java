@@ -46,7 +46,6 @@ public class Pkcs1Validator extends AbstractPkcsValidator {
         super(signatureFieldDictionary);
     }
 
-    @SuppressWarnings("unchecked")
     public void init() throws SignatureIntegrityException {
         SignatureDictionary signatureDictionary = signatureFieldDictionary.getSignatureDictionary();
         announceSignatureType(signatureDictionary);

@@ -22,6 +22,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 /**
  * The InkAnnotationComponent encapsulates a InkAnnotation objects.  It
@@ -49,7 +50,20 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent {
     public void resetAppearanceShapes() {
         refreshAnnotationRect();
         InkAnnotation inkAnnotation = (InkAnnotation) annotation;
-        inkAnnotation.resetAppearanceStream(getPageTransform());
+        inkAnnotation.resetAppearanceStream(dx, dy, getPageTransform());
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent mouseEvent) {
+        wasResized = false;
+        super.mouseReleased(mouseEvent);
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent me) {
+        super.mouseDragged(me);
+        dy *= -1;
+        resetAppearanceShapes();
     }
 
     @Override

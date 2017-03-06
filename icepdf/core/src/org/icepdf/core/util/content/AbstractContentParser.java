@@ -17,6 +17,7 @@ package org.icepdf.core.util.content;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -46,6 +47,7 @@ public abstract class AbstractContentParser implements ContentParser {
             Logger.getLogger(AbstractContentParser.class.toString());
     private static boolean disableTransparencyGroups;
     private static boolean enabledOverPrint;
+    private static boolean enabledFontFallback;
 
     static {
         // decide if large images will be scaled
@@ -57,6 +59,10 @@ public abstract class AbstractContentParser implements ContentParser {
         enabledOverPrint =
                 Defs.sysPropertyBoolean("org.icepdf.core.enabledOverPrint",
                         true);
+
+        enabledFontFallback =
+                Defs.sysPropertyBoolean("org.icepdf.core.enabledFontFallback",
+                        false);
     }
 
     public static final float OVERPAINT_ALPHA = 0.4f;
@@ -470,6 +476,8 @@ public abstract class AbstractContentParser implements ContentParser {
             // update the textBlockBase with the cm matrix
             af = new AffineTransform(textBlockBase);
             // apply the transform
+            // corner case of a negative ShearX causing layout issue,  only one case in a text block
+            if (c < 0) c = Math.abs(c);
             graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
             af.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af);
@@ -999,7 +1007,6 @@ public abstract class AbstractContentParser implements ContentParser {
                                      LinkedList<OptionalContents> oCGs) {
         float y = ((Number) stack.pop()).floatValue();
         float x = ((Number) stack.pop()).floatValue();
-        double oldY = graphicState.getCTM().getTranslateY();
         graphicState.translate(-textMetrics.getShift(), 0);
         textMetrics.setShift(0);
         textMetrics.setPreviousAdvance(0);
@@ -1007,9 +1014,9 @@ public abstract class AbstractContentParser implements ContentParser {
         // x,y are expressed in unscaled but we don't scale until
         // a text showing operator is called.
         graphicState.translate(x, -y);
-        float newY = (float) graphicState.getCTM().getTranslateY();
         // capture x coord of BT y offset, tm, Td, TD.
         if (textMetrics.isYstart()) {
+            float newY = (float) graphicState.getCTM().getTranslateY();
             textMetrics.setyBTStart(newY);
             textMetrics.setYstart(false);
         }
@@ -1455,32 +1462,28 @@ public abstract class AbstractContentParser implements ContentParser {
                                      TextMetrics textMetrics,
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs) {
-        Object tjValue = stack.pop();
-        StringObject stringObject;
-        TextState textState;
-        if (tjValue instanceof StringObject) {
-            stringObject = (StringObject) tjValue;
-            textState = graphicState.getTextState();
-            // apply scaling
-            AffineTransform tmp = applyTextScaling(graphicState);
-            // apply transparency
-            setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
-            // draw string will take care of text pageText construction
-            drawString(stringObject.getLiteralStringBuffer(
-                    textState.font.getSubTypeFormat(),
-                    textState.font.getFont()),
-                    textMetrics,
-                    graphicState.getTextState(),
-                    shapes,
-                    glyphOutlineClip,
-                    graphicState, oCGs);
-            graphicState.set(tmp);
-//            graphicState.translate(textMetrics.getAdvance().x, 0);
-//            float shift = textMetrics.getShift();
-//            shift += textMetrics.getAdvance().x;
-//            textMetrics.setShift(shift);
-//            textMetrics.setPreviousAdvance(0);
-//            textMetrics.getAdvance().setLocation(0, 0);
+        if (stack.size() != 0) {
+            Object tjValue = stack.pop();
+            StringObject stringObject;
+            TextState textState;
+            if (tjValue instanceof StringObject) {
+                stringObject = (StringObject) tjValue;
+                textState = graphicState.getTextState();
+                // apply scaling
+                AffineTransform tmp = applyTextScaling(graphicState);
+                // apply transparency
+                setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+                // draw string will take care of text pageText construction
+                drawString(stringObject.getLiteralStringBuffer(
+                        textState.font.getSubTypeFormat(),
+                        textState.font.getFont()),
+                        textMetrics,
+                        graphicState.getTextState(),
+                        shapes,
+                        glyphOutlineClip,
+                        graphicState, oCGs);
+                graphicState.set(tmp);
+            }
         }
     }
 
@@ -1550,6 +1553,15 @@ public abstract class AbstractContentParser implements ContentParser {
         // Iterate through displayText to calculate the the new advanceX value
         for (int i = 0; i < textLength; i++) {
             currentChar = displayText.charAt(i);
+
+            if (enabledFontFallback) {
+                boolean display = currentFont.canDisplayEchar(currentChar);
+                // slow display test, but allows us to fall back on a different font if needed.
+                if (!display) {
+                    FontFile fontFile = FontManager.getInstance().getInstance(currentFont.getName(), 0);
+                    textSprites.setFont(fontFile);
+                }
+            }
 
             // Position of the specified glyph relative to the origin of glyphVector
             // advance is handled by the particular font implementation.
@@ -1681,8 +1693,16 @@ public abstract class AbstractContentParser implements ContentParser {
 
         // set the line width for the glyph
         float lineWidth = graphicState.getLineWidth();
-        lineWidth /= textState.tmatrix.getScaleX();
-        graphicState.setLineWidth(lineWidth);
+        double scale = textState.tmatrix.getScaleX();
+        // double check for a near zero value as it will really mess up the division result, zero is just fine.
+        if (scale > 0.001 || scale == 0) {
+            lineWidth /= scale;
+            graphicState.setLineWidth(lineWidth);
+        } else {
+            // corner case stroke adjustment,  still can't find anything in spec about this.
+            lineWidth *= scale * 100;
+            graphicState.setLineWidth(lineWidth);
+        }
         // update the stroke and add the text to shapes
         setStroke(shapes, graphicState);
         shapes.add(new ColorDrawCmd(graphicState.getStrokeColor()));

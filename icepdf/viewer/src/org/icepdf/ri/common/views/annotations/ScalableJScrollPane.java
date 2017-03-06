@@ -20,13 +20,11 @@ import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 
 /**
  * @since 5.1
  */
-public class ScalableJScrollPane extends JScrollPane implements ScalableField, FocusListener {
+public class ScalableJScrollPane extends JScrollPane implements ScalableField {
 
 
     private static final long serialVersionUID = -7748761572295520052L;
@@ -46,14 +44,6 @@ public class ScalableJScrollPane extends JScrollPane implements ScalableField, F
 
     public void setEditable(boolean editable) {
 //        this.setEditable(editable);
-    }
-
-    public void focusLost(FocusEvent e) {
-
-    }
-
-    public void focusGained(FocusEvent e) {
-
     }
 
     @Override

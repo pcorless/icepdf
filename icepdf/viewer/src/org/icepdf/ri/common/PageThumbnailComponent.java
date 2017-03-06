@@ -76,6 +76,10 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
 
 
     protected void calculateBufferLocation() {
+        // grab a reference to the graphics configuration via the AWT thread,  if we get it on the worker thread
+        // it sometimes return null.
+        graphicsConfiguration = parentScrollPane.getGraphicsConfiguration();
+
         // page location in the the entire view.
         Rectangle pageLocation = this.getBounds();
         Rectangle viewPort = parentScrollPane.getViewport().getViewRect();

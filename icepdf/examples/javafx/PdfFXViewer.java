@@ -175,3 +175,4 @@ public class PdfFXViewer extends Application {
     }
 
 }
+

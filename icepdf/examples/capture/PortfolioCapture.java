@@ -76,7 +76,7 @@ public class PortfolioCapture {
              */
             if (!(document.getCatalog().getCollection() != null &&
                     document.getCatalog().getCollection().size() > 0)) {
-                System.out.println("Loading root document file " + document.getDocumentOrigin());
+                System.out.println("Loading root document file "+ document.getDocumentOrigin());
                 callables.add(new CaptureDocument(document, 0, document.getDocumentOrigin()));
             }
 
@@ -105,14 +105,14 @@ public class PortfolioCapture {
                             String fileName = fileSpecification.getUnicodeFileSpecification() != null ?
                                     fileSpecification.getUnicodeFileSpecification() :
                                     fileSpecification.getFileSpecification() != null ?
-                                            fileSpecification.getFileSpecification() : "";
+                                    fileSpecification.getFileSpecification() : "";
 
                             // queue the embedded document for page capture
-                            System.out.println("Loading embedded file " + fileAttachmentName + " : " + fileName);
+                            System.out.println("Loading embedded file "+ fileAttachmentName + " : " + fileName);
                             if (fileName.toLowerCase().endsWith(".pdf")) {
                                 Document embeddedDocument = new Document();
                                 embeddedDocument.setInputStream(fileInputStream, fileAttachmentName);
-                                int index = (int) Math.round((i / 2.0) + 1.0);
+                                int index = (int)Math.round((i/2.0)+ 1.0);
                                 callables.add(new CaptureDocument(embeddedDocument, index, fileAttachmentName));
                             }
                         }

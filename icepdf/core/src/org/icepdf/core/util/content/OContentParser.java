@@ -630,7 +630,7 @@ public class OContentParser extends AbstractContentParser {
             logger.finer("End of Content Stream");
         } catch (NoninvertibleTransformException e) {
             logger.log(Level.WARNING, "Error creating inverse transform:", e);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException e){
             throw new InterruptedException(e.getMessage());
         } finally {
             // End of stream set alpha state back to 1.0f, so that other

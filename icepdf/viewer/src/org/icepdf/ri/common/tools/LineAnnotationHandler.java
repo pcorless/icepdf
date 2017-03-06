@@ -151,17 +151,18 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
     public void mouseReleased(MouseEvent e) {
         endOfLine = e.getPoint();
-        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
-        // check to make sure the bbox isn't zero height or width
+        // add a little padding or the end point icon types
         rectToDraw.setRect(rectToDraw.getX() - 8, rectToDraw.getY() - 8,
                 rectToDraw.getWidth() + 16, rectToDraw.getHeight() + 16);
 
         // convert bbox and start and end line points.
-        Rectangle tBbox = convertToPageSpace();
+        Rectangle tBbox = convertToPageSpace(rectToDraw).getBounds();
+        // convert start of line and end of line to page space
+        Point2D[] points = convertToPageSpace(startOfLine, endOfLine);
 
-        // create annotations types that that are rectangle based;
-        // which is actually just link annotations
+        // create annotations types that  are rectangle based;
         LineAnnotation annotation = (LineAnnotation)
                 AnnotationFactory.buildAnnotation(
                         documentViewModel.getDocument().getPageTree().getLibrary(),
@@ -169,8 +170,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
                         tBbox);
         annotation.setStartArrow(startLineEnding);
         annotation.setEndArrow(endLineEnding);
-        annotation.setStartOfLine(startOfLine);
-        annotation.setEndOfLine(endOfLine);
+        annotation.setStartOfLine(points[0]);
+        annotation.setEndOfLine(points[1]);
         annotation.setBorderStyle(borderStyle);
         annotation.setColor(lineColor);
         annotation.setInteriorColor(internalColor);
@@ -194,9 +195,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         Rectangle bbox = new Rectangle(rectToDraw.x, rectToDraw.y,
                 rectToDraw.width, rectToDraw.height);
         comp.setBounds(bbox);
-        // resets user space rectangle to match bbox converted to page space
-        comp.refreshAnnotationRect();
-
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
@@ -214,7 +212,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     public void mouseDragged(MouseEvent e) {
-        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
         endOfLine = e.getPoint();
         pageViewComponent.repaint();
     }

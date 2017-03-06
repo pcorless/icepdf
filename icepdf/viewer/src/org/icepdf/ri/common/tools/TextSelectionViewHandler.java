@@ -110,7 +110,7 @@ public class TextSelectionViewHandler extends TextSelection
                     selectedPages.size() > 0) {
                 PageViewComponentImpl pageComp;
                 for (AbstractPageViewComponent selectedPage : selectedPages) {
-                    pageComp = (PageViewComponentImpl) selectedPage;
+                    pageComp = (PageViewComponentImpl)selectedPage;
                     if (pageComp != null) {
                         pageComp.getTextSelectionPageHandler().selectionEnd(modeEvent.getPoint(), pageComp);
                     }
@@ -173,7 +173,7 @@ public class TextSelectionViewHandler extends TextSelection
                         // pass the selection movement on to the page.
                         boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
                         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
-                        ((PageViewComponentImpl) page).getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
+                        ((PageViewComponentImpl)page).getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
 
                     } else {
                         documentViewModel.removeSelectedPageText(page);

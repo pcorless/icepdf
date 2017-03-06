@@ -15,20 +15,18 @@
  */
 package org.icepdf.ri.common;
 
+import apple.dts.samplecode.osxadapter.OSXAdapter;
 import org.icepdf.core.util.Defs;
-import org.icepdf.ri.common.utility.annotation.AnnotationHandlerPanel;
-import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesPanel;
-import org.icepdf.ri.common.utility.annotation.acroform.AcroFormHandlerPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;
-import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.MacOSAdapter;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -486,7 +484,7 @@ public class SwingViewBuilder {
         // Builds the utility pane as well as the main document View, important
         // code entry point.
         JSplitPane utilAndDocSplit =
-                buildUtilityAndDocumentAndPropertiesSplitPane(embeddableComponent);
+                buildUtilityAndDocumentSplitPane(embeddableComponent);
         if (utilAndDocSplit != null)
             cp.add(utilAndDocSplit, BorderLayout.CENTER);
         JPanel statusPanel = buildStatusPanel();
@@ -508,12 +506,12 @@ public class SwingViewBuilder {
         // If running on MacOS, setup the native app. menu item handlers
         if (isMacOs) {
             try {
-                // Generate and register the MacOSAdapter, passing it a hash of all the methods we wish to
+                // Generate and register the OSXAdapter, passing it a hash of all the methods we wish to
                 // use as delegates for various com.apple.eawt.ApplicationListener methods
-                MacOSAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[]) null));
-                MacOSAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[]) null));
+                OSXAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[]) null));
+                OSXAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[]) null));
             } catch (Exception e) {
-                logger.log(Level.FINE, "Error occurred while loading the MacOSAdapter:", e);
+                logger.log(Level.FINE, "Error occurred while loading the OSXAdapter:", e);
             }
         }
 
@@ -587,6 +585,7 @@ public class SwingViewBuilder {
         addToMenu(fileMenu, buildCloseMenuItem());
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
         addToMenu(fileMenu, buildExportTextMenuItem());
+        addToMenu(fileMenu, buildExportSVGMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildPermissionsMenuItem());
         addToMenu(fileMenu, buildInformationMenuItem());
@@ -644,6 +643,22 @@ public class SwingViewBuilder {
                 messageBundle.getString("viewer.menu.exportText.label"), null, null, null);
         if (viewerController != null && mi != null)
             viewerController.setExportTextMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildExportSVGMenuItem() {
+        JMenuItem mi = null;
+        // Check to make sure SVG libraries are available
+        try {
+            Class.forName("org.apache.batik.dom.GenericDOMImplementation");
+
+            mi = makeMenuItem(
+                    messageBundle.getString("viewer.menu.exportSVG.label"), null, null, null);
+            if (viewerController != null && mi != null)
+                viewerController.setExportSVGMenuItem(mi);
+        } catch (ClassNotFoundException e) {
+            logger.warning("SVG Support Not Found");
+        }
         return mi;
     }
 
@@ -1488,22 +1503,6 @@ public class SwingViewBuilder {
         return toolbar;
     }
 
-
-    public JToolBar buildAcroFormUtilityToolBar() {
-        JToolBar toolbar = new JToolBar();
-        commonToolBarSetup(toolbar, true);
-        addToToolBar(toolbar, buildPropertiesPanelAnnotationButton());
-        toolbar.addSeparator();
-//        addToToolBar(toolbar, buildSelectToolButton(Images.SIZE_MEDIUM));
-        addToToolBar(toolbar, buildTextFieldAnnotationToolButton());
-        addToToolBar(toolbar, buildChoiceFieldAnnotationToolButton());
-        addToToolBar(toolbar, buildRadioFieldAnnotationToolButton());
-        addToToolBar(toolbar, buildCheckFieldAnnotationToolButton());
-        addToToolBar(toolbar, buildButtonFieldArrowAnnotationToolButton());
-        addToToolBar(toolbar, buildSigntureFieldAnnotationToolButton());
-        return toolbar;
-    }
-
     public JToolBar buildDemoToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
@@ -1661,76 +1660,6 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JToggleButton buildPropertiesPanelAnnotationButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.tool.acroform.properties.label"),
-                messageBundle.getString("viewer.toolbar.tool.acroform.properties.tooltip"),
-                "annot_properties", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setPropertiesWidgetButton(btn);
-        return btn;
-    }
-
-    public JToggleButton buildTextFieldAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.tool.acroform.textField.label"),
-                messageBundle.getString("viewer.toolbar.tool.acroform.textField.tooltip"),
-                "annot_text", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setTextFieldAnnotationToolButton(btn);
-        return btn;
-    }
-
-    public JToggleButton buildRadioFieldAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.tool.acroform.btn.radio.label"),
-                messageBundle.getString("viewer.toolbar.tool.acroform.btn.radio.tooltip"),
-                "annot_btn_radio", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setButtonRadioFieldAnnotationToolButton(btn);
-        return btn;
-    }
-
-    public JToggleButton buildCheckFieldAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.tool.acroform.btn.checkbox.label"),
-                messageBundle.getString("viewer.toolbar.tool.acroform.btn.checkbox.tooltip"),
-                "annot_btn_checkbox", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setButtonCheckboxFieldAnnotationToolButton(btn);
-        return btn;
-    }
-
-    public JToggleButton buildButtonFieldArrowAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.tool.acroform.btn.label"),
-                messageBundle.getString("viewer.toolbar.tool.acroform.btn.tooltip"),
-                "annot_btn", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setButtonFieldAnnotationToolButton(btn);
-        return btn;
-    }
-
-    public JToggleButton buildChoiceFieldAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.tool.acroform.choice.label"),
-                messageBundle.getString("viewer.toolbar.tool.acroform.choice.tooltip"),
-                "annot_choice", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setButtonChoiceFieldAnnotationToolButton(btn);
-        return btn;
-    }
-
-    public JToggleButton buildSigntureFieldAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButton(
-                messageBundle.getString("viewer.toolbar.tool.acroform.signature.label"),
-                messageBundle.getString("viewer.toolbar.tool.acroform.signature.tooltip"),
-                "annot_sig", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setSignatureFieldAnnotationToolButton(btn);
-        return btn;
-    }
-
     public JToggleButton buildFormHighlightButton(final String imageSize) {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.forms.highlight.label"),
@@ -1771,41 +1700,6 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JSplitPane buildUtilityAndDocumentAndPropertiesSplitPane(boolean embeddableComponent) {
-        // create the utility and document spit panes.
-        JSplitPane mainDocumentSplitPane = buildUtilityAndDocumentSplitPane(embeddableComponent);
-        JSplitPane documentAndPropertiesPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        documentAndPropertiesPane.setOneTouchExpandable(false);
-        documentAndPropertiesPane.setDividerSize(8);
-        documentAndPropertiesPane.setContinuousLayout(true);
-
-        // set the viewController embeddable flag.
-        DocumentViewController viewController =
-                viewerController.getDocumentViewController();
-        // will add key event listeners
-        viewerController.setIsEmbeddedComponent(embeddableComponent);
-
-        // remove F6 focus management key from the splitpane
-        documentAndPropertiesPane.getActionMap().getParent().remove("toggleFocus");
-
-        documentAndPropertiesPane.setLeftComponent(mainDocumentSplitPane);
-        documentAndPropertiesPane.setRightComponent(buildAnnotationPropertiesPanel());
-
-        // apply previously set divider location, default is -1
-        int dividerLocation = PropertiesManager.checkAndStoreIntegerProperty(
-                propertiesManager,
-                PropertiesManager.PROPERTY_DIVIDER_LOCATION, 640);
-        documentAndPropertiesPane.setDividerLocation(dividerLocation);
-
-        // Add the split pan component to the view controller so that it can
-        // manipulate the divider via the controller, hide, show, etc. for
-        // utility pane.
-        if (viewerController != null)
-            viewerController.setDocumentAndPropertiesSplitPane(documentAndPropertiesPane);
-
-        return documentAndPropertiesPane;
-    }
-
 
     public JSplitPane buildUtilityAndDocumentSplitPane(boolean embeddableComponent) {
         JSplitPane splitpane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -1830,7 +1724,7 @@ public class SwingViewBuilder {
         // apply previously set divider location, default is -1
         int dividerLocation = PropertiesManager.checkAndStoreIntegerProperty(
                 propertiesManager,
-                PropertiesManager.PROPERTY_UTILITY_DIVIDER_LOCATION, 260);
+                PropertiesManager.PROPERTY_DIVIDER_LOCATION, 260);
         splitpane.setDividerLocation(dividerLocation);
 
         // Add the split pan component to the view controller so that it can
@@ -1889,13 +1783,7 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
-                    buildAnnotationHandlerPanel());
-        }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ACROFORM)) {
-            utilityTabbedPane.add(
-                    messageBundle.getString("viewer.utilityPane.acroform.tab.title"),
-                    buildAcroFormHandlerPanel());
+                    buildAnnotationPanel());
         }
 
         // Ensure something was added to the utility pane, otherwise reset it to null
@@ -1936,11 +1824,11 @@ public class SwingViewBuilder {
     }
 
     public JComponent buildSignatureComponents() {
-        SignaturesHandlerPanel signaturesHandlerPanel = new SignaturesHandlerPanel(viewerController);
+        SignaturesPanel signaturesPanel = new SignaturesPanel(viewerController);
         if (viewerController != null) {
-            viewerController.setSignaturesHandlerPanel(signaturesHandlerPanel);
+            viewerController.setSignaturesPanel(signaturesPanel);
         }
-        return signaturesHandlerPanel;
+        return signaturesPanel;
     }
 
     public SearchPanel buildSearchPanel() {
@@ -1950,36 +1838,19 @@ public class SwingViewBuilder {
         return searchPanel;
     }
 
-    public AttachmentPanel buildAttachmentPanle() {
+    public AttachmentPanel buildAttachmentPanle(){
         AttachmentPanel attachmentPanel = new AttachmentPanel(viewerController);
         if (viewerController != null)
             viewerController.setAttachmentPanel(attachmentPanel);
         return attachmentPanel;
     }
 
-    public AnnotationHandlerPanel buildAnnotationHandlerPanel() {
-        AnnotationHandlerPanel annotationHandlerPanel = new AnnotationHandlerPanel(viewerController);
-        annotationHandlerPanel.setAnnotationUtilityToolbar(buildAnnotationUtilityToolBar());
+    public AnnotationPanel buildAnnotationPanel() {
+        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, propertiesManager);
+        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationUtilityToolBar());
         if (viewerController != null)
-            viewerController.setAnnotationHandlerPanel(annotationHandlerPanel);
-        return annotationHandlerPanel;
-    }
-
-    public JComponent buildAcroFormHandlerPanel() {
-        AcroFormHandlerPanel acroFormHandlerPanelPanel = new AcroFormHandlerPanel(viewerController);
-        acroFormHandlerPanelPanel.setAnnotationUtilityToolbar(buildAcroFormUtilityToolBar());
-        if (viewerController != null) {
-            viewerController.setAcroFormHandlerPanel(acroFormHandlerPanelPanel);
-        }
-        return acroFormHandlerPanelPanel;
-    }
-
-    public JComponent buildAnnotationPropertiesPanel() {
-        AnnotationPropertiesPanel annotationPropertiesPanel = new AnnotationPropertiesPanel(viewerController);
-        if (viewerController != null) {
-            viewerController.setAnnotationPropertiesPanel(annotationPropertiesPanel);
-        }
-        return annotationPropertiesPanel;
+            viewerController.setAnnotationPanel(annotationPanel);
+        return annotationPanel;
     }
 
     /**

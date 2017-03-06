@@ -103,30 +103,33 @@ public class PostScriptEncoder {
                 }
                 // stroke the shape.
                 else if (drawCmd instanceof DrawDrawCmd) {
-                    float[] colors = color.getRGBColorComponents(null);
-                    // set the stroke color
-                    postScript.append(colors[0]).append(SPACE)
-                            .append(colors[1]).append(SPACE)
-                            .append(colors[2]).append(SPACE)
-                            .append(PdfOps.RG_TOKEN).append(NEWLINE);
-                    // generate the draw operands for current shape.
-                    generateShapePostScript(currentShape, postScript);
-                    // add  the fill
-                    postScript.append(PdfOps.S_TOKEN).append(NEWLINE);
+                    if (color != null) {
+                        float[] colors = color.getRGBColorComponents(null);
+                        // set the stroke color
+                        postScript.append(colors[0]).append(SPACE)
+                                .append(colors[1]).append(SPACE)
+                                .append(colors[2]).append(SPACE)
+                                .append(PdfOps.RG_TOKEN).append(NEWLINE);
+                        // generate the draw operands for current shape.
+                        generateShapePostScript(currentShape, postScript);
+                        // add  the fill
+                        postScript.append(PdfOps.S_TOKEN).append(NEWLINE);
+                    }
                 }
                 // fill the shape.
                 else if (drawCmd instanceof FillDrawCmd) {
-                    float[] colors = color.getRGBColorComponents(null);
-                    // set fill color
-                    postScript.append(colors[0]).append(SPACE)
-                            .append(colors[1]).append(SPACE)
-                            .append(colors[2]).append(SPACE)
-                            .append(PdfOps.rg_TOKEN).append(NEWLINE);
-                    // generate the draw operands for the current shape.
-                    generateShapePostScript(currentShape, postScript);
-                    // add  the fill
-                    postScript.append(PdfOps.f_TOKEN).append(SPACE);
-
+                    if (color != null) {
+                        float[] colors = color.getRGBColorComponents(null);
+                        // set fill color
+                        postScript.append(colors[0]).append(SPACE)
+                                .append(colors[1]).append(SPACE)
+                                .append(colors[2]).append(SPACE)
+                                .append(PdfOps.rg_TOKEN).append(NEWLINE);
+                        // generate the draw operands for the current shape.
+                        generateShapePostScript(currentShape, postScript);
+                        // add  the fill
+                        postScript.append(PdfOps.f_TOKEN).append(SPACE);
+                    }
                 }
                 // current shape.
                 else if (drawCmd instanceof ShapeDrawCmd) {
@@ -241,8 +244,8 @@ public class PostScriptEncoder {
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error encoding PostScript notation ", e);
         }
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.finest("PostEncoding: " + postScript.toString());
+        if (logger.isLoggable(Level.FINER)) {
+            logger.finer("PostEncoding: " + postScript.toString());
         }
         return postScript.toString().getBytes();
     }

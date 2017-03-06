@@ -22,6 +22,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 /**
  * The LineAnnotationComponent encapsulates a LineAnnotation objects.  It
@@ -53,8 +54,22 @@ public class LineAnnotationComponent extends MarkupAnnotationComponent {
     }
 
     @Override
+    public void mouseReleased(MouseEvent mouseEvent) {
+        wasResized = false;
+        super.mouseReleased(mouseEvent);
+    }
+
+    @Override
     public void resetAppearanceShapes() {
+        refreshAnnotationRect();
         LineAnnotation textMarkupAnnotation = (LineAnnotation) annotation;
-        textMarkupAnnotation.resetAppearanceStream(getPageTransform());
+        textMarkupAnnotation.resetAppearanceStream(dx, dy, getPageTransform());
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent me) {
+        super.mouseDragged(me);
+        dy *= -1;
+        resetAppearanceShapes();
     }
 }

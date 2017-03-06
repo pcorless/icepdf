@@ -82,7 +82,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
      * @param e mouse event.
      */
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
         // convert the rectangle to page space
         rectangle = convertToPageSpace(rectangle);
@@ -111,7 +111,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         annotation.setBorderStyle(borderStyle);
 
         // pass outline shapes and bounds to create the highlight shapes
-        annotation.setBBox(tBbox);
+        annotation.setBBox(new Rectangle(0, 0, tBbox.width, tBbox.height));
         annotation.resetAppearanceStream(getPageTransform());
 
         // create the annotation object.

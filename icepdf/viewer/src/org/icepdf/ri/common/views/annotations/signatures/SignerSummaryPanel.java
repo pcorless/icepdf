@@ -27,7 +27,6 @@ import java.util.ResourceBundle;
 /**
  * Simple panel that shows a summary of signature data.
  */
-@SuppressWarnings("serial")
 public class SignerSummaryPanel extends JPanel {
     // layouts constraint
     private GridBagConstraints constraints;

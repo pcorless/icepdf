@@ -98,7 +98,7 @@ public class DocumentViewControllerImpl
     protected Document document;
 
     protected DocumentViewModel documentViewModel;
-    protected AbstractDocumentView documentView;
+    protected DocumentView documentView;
 
     protected JScrollPane documentViewScrollPane;
 
@@ -191,7 +191,7 @@ public class DocumentViewControllerImpl
 
         // dispose the view
         if (documentView != null) {
-            documentViewScrollPane.remove(documentView);
+            documentViewScrollPane.remove((JComponent) documentView);
             documentView.dispose();
             documentView = null;
         }
@@ -359,7 +359,7 @@ public class DocumentViewControllerImpl
 
     public synchronized void setViewKeyListener(KeyListener l) {
         if (documentView != null)
-            documentView.addKeyListener(l);
+            ((JComponent) documentView).addKeyListener(l);
     }
 
     public void setDestinationTarget(Destination destination) {
@@ -411,7 +411,7 @@ public class DocumentViewControllerImpl
                 float zoom = getZoom();
 
                 // Process top destination coordinate
-                Rectangle viewportBounds = documentView.getBounds();
+                Rectangle viewportBounds = ((JComponent) documentView).getBounds();
                 Rectangle viewportRect = documentViewport.getViewRect();
                 if (logger.isLoggable(Level.FINER)) {
                     logger.finer("viewPort bounds " + viewportBounds);
@@ -518,7 +518,7 @@ public class DocumentViewControllerImpl
 
         // check if there is current view, if so dispose it
         if (documentView != null) {
-            documentViewScrollPane.remove(documentView);
+            documentViewScrollPane.remove((JComponent) documentView);
             documentViewScrollPane.validate();
             documentView.dispose();
         }
@@ -535,7 +535,7 @@ public class DocumentViewControllerImpl
         documentView.setToolMode(documentViewModel.getViewToolMode());
 
         // add the new view the scroll pane
-        documentViewScrollPane.setViewportView(documentView);
+        documentViewScrollPane.setViewportView((Component) documentView);
         documentViewScrollPane.validate();
 
         // re-apply the fit mode
@@ -587,7 +587,7 @@ public class DocumentViewControllerImpl
                     new OneColumnPageView(this, documentViewScrollPane, documentViewModel);
         }
 
-        documentView.addPropertyChangeListener(this);
+        ((JComponent) documentView).addPropertyChangeListener(this);
 
     }
 
@@ -706,7 +706,7 @@ public class DocumentViewControllerImpl
         Rectangle preferedPageOffset = documentViewModel.getPageBounds(getCurrentPageIndex());
         if (preferedPageOffset != null) {
             // scroll the view port to the correct location
-            Rectangle currentViewSize = documentView.getBounds();
+            Rectangle currentViewSize = ((JComponent) documentView).getBounds();
 
             // check to see of the preferedPageOffset will actually be possible.  If the
             // pages is smaller then the view port we need to correct x,y coordinates.
@@ -852,9 +852,9 @@ public class DocumentViewControllerImpl
         boolean changed = documentViewModel.setViewRotation(viewRotation);
         if (changed) {
             // send out the property change event.
-            documentView.invalidate();
-            documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE, oldRotation, viewRotation);
-            documentView.revalidate();
+            ((JComponent) documentView).invalidate();
+            ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE, oldRotation, viewRotation);
+            ((JComponent) documentView).revalidate();
         }
         return changed;
 
@@ -1006,7 +1006,7 @@ public class DocumentViewControllerImpl
         int scrollPaneX = documentViewScrollPane.getViewport().getViewPosition().x;
         int scrollPaneY = documentViewScrollPane.getViewport().getViewPosition().y;
 
-        Dimension pageViewSize = documentView.getPreferredSize();
+        Dimension pageViewSize = ((JComponent) documentView).getPreferredSize();
         int pageViewWidth = pageViewSize.width;
         int pageViewHeight = pageViewSize.height;
 
@@ -1080,11 +1080,11 @@ public class DocumentViewControllerImpl
         boolean changed = documentViewModel.setViewZoom(zoom);
 
         if (changed) {
-            documentView.invalidate();
+            ((JComponent) documentView).invalidate();
             // send out the property change event.
-            documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
+            ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
             // get the view port validate the viewport and shift the components
-            documentView.revalidate();
+            ((JComponent) documentView).revalidate();
         }
         // center zoom calculation, find current center and pass
         // it along to zoomCenter function.
@@ -1141,7 +1141,7 @@ public class DocumentViewControllerImpl
         // apply zoom
         boolean changed = documentViewModel.setViewZoom(zoom);
         if (changed) {
-            documentView.firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
+            ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
             documentViewScrollPane.invalidate();
             documentViewScrollPane.validate();
             documentViewScrollPane.getViewport().getView().invalidate();

@@ -188,7 +188,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         Page currentPage = pageViewComponent.getPage();
         String selectedText = null;
         try {
-            selectedText = currentPage.getViewText().getSelected().toString();
+            selectedText =  currentPage.getViewText().getSelected().toString();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.fine("HighLightAnnotation initialization interrupted.");

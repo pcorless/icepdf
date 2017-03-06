@@ -140,6 +140,7 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
         alphaSliderChange(e, annotation);
     }
 
+
     /**
      * Method to create link annotation GUI.
      */

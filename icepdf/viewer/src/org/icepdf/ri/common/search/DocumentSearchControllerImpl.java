@@ -133,7 +133,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // get our our page text reference
         PageText pageText = getPageText(pageIndex);
 
-        // some pages just don't have any text.
+        // some pages just don't have any text. 
         if (pageText == null) {
             return 0;
         }
@@ -457,7 +457,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param pageIndex page indext to clear
      */
     public void clearSearchHighlight(int pageIndex) {
-        // clear cache and terms list
+        // clear cache and terms list 
         searchModel.clearSearchResults(pageIndex);
     }
 
@@ -477,7 +477,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * object then we need to do refresh as the page was disposed and
      * reinitialized with new content.
      *
-     * @param pageIndex page index to text for restuls.
+     * @param pageIndex page index to text for results.
      * @param pageText  current pageText object associated with the pageIndex.
      * @return true if refresh is needed, false otherwise.
      */

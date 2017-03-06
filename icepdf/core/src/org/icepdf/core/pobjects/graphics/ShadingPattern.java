@@ -245,7 +245,6 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
 
     /**
      * Applies the function data to the values array.
-     *
      * @param values values to feed functions.
      * @return new values after function execution.
      */

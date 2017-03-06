@@ -72,7 +72,7 @@ public class DocumentViewModelImpl extends AbstractDocumentViewModel {
 
     protected AbstractPageViewComponent buildPageViewComponent(
             DocumentViewModel documentViewModel, PageTree pageTree, final int pageIndex,
-            JScrollPane parentScrollPane, int width, int height) {
+            JScrollPane parentScrollPane, int width, int height){
         return new PageViewComponentImpl(this, pageTree, pageIndex, parentScrollPane, width, height);
     }
 }

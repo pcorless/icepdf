@@ -175,16 +175,6 @@ public class FileSpecification extends Dictionary {
     }
 
     /**
-     * Sets the the file system name,  URL, FILE etc.  Value is added directly to the
-     * dictionary so that teh value can be saved
-     *
-     * @param name name of file system,  not restrictions on name value.
-     */
-    public void setFileSystemName(Name name){
-        entries.put(FS_KEY, name);
-    }
-
-    /**
      * Gets the file specification string.
      *
      * @return file specification string.
@@ -196,15 +186,6 @@ public class FileSpecification extends Dictionary {
         } else {
             return null;
         }
-    }
-
-    /**
-     * Sets the file specification string which is generally a path or URL.
-     *
-     * @param fileSpecification string to be asinged to the 'F' key.
-     */
-    public void setFileSpecification(String fileSpecification){
-        entries.put(F_KEY, new LiteralStringObject(fileSpecification));
     }
 
     /**
@@ -312,7 +293,7 @@ public class FileSpecification extends Dictionary {
      *
      * @return associated EmbeddedFileStream object if present, null otherwise.
      */
-    public EmbeddedFileStream getEmbeddedFileStream() {
+    public EmbeddedFileStream getEmbeddedFileStream(){
         HashMap fileDictionary = getEmbeddedFileDictionary();
         Reference fileRef = (Reference) fileDictionary.get(FileSpecification.F_KEY);
         if (fileRef != null) {

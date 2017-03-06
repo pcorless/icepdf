@@ -817,9 +817,7 @@ public class Document {
      * @param documentTrailer document trailer
      * @return Whether or not a SecurityManager was made, and set in the Library
      * @throws PDFSecurityException if there is an issue finding encryption libraries.
-     *
      */
-    @SuppressWarnings("unchecked")
     private boolean makeSecurityManager(PTrailer documentTrailer) throws PDFSecurityException {
         /**
          * Before a security manager can be created or needs to be created
@@ -829,12 +827,12 @@ public class Document {
          */
         boolean madeSecurityManager = false;
         HashMap<Object, Object> encryptDictionary = documentTrailer.getEncrypt();
-        List<StringObject> fileID = (List<StringObject>) documentTrailer.getID();
+        List fileID = documentTrailer.getID();
         // check for a missing file ID.
         if (fileID == null) {
             // we have a couple malformed documents that don't specify a FILE ID.
             // but proving two empty string allows the document to be decrypted.
-            fileID = new ArrayList<StringObject>(2);
+            fileID = new ArrayList(2);
             fileID.add(new LiteralStringObject(""));
             fileID.add(new LiteralStringObject(""));
         }
@@ -944,7 +942,7 @@ public class Document {
      * @return page dimension for the specified page number.
      * @see #getPageDimension(int, float)
      */
-    public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom) {
+    public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom){
         Page page = catalog.getPageTree().getPage(pageNumber);
         if (page != null) {
             return page.getSize(userRotation, userZoom);
@@ -1109,7 +1107,7 @@ public class Document {
                 Object[] argValues = {this, out, documentLength};
                 Method method = incrementalUpdaterClass.getDeclaredMethod(
                         "appendIncrementalUpdate",
-                        Document.class, OutputStream.class, Long.TYPE);
+                        new Class[]{Document.class, OutputStream.class, Long.TYPE});
                 long appendedLength = (Long) method.invoke(null, argValues);
                 return documentLength + appendedLength;
             } catch (Throwable e) {
@@ -1189,7 +1187,7 @@ public class Document {
      *                   The page number is zero-based.
      * @return page PageText data Structure.
      */
-    public PageText getPageViewText(int pageNumber) throws InterruptedException {
+    public PageText getPageViewText(int pageNumber) throws InterruptedException{
         PageTree pageTree = catalog.getPageTree();
         if (pageNumber >= 0 && pageNumber < pageTree.getNumberOfPages()) {
             Page pg = pageTree.getPage(pageNumber);

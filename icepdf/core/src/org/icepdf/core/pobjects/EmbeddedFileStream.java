@@ -111,7 +111,7 @@ public class EmbeddedFileStream extends Dictionary {
      */
     public int getParamUncompressedSize() {
         int size = library.getInt(getParams(), PARAMS_SIZE_KEY);
-        if (size == 0) {
+        if (size == 0){
             size = fileStream.getDecodedStreamBytes().length;
         }
         return size;

@@ -125,7 +125,7 @@ public class Shapes {
      *
      * @param g graphics context to paint to.
      */
-    public void paint(Graphics2D g) throws InterruptedException {
+    public void paint(Graphics2D g) throws InterruptedException{
         try {
             interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());
@@ -147,7 +147,8 @@ public class Shapes {
                 previousShape = nextShape.paintOperand(g, parentPage,
                         previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
             }
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e){
             throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
             logger.log(Level.FINE, "Error painting shapes.", e);

@@ -115,7 +115,7 @@ public class OptionalContent extends Dictionary {
             return;
         }
         // test of a valid definition.
-        if (entries == null || entries.size() == 0) {
+        if (entries == null || entries.size() == 0){
             emptyDefinition = true;
         }
 

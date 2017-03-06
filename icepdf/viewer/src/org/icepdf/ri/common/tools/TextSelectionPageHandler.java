@@ -158,7 +158,7 @@ public class TextSelectionPageHandler extends TextSelection
                     documentViewModel.getViewRotation(),
                     documentViewModel.getViewZoom());
 
-            ((Graphics2D) g).transform(at);
+            ((Graphics2D)g).transform(at);
             g.setColor(Color.RED);
             paintSelectionBox(g, topMarginExclusion.getBounds());
             g.setColor(Color.BLUE);

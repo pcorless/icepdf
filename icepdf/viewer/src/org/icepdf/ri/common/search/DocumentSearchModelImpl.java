@@ -159,7 +159,7 @@ public class DocumentSearchModelImpl {
      * @param page page index to clear search results from.
      */
     public void clearSearchResults(int page) {
-        // clear highlighted state for this page index.
+        // clear highlighted state for this page index. 
         WeakReference<PageText> pageReference = searchResultCache.get(page);
         if (pageReference != null) {
             PageText currentPageText = pageReference.get();

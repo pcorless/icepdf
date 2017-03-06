@@ -173,7 +173,7 @@ public class LayersPanel extends JPanel {
                     // silent running for now.
                 }
                 // fire change  event.
-                ((AbstractDocumentView) documentViewController.getDocumentView()).firePropertyChange(
+                ((AbstractDocumentView)documentViewController.getDocumentView()).firePropertyChange(
                         PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE, false, true);
                 // repaint the page.
                 page.repaint();

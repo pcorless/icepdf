@@ -556,7 +556,7 @@ public class EncryptionDictionary extends Dictionary {
         return getLiteralString(tmp);
     }
 
-    public String getLiteralString(Object value) {
+    public  String getLiteralString(Object value){
         if (value instanceof LiteralStringObject) {
             return ((StringObject) value).getLiteralString();
         } else if (value instanceof HexStringObject) {
