@@ -479,6 +479,7 @@ public abstract class AbstractContentParser implements ContentParser {
             graphicState.getTextState().tmatrix = new AffineTransform(a, b, c, d, e, f);
             af.concatenate(graphicState.getTextState().tmatrix);
             graphicState.set(af);
+            graphicState.scale(1, -1);
             // update the textBlockBase as the tm was specified in the BT block
             // and we still need to keep the offset.
             textBlockBase.setTransform(new AffineTransform(graphicState.getCTM()));
