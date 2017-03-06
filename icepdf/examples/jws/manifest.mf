@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+X-COMMENT: Main-Class will be added automatically by build
+Codebase: *
+Permissions: all-permissions
+Application-Name: ComponentArch: ICEpdf Viewer Webstart Demo
+Entry-Point: org.icepdf.os.examples.WebStart
