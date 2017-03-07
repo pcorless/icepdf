@@ -112,7 +112,6 @@ public class SwingController
     private JMenuItem closeMenuItem;
     private JMenuItem saveAsFileMenuItem;
     private JMenuItem exportTextMenuItem;
-    private JMenuItem exportSVGMenuItem;
     private JMenuItem permissionsMenuItem;
     private JMenuItem informationMenuItem;
     private JMenuItem fontInformationMenuItem;
@@ -368,14 +367,6 @@ public class SwingController
      */
     public void setExportTextMenuItem(JMenuItem mi) {
         exportTextMenuItem = mi;
-        mi.addActionListener(this);
-    }
-
-    /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
-     */
-    public void setExportSVGMenuItem(JMenuItem mi) {
-        exportSVGMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1114,9 +1105,6 @@ public class SwingController
         setEnabled(closeMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
-        // Exporting to SVG creates output as if we printed,
-        //   which is not the same as extracting text
-        setEnabled(exportSVGMenuItem, opened && canPrint && !pdfCollection);
         setEnabled(permissionsMenuItem, opened);
         setEnabled(informationMenuItem, opened);
         setEnabled(fontInformationMenuItem, opened);
@@ -2510,7 +2498,6 @@ public class SwingController
         closeMenuItem = null;
         saveAsFileMenuItem = null;
         exportTextMenuItem = null;
-        exportSVGMenuItem = null;
         permissionsMenuItem = null;
         informationMenuItem = null;
         printSetupMenuItem = null;
@@ -2846,117 +2833,6 @@ public class SwingController
                         "viewer.dialog.exportText.noExtensionError.title",
                         "viewer.dialog.exportText.noExtensionError.msg");
                 exportText();
-            }
-        }
-    }
-
-    /**
-     * Utility method for exporting the current page of the Document to an SVG file.
-     * Shows a file save dialog for the user to select where to save the
-     * exported SVG file to, and what name to give that file.
-     */
-    public void exportSVG() {
-        // Create and display a file saving dialog
-        final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle(messageBundle.getString("viewer.dialog.exportSVG.title"));
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fileChooser.addChoosableFileFilter(FileExtensionUtils.getSVGFileFilter());
-        if (ViewModel.getDefaultFile() != null) {
-            fileChooser.setCurrentDirectory(ViewModel.getDefaultFile());
-        }
-        // show the dialog
-        int returnVal = fileChooser.showSaveDialog(viewer);
-
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            final File file = fileChooser.getSelectedFile();
-            // make sure file being opened is valid
-            String extension = FileExtensionUtils.getExtension(file);
-            if (extension != null) {
-                if (extension.equals(FileExtensionUtils.svg)) {
-                    final Document doc = document;
-                    final int pageIndex = documentViewController.getCurrentPageIndex();
-
-                    if (statusLabel != null) {
-                        Object[] messageArguments = new Object[]{
-                                String.valueOf(pageIndex + 1),
-                                file.getName()
-                        };
-                        MessageFormat formatter = new MessageFormat(
-                                messageBundle.getString("viewer.dialog.exportSVG.status.exporting.msg"));
-                        statusLabel.setText(formatter.format(messageArguments));
-                    }
-
-                    SwingWorker worker = new SwingWorker() {
-                        public Object construct() {
-                            // save the file
-                            String error = null;
-                            try {
-                                // It is important to create a UTF-8 encoded file.
-                                OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
-                                SVG.createSVG(
-                                        doc,
-                                        pageIndex,
-                                        out);
-                                out.close();
-                            } catch (Throwable e) {
-                                error = e.getMessage();
-                                logger.log(Level.FINE, "Error exporting to SVG");
-                            }
-                            final String tmpMsg;
-                            // finished message
-                            if (error == null) {
-                                Object[] messageArguments = new Object[]{
-                                        String.valueOf(pageIndex + 1),
-                                        file.getName()
-                                };
-                                MessageFormat formatter =
-                                        new MessageFormat(
-                                                messageBundle.getString("viewer.dialog.exportSVG.status.exporting.msg"));
-                                tmpMsg = formatter.format(messageArguments);
-                            }
-                            // problem message
-                            else {
-                                Object[] messageArguments = new Object[]{
-                                        String.valueOf(pageIndex + 1),
-                                        file.getName(),
-                                        error
-                                };
-                                MessageFormat formatter = new MessageFormat(
-                                        messageBundle.getString("viewer.dialog.exportSVG.status.error.msg"));
-                                tmpMsg = formatter.format(messageArguments);
-                            }
-
-                            Runnable doSwingWork = new Runnable() {
-                                public void run() {
-                                    if (statusLabel != null)
-                                        statusLabel.setText(tmpMsg);
-                                }
-                            };
-                            SwingUtilities.invokeLater(doSwingWork);
-                            return null;
-                        }
-                    };
-                    worker.setThreadPriority(Thread.MIN_PRIORITY);
-                    worker.start();
-                } else {
-                    org.icepdf.ri.util.Resources.showMessageDialog(
-                            viewer,
-                            JOptionPane.INFORMATION_MESSAGE,
-                            messageBundle,
-                            "viewer.dialog.exportSVG.exportError.title",
-                            "viewer.dialog.exportSVG.exportError.msg",
-                            file.getName());
-                }
-                // save the default directory
-                ViewModel.setDefaultFile(file);
-            } else {
-                org.icepdf.ri.util.Resources.showMessageDialog(
-                        viewer,
-                        JOptionPane.INFORMATION_MESSAGE,
-                        messageBundle,
-                        "viewer.dialog.exportSVG.noExtensionError.title",
-                        "viewer.dialog.exportSVG.noExtensionError.msg");
-                exportSVG();
             }
         }
     }
@@ -3978,13 +3854,6 @@ public class SwingController
                 Runnable doSwingWork = new Runnable() {
                     public void run() {
                         exportText();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
-            } else if (source == exportSVGMenuItem) {
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        exportSVG();
                     }
                 };
                 SwingUtilities.invokeLater(doSwingWork);

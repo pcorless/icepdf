@@ -73,11 +73,4 @@ artifacts {
 
 dependencies {
     compile project(':core:core-awt')
-    // svg export
-    compile 'org.apache.xmlgraphics:batik-awt-util:1.8'
-    compile 'org.apache.xmlgraphics:batik-dom:1.8'
-    compile 'org.apache.xmlgraphics:batik-svg-dom:1.8'
-    compile 'org.apache.xmlgraphics:batik-svggen:1.8'
-    compile 'org.apache.xmlgraphics:batik-util:1.8'
-    compile 'org.apache.xmlgraphics:batik-xml:1.8'
 }

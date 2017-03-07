@@ -3,6 +3,7 @@ description 'ICEpdf core library jar project'
 def sectionName = 'org/icepdf/core/'
 def baseJarName = 'icepdf'
 def baseAppendixName = 'core'
+def bouncyVersion = '1.54'
 
 // generatePomFileForCoreJarPublication
 publishing {
@@ -88,7 +89,7 @@ compileJava {
 
 dependencies {
     // signature validation.
-    compile 'org.bouncycastle:bcprov-jdk15on:1.56'
-    compile 'org.bouncycastle:bcprov-ext-jdk15on:1.55'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.56'
+    compile 'org.bouncycastle:bcprov-jdk15on:' + "${bouncyVersion}"
+    compile 'org.bouncycastle:bcprov-ext-jdk15on:' + "${bouncyVersion}"
+    compile 'org.bouncycastle:bcpkix-jdk15on:' + "${bouncyVersion}"
 }
