@@ -1,3 +1,4 @@
+package org.icepdf.os.examples.signatures;
 /*
  * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
  *

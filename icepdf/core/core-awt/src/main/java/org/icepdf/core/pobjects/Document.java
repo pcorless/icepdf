@@ -74,8 +74,7 @@ public class Document {
      * @return version number of ICEpdf's rendering core.
      */
     public static String getLibraryVersion() {
-        return ProductInfo.PRIMARY + "." + ProductInfo.SECONDARY + "." +
-                ProductInfo.TERTIARY + " " + ProductInfo.RELEASE_TYPE;
+        return ProductInfo.VERSION + ProductInfo.RELEASE_TYPE;
     }
 
     private static final String INCREMENTAL_UPDATER =

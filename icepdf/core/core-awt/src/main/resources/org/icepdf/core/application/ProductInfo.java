@@ -30,20 +30,18 @@ public class ProductInfo {
     /**
      * The 3 levels of version identification, e.g. 1.0.0.
      */
-    public static String PRIMARY = "@version.primary@";
-    public static String SECONDARY = "@version.secondary@";
-    public static String TERTIARY = "@version.tertiary@";
+    public static String VERSION = "@version@";
 
     /**
      * The release type of the product (alpha, beta, production).
      */
-    public static String RELEASE_TYPE = "@release.type@";
+    public static String RELEASE_TYPE = "@type@";
 
     /**
      * The build number.  Typically this would be tracked and maintained
      * by the build system (i.e. Ant).
      */
-    public static String BUILD_NO = "@build.number@";
+    public static String BUILD_NO = "@build@";
 
     /**
      * The revision number retrieved from the repository for this build.
@@ -62,11 +60,7 @@ public class ProductInfo {
         info.append( "\n" );
         info.append( PRODUCT );
         info.append( " " );
-        info.append( PRIMARY );
-        info.append( "." );
-        info.append( SECONDARY );
-        info.append( "." );
-        info.append( TERTIARY );
+        info.append(VERSION);
         info.append( " " );
         info.append( RELEASE_TYPE );
         info.append( "\n" );
@@ -81,17 +75,13 @@ public class ProductInfo {
 
     public String getVersion(){
         StringBuilder info = new StringBuilder();
-        info.append( PRIMARY );
-        info.append( "." );
-        info.append( SECONDARY );
-        info.append( "." );
-        info.append( TERTIARY );
+        info.append(VERSION);
         info.append( " " );
         info.append( RELEASE_TYPE );
         return info.toString();
     }
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
         ProductInfo app = new ProductInfo();
         System.out.println( app.toString() );
     }

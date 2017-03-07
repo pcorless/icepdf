@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.icepdf.os</groupId>
+        <artifactId>icepdf</artifactId>
+        <version>${project.version}</version>
+    </parent>
+    <groupId>org.icepdf.os.ri</groupId>
+    <artifactId>common-viewer</artifactId>
+    <packaging>pom</packaging>
+    <name>ICEpdf OS :: Viewer</name>
+    <description>
+        The ICEpdf common viewer reference library.
+    </description>
+
+    <modules>
+        <!--<module>viewer-core</module>-->
+        <module>viewer-awt</module>
+        <!--<module>viewer-fx</module>-->
+    </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.icepdf.os.core</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>com.sun.media</artifactId>
+                    <groupId>jai_imageio</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.media</groupId>
+                    <artifactId>jai_core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>viewer</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

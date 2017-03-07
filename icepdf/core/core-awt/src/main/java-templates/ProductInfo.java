@@ -30,26 +30,24 @@ public class ProductInfo {
     /**
      * The 3 levels of version identification, e.g. 1.0.0.
      */
-    public static String PRIMARY = "x";
-    public static String SECONDARY = "x";
-    public static String TERTIARY = "x";
+    public static String VERSION = "${project.version}";
 
     /**
      * The release type of the product (alpha, beta, production).
      */
-    public static String RELEASE_TYPE = "x";
+    public static String RELEASE_TYPE = "";
 
     /**
      * The build number.  Typically this would be tracked and maintained
      * by the build system (i.e. Ant).
      */
-    public static String BUILD_NO = "x";
+    public static String BUILD_NO = "0";
 
     /**
      * The revision number retrieved from the repository for this build.
      * This is substitued automatically by subversion.
      */
-    public static String REVISION = "x";
+    public static String REVISION = "0";
 
     /**
      * Convenience method to get all the relevant product information.
@@ -62,11 +60,7 @@ public class ProductInfo {
         info.append( "\n" );
         info.append( PRODUCT );
         info.append( " " );
-        info.append( PRIMARY );
-        info.append( "." );
-        info.append( SECONDARY );
-        info.append( "." );
-        info.append( TERTIARY );
+        info.append(VERSION);
         info.append( " " );
         info.append( RELEASE_TYPE );
         info.append( "\n" );
@@ -81,17 +75,13 @@ public class ProductInfo {
 
     public String getVersion(){
         StringBuilder info = new StringBuilder();
-        info.append( PRIMARY );
-        info.append( "." );
-        info.append( SECONDARY );
-        info.append( "." );
-        info.append( TERTIARY );
+        info.append(VERSION);
         info.append( " " );
         info.append( RELEASE_TYPE );
         return info.toString();
     }
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
         ProductInfo app = new ProductInfo();
         System.out.println( app.toString() );
     }

@@ -1,0 +1,78 @@
+apply plugin: 'distribution'
+apply plugin: 'project-report'
+
+allprojects {
+    apply plugin: 'java'
+
+    sourceCompatibility = '1.5'
+    targetCompatibility = '1.5'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects{
+    apply plugin: 'maven-publish'
+}
+
+evaluationDependsOn(':core')
+
+defaultTasks 'projectReport', 'sourcesJar', 'genPomFileForCoreJarPub', 'genPomFileForViewerJarPub','osDistZip'
+
+// Main distribution for os bundle
+distributions {
+    os {
+        baseName = 'icepdf-os'
+        version "${VERSION}"
+        contents {
+            duplicatesStrategy = 'exclude'
+            into('libs-source') {
+                from 'core/core-awt/build/libs/'
+                from 'viewer/viewer-awt/build/libs/'
+                include '*-sources.jar'
+            }
+            into('libs') {
+                // dependency jars
+                def libs = []
+                libs << project(':core:core-awt').configurations.compile
+                libs << project(':viewer:viewer-awt').configurations.compile
+                from libs
+                from project(':core:core-awt').jar
+                from project(':viewer:viewer-awt').jar
+            }
+            // dependencies information
+            into('dependencies') {
+                from 'build/reports/project'
+            }
+            // licenses copy
+            into('licenses') {
+                from 'licenses'
+            }
+            // maven auto generated pom files.
+            into ('maven2') {
+                from 'core/core-awt/build/publications/coreJar/pom-default.xml'
+                rename { String fileName ->
+                    fileName.replace("pom-default.xml", "icepdf-core.xml")
+                }
+            }
+            into ('maven2') {
+                from 'viewer/viewer-awt/build/publications/viewerJar/pom-default.xml'
+                rename { String fileName ->
+                    fileName.replace("pom-default.xml", "icepdf-viewer.xml")
+                }
+            }
+            // examples
+            into ('examples') {
+                from 'examples'
+            }
+            // readme.
+            from 'readme.html'
+        }
+    }
+}
+
+dependencies {
+    compile project(':core')
+    compile project(':viewer')
+}

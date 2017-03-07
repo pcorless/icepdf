@@ -1,0 +1,94 @@
+description 'ICEpdf core library jar project'
+
+def sectionName = 'org/icepdf/core/'
+def baseJarName = 'icepdf'
+def baseAppendixName = 'core'
+
+// generatePomFileForCoreJarPublication
+publishing {
+    publications {
+        coreJar(MavenPublication) {
+            groupId 'org.icepdf.os'
+            artifactId 'icepdf-core'
+            version "${VERSION + '-' + RELEASE_TYPE}"
+            artifact sourcesJar
+            pom.withXml {
+                asNode().appendNode('description', 'ICEpdf core rendering library.')
+                asNode().appendNode('url', 'http://www.icepdf.org')
+                asNode().appendNode('scm')
+                        .appendNode('connection', 'scm:svn:http://anonsvn.icesoft.org/repo/icepdf/').parent()
+                        .appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.txt').parent()
+                        .appendNode('tag', 'icepdf-' + version + '-maven')
+                asNode().appendNode('licenses').appendNode('license').with {
+                    appendNode('name', 'Apache License, Version 2.0')
+                    appendNode('url', 'http://www.apache.org/licenses/LICENSE-2.0.html')
+                    appendNode('distribution', 'repo')
+                }
+                asNode().appendNode('developers').appendNode('developer').with {
+                    appendNode('name', 'ICEsoft Technologies Canada Corp.')
+                    appendNode('email', 'product.sales@icesoft.com')
+                }
+                asNode().appendNode('issueManagement').with {
+                    appendNode('url', 'http://jira.icesoft.org/browse/PDF/')
+                    appendNode('system', 'JIRA')
+                }
+            }
+            from components.java
+        }
+    }
+}
+
+jar() {
+    baseName "${baseJarName}"
+    appendix "${baseAppendixName}"
+    version "${VERSION}"
+    classifier "${RELEASE_TYPE}"
+    manifest {
+        attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
+        attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
+        attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    description = 'Assembles a jar archive containing the main classes source code.'
+    group = 'Documentation'
+
+    baseName "${baseJarName}"
+    appendix "${baseAppendixName}"
+    version "${VERSION}"
+    classifier = 'sources'
+    manifest {
+        attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
+        attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
+        attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
+    }
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+compileJava {
+    doFirst{
+
+        def jenkinsBuild = System.getenv("BUILD_NUMBER") ?: "0"
+        def jenkinsRevision = System.getenv("SVN_REVISION") ?: "0"
+
+        copy{
+            from 'src/main/resources/org/icepdf/core/application/ProductInfo.java'
+            into 'src/main/java/org/icepdf/core/application/'
+            filter(org.apache.tools.ant.filters.ReplaceTokens,
+                    tokens: [company: COMPANY, product: PRODUCT, version: VERSION, type: RELEASE_TYPE,
+                             build: jenkinsBuild, revision: jenkinsRevision])
+        }
+    }
+}
+
+dependencies {
+    // signature validation.
+    compile 'org.bouncycastle:bcprov-jdk15on:1.56'
+    compile 'org.bouncycastle:bcprov-ext-jdk15on:1.55'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.56'
+}
