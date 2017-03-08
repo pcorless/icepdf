@@ -18,7 +18,7 @@ subprojects{
 
 evaluationDependsOn(':core:core-awt')
 
-defaultTasks 'projectReport', 'sourcesJar', 'genPomFileForCoreJarPub', 'genPomFileForViewerJarPub','osDistZip'
+defaultTasks 'projectReport', 'sourcesJar', 'genPomFileForCoreJarPub', 'genPomFileForViewerJarPub','osDistZip', 'osDistTar'
 
 // Main distribution for os bundle
 distributions {
