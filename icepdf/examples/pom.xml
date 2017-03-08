@@ -22,7 +22,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.icepdf.os.core</groupId>
+            <groupId>org.icepdf.os</groupId>
             <artifactId>core</artifactId>
             <version>${project.version}</version>
             <exclusions>
@@ -37,7 +37,7 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.icepdf.os.ri</groupId>
+            <groupId>org.icepdf.os</groupId>
             <artifactId>viewer</artifactId>
             <version>${project.version}</version>
         </dependency>

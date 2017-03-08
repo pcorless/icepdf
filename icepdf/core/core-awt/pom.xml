@@ -3,13 +3,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.icepdf.os.core</groupId>
+        <groupId>org.icepdf.os</groupId>
         <artifactId>common-core</artifactId>
         <version>${parent.version}</version>
     </parent>
     <artifactId>core</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Core :: Core AWT</name>
+    <name>ICEpdf OS :: Core :: Core Swing/AWT</name>
     <description>
         The ICEpdf Common rendering core. Contains AWT based rendering core.
     </description>

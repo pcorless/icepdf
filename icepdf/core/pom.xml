@@ -7,7 +7,7 @@
         <artifactId>icepdf</artifactId>
         <version>${project.version}</version>
     </parent>
-    <groupId>org.icepdf.os.core</groupId>
+    <groupId>org.icepdf.os</groupId>
     <artifactId>common-core</artifactId>
     <packaging>pom</packaging>
     <name>ICEpdf OS :: Core</name>
