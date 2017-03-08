@@ -1,0 +1,10 @@
+apply plugin: 'application'
+
+description 'document image extraction example'
+
+mainClassName = "org.icepdf.os.examples.extraction.PageImageExtraction"
+applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+
+dependencies {
+    compile project(':viewer:viewer-awt')
+}

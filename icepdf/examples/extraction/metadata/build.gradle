@@ -1,0 +1,10 @@
+apply plugin: 'application'
+
+description 'document metadata extraction example'
+
+mainClassName = "org.icepdf.os.examples.extraction.PageMetaDataExtraction"
+applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+
+dependencies {
+    compile project(':viewer:viewer-awt')
+}

@@ -1,0 +1,10 @@
+apply plugin: 'application'
+
+description 'viewer component example'
+
+mainClassName = "org.icepdf.os.examples.component.ViewerComponentExample"
+applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+
+dependencies {
+    compile project(':viewer:viewer-awt')
+}

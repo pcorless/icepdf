@@ -24,7 +24,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>svg-capture</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Examples :: SVG Capture</name>
+    <name>ICEpdf OS :: Examples :: Capture :: SVG</name>
 
     <properties>
         <batik.version>1.6</batik.version>

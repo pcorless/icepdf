@@ -25,7 +25,6 @@
         <module>printservices</module>
         <module>search</module>
         <module>signatures</module>
-        <module>svg</module>
     </modules>
 
     <build>

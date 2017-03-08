@@ -1,2 +1,23 @@
-include 'core:core-awt', 'viewer:viewer-awt'
+include 'core:core-awt',
+        'viewer:viewer-awt',
+        'examples:annotation:callback',
+            'examples:annotation:creation',
+        'examples:capture:listener',
+            'examples:capture:png',
+            'examples:capture:portfolio',
+            'examples:capture:svg',
+            'examples:capture:tiff',
+            'examples:capture:watermark',
+        'examples:component',
+        'examples:extraction:image',
+            'examples:extraction:metadata',
+            'examples:extraction:text',
+        'examples:javafx',
+        'examples:loadingEvents',
+        'examples:printservices',
+        'examples:search:component',
+            'examples:search:headless',
+        'examples:signatures'
+
+
 rootProject.name = 'icepdf-os'

@@ -19,6 +19,7 @@
         <module>listener</module>
         <module>png</module>
         <module>portfolio</module>
+        <module>svg</module>
         <module>tiff</module>
         <module>watermark</module>
     </modules>

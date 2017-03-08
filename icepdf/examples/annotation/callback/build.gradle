@@ -1,0 +1,6 @@
+
+description 'aannotation callback example'
+
+dependencies {
+    compile project(':viewer:viewer-awt')
+}

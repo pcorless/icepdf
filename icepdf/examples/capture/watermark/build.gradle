@@ -1,0 +1,10 @@
+apply plugin: 'application'
+
+description 'pdf to png image with watermark example'
+
+mainClassName = "org.icepdf.os.examples.capture.WatermarkPageCapture"
+applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+
+dependencies {
+    compile project(':viewer:viewer-awt')
+}
