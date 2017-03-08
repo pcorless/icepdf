@@ -16,7 +16,7 @@ subprojects{
     apply plugin: 'maven-publish'
 }
 
-evaluationDependsOn(':core')
+evaluationDependsOn(':core:core-awt')
 
 defaultTasks 'projectReport', 'sourcesJar', 'genPomFileForCoreJarPub', 'genPomFileForViewerJarPub','osDistZip'
 
@@ -68,11 +68,13 @@ distributions {
             }
             // readme.
             from 'readme.html'
+            filter(org.apache.tools.ant.filters.ReplaceTokens,
+                    tokens: [version: VERSION])
         }
     }
 }
 
 dependencies {
-    compile project(':core')
-    compile project(':viewer')
+    compile project(':core:core-awt')
+    compile project(':viewer:viewer-awt')
 }

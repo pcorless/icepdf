@@ -87,6 +87,12 @@ compileJava {
     }
 }
 
+clean {
+    doLast{
+        file("src/main/java/org/icepdf/core/application/ProductInfo.java").delete()
+    }
+}
+
 dependencies {
     // signature validation.
     compile 'org.bouncycastle:bcprov-jdk15on:' + "${bouncyVersion}"
