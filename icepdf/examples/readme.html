@@ -1,0 +1,51 @@
+<html>
+<head>
+    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+    <title>ICEsoft's ICEpdf Library Examples</title>
+</head>
+<body>
+<h2>ICEsoft's ICEpdf Library Examples</h2>
+
+<h3>Overview</h3>
+
+<p>
+    The ICEpdf API includes many useful examples that demonstrate common usages scenarios.
+</p>
+<pre>
++--- Project ':examples'
+|    +--- Project ':examples:annotation'
+|    |    +--- Project ':examples:annotation:callback' - aannotation callback example
+|    |    \--- Project ':examples:annotation:creation' - annotation creation example
+|    +--- Project ':examples:capture'
+|    |    +--- Project ':examples:capture:listener' - directory listener for auto image cap
+|    |    +--- Project ':examples:capture:png' - pdf to png image example
+|    |    +--- Project ':examples:capture:portfolio' - portfolio pdf to png image example
+|    |    +--- Project ':examples:capture:svg' - pdf to svg example
+|    |    +--- Project ':examples:capture:tiff' - pdf to tiff image example
+|    |    \--- Project ':examples:capture:watermark' - pdf to png image with watermark exam
+|    +--- Project ':examples:component' - viewer component example
+|    +--- Project ':examples:extraction'
+|    |    +--- Project ':examples:extraction:image' - document image extraction example
+|    |    +--- Project ':examples:extraction:metadata' - document metadata extraction examp
+|    |    \--- Project ':examples:extraction:text' - document text extraction example
+|    +--- Project ':examples:javafx' - javafx SwingNode example
+|    +--- Project ':examples:loadingEvents' - page loading event example
+|    +--- Project ':examples:printservices' - java print services example
+|    +--- Project ':examples:search'
+|    |    +--- Project ':examples:search:component' - search highlight example
+|    |    \--- Project ':examples:search:headless' - headless search highlight example
+|    \--- Project ':examples:signatures' - signature validation example
+</pre>
+
+<h3>Building Examples</h3>
+
+<p>
+    Most examples can be build with either Gradle or Maven unless otherwise stated. Make sure to look for readme.html
+    and readme.txt for further instruction.
+</p>
+<p>Maven Build Example</p>
+<pre>~$ mvn -pl org.icepdf.os.examples:png-capture -am package</pre>
+<p>Gradle Build Example</p>
+<pre>~$ gradle :examples:capture:png:assemble</pre>
+</body>
+</html>
