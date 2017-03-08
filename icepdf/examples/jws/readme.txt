@@ -4,6 +4,9 @@ The Java Web Start (JWS) examples main purpose is to show how to build a deploy 
 a NetBeans build script to produce the necessary artifacts for a JWS deployment.  JWS is inherently more secure then
 Applets but this comes at the cost of complicating the build process.
 
+Maven and Gradle plugin exist but they do not yet support adding a copy of the jnlp into the jars which is needed
+for a valid JWS deployement.
+
 ** Signing the Jar files *
 
 All the jars files in a JWS project must be signed using the same code signer certificate to be deployed successfully.

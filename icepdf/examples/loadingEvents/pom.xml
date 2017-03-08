@@ -22,9 +22,13 @@
         <version>${project.version}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>signature-verification</artifactId>
+    <artifactId>loading-events</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Examples :: Signatures</name>
+    <name>ICEpdf OS :: Examples :: Loading Events</name>
+
+    <properties>
+        <batik.version>1.6</batik.version>
+    </properties>
 
     <build>
         <plugins>
@@ -36,7 +40,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>org.icepdf.os.examples.signatures.SvgCapture</mainClass>
+                            <mainClass>org.icepdf.os.examples.loadingEvents.PageLoadingEvents</mainClass>
                             <classpathPrefix>lib/</classpathPrefix>
                         </manifest>
                     </archive>
@@ -44,5 +48,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
