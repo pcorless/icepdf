@@ -24,7 +24,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>annotation-callback</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf OS :: Examples :: Annotations :: Callback</name>
+    <name>ICEpdf OS :: Examples :: Annotation :: Callback</name>
 
     <build>
         <plugins>
