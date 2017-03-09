@@ -33,7 +33,7 @@ import java.util.HashMap;
  * The field’s text shall be held in a text string (or, beginning with PDF 1.5,
  * a stream) in the V (value) entry of the field dictionary. The contents of this
  * text string or stream shall be used to construct an appearance stream for
- * displaying the field, as described under 12.7.3.3, “Variable Text.” The text
+ * displaying the field, as described under 12.7.3.3, "Variable Text." The text
  * shall be presented in a single style (font, size, colour, and so forth), as
  * specified by the DA (default appearance) string.
  * <p/>
@@ -46,8 +46,8 @@ import java.util.HashMap;
  * Multipurpose Internet Mail Extensions (MIME), Part One: Format of Internet
  * Message Bodies (see the Bibliography).</li>
  * <li>For Forms Data Format (FDF) submission, the value of the V entry in
- * the FDF field dictionary (see FDF Fields in 12.7.7.3, “FDF Catalog”) shall
- * be a file specification (7.11, “File Specifications”) identifying the
+ * the FDF field dictionary (see FDF Fields in 12.7.7.3, "FDF Catalog") shall
+ * be a file specification (7.11, "File Specifications") identifying the
  * selected file.</li>
  * <li>XML format is not supported for file-select controls; therefore, no
  * value shall be submitted in this case.</li>
@@ -117,7 +117,7 @@ public class TextFieldDictionary extends VariableTextFieldDictionary {
 
     /**
      * (PDF 1.5) If set, the value of this field shall be a rich text string
-     * (see 12.7.3.4, “Rich Text Strings”). If the field has a value, the RV entry
+     * (see 12.7.3.4, "Rich Text Strings"). If the field has a value, the RV entry
      * of the field dictionary (Table 222) shall specify the rich text string.
      */
     public static final int RICH_TEXT_BIT_FLAG = 0x2000000;
@@ -197,7 +197,7 @@ public class TextFieldDictionary extends VariableTextFieldDictionary {
     }
 
     /**
-     * If set, the value of this field shall be a rich text string (see 12.7.3.4, “Rich Text Strings”). If the field has
+     * If set, the value of this field shall be a rich text string (see 12.7.3.4, "Rich Text Strings"). If the field has
      * a value, the RV entry of the field dictionary (Table 222) shall specify the rich text string.
      *
      * @return true if file select,  otherwise false.

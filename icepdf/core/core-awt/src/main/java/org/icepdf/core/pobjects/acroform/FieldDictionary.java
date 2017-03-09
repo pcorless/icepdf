@@ -51,13 +51,13 @@ public class FieldDictionary extends Dictionary {
      * Required for terminal fields; inheritable) The type of field that this
      * dictionary describes:
      * <p/>
-     * Button -> Button (see 12.7.4.2, “Button Fields”)
+     * Button -> Button (see 12.7.4.2, "Button Fields")
      * <p/>
-     * Text -> Text (see 12.7.4.3, “Text Fields”)
+     * Text -> Text (see 12.7.4.3, "Text Fields")
      * <p/>
-     * Choice -> Choice (see 12.7.4.4, “Choice Fields”)
+     * Choice -> Choice (see 12.7.4.4, "Choice Fields")
      * <p/>
-     * Signature(PDF 1.3) -> Signature (see 12.7.4.5, “Signature Fields”)
+     * Signature(PDF 1.3) -> Signature (see 12.7.4.5, "Signature Fields")
      * <p/>
      * This entry may be present in a non-terminal field (one whose descendants
      * are fields) to provide an inheritable FT value. However, a non-terminal
@@ -88,7 +88,7 @@ public class FieldDictionary extends Dictionary {
      */
     public static final Name PARENT_KEY = new Name("Parent");
     /**
-     * (Optional) The partial field name (see 12.7.3.2, “Field Names”).
+     * (Optional) The partial field name (see 12.7.3.2, "Field Names").
      */
     public static final Name T_KEY = new Name("T");
     /**
@@ -97,7 +97,7 @@ public class FieldDictionary extends Dictionary {
      * user interface (such as in error or status messages referring to the field).
      * This text is also useful when extracting the document’s contents in support
      * of accessibility to users with disabilities or for other purposes
-     * (see 14.9.3, “Alternate Descriptions”).
+     * (see 14.9.3, "Alternate Descriptions").
      */
     public static final Name TU_KEY = new Name("TU");
     /**
@@ -118,15 +118,15 @@ public class FieldDictionary extends Dictionary {
     public static final Name V_KEY = new Name("V");
     /**
      * (Optional; inheritable) The default value to which the field reverts when
-     * a reset-form action is executed (see 12.7.5.3, “Reset-Form Action”). The
+     * a reset-form action is executed (see 12.7.5.3, "Reset-Form Action"). The
      * format of this value is the same as that of V.
      */
     public static final Name DV_KEY = new Name("DV");
     /**
      * (Optional; PDF 1.2) An additional-actions dictionary defining the field’s
-     * behaviour in response to various trigger events (see 12.6.3, “Trigger Events”).
+     * behaviour in response to various trigger events (see 12.6.3, "Trigger Events").
      * This entry has exactly the same meaning as the AA entry in an annotation
-     * dictionary (see 12.5.2, “Annotation Dictionaries”).
+     * dictionary (see 12.5.2, "Annotation Dictionaries").
      */
     public static final Name AA_KEY = new Name("AA");
 
@@ -143,11 +143,11 @@ public class FieldDictionary extends Dictionary {
 
     /**
      * If set, the field shall have a value at the time it is exported by a
-     * submit-form action (see 12.7.5.2, “Submit-Form Action”).
+     * submit-form action (see 12.7.5.2, "Submit-Form Action").
      */
     public static final int REQUIRED_BIT_FLAG = 0x2;
     /**
-     * If set, the field shall not be exported by a submit-form action (see 12.7.5.2, “Submit-Form Action”).
+     * If set, the field shall not be exported by a submit-form action (see 12.7.5.2, "Submit-Form Action").
      */
     public static final int NO_EXPORT_BIT_FLAG = 0x4;
 

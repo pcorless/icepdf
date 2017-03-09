@@ -39,11 +39,11 @@ import java.util.logging.Logger;
 
 /**
  * A free text annotation (PDF 1.3) displays text directly on the page. Unlike
- * an ordinary text annotation (see 12.5.6.4, “Text Annotations”), a free text
+ * an ordinary text annotation (see 12.5.6.4, "Text Annotations"), a free text
  * annotation has no open or closed state; instead of being displayed in a pop-up
  * window, the text shall be always visible. Table 174 shows the annotation
  * dictionary entries specific to this type of annotation. 12.7.3.3,
- * “Variable Text” describes the process of using these entries to generate the
+ * "Variable Text" describes the process of using these entries to generate the
  * appearance of the text in these annotations.
  *
  * @since 5.0
@@ -55,10 +55,10 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
     /**
      * (Required) The default appearance string that shall be used in formatting
-     * the text (see 12.7.3.3, “Variable Text”).
+     * the text (see 12.7.3.3, "Variable Text").
      * <p/>
      * The annotation dictionary’s AP entry, if present, shall take precedence
-     * over the DA entry; see Table 168 and 12.5.5, “Appearance Streams.”
+     * over the DA entry; see Table 168 and 12.5.5, "Appearance Streams."
      */
     public static final Name DA_KEY = new Name("DA");
     /**
@@ -72,7 +72,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     public static final Name Q_KEY = new Name("Q");
     /**
      * (Optional; PDF 1.5) A default style string, as described in 12.7.3.4,
-     * “Rich Text Strings.”
+     * "Rich Text Strings."
      */
     public static final Name DS_KEY = new Name("DS");
     /**
@@ -130,7 +130,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * annotation’s border.
      * <p/>
      * The annotation dictionary’s AP entry, if present, takes precedence over
-     * the BS entry; see Table 164 and 12.5.5, “Appearance Streams”.
+     * the BS entry; see Table 164 and 12.5.5, "Appearance Streams".
      */
     public static final Name BS_KEY = new Name("BS");
     /**

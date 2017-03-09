@@ -100,7 +100,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      * is made (commonly with the pointing device). In this case, supplying a
      * value for a field involves three actions: selecting the field for fill-in,
      * selecting a choice for the fill-in value, and leaving that field, which
-     * finalizes or “commits” the data choice and triggers any actions associated
+     * finalizes or "commits" the data choice and triggers any actions associated
      * with the entry or changing of this data. If this flag is on, then processing
      * does not wait for leaving the field action to occur, but immediately
      * proceeds to the third step.
@@ -358,7 +358,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
     /**
      * If set, the new value shall be committed as soon as a selection is made (commonly with the pointing device).
      * In this case, supplying a value for a field involves three actions: selecting the field for fill-in, selecting
-     * a choice for the fill-in value, and leaving that field, which finalizes or “commits” the data choice and triggers
+     * a choice for the fill-in value, and leaving that field, which finalizes or "commits" the data choice and triggers
      * any actions associated with the entry or changing of this data. If this flag is on, then processing does not wait
      * for leaving the field action to occur, but immediately proceeds to the third step.
      * <p/>

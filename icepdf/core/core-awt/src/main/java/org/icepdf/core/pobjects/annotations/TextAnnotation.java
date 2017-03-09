@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A text annotation represents a “sticky note” attached to a point in the PDF
+ * A text annotation represents a "sticky note" attached to a point in the PDF
  * document. When closed, the annotation shall appear as an icon; when open, it
  * shall display a pop-up window containing the text of the note in a font and
  * size chosen by the conforming reader. Text annotations shall not scale and
@@ -61,19 +61,19 @@ public class TextAnnotation extends MarkupAnnotation {
      * Additional names may be supported as well. Default value: Note.
      * <p/>
      * The annotation dictionary’s AP entry, if present, shall take precedence
-     * over the Name entry; see Table 168 and 12.5.5, “Appearance Streams.”
+     * over the Name entry; see Table 168 and 12.5.5, "Appearance Streams."
      */
     public static final Name NAME_KEY = new Name("Name");
     /**
      * (Optional; PDF 1.5) The state to which the original annotation shall be
-     * set; see 12.5.6.3, “Annotation States.”
+     * set; see 12.5.6.3, "Annotation States."
      * <p/>
-     * Default: “Unmarked” if StateModel is “Marked”; “None” if StateModel is “Review”.
+     * Default: "Unmarked" if StateModel is "Marked"; "None" if StateModel is "Review".
      */
     public static final Name STATE_KEY = new Name("State");
     /**
      * (Required if State is present, otherwise optional; PDF 1.5) The state model
-     * corresponding to State; see 12.5.6.3, “Annotation States.”
+     * corresponding to State; see 12.5.6.3, "Annotation States."
      */
     public static final Name STATE_MODEL_KEY = new Name("StateModel");
     /**

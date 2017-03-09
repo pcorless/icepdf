@@ -22,13 +22,13 @@ import org.icepdf.core.util.Library;
 import java.util.HashMap;
 
 /**
- * As mentioned in 12.5.2, “Annotation Dictionaries,” the meaning of an
+ * As mentioned in 12.5.2, "Annotation Dictionaries," the meaning of an
  * annotation’s Contents entry varies by annotation type. Typically, it is the
  * text that shall be displayed for the annotation or, if the annotation does not
  * display text, an alternate description of the annotation’s contents in
  * human-readable form. In either case, the Contents entry is useful when
  * extracting the document’s contents in support of accessibility to users with
- * disabilities or for other purposes (see 14.9.3, “Alternate Descriptions”).
+ * disabilities or for other purposes (see 14.9.3, "Alternate Descriptions").
  * <p/>
  * Many annotation types are defined as markup annotations because they are used
  * primarily to mark up PDF documents (see Table 170). These annotations have
@@ -61,8 +61,8 @@ public abstract class MarkupAnnotation extends Annotation {
 
     /**
      * (Optional; PDF 1.4) The constant opacity value that shall be used in
-     * painting the annotation (see Sections 11.2, “Overview of Transparency,”
-     * and 11.3.7, “Shape and Opacity Computations”). This value shall apply to
+     * painting the annotation (see Sections 11.2, "Overview of Transparency,"
+     * and 11.3.7, "Shape and Opacity Computations"). This value shall apply to
      * all visible elements of the annotation in its closed state (including its
      * background and border) but not to the pop-up window that appears when the
      * annotation is opened.
@@ -70,24 +70,24 @@ public abstract class MarkupAnnotation extends Annotation {
     public static final Name CA_KEY = new Name("CA");
 
     /**
-     * (Optional; PDF 1.5) A rich text string (see 12.7.3.4, “Rich Text Strings”)
+     * (Optional; PDF 1.5) A rich text string (see 12.7.3.4, "Rich Text Strings")
      * that shall be displayed in the pop-up window when the annotation is opened.
      */
     public static final Name RC_KEY = new Name("RC");
 
     /**
-     * (Optional; PDF 1.5) The date and time (7.9.4, “Dates”) when the
+     * (Optional; PDF 1.5) The date and time (7.9.4, "Dates") when the
      * annotation was created.
      */
     public static final Name CREATION_DATE_KEY = new Name("CreationDate");
 
     /**
      * (Required if an RT entry is present, otherwise optional; PDF 1.5) A
-     * reference to the annotation that this annotation is “in reply to.” Both
+     * reference to the annotation that this annotation is "in reply to." Both
      * annotations shall be on the same page of the document. The relationship
      * between the two annotations shall be specified by the RT entry.
      * <p/>
-     * If this entry is present in an FDF file (see 12.7.7, “Forms Data Format”),
+     * If this entry is present in an FDF file (see 12.7.7, "Forms Data Format"),
      * its type shall not be a dictionary but a text string containing the
      * contents of the NM entry of the annotation being replied to, to allow for
      * a situation where the annotation being replied to is not in the same FDF
@@ -109,7 +109,7 @@ public abstract class MarkupAnnotation extends Annotation {
 
     /**
      * Optional; meaningful only if IRT is present; PDF 1.6) A name specifying
-     * the relationship (the “reply type”) between this annotation and one
+     * the relationship (the "reply type") between this annotation and one
      * specified by IRT. Valid values are:
      * <p/>
      * R - The annotation shall be considered a reply to the annotation specified

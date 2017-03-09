@@ -482,13 +482,13 @@ public abstract class Annotation extends Dictionary {
      * annotation’s contents in human-readable form. In either case, this text
      * is useful when extracting the document’s contents in support of accessibility
      * to users with disabilities or for other purposes (see 14.9.3,
-     * “Alternate Descriptions”). See 12.5.6, “Annotation Types” for more details
+     * "Alternate Descriptions"). See 12.5.6, "Annotation Types" for more details
      * on the meaning of this entry for each annotation type.
      */
     public static final Name CONTENTS_KEY = new Name("Contents");
     /**
      * The date and time when the annotation was most recently modified. The
-     * format should be a date string as described in 7.9.4, “Dates,” but
+     * format should be a date string as described in 7.9.4, "Dates," but
      * conforming readers shall accept and display a string in any format.
      */
     public static final Name M_KEY = new Name("M");

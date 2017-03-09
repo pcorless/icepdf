@@ -26,7 +26,7 @@ import java.util.HashMap;
 /**
  * An annotation, page object, or (beginning with PDF 1.3) interactive form field may include an entry named AA that
  * specifies an additional-actions dictionary (PDF 1.2) that extends the set of events that can trigger the execution
- * of an action. In PDF 1.4, the document catalogue dictionary (see 7.7.2, “Document Catalog”) may also contain an AA
+ * of an action. In PDF 1.4, the document catalogue dictionary (see 7.7.2, "Document Catalog") may also contain an AA
  * entry for trigger events affecting the document as a whole. Tables 194 to 197 show the contents of this type of
  * dictionary.
  * <p/>
@@ -124,7 +124,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     /**
      * Optional; PDF 1.2) An action that shall be performed when the page is opened (for example, when the user
      * navigates to it from the next or previous page or by means of a link annotation or outline item). This action is
-     * independent of any that may be defined by the OpenAction entry in the document Catalog (see 7.7.2, “Document Catalog”)
+     * independent of any that may be defined by the OpenAction entry in the document Catalog (see 7.7.2, "Document Catalog")
      * and shall be executed after such an action.
      */
     public static final Name PAGE_0_KEY = new Name("O");
@@ -153,15 +153,15 @@ public class AdditionalActionsDictionary extends Dictionary {
 
     /**
      * (Optional; PDF 1.3) A JavaScript action that shall be performed when the field’s value is changed. This action
-     * may check the new value for validity. (The name V stands for “validate.”)
+     * may check the new value for validity. (The name V stands for "validate.")
      */
     public static final Name FORM_V_KEY = new Name("V");
 
     /**
      * (Optional; PDF 1.3) A JavaScript action that shall be performed to recalculate the value of this field when that
-     * of another field changes. (The name C stands for “calculate.”) The order in which the document’s fields are
+     * of another field changes. (The name C stands for "calculate.") The order in which the document’s fields are
      * recalculated shall be defined by the CO entry in the interactive form dictionary
-     * (see 12.7.2, “Interactive Form Dictionary”).
+     * (see 12.7.2, "Interactive Form Dictionary").
      */
     public static final Name FORM_C_KEY = new Name("C");
 
@@ -169,31 +169,31 @@ public class AdditionalActionsDictionary extends Dictionary {
 
     /**
      * (Optional; PDF 1.4) A JavaScript action that shall be performed before closing a document.
-     * (The name WC stands for “will close.”)
+     * (The name WC stands for "will close.")
      */
     public static final Name CATALOG_WC_KEY = new Name("WC");
 
     /**
      * (Optional; PDF 1.4) A JavaScript action that shall be performed before saving a document.
-     * (The name WS stands for “will save.”)
+     * (The name WS stands for "will save.")
      */
     public static final Name CATALOG_WS_KEY = new Name("WS");
 
     /**
      * (Optional; PDF 1.4) A JavaScript action that shall be performed after saving a document.
-     * (The name DS stands for “did save.”)
+     * (The name DS stands for "did save.")
      */
     public static final Name CATALOG_DS_KEY = new Name("DS");
 
     /**
      * (Optional; PDF 1.4) A JavaScript action that shall be performed before printing a document.
-     * (The name WP stands for “will print.”)
+     * (The name WP stands for "will print.")
      */
     public static final Name CATALOG_WP_KEY = new Name("WP");
 
     /**
      * (Optional; PDF 1.4) A JavaScript action that shall be performed after printing a document.
-     * (The name DP stands for “did print.”)
+     * (The name DP stands for "did print.")
      */
     public static final Name CATALOG_DP_KEY = new Name("DP");
 

@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 /**
  * Text markup annotations shall appear as highlights, underlines, strikeouts
- * (all PDF 1.3), or jagged (“squiggly”) underlines (PDF 1.4) in the text of a
+ * (all PDF 1.3), or jagged ("squiggly") underlines (PDF 1.4) in the text of a
  * document. When opened, they shall display a pop-up window containing the text
  * of the associated note. Table 179 shows the annotation dictionary entries
  * specific to these types of annotations.
@@ -110,7 +110,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      * connecting points (x1, y1) and (x2, y2).
      * <p/>
      * The annotation dictionary’s AP entry, if present, shall take precedence
-     * over QuadPoints; see Table 168 and 12.5.5, “Appearance Streams.”
+     * over QuadPoints; see Table 168 and 12.5.5, "Appearance Streams."
      */
     public static final Name KEY_QUAD_POINTS = new Name("QuadPoints");
 

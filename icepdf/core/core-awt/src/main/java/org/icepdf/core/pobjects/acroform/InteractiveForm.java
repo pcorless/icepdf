@@ -34,17 +34,17 @@ import java.util.logging.Logger;
  * the entire document.
  * <p/>
  * Each field in a document’s interactive form shall be defined by a field
- * dictionary (see 12.7.3, “Field Dictionaries”). For purposes of definition and
+ * dictionary (see 12.7.3, "Field Dictionaries"). For purposes of definition and
  * naming, the fields can be organized hierarchically and can inherit attributes
  * from their ancestors in the field hierarchy. A field’s children in the hierarchy
- * may also include widget annotations (see 12.5.6.19, “Widget Annotations”) that
+ * may also include widget annotations (see 12.5.6.19, "Widget Annotations") that
  * define its appearance on the page. A field that has children that are fields
  * is called a non-terminal field. A field that does not have children that are
  * fields is called a terminal field.
  * <p/>
  * The contents and properties of a document’s interactive form shall be defined
  * by an interactive form dictionary that shall be referenced from the AcroForm
- * entry in the document catalogue (see 7.7.2, “Document Catalog”).
+ * entry in the document catalogue (see 7.7.2, "Document Catalog").
  *
  * @since 5.1
  */
@@ -58,13 +58,13 @@ public class InteractiveForm extends Dictionary {
     /**
      * (Optional) A flag specifying whether to construct appearance streams and
      * appearance dictionaries for all widget annotations in the document (see
-     * 12.7.3.3, “Variable Text”). Default value: false.
+     * 12.7.3.3, "Variable Text"). Default value: false.
      */
     public static final Name NEEDS_APPEARANCES_KEY = new Name("NeedAppearances");
     /**
      * (Optional; PDF 1.3) A set of flags specifying various document-level
      * characteristics related to signature fields (see Table 219, and 12.7.4.5,
-     * “Signature Fields”). Default value: 0.
+     * "Signature Fields"). Default value: 0.
      */
     public static final Name SIG_FLAGS_KEY = new Name("SigFlags");
     /**
@@ -72,11 +72,11 @@ public class InteractiveForm extends Dictionary {
      * dictionaries containing a C entry; PDF 1.3) An array of indirect
      * references to field dictionaries with calculation actions, defining the
      * calculation order in which their values will be recalculated when the
-     * value of any field changes (see 12.6.3, “Trigger Events”).
+     * value of any field changes (see 12.6.3, "Trigger Events").
      */
     public static final Name CO_KEY = new Name("CO");
     /**
-     * (Optional) A resource dictionary (see 7.8.3, “Resource Dictionaries”)
+     * (Optional) A resource dictionary (see 7.8.3, "Resource Dictionaries")
      * containing default resources (such as fonts, patterns, or colour spaces)
      * that shall be used by form field appearance streams. At a minimum, this
      * dictionary shall contain a Font entry specifying the resource name and
@@ -85,12 +85,12 @@ public class InteractiveForm extends Dictionary {
     public static final Name DR_KEY = new Name("DR");
     /**
      * (Optional) A document-wide default value for the DA attribute of variable
-     * text fields (see 12.7.3.3, “Variable Text”).
+     * text fields (see 12.7.3.3, "Variable Text").
      */
     public static final Name DA_KEY = new Name("DA");
     /**
      * (Optional) A document-wide default value for the Q attribute of variable
-     * text fields (see 12.7.3.3, “Variable Text”).
+     * text fields (see 12.7.3.3, "Variable Text").
      */
     public static final Name Q_KEY = new Name("Q");
     /**
@@ -105,7 +105,7 @@ public class InteractiveForm extends Dictionary {
      * file is saved (written) in a way that alters its previous contents, as
      * opposed to an incremental update. Merely updating the file by appending
      * new information to the end of the previous version is safe
-     * (see H.7, “Updating Example”). Conforming readers may use this flag to
+     * (see H.7, "Updating Example"). Conforming readers may use this flag to
      * inform a user requesting a full save that signatures will be invalidated
      * and require explicit confirmation before continuing with the operation.
      */
@@ -118,7 +118,7 @@ public class InteractiveForm extends Dictionary {
     private ArrayList<Object> fields;
 
     // A flag specifying whether to construct appearance streams and appearance dictionaries for all
-    // widget annotations in the document (see 12.7.3.3, “Variable Text”). Default value: false.
+    // widget annotations in the document (see 12.7.3.3, "Variable Text"). Default value: false.
     private boolean needAppearances;
 
     // A set of flags specifying various document-level characteristics related to signature fields .

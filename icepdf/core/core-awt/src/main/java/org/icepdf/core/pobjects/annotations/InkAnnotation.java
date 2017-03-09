@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * An ink annotation (PDF 1.3) represents a freehand “scribble” composed of one
+ * An ink annotation (PDF 1.3) represents a freehand "scribble" composed of one
  * or more disjoint paths. When opened, it shall display a pop-up window
  * containing the text of the associated note. Table 182 shows the annotation
  * dictionary entries specific to this type of annotation.

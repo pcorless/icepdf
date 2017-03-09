@@ -36,7 +36,7 @@ import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
 /**
  * When the contents and properties of a field are known in advance, its visual
  * appearance can be specified by an appearance stream defined in the PDF file
- * (see 12.5.5, “Appearance Streams,” and 12.5.6.19, “Widget Annotations”). In
+ * (see 12.5.5, "Appearance Streams," and 12.5.6.19, "Widget Annotations"). In
  * some cases, however, the field may contain text whose value is not known
  * until viewing time.
  *
@@ -69,7 +69,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
     public static final Name Q_KEY = new Name("Q");
 
     /**
-     * A default style string, as described in 12.7.3.4, “Rich Text Strings.”
+     * A default style string, as described in 12.7.3.4, "Rich Text Strings."
      */
     public static final Name DS_KEY = new Name("DS");
 
@@ -81,7 +81,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
     private String defaultRichText;
 
     /**
-     * A rich text string, as described in 12.7.3.4, “Rich Text Strings.”
+     * A rich text string, as described in 12.7.3.4, "Rich Text Strings."
      */
     public static final Name RV_KEY = new Name("RV");
 

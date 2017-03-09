@@ -75,7 +75,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * Meaningful only if the SubmitPDF and XFDF flags are clear. If set, field names and values shall be submitted in
-     * HTML Form format. If clear, they shall be submitted in Forms Data Format (FDF); see 12.7.7, “Forms Data Format.”
+     * HTML Form format. If clear, they shall be submitted in Forms Data Format (FDF); see 12.7.7, "Forms Data Format."
      */
     public int EXPORT_FORMAT_BIT = 0X0000004;  // bit 3
 
@@ -121,7 +121,7 @@ public class SubmitFormAction extends FormAction {
     /**
      * (PDF 1.4) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF a
      * nd ExportFormat flags are clear). If set, the submitted FDF file shall include includes all markup
-     * annotations in the underlying PDF document (see 12.5.6.2, “Markup Annotations”). If clear, markup annotations
+     * annotations in the underlying PDF document (see 12.5.6.2, "Markup Annotations"). If clear, markup annotations
      * shall not be included.
      */
     public int INCLUDE_ANNOTATIONS_BIT = 0X0000040;  // bit 8
@@ -135,7 +135,7 @@ public class SubmitFormAction extends FormAction {
 
     /**
      * (PDF 1.4) If set, any submitted field values representing dates shall be converted to the standard format
-     * described in 7.9.4, “Dates.”
+     * described in 7.9.4, "Dates."
      * <p/>
      * <b>NOTE</b><br/>
      * The interpretation of a form field as a date is not specified explicitly in the field itself but only in the

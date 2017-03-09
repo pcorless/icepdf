@@ -28,11 +28,11 @@ import java.util.List;
  * represent calibrated red, green, and blue colour values. These three colour
  * components shall be in the range 0.0 to 1.0; component values falling outside
  * that range shall be adjusted to the nearest valid value without error indication.
- * The decoding functions (denoted by “Decode ABC” in Figure 22) are gamma
+ * The decoding functions (denoted by "Decode ABC" in Figure 22) are gamma
  * functions whose coefficients shall be specified by the Gamma entry in the
  * colour space dictionary (see Table 64). The transformation matrix denoted by
- * “Matrix ABC” in Figure 22 shall be defined by the dictionary’s Matrix entry.
- * Since there is no second transformation stage, “Decode LMN” and “Matrix LMN”
+ * "Matrix ABC" in Figure 22 shall be defined by the dictionary’s Matrix entry.
+ * Since there is no second transformation stage, "Decode LMN" and "Matrix LMN"
  * shall be implicitly taken to be identity transformations.
  *
  * @since 1.0
