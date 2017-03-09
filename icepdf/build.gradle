@@ -22,13 +22,13 @@ subprojects{
 
 evaluationDependsOn(':core:core-awt')
 
-defaultTasks 'projectReport', 'sourcesJar', 'genPomFileForCoreJarPub', 'genPomFileForViewerJarPub','osDistZip', 'osDistTar'
+defaultTasks 'taskReport', 'dependencyReport', 'sourcesJar', 'genPomFileForCoreJarPub', 'genPomFileForViewerJarPub','osDistZip', 'osDistTar'
 
 // Main distribution for os bundle
 distributions {
     os {
         baseName = 'icepdf-os'
-        version "${VERSION}"
+        version "${VERSION + '-' + RELEASE_TYPE}"
         contents {
             duplicatesStrategy = 'exclude'
             into('libs-source') {
@@ -71,9 +71,11 @@ distributions {
                 from 'examples'
             }*/
             // readme.
-            from 'readme.html'
-            filter(org.apache.tools.ant.filters.ReplaceTokens,
-                    tokens: [version: VERSION])
+            into (''){
+                from 'readme.html'
+                filter(org.apache.tools.ant.filters.ReplaceTokens,
+                        tokens: [version: VERSION])
+            }
         }
     }
 }
