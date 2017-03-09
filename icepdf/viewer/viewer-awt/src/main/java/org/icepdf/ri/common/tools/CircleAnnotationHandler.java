@@ -33,7 +33,7 @@ import java.awt.geom.Ellipse2D;
  * CircleAnnotationHandler tool is responsible for painting representation of
  * a circle on the screen during a click and drag mouse event.  The box
  * created by this mouse event will be used to draw circle within its bounds.
- * <p/>
+ * <br>
  * Once the mouseReleased event is fired this handler will create new
  * CircleAnnotation and respective AnnotationComponent.  The addition of the
  * Annotation object to the page is handled by the annotation callback.

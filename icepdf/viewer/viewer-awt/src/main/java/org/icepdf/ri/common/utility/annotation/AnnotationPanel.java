@@ -27,7 +27,7 @@ import java.awt.*;
 /**
  * Annotation Panel is responsible for viewing and editing Annotation properties
  * which also include annotation action properties.
- * <p/>
+ * <br>
  * Currently only Link Annotation are supported and the Action types GoTo and
  * URI.  It will be quite easy to add more properties in the future given the
  * factory nature of this class

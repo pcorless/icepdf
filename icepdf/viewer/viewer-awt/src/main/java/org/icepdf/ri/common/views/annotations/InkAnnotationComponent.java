@@ -28,7 +28,7 @@ import java.awt.event.MouseEvent;
  * The InkAnnotationComponent encapsulates a InkAnnotation objects.  It
  * also provides basic editing functionality such as resizing, moving and change
  * the border color and style.
- * <p/>
+ * <br>
  * The Viewer RI implementation contains a InkAnnotationPanel class which
  * can edit the various properties of this component.
  *

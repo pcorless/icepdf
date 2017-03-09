@@ -27,7 +27,7 @@ import java.awt.*;
  * a line arrow on the screen during a click and drag mouse event.  The first point
  * is recorded on mousePressed and the line is drawn from first point the current
  * location of the mouse.  An open arrow is drawn at the starting point.
- * <p/>
+ * <br>
  * Once the mouseReleased event is fired this handler will create new
  * LineArrowAnnotation and respective AnnotationComponent.  The addition of the
  * Annotation object to the page is handled by the annotation callback.

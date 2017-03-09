@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  * read from the default application file path.  If the file cannot be found then
  * all system fonts are read from the operating system and are written to the
  * "pdfviewerfontcache.properties" file.</p>
- * <p/>
+ * <br>
  * <p>This class is designed to speed up the load time of the viewer application
  * by reading already parsed font information from the properties file.  If new
  * fonts are added to the system, the "pdfviewerfontcache.properties" file can
@@ -79,19 +79,19 @@ public class FontPropertiesManager {
     /**
      * Create a new instance of the FontPropertiesManager class. This constructor will
      * automatically scan the system for the available fonts.
-     * <p/>
-     * Typical usage would look like this:<br />
-     * <ul>
+     * <br>
+     * Typical usage would look like this:<br>
+     * <pre>
      * // read/store the font cache.
      * ResourceBundle messageBundle = ResourceBundle.getBundle(
      * PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
      * PropertiesManager properties = new PropertiesManager(System.getProperties(),
      * ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-     * <p/>
+     *
      * // creates a new cache properties file, does not read system fonts.
      * FontPropertiesManager fontPropertiesManager =
      * new FontPropertiesManager(properties, System.getProperties(), messageBundle, false);
-     * </ul>
+     * </pre>
      *
      * @param appProps      properties manager reference
      * @param sysProps      system properties.
@@ -128,19 +128,18 @@ public class FontPropertiesManager {
      * the system for fonts.  The users must call one of the following methods to scan for fonts;
      * {@link #readFontPaths} or {@link #readDefaulFontPaths(String[])}
      *
-     * <p/>
-     * Typical usage would look like this:<br />
-     * <ul>
+     * <br>
+     * Typical usage would look like this:<br>
+     * <pre>
      * // read/store the font cache.
      * ResourceBundle messageBundle = ResourceBundle.getBundle(
      * PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
      * PropertiesManager properties = new PropertiesManager(System.getProperties(),
      * ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-     * <p/>
      * // creates a new cache properties file, does not read system fonts.
      * FontPropertiesManager fontPropertiesManager = new FontPropertiesManager(properties, messageBundle, false);
      * fontPropertiesManager.readFontPaths(null);
-     * </ul>
+     * </pre>
      *
      * @param appProps      properties manager reference
      * @param messageBundle application message bundle.

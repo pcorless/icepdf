@@ -27,7 +27,7 @@ import java.awt.*;
  * <p>Constructs a two page view as defined in the PDF specification.
  * A two column page view displays two pages with odd numbered pages
  * on the left.</p>
- * <p/>
+ * <br>
  * <p>Page views are basic containers which use Swing Layout Containers to
  * place pages </p>
  *

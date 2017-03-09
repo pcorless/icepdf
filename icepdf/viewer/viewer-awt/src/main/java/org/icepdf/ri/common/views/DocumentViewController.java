@@ -28,7 +28,7 @@ import java.awt.event.KeyListener;
  * <p>The DocumentViewControllerImpl is the controler in the MVC for multipage view
  * management.  This controller is used to manipulate the one column, one page,
  * two column and two page views.</p>
- * <p/>
+ * <br>
  * <p>The Swing implementation of multiple view usesa the folowing MVC base
  * classes:
  * </P>

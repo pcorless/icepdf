@@ -24,7 +24,7 @@ import java.awt.*;
 
 /**
  * The PolygonAnnotationComponent encapsulates a PolygonAnnotation objects.
- * <p/>
+ * <br>
  * NOTE: this component is has no handler and can only be created if the parent
  * Page object contains a PolygonAnnotation.
  *

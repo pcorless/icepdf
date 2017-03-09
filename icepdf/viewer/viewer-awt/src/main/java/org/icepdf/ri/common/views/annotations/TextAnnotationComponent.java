@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * The TextAnnotationComponent encapsulates a TextAnnotation objects.  It
  * also provides basic editing functionality such as resizing, moving and change
  * the border color and style as well as the fill color.
- * <p/>
+ * <br>
  * The Viewer RI implementation contains a TextAnnotationPanel class which
  * can edit the various properties of this component.
  *

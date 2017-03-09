@@ -29,7 +29,7 @@ import java.awt.event.MouseEvent;
  * also provides basic editing functionality such as resizing, moving and change
  * the border color and style.  The start and end line cab can also be changed
  * to one of the name types defined in the LineAnnotation class.
- * <p/>
+ * <br>
  * The Viewer RI implementation contains a LineAnnotationPanel class which
  * can edit the various properties of this component.
  *

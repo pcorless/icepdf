@@ -41,17 +41,17 @@ import java.util.logging.Logger;
 /**
  * <p>The purpose of this class is to facilitate in the building of user interface components
  * that are used to view and interact with PDF Documents.</p>
- * <p/>
- * <p>As such, there are three main scenarios that are covered.
+ * <br>
+ * <p>As such, there are three main scenarios that are covered.</p>
  * <ol>
- * <li>Building a standalone Viewer JFrame that will behave much as a full-featured PDF viewing application.
+ * <li>Building a standalone Viewer JFrame that will behave much as a full-featured PDF viewing application.</li>
  * <li>Building an embeddable PDF Viewer JPanel, which can easily be added into any existing client application,
- * augmenting its cababilities to include the capacity for viewing PDF Documents.
+ * augmenting its capabilities to include the capacity for viewing PDF Documents.</li>
  * <li>Building a subset of the above, using the various building block methods in this class to construct GUI
  * components that provide certain aspects of the overall functionality, and adding those into
- * your application as desired.
- * </ol></p>
- * <p/>
+ * your application as desired.</li>
+ * </ol>
+ * <br>
  * <h2>Building a standalone window</h2>
  * <p>This is the main entry point for building a JFrame containing all of the graphical user interface
  * elements necessary for viewing PDF files.</p>
@@ -80,7 +80,6 @@ import java.util.logging.Logger;
  * <li>public JMenuItem buildExitMenuItem()</li>
  * </ul>
  * </li>  <!-- buildFileMenu() -->
- * <p/>
  * <li>public JMenu buildViewMenu()
  * <ul>
  * <li>public JMenuItem buildFitActualSizeMenuItem()</li>
@@ -94,7 +93,6 @@ import java.util.logging.Logger;
  * <li>public JMenuItem buildShowHideUtilityPaneMenuItem()</li>
  * </ul>
  * </li>  <!-- buildViewMenu() -->
- * <p/>
  * <li>public JMenu buildDocumentMenu()
  * <ul>
  * <li>public JMenuItem buildFirstPageMenuItem()</li>
@@ -105,7 +103,6 @@ import java.util.logging.Logger;
  * <li>public JMenuItem buildGoToPageMenuItem()</li>
  * </ul>
  * </li>  <!-- buildDocumentMenu() -->
- * <p/>
  * <li>public JMenu buildWindowMenu()
  * <ul>
  * <li>public JMenuItem buildMinimiseAllMenuItem()</li>
@@ -113,7 +110,6 @@ import java.util.logging.Logger;
  * <li>public void buildWindowListMenuItems(JMenu menu)</li>
  * </ul>
  * </li>  <!-- buildWindowMenu() -->
- * <p/>
  * <li>public JMenu buildHelpMenu()
  * <ul>
  * <li>public JMenuItem buildAboutMenuItem()</li>
@@ -121,11 +117,8 @@ import java.util.logging.Logger;
  * </li>  <!-- buildHelpMenu() -->
  * </ul>
  * </li>  <!-- buildCompleteMenuBar() -->
- * <p/>
- * <p/>
  * <li>public void buildContents(Container cp, boolean embeddableComponent)
  * <ul>
- * <p/>
  * <li>public JToolBar buildCompleteToolBar(boolean embeddableComponent)
  * <ul>
  * <li>public JToolBar buildUtilityToolBar(boolean embeddableComponent)
@@ -137,7 +130,6 @@ import java.util.logging.Logger;
  * <li>public JButton buildShowHideUtilityPaneButton()</li>
  * </ul>
  * </li>  <!-- buildUtilityToolBar(boolean embeddableComponent) -->
- * <p/>
  * <li>public JToolBar buildPageNavigationToolBar()
  * <ul>
  * <li>public JButton buildFirstPageButton()</li>
@@ -148,7 +140,6 @@ import java.util.logging.Logger;
  * <li>public JLabel buildNumberOfPagesLabel()</li>
  * </ul>
  * </li>  <!-- buildPageNavigationToolBar() -->
- * <p/>
  * <li>public JToolBar buildZoomToolBar()
  * <ul>
  * <li>public JButton buildZoomOutButton()</li>
@@ -156,7 +147,6 @@ import java.util.logging.Logger;
  * <li>public JButton buildZoomInButton()</li>
  * </ul>
  * </li>  <!-- buildZoomToolBar() -->
- * <p/>
  * <li>public JToolBar buildFitToolBar()
  * <ul>
  * <li>public JToggleButton buildFitActualSizeButton()</li>
@@ -164,14 +154,12 @@ import java.util.logging.Logger;
  * <li>public JToggleButton buildFitWidthButton()</li>
  * </ul>
  * </li>  <!-- buildFitToolBar() -->
- * <p/>
  * <li>public JToolBar buildRotateToolBar()
  * <ul>
  * <li>public JButton buildRotateLeftButton()</li>
  * <li>public JButton buildRotateRightButton()</li>
  * </ul>
  * </li>  <!-- buildRotateToolBar() -->
- * <p/>
  * <li>public JToolBar buildToolToolBar()
  * <ul>
  * <li>public JToggleButton buildPanToolButton()</li>
@@ -181,8 +169,6 @@ import java.util.logging.Logger;
  * </li>  <!-- buildToolToolBar() -->
  * </ul>
  * </li>  <!-- buildCompleteToolBar(boolean embeddableComponent) -->
- * <p/>
- * <p/>
  * <li>public JSplitPane buildUtilityAndDocumentSplitPane(boolean embeddableComponent)
  * <ul>
  * <li>public JTabbedPane buildUtilityTabbedPane()
@@ -191,42 +177,31 @@ import java.util.logging.Logger;
  * <li>public SearchPanel buildSearchPanel()</li>
  * </ul>
  * </li>  <!-- buildUtilityTabbedPane() -->
- * <p/>
  * <li>public JScrollPane buildDocumentComponents(boolean embeddableComponent)</li>
  * </ul>
  * </li>  <!-- buildUtilityAndDocumentSplitPane(boolean embeddableComponent) -->
- * <p/>
  * <li>public JLabel buildStatusPanel()</li>
- * <p/>
  * </ul>
  * </li>  <!-- buildContents(Container cp, boolean embeddableComponent) -->
- * <p/>
  * </ul>
- * <p/>
- * <p/>
  * <h2>Building an embeddable component</h2>
  * <p>This is the main entry point for building a JPanel containing all of the GUI elements
- * necessary for viewing PDF files. The main differences between this and buildViewerFrame() are:
+ * necessary for viewing PDF files. The main differences between this and buildViewerFrame() are:</p>
  * <ul>
  * <li>The buildViewerPanel method returns a JPanel which you may then embed anywhere into your GUI
  * <li>The JPanel will not contain a menu bar.
  * <li>The JPanel uses the sub-set of the GUI components available in buildViewerFrame that are
  * suited to an embedded component scenario.
  * </ul>
- * </p>
- * <p/>
  * <p>The following hierarchy of methods that are invoked to construct the complete Component GUI
  * is provided for your reference.
  * You may choose to use any of the individual methods below to construct a sub-set of the complete
  * GUI that meets your specific requirements. This also provides you flexibility in the containers
  * that you add the components into and the overall layout of the application, etc.</p>
- * <br>
  * <b>public JPanel buildViewerPanel()</b>
  * <ul>
- * <p/>
  * <li>public void buildContents(Container cp, boolean embeddableComponent)
  * <ul>
- * <p/>
  * <li>public JToolBar buildCompleteToolBar(boolean embeddableComponent)
  * <ul>
  * <li>public JToolBar buildUtilityToolBar(boolean embeddableComponent)
@@ -237,7 +212,6 @@ import java.util.logging.Logger;
  * <li>public JButton buildShowHideUtilityPaneButton()</li>
  * </ul>
  * </li>  <!-- buildUtilityToolBar(boolean embeddableComponent) -->
- * <p/>
  * <li>public JToolBar buildPageNavigationToolBar()
  * <ul>
  * <li>public JButton buildFirstPageButton()</li>
@@ -248,7 +222,6 @@ import java.util.logging.Logger;
  * <li>public JLabel buildNumberOfPagesLabel()</li>
  * </ul>
  * </li>  <!-- buildPageNavigationToolBar() -->
- * <p/>
  * <li>public JToolBar buildZoomToolBar()
  * <ul>
  * <li>public JButton buildZoomOutButton()</li>
@@ -256,7 +229,6 @@ import java.util.logging.Logger;
  * <li>public JButton buildZoomInButton()</li>
  * </ul>
  * </li>  <!-- buildZoomToolBar() -->
- * <p/>
  * <li>public JToolBar buildFitToolBar()
  * <ul>
  * <li>public JToggleButton buildFitActualSizeButton()</li>
@@ -264,14 +236,12 @@ import java.util.logging.Logger;
  * <li>public JToggleButton buildFitWidthButton()</li>
  * </ul>
  * </li>  <!-- buildFitToolBar() -->
- * <p/>
  * <li>public JToolBar buildRotateToolBar()
  * <ul>
  * <li>public JButton buildRotateLeftButton()</li>
  * <li>public JButton buildRotateRightButton()</li>
  * </ul>
  * </li>  <!-- buildRotateToolBar() -->
- * <p/>
  * <li>public JToolBar buildToolToolBar()
  * <ul>
  * <li>public JToggleButton buildPanToolButton()</li>
@@ -281,8 +251,6 @@ import java.util.logging.Logger;
  * </li>  <!-- buildToolToolBar() -->
  * </ul>
  * </li>  <!-- buildCompleteToolBar(boolean embeddableComponent) -->
- * <p/>
- * <p/>
  * <li>public JSplitPane buildUtilityAndDocumentSplitPane(boolean embeddableComponent)
  * <ul>
  * <li>public JTabbedPane buildUtilityTabbedPane()
@@ -291,20 +259,12 @@ import java.util.logging.Logger;
  * <li>public SearchPanel buildSearchPanel()</li>
  * </ul>
  * </li>  <!-- buildUtilityTabbedPane() -->
- * <p/>
  * <li>public JScrollPane buildDocumentComponents(boolean embeddableComponent)</li>
  * </ul>
  * </li>  <!-- buildUtilityAndDocumentSplitPane(boolean embeddableComponent) -->
- * <p/>
- * <p/>
  * <li>public JLabel buildStatusPanel()</li>
- * <p/>
- * <p/>
  * </ul>
  * </li>  <!-- buildContents(Container cp, boolean embeddableComponent) -->
- * <p/>
- * <p/>
- * <p/>
  * </ul>
  *
  * @author Mark Collette
@@ -1821,7 +1781,7 @@ public class SwingViewBuilder {
         return searchPanel;
     }
 
-    public AttachmentPanel buildAttachmentPanle(){
+    public AttachmentPanel buildAttachmentPanle() {
         AttachmentPanel attachmentPanel = new AttachmentPanel(viewerController);
         if (viewerController != null)
             viewerController.setAttachmentPanel(attachmentPanel);

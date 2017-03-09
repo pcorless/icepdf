@@ -28,7 +28,7 @@ import java.awt.event.MouseEvent;
  * The SquareAnnotationComponent encapsulates a SquareAnnotation objects.  It
  * also provides basic editing functionality such as resizing, moving and change
  * the border color and style as well as the fill color.
- * <p/>
+ * <br>
  * The Viewer RI implementation contains a SquareAnnotationPanel class which
  * can edit the various properties of this component.
  *

@@ -24,7 +24,7 @@ import java.awt.*;
 
 /**
  * The PolyLineAnnotationComponent encapsulates a PolyLineAnnotation objects.
- * <p/>
+ * <br>
  * NOTE: this component is has no handler and can only be created if the parent
  * Page object contains a PolygonLineAnnotation.
  *

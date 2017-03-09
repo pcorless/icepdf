@@ -21,7 +21,7 @@ import java.awt.*;
 /**
  * The ToolbarLayout class provides a Flow-like Layout Manager specifically
  * suited for use within a JToolBar.
- * <p/>
+ * <br>
  * <p>This layout manager will dynamically wrap JToolBar contents to additional
  * toolbar rows if the current toolbar width is not sufficient for it to display
  * all of the toolbar items on the current number of toolbar rows. Alternatively,

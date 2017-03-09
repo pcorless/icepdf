@@ -48,7 +48,7 @@ import java.util.logging.Level;
  * also provides basic editing of the parent MarkupAnnotation's review state:
  * accepted, rejected, cancelled, completed, none. The component can also add
  * replyTo text annotations as well as delete comments.
- * <p/>
+ * <br>
  * The PopupAnnotationComponent is slightly more complex then the other
  * annotations components.  Most annotations let the page pain the annotation
  * but in this case PopupAnnotationComponent paints itself along with controls

@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  * SquareAnnotationHandler tool is responsible for painting representation of
  * a square on the screen during a click and drag mouse event.  The box
  * created by this mouse event will be used to draw square within its bounds.
- * <p/>
+ * <br>
  * Once the mouseReleased event is fired this handler will create new
  * SquareAnnotation and respective AnnotationComponent.  The addition of the
  * Annotation object to the page is handled by the annotation callback.

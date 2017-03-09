@@ -45,7 +45,7 @@ import java.util.logging.Logger;
  * a line on the screen during a click and drag mouse event.  The first point
  * is recorded on mousePressed and the line is drawn from first point the current
  * location of the mouse.
- * <p/>
+ * <br>
  * Once the mouseReleased event is fired this handler will create new
  * LineAnnotation and respective AnnotationComponent.  The addition of the
  * Annotation object to the page is handled by the annotation callback.

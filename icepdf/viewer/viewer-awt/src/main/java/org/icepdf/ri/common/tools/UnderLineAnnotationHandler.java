@@ -24,7 +24,7 @@ import org.icepdf.ri.common.views.DocumentViewModel;
  * UnderLineAnnotationHandler tool extends TextSelectionPageHandler which
  * takes care visually selected text as the mouse is dragged across text on the
  * current page.
- * <p/>
+ * <br>
  * Once the mouseReleased event is fired this handler will create new
  * UnderLineAnnotation and respective AnnotationComponent.  The addition of the
  * Annotation object to the page is handled by the annotation callback. Once

@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * <p>Constructs a one column page view as defined in the PDF specification. A one
  * column page view displays pages continuously in one column.</p>
- * <p/>
+ * <br>
  * <p>Page views are basic containers which use Swing Layout Containers to
  * place pages </p>
  *

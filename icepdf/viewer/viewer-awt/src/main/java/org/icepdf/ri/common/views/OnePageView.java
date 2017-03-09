@@ -25,7 +25,7 @@ import java.awt.*;
 /**
  * <p>Constructs a one  page view as defined in the PDF specification. A one
  * page view displays one page at a time.</p>
- * <p/>
+ * <br>
  * <p>Page views are basic containers which use Swing Layout Containers to
  * place pages </p>
  *

@@ -40,7 +40,10 @@ import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
-import org.icepdf.ri.util.*;
+import org.icepdf.ri.util.BareBonesBrowserLaunch;
+import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.TextExtractionTask;
+import org.icepdf.ri.util.URLAccess;
 
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Media;
@@ -1996,9 +1999,9 @@ public class SwingController
     /**
      * Opens a Document via the specified InputStream. This method is a convenience method provided for
      * backwards compatibility.
-     * <p/>
+     * <br>
      * <p><b>Note:</b> This method is less efficient than
-     * {@see #openDocument(Stringpathname)} or {@see #openDocument(URLlocation)} as it
+     * {@link #openDocument(String)} or {@link #openDocument(URL)}  as it
      * may have to do intermediary data copying, using more memory.
      *
      * @param inputStream InputStream containing a valid PDF document.
@@ -2965,8 +2968,8 @@ public class SwingController
      * Sets the default MediaSizeName and creates an new instance of the
      * the PrintHelp with the new media size.  The media size is also
      * persisted to the PropertiesManager.
-     * <p/>
-     * <b/>Note:</b> this method should only be called after a valid file or
+     * <br>
+     * <b>Note:</b> this method should only be called after a valid file or
      * file stream has been loaded by the controller otherwise a null pointer
      * will result.
      *
@@ -3008,7 +3011,7 @@ public class SwingController
      * If the <code>withDialog</code> parameter is true, show a print dialog,
      * defaulted to print all pages. If the click Ok, then print the page range
      * they have specified, else if they clicked Cancel, then abort the printing
-     * <p/>
+     * <br>
      * If the <code>withDialog</code> parameter is false, then print all pages of
      * the PDF Document without showing and print dialogs
      *

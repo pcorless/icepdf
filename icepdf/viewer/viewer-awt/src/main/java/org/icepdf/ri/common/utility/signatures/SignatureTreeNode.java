@@ -124,13 +124,13 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * corresponding certificate.  The main purpose is to display to the end user if the certificate is valid and
      * can be trusted as well as showing document permissions and if the document has been modified since it was
      * singed.
-     * <p/>
+     * <br>
      * - Singed by "signer name"
      * |
-     * - Signature is <valid|invalid>
+     * - Signature is &lt;valid|invalid&gt;
      * |
-     * - This version of the document has <not> been altered
-     * - SignatureSigner's identity is <valid|invalid>
+     * - This version of the document has &lt;not&gt; been altered
+     * - SignatureSigner's identity is &lt;valid|invalid&gt;
      * - Signature includes an embedded timestamp | Signing is from the clock of the signer's computer.
      * - Permissions
      * |
@@ -142,8 +142,8 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * - Reason:
      * - Location:
      * - Certificate Details (clickable, loads certificate dialog)
-     * - Last Checked: <verification last run time>
-     * - Field Name: <field name> on page X (clickable, takes to page and applies focus).
+     * - Last Checked: &lt;verification last run time&gt;
+     * - Field Name: &lt;field name&gt; on page X (clickable, takes to page and applies focus).
      *
      */
     public synchronized void refreshSignerNode() {

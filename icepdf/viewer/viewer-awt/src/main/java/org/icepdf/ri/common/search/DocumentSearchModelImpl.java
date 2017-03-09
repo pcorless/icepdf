@@ -30,7 +30,7 @@ import java.util.Set;
  * data in memory at once.  ICEpdf uses a dispose/initialization on Page data
  * as memory is needed.  When this happens the selected text data will be lost
  * and we have to research the page in question the next time it is viewed.
- * <p/>
+ * <br>
  * This model can be used in two ways; the first is to store search terms and
  * the second is to keep a record of page indexes that have search results.  The
  * later uses weak references to make sure we don't leak any memory.  If the
@@ -135,7 +135,7 @@ public class DocumentSearchModelImpl {
      * is null or not equal then we have to do the search again to get the
      * highlight state back.  Pages searches in general are extremely fast and
      * performs better then trying to keep everything in memory.
-     * <p/>
+     * <br>
      *
      * @param pageIndex page index to look at PageText results
      * @param pageText  current Page objects PageText object we want to check

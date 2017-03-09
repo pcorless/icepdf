@@ -30,15 +30,15 @@ import java.util.logging.Level;
 
 /**
  * Handles Paint and mouse/keyboard logic around text selection and search
- * highlighting.  there is on text handler isntance of each pageComponent
- * used to dispaly the document.
- * <p/>
+ * highlighting.  there is on text handler instance of each pageComponent
+ * used to display the document.
+ * <br>
  * The highlight colour by default is #FFF600 but can be set using color or
  * hex values names using the system property "org.icepdf.core.views.page.text.highlightColor"
- * <p/>
+ * <br>
  * The highlight colour by default is #FFF600 but can be set using color or
  * hex values names using the system property "org.icepdf.core.views.page.text.selectionColor"
- * <p/>
+ * <br>
  *
  * @since 4.0
  */
@@ -94,10 +94,10 @@ public class TextSelectionPageHandler extends TextSelection
      * delivered to the component where the drag originated until the
      * mouse button is released (regardless of whether the mouse position
      * is within the bounds of the component).
-     * <p/>
-     * Due to platform-dependent Drag&Drop implementations,
+     * <br>
+     * Due to platform-dependent Drag&amp;Drop implementations,
      * <code>MOUSE_DRAGGED</code> events may not be delivered during a native
-     * Drag&Drop operation.
+     * Drag&amp;Drop operation.
      */
     public void mouseDragged(MouseEvent e) {
         Point point = e.getPoint();

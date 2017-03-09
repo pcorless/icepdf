@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * <p>The PageViewDecorator class adds a page border and shadow to all of the page
  * views defined in the corg.icepdf.core.views.swing package.  This class can
  * easily be modified for extended for custom page decorations.</p>
- * <p/>
+ * <br>
  * <p>By default the this class paints with the following colors:</p>
  * <ul>
  * <li>paper color - default color is white, can be changed using the system

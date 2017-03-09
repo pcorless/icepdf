@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * TextAnnotation is placed at the point of the page where the click took place.
  * The default icon state is set to comment and the respective PopupAnnotation
  * is also created and shown.
- * <p/>
+ * <br>
  * The addition of the
  * Annotation object to the page is handled by the annotation callback.
  *

@@ -20,7 +20,7 @@ import java.io.File;
 /**
  * Data model for the view, which maintains state on how a Document is being
  * presented to the user.
- * <p/>
+ * <br>
  * The default value of isShrinkToPrintableArea is true.
  *
  * @author Mark Collette

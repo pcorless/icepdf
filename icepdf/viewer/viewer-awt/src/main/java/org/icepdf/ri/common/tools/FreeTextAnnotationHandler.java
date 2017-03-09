@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * a FreeTextAnnotationHandler on the screen during a click and drag mouse event.
  * The box created by this mouse event will be used be used as the bounding
  * box of the annotation that will be created.
- * <p/>
+ * <br>
  * Once the mouseReleased event is fired this handler will create new
  * FreeTextAnnotationHandler and respective AnnotationComponent.  The addition
  * of the Annotation object to the page is handled by the annotation callback.

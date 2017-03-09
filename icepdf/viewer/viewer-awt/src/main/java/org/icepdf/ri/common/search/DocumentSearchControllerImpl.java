@@ -33,11 +33,11 @@ import java.util.logging.Logger;
  * class takes care of many of the performance issues of doing searches on
  * larges documents and is also used by PageViewComponentImpl to highlight
  * search results.
- * <p/>
+ * <br>
  * This implementation uses simple search algorithm that will work well for most
  * users. This class can be extended and the method {@link #searchHighlightPage(int)}
  * can be overridden for custom search implementations.
- * <p/>
+ * <br>
  * The DocumentSearchControllerImpl can be constructed to be used with the
  * Viewer RI source code via the constructor that takes a SwingController as
  * a parameter.  The second variation is ended for a headless environment where
@@ -87,7 +87,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * sure that a pages text is highlighted even after a dispose/init cycle.
      * If the text state is no longer present then the search should be executed
      * again.
-     * <p/>
+     * <br>
      * This method clears the search results for the page before it searches. If
      * you wish to have cumulative search results then searches terms should
      * be added with {@link #addSearchTerm(String, boolean, boolean)} and the
@@ -114,7 +114,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * Searches the page index given the search terms that have been added
      * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
      * hits where detected then the Page's PageText is added to the cache.
-     * <p/>
+     * <br>
      * This method represent the core search algorithm for this
      * DocumentSearchController implementation.  This method can be over riden
      * if a different search algorithm or functionality is needed.
@@ -235,12 +235,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * Searches the page index given the search terms that have been added
      * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
      * hits where detected then the Page's PageText is added to the cache.
-     * <p/>
+     * <br>
      * This class differences from {@link #searchHighlightPage(int)} in that
      * is returns a list of lineText fragments for each hit but the LinText
      * is padded by pre and post words that surround the hit in the page
      * context.
-     * <p/>
+     * <br>
      * This method represent the core search algorithm for this
      * DocumentSearchController implementation.  This method can be over riden
      * if a different search algorithm or functionality is needed.
@@ -414,7 +414,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * Add the search term to the list of search terms.  The term is split
      * into words based on white space and punctuation. No checks are done
      * for duplication.
-     * <p/>
+     * <br>
      * A new search needs to be executed for this change to take place.
      *
      * @param term          single word or phrase to search for.

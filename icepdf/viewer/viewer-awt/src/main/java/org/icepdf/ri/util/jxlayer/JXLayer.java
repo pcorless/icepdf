@@ -55,19 +55,19 @@ import java.util.Iterator;
  * with which you can implement various advanced painting effects
  * as well as receive notification of all {@code MouseEvent}s,
  * {@code KeyEvent}s and {@code FocusEvent}s which generated within its borders.
- * <p/>
+ * <br>
  * {@code JXLayer} delegates its painting and input events handling
  * to its {@link LayerUI} object which performs the actual decoration.
- * <p/>
+ * <br>
  * The custom painting and events notification automatically work
  * for {@code JXLayer} itself and all its subcomponents.
  * This powerful combination makes it possible to enrich existing components
  * with new advanced functionality such as temporary locking of a hierarchy,
  * data tips for compound components, enhanced mouse scrolling etc...
- * <p/>
+ * <br>
  * {@code JXLayer} is a great solution if you just need to do custom painting
  * over compound component or catch input events of its subcomponents.
- * <p/>
+ * <br>
  * <pre>
  *         // create a component to be decorated with the layer
  *        JPanel panel = new JPanel();
@@ -98,7 +98,7 @@ import java.util.Iterator;
  *        // work with the layer as with any other Swing component
  *        frame.add(layer);
  * </pre>
- * <p/>
+ * <br>
  * <b>Note:</b> When a {@code LayerUI} instance is disabled or not set,
  * its {@code JXLayer}s temporary lose all their decorations.
  * <b>Note:</b> {@code JXLayer} is very friendly to your application,
@@ -106,7 +106,7 @@ import java.util.Iterator;
  * like custom {@code RepaintManager} or {@code AWTEventListener}.
  * It neither change the opaque state of its subcomponents
  * nor use the glassPane of its parent frame.
- * <p/>
+ * <br>
  * {@code JXLayer} can be used under restricted environment
  * (e.g. unsigned applets)
  *
@@ -178,7 +178,7 @@ public final class JXLayer<V extends Component> extends JComponent
 
     /**
      * Returns the {@code JXLayer}'s view component or {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @return the {@code JXLayer}'s view component
      * or {@code null} if none exists
@@ -190,7 +190,7 @@ public final class JXLayer<V extends Component> extends JComponent
 
     /**
      * Sets the {@code JXLayer}'s view component, which can be {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @param view the view component for this {@code JXLayer}
      * @see #getView()
@@ -231,7 +231,7 @@ public final class JXLayer<V extends Component> extends JComponent
 
     /**
      * Returns the {@code JXLayer}'s glassPane component or {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @return the {@code JXLayer}'s glassPane component
      * or {@code null} if none exists
@@ -243,7 +243,7 @@ public final class JXLayer<V extends Component> extends JComponent
 
     /**
      * Sets the {@code JXLayer}'s glassPane component, which can be {@code null}.
-     * <br/>This is a bound property.
+     * <br>This is a bound property.
      *
      * @param glassPane the glassPane component of this {@code JXLayer}
      * @see #getGlassPane()
@@ -367,11 +367,11 @@ public final class JXLayer<V extends Component> extends JComponent
      * <li>AWTEvent.HIERARCHY_EVENT_MASK</li>
      * <li>AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK</li>
      * </ul>
-     * <p/>
+     * <br>
      * If {@code LayerUI} is installed,
      * {@link LayerUI#eventDispatched(AWTEvent, JXLayer)} method
      * will only receive events that match the event mask.
-     * <p/>
+     * <br>
      * Here is an example how to correclty use this method
      * in the {@code LayerUI} implementations:
      * <pre>
@@ -389,7 +389,7 @@ public final class JXLayer<V extends Component> extends JComponent
      *       l.setLayerEventMask(0);
      *    }
      * </pre>
-     * <p/>
+     * <br>
      * By default {@code JXLayer} receives no events.
      *
      * @param layerEventMask the bitmask of event types to receive
@@ -415,10 +415,10 @@ public final class JXLayer<V extends Component> extends JComponent
     /**
      * Returns the bitmap of event mask to receive by this {@code JXLayer}
      * and its {@code LayerUI}.
-     * <p/>
+     * <br>
      * It means that {@link LayerUI#eventDispatched(AWTEvent, JXLayer)} method
      * will only receive events that match the event mask.
-     * <p/>
+     * <br>
      * By default {@code JXLayer} receives no events.
      *
      * @return the bitmask of event types to receive for this {@code JXLayer}
@@ -439,7 +439,7 @@ public final class JXLayer<V extends Component> extends JComponent
 
     /**
      * Returns the preferred size of the viewport for a view component.
-     * <p/>
+     * <br>
      * If the ui delegate of this layer is not null, this method delegates its
      * implementation to the {@code LayerUI.getPreferredScrollableViewportSize(JXLayer)}
      *
@@ -458,7 +458,7 @@ public final class JXLayer<V extends Component> extends JComponent
      * Components that display logical rows or columns should compute
      * the scroll increment that will completely expose one block
      * of rows or columns, depending on the value of orientation.
-     * <p/>
+     * <br>
      * If the ui delegate of this layer is not null, this method delegates its
      * implementation to the {@code LayerUI.getScrollableBlockIncrement(JXLayer, Rectangle, int, int)}
      *
@@ -480,7 +480,7 @@ public final class JXLayer<V extends Component> extends JComponent
      * Returns false to indicate that the height of the viewport does not
      * determine the height of the layer, unless the preferred height
      * of the layer is smaller than the viewports height.
-     * <p/>
+     * <br>
      * If the ui delegate of this layer is not null, this method delegates its
      * implementation to the {@code LayerUI.getScrollableTracksViewportHeight(JXLayer)}
      *
@@ -502,7 +502,7 @@ public final class JXLayer<V extends Component> extends JComponent
      * Returns false to indicate that the width of the viewport does not
      * determine the width of the layer, unless the preferred width
      * of the layer is smaller than the viewports width.
-     * <p/>
+     * <br>
      * If the ui delegate of this layer is not null, this method delegates its
      * implementation to the {@code LayerUI.getScrollableTracksViewportWidth(JXLayer)}
      *
@@ -526,10 +526,10 @@ public final class JXLayer<V extends Component> extends JComponent
      * or column, depending on the value of orientation.  Ideally,
      * components should handle a partially exposed row or column by
      * returning the distance required to completely expose the item.
-     * <p/>
+     * <br>
      * Scrolling containers, like JScrollPane, will use this method
      * each time the user requests a unit scroll.
-     * <p/>
+     * <br>
      * If the ui delegate of this layer is not null, this method delegates its
      * implementation to the {@code LayerUI.getScrollableUnitIncrement(JXLayer, Rectangle, int, int)}
      *

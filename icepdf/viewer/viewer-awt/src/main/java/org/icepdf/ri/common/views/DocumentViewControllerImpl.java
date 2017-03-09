@@ -1250,10 +1250,11 @@ public class DocumentViewControllerImpl
 
     /**
      * Fires property change events for Page view UI changes such as:
+     * <ul>
      * <li>focus gained/lost</li>
      * <li>annotation state change such as move or resize</li>
-     * <li>new annotation crreated, currently only for new link annotations</li>
-     * <li></li>
+     * <li>new annotation created, currently only for new link annotations</li>
+     * </ul>
      *
      * @param event    property being changes
      * @param oldValue old value, null if no old value

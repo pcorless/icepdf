@@ -27,7 +27,7 @@ import java.awt.event.MouseEvent;
  * <p>Constructs a two column page view as defined in the PDF specification.
  * A two column page view displays pages in two columns with odd numbered pages
  * on the left.</p>
- * <p/>
+ * <br>
  * <p>Page views are basic containers which use Swing Layout Containers to
  * place pages </p>
  *

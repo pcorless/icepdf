@@ -25,7 +25,7 @@ import java.util.ArrayList;
  * <p>Default Swing implementation of the AbstractDocumentViewModel class.  The
  * constructor for this class constructs the needed PageViewComponentImpl objects
  * and associates a reference to the parent JScrollPane.</p>
- * <p/>
+ * <br>
  * <p>Swing specific setup is handle by this class.</p>
  *
  * @since 2.5

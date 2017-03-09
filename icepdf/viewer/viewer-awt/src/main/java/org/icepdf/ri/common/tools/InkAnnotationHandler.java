@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * a ink on the screen as the mouse is dragged around the page.  The points
  * that make up the mouse path are then used to create the InkAnnotation and
  * respective annotation component.
- * <p/>
+ * <br>
  * The addition of the Annotation object to the page is handled by the
  * annotation callback.
  *

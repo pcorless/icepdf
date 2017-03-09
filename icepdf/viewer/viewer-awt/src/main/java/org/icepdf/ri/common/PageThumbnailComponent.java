@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * and is displayed as is.  If no embedded thumbnail is found the page is
  * initialized and page thumbnail is captured and cached.  The size of this
  * thumbnail can be configure with the system property:
- * <p/>
+ * <br>
  * org.icepdf.vi.views.buffersize.vertical
  */
 @SuppressWarnings("serial")

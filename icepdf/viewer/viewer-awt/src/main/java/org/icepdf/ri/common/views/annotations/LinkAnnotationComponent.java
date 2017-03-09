@@ -30,7 +30,7 @@ import java.awt.geom.Rectangle2D;
  * also provides basic editing functionality such as resizing, moving and change
  * the border color and style.  The rollover effect can also be set to one
  * of the named states defined in the LinkAnnotation object. .
- * <p/>
+ * <br>
  * The Viewer RI implementation contains a LinkAnnotationPanel class which
  * can edit the various properties of this component.
  *

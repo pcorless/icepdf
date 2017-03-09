@@ -22,7 +22,7 @@ import java.net.URL;
  * package com.icesoft.pdf.ri.images.
  * Used as an accessor to the images. Just call:</p>
  * <ul>
- * Images.get("<filename>.gif")
+ * <li>Images.get("&lt;filename&gt;.gif")</li>
  * </ul>
  *
  * @author Mark Collette

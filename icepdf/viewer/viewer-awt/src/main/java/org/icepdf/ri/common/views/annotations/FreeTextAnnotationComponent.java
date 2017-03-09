@@ -49,10 +49,10 @@ import java.util.logging.Logger;
  * The FreeTextAnnotationComponent encapsulates a FreeTextAnnotation objects.  It
  * also provides basic editing functionality such as resizing, moving and change
  * the border color and style as well as the fill color.
- * <p/>
+ * <br>
  * The Viewer RI implementation contains a FreeTextAnnotationPanel class which
  * can edit the various properties of this component.
- * <p/>
+ * <br>
  * The FreeTextAnnotationComponent is slightly more complex then the other
  * annotations components.  Most annotations let the page pain the annotation
  * but in this cse FreeTextAnnotationComponent paints itself by creating a

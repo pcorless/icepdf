@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 /**
  * <p>Launches the Viewer Application.  The following parameters can be used
  * to optionally load a PDF document at startup.</p>
- * <table border="1">
+ * <table border="1" summary="">
  * <tr>
  * <td><b>Option</b></td>
  * <td><b>Description</b></td>
@@ -39,13 +39,13 @@ import java.util.logging.Logger;
  * <tr>
  * <td>-loadfile <i>filename</i></td>
  * <td>Starts the ICEpdf Viewer and displays the specified local PDF file.
- * Use the following syntax: <br />
+ * Use the following syntax: <br>
  * -loadfile c:/examplepath/file.pdf</td>
  * </tr>
  * <tr>
  * <td>-loadfile <i>filename</i></td>
  * <td>Starts the ICEpdf Viewer and displays the PDF file at the specified
- * URL. Use the following syntax: <br />
+ * URL. Use the following syntax: <br>
  * -loadurl http://www.examplesite.com/file.pdf</td>
  * </tr>
  * </table>
