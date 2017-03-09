@@ -10,6 +10,10 @@ allprojects {
     repositories {
         mavenCentral()
     }
+
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
 }
 
 subprojects{
@@ -50,7 +54,7 @@ distributions {
                 from 'licenses'
             }
             // maven auto generated pom files.
-            into ('maven2') {
+ /*           into ('maven2') {
                 from 'core/core-awt/build/publications/coreJar/pom-default.xml'
                 rename { String fileName ->
                     fileName.replace("pom-default.xml", "icepdf-core.xml")
@@ -65,7 +69,7 @@ distributions {
             // examples
             into ('examples') {
                 from 'examples'
-            }
+            }*/
             // readme.
             from 'readme.html'
             filter(org.apache.tools.ant.filters.ReplaceTokens,

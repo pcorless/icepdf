@@ -16,7 +16,7 @@ publishing {
             groupId 'org.icepdf.os'
             artifactId 'icepdf-viewer'
             version "${VERSION + '-' + RELEASE_TYPE}"
-            artifact sourcesJar
+
             pom.withXml {
                 asNode().appendNode('description', 'ICEpdf core rendering library.')
                 asNode().appendNode('url', 'http://www.icepdf.org')
@@ -33,6 +33,8 @@ publishing {
                         .appendNode('email', 'product.sales@icesoft.com')
             }
             from components.java
+            artifact sourcesJar
+            artifact javadocJar
         }
     }
 }
@@ -41,7 +43,6 @@ jar {
     baseName 'icepdf'
     appendix 'viewer'
     version "${VERSION}"
-    classifier "${RELEASE_TYPE}"
 
     manifest {
         attributes("Main-Class": 'org.icepdf.ri.viewer.Main')
@@ -67,8 +68,14 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
+task javadocJar(type: Jar, dependsOn: 'javadoc') {
+    from javadoc
+    classifier = 'javadoc'
+}
+
 artifacts {
     archives sourcesJar
+    archives javadocJar
 }
 
 dependencies {

@@ -12,7 +12,6 @@ publishing {
             groupId 'org.icepdf.os'
             artifactId 'icepdf-core'
             version "${VERSION + '-' + RELEASE_TYPE}"
-            artifact sourcesJar
             pom.withXml {
                 asNode().appendNode('description', 'ICEpdf core rendering library.')
                 asNode().appendNode('url', 'http://www.icepdf.org')
@@ -35,15 +34,25 @@ publishing {
                 }
             }
             from components.java
+            artifact sourcesJar
+            artifact javadocJar
         }
     }
 }
+
+//publishing {
+//    repositories {
+//        maven {
+//            // change to point to your repo, e.g. http://my.org/repo
+//            url "$buildDir/repo"
+//        }
+//    }
+//}
 
 jar() {
     baseName "${baseJarName}"
     appendix "${baseAppendixName}"
     version "${VERSION}"
-    classifier "${RELEASE_TYPE}"
     manifest {
         attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
         attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
@@ -67,8 +76,14 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
+task javadocJar(type: Jar, dependsOn: 'javadoc') {
+    from javadoc
+    classifier = 'javadoc'
+}
+
 artifacts {
     archives sourcesJar
+    archives javadocJar
 }
 
 compileJava {

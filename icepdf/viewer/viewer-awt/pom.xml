@@ -7,11 +7,37 @@
         <artifactId>common-viewer</artifactId>
         <version>${parent.version}</version>
     </parent>
-    <artifactId>viewer</artifactId>
+    <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
     <name>ICEpdf OS :: Viewer : Swing/AWT Viewer RI</name>
     <description>
         ICEpdf Java Swing/AWT reference implementation.
     </description>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>ICEsoft Technologies Canada Corp.</name>
+            <email>product.sales@icesoft.com</email>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>http://jira.icesoft.org/browse/PDF/</url>
+    </issueManagement>
+
+    <scm>
+        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/</connection>
+        <url>http://sventon.icesoft.org/svn/repos/repo/list/icepdf/</url>
+        <tag>trunk</tag>
+    </scm>
 
 </project>
