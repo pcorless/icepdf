@@ -31,7 +31,7 @@ import java.util.Stack;
 public interface ContentParser {
 
     /**
-     * Gets the shapes parsed by the last run of {@see parse}.
+     * Gets the shapes parsed by the last run of {@link #parse(byte[][], Page)}.
      *
      * @return Shapes associated with the content parser.
      */

@@ -26,18 +26,18 @@ import java.util.HashMap;
  * the author of a document (the person applying the first signature). A document can contain only one signature field
  * that contains a DocMDP transform method; it shall be the first signed field in the document. It enables the author
  * to specify what changes shall be permitted to be made the document and what changes invalidate the author's signature.
- * <p/>
- * NOTE <br />
+ * <br>
+ * NOTE <br>
  * As discussed earlier, MDP stands for modification detection and prevention. Certification signatures that use the
  * DocMDP transform method enable detection of disallowed changes specified by the author. In addition, disallowed
  * changes can also be prevented when the signature dictionary is referred to by the DocMDP entry in the permissions
  * dictionary (see 12.8.4, Permissions).
- * <p/>
+ * <br>
  * A certification signature should have a legal attestation dictionary (see 12.8.5, Legal Content Attestations) that
  * specifies all content that might result in unexpected rendering of the document contents, along with the author's
  * attestation to such content. This dictionary may be used to establish an author's intent if the integrity of the
  * document is questioned.
- * <p/>
+ * <br>
  * The P entry in the DocMDP transform parameters dictionary (see Table 254) shall indicate the author's specification
  * of which changes to the document will invalidate the signature. (These changes to the document shall also be
  * prevented if the signature dictionary is referred from the DocMDP entry in the permissions dictionary.) A value of 1
@@ -85,7 +85,7 @@ public class DocMDPTransferParam extends Dictionary implements TransformParams {
 
     /**
      * Gets the DocMDP transform parameters dictionary version. The only valid value shall be 1.2.
-     * NOTE<br />
+     * NOTE<br>
      * this value is a name object, not a number.
      *
      * @return always returns 1.2 as a name.

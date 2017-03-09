@@ -33,7 +33,7 @@ import java.util.HashMap;
  * For fields that can have no value (such as pushButtons), the action has no
  * effect. Table 238 shows the action dictionary entries specific to this type
  * of action.
- * <p/>
+ * <br>
  * The value of the action dictionary’s Flags entry is a non-negative containing
  *
  * flags specifying various characteristics of the action. Bit positions within

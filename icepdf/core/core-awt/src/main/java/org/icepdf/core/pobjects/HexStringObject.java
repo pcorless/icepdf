@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 /**
  * <p>This class represents a PDF Hexadecimal String Object.  Hexadecimal String
  * objects are written as a sequence of literal characters enclosed in
- * angled brackets <>.</p>
+ * angled brackets &lt;&gt;.</p>
  *
  * @since 2.0
  */

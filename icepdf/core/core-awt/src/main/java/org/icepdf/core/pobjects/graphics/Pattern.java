@@ -30,7 +30,6 @@ import java.awt.geom.Rectangle2D;
  * pattern cell) that is replicated at fixed horizontal and vertical
  * intervals to fill the area to be painted. The graphics objects to
  * use for tiling are described by a content stream. (PDF 1.2)</li>
- * <p/>
  * <li><p><i>Shading patterns</i> define a gradient fill that produces a smooth
  * transition between colors across the area. The color to use is
  * specified as a function of position using any of a variety of

@@ -27,11 +27,11 @@ import java.util.HashMap;
  * <p>This class represents a PDF object which has a subtype value equal to "Font".
  * The class does the necessary encoding and Cmap manipulation to allow the proper
  * display of text that uses this font object.</p>
- * <p/>
+ * <br>
  * <p>This class is generally only used by the ContentParser for laying out
  * text for display and for text extraction.  There are two categories of PDF fonts:
  * Simple and Composite.<p>
- * <p/>
+ * <br>
  * <h3>Simple Fonts</h3>
  * <p>There are several types of simple font; all of which have the following
  * properties:</p>
@@ -42,18 +42,16 @@ import java.util.HashMap;
  * the font's encoding. Each font program has a built-in encoding. Under some
  * circumstances, the encoding can be altered by means described in Section
  * 5.5.5, "Character Encoding."</li>
- * <p/>
  * <li>Each glyph has a single set of metrics, including a horizontal displacement
  * or width, as described in Section 5.1.3, "Glyph Positioning and Metrics."
  * That is, simple fonts support only horizontal writing mode.</li>
- * <p/>
  * <li>Except for Type 3 fonts and certain standard Type 1 fonts, every font
  * dictionary contains a subsidiary dictionary, the font descriptor,
  * containing fontwide metrics and other attributes of the font; see Section
  * 5.7, "Font Descriptors." Among those attributes is an optional font file
  * stream containing the font program itself.</li>
  * </ul>
- * <p/>
+ * <br>
  * <h3>Composite Fonts</h3>
  * <p>A composite font, also called Type0 font, is one whose glyphs are obtained
  * from a font like object called a CIDFont.  A composite font is represented by
@@ -285,6 +283,7 @@ public abstract class Font extends Dictionary {
      * Gets the base name of the core 14 fonts, null if it does not match
      *
      * @param name name of font to search for canonical name
+     * @return core 14 font name
      */
     protected String getCanonicalName(String name) {
         for (String[] aTYPE1_FONT_NAME : TYPE1_FONT_NAME) {

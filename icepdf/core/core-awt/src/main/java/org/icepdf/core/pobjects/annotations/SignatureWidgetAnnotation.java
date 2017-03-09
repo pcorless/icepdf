@@ -18,8 +18,8 @@ import java.util.logging.Logger;
  * such as a handwritten signature, fingerprint, or retinal scan. The specific form of authentication used shall be
  * implemented by a special software module called a signature handler. Signature handlers shall be identified in
  * accordance with the rules defined in Annex E.
- * <br />
- * NOTE 2<br />
+ * <br>
+ * NOTE 2<br>
  * The entries in the signature dictionary can be conceptualized as being in different dictionaries; they are in one
  * dictionary for historical and cryptographic reasons. The categories are signature properties (R, M, Name, Reason,
  * Location, Prop_Build, Prop_AuthTime, and Prop_AuthType); key information (Cert and portions of Contents when the

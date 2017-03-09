@@ -79,7 +79,7 @@ public class CrossReference {
     /**
      * Starts the parsing of an xRef table entries as found when using the
      * Parser to Parse out an object via Parser.getObject().
-     * <p/>
+     * <br>
      * All entries are taken into consideration except for ones that are marked
      * free.
      *

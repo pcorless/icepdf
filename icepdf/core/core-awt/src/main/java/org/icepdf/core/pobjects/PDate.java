@@ -25,7 +25,7 @@ import java.util.*;
  * to parse the date format into its component parts.  If a date cannot
  * be parsed, a non-standard flag is set to true.  In this instance, any
  * of the data accessor methods will return the unparsed string.</p>
- * <p/>
+ * <br>
  * <p>PDF defines a standard date format, which closely follows that of the
  * international standard ASN.1 (Abstract Syntax Notation One), defined in
  * ISO/IEC 8824. A date is a string of the form (D:YYYYMMDDHHmmSSOHH'mm')
@@ -43,7 +43,7 @@ import java.util.*;
  * (00-23)mm followed by ' is the absolute value of the offset from UT
  * in minutes (00-59)</li>
  * </ul>
- * <p/>
+ * <br>
  * <p>The apostrophe character (') after HH and mm is part of the syntax. All
  * fields after the year are optional. (The prefix D:, although also optional,
  * is strongly recommended.) The default values for MM and DD are both 01; all
@@ -130,7 +130,7 @@ public class PDate {
 
     /**
      * Gets the year value of the date.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -142,7 +142,7 @@ public class PDate {
 
     /**
      * Gets the month value of the date.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -154,7 +154,7 @@ public class PDate {
 
     /**
      * Gets the day value of the date.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -166,7 +166,7 @@ public class PDate {
 
     /**
      * Gets the hour value of the date.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -178,7 +178,7 @@ public class PDate {
 
     /**
      * Gets the minute value of the date.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -190,7 +190,7 @@ public class PDate {
 
     /**
      * Gets the second value of the date.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -202,7 +202,7 @@ public class PDate {
 
     /**
      * Gets the time zone offset hour from GMT.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -214,7 +214,7 @@ public class PDate {
 
     /**
      * Gets the time zone offset minute from GMT.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *
@@ -227,7 +227,7 @@ public class PDate {
     /**
      * Gets the time zone offset fromm GMT.  If the offset is negative
      * true is returned, false otherwise.
-     * <br /><b>Note</b><br />
+     * <br><b>Note</b><br>
      * If the original date value cannot be parsed, this method returns
      * the unparsed string.
      *

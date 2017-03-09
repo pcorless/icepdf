@@ -29,10 +29,10 @@ import java.util.List;
  * BorderStyle state of a PDF annotation.  Some values of this class are
  * mutable and do not change the value of the underlying PDF in any way.  They
  * are only keep in memory for the duration that the PDF document is open.
- * <p/>
+ * <br>
  * <h2>Refer to: 8.4.3 Border Styles</h2>
- * <p/>
- * <table border=1>
+ * <br>
+ * <table border=1 summary="">
  * <tr>
  * <td>Key</td>
  * <td>Type</td>
@@ -54,7 +54,7 @@ import java.util.List;
  * <td>S</td>
  * <td>name</td>
  * <td><i>(Optional)</i> The border style:
- * <table>
+ * </tr>
  * <tr>
  * <td>S</td>
  * <td>(Solid) A solid rectangle surrounding the annotation.</td>
@@ -77,8 +77,7 @@ import java.util.List;
  * <tr>
  * <td>U</td>
  * <td>(Underline) A single line along the bottom of the annotation rectangle.</td>
- * </tr>
- * </table>Default value: S.</td>
+ * <td>Default value: S.</td>
  * </tr>
  * <tr>
  * <td>D</td>

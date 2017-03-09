@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * have change.  When a file is written to disk this class is used to find
  * the object that should be written in the body section of the file as part of
  * an incremental update.
- * <p/>
+ * <br>
  * Once this object is created should be added to the library so that is
  * accessible by any PObject.
  *
@@ -133,7 +133,7 @@ public class StateManager {
     }
 
     /**
-     * @return An Iterator<PObject> for all the changes objects, sorted
+     * @return An Iterator&lt;PObject&gt; for all the changes objects, sorted
      */
     public Iterator<PObject> iteratorSortedByObjectNumber() {
         Collection<PObject> coll = changes.values();

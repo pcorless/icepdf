@@ -22,7 +22,7 @@ import java.awt.*;
  * storing Java2D rendering hints settings.  The
  * <code>GraphicsRenderingHints</code> object is used to apply different rendering
  * hints for printing and screen presentation when rending a Page's content.</p>
- * <p/>
+ * <br>
  * <p>The "screen" and "print" configuration are configurable with system properties.
  * See the <i>ICEpdf Developer's Guide</i>  for more information about configuring
  * these properites.</p>

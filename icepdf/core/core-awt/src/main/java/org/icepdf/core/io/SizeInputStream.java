@@ -22,7 +22,7 @@ import java.io.InputStream;
  * SizeInputStream wraps inputs streams of know lengths so that the available
  * call can return a useful number.
  *
- * @sinece 5.0.3
+ * @since 5.0.3
  */
 public class SizeInputStream extends InputStream {
 

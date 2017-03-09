@@ -55,11 +55,11 @@ public class TextAnnotation extends MarkupAnnotation {
      * Optional) The name of an icon that shall be used in displaying the annotation.
      * Conforming readers shall provide predefined icon appearances for at least
      * the following standard names:
-     * <p/>
+     * <br>
      * Comment, Key, Note, Help, NewParagraph, Paragraph, Insert
-     * <p/>
+     * <br>
      * Additional names may be supported as well. Default value: Note.
-     * <p/>
+     * <br>
      * The annotation dictionary’s AP entry, if present, shall take precedence
      * over the Name entry; see Table 168 and 12.5.5, "Appearance Streams."
      */
@@ -67,7 +67,7 @@ public class TextAnnotation extends MarkupAnnotation {
     /**
      * (Optional; PDF 1.5) The state to which the original annotation shall be
      * set; see 12.5.6.3, "Annotation States."
-     * <p/>
+     * <br>
      * Default: "Unmarked" if StateModel is "Marked"; "None" if StateModel is "Review".
      */
     public static final Name STATE_KEY = new Name("State");

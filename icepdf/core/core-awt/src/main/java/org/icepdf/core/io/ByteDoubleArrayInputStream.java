@@ -57,7 +57,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * position within the buffer by the <code>mark()</code> method.
      * The current buffer position is set to this point by the
      * <code>reset()</code> method.
-     * <p/>
+     * <br>
      * If no mark has been set, then the value of mark is the offset
      * passed to the constructor (or 0 if the offset was not supplied).
      *
@@ -106,7 +106,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * <code>0</code> to <code>255</code>. If no byte is available
      * because the end of the stream has been reached, the value
      * <code>-1</code> is returned.
-     * <p/>
+     * <br>
      * This <code>read</code> method
      * cannot block.
      *
@@ -143,7 +143,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * by <code>System.arraycopy</code>. The
      * value <code>k</code> is added into <code>pos</code>
      * and <code>k</code> is returned.
-     * <p/>
+     * <br>
      * This <code>read</code> method cannot block.
      *
      * @param b   the buffer into which the data is read.
@@ -267,11 +267,11 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * ByteArrayInputStream objects are marked at position zero by
      * default when constructed.  They may be marked at another
      * position within the buffer by this method.
-     * <p/>
+     * <br>
      * If no mark has been set, then the value of the mark is the
      * offset passed to the constructor (or 0 if the offset was not
      * supplied).
-     * <p/>
+     * <br>
      * <p> Note: The <code>readAheadLimit</code> for this class
      * has no meaning.
      */
@@ -294,7 +294,7 @@ public class ByteDoubleArrayInputStream extends InputStream {
      * Closing a <tt>ByteArrayInputStream</tt> has no effect. The methods in
      * this class can be called after the stream has been closed without
      * generating an <tt>IOException</tt>.
-     * <p/>
+     * <br>
      */
     public void close() throws IOException {
     }

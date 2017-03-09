@@ -40,10 +40,10 @@ public class FontUtil {
      * Utility method which maps know style strings to an AWT font style constants.
      * The style attribute read as follows from the java.awt.font constructor:
      * <ul>
-     * the style constant for the Font The style argument is an integer bitmask
+     * <li>the style constant for the Font The style argument is an integer bitmask
      * that may be PLAIN, or a bitwise union of BOLD and/or ITALIC
      * (for example, ITALIC or BOLD|ITALIC). If the style argument does not
-     * conform to one of the expected integer bitmasks then the style is set to PLAIN.
+     * conform to one of the expected integer bitmasks then the style is set to PLAIN.</li>
      * </ul>
      *
      * @param name base name of font.
@@ -72,7 +72,7 @@ public class FontUtil {
      * Utility method for guessing a font family name from its base name. Font
      * names are usually made up of a familyName followed by a style
      * name.  For example:
-     * <p/>
+     * <br>
      * <ul>
      * <li>Arial,BoldItalic</li>
      * <li>Times-Bold"</li>
@@ -114,7 +114,7 @@ public class FontUtil {
      * a tag followed by a plus sign (+). The tag shall consist of exactly six
      * uppercase letters; the choice of letters is arbitrary, but different
      * subsets in the same PDF file shall have different tags
-     * <p/>
+     * <br>
      * This method will strip the font subset from the font name and return
      * the font name.
      *

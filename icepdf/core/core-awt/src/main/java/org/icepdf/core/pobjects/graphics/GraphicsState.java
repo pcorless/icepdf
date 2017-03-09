@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  * graphics state that holds current graphics control parameters. These
  * parameters define the global framework within which the graphics operators
  * execute.</p>
- * <p/>
+ * <br>
  * <p>The graphics state is initialized at the beginning of each page, using the
  * default values specified in Tables 4.2 and 4.3. Table 4.2 lists those
  * graphics state parameters that are device-independent and are appropriate
@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * details of the rendering (scan conversion) process and are device-dependent;
  * a page description that is intended to be device-independent should not
  * modify these parameters.</p>
- * <p/>
+ * <br>
  * <h2>Graphics State Stack Info</h2>
  * <p>A well-structured PDF document typically contains many graphical elements
  * that are essentially independent of each other and sometimes nested to
@@ -65,9 +65,9 @@ import java.util.logging.Logger;
  * encounters different graphic state manipulators they are added to the stack
  * and then when the page is rendered the stack (actually a vector) is read
  * in a FIFO to generate the drawing commands.</p>
- * <p/>
+ * <br>
  * <h2>Device-independent graphics state parameters - (Table 4.2)</h2>
- * <table border="1" cellpadding="1" cellspacing="1" >
+ * <table border="1" cellpadding="1" cellspacing="1" summary="">
  * <tr>
  * <td><b> Paramater </b></td>
  * <td><b> Type</b></td>
@@ -199,7 +199,7 @@ import java.util.logging.Logger;
  * Initial value: false.</td>
  * </tr>
  * </table>
- * <p/>
+ * <br>
  * <h2>Device-Dependent graphics state parameters - (Table 4.3) </h2>
  * <p><b>Currently Not supported</b></p>
  *

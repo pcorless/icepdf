@@ -19,7 +19,7 @@ package org.icepdf.core.pobjects.security;
  * <p>Standard encryption has permissions associated with it which is defined
  * by a key in the encryption dictionary.  It is up to the viewer application
  * to respect these permissions.</p>
- * <p/>
+ * <br>
  * <p>The value of the P key is an unsigned 32-bit integer containing a set of
  * flags specifying which access permissions should be granted when the document
  * is opened with user access. The below list shows the meanings of these flags.
@@ -28,8 +28,8 @@ package org.icepdf.core.pobjects.security;
  * permission. Which bits are meaningful, and in some cases how they are
  * interpreted, depends on the security handler's revision number (specified in
  * the encryption dictionary's R entry).</p>
- * <p/>
- * <table border="1" cellpadding="1" cellspacing="1" >
+ * <br>
+ * <table border="1" cellpadding="1" cellspacing="1" summary="">
  * <tr>
  * <td><b> Bits</b></td>
  * <td><b> Meaning</b></td>
@@ -40,7 +40,7 @@ package org.icepdf.core.pobjects.security;
  * </tr>
  * <tr>
  * <td valign="top" > 3</td>
- * <td> (Revision 2) Print the document.<br />
+ * <td> (Revision 2) Print the document.<br>
  * (Revision 3) Print the document (possibly not at the highest
  * quality (possibly not at the highest quality level, depending on
  * whether bit 12 is also set).
@@ -98,8 +98,8 @@ package org.icepdf.core.pobjects.security;
  * <td>(Revision 3 only) Reserved; must be 1.</td>
  * </tr>
  * </table>
- * <br />
- * <b>Note:</b><br/>
+ * <br>
+ * <b>Note:</b><br>
  * PDF integer objects in fact are represented internally in signed
  * twos complement form. Since all the reserved high-order flag bits in the
  * encryption dictionary's P value are required to be 1, the value must be

@@ -25,15 +25,15 @@ import java.util.List;
  * in Java.  A PDF rectangle is written as an array of four numbers giving the
  * coordinates of a pair of diagonally opposite corners.  Typically, the
  * array takes the form:</p>
- * <p/>
+ * <br>
  * <ul>
- * [II<sub>x</sub> II<sub>y</sub> UR<sub>x</sub> UR<sub>y</sub>]
+ * <li>[II<sub>x</sub> II<sub>y</sub> UR<sub>x</sub> UR<sub>y</sub>]</li>
  * </ul>
- * <p/>
+ * <br>
  * <p>This specifies the lower-left x, lower-left y, upper-right x, and upper-right y
  * coordinates of the rectangle, in that order.  However, this format is not
  * guaranteed and this class normalizes such rectangles.</p>
- * <p/>
+ * <br>
  * <p>Another very important difference between PRectangles Rectangles is that
  * PRectangles use the Cartesian Coordinate system, where Rectangles use the
  * Java2D coordinates system.  As a result, the user of this class must know the
@@ -117,7 +117,7 @@ public class PRectangle extends Rectangle2D.Float {
      * Returns a new PRectangle object representing the intersection of this
      * PRectangle with the specified PRectangle using the Cartesian coordinate
      * system. If a Java2D coordinate system is used, then the rectangle should
-     * be first converted to that space {@see #toJava2dCoordinates() }.
+     * be first converted to that space {@link #toJava2dCoordinates() }.
      *
      * @param src2 the Rectangle2D to be intersected with this Rectangle2D.
      * @return object representing the intersection of the two PRectangles.

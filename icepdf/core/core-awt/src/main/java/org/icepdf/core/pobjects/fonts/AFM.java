@@ -71,7 +71,7 @@ public class AFM {
      * <p>The value of the <b>Flags</b> entry in a font descriptor is an
      * unsized 32-bit integer containg flags specifying various characteristics
      * of the font.</p>
-     * <table border="1" cellpadding="1">
+     * <table border="1" cellpadding="1" summary="">
      * <tr>
      * <td><b>Bit Position</b></td>
      * <td><b>Name</b></td>

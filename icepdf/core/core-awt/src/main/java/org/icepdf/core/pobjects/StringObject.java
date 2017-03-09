@@ -23,8 +23,8 @@ import org.icepdf.core.pobjects.security.SecurityManager;
  * consists of a series of bytes in the range 0 to 255. A <code>StringObject</code>
  * can be written in two ways:</p>
  * <ul>
- * <li>Literal Strings - {@see LiteralStringObject}  </li>
- * <li>Hexadecimal Strings - {@see HexStringObject}  </li>
+ * <li>Literal Strings - {@link LiteralStringObject}  </li>
+ * <li>Hexadecimal Strings - {@link HexStringObject}  </li>
  * </ul>
  * <p>The methods define in this interface are common to both Literal and
  * Hexadecimal Strings Object.</p>

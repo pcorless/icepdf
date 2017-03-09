@@ -157,7 +157,7 @@ public class DeviceCMYK extends PColorSpace {
 
     /**
      * GNU Ghost Script algorithm or so they say.
-     * <p/>
+     * <br>
      * rgb[0] = colors * (255 - cyan)/255;
      * rgb[1] = colors * (255 - magenta)/255;
      * rgb[2] = colors * (255 - yellow)/255;

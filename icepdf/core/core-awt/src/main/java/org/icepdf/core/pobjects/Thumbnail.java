@@ -27,7 +27,7 @@ import java.util.HashMap;
  * pages in miniature form. A conforming reader may display these images on the
  * screen, allowing the user to navigate to a page by clicking its thumbnail
  * image:
- * <p/>
+ * <br>
  * <b>NOTE</b>Thumbnail images are not required, and may be included for some
  * pages and not for others.
  */

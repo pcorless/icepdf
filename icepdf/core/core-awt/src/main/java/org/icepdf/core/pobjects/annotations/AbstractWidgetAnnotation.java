@@ -268,7 +268,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
      * Encodes the given contents string into a valid postscript hex string.
      *
      * @param content  current content stream to append literal string to.
-     * @param contents string to be encoded into '<...></...>' hex format.
+     * @param contents string to be encoded into '&lt;...&gt;&lt;/...&gt;' hex format.
      * @return original content stream with contents encoded in the hex string format.
      */
     protected StringBuilder encodeHexString(StringBuilder content, String contents) {

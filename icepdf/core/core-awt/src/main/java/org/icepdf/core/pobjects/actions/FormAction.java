@@ -41,7 +41,7 @@ public abstract class FormAction extends Action {
      * an indirect reference to a field dictionary or (PDF 1.3) a text string
      * representing the fully qualified name of a field. Elements of both kinds
      * may be mixed in the same array.
-     * <p/>
+     * <br>
      * If this entry is omitted, the Include/Exclude flag shall be ignored, and all
      * fields in the document’s interactive form shall be submitted except those whose
      * NoExport flag (see Table 221) is set. Fields with no values may also be excluded,

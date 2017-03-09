@@ -12,7 +12,7 @@ import java.awt.image.*;
  * algorithm which generally results in images that are darker then they should
  * be.  The black value can be configured using the system property
  * -Dorg.icepdf.core.cmyk.image.black=255.
- * <p/>
+ * <br>
  * This colour conversion method should only be used if its not desirable to
  * use the more accurate ICC Color Profile for colour conversion.
  *

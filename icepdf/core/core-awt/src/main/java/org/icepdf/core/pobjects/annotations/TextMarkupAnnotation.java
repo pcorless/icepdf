@@ -108,7 +108,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      * specifying the quadrilateral’s four vertices in counterclockwise order
      * (see Figure 64). The text shall be oriented with respect to the edge
      * connecting points (x1, y1) and (x2, y2).
-     * <p/>
+     * <br>
      * The annotation dictionary’s AP entry, if present, shall take precedence
      * over QuadPoints; see Table 168 and 12.5.5, "Appearance Streams."
      */

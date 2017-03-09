@@ -30,7 +30,7 @@ import java.util.List;
  * intermediate nodes and pages are leaves.  A simple example of this tree structure
  * is a single page tree node that references all of the document's page
  * objects directly.</p>
- * <p/>
+ * <br>
  * <p>The page tree is accessible via the document catalog and can be traversed
  * to display a desired page or extracts its content.<p>
  *
@@ -191,7 +191,7 @@ public class PageTree extends Dictionary {
     /**
      * Gets the Resources defined by this PageTree.  The Resources entry can
      * be inherited by the child Page objects.
-     * <p/>
+     * <br>
      * The caller is responsible for disposing of the returned Resources object.
      *
      * @return Resources associates with the PageTree
@@ -362,7 +362,7 @@ public class PageTree extends Dictionary {
     /**
      * Gets a Page from the PDF file, locks it for the user,
      * initializes the Page, and returns it.
-     * <p/>
+     * <br>
      * ICEpdf uses a caching and memory management mechanism
      * to reduce the CPU, I/O, and time to access a Page,
      * which requires a locking and releasing protocol.

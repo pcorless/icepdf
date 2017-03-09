@@ -27,7 +27,7 @@ import java.util.List;
  * more complex visibility policies, content shall not declare itself to belong
  * directly to an optional content group but rather to an optional content
  * membership dictionary.
- * <p/>
+ * <br>
  * Note: currently no support for the visibility expression (VE) array.
  *
  * @since 5.0

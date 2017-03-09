@@ -10,7 +10,7 @@ import java.util.HashMap;
  * be referred to indirectly by means of a name object (PDF 1.1) or a byte
  * string (PDF 1.2). This capability is especially useful when the destination
  * is located in another PDF document.
- * <p/>
+ * <br>
  * In PDF 1.1, the correspondence between name objects and destinations shall be
  * defined by the Dests entry in the document catalogue (see 7.7.2, "Document Catalog").
  * The value of this entry shall be a dictionary in which each key is a destination

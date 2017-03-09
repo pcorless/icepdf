@@ -20,21 +20,14 @@ package org.icepdf.core.events;
  * level vents pertaining to the loading of the PDF page.  The hierarchy
  * and ordering of the events is as follows.  PageImageEvent can happen at any
  * point between the PageLoadingEvent.
- * <p/>
  * <ul>
  * <li>pageLoadingStarted(v event);</li>
- * <ul>
  * <li>pageInitializationStarted(PageProcessingEvent event);</li>
- * <ul>
  * <li>pageImageLoaded(PageImageEvent event)</li>
- * </ul>
  * <li>pageInitializationEnded(PageProcessingEvent event)</li>
  * <li>pagePaintingStarted(PagePaintingEvent event)</li>
- * <ul>
  * <li>pageImageLoaded(PageImageEvent event)</li>
- * </ul>
  * <li>pagePaintingEnded(PagePaintingEvent event)</li>
- * </ul>
  * <li>pageLoadingEnded(PageLoadingEvent event)</li>
  * </ul>
  *

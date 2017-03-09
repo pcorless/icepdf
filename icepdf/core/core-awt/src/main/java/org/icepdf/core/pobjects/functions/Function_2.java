@@ -25,11 +25,11 @@ import java.util.List;
  * <p>This class <code>Function_2</code> represents a generic Type 2, exponentail
  * interpolation function type.  Type 2 functions include a set of parameters that
  * define an exponential interpolation of one input value and n output values:<p>
- * <p/>
+ * <br>
  * <ul>
- * f(x) = y<sub>0</sub>, ..., y<sub>n-1</sub>
+ * <li>f(x) = y<sub>0</sub>, ..., y<sub>n-1</sub></li>
  * </ul>
- * <p/>
+ * <br>
  * <p>Values of <code>Domain</code> must constrain x in such a way that if
  * <code>N</code> is not an integer, all values of x must be non-negative, and if
  * <code>N</code> is negative, no value of x may be zero.  Typically,
@@ -111,8 +111,8 @@ public class Function_2 extends Function {
      * <p>Exponential Interpolation calculation.  Each input value x will return
      * n values, given by:</p>
      * <ul>
-     * y<sub>j</sub> =
-     * CO<sub>j</sub> + x<sup>N</sup> x (C1<sub>j</sub> - C0<sub>j</sub>), for 0 <= j < n
+     * <li>y<sub>j</sub> =
+     * CO<sub>j</sub> + x<sup>N</sup> x (C1<sub>j</sub> - C0<sub>j</sub>), for 0 &lt;= j &lt; n</li>
      * </ul>
      *
      * @param x input values m

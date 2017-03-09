@@ -29,12 +29,12 @@ import java.util.HashMap;
  * human-readable form. In either case, the Contents entry is useful when
  * extracting the document’s contents in support of accessibility to users with
  * disabilities or for other purposes (see 14.9.3, "Alternate Descriptions").
- * <p/>
+ * <br>
  * Many annotation types are defined as markup annotations because they are used
  * primarily to mark up PDF documents (see Table 170). These annotations have
  * text that appears as part of the annotation and may be displayed in other ways
  * by a conforming reader, such as in a Comments pane.
- * <p/>
+ * <br>
  * Markup annotations may be divided into the following groups:
  * <ul>
  * <li>Free text annotations display text directly on the page. The annotation’s
@@ -86,7 +86,7 @@ public abstract class MarkupAnnotation extends Annotation {
      * reference to the annotation that this annotation is "in reply to." Both
      * annotations shall be on the same page of the document. The relationship
      * between the two annotations shall be specified by the RT entry.
-     * <p/>
+     * <br>
      * If this entry is present in an FDF file (see 12.7.7, "Forms Data Format"),
      * its type shall not be a dictionary but a text string containing the
      * contents of the NM entry of the annotation being replied to, to allow for
@@ -111,14 +111,14 @@ public abstract class MarkupAnnotation extends Annotation {
      * Optional; meaningful only if IRT is present; PDF 1.6) A name specifying
      * the relationship (the "reply type") between this annotation and one
      * specified by IRT. Valid values are:
-     * <p/>
+     * <br>
      * R - The annotation shall be considered a reply to the annotation specified
      * by IRT. Conforming readers shall not display replies to an annotation
      * individually but together in the form of threaded comments.
-     * <p/>
+     * <br>
      * Group - The annotation shall be grouped with the annotation specified by
      * IRT; see the discussion following this Table.
-     * <p/>
+     * <br>
      * Default value: R.
      */
     public static final Name RT_KEY = new Name("RT");
@@ -130,7 +130,7 @@ public abstract class MarkupAnnotation extends Annotation {
      * present or its value is the same as the annotation type, the annotation
      * shall have no explicit intent and should behave in a generic manner in a
      * conforming reader.
-     * <p/>
+     * <br>
      * Free text annotations (Table 174), line annotations (Table 175), polygon
      * annotations (Table 178), and (PDF 1.7) polyline annotations (Table 178)
      * have defined intents, whose values are enumerated in the corresponding
@@ -142,9 +142,9 @@ public abstract class MarkupAnnotation extends Annotation {
      * (Optional; PDF 1.7) An external data dictionary specifying data that shall
      * be associated with the annotation. This dictionary contains the following
      * entries:
-     * <p/>
+     * <br>
      * Type - (optional) If present, shall be ExData.
-     * <p/>
+     * <br>
      * Subtype  - (required) a name specifying the type of data that the markup
      * annotation shall be associated with. The only defined value is Markup3D.
      * Table 298 lists the values that correspond to a subtype of Markup3D.

@@ -29,12 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * DeviceN colour spaces shall be defined in a similar way to Separation colour
  * spaces-in fact, a Separationcolour space can be defined as a DeviceN colour
  * space with only one component.
- * <p/>
+ * <br>
  * A DeviceN colour space shall be specified as follows:
  * [/DeviceN names alternateSpace tintTransform]
  * or
  * [/DeviceN names alternateSpace tintTransform attributes]
- * <p/>
+ * <br>
  * It is a four- or five-element array whose first element shall be the colour
  * space family name DeviceN. The remaining elements shall be parameters that a
  * DeviceN colour space requires.

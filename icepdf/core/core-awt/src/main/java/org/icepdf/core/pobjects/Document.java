@@ -50,12 +50,12 @@ import java.util.logging.Logger;
  * contain references to page content and other objects such such as annotations.
  * For more information on the document object hierarchy, see the <i>ICEpdf
  * Developer's Guide</i>.</p>
- * <p/>
+ * <br>
  * <p>The <code>Document</code> class also provides access to methods responsible
  * for rendering PDF document content.  Methods are available to capture page
  * content to a graphics context or extract image and text data on a page-by-page
  * basis.</p>
- * <p/>
+ * <br>
  * <p>If your PDF rendering application will be accessing encrypted documents,
  * it is important to implement the SecurityCallback.  This interface provides
  * methods for getting password data from a user if needed.<p>
@@ -160,7 +160,7 @@ public class Document {
      * Utility method for setting the origin (filepath or URL) of this Document
      *
      * @param o new origin value
-     * @see #getDocumentOrigin()
+     * {@link #getDocumentOrigin}
      */
     private void setDocumentOrigin(String o) {
         origin = o;
@@ -176,7 +176,7 @@ public class Document {
      * Sets the cached file path in the case of opening a file from a URL.
      *
      * @param o new cached file path value
-     * @see #getDocumentCachedFilePath
+     * {@link #getDocumentCachedFilePath}
      */
     private void setDocumentCachedFilePath(String o) {
         cachedFilePath = o;
@@ -713,7 +713,7 @@ public class Document {
      * is corrupted, usually by junk being appended to it, or the ending
      * being truncated, or, in this case, from junk being inserted into the
      * beginning of the file, skewing all the xref object offsets.
-     * <p/>
+     * <br>
      * We're going to look for the "%PDF-1." string that most PDF files start
      * with. If we do find it, then leave the InputStream after the next
      * whitespace, else rewind back to the beginning, in case the file was
@@ -921,7 +921,7 @@ public class Document {
      * @param userRotation Rotation, in degrees, that has been applied to page
      *                     when calculating the dimension.
      * @return page dimension for the specified page number
-     * @see #getPageDimension(int, float, float)
+     * {@link #getPageDimension(int, float, float)}
      */
     public PDimension getPageDimension(int pageNumber, float userRotation) {
         Page page = catalog.getPageTree().getPage(pageNumber);
@@ -939,7 +939,7 @@ public class Document {
      *                     when calculating the dimension.
      * @param userZoom     Any deviation from the page's actual size, by zooming in or out.
      * @return page dimension for the specified page number.
-     * @see #getPageDimension(int, float)
+     * {@link #getPageDimension(int, float)}
      */
     public PDimension getPageDimension(int pageNumber, float userRotation, float userZoom){
         Page page = catalog.getPageTree().getPage(pageNumber);
@@ -957,7 +957,7 @@ public class Document {
      * be different if it was loaded from a URL or an input stream.
      *
      * @return file path or URL
-     * @see #getDocumentLocation
+     * {@link #getDocumentLocation}
      */
     public String getDocumentOrigin() {
         return origin;
@@ -970,7 +970,7 @@ public class Document {
      * the path to where the document content is cached.
      *
      * @return file path
-     * @see #getDocumentOrigin()
+     * {@link #getDocumentOrigin()}
      */
     public String getDocumentLocation() {
         if (cachedFilePath != null)
@@ -1164,7 +1164,7 @@ public class Document {
      * @param pageNumber Page number of page in which text extraction will act on.
      *                   The page number is zero-based.
      * @return page PageText data Structure.
-     * @see #getPageViewText(int).
+     * {@link #getPageViewText(int)}
      */
     public PageText getPageText(int pageNumber) throws InterruptedException {
         PageTree pageTree = catalog.getPageTree();
@@ -1223,7 +1223,7 @@ public class Document {
      * hierarchy.
      *
      * @return document information
-     * @see org.icepdf.core.pobjects.PInfo for more information.
+     * {@link PInfo}
      */
     public PInfo getInfo() {
         if (pTrailer == null)

@@ -46,7 +46,7 @@ public class FileSpecification extends Dictionary {
      * the UF entry for PDF 1.7) A file specification string of the form
      * described in 7.11.2, "File Specification Strings," or (if the file system is URL)
      * a uniform resource locator, as described in 7.11.5, "URL Specifications."
-     * <p/>
+     * <br>
      * The UF entry should be used in addition to the F entry. The UF entry provides
      * cross-platform and cross-language compatibility and the F entry provides
      * backwards compatibility.
@@ -65,7 +65,7 @@ public class FileSpecification extends Dictionary {
     /**
      * A file specification string (see 7.11.2, "File Specification Strings")
      * representing a DOS file name.
-     * <p/>
+     * <br>
      * This entry is obsolescent and should not be used by conforming writers.
      */
     public static final Name DOS_KEY = new Name("DOS");
@@ -73,7 +73,7 @@ public class FileSpecification extends Dictionary {
     /**
      * A file specification string (see 7.11.2, "File Specification
      * Strings") representing a Mac OS file name.
-     * <p/>
+     * <br>
      * This entry is obsolescent and should not be used by conforming writers.
      */
     public static final Name MAC_KEY = new Name("Mac");
@@ -81,7 +81,7 @@ public class FileSpecification extends Dictionary {
     /**
      * A file specification string (see 7.11.2, "File Specification Strings")
      * representing a UNIX file name.
-     * <p/>
+     * <br>
      * This entry is obsolescent and should not be used by conforming writers.
      */
     public static final Name UNIX_KEY = new Name("Unix");
@@ -89,7 +89,7 @@ public class FileSpecification extends Dictionary {
     /**
      * An array of two byte strings constituting a file identifier that should
      * be included in the referenced file.
-     * <p/>
+     * <br>
      * <b>NOTE</b>
      * The use of this entry improves an application's chances of finding the
      * intended file and allows it to warn the user if the file has changed
@@ -115,7 +115,7 @@ public class FileSpecification extends Dictionary {
      * "Embedded File Streams") containing the corresponding file. If this entry
      * is present, the Type entry is required and the file specification dictionary
      * shall be indirectly referenced.
-     * <p/>
+     * <br>
      * The F and UF entries should be used in place of the DOS, Mac, or Unix entries.
      */
     public static final Name EF_KEY = new Name("EF");

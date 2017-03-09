@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * <p>This class represents text which will be rendered to the a graphics context.
  * This class was created to act as a wrapper for painting text using the Phelphs
  * font library as well as painting using java.awt.Font.</p>
- * <p/>
+ * <br>
  * <p>Objects of this type are created by the content parser when "TJ" or "Tj"
  * operands are encountered in a page's content stream.  Each TextSprite object
  * is comprised of a list of CharSprites which can be painted by the Shapes

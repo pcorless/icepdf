@@ -28,7 +28,7 @@ import java.util.List;
  * The value of the SV entry in the field dictionary is a seed value dictionary whose entries (see Table 234) provide
  * constraining information that shall be used at the time the signature is applied. Its Ff entry specifies whether
  * the other entries in the dictionary shall be honoured or whether they are merely recommendations.
- * <p/>
+ * <br>
  * The seed value dictionary may include seed values for private entries belonging to multiple handlers. A given handler
  * shall use only those entries that are pertinent to itself and ignore the others.
  *
@@ -44,7 +44,7 @@ public class SeedValueDictionary extends Dictionary {
      * A set of bit flags specifying the interpretation of specific entries in this dictionary. A value of 1 for the
      * flag indicates that the associated entry is a required constraint. A value of 0 indicates that the associated
      * entry is an optional constraint.
-     * <p/>
+     * <br>
      * Bit positions are 1 (Filter); 2 (SubFilter); 3 (V); 4 (Reasons); 5 (LegalAttestation); 6 (AddRevInfo); and
      * 7 (DigestMethod). Default value: 0.
      */
@@ -87,7 +87,7 @@ public class SeedValueDictionary extends Dictionary {
     /**
      * (Optional; PDF 1.7) An array of names indicating acceptable digest algorithms to use while signing. The value
      * shall be one of SHA1, SHA256, SHA384, SHA512 and RIPEMD160. The default value is implementation-specific.
-     * <p/>
+     * <br>
      * This property is only applicable if the digital credential signing contains RSA public/private keys. If it
      * contains DSA public/ private keys, the digest algorithm is always SHA1 and this attribute shall be ignored.
      */
@@ -97,7 +97,7 @@ public class SeedValueDictionary extends Dictionary {
      * (Optional) The minimum required capability of the signature field seed value dictionary parser. A value of 1
      * specifies that the parser shall be able to recognize all seed value dictionary entries in a PDF 1.5 file.
      * A value of 2 specifies that it shall be able to recognize all seed value dictionary entries specified.
-     * <p/>
+     * <br>
      * The Ff entry indicates whether this shall be treated as a required constraint.
      */
     public static final Name V_KEY = new Name("V");
@@ -111,12 +111,12 @@ public class SeedValueDictionary extends Dictionary {
     /**
      * (Optional) An array of text strings that specifying possible reasons for signing a document. If specified, the
      * reasons supplied in this entry replace those used by conforming products.
-     * <p/>
+     * <br>
      * If the Reasons array is provided and the Ff entry indicates that Reasons is a required constraint, one of the
      * reasons in the array shall be used for the signature dictionary; otherwise, signing shall not take place. If
      * the Ff entry indicates Reasons is an optional constraint, one of the reasons in the array may be chosen or a
      * custom reason can be provided.
-     * <p/>
+     * <br>
      * If the Reasons array is omitted or contains a single entry with the value PERIOD (2Eh) and the Ff entry
      * indicates that Reasons is a required constraint, the Reason entry shall be omitted from the signature
      * dictionary (see Table 252).
@@ -128,7 +128,7 @@ public class SeedValueDictionary extends Dictionary {
      * between 0 and 3. A value of 0 defines the signature as an author signature (see 12.8, Digital Signatures).
      * The values 1 through 3 shall be used for certification signatures and correspond to the value of P in a DocMDP
      * transform parameters dictionary (see Table 254).
-     * <p/>
+     * <br>
      * If this MDP key is not present or the MDP dictionary does not contain a P entry, no rules shall be defined
      * regarding the type of signature or its permissions.
      */
@@ -156,22 +156,22 @@ public class SeedValueDictionary extends Dictionary {
     /**
      * (Optional; PDF 1.7) A flag indicating whether revocation checking shall be carried out. If AddRevInfo is true,
      * the conforming processor shall perform the following additional tasks when signing the signature field:
-     * <p/>
+     * <br>
      * Perform revocation checking of the certificate (and the corresponding issuing certificateChain) used to sign.
-     * <p/>
+     * <br>
      * Include the revocation information within the signature value.
-     * <p/>
+     * <br>
      * Three SubFilter values have been defined for ISO 32000. For those values the AddRevInfo value shall be true
      * only if SubFilter is adbe.pkcs7.detached or adbe.pkcs7.sha1. If SubFilter is x509.rsa_sha1, this entry shall
      * be omitted or set to false. Additional SubFilters may be defined that also use AddRevInfo values.
-     * <p/>
+     * <br>
      * If AddRevInfo is true and the Ff entry indicates this is a required constraint, then the preceding tasks shall
      * be performed. If they cannot be performed, then signing shall fail.
      * Default value: false
-     * <p/>
+     * <br>
      * NOTE 1Revocation information is carried in the signature data as specified by PCKS#7. See 12.8.3.3,
      * "PKCS#7 Signatures as used in ISO 32000".
-     * <p/>
+     * <br>
      * NOTE 2The trust anchors used are determined by the signature handlers for both creation and validation.
      */
     public static final Name ADD_REV_INFO_KEY = new Name("AddRevInfo");

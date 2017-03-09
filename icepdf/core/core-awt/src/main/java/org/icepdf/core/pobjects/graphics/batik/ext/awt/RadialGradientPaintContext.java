@@ -367,14 +367,14 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
     /**
      * Fill the raster, cycling the gradient colors when a point falls outside
      * of the perimeter of the 100% stop circle.
-     * <p/>
+     * <br>
      * This calculation first computes the intersection point of the line
      * from the focus through the current point in the raster, and the
      * perimeter of the gradient circle.
-     * <p/>
+     * <br>
      * Then it determines the percentage distance of the current point along
      * that line (focus is 0%, perimeter is 100%).
-     * <p/>
+     * <br>
      * Equation of a circle centered at (a,b) with radius r:
      * (x-a)^2 + (y-b)^2 = r^2
      * Equation of a line with slope m and y-intercept b
@@ -497,14 +497,14 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
      * Fill the raster, cycling the gradient colors when a point
      * falls outside of the perimeter of the 100% stop circle. Use
      * the anti-aliased gradient lookup.
-     * <p/>
+     * <br>
      * This calculation first computes the intersection point of the line
      * from the focus through the current point in the raster, and the
      * perimeter of the gradient circle.
-     * <p/>
+     * <br>
      * Then it determines the percentage distance of the current point along
      * that line (focus is 0%, perimeter is 100%).
-     * <p/>
+     * <br>
      * Equation of a circle centered at (a,b) with radius r:
      * (x-a)^2 + (y-b)^2 = r^2
      * Equation of a line with slope m and y-intercept b

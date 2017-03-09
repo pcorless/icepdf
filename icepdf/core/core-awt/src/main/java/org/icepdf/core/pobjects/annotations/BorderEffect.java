@@ -22,8 +22,8 @@ import java.util.HashMap;
 
 /**
  * <h2>Refer to: 8.4.3 Border Styles</h2>
- * <p/>
- * <table border=1>
+ * <br>
+ * <table border=1 summary="">
  * <tr>
  * <td>Key</td>
  * <td>Type</td>
@@ -33,7 +33,7 @@ import java.util.HashMap;
  * <td><b>S</b></td>
  * <td>name</td>
  * <td><i>(Optional)</i> A name representing the border effect to apply. Possible values are:
- * <table border=0>
+ * <table border=0 summary="">
  * <tr>
  * <td>S</td>
  * <td>No effect: the border is as described by the annotation dictionary's <b>BS</b> entry.</td>

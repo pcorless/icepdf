@@ -25,7 +25,7 @@ import java.util.HashMap;
 /**
  * <p>The uniform resource identifier (URI) action represents destination
  * that is a hypertext link</p>
- * <p/>
+ * <br>
  * <p>The URI can be extracted from this object so that the content can
  * be loaded in a web browser.  ICEpdf does not currently support image map
  * URI's.</p>

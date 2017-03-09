@@ -27,13 +27,13 @@ import java.util.List;
  * Page text represents the root element of a page's text hierarchy which
  * looks something like this.
  * <ul>
- * PageText -&gt; LineText* -&gt; WordText* -&gt; GlyphText*
+ * <li>PageText -&gt; LineText* -&gt; WordText* -&gt; GlyphText*</li>
  * </ul>
  * The hierarchy elements are build by the content parser when text extraction
  * is enabled.  It is build to seperate the huristics used to calculate
  * word and line detection which is used for text extraction/search,
  * search highlighting and text highlighting.
- * <p/>
+ * <br>
  * It very important to note that all coordinates system represented in this
  * hierarchy of object has been normalized to the page space.  This allows for
  * object to be sorted and drawn. Also this structure is not used for page
@@ -110,8 +110,8 @@ public class PageText implements TextSelect {
      * vertically and horizontally to aid in the proper ordering during text
      * extraction.  The value is cached so any changes to optional content
      * visibility should require that the cache is refreshed with a call to
-     * {@see sortAndFormatText}.
-     * <p/>
+     * {@link #sortAndFormatText}.
+     * <br>
      * During the extraction process extra space will automatically be added
      * between words.  However depending on how the PDF is encoded can result
      * in too many extra spaces.  So as a result this feature can be turned off

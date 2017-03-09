@@ -29,14 +29,14 @@ import java.util.HashMap;
  * to this type of field. A text field shall have a field type of Tx. A conforming
  * PDF file, and a conforming processor shall obey the usage guidelines as
  * defined by the big flags below.
- * <p/>
+ * <br>
  * The field’s text shall be held in a text string (or, beginning with PDF 1.5,
  * a stream) in the V (value) entry of the field dictionary. The contents of this
  * text string or stream shall be used to construct an appearance stream for
  * displaying the field, as described under 12.7.3.3, "Variable Text." The text
  * shall be presented in a single style (font, size, colour, and so forth), as
  * specified by the DA (default appearance) string.
- * <p/>
+ * <br>
  * If the FileSelect flag (PDF 1.4) is set, the field shall function as a file-select
  * control. In this case, the field’s text represents the pathname of a file whose
  * contents shall be submitted as the field’s value:

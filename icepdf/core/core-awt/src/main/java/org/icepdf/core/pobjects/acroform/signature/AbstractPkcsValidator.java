@@ -137,7 +137,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      * 3, certificateChain [0] IMPLICIT CertificateSet OPTIONAL,
      * 4, crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
      * 5, signerInfos SignerInfos }
-     * <p/>
+     * <br>
      * DigestAlgorithmIdentifiers ::= SET OF DigestAlgorithmIdentifier
      * SignerInfos ::= SET OF SignerInfo
      */
@@ -284,21 +284,21 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         // crls [1] IMPLICIT RevocationInfoChoices OPTIONAL,
         // Most of our example seem to have what looks like a CertificateSet but I haven't had much luck finding
         // a specific format to follow ot parse out the data.
-        // CertificateSet is defined as:<br/>
+        // CertificateSet is defined as:<br>
         // The CertificateSet type provides a set of certificateChain. It is
         // intended that the set be sufficient to contain certification paths
         // from a recognized "root" or "top-level certification authority" to
         // all of the sender certificateChain with which the set is associated.
         // However, there may be more certificateChain than necessary, or there MAY
         // be fewer than necessary.
-        // <br/>
+        // <br>
         // The precise meaning of a "certification path" is outside the scope of
         // this document. However, [PROFILE] provides a definition for X.509
         // certificateChain. Some applications may impose upper limits on the
         // length of a certification path; others may enforce certain
         // relationships between the subjects and issuers of certificateChain within
         // a certification path.
-        // <br/>
+        // <br>
         // Object tmp = signedData.getObjectAt(3);
 
         // the certificateChain

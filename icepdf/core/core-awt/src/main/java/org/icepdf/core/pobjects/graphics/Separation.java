@@ -27,14 +27,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * <p>Separation Color Space background:</p>
  * <ul>
- * <p>Color output devices produce full color by combining primary or process
+ * <li>Color output devices produce full color by combining primary or process
  * colorants in varying amounts. On an additive color device such as a display,
  * the primary colorants consist of red, green, and blue phosphors; on a
  * subtractive device such as a printer, they typically consist of cyan, magenta,
  * yellow, and sometimes black inks. In addition, some devices can apply special
  * colorants, often called spot colorants, to produce effects that cannot be
  * achieved with the standard process colorants alone. Examples include metallic
- * and fluorescent colors and special textures.</p>
+ * and fluorescent colors and special textures.</li>
  * </ul>
  * <p>A Separation color space (PDF 1.2) provides a means for specifying the use
  * of additional colorants or for isolating the control of individual color
@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * is the current color space, the current color is a single-component value,
  * called a tint, that controls the application of the given colorant or color
  * components only.</p>
- * <p>A Separation color space is defined as follows:<br />
+ * <p>A Separation color space is defined as follows:<br>
  * [/Separation name alternateSpace tintTransform]
  * </p>
  * <ul>

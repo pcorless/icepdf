@@ -26,7 +26,7 @@ import java.util.List;
  * it associates keys and values, but it does this in a different way.  The keys
  * in a NameTree are strings and are ordered and the values of the associated
  * keys may be an object of any type.</p>
- * <p/>
+ * <br>
  * <p>The <code>NameTree</code> class is primarily used to store named destinations
  * accessible via the document's Catalog.  This class is very simple with only
  * one method which is responsible searching for the given key.</p>

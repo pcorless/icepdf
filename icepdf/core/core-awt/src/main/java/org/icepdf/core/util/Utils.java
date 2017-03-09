@@ -342,9 +342,8 @@ public class Utils {
      * default encoding. This method is for when encoding is not relevant,
      * when the String simply holds byte values in each char.
      *
-     * @see org.icepdf.core.pobjects.LiteralStringObject
-     * @see org.icepdf.core.pobjects.HexStringObject
-     * @see org.icepdf.core.pobjects.security.StandardEncryption
+     * {@link org.icepdf.core.pobjects.LiteralStringObject}
+     * {@link org.icepdf.core.pobjects.HexStringObject}
      */
     public static byte[] convertByteCharSequenceToByteArray(CharSequence string) {
         final int max = string.length();
@@ -362,9 +361,8 @@ public class Utils {
      * default encoding. This method is for when encoding is not relevant,
      * when the String simply holds byte values in each char.
      *
-     * @see org.icepdf.core.pobjects.LiteralStringObject
-     * @see org.icepdf.core.pobjects.HexStringObject
-     * @see org.icepdf.core.pobjects.security.StandardEncryption
+     * {@link org.icepdf.core.pobjects.LiteralStringObject}
+     * {@link org.icepdf.core.pobjects.HexStringObject}
      */
     public static String convertByteArrayToByteString(byte[] bytes) {
         final int max = bytes.length;

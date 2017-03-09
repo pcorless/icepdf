@@ -32,7 +32,7 @@ import java.util.HashMap;
 /**
  * The FormDrawCmd when executed will draw an xForm's shapes to a raster and
  * then paint the raster.  This procedure is only executed if the xForm
- * is part of transparency group that has a alpha value < 1.0f.
+ * is part of transparency group that has a alpha value &lt; 1.0f.
  *
  * @since 5.0
  */

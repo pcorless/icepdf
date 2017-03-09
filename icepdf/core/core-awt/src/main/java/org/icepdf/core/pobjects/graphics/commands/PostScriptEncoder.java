@@ -28,10 +28,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The PostScriptEncoder is responsible for converting an ArrayList<DrawCmd>
+ * The PostScriptEncoder is responsible for converting an ArrayList&lt;DrawCmd&gt;
  * into postscript operands.  Basically the reverse of what the content
  * parser does.
- * <p/>
+ * <br>
  * NOTE: this is currently a partial implementation to vac
  *
  * @since 5.0

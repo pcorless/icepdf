@@ -26,13 +26,13 @@ import java.util.List;
  * Security Handler, Public Key Handlers and Crypt filters.  This PDF object
  * is found via a document's Trailer object, but only when the Trailer has an
  * encrypted named reference.</p>
- * <p/>
+ * <br>
  * <p>The dictionary is composed of combinations of the following entries defined
  * by the different encryption types.  ICEpdf currently only supports the
  * Standard Security Handler.</p>
- * <p/>
- * <p/>
- * <table border="1" cellpadding="1" cellspacing="1" >
+ * <br>
+ * <br>
+ * <table border="1" cellpadding="1" cellspacing="1" summary="" >
  * <tr>
  * <td colspan="3" ><b>Common to all Encryption Dictionaries</b></td>
  * </tr>
@@ -116,14 +116,14 @@ import java.util.List;
  * or a standard crypt filter name.</td>
  * </tr>
  * </table>
- * <p/>
+ * <br>
  * <p>The dictionary composes of the following values that can be returned via
  * their named mehtod or by a generic getValue method if the key's name is known.
  * The values of the O and U entries in this dictionary are used to determine
  * whether a password entered when the document is opened is the correct owner
  * password, user password, or neither.</p>
- * <p/>
- * <table border="1" cellpadding="1" cellspacing="1" >
+ * <br>
+ * <table border="1" cellpadding="1" cellspacing="1" summary="" >
  * <tr>
  * <td colspan="3" ><b>Standard Encryption Dictionary Entries</b> </td>
  * </tr>
@@ -171,12 +171,12 @@ import java.util.List;
  * </td>
  * </tr>
  * </table>
- * <p/>
+ * <br>
  * <p>Encryption dictionaries for public-key security handlers contain the
  * common entries shown above. In addition,  they may contain the entries
  * shown below.</p>
- * <p/>
- * <table border="1" cellpadding="1" cellspacing="1" >
+ * <br>
+ * <table border="1" cellpadding="1" cellspacing="1" summary="">
  * <tr>
  * <td colspan="3" ><b>Additional public-key Dictionary Entries</b> </td>
  * </tr>
@@ -196,18 +196,18 @@ import java.util.List;
  * permissions that apply to the recipient list. There should be only
  * one object per unique set of access permissions; if a recipient
  * appears in more than one list, the permissions used will be those
- * found in the first matching list.<br />
- * <b>Note:</b><br />
+ * found in the first matching list.<br>
+ * <b>Note:</b><br>
  * When SubFilter is adbe.pkcs7.s5, recipient lists are specified in
  * the crypt filter dictionary.</td>
  * </tr>
  * </table>
- * <p/>
+ * <br>
  * <p>Encryption dictionaries for crypt filter security handlers contain the
  * common entries shown above. In addition,  they may contain the entries
  * shown below</p>
- * <p/>
- * <table border="1" cellpadding="1" cellspacing="1" >
+ * <br>
+ * <table border="1" cellpadding="1" cellspacing="1" summary="" >
  * <tr>
  * <td colspan="3" ><b> Standard Encryption Dictionary Entries</b> </td>
  * </tr>
@@ -439,7 +439,7 @@ public class EncryptionDictionary extends Dictionary {
      * shall be the corresponding crypt filter dictionaries (see Table 25).
      * Every crypt filter used in the document shall have an entry in this
      * dictionary, except for the standard crypt filter names (see Table 26).
-     * <p/>
+     * <br>
      * The conforming reader shall ignore entries in CF dictionary with the keys
      * equal to those listed in Table 26 and use properties of the respective
      * standard crypt filters.
@@ -465,9 +465,9 @@ public class EncryptionDictionary extends Dictionary {
      * for cross-reference streams (see 7.5.8, "Cross-Reference Streams") or
      * streams that have a Crypt entry in their Filterarray (see Table 6),
      * shall be decrypted by the security handler, using this crypt filter.
-     * <p/>
+     * <br>
      * Default value: Identity.
-     * <p/>
+     * <br>
      *
      * @return name of the default stream filter name.
      */
@@ -485,7 +485,7 @@ public class EncryptionDictionary extends Dictionary {
      * The name of the crypt filter that shall be used when decrypting all
      * strings in the document. The name shall be a key in the CF dictionary or
      * a standard crypt filter name specified in Table 26.
-     * <p/>
+     * <br>
      * Default value: Identity.
      *
      * @return name of the default string filter name.
@@ -504,14 +504,14 @@ public class EncryptionDictionary extends Dictionary {
      * streams that do not have their own crypt filter specifier; it shall
      * correspond to a key in the CFdictionary or a standard crypt filter name
      * specified in Table 26.
-     * <p/>
+     * <br>
      * This entry shall be provided by the security handler. Conforming writers
      * shall respect this value when encrypting embedded files, except for
      * embedded file streams that have their own crypt filter specifier. If
      * this entry is not present, and the embedded file stream does not contain
      * a crypt filter specifier, the stream shall be encrypted using the default
      * stream crypt filter specified by StmF.
-     * <p/>
+     * <br>
      * EFF:name
      */
     public Name getEEF() {

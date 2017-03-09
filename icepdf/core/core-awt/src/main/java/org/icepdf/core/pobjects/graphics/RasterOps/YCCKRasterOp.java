@@ -14,9 +14,8 @@ import java.awt.image.WritableRaster;
  * CMYK to RGB the result is much better then going directly from YCCK to
  * RGB.
  * NOTE: no masking here, as it is done later in the call to
- * {@see alterRasterCMYK2BGRA}
  *
- * @sine 5.1
+ * @since 5.1
  */
 public class YCCKRasterOp implements RasterOp {
 

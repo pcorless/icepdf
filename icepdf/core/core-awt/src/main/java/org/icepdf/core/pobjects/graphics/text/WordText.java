@@ -27,12 +27,12 @@ import java.util.logging.Logger;
  * Word text represents an individual word in the document.  A word can
  * also represent white space between words th isWhiteSpace method can be used
  * to distguish between words and whiteSpace
- * <p/>
+ * <br>
  * If extracted text has extract white space then the space width fraction
  * can be adjusted.  The deault value a 4th of the current character width.  To
  * add more sapces the number can be increase or decrease to limit the number
  * of spaces that are added. The system property is as follows:
- * Default<br/>
+ * Default<br>
  * org.icepdf.core.views.page.text.spaceFraction=4
  *
  * @since 4.0

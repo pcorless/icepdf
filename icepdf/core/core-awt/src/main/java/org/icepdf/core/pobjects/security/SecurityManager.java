@@ -34,12 +34,12 @@ import java.util.logging.Logger;
  * Crypt key is found in the document's trailer.  The singleton pattern
  * is implemented so that it can be called from anywhere with the PDF
  * object structure.</p>
- * <p/>
+ * <br>
  * <p>There is currently only support for Adobe Standard encryption which is
  * supported by the StandardSecurityHandler.  Additional support for custom
  * security handlers, public-key handlers and crypt filters is currently under
  * development.</p>
- * <p/>
+ * <br>
  * <p>The Security Manager needs tobe compliant with Sun Java JCE 1.2.1 implementation.
  * The security manager assumes that
  * org.bouncycastle.jce.provider.BouncyCastleProvider can be found on the class

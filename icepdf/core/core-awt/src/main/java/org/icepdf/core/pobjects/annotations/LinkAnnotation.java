@@ -26,8 +26,8 @@ import java.util.logging.Logger;
 
 /**
  * <h2>Refer to: 8.4.5 Annotation Types</h2>
- * <p/>
- * <table border=1> <tr> <td>Key</td> <td>Type</td> <td>Value</td> </tr> <tr>
+ * <br>
+ * <table border=1 summary=""> <tr> <td>Key</td> <td>Type</td> <td>Value</td> </tr> <tr>
  * <td><b>Subtype</b></td> <td>name</td> <td><i>(Required)</i> The type of
  * annotation that this dictionary describes; must be <b>Link</b> for a link
  * annotation.</td> </tr> <tr> <td><b>Dest</b></td> <td>array, name, or
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * Appendix H).</td> </tr> <tr> <td><b>H</b></td> <td>name</td>
  * <td><i>(Optional; PDF 1.2)</i> The annotation's <i>highlighting mode</i>, the
  * visual effect to be used when the mouse button is pressed or held down inside
- * its active area: <table border=0> <tr> <td>N</td> <td>(None) No
+ * its active area: <table border=0 summary=""> <tr> <td>N</td> <td>(None) No
  * highlighting.</td> </tr> <tr> <td>I</td> <td>(Invert) Invert the contents of
  * the annotation rectangle.</td> </tr> <tr> <td>O</td> <td>(Outline) Invert the
  * annotation's border.</td> </tr> <tr> <td>P</td> <td>(Push) Display the

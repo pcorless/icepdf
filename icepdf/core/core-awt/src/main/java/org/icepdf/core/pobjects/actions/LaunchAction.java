@@ -26,7 +26,7 @@ import java.util.HashMap;
 /**
  * <p>The launch action launches an applicaiton or opens or prints a
  * document.</p>
- * <p/>
+ * <br>
  * <p>There are optional Win which allow for platform specific parameters for
  * launching the designated application. </p>
  *

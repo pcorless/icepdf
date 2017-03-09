@@ -38,7 +38,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      * element of the array is either a text string representing one of the
      * available options or an array consisting of two text strings: the option’s
      * export value and the text that shall be displayed as the name of the option.
-     * <p/>
+     * <br>
      * If this entry is not present, no choices should be presented to the user.
      */
     public static final Name OPT_KEY = new Name("Opt");
@@ -104,7 +104,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      * with the entry or changing of this data. If this flag is on, then processing
      * does not wait for leaving the field action to occur, but immediately
      * proceeds to the third step.
-     * <p/>
+     * <br>
      * This option enables applications to perform an action once a selection is
      * made, without requiring the user to exit the field. If clear, the new
      * value is not committed until the user exits the field.
@@ -281,7 +281,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      * An array of options that shall be presented to the user. Each element of the array is either a text
      * string representing one of the available options or an array consisting of two text strings: the option’s
      * export value and the text that shall be displayed as the name of the option.
-     * <p/>
+     * <br>
      * If this entry is not present, no choices should be presented to the user.
      *
      * @return choice options.
@@ -361,7 +361,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      * a choice for the fill-in value, and leaving that field, which finalizes or "commits" the data choice and triggers
      * any actions associated with the entry or changing of this data. If this flag is on, then processing does not wait
      * for leaving the field action to occur, but immediately proceeds to the third step.
-     * <p/>
+     * <br>
      * This option enables applications to perform an action once a selection is made, without requiring the user to
      * exit the field. If clear, the new value is not committed until the user exits the field.
      *

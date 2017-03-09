@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * Digital SignatureFactory is responsible for creating any SignatureValidator implementation and does so based on the
  * subFilter value of the SignatureFieldDictionary.  In this particular cas the validation takes place when the
  * subFilter is equal to "adbe.pkcs7.detached".
- * <p/>
+ * <br>
  * Also the subfilter "adbe.pkcs7.sha1".  PKCS#7 The SHA1 digest of the document's byte range shall be encapsulated in
  * the PKCS#7 SignedData field with ContentInfo of type Data. The digest of that SignedData shall be incorporated as
  * the normal PKCS#7 digest.

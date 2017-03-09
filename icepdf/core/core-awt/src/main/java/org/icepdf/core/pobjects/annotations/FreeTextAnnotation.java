@@ -56,7 +56,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     /**
      * (Required) The default appearance string that shall be used in formatting
      * the text (see 12.7.3.3, "Variable Text").
-     * <p/>
+     * <br>
      * The annotation dictionary’s AP entry, if present, shall take precedence
      * over the DA entry; see Table 168 and 12.5.5, "Appearance Streams."
      */
@@ -89,13 +89,13 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * (Optional; PDF 1.6) A name describing the intent of the free text
      * annotation (see also the IT entry in Table 170). The following values
      * shall be valid:
-     * <p/>
+     * <br>
      * FreeTextThe annotation is intended to function as a plain free-text
      * annotation. A plain free-text annotation is also known as a text box comment.
      * FreeTextCallout The annotation is intended to function as a callout. The
      * callout is associated with an area on the page through the callout line
      * specified in CL.
-     * <p/>
+     * <br>
      * FreeTextTypeWriterThe annotation is intended to function as a click-to-type
      * or typewriter object and no callout line is drawn.
      * Default value: FreeText
@@ -115,7 +115,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * the annotation’s text should be displayed. Any border styles and/or border
      * effects specified by BS and BE entries, respectively, shall be applied to
      * the border of the inner rectangle.
-     * <p/>
+     * <br>
      * The four numbers correspond to the differences in default user space
      * between the left, top, right, and bottom coordinates of Rect and those
      * of the inner rectangle, respectively. Each value shall be greater than
@@ -128,7 +128,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * (Optional; PDF 1.6) A border style dictionary (see Table 166) specifying
      * the line width and dash pattern that shall be used in drawing the
      * annotation’s border.
-     * <p/>
+     * <br>
      * The annotation dictionary’s AP entry, if present, takes precedence over
      * the BS entry; see Table 164 and 12.5.5, "Appearance Streams".
      */
@@ -139,7 +139,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
      * specified in CL. The name shall specify the line ending style for the
      * endpoint defined by the pairs of coordinates (x1, y1). Table 176 shows
      * the possible line ending styles.
-     * <p/>
+     * <br>
      * Default value: None.
      */
     public static final Name LE_KEY = new Name("LE");

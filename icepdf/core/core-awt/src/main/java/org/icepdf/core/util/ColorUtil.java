@@ -240,7 +240,7 @@ public class ColorUtil {
      * then be used to generate a valid java.awt.Color object.
      *
      * @param name name of colour to convert.
-     * @return integer >= 0 if named colour was converted successfully, -1
+     * @return integer &gt;= 0 if named colour was converted successfully, -1
      *         otherwise.
      */
     public static final int convertNamedColor(String name) {

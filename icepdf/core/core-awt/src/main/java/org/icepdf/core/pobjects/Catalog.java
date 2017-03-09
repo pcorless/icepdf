@@ -30,9 +30,9 @@ import java.util.logging.Logger;
  * <b>Root</b> entry in the trailer of the PDF file.  The catalog contains
  * references to other objects defining the document's contents, outline, names,
  * destinations, and other attributes.</p>
- * <p/>
- * <p>The <code>Catalog</code> class can be accessed from the {@see Document}
- * class for convenience, but can also be accessed via the {@see PTrailer} class.
+ * <br>
+ * <p>The <code>Catalog</code> class can be accessed from the {@link Document}
+ * class for convenience, but can also be accessed via the {@link PTrailer} class.
  * Useful information about the document can be extracted from the Catalog
  * Dictionary, such as PDF version information and Viewer Preferences.  All
  * Catalog dictionary properties can be accesed via the getEntries method.
@@ -150,7 +150,7 @@ public class Catalog extends Dictionary {
      * The PageTree can be traversed to access child PageTree and Page objects.
      *
      * @return Catalogs PageTree.
-     * @see org.icepdf.core.pobjects.Page
+     * {@link Page}
      */
     public PageTree getPageTree() {
         return pageTree;
@@ -161,7 +161,7 @@ public class Catalog extends Dictionary {
      * hierarchy. The Outline can be traversed to access child OutlineItems.
      *
      * @return Outlines object if one exists; null, otherwise.
-     * @see org.icepdf.core.pobjects.OutlineItem
+     * {@link OutlineItem}
      */
     public Outlines getOutlines() {
         if (!outlinesInited) {

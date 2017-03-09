@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  * state.  The mask values shall be derived from those of the transparency group,
  * using one of the two methods in "11.5.2 Deriving a Soft Mask from Group Alpha",
  * and "11.5.3 Deriving a Soft Mask from Group Luminosity".
- * <p/>
+ * <br>
  * The S subtype entry shall specify which of the two derivation methods to use:
  * <ul>
  * <li>If the subtype is Alpha, the transparency group XObject G shall be

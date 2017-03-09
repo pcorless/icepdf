@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * PDF's standard security handler allows access permissions and up to two passwords
  * to be specified for a document.  The purpose of this class is to encapsulate
  * the algorithms used by the Standard Security Handler.
- * <p/>
+ * <br>
  * All of the algorithms used for encryption related calculations are based
  * on the suto code described in the Adobe PDF Specification 1.5.
  *
@@ -454,7 +454,7 @@ class StandardEncryption {
      * generation number in that order, low-order byte first. (n is 5 unless
      * the value of V in the encryption dictionary is greater than 1, in which
      * case the n is the value of Length divided by 8.)
-     * <br />
+     * <br>
      * If using the AES algorithm, extend the encryption key an additional
      * 4 bytes by adding the value "sAlT", which corresponds to the hexadecimal
      * values 0x73, 0x41, 0x6C, 0x54. (This addition is done for backward
@@ -715,12 +715,12 @@ class StandardEncryption {
     /**
      * ToDo: xjava.security.Padding,  look at class for interface to see
      * if PDFPadding class could/should be built
-     * <p/>
+     * <br>
      * Pad or truncate the password string to exactly 32 bytes.  If the
      * password is more than 32 bytes long, use only its first 32 bytes; if it
      * is less than 32 bytes long, pad it by appending the required number of
      * additional bytes from the beginning of the PADDING string.
-     * <p/>
+     * <br>
      * NOTE: This is algorithm is the <b>1st</b> step of <b>algorithm 3.2</b>
      * and is commonly used by other methods in this class
      *
@@ -759,7 +759,7 @@ class StandardEncryption {
 
     /**
      * Computing Owner password value, Algorithm 3.3.
-     * <p/>
+     * <br>
      * AESv3 passwords are not handle by this method, instead use
      * {@link #generalEncryptionAlgorithm(org.icepdf.core.pobjects.Reference, byte[], String, byte[], boolean)}
      * If the result is not null then the encryptionDictionary will container
@@ -771,7 +771,7 @@ class StandardEncryption {
      * @param isAuthentication if true, only steps 1-4 of the algorithm will be
      *                         completed.  If false, all 8 steps of the algorithm will be
      *                         completed
-     *                         <b>Note : </b><br />
+     *                         <b>Note : </b><br>
      *                         There may be a bug in this algorithm when all 8 steps are called.
      *                         1-4 are work properly, but 1-8 can not generate an O value that is
      *                         the same as the orgional documents O.  This is not a currently a
@@ -904,7 +904,7 @@ class StandardEncryption {
      * Computing Owner password value, Algorithm 3.4 is respected for
      * Revision = 2 and Algorithm 3.5 is respected for Revisison = 3, null
      * otherwise.
-     * <p/>
+     * <br>
      * AESv3 passwords are not handle by this method, instead use
      * {@link #generalEncryptionAlgorithm(org.icepdf.core.pobjects.Reference, byte[], String, byte[], boolean)}
      * If the result is not null then the encryptionDictionary will container

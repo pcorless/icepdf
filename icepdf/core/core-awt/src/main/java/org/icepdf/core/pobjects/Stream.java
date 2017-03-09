@@ -209,7 +209,7 @@ public class Stream extends Dictionary {
     /**
      * Utility method for decoding the byte stream using the decode algorithem
      * specified by the filter parameter
-     * <p/>
+     * <br>
      * The memory manger is called every time a stream is being decoded with an
      * estimated size of the decoded stream.  Because many of the Filter
      * algorithms use compression,  further research must be done to try and

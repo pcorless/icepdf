@@ -30,13 +30,12 @@ import java.util.List;
  * outline item has a title and a destination which can be accessed by the
  * visual representation to create a function document outlines (sometimes
  * called bookmarks).</p>
- * <p/>
+ * <br>
  * <p>This class is used mainly by the Outlines class to build the outline
  * hierarchy.  The root node of the outline hierarchy can be accessed through
  * the Outlines class. </p>
  *
- * @see org.icepdf.ri.common.utility.outline.OutlineItemTreeNode
- * @see org.icepdf.core.pobjects.Outlines
+ * {@link org.icepdf.core.pobjects.Outlines}
  * @since 2.0
  */
 public class OutlineItem extends Dictionary {

@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * The purpose of the class is to parse a CMap file.  A CMap specifies the
  * mapping from character codes to character selectors.  A CMap file defines
  * the relationship between a character code and the character description
- * <p/>
+ * <br>
  * Character selectors are always CIDs in a CIDFont. A CMap serves a function
  * analogous to the Encoding dictionary for a simple font. The CMap does not
  * refer directly to a specific CIDFont; instead, it is combined with it as part
@@ -184,7 +184,7 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
     /**
      * Start the parsing of the CMap file.  Once completed, all necessary data
      * should be captured from the CMap file.
-     * <p/>
+     * <br>
      * Simple CMap
      * /CIDInit /ProcSet findresource
      * begin
@@ -499,12 +499,12 @@ class CMap extends Dictionary implements org.icepdf.core.pobjects.fonts.CMap {
      * in two flavours but there both share a start and end range value.
      * Characters that fall in this range are mapped with wither the offset
      * value or to an offset vector.
-     * <p/>
+     * <br>
      * Basic offset Mapping
      * <0000> <005E> <0020>  -  values that are between <0000> and <005E> are
      * offset by <0020> ie  <0001> maps to <0021>, <004f> maps to <006f> and
      * <0006F> would not be mapped by this range.
-     * <p/>
+     * <br>
      * Vector offset Mapping
      * <005F> <0061>[<00660066> <0066069> <00660066006C>] - values that are
      * between <005f> and <0067> are mapped directly to an offset index in the

@@ -30,27 +30,27 @@ import java.awt.image.ColorModel;
  * interpolation between each color.  The user also specifies start and end
  * points which define where in user space the color gradient should begin
  * and end.
- * <p/>
+ * <br>
  * The user must provide an array of floats specifying how to distribute the
  * colors along the gradient.  These values should range from 0.0 to 1.0 and
  * act like keyframes along the gradient (they mark where the gradient should
  * be exactly a particular color).
- * <p/>
+ * <br>
  * For example:
  * <br>
  * <code>
- * <p/>
+ * <br>
  * Point2D start = new Point2D.Float(0, 0);<br>
  * Point2D end = new Point2D.Float(100,100);<br>
  * float[] dist = {0.0, 0.2, 1.0};<br>
  * Color[] colors = {Color.red, Color.white, Color.blue};<br>
  * LinearGradientPaint p = new LinearGradientPaint(start, end, dist, colors);
  * </code>
- * <p/>
+ * <br>
  * This code will create a LinearGradientPaint which interpolates between
  * red and white for the first 20% of the gradient and between white and blue
  * for the remaining 80%.
- * <p/>
+ * <br>
  * <p> In the event that the user does not set the first keyframe value equal
  * to 0 and the last keyframe value equal to 1, keyframes will be created at
  * these positions and the first and last colors will be replicated there.
@@ -58,18 +58,18 @@ import java.awt.image.ColorModel;
  * {Color.blue, Color.red}, {.3, .7}<br>
  * this will be converted to a gradient with the following keyframes:
  * {Color.blue, Color.blue, Color.red, Color.red}, {0, .3, .7, 1}
- * <p/>
- * <p/>
+ * <br>
+ * <br>
  * The user may also select what action the LinearGradientPaint should take
  * when filling color outside the start and end points. If no cycle method is
  * specified, NO_CYCLE will be chosen by default, so the endpoint colors
  * will be used to fill the remaining area.
- * <p/>
+ * <br>
  * <p> The following image demonstrates the options NO_CYCLE and REFLECT.
- * <p/>
- * <p/>
- * <img src = "cyclic.jpg">
- * <p/>
+ * <br>
+ * <br>
+ * <img src = "cyclic.jpg" alt="" >
+ * <br>
  * <p> The colorSpace parameter allows the user to specify in which colorspace
  * the interpolation should be performed, default sRGB or linearized RGB.
  *

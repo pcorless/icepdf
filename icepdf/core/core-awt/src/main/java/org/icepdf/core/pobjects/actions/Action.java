@@ -28,7 +28,7 @@ import java.util.HashMap;
  * variety of standard action types.  This class is designed to help users
  * get needed attributes from the Action Dictionary.  The Dictionary classes
  * getEntries method can be used to find other attributes associated with this action.</p>
- * <p/>
+ * <br>
  * <p>ICEpdf currently only uses the "GoTo" action when working with document
  * outlines.  If your application is interpreting a page's Annotations then you
  * can query the Annotation object to get its Action.  </p>

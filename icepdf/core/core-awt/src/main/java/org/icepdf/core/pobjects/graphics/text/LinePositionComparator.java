@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
-import java.awt.*;
 import java.util.Comparator;
 
 /**
@@ -24,7 +23,7 @@ import java.util.Comparator;
  * of the bounding box in the cartesian plane's fourth quadrant.  The sorting
  * tries to order the line blocks via the coordinate system rather then the order
  * that they were plotted in.
- * <p/>
+ * <br>
  * It's assumed that all LineText that is a child of PageText will not be
  * sorted on the x access.  The class WordPositionComparator will be used
  * to insure that words are ordered correctly in the parent PageText array.

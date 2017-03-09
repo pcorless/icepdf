@@ -23,7 +23,7 @@ import java.awt.geom.Rectangle2D;
  * Abstract text is the base class for all Text extraction data.  Its main
  * purpose to is hold common data for GeneralPath and Bounds and common
  * contains and intersect calculations.
- * <p/>
+ * <br>
  * Some paintable properties are also defined here, such as selected, has selected
  * highlight and hasHighlight which are used as queues to painting selected
  * or highlighted text.
@@ -68,7 +68,7 @@ public abstract class AbstractText implements Text {
      * applies the current pageTransformation to it.  The containment
      * calculation is then applied the newly transformed path for the given
      * rectangle.
-     * <p/>
+     * <br>
      * This method is usually used for text selection via a selection box.
      *
      * @param rect rectangle to check intersection of in page.

@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 
 /**
  * Form XObject class. Not currently part of the public api.
- * <p/>
+ * <br>
  * Forms are grouped into the 'Resource' category and can be shared.  As a result we need to make sure
  * that the init method are synchronized as they can be accessed by different page loading threads.
  *

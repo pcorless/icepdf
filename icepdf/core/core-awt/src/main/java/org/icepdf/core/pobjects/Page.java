@@ -46,12 +46,12 @@ import java.util.logging.Logger;
  * of the single page of the document.  Many of the page's attributes are
  * inherited from the page tree dictionary if not specified in the page
  * dictionary.</p>
- * <p/>
+ * <br>
  * <p>The page object also provides a method which will extract a page's content,
  * such as text and images.  The <code>paint</code> method is the core of
  * the ICEpdf renderer, allowing page content to be painted to any Java graphics
  * context. </p>
- * <p/>
+ * <br>
  * <p>Page objects in a PDF document have different boundaries defined which
  * govern various aspects of the pre-press process, such as cropping, bleed,
  * and trimming. Facilities for including printer's marks, such a registration
@@ -560,7 +560,7 @@ public class Page extends Dictionary {
     /**
      * Paints the contents of this page to the graphics context using
      * the specified rotation, zoom, rendering hints.
-     * <p/>
+     * <br>
      * The drawing commands that are issued on the given graphics context will use coordinates
      * in PDF user coordinate space. It is the responsibility of the caller of this method
      * to setup the graphics context to correctly interpret these coordinates.

@@ -34,9 +34,9 @@ public class CertSeedValueDictionary extends Dictionary {
      * (Optional) A set of bit flags specifying the interpretation of specific entries in this dictionary.
      * A value of 1 for the flag means that a signer shall be required to use only the specified values for the entry.
      * A value of 0 means that other values are permissible.
-     * <p/>
+     * <br>
      * Bit positions are 1 (Subject); 2 (Issuer); 3 (OID); 4 (SubjectDN); 5 (Reserved); 6 (KeyUsage); 7 (URL).
-     * <p/>
+     * <br>
      * Default value: 0.
      */
     public static final Name Ff_KEY = new Name("Ff");
@@ -72,10 +72,10 @@ public class CertSeedValueDictionary extends Dictionary {
      * only attribute entries from these dictionaries but may contain additional attributes.The Subject Distinguished
      * Name is described in RFC 3280 (see the Bibliography). The key can be any legal attribute identifier (OID).
      * Attribute names shall contain characters in the set a-z A-Z 0-9 and PERIOD.
-     * <p/>
+     * <br>
      * Certificate attribute names are used as key names in the dictionaries in this array. Values of the attributes are
      * used as values of the keys. Values shall be text strings.
-     * <p/>
+     * <br>
      * The value of the corresponding flag in the Ff entry indicates whether this entry is a required constraint.
      */
     public static final Name SUBJECT_DN_KEY = new Name("SubjectDN");
@@ -84,7 +84,7 @@ public class CertSeedValueDictionary extends Dictionary {
      * (Optional; PDF 1.7) An array of ASCII strings, where each string specifies an acceptable key-usage extension that
      * shall be present in the signing certificate. Multiple strings specify a range of acceptable key-usage extensions.
      * The key-usage extension is described in RFC 3280.
-     * <p/>
+     * <br>
      * Each character in a string represents a key-usage type, where the order of the characters indicates the key-usage
      * extension it represents. The first through ninth characters in the string, from left to right, represent the
      * required value for the following key-usage extensions:
@@ -106,7 +106,7 @@ public class CertSeedValueDictionary extends Dictionary {
      * <li>1 Corresponding key-usage shall be set.</li>
      * <li>X State of the corresponding key-usage does not matter.</li>
      * </ul>
-     * EXAMPLE 1<br />
+     * EXAMPLE 1<br>
      * The string values 1 and 1XXXXXXXX represent settings where the key-usage type digitalSignature is set
      * and the state of all other key-usage types do not matter.
      * The value of the corresponding flag in the Ff entry indicates whether this is a required constraint.
@@ -118,7 +118,7 @@ public class CertSeedValueDictionary extends Dictionary {
      * signer's certificate refers to any of the specified issuers (either directly or indirectly), the certificate shall
      * be considered acceptable for signing. The value of the corresponding flag in the Ff entry indicates whether this
      * is a required constraint.
-     * <p/>
+     * <br>
      * This array may contain self-signed certificateChain.
      */
     public static final Name ISSUER_KEY = new Name("Issuer");
@@ -126,10 +126,10 @@ public class CertSeedValueDictionary extends Dictionary {
     /**
      * (Optional) An array of byte strings that contain Object Identifiers (OIDs) of the certificate policies that shall
      * be present in the signing certificate.
-     * <p/>
-     * EXAMPLE 2<br />
+     * <br>
+     * EXAMPLE 2<br>
      * An example of such a string is: (2.16.840.1.113733.1.7.1.1).
-     * <p/>
+     * <br>
      * This field shall only be used if the value of Issuer is not empty. The certificate policies extension is
      * described in RFC 3280 (see the Bibliography). The value of the corresponding flag in the Ff entry indicates
      * whether this is a required constraint.
@@ -144,13 +144,13 @@ public class CertSeedValueDictionary extends Dictionary {
     /**
      * (Optional; PDF 1.7) A name indicating the usage of the URL entry. There are standard uses and there can be
      * implementation-specific uses for this URL. The following value specifies a valid standard usage:
-     * <p/>
+     * <br>
      * Browser - The URL references content that shall be displayed in a web browser to allow enrolling for a new
      * credential if a matching credential is not found. The Ff attribute's URL bit shall be ignored for this usage.
-     * <p/>
+     * <br>
      * Third parties may extend the use of this attribute with their own attribute values, which shall conform to the
      * guidelines described in Annex E.
-     * <p/>
+     * <br>
      * The default value is Browser.
      */
     public static final Name URL_TYPE_KEY = new Name("URLType");

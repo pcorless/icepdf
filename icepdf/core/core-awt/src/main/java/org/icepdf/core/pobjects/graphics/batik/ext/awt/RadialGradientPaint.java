@@ -24,37 +24,37 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.ColorModel;
 
 /**
- * <p/>
+ * <br>
  * This class provides a way to fill a shape with a circular radial color
  * gradient pattern. The user may specify 2 or more gradient colors, and this
  * paint will provide an interpolation between each color.
- * <p/>
- * <p/>
+ * <br>
+ * <br>
  * The user must provide an array of floats specifying how to distribute the
  * colors along the gradient.  These values should range from 0.0 to 1.0 and
  * act like keyframes along the gradient (they mark where the gradient should
  * be exactly a particular color).
- * <p/>
- * <p/>
+ * <br>
+ * <br>
  * This paint will map the first color of the gradient to a focus point within
  * the circle, and the last color to the perimeter of the circle, interpolating
  * smoothly for any inbetween colors specified by the user.  Any line drawn
  * from the focus point to the circumference will span the all the gradient
  * colors.  By default the focus is set to be the center of the circle.
- * <p/>
- * <p/>
+ * <br>
+ * <br>
  * Specifying a focus point outside of the circle's radius will result in the
  * focus being set to the intersection point of the focus-center line and the
  * perimenter of the circle.
- * <p/>
- * <p/>
+ * <br>
+ * <br>
  * Specifying a cycle method allows the user to control the painting behavior
  * outside of the bounds of the circle's radius.  See LinearGradientPaint for
  * more details.
- * <p/>
- * <p/>
+ * <br>
+ * <br>
  * The following code demonstrates typical usage of RadialGradientPaint:
- * <p/>
+ * <br>
  * <code>
  * Point2D center = new Point2D.Float(0, 0);<br>
  * float radius = 20;
@@ -63,7 +63,7 @@ import java.awt.image.ColorModel;
  * RadialGradientPaint p = new RadialGradientPaint(center, radius,
  * dist, colors);
  * </code>
- * <p/>
+ * <br>
  * <p> In the event that the user does not set the first keyframe value equal
  * to 0 and the last keyframe value equal to 1, keyframes will be created at
  * these positions and the first and last colors will be replicated there.
@@ -71,22 +71,22 @@ import java.awt.image.ColorModel;
  * {Color.blue, Color.red}, {.3, .7}<br>
  * this will be converted to a gradient with the following keyframes:
  * {Color.blue, Color.blue, Color.red, Color.red}, {0, .3, .7, 1}
- * <p/>
- * <p/>
- * <p/>
- * <img src = "radial.jpg">
- * <p/>
+ * <br>
+ * <br>
+ * <br>
+ * <img src = "radial.jpg" alt="">
+ * <br>
  * This image demonstrates a radial gradient with NO_CYCLE and default focus.
- * <p/>
- * <p/>
- * <img src = "radial2.jpg">
- * <p/>
+ * <br>
+ * <br>
+ * <img src = "radial2.jpg"  alt="">
+ * <br>
  * This image demonstrates a radial gradient with NO_CYCLE and non-centered
  * focus.
- * <p/>
- * <p/>
- * <img src = "radial3.jpg">
- * <p/>
+ * <br>
+ * <br>
+ * <img src = "radial3.jpg"  alt="">
+ * <br>
  * This image demonstrates a radial gradient with REFLECT and non-centered
  * focus.
  *
@@ -112,8 +112,8 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     private float radius;
 
     /**
-     * <p/>
-     * <p/>
+     * <br>
+     * <br>
      * Constructs a <code>RadialGradientPaint</code>, using the center as the
      * focus point.
      *
@@ -131,7 +131,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      *                  is used at the focus point, the last color around the perimeter of the
      *                  circle.
      * @throws IllegalArgumentException if fractions.length != colors.length, or if colors is less
-     *                                  than 2 in size, or if radius < 0
+     *                                  than 2 in size, or if radius &lt; 0
      */
     public RadialGradientPaint(float cx, float cy, float radius,
                                float[] fractions, Color[] colors) {
@@ -143,8 +143,8 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * <p/>
-     * <p/>
+     * <br>
+     * <br>
      * Constructs a <code>RadialGradientPaint</code>, using the center as the
      * focus point.
      *
@@ -159,7 +159,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      *                  circle.
      * @throws NullPointerException     if center point is null
      * @throws IllegalArgumentException if fractions.length != colors.length, or if colors is less
-     *                                  than 2 in size, or if radius < 0
+     *                                  than 2 in size, or if radius &lt;0
      */
     public RadialGradientPaint(Point2D center, float radius,
                                float[] fractions, Color[] colors) {
@@ -171,8 +171,8 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * <p/>
-     * <p/>
+     * <br>
+     * <br>
      * Constructs a <code>RadialGradientPaint</code>.
      *
      * @param cx        the x coordinate in user space of the center point of the
@@ -193,7 +193,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      *                  is used at the focus point, the last color around the perimeter of the
      *                  circle.
      * @throws IllegalArgumentException if fractions.length != colors.length, or if colors is less
-     *                                  than 2 in size, or if radius < 0
+     *                                  than 2 in size, or if radius &lt; 0
      */
     public RadialGradientPaint(float cx, float cy, float radius,
                                float fx, float fy,
@@ -208,8 +208,8 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * <p/>
-     * <p/>
+     * <br>
+     * <br>
      * Constructs a <code>RadialGradientPaint</code>.
      *
      * @param center    the center point, in user space, of the circle defining
@@ -226,7 +226,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      *                  circle.
      * @throws NullPointerException     if one of the points is null
      * @throws IllegalArgumentException if fractions.length != colors.length, or if colors is less
-     *                                  than 2 in size, or if radius < 0
+     *                                  than 2 in size, or if radius &lt; 0
      */
     public RadialGradientPaint(Point2D center, float radius,
                                Point2D focus,
@@ -241,8 +241,8 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * <p/>
-     * <p/>
+     * <br>
+     * <br>
      * Constructs a <code>RadialGradientPaint</code>.
      *
      * @param center      the center point in user space of the circle defining the
@@ -261,7 +261,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      *                    either SRGB or LINEAR_RGB
      * @throws NullPointerException     if one of the points is null
      * @throws IllegalArgumentException if fractions.length != colors.length, or if colors is less
-     *                                  than 2 in size, or if radius < 0
+     *                                  than 2 in size, or if radius &lt; 0
      */
     public RadialGradientPaint(Point2D center, float radius,
                                Point2D focus,
@@ -279,8 +279,8 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * <p/>
-     * <p/>
+     * <br>
+     * <br>
      * Constructs a <code>RadialGradientPaint</code>.
      *
      * @param center            the center point in user space of the circle defining the
@@ -301,7 +301,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      * @throws NullPointerException     if one of the points is null,
      *                                  or gradientTransform is null
      * @throws IllegalArgumentException if fractions.length != colors.length, or if colors is less
-     *                                  than 2 in size, or if radius < 0
+     *                                  than 2 in size, or if radius &lt; 0
      */
     public RadialGradientPaint(Point2D center,
                                float radius,
@@ -332,8 +332,8 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
     }
 
     /**
-     * <p/>
-     * <p/>
+     * <br>
+     * <br>
      * Constructs a <code>RadialGradientPaint</code>, the gradient circle is
      * defined by a bounding box.
      *
@@ -346,7 +346,7 @@ public final class RadialGradientPaint extends MultipleGradientPaint {
      *                       circle.
      * @throws NullPointerException     if the gradientBounds is null
      * @throws IllegalArgumentException if fractions.length != colors.length, or if colors is less
-     *                                  than 2 in size, or if radius < 0
+     *                                  than 2 in size, or if radius &lt; 0
      */
     public RadialGradientPaint(Rectangle2D gradientBounds,
                                float[] fractions, Color[] colors) {

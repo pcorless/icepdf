@@ -32,14 +32,14 @@ import java.util.HashMap;
  * authority. The transform parameters dictionary (see Table 255) specifies the additional rights that shall be enabled
  * if the signature is valid. If the signature is invalid because the document has been modified in a way that is not
  * permitted or the identity of the signer is not granted the extended permissions, additional rights shall not be granted.
- * <br />
- * EXAMPLE<br />
+ * <br>
+ * EXAMPLE<br>
  * Adobe Systems grants permissions to enable additional features in Adobe Reader, using public-key cryptography. It
  * uses certificate authorities to issue public key certificateChain to document creators with which it has entered into a
  * business relationship. Adobe Reader verifies that the rights-enabling signature uses a certificate from an
  * Adobe-authorized certificate authority. Other conforming readers are free to use this same mechanism for their
  * own purposes.
- * <br />
+ * <br>
  * UR3 (PDF 1.6): The ByteRange entry in the signature dictionary (see Table 252) shall be present. First, a conforming
  * reader shall verify the byte range digest to determine whether the portion of the document specified by ByteRange
  * corresponds to the state of the document at the time of signing. Next,
@@ -184,12 +184,12 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
      * value shall be FullSave, which permits a user to save the document along with modified form and/or annotation
      * data. (PDF 1.5) Any usage right that permits the document to be modified implicitly shall enable the FullSave
      * right.
-     * <br />
+     * <br>
      * If the PDF document contains a UR3 dictionary, only rights specified by the Annots entry that permit the document
      * to be modified shall implicitly enable the FullSave right. For all other rights, FullSave shall be explicitly
      * enabled in order to save the document. (Signature rights shall permit saving as part of the signing process but
      * not otherwise).
-     * <br />
+     * <br>
      * If the P entry in the UR transform parameters dictionary is true (PDF 1.6) and greater conforming readers shall
      * permit only those rights that are enabled by the entries in the dictionary. However, conforming readers shall
      * permit saving the document as long as any rights that permit modifying the document are enabled.
@@ -219,7 +219,7 @@ public class UR3TransferParam extends Dictionary implements TransformParams {
     /**
      * Gets the UR transform parameters dictionary version. The value shall be 2.2. If an unknown version is present,
      * no rights shall be enabled.
-     * NOTE<br />
+     * NOTE<br>
      * this value is a name object, not a number.
      *
      * @return a name value of 2.2 if present, otherwise specified value.

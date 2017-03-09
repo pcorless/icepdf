@@ -25,14 +25,13 @@ import java.util.HashMap;
  * Catalog.  The outline consists of a tree-structured hierarchy of outline items
  * (sometimes called bookmarks) which can be used to display a documents
  * structure to the user.</p>
- * <p/>
+ * <br>
  * <p>The outlines class does not build a visible structure; it only represents the
  * non-visual structure of the outline.  The OutlineItemTreeNode available in
  * the packageorg.icepdf.core.ri.common provides an example on converting
  * this hierarchy to a Swing JTree.</p>
  *
- * @see org.icepdf.ri.common.utility.outline.OutlineItemTreeNode
- * @see org.icepdf.core.pobjects.OutlineItem
+ * {@link org.icepdf.core.pobjects.OutlineItem}
  * @since 1.0
  */
 public class Outlines extends Dictionary {

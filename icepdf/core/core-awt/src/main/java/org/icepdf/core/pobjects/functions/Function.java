@@ -27,12 +27,12 @@ import java.util.logging.Logger;
 /**
  * <p>The class <code>Function</code> is factory responsible for creating the correct
  * function type for the given "FunctionType" dictionary entry.</p>
- * <p/>
+ * <br>
  * <p>Functions in PDF represent static, self-contained numerical transformations.
  * In general, a function can take any number (m) of input values and produce any
  * number (n) of output values:
  * <ul>
- * f(x<sub>0</sub>,..., x<sub>m-1</sub>) = y<sub>0</sub>, ... , y<sub>n-1</sub>
+ * <li>f(x<sub>0</sub>,..., x<sub>m-1</sub>) = y<sub>0</sub>, ... , y<sub>n-1</sub></li>
  * </ul>
  * <p>In PDF functions, all the input values and all the output values are numbers.
  * Each function definition includes a <code>domain</code>, the set of legal
@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  * set of legal values for the output. Input and output values are clipped to
  * the respective <code>domain</code> and <code>range</code>.
  * </p>
- * <p/>
+ * <br>
  * <p>This function factory currently support the following function types:</p>
  * <ul>
  * <li><b>type 0</b> - sampled function, uses a table of sample values to define the function.
@@ -55,7 +55,7 @@ import java.util.logging.Logger;
  * <li><b>type 4</b> - calculator function, uses operators from
  * the PostScript language do describe an arithmetic expression.
  * </li>
- * </u>
+ * </ul>
  *
  * @since 1.0
  */
@@ -170,7 +170,7 @@ public abstract class Function {
      * <li><b>type 4</b> - calculator function, uses operators from
      * the PostScript language do describe an arithmetic expression.
      * </li>
-     * </u>
+     * </ul>
      */
     public int getFunctionType() {
         return functionType;
@@ -198,7 +198,7 @@ public abstract class Function {
      * function can take any number (m) of input values and produce any
      * number (n) of output values:
      * <ul>
-     * f(x<sub>0</sub>,..., x<sub>m-1</sub>) = y<sub>0</sub>, ... , y<sub>n-1</sub>
+     * <li>f(x<sub>0</sub>,..., x<sub>m-1</sub>) = y<sub>0</sub>, ... , y<sub>n-1</sub></li>
      * </ul>
      *
      * @param m input values to put through function.

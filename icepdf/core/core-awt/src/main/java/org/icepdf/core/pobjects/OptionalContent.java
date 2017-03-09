@@ -58,7 +58,7 @@ public class OptionalContent extends Dictionary {
      * shall be used to determine which optional content groups’ states to consider
      * and which to ignore in calculating the visibility of content
      * (see 8.11.2.3, "Intent").
-     * <p/>
+     * <br>
      * PDF defines two intent names, View and Design. In addition, the name All
      * shall indicate the set of all intents, including those not yet defined.
      * Default value: View. The value shall be View for the document’s default configuration.
@@ -70,15 +70,15 @@ public class OptionalContent extends Dictionary {
      * An array specifying the order for presentation of optional content groups
      * in a conforming reader’s user interface. The array elements may include
      * the following objects:
-     * <p/>
+     * <br>
      * Optional content group dictionaries, whose Name entry shall be displayed in
      * the user interface by the conforming reader.
-     * <p/>
+     * <br>
      * Arrays of optional content groups which may be displayed by a conforming
      * reader in a tree or outline structure. Each nested array may optionally
      * have as its first element a text string to be used as a non-selectable
      * label in a conforming reader’s user interface.
-     * <p/>
+     * <br>
      * Text labels in nested arrays shall be used to present collections of
      * related optional content groups, and not to communicate actual nesting of
      * content inside multiple layers of groups (see EXAMPLE 1 in 8.11.4.3,
@@ -86,12 +86,12 @@ public class OptionalContent extends Dictionary {
      * of groups in the content, such as for layers with sublayers, nested arrays
      * of groups without a text label shall be used (see EXAMPLE 2 in 8.11.4.3,
      * "Optional Content Configuration Dictionaries").
-     * <p/>
+     * <br>
      * An empty array [] explicitly specifies that no groups shall be presented.
      * In the default configuration dictionary, the default value shall be an empty
      * array; in other configuration dictionaries, the default shall be the Order
      * value from the default configuration dictionary.
-     * <p/>
+     * <br>
      * Any groups not listed in this array shall not be presented in any user
      * interface that uses the configuration.
      */

@@ -33,7 +33,7 @@ public class Permissions extends Dictionary {
     /**
      * This dictionary shall contain a Reference entry that shall be a signature reference dictionary (see Table 252)
      * that has a DocMDP transform method (see 12.8.2.2, DocMDP) and corresponding transform parameters.
-     * <p/>
+     * <br>
      * If this entry is present, consumer applications shall enforce the permissions specified by the P attribute in
      * the DocMDP transform parameters dictionary and shall also validate the corresponding signature based on whether
      * any of these permissions have been violated.
@@ -44,11 +44,11 @@ public class Permissions extends Dictionary {
      * (Optional) A signature dictionary that shall be used to specify and validate additional capabilities (usage rights)
      * granted for this document; that is, the enabling of interactive features of the conforming reader that are not
      * available by default.
-     * <br />
+     * <br>
      * For example, A conforming reader does not permit saving documents by default, but an agent may grant permissions
      * that enable saving specific documents. The signature shall be used to validate that the permissions have been
      * granted by the agent that did the signing.
-     * <br />
+     * <br>
      * The signature dictionary shall contain a Reference entry that shall be a signature reference dictionary that has
      * a UR transform method (see 12.8.2.3, UR). The transform parameter dictionary for this method indicates which
      * additional permissions shall be granted for the document. If the signature is valid, the conforming reader shall

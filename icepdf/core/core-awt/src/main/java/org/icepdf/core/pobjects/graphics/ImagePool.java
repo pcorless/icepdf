@@ -30,15 +30,15 @@ import java.util.logging.Logger;
  * will self trim to keep the memory foot print at the specified max.  The
  * max pool size can be specified by using the org.icepdf.core.views.imagePoolSize
  * system property.  The value is specified in MB.
- * <p/>
+ * <br>
  * The pool also contains an executor pool for processing Images.  The executor
  * allows the pageInitialization thread to continue while the executor processes
  * the image data on another thread.
- * <p/>
+ * <br>
  * Teh pool size can be set with the system property  org.icepdf.core.views.imagePoolSize
  * where the default value is 1/4 the heap size.  The pool set can be specified in
  * using a int value representing the desired size in MB.
- * <p/>
+ * <br>
  * The pool can also be disabled using the boolean system property
  * org.icepdf.core.views.imagePoolEnabled=false.  The default state is for the
  * ImagePool to be enabled.

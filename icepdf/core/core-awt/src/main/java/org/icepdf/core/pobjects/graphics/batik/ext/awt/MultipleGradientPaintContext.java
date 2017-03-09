@@ -457,7 +457,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
     /**
      * FAST LOOKUP METHOD
-     * <p/>
+     * <br>
      * This method calculates the gradient color values and places them in a
      * single int array, gradient[].  It does this by allocating space for
      * each interval based on its size relative to the smallest interval in
@@ -465,11 +465,11 @@ abstract class MultipleGradientPaintContext implements PaintContext {
      * (the maximum number of unique in-between colors in a 24 bit color
      * system), and all other intervals are allocated
      * size = (255 * the ratio of their size to the smallest interval).
-     * <p/>
+     * <br>
      * This scheme expedites a speedy retrieval because the colors are
      * distributed along the array according to their user-specified
      * distribution.  All that is needed is a relative index from 0 to 1.
-     * <p/>
+     * <br>
      * The only problem with this method is that the possibility exists for
      * the array size to balloon in the case where there is a
      * disproportionately small gradient interval.  In this case the other
@@ -565,19 +565,19 @@ abstract class MultipleGradientPaintContext implements PaintContext {
 
     /**
      * SLOW LOOKUP METHOD
-     * <p/>
+     * <br>
      * This method calculates the gradient color values for each interval and
      * places each into its own 255 size array.  The arrays are stored in
      * gradients[][].  (255 is used because this is the maximum number of
      * unique colors between 2 arbitrary colors in a 24 bit color system)
-     * <p/>
+     * <br>
      * This method uses the minimum amount of space (only 255 * number of
      * intervals), but it aggravates the lookup procedure, because now we
      * have to find out which interval to select, then calculate the index
      * within that interval.  This causes a significant performance hit,
      * because it requires this calculation be done for every point in
      * the rendering loop.
-     * <p/>
+     * <br>
      * For those of you who are interested, this is a classic example of the
      * time-space tradeoff.
      */

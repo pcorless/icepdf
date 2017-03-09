@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * pop-up window containing the text of the associated note. The rectangle or
  * ellipse shall be inscribed within the annotation rectangle defined by the
  * annotation dictionary’s Rect entry (see Table 168).
- * <p/>
+ * <br>
  * Figure 63 shows two annotations, each with a border width of 18 points. Despite
  * the names square and circle, the width and height of the annotation rectangle
  * need not be equal. Table 177 shows the annotation dictionary entries specific

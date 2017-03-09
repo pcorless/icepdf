@@ -51,7 +51,7 @@ public class SignatureDictionary extends Dictionary {
     /**
      * (Optional) A name that describes the encoding of the signature value and key information in the signature dictionary.
      * A conforming reader may use any handler that supports this format to validate the signature.
-     * <p/>
+     * <br>
      * (PDF 1.6) The following values for public-key cryptographic signatures shall be used: adbe.x509.rsa_sha1,
      * adbe.pkcs7.detached, and adbe.pkcs7.sha1 (see 12.8.3, Signature Interoperability). Other values may be defined
      * by developers, and when used, shall be prefixed with the registered developer identification. All prefix names
@@ -63,7 +63,7 @@ public class SignatureDictionary extends Dictionary {
     /**
      * (Required) The signature value. When ByteRange is present, the value shall be a hexadecimal string (see 7.3.4.3,
      * "Hexadecimal Strings") representing the value of the byte range digest.
-     * <br />
+     * <br>
      * For public-key signatures, Contents should be either a DER-encoded PKCS#1 binary data object or a DER-encoded
      * PKCS#7 binary data object.
      * Space for the Contents value must be allocated before the message digest is computed. (See 7.3.4, String Objects)
@@ -76,7 +76,7 @@ public class SignatureDictionary extends Dictionary {
      * string if the chain has only one entry. The signing certificate shall appear first in the array; it shall
      * be used to verify the signature value in Contents, and the other certificateChain shall be used to verify the
      * authenticity of the signing certificate.
-     * <br />
+     * <br>
      * If SubFilter is adbe.pkcs7.detached or adbe.pkcs7.sha1, this entry shall not be used, and the certificate chain
      * shall be put in the PKCS#7 envelope in Contents.
      */
@@ -99,7 +99,7 @@ public class SignatureDictionary extends Dictionary {
      * (Optional) An array of three integers that shall specify changes to the document that have been made between the
      * previous signature and this signature: in this order, the number of pages altered, the number of fields altered,
      * and the number of fields filled in.
-     * <br />
+     * <br>
      * The ordering of signatures shall be determined by the value of ByteRange. Since each signature results in an
      * incremental save, later signatures have a greater length value.
      */
@@ -108,8 +108,8 @@ public class SignatureDictionary extends Dictionary {
     /**
      * (Optional) The name of the person or authority signing the document. This value should be used only when it is
      * not possible to extract the name from the signature.
-     * <br />
-     * EXAMPLE 1 <br />
+     * <br>
+     * EXAMPLE 1 <br>
      * From the certificate of the signer.
      */
     public static final Name NAME_KEY = new Name("Name");
@@ -117,10 +117,10 @@ public class SignatureDictionary extends Dictionary {
     /**
      * (Optional) The time of signing. Depending on the signature handler, this may be a normal unverified computer
      * time or a time generated in a verifiable way from a secure time server.
-     * <br />
+     * <br>
      * This value should be used only when the time of signing is not available in the signature.
-     * <br />
-     * EXAMPLE 2<br />
+     * <br>
+     * EXAMPLE 2<br>
      * A  time stamp can be embedded in a PKCS#7 binary data object
      * (see 12.8.3.3, PKCS#7 Signatures as used in ISO 32000).
      */
@@ -146,7 +146,7 @@ public class SignatureDictionary extends Dictionary {
      * (Optional; PDF 1.5) The version of the signature dictionary format. It corresponds to the usage of the signature
      * dictionary in the context of the value of SubFilter. The value is 1 if the Reference dictionary shall be
      * considered critical to the validation of the signature.
-     * <br />
+     * <br>
      * Default value: 0.
      */
     public static final Name V_KEY = new Name("V");
@@ -155,7 +155,7 @@ public class SignatureDictionary extends Dictionary {
      * (Optional; PDF 1.5) A dictionary that may be used by a signature handler to record information that captures the
      * state of the computer environment used for signing, such as the name of the handler used to create the signature,
      * software build date, version, and operating system.
-     * <br />
+     * <br>
      * The PDF Signature Build Dictionary Specification, provides implementation guidelines for the use of this dictionary.
      */
     public static final Name PROP_BUILD_KEY = new Name("Prop_Build");
@@ -174,8 +174,8 @@ public class SignatureDictionary extends Dictionary {
 
     /**
      * (Optional) Information provided by the signer to enable a recipient to contact the signer to verify the signature.
-     * <br />
-     * EXAMPLE 3<br />
+     * <br>
+     * EXAMPLE 3<br>
      * A phone number.
      */
     public static final Name CONTACT_INFO_KEY = new Name("ContactInfo");

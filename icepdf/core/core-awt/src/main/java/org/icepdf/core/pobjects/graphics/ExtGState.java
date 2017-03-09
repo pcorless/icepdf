@@ -34,8 +34,8 @@ import java.util.logging.Logger;
  * dictionary are summarized in the following table. An ExtGSate dictionary
  * does not need to specify all entries and the results of gs operations are
  * cumulative.</p>
- * <p/>
- * <table border="1" >
+ * <br>
+ * <table border="1" summary="">
  * <tr>
  * <td><b> Key </b></td>
  * <td><b> Type</b></td>
@@ -53,7 +53,7 @@ import java.util.logging.Logger;
  * <td>(Optional; PDF 1.3) The line width</td>
  * </tr>
  * <tr>
- * <td valign="top" ><LC/td>
+ * <td valign="top" >LC</td>
  * <td valign="top" >integer</td>
  * <td>(Optional; PDF 1.3) The line cap style.</td>
  * </tr>
@@ -207,13 +207,13 @@ import java.util.logging.Logger;
  * <td>(Optional; PDF 1.4) Same as CA, but for nonstroking operations.</td>
  * </tr>
  * </table>
- * <p/>
+ * <br>
  * <p>An <code>ExtGState</code> object is is referenced by a named resource of
  * the type ExtGSate.  The Resources class method getExtGState() will try and
  * return an <code>ExtGState</code> object of the specified name.  If successful
  * the <code>ExtGState</code> object should be concatenated with the current
  * <code>GraphicsState</code> object.</p>
- * <p/>
+ * <br>
  * <p><b>Note: </b>many of the external graphics state parameters have not
  * yet been been implemented in the context of the content parser.
  * The <code>GraphicsSate</code> object and other relevant rendering pipeline

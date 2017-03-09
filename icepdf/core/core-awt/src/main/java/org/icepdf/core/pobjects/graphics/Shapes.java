@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * <p>The Shapes class hold all object that are parsed from a Page's content
  * streams.  These contained object make up a pages graphics stack which can
  * be iterated through to paint a page's content.<p>
- * <p/>
+ * <br>
  * <p>This class is generally only used by the Content parser during content
  * parsing.  The class also stores points to the images found in the content
  * as well as the text that is encoded on a page.</p>

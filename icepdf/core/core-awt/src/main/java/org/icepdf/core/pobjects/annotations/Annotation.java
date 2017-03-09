@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * <p>An <code>Annotation</code> class associates an object such as a note, sound, or movie with
  * a location on a page of a PDF document, or provides a way to interact with
  * the user by means of the mouse and keyboard.</p>
- * <p/>
+ * <br>
  * <p>This class allows direct access to the a Annotations dictionary.
  * Developers can take advantage of this information as they see fit.  It is
  * important to note that an annotations' rectangle coordinates are defined
@@ -46,14 +46,14 @@ import java.util.logging.Logger;
  * a view, they must be converted from the Cartesian plain to the the Java2D
  * plain.  The PageView method getPageBounds() can be used to locate the position
  * of a page within its parent component.</p>
- * <p/>
+ * <br>
  * Base class of all the specific Annotation types
- * <p/>
+ * <br>
  * Taken from the PDF 1.6 spec, here is some relevant documentation,
  * along with some additional commentary
- * <p/>
+ * <br>
  * <h2>8.4.1 Annotation Dictionaries</h2>
- * <table border=1>
+ * <table border="1" summary="">
  * <tr>
  * <td>Key</td>
  * <td>Type</td>
@@ -231,15 +231,15 @@ import java.util.logging.Logger;
  * to be invisible, the annotation is skipped, as if it were not in the document.</td>
  * </tr>
  * </table>
- * <p/>
- * <p/>
+ * <br>
+ * <br>
  * <h2>8.4.2 Annotation Flags</h2>
  * The value of the annotation dictionary's <b>F</b> entry is an unsigned 32-bit integer containing
  * flags specifying various characteristics of the annotation. Bit positions
  * within the flag word are numbered from 1 (low-order) to 32 (high-order). Table
  * 8.12 shows the meanings of the flags; all undefined flag bits are reserved and must
  * be set to 0.
- * <table border=1>
+ * <table border=1 summary="">
  * <tr>
  * <td>Bit position</td>
  * <td>Name</td>
@@ -402,7 +402,7 @@ public abstract class Annotation extends Dictionary {
      * annotation may be displayed or printed (depending on the settings of the
      * NoView and Print flags) but should not respond to mouse clicks or change
      * its appearance in response to mouse motions.
-     * <p/>
+     * <br>
      * This flag shall be ignored for widget annotations; its function is
      * subsumed by the ReadOnly flag of the associated form field.
      */
@@ -920,7 +920,7 @@ public abstract class Annotation extends Dictionary {
     /**
      * Adds the specified action to this annotation instance.  If the annotation
      * instance already has an action then this action replaces it.
-     * <p/>
+     * <br>
      * todo: future enhancement add support of next/muliple action chains.
      *
      * @param action action to add to this annotation.  This action must
@@ -1115,7 +1115,7 @@ public abstract class Annotation extends Dictionary {
     /**
      * Gets the Link type,  can be either VISIBLE_RECTANGLE or
      * INVISIBLE_RECTANGLE, it all depends on the if the border or BS has
-     * border width > 0.
+     * border width &gt; 0.
      *
      * @return VISIBLE_RECTANGLE if the annotation has a visible borde, otherwise
      * INVISIBLE_RECTANGLE

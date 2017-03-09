@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * same sequence of characters are identical. Atomic means
  * that a name has no internal structure, although it is defined by a sequence
  * of characters, those characters are not "elements" of the name. </p>
- * <p/>
+ * <br>
  * <p>A slash character (/) introduces a name. The slash is not part of the name
  * itself, but a prefix indicating that the following sequence of characters
  * constitutes a name. There can be no white-space characters between the slash
@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  * characters, but no delimiter or white-space characters. Uppercase and
  * lowercase letters are considered distinct forexample,
  * /A and /a are different names.</p>
- * <p/>
+ * <br>
  * <p>Names are similar to References in that objects in a PDF document can be
  * accessed by their use.  The Library class can result in any Name object and return
  * the corresponding PDF object.</p>

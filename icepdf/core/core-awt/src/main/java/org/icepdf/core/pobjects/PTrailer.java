@@ -26,18 +26,18 @@ import java.util.Set;
  * find the cross-reference table and certain special objects. Applications
  * should read a PDF file from its end. The last line of the file contains only
  * the end-of-file marker, %%EOF.</p>
- * <p/>
+ * <br>
  * <p>A document can have more then one trailer reference.  It is important to use
  * the addTrailer() method if a subsequent trailer is found, or the
  * addPreviousTrailer() method if a previous trailer is found, depending on if
  * the PDF file is being read linearly, or via random access seeking.</p>
- * <p/>
+ * <br>
  * <p>If the Prev key entry is present then the document has more then one
  * cross-reference section.  There is a numerical value, which is typically
  * associated with the trailer, that comes after startxref, and before %%EOF.
  * It is byte offset from the beginning of the file to the beginning of the last
  * cross-reference section.</p>
- * <p/>
+ * <br>
  * <p>In a regular PDF, it's the address of the current xref table.  In a linearized
  * PDF, it's the address of the xref table at the file beginning, or zero.
  * In an updated PDF, it's the address of the current xref table. In all cases,
@@ -97,7 +97,7 @@ public class PTrailer extends Dictionary {
      * <li>Note: Any object in a cross-reference section whose number is
      * greater than this value is ignored and considered missing.</li>
      * </ul>
-     * <p/>
+     * <br>
      * <b>Required : </b> must not be an indirect reference
      *
      * @return total number of entries in the file's cross-reference table
@@ -109,7 +109,7 @@ public class PTrailer extends Dictionary {
     /**
      * Gets the byte offset from the beginning of the file to the beginning of the
      * previous cross-reference section.
-     * <p/>
+     * <br>
      * (Present only if the file has more than one cross-reference section; must
      * not be an indirect reference)
      *
@@ -154,7 +154,7 @@ public class PTrailer extends Dictionary {
 
     /**
      * Gets the catalog reference for the PDF document contained in the file.
-     * <p/>
+     * <br>
      * <b>Required : </b> must not be an indirect reference
      *
      * @return reference number of catalog reference.
@@ -189,7 +189,7 @@ public class PTrailer extends Dictionary {
 
     /**
      * The document's encryption dictionary
-     * <p/>
+     * <br>
      * <b>Required : </b> if document is encrypted; PDF 1.1
      *
      * @return encryption dictionary
@@ -206,7 +206,7 @@ public class PTrailer extends Dictionary {
 
     /**
      * The document's information dictionary
-     * <p/>
+     * <br>
      * <b>Optional : </b> must be an indirect reference.
      *
      * @return information dictionary
@@ -222,7 +222,7 @@ public class PTrailer extends Dictionary {
 
     /**
      * A vector of two strings constituting a file identifier
-     * <p/>
+     * <br>
      * <b>Optional : </b> PDF 1.1.
      *
      * @return vector containing constituting file identifier

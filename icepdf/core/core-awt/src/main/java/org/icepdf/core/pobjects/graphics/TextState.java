@@ -25,7 +25,7 @@ import java.awt.geom.Point2D;
 
 /**
  * The text state comprises those graphics state parameters that only affect text.
- * <p/>
+ * <br>
  * Tc - Character spacing
  * Tw - Word spacing
  * Th - Horizontal scaling

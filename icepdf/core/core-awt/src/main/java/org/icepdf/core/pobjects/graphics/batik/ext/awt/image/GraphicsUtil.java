@@ -123,7 +123,7 @@ public class GraphicsUtil {
      * An internal optimized version of copyData designed to work on
      * Integer packed data with a SinglePixelPackedSampleModel.  Only
      * the region of overlap between src and dst is copied.
-     * <p/>
+     * <br>
      * Calls to this should be preflighted with is_INT_PACK_Data
      * on both src and dest (requireAlpha can be false).
      *
@@ -244,7 +244,7 @@ public class GraphicsUtil {
      * Creates a new raster that has a <b>copy</b> of the data in
      * <tt>ras</tt>.  This is highly optimized for speed.  There is
      * no provision for changing any aspect of the SampleModel.
-     * <p/>
+     * <br>
      * This method should be used when you need to change the contents
      * of a Raster that you do not "own" (ie the result of a
      * <tt>getData</tt> call).
@@ -262,7 +262,7 @@ public class GraphicsUtil {
      * <tt>ras</tt>.  This is highly optimized for speed.  There is
      * no provision for changing any aspect of the SampleModel.
      * However you can specify a new location for the returned raster.
-     * <p/>
+     * <br>
      * This method should be used when you need to change the contents
      * of a Raster that you do not "own" (ie the result of a
      * <tt>getData</tt> call).
@@ -334,7 +334,7 @@ public class GraphicsUtil {
      * Coerces <tt>ras</tt> to be writable.  The returned Raster continues to
      * reference the DataBuffer from ras, so modifications to the returned
      * WritableRaster will be seen in ras.<p>
-     * <p/>
+     * <br>
      * This method should only be used if you need a WritableRaster due to
      * an interface (such as to construct a BufferedImage), but have no
      * intention of modifying the contents of the returned Raster.  If
@@ -353,11 +353,11 @@ public class GraphicsUtil {
      * Coerces <tt>ras</tt> to be writable.  The returned Raster continues to
      * reference the DataBuffer from ras, so modifications to the returned
      * WritableRaster will be seen in ras.<p>
-     * <p/>
+     * <br>
      * You can specify a new location for the returned WritableRaster, this
      * is especially useful for constructing BufferedImages which require
      * the Raster to be at (0,0).
-     * <p/>
+     * <br>
      * This method should only be used if you need a WritableRaster due to
      * an interface (such as to construct a BufferedImage), but have no
      * intention of modifying the contents of the returned Raster.  If

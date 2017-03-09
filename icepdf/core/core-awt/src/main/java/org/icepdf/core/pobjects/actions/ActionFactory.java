@@ -37,7 +37,7 @@ public class ActionFactory {
     /**
      * Creates a new ACTION object of the type specified by the type constant.
      * Currently there are only two supporte action types; GoTo, Launch and URI.
-     * <p/>
+     * <br>
      * This call adds the new action object to the document library as well
      * as the document StateManager.
      *

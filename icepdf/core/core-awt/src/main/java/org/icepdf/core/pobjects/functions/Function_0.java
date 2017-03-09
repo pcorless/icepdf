@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * to produce an approximation for function whose domains and ranges are bounded.
  * The samples are organized as an m-dimensional table in which each entry has n
  * components. </p>
- * <p/>
+ * <br>
  * <p>Sampled functions are highly general and offer reasonably accurate
  * representations of arbitrary analytic functions at low expense.  The
  * dimensionality of a sampled function is restricted only by the implementation

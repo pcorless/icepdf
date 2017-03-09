@@ -23,7 +23,7 @@ import java.util.Comparator;
  * of the bounding box in the cartesian plane's fourth quadrant.  The sorting
  * tries to order the word blocks via the coordinate system rather then the order
  * that they were plotted in and thus shouldn't effect LTR or RTL writing formats.
- * <p/>
+ * <br>
  * It's assumed that all WordText that is a child of LineText will not be
  * sorted on the y access.  The class LinePositionComparator will be used
  * to insure that lines are ordered correctly in the parent PageText array.

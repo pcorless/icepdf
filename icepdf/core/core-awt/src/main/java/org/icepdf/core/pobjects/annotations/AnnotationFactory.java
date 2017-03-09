@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 /**
  * Factory for build annotations.
- * <p/>
+ * <br>
  * Note: Currently only Link annotations are supported.
  *
  * @since 4.0
@@ -38,7 +38,7 @@ public class AnnotationFactory {
      * paramater.  If no annotaitonState is provided a LinkAnnotation is returned
      * with with a black border.  The rect specifies where the annotation should
      * be located in user space.
-     * <p/>
+     * <br>
      * This call adds the new Annotation object to the document library as well
      * as the document StateManager.
      *

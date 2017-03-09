@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 /**
  * The FieldMDP transform method shall be used to detect changes to the values of a list of form fields.
- * <p/>
+ * <br>
  * On behalf of a document author creating a document containing both form fields and signatures the following shall be
  * supported by conforming writers:
  * <ul>
@@ -38,11 +38,11 @@ import java.util.HashMap;
  * shall be created. The Action and Fields entries in the transform parameters dictionary shall be copied from the
  * corresponding fields in the signature field lock dictionary.</li>
  * </ul>
- * NOTE <br />
+ * NOTE <br>
  * This copying is done because all objects in a signature dictionary must be direct objects if the dictionary contains
  * a byte range signature. Therefore, the transform parameters dictionary cannot reference the signature field lock
  * dictionary indirectly.
- * <p/>
+ * <br>
  * FieldMDP signatures shall be validated in a similar manner to DocMDP signatures. See Validating Signatures That Use
  * the DocMDP Transform Method in 12.8.2.2, DocMDP for details.
  */
@@ -100,7 +100,7 @@ public class FieldMDPTransferParam extends Dictionary implements TransformParams
     /**
      * (Optional: PDF 1.5 required) The transform parameters dictionary version. The value for PDF 1.5 and
      * later shall be 1.2.
-     * NOTE<br />
+     * NOTE<br>
      * this value is a name object, not a number.
      *
      * @return Default value: 1.2.

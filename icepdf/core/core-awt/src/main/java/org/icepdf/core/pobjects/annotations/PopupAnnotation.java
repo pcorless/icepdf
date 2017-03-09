@@ -51,7 +51,7 @@ public class PopupAnnotation extends Annotation {
     /**
      * (Optional; shall be an indirect reference) The parent annotation with
      * which this pop-up annotation shall be associated.
-     * <p/>
+     * <br>
      * If this entry is present, the parent annotation’s Contents, M, C, and T
      * entries (see Table 168) shall override those of the pop-up annotation
      * itself.

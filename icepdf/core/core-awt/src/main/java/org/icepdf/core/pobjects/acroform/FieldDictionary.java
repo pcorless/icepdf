@@ -50,15 +50,15 @@ public class FieldDictionary extends Dictionary {
     /**
      * Required for terminal fields; inheritable) The type of field that this
      * dictionary describes:
-     * <p/>
-     * Button -> Button (see 12.7.4.2, "Button Fields")
-     * <p/>
-     * Text -> Text (see 12.7.4.3, "Text Fields")
-     * <p/>
-     * Choice -> Choice (see 12.7.4.4, "Choice Fields")
-     * <p/>
-     * Signature(PDF 1.3) -> Signature (see 12.7.4.5, "Signature Fields")
-     * <p/>
+     * <br>
+     * Button - Button (see 12.7.4.2, "Button Fields")
+     * <br>
+     * Text - Text (see 12.7.4.3, "Text Fields")
+     * <br>
+     * Choice - Choice (see 12.7.4.4, "Choice Fields")
+     * <br>
+     * Signature(PDF 1.3) - Signature (see 12.7.4.5, "Signature Fields")
+     * <br>
      * This entry may be present in a non-terminal field (one whose descendants
      * are fields) to provide an inheritable FT value. However, a non-terminal
      * field does not logically have a type of its own; it is merely a container
@@ -70,7 +70,7 @@ public class FieldDictionary extends Dictionary {
     /**
      * (Sometimes required, as described below) An array of indirect references
      * to the immediate children of this field.
-     * <p/>
+     * <br>
      * In a non-terminal field, the Kids array shall refer to field dictionaries
      * that are immediate descendants of this field. In a terminal field, the Kids
      * array ordinarily shall refer to one or more separate widget annotations that
@@ -331,7 +331,7 @@ public class FieldDictionary extends Dictionary {
      * The T entry in the field dictionary (see Table 220) holds a text string defining the field’s partial field name.
      * The fully qualified field name is not explicitly defined but shall be constructed from the partial field names
      * of the field and all of its ancestors.
-     * <p/>
+     * <br>
      * This method will climb back up the inheritance tree to build the name.
      *
      * @return fully quality name of the field.

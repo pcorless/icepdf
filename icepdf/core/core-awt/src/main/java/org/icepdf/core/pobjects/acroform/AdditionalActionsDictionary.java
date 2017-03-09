@@ -29,7 +29,7 @@ import java.util.HashMap;
  * of an action. In PDF 1.4, the document catalogue dictionary (see 7.7.2, "Document Catalog") may also contain an AA
  * entry for trigger events affecting the document as a whole. Tables 194 to 197 show the contents of this type of
  * dictionary.
- * <p/>
+ * <br>
  * PDF 1.5 introduces four trigger events in annotation’s additional-actions dictionary to support multimedia
  * presentations:
  * <ul>
@@ -67,7 +67,7 @@ public class AdditionalActionsDictionary extends Dictionary {
     /**
      * (Optional; PDF 1.2) An action that shall be performed when the mouse button is released inside the annotation’s
      * active area.
-     * <p/>
+     * <br>
      * For backward compatibility, the A entry in an annotation dictionary, if present, takes precedence over this
      * entry (see Table 168).
      * A U (up) event may not occur without a preceding E and D event.
@@ -88,10 +88,10 @@ public class AdditionalActionsDictionary extends Dictionary {
 
     /**
      * (Optional; PDF 1.5) An action that shall be performed when the page containing the annotation is opened.
-     * <p/>
-     * EXAMPLE 1<br />
+     * <br>
+     * EXAMPLE 1<br>
      * When the user navigates to it from the next or previous page or by means of a link annotation or outline item.
-     * <p/>
+     * <br>
      * The action shall be executed after the O action in the page’s additional-actions dictionary (see Table 195) and
      * the OpenAction entry in the document Catalog(see Table 28), if such actions are present.
      */
@@ -99,10 +99,10 @@ public class AdditionalActionsDictionary extends Dictionary {
 
     /**
      * (Optional; PDF 1.5) An action that shall be performed when the page containing the annotation is closed.
-     * <p/>
-     * EXAMPLE 2<br />
+     * <br>
+     * EXAMPLE 2<br>
      * When the user navigates to the next or previous page, or follows a link annotation or outline item.
-     * <p/>
+     * <br>
      * The action shall be executed before the C action in the page’s additional-actions dictionary (see Table 195),
      * if present.
      */

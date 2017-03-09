@@ -23,10 +23,10 @@ import java.awt.*;
  * WatermarkCallback allows a user to set a default watermark at the document
  * level which will be applied at paint time for print and/or screen.  The callback
  * can be added to the Document class or on a page by page bases.
- * <p/>
+ * <br>
  * The renderingHintType can be used to detect two different output modes;
  * GraphicsRenderingHints.PRINT and GraphicsRenderingHints.SCREEN.
- * <p/>
+ * <br>
  * <b>Note:</b> be careful not to hold a reference to the Page object as an
  * an instance of the class as a memory leak may result.
  *

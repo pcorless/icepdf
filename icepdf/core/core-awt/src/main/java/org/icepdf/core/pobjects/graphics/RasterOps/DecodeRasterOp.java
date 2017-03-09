@@ -12,7 +12,7 @@ import java.awt.image.WritableRaster;
  * Applies the decode value array tot he specified raster.  The decode array
  * is specific to PDF and describes how to map image samples into the range of
  * values appropriate for the image’s colour space.
- * <p/>
+ * <br>
  * This Raster Operation should be applied to any image type before colour
  * conversion takes place.
  *

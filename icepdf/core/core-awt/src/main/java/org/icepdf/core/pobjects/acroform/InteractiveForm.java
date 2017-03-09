@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * A PDF document may contain any number of fields appearing on any combination
  * of pages, all of which make up a single, global interactive form spanning
  * the entire document.
- * <p/>
+ * <br>
  * Each field in a document’s interactive form shall be defined by a field
  * dictionary (see 12.7.3, "Field Dictionaries"). For purposes of definition and
  * naming, the fields can be organized hierarchically and can inherit attributes
@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  * define its appearance on the page. A field that has children that are fields
  * is called a non-terminal field. A field that does not have children that are
  * fields is called a terminal field.
- * <p/>
+ * <br>
  * The contents and properties of a document’s interactive form shall be defined
  * by an interactive form dictionary that shall be referenced from the AcroForm
  * entry in the document catalogue (see 7.7.2, "Document Catalog").
@@ -295,7 +295,7 @@ public class InteractiveForm extends Dictionary {
 
     /**
      * A set of flags specifying various document-level characteristics related to signature fields.  It should
-     * be noted that this filed is not used very often and {@see isSignatureFields} should be used instead.
+     * be noted that this filed is not used very often and {@link #isSignatureFields} should be used instead.
      *
      * @return true if enabled, false otherwise.
      */

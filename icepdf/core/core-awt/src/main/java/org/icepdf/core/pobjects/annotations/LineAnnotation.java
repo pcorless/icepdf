@@ -44,7 +44,7 @@ public class LineAnnotation extends MarkupAnnotation {
     /**
      * (Required) An array of four numbers, [x1 y1 x2 y2], specifying the starting
      * and ending coordinates of the line in default user space.
-     * <p/>
+     * <br>
      * If the LL entry is present, this value shall represent the endpoints of
      * the leader lines rather than the endpoints of the line itself; see Figure 60.
      */
@@ -55,7 +55,7 @@ public class LineAnnotation extends MarkupAnnotation {
      * the array shall specify the line ending styles for the endpoints defined,
      * respectively, by the first and second pairs of coordinates, (x1, y1) and
      * (x2, y2), in the L array. Table 176 shows the possible values.
-     * <p/>
+     * <br>
      * Default value: [/None /None].
      */
     public static final Name LE_KEY = new Name("LE");
@@ -67,7 +67,7 @@ public class LineAnnotation extends MarkupAnnotation {
      * clockwise when traversing the line from its starting point to its ending
      * point (as specified by L); a negative value shall indicate the opposite
      * direction.
-     * <p/>
+     * <br>
      * Default value: 0 (no leader lines).
      */
     public static final Name LL_KEY = new Name("LL");
@@ -75,7 +75,7 @@ public class LineAnnotation extends MarkupAnnotation {
      * (Optional; PDF 1.6) A non-negative number that shall represents the
      * length of leader line extensions that extend from the line proper 180
      * degrees from the leader lines, as shown in Figure 60.
-     * <p/>
+     * <br>
      * Default value: 0 (no leader line extensions).
      */
     public static final Name LLE_KEY = new Name("LLE");
@@ -96,7 +96,7 @@ public class LineAnnotation extends MarkupAnnotation {
      * as shown in Figure 61 and Figure 62. The text shall be rendered in a
      * manner appropriate to the content, taking into account factors such as
      * writing direction.
-     * <p/>
+     * <br>
      * Default value: false.
      */
     public static final Name CAP_KEY = new Name("Cap");
@@ -119,7 +119,7 @@ public class LineAnnotation extends MarkupAnnotation {
      * annotation’s caption positioning. Valid values are Inline, meaning the
      * caption shall be centered inside the line, and Top, meaning the caption
      * shall be on top of the line.
-     * <p/>
+     * <br>
      * Default value: Inline
      */
     public static final Name CP_KEY = new Name("CP");
@@ -137,7 +137,7 @@ public class LineAnnotation extends MarkupAnnotation {
      * be the vertical offset perpendicular to the annotation line, with a
      * positive value indicating a shift up and a negative value indicating a
      * shift down.
-     * <p/>
+     * <br>
      * Default value: [0, 0] (no offset from normal positioning)
      */
     public static final Name CO_KEY = new Name("CO");

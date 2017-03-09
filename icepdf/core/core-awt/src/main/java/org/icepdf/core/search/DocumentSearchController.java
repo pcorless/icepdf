@@ -35,7 +35,7 @@ public interface DocumentSearchController {
      * sure that a pages text is highlighted even after a despose/init cycle.
      * If the text state is no longer present then the search should be executed
      * again.
-     * <p/>
+     * <br>
      * This method clears the search results for the page before it searches. If
      * you wish to have cumulative search results then searches terms should
      * be added with {@link #addSearchTerm(String, boolean, boolean)} and the
@@ -55,7 +55,7 @@ public interface DocumentSearchController {
      * Searches the page index given the search terms that have been added
      * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
      * hits where detected then the Page's PageText is added to the cache.
-     * <p/>
+     * <br>
      * This method represent the core search algorithm for this
      * DocumentSearchController implementation.  This method can be overridden
      * if a different search algorithm or functionality is needed.
@@ -69,12 +69,12 @@ public interface DocumentSearchController {
      * Searches the page index given the search terms that have been added
      * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
      * hits where detected then the Page's PageText is added to the cache.
-     * <p/>
+     * <br>
      * This class differences from {@link #searchHighlightPage(int)} in that
      * is returns a list of lineText fragments for each hit but the LinText
      * is padded by pre and post words that surround the hit in the page
      * context.
-     * <p/>
+     * <br>
      * This method represent the core search algorithm for this
      * DocumentSearchController implementation.  This method can be overridden
      * if a different search algorithm or functionality is needed.
@@ -101,7 +101,7 @@ public interface DocumentSearchController {
      * Add the search term to the list of search terms.  The term is split
      * into words based on white space and punctuation. No checks are done
      * for duplication.
-     * <p/>
+     * <br>
      * A new search needs to be executed for this change to take place.
      *
      * @param term          single word or phrase to search for.

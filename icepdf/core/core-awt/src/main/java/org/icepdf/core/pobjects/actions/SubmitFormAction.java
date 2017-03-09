@@ -37,10 +37,10 @@ import java.util.logging.Logger;
 /**
  * Upon invocation of a submit-form action, a conforming processor shall transmit the names and values of selected
  * interactive form fields to a specified uniform resource locator (URL).
- * <p/>
+ * <br>
  * The main function of this class is to interpret the F value against the submit bit flags and submit the form
  * data and other data as needed.
- * <p/>
+ * <br>
  * <b>Note: </b>Some flagss are not yet supported, see flag _BIT constants for more information on support flags.
  *
  * @since 5.1
@@ -57,7 +57,7 @@ public class SubmitFormAction extends FormAction {
     /**
      * If clear, the Fields array (see Table 236) specifies which fields to include in the submission.
      * (All descendants of the specified fields in the field hierarchy shall be submitted as well.)
-     * <p/>
+     * <br>
      * If set, the Fields array tells which fields to exclude. All fields in the document’s interactive form shall be
      * submitted except those listed in the Fields array and those whose NoExport flag (see Table 221)
      * is set and fields with no values if the IncludeNoValueFields flag is clear.
@@ -68,7 +68,7 @@ public class SubmitFormAction extends FormAction {
      * If set, all fields designated by the Fields array and the Include/Exclude flag shall be submitted, regardless
      * of whether they have a value (V entry in the field dictionary). For fields without a value, only the field name
      * shall be transmitted.
-     * <p/>
+     * <br>
      * If clear, fields without a value shall not be submitted.
      */
     public int INCLUDE_NO_VALUE_FIELDS_BIT = 0X0000002; // bit 2
@@ -90,15 +90,15 @@ public class SubmitFormAction extends FormAction {
      * If set, the coordinates of the mouse click that caused the submit-form action shall be transmitted as part of
      * the form data. The coordinate values are relative to the upper-left corner of the field’s widget annotation
      * rectangle. They shall be represented in the data in the format
-     * <p/>
-     * name.x=xval&name.y=yval
-     * <p/>
+     * <br>
+     * name.x=xval&amp;name.y=yval
+     * <br>
      * where name is the field’s mapping name (TM in the field dictionary) if present; otherwise, name is the field name.
      * If the value of the TM entry is a single ASCII SPACE (20h) character, both the name and the ASCII PERIOD (2Eh)
      * following it shall be suppressed, resulting in the format
-     * <p/>
-     * x=xval&y=yval
-     * <p/>
+     * <br>
+     * x=xval&amp;y=yval
+     * <br>
      * This flag shall be used only when the ExportFormat flag is set. If ExportFormat is clear, this flag shall also
      * be clear
      */
@@ -136,8 +136,8 @@ public class SubmitFormAction extends FormAction {
     /**
      * (PDF 1.4) If set, any submitted field values representing dates shall be converted to the standard format
      * described in 7.9.4, "Dates."
-     * <p/>
-     * <b>NOTE</b><br/>
+     * <br>
+     * <b>NOTE</b><br>
      * The interpretation of a form field as a date is not specified explicitly in the field itself but only in the
      * JavaScript code that processes it.
      */
@@ -148,11 +148,11 @@ public class SubmitFormAction extends FormAction {
      * and ExportFormat flags are clear) and the IncludeAnnotations flag is set. If set, it shall include only those
      * markup annotations whose T entry (see Table 170) matches the name of the current user, as determined by the
      * remote server to which the form is being submitted.
-     * <p/>
-     * <b>NOTE 1</b><br/>The T entry for markup annotations specifies the text label that is displayed in the title bar
+     * <br>
+     * <b>NOTE 1</b><br>The T entry for markup annotations specifies the text label that is displayed in the title bar
      * of the annotation’s pop-up window and is assumed to represent the name of the user authoring the annotation.
-     * <p/>
-     * <b>NOTE 2</b><br/>This allows multiple users to collaborate in annotating a single remote PDF document without
+     * <br>
+     * <b>NOTE 2</b><br>This allows multiple users to collaborate in annotating a single remote PDF document without
      * affecting one another’s annotations.
      */
     public int EXCL_NON_USER_ANNOTS_BIT = 0X0001024;  // bit 11
@@ -182,7 +182,7 @@ public class SubmitFormAction extends FormAction {
      * an indirect reference to a field dictionary or (PDF 1.3) a text string
      * representing the fully qualified name of a field. Elements of both kinds
      * may be mixed in the same array.
-     * <p/>
+     * <br>
      * If this entry is omitted, the Include/Exclude flag shall be ignored, and all
      * fields in the document’s interactive form shall be submitted except those whose
      * NoExport flag (see Table 221) is set. Fields with no values may also be excluded,
@@ -427,91 +427,91 @@ public class SubmitFormAction extends FormAction {
     }
 
     /**
-     * @see #INCLUDE_EXCLUDE_BIT
+     * {@link #INCLUDE_EXCLUDE_BIT}
      */
     public boolean isIncludeExclude() {
         return (getFlags() & INCLUDE_EXCLUDE_BIT) == INCLUDE_EXCLUDE_BIT;
     }
 
     /**
-     * @see #INCLUDE_NO_VALUE_FIELDS_BIT
+     * {@link #INCLUDE_NO_VALUE_FIELDS_BIT}
      */
     public boolean isIncludeNoValueFields() {
         return (getFlags() & INCLUDE_NO_VALUE_FIELDS_BIT) == INCLUDE_NO_VALUE_FIELDS_BIT;
     }
 
     /**
-     * @see #EXPORT_FORMAT_BIT
+     * {@link #EXPORT_FORMAT_BIT}
      */
     public boolean isExportFormat() {
         return (getFlags() & EXPORT_FORMAT_BIT) == EXPORT_FORMAT_BIT;
     }
 
     /**
-     * @see #GET_METHOD_BIT
+     * {@link #GET_METHOD_BIT}
      */
     public boolean isGetMethod() {
         return (getFlags() & GET_METHOD_BIT) == GET_METHOD_BIT;
     }
 
     /**
-     * @see #SUBMIT_COORDINATES_BIT
+     * {@link #SUBMIT_COORDINATES_BIT}
      */
     public boolean isSubmitCoordinates() {
         return (getFlags() & SUBMIT_COORDINATES_BIT) == SUBMIT_COORDINATES_BIT;
     }
 
     /**
-     * @see #SUBMIT_COORDINATES_BIT
+     * {@link #SUBMIT_COORDINATES_BIT}
      */
     public boolean isXFDF() {
         return (getFlags() & XFDF_BIT) == XFDF_BIT;
     }
 
     /**
-     * @see #INCLUDE_APPEND_SAVES_BIT
+     * {@link #INCLUDE_APPEND_SAVES_BIT}
      */
     public boolean isIncludeAppendSaves() {
         return (getFlags() & INCLUDE_APPEND_SAVES_BIT) == INCLUDE_APPEND_SAVES_BIT;
     }
 
     /**
-     * @see #INCLUDE_ANNOTATIONS_BIT
+     * {@link #INCLUDE_ANNOTATIONS_BIT}
      */
     public boolean isIncludeAnnotations() {
         return (getFlags() & INCLUDE_ANNOTATIONS_BIT) == INCLUDE_ANNOTATIONS_BIT;
     }
 
     /**
-     * @see #SUBMIT_PDF_BIT
+     * {@link #SUBMIT_PDF_BIT}
      */
     public boolean isSubmitPDF() {
         return (getFlags() & SUBMIT_PDF_BIT) == SUBMIT_PDF_BIT;
     }
 
     /**
-     * @see #CANONICAL_FORMAT_BIT
+     * {@link #CANONICAL_FORMAT_BIT}
      */
     public boolean isCanonicalFormat() {
         return (getFlags() & CANONICAL_FORMAT_BIT) == CANONICAL_FORMAT_BIT;
     }
 
     /**
-     * @see #EXCL_NON_USER_ANNOTS_BIT
+     * {@link #EXCL_NON_USER_ANNOTS_BIT}
      */
     public boolean isExcludeNonUserAnnots() {
         return (getFlags() & EXCL_NON_USER_ANNOTS_BIT) == EXCL_NON_USER_ANNOTS_BIT;
     }
 
     /**
-     * @see #EXCL_F_KEY_BIT
+     * {@link #EXCL_F_KEY_BIT}
      */
     public boolean isExcludeFKey() {
         return (getFlags() & EXCL_F_KEY_BIT) == EXCL_F_KEY_BIT;
     }
 
     /**
-     * @see #EMBED_FORM_BIT
+     * {@link #EMBED_FORM_BIT}
      */
     public boolean isEmbedForm() {
         return (getFlags() & EMBED_FORM_BIT) == EMBED_FORM_BIT;

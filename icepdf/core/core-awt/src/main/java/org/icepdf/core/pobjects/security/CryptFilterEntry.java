@@ -63,15 +63,15 @@ public class CryptFilterEntry extends Dictionary {
      * and an initialization vector that shall be randomly generated and
      * placed as the first 16 bytes in the stream or string.</li>
      * </ul>
-     * <p/>
+     * <br>
      * When the value is V2 or AESV2, the application may ask once for this
      * encryption key and cache the key for subsequent use for streams that use
      * the same crypt filter. Therefore, there shall be a one-to-one relationship
      * between a crypt filter name and the corresponding encryption key.
-     * <p/>
+     * <br>
      * Only the values listed here shall be supported. Applications that encounter
      * other values shall report that the file is encrypted with an unsupported algorithm.
-     * <p/>
+     * <br>
      * Default value: None.
      *
      * @return name of crypt filter method.
@@ -93,7 +93,7 @@ public class CryptFilterEntry extends Dictionary {
      * <li>EFOpen: Authorization shall be required when accessing embedded files.</li>
      * </ul>
      * Default value: DocOpen.
-     * <p/>
+     * <br>
      * If this filter is used as the value of StrF or StmF in the encryption
      * dictionary (see Table 20), the conforming reader shall ignore this key
      * and behave as if the value is DocOpen.

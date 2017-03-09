@@ -26,7 +26,7 @@ import java.awt.geom.AffineTransform;
  * Common command pattern for painting PDF draw commands to a Java2D graphics
  * context. Any object that is Shapes shapes array list must implement this
  * interface.
- * <p/>
+ * <br>
  * Implementing methods should execute as quickly as possible to avoid slowing
  * down render times.
  *
