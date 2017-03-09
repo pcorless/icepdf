@@ -637,11 +637,11 @@ public class ImageStream extends Stream {
                         tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                     }
                 } else {
-                    if (colourSpace instanceof Indexed){
+                    if (colourSpace instanceof Indexed) {
                         tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
                     } else if (wr.getNumBands() == 1) {
                         tmpImage = ImageUtility.makeGrayBufferedImage(wr);
-                    }else {
+                    } else {
                         tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
                     }
                 }
@@ -706,7 +706,7 @@ public class ImageStream extends Stream {
     private BufferedImage jbig2Decode(int width, int height,
                                       PColorSpace colourSpace,
                                       int bitsPerComponent, float[] decode) {
-        BufferedImage tmpImage;
+        BufferedImage tmpImage = null;
 
         // get the decode params form the stream
         HashMap decodeParms = library.getDictionary(entries, DECODEPARMS_KEY);
@@ -724,29 +724,23 @@ public class ImageStream extends Stream {
                         * bitsPerComponent / 8);
 
         // ICEpdf-pro has a commercial license of the levigo library but the OS
-        // library can use it to if the project can comply with levigo's open
-        // source licence.
+        // library will need to add the library as a dependence.
         if (isLevigoJBIG2ImageReaderClass) {
             try {
                 tmpImage = ImageUtility.proJbig2Decode(
                         ImageIO.createImageInputStream(new ByteArrayInputStream(data)),
                         decodeParms, globalsStream);
+                // apply decode
+                if ((colourSpace instanceof DeviceGray)) {
+                    tmpImage = ImageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
+                }
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Problem loading JBIG2 image using Levigo: ", e);
-                // fall back and try and load with the OS jbig2 implementation.
-                tmpImage = ImageUtility.jbig2Decode(
-                        data,
-                        decodeParms, globalsStream);
             }
         } else {
-            tmpImage = ImageUtility.jbig2Decode(
-                    data,
-                    decodeParms, globalsStream);
+            logger.log(Level.WARNING, "Levigo JBIG2 library could not be found on the class path.");
         }
-        // apply decode
-        if ((colourSpace instanceof DeviceGray)) {
-            tmpImage = ImageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
-        }
+
 
         // apply the fill colour and alpha if masking is enabled.
         return tmpImage;
