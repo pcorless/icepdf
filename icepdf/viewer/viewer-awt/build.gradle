@@ -43,7 +43,7 @@ jar {
     baseName 'icepdf'
     appendix 'viewer'
     version "${VERSION}"
-
+    classifier "${RELEASE_TYPE}"
     manifest {
         attributes("Main-Class": 'org.icepdf.ri.viewer.Main')
         // section names attributes

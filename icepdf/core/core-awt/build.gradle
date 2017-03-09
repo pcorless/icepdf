@@ -53,6 +53,7 @@ jar() {
     baseName "${baseJarName}"
     appendix "${baseAppendixName}"
     version "${VERSION}"
+    classifier "${RELEASE_TYPE}"
     manifest {
         attributes("Implementation-Title": "${baseName + '-' + appendix}", "${sectionName}")
         attributes("Implementation-Version": "${version + '-' + classifier}", "${sectionName}")
