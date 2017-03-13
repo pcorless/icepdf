@@ -5,7 +5,7 @@ a NetBeans build script to produce the necessary artifacts for a JWS deployment.
 Applets but this comes at the cost of complicating the build process.
 
 Maven and Gradle plugin exist but they do not yet support adding a copy of the jnlp into the jars which is needed
-for a valid JWS deployement.
+for a valid JWS deployment.
 
 ** Signing the Jar files *
 
