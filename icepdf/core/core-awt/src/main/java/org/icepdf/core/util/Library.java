@@ -751,33 +751,38 @@ public class Library {
     public static void initializeThreadPool() {
 
         log.fine("Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
-        commonThreadPool = new ThreadPoolExecutor(
-                commonPoolThreads, commonPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        commonThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-thread-pool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
 
-        imageThreadPool = new ThreadPoolExecutor(
-                imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
-        // set a lower thread priority
-        imageThreadPool.setThreadFactory(new ThreadFactory() {
-            public Thread newThread(java.lang.Runnable command) {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-thread-image-pool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            }
-        });
+        if (commonThreadPool == null || commonThreadPool.isShutdown()) {
+            commonThreadPool = new ThreadPoolExecutor(
+                    commonPoolThreads, commonPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<Runnable>());
+            // set a lower thread priority
+            commonThreadPool.setThreadFactory(new ThreadFactory() {
+                public Thread newThread(java.lang.Runnable command) {
+                    Thread newThread = new Thread(command);
+                    newThread.setName("ICEpdf-thread-pool");
+                    newThread.setPriority(Thread.NORM_PRIORITY);
+                    newThread.setDaemon(true);
+                    return newThread;
+                }
+            });
+        }
+
+        if (imageThreadPool == null || imageThreadPool.isShutdown()) {
+            imageThreadPool = new ThreadPoolExecutor(
+                    imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<Runnable>());
+            // set a lower thread priority
+            imageThreadPool.setThreadFactory(new ThreadFactory() {
+                public Thread newThread(java.lang.Runnable command) {
+                    Thread newThread = new Thread(command);
+                    newThread.setName("ICEpdf-thread-image-pool");
+                    newThread.setPriority(Thread.NORM_PRIORITY);
+                    newThread.setDaemon(true);
+                    return newThread;
+                }
+            });
+        }
     }
 
     public static void shutdownThreadPool() {
@@ -790,6 +795,9 @@ public class Library {
 
     public static void execute(Runnable runnable) {
         try {
+            if (commonThreadPool.isShutdown()) {
+                initializeThreadPool();
+            }
             commonThreadPool.execute(runnable);
         } catch (RejectedExecutionException e) {
             log.severe("ICEpdf Common Thread Pool was shutdown!");
@@ -798,6 +806,9 @@ public class Library {
 
     public static void executeImage(FutureTask callable) {
         try {
+            if (imageThreadPool.isShutdown()) {
+                initializeThreadPool();
+            }
             imageThreadPool.execute(callable);
         } catch (RejectedExecutionException e) {
             log.severe("ICEpdf Common Thread Pool was shutdown!");
