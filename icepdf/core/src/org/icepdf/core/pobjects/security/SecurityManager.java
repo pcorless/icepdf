@@ -85,7 +85,7 @@ public class SecurityManager {
         try {
             // try and create a new provider
             Object provider = Class.forName(defaultSecurityProvider).newInstance();
-            Security.insertProviderAt((Provider) provider, 2);
+            Security.addProvider((Provider) provider);
         } catch (ClassNotFoundException e) {
             logger.log(Level.FINE, "Optional BouncyCastle security provider not found");
         } catch (InstantiationException e) {
