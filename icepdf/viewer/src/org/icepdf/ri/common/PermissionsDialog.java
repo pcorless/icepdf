@@ -80,12 +80,12 @@ public class PermissionsDialog extends EscapeJDialog {
                 // currenly only adobe standard security supported
                 securityMethod = standardSecurity;
 
-                // Get user and owner passwords
-                if (!securityManager.getSecurityHandler().isUserAuthorized("")) {
-                    userPassword = yes;
-                }
+                // Get user and owner passwords, owner first, just encase it has a password.
                 if (!securityManager.getSecurityHandler().isOwnerAuthorized("")) {
                     ownerPassword = yes;
+                }
+                if (!securityManager.getSecurityHandler().isUserAuthorized("")) {
+                    userPassword = yes;
                 }
                 if (!permissions.getPermissions(Permissions.PRINT_DOCUMENT)) {
                     if (!permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY)) {
