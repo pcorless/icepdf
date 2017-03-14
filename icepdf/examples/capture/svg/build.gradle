@@ -5,6 +5,14 @@ description 'pdf to svg example'
 mainClassName = "org.icepdf.os.examples.capture.SvgCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
+
 dependencies {
     compile project(':viewer:viewer-awt')
+    // svg export
+    compile 'batik:batik-awt-util:1.6'
+    compile 'batik:batik-dom:1.6'
+    compile 'batik:batik-svg-dom:1.6'
+    compile 'batik:batik-svggen:1.6'
+    compile 'batik:batik-util:1.6'
+    compile 'batik:batik-xml:1.6'
 }
