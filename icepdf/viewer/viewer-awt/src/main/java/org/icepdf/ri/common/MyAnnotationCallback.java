@@ -231,15 +231,14 @@ public class MyAnnotationCallback implements AnnotationCallback {
                         ((PageViewComponentImpl) pageComponent).getAnnotationComponents();
                 Reference compReference;
                 Reference popupReference = markupAnnotation.getPopupAnnotation().getPObjectReference();
-                AnnotationComponent annotationComp;
-                for (int i = 0, max = annotationComponents.size(); i < max; i++) {
-                    annotationComp = annotationComponents.get(i);
+                for (AbstractAnnotationComponent annotationComp : annotationComponents) {
                     compReference = annotationComp.getAnnotation().getPObjectReference();
                     // find the component and toggle it's visibility.
                     if (compReference != null && compReference.equals(popupReference)) {
                         if (annotationComp instanceof PopupAnnotationComponent) {
                             PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComp);
                             ((PageViewComponentImpl) pageComponent).removeAnnotation(popupComponent);
+                            break;
                         }
                     }
                 }
