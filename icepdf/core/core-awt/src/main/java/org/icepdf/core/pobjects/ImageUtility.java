@@ -1120,7 +1120,7 @@ public class ImageUtility {
             DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
             decodeRasterOp.filter(cmykRaster, (WritableRaster) cmykRaster);
             // convert it to rgb
-            ColorConvertOp cmykToRgb = new ColorConvertOp(DeviceCMYK.getIccCmykColorSpace(), rgbCS, null);
+            IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
             cmykToRgb.filter(cmykRaster, rgbRaster);
             return rgbImage;
         } else {
@@ -1166,7 +1166,7 @@ public class ImageUtility {
             YCCKRasterOp ycckRasterOp = new YCCKRasterOp(null);
             ycckRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
             // convert it to rgb
-            ColorConvertOp cmykToRgb = new ColorConvertOp(DeviceCMYK.getIccCmykColorSpace(), rgbCS, null);
+            IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
             cmykToRgb.filter(ycckRaster, rgbRaster);
             return rgbImage;
         } else {
