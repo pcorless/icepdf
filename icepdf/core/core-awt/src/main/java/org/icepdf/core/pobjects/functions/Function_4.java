@@ -63,7 +63,7 @@ public class Function_4 extends Function {
             }
 
         } else {
-            logger.warning("Type 4 function operands could not be found.");
+            logger.finer("Type 4 function operands could not be found.");
         }
         // cache for type 4 function results.
         resultCache = new ConcurrentHashMap<Integer, float[]>();
@@ -93,7 +93,7 @@ public class Function_4 extends Function {
         try {
             lex.parse(x);
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "Error Processing Type 4 definition", e);
+            logger.log(Level.FINER, "Error Processing Type 4 definition", e);
         }
 
         // get the remaining number on the stack which are the return values.
