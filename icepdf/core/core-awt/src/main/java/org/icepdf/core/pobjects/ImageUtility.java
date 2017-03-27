@@ -1052,6 +1052,10 @@ public class ImageUtility {
         } else if (foundSOS) {
             if (numCompsFromSOS == 1)
                 jpegEncoding = JPEG_ENC_GRAY; // Y
+            else if (numCompsFromSOS == 3)
+                jpegEncoding = JPEG_ENC_YCbCr;
+            else if (numCompsFromSOS == 4)
+                jpegEncoding = JPEG_ENC_CMYK;
         }
         return jpegEncoding;
     }
