@@ -637,28 +637,30 @@ public class ImageStream extends Stream {
                         tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                     }
                 } else {
-                    if (colourSpace instanceof Indexed){
+                    if (colourSpace instanceof Indexed) {
                         tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
                     } else if (wr.getNumBands() == 1) {
                         tmpImage = ImageUtility.makeGrayBufferedImage(wr);
-                    }else {
+                    } else {
                         tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
                     }
                 }
             } else {
                 if (colourSpace instanceof Indexed) {
                     return ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
-                }
-                // assume gray based jpeg.
+                } // assume gray based jpeg.
                 if (wr.getNumBands() == 1) {
                     tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                } else if (wr.getNumBands() == 2) {
+                    tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
                 }
                 // otherwise assume YCbCr bands = 3.
-                else {
+                else if (wr.getNumBands() == 3) {
                     tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                } else if (wr.getNumBands() == 4) {
+                    tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
                 }
             }
-
         } catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG image via ImageIO: ", e);
         } finally {
