@@ -781,7 +781,7 @@ public class Page extends Dictionary {
     public Annotation addAnnotation(Annotation newAnnotation) {
 
         // make sure the page annotations have been initialized.
-        if (!inited) {
+        if (annotations == null) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
@@ -864,7 +864,7 @@ public class Page extends Dictionary {
     public void deleteAnnotation(Annotation annot) {
 
         // make sure the page annotations have been initialized.
-        if (!inited) {
+        if (annotations == null) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
@@ -949,7 +949,7 @@ public class Page extends Dictionary {
         }
 
         // make sure the page annotations have been initialized.
-        if (!inited) {
+        if (annotations == null) {
             try {
                 initPageAnnotations();
             } catch (InterruptedException e) {
