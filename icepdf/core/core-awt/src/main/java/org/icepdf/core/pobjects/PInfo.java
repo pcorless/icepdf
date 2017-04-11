@@ -15,19 +15,19 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.fonts.ofont.Encoding;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.util.HashMap;
 
 /**
  * <p>This class represents the data stored in a File trailers optional "info"
  * entry.</p>
- * <br>
+ * <p/>
  * <p>Any entry whose value is not known should be omitted from the dictionary,
  * rather than included with an empty string as its value.</p>
- * <br>
+ * <p/>
  * <p>Some plug-in extensions may choose to permit searches on the contents of the
  * document information dictionary. To facilitate browsing and editing, all keys
  * in the dictionary are fully spelled out, not abbreviated. New keys should be
@@ -72,7 +72,7 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, name);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         }
         return value;
     }
@@ -86,7 +86,7 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, TITLE_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
@@ -102,7 +102,7 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, AUTHOR_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
@@ -118,7 +118,7 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, SUBJECT_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
@@ -134,7 +134,7 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, KEYWORDS_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
@@ -151,7 +151,7 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, CREATOR_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
@@ -168,7 +168,7 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, PRODUCER_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
@@ -220,58 +220,10 @@ public class PInfo extends Dictionary {
         Object value = library.getObject(entries, TRAPPED_KEY);
         if (value != null && value instanceof StringObject) {
             StringObject text = (StringObject) value;
-            return cleanString(text.getDecryptedLiteralString(securityManager));
+            return Utils.convertStringObject(library, text);
         } else if (value instanceof String) {
             return (String) value;
         }
         return null;
     }
-
-    /**
-     * Utility method for removing extra characters associated with 4 byte
-     * characters codes.
-     *
-     * @param text string to clean
-     * @return cleaned
-     */
-    private String cleanString(String text) {
-        if (text != null && text.length() > 0) {
-            if (((int) text.charAt(0)) == 254 && ((int) text.charAt(1)) == 255) {
-                StringBuilder sb1 = new StringBuilder();
-
-                // strip and white space, as the will offset the below algorithm
-                // which assumes the string is made up of two byte chars.
-                String hexTmp = "";
-                for (int i = 0; i < text.length(); i++) {
-                    char c = text.charAt(i);
-                    if (!((c == '\t') || (c == '\r') || (c == '\n'))) {
-                        hexTmp = hexTmp + text.charAt(i);
-                    }
-                }
-                byte title1[] = hexTmp.getBytes();
-
-                for (int i = 2; i < title1.length; i += 2) {
-                    try {
-                        int b1 = (((int) title1[i] & 0xFF) << 8) |
-                                (int) title1[i + 1] & 0xFF;
-                        sb1.append((char) (b1));
-                    } catch (Exception ex) {
-                        // intentionally left empty
-                    }
-                }
-                text = sb1.toString();
-            } else {
-                StringBuilder sb = new StringBuilder();
-                Encoding enc = Encoding.getPDFDoc();
-                for (int i = 0; i < text.length(); i++) {
-                    sb.append(enc.get(text.charAt(i)));
-                }
-                text = sb.toString();
-            }
-            return text;
-        } else {
-            return "";
-        }
-    }
-
 }
