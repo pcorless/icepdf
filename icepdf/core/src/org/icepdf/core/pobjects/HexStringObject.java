@@ -248,33 +248,33 @@ public class HexStringObject implements StringObject {
             }
             return tmp;
         } else if (fontFormat == Font.CID_FORMAT) {
-            stringData = new StringBuilder(normalizeHex(stringData, 4).toString());
-            int charOffset = 2;
             int length = getLength();
             int charValue;
+            FontFile.ByteEncoding encoding = font.getByteEncoding();
             StringBuilder tmp = new StringBuilder(length);
-            // attempt to detect mulibyte encoded strings.
-            for (int i = 0; i < length; i += charOffset) {
-                String first = stringData.substring(i, i + 2);
-                if (first.charAt(0) != '0') {
-                    // check range for possible 2 byte char ie mixed mode.
-                    charValue = getUnsignedInt(first);
-                    if (font.getByteEncoding() == FontFile.ByteEncoding.MIXED_BYTE &&
-                            font.canDisplayEchar((char) charValue) && font.getSource() != null) {
+            if (encoding == FontFile.ByteEncoding.MIXED_BYTE ||
+                    encoding == FontFile.ByteEncoding.ONE_BYTE) {
+                int charOffset = 2;
+                for (int i = 0; i < length; i += charOffset) {
+                    // check range for possible 2 byte char.
+                    charValue = getUnsignedInt(i, 2);
+                    if (font.canDisplayEchar((char) charValue)) {
                         tmp.append((char) charValue);
                     } else {
-                        charValue = getUnsignedInt(i, 4);
-                        if (font.canDisplayEchar((char) charValue)) {
-                            tmp.append((char) charValue);
+                        int charValue2 = getUnsignedInt(i, 4);
+                        if (font.canDisplayEchar((char) charValue2)) {
+                            tmp.append((char) charValue2);
                             i += 2;
                         }
                     }
-                } else {
-                    charValue = getUnsignedInt(i, 4);
-                    // should never have a 4 digit zero value.
-                    if (font.canDisplayEchar((char) charValue)) {
-                        tmp.append((char) charValue);
-                        i += 2;
+                }
+            } else {
+                // we have default 2bytes.
+                int charOffset = 4;
+                for (int i = 0; i < length; i += charOffset) {
+                    int charValue2 = getUnsignedInt(i, 4);
+                    if (font.canDisplayEchar((char) charValue2)) {
+                        tmp.append((char) charValue2);
                     }
                 }
             }
