@@ -657,8 +657,12 @@ public class ImageStream extends Stream {
                 // otherwise assume YCbCr bands = 3.
                 else if (wr.getNumBands() == 3) {
                     tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
-                } else if (wr.getNumBands() == 4) {
+                }
+                // still some corner cases around 4  components and one or the other.
+                else if (wr.getNumBands() == 4 && !(colourSpace instanceof ICCBased)) {
                     tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                } else {
+                    tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
                 }
             }
         } catch (IOException e) {
