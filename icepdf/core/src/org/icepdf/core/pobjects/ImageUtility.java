@@ -648,6 +648,7 @@ public class ImageUtility {
         }
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
+        int red, alpha, sa;
         // iterate over each band to apply the mask
         for (int i = 0; i < baseHeight; i++) {
             baseImage.getRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
@@ -655,12 +656,11 @@ public class ImageUtility {
             // apply the soft mask blending
             for (int j = 0; j < baseWidth; j++) {
                 // take any one of the primaries and apply src image alpha.
-                int red = (sMaskBand[j] >> 16) & 0x000000FF;
-                int alpha = (srcBand[j] >> 24) & 0x000000FF;
-                int sa = ((int) (red * (alpha / 255.0f))) << 24;
+                red = (sMaskBand[j] >> 16) & 0x000000FF;
+                alpha = (srcBand[j] >> 24) & 0x000000FF;
+                sa = ((int) (red * (alpha / 255.0f))) << 24;
                 // apply the smask value as the alpha value
-                srcBand[j] = sa
-                        | (srcBand[j] & ~0xff000000);
+                srcBand[j] = sa | (srcBand[j] & ~0xff000000);
             }
             argbImage.setRGB(0, i, baseWidth, 1, srcBand, 0, baseWidth);
         }

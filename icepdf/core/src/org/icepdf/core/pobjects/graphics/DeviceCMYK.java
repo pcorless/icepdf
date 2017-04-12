@@ -25,7 +25,6 @@ import java.awt.color.ICC_Profile;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -48,9 +47,6 @@ public class DeviceCMYK extends PColorSpace {
 
     // CMYK ICC color profile.
     private static ICC_ColorSpace iccCmykColorSpace;
-    // basic cache to speed up the lookup. always 4 bands, can be static
-    private ConcurrentHashMap<Integer, Color> iccCmykColorCache =
-            new ConcurrentHashMap<Integer, Color>();
 
     // disable icc color profile lookups as they can be slow. n
     private static boolean disableICCCmykColorSpace;
@@ -83,7 +79,7 @@ public class DeviceCMYK extends PColorSpace {
      * @return valid rgb colour object.
      */
     public Color getColor(float[] f, boolean fillAndStroke) {
-        return alternative2(f, iccCmykColorCache);
+        return alternative2(f);
     }
 
     /**
@@ -191,8 +187,7 @@ public class DeviceCMYK extends PColorSpace {
      *          0.0 and 1.0
      * @return valid rgb colour object.
      */
-    private static Color alternative2(float[] f,
-                                      ConcurrentHashMap<Integer, Color> iccCmykColorCache) {
+    private static Color alternative2(float[] f) {
         float inCyan = f[3];
         float inMagenta = f[2];
         float inYellow = f[1];
@@ -200,23 +195,11 @@ public class DeviceCMYK extends PColorSpace {
 
         // check if we have a valid ICC profile to work with
         if (!disableICCCmykColorSpace && iccCmykColorSpace != null) {
-            // generate a key for the colour
-            int key = (((int) (f[0] * 255) & 0xff) << 24) |
-                    (((int) (f[1] * 255) & 0xff) << 16) |
-                    (((int) (f[2] * 255) & 0xff) << 8) |
-                    (((int) (f[3] * 255) & 0xff) & 0xff);
-            Color color = iccCmykColorCache.get(key);
-            if (color != null) {
-                return color;
-            } else {
-                try {
-                    f = iccCmykColorSpace.toRGB(reverse(f));
-                    color = new Color(f[0], f[1], f[2]);
-                    iccCmykColorCache.put(key, color);
-                    return color;
-                } catch (Throwable e) {
-                    logger.warning("Error using iccCmykColorSpace in DeviceCMYK.");
-                }
+            try {
+                f = iccCmykColorSpace.toRGB(reverse(f));
+                return new Color(f[0], f[1], f[2]);
+            } catch (Throwable e) {
+                logger.warning("Error using iccCmykColorSpace in DeviceCMYK.");
             }
         }
 
