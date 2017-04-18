@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.icepdf.os</groupId>
     <artifactId>icepdf-viewer</artifactId>
-    <version>6.2.0-SNAPSHOT</version>
+    <version>6.2.3_1112_1</version>
     <packaging>jar</packaging>
     <name>ICEpdf Viewer RI</name>
     <url>http://www.icefaces.org</url>
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.icepdf.os</groupId>
             <artifactId>icepdf-core</artifactId>
-            <version>6.2.0-SNAPSHOT</version>
+            <version>6.2.3_1112_1</version>
         </dependency>
 
         <dependency>
