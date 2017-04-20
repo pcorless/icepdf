@@ -20,6 +20,7 @@ import org.icepdf.core.util.FontUtil;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.util.*;
@@ -1056,12 +1057,89 @@ public class FontManager {
      */
     private java.awt.Font findAWTFont(String fontName) {
         java.awt.Font font = null;
-        // get a list of all the fonts AWT has
-        java.awt.Font[] awtFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
-        if (awtFonts != null) {
-            for (java.awt.Font awtFont : awtFonts) {
-                if (awtFont.getName().equals(fontName) || awtFont.getFamily().equals(fontName)) {
-                    return awtFont;
+        // references for system font list.
+        Object[] fontData;
+        String baseName;
+        String familyName;
+        // normalize the fontName we are trying to find a match for
+        int decorations = guessFontStyle(fontName);
+        String name = FontUtil.normalizeString(fontName);
+        int style;
+
+        if (fontList != null) {
+            for (int i = fontList.size() - 1; i >= 0; i--) {
+                fontData = fontList.get(i);
+                baseName = (String) fontData[0];
+                familyName = (String) fontData[1];
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest(baseName + " : " + familyName + "  : " + name);
+                }
+                if (name.contains(familyName) ||
+                        fontName.toLowerCase().contains(baseName)) {
+                    style = (Integer) fontData[2];
+                    boolean found = false;
+                    // ignore this font, as the cid mapping are not correct, or ther is
+                    // just look and feel issues with them.
+                    if (baseName.equals("opensymbol") ||
+                            baseName.equals("starsymbol")
+                            || baseName.equals("arial-black")
+                            || baseName.equals("arial-blackitalic")
+                            || baseName.equals("new")
+                            // mapping issue with standard ascii, not sure why, TimesNewRomanPSMT is ok.
+                            || baseName.equals("timesnewromanps")
+                            ) {
+                        //found = false;
+                    } else if (((decorations & BOLD_ITALIC) == BOLD_ITALIC) &&
+                            ((style & BOLD_ITALIC) == BOLD_ITALIC)) {
+                        found = true;
+                    } else if (((decorations & BOLD) == BOLD) &&
+                            ((style & BOLD) == BOLD)) {
+                        found = true;
+                    } else if (((decorations & ITALIC) == ITALIC) &&
+                            ((style & ITALIC) == ITALIC)) {
+                        found = true;
+                    } else if (((decorations & PLAIN) == PLAIN) &&
+                            ((style & PLAIN) == PLAIN)) {
+                        found = true;
+                    }
+                    // symbol type fonts don't have an associated style, so
+                    // no point trying to match  them based on style.
+                    else if (baseName.contains("wingdings") ||
+                            baseName.contains("zapfdingbats") ||
+                            baseName.contains("symbol")) {
+                        found = true;
+                    }
+
+                    if (found) {
+                        if (logger.isLoggable(Level.FINER)) {
+                            logger.finer("----> Found font: " + baseName +
+                                    " family: " + getFontStyle(style, 0) +
+                                    " for: " + fontName);
+                        }
+                        try {
+                            // found true type font
+                            String fontPath = (String) fontData[3];
+                            String fontPathLower = fontPath.toLowerCase();
+                            if ( fontPathLower.endsWith(".ttf") ||  fontPathLower.endsWith(".dfont") ||
+                                    fontPathLower.endsWith(".ttc") ) {
+                                font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT,
+                                        new File((String) fontData[3]));
+                            }
+                            // found Type 1 font
+                            else if (fontPathLower.endsWith(".pfa") || fontPathLower.endsWith(".pfb")) {
+                                font = java.awt.Font.createFont(java.awt.Font.TYPE1_FONT,
+                                        new File((String) fontData[3]));
+                            }
+                        } catch (FontFormatException e) {
+                            logger.log(Level.FINE, "Error create new font", e);
+                        } catch (IOException e) {
+                            logger.log(Level.FINE, "Error reading font", e);
+                        }
+                        // make sure the font does indeed exist
+                        if (font != null) {
+                            break;
+                        }
+                    }
                 }
             }
         }
