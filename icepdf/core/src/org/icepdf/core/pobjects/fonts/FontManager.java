@@ -1123,12 +1123,12 @@ public class FontManager {
                             if ( fontPathLower.endsWith(".ttf") ||  fontPathLower.endsWith(".dfont") ||
                                     fontPathLower.endsWith(".ttc") ) {
                                 font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT,
-                                        new File((String) fontData[3]));
+                                        new File(fontPath));
                             }
                             // found Type 1 font
                             else if (fontPathLower.endsWith(".pfa") || fontPathLower.endsWith(".pfb")) {
                                 font = java.awt.Font.createFont(java.awt.Font.TYPE1_FONT,
-                                        new File((String) fontData[3]));
+                                        new File(fontPath));
                             }
                         } catch (FontFormatException e) {
                             logger.log(Level.FINE, "Error create new font", e);
@@ -1157,12 +1157,13 @@ public class FontManager {
     private static int guessFontStyle(String name) {
         name = name.toLowerCase();
         int decorations = 0;
-        if ((name.indexOf("boldital") > 0) || (name.indexOf("demiital") > 0)) {
+        if ((name.indexOf("boldital") > 0) || (name.indexOf("demiital") > 0) ||
+                (name.indexOf("bold obli") > 0) || name.indexOf("bold ital") > 0|| name.indexOf("fett kursiv") > 0) {
             decorations |= BOLD_ITALIC;
         } else if (name.indexOf("bold") > 0 || name.indexOf("black") > 0 || name.endsWith("bt")
-                || name.indexOf("demi") > 0) {
+                || name.indexOf("demi") > 0|| name.indexOf("fett") > 0) {
             decorations |= BOLD;
-        } else if (name.indexOf("ital") > 0 || name.indexOf("obli") > 0) {
+        } else if (name.indexOf("ital") > 0 || name.indexOf("obli") > 0 || name.indexOf("kursiv") > 0) {
             decorations |= ITALIC;
         } else {
             decorations |= PLAIN;
