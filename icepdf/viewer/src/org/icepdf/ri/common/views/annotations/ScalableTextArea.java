@@ -91,6 +91,28 @@ public class ScalableTextArea extends JTextArea implements ScalableField {
         super.paintBorder(g);
     }
 
+    private MouseEvent scaleMouseEvent(MouseEvent e){
+        float zoom = documentViewModel.getViewZoom();
+        MouseEvent scaleMouseEvent =  new MouseEvent((Component) e.getSource(),
+                e.getID(), e.getWhen(), e.getModifiers(),
+                (int) (e.getX() / zoom), (int) (e.getY() / zoom),
+                e.getClickCount(), e.isPopupTrigger(), e.getButton());
+        e.consume();
+        return scaleMouseEvent;
+    }
+
+    @Override
+    protected void processMouseEvent(MouseEvent e) {
+        MouseEvent newEvent = scaleMouseEvent(e);
+        super.processMouseEvent(newEvent);
+    }
+
+    @Override
+    protected void processMouseMotionEvent(MouseEvent e) {
+        MouseEvent newEvent = scaleMouseEvent(e);
+        super.processMouseMotionEvent(newEvent);
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         if (!active) {
