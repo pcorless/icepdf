@@ -43,14 +43,20 @@ package org.icepdf.core.pobjects.graphics;
  */
 
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
+import java.util.logging.Logger;
 
 public final class BlendComposite implements Composite {
+
+    private static final Logger logger =
+            Logger.getLogger(BlendComposite.class.toString());
+
     public enum BlendingMode {
         NORMAL,
         AVERAGE,
@@ -84,6 +90,16 @@ public final class BlendComposite implements Composite {
         SATURATION,
         COLOR,
         LUMINOSITY
+    }
+
+    // System property to disable blending modes other then AlphaComposite.  Oracle's MacOS Java implementation is
+    // throwing a not implemented exception on JDK 1.8.0_131 when a custom blend composite is set on the graphics
+    // graphics context.
+    private static boolean disableBlendComposite;
+    static {
+        // sets the shadow colour of the decorator.
+        disableBlendComposite = Defs.booleanProperty(
+                "org.icepdf.core.paint.disableBlendComposite", false);
     }
 
     public static final Name NORMAL_VALUE = new Name("Normal");
@@ -126,6 +142,14 @@ public final class BlendComposite implements Composite {
         if (alpha == -1) {
             alpha = 1;
         }
+        if(disableBlendComposite){
+            if (modeName.equals(MULTIPLY_VALUE)){
+                // simulate a basic multiply effect.
+                return AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
+            }
+            return AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
+        }
+
         if (modeName.equals(NORMAL_VALUE) || modeName.equals(COMPATIBLE_VALUE)) {
             return AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
 //            return new BlendComposite(BlendingMode.NORMAL, alpha);
