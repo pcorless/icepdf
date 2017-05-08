@@ -34,9 +34,9 @@ import java.io.Serializable;
 @SuppressWarnings("serial")
 public class Reference implements Serializable {
     // object number
-    int objf = 0;
+    int objf;
     // object generation number.
-    int genf = 0;
+    int genf;
 
     /**
      * Creates a new instance of a Reference.

@@ -403,8 +403,15 @@ public class PrintHelper implements Printable {
             // Paint the page content
             currentPage.paint(printGraphics,
                     GraphicsRenderingHints.PRINT,
-                    Page.BOUNDARY_CROPBOX,
+                    Page.BOUNDARY_MEDIABOX,
                     rotation, zoomFactor, paintAnnotation, paintSearchHighlight);
+
+            // Painting a little rectangle seems to fix a strange clipping issue where some images are
+            // clipped by about 75%.  Found this by workaround by accident with our trial version.  The clip
+            // issue only seems to happen if the PDF is make up many image with now paint primitives.
+            printGraphics.setColor(Color.WHITE);
+            printGraphics.drawRect(-9, -9, 10, 10);
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.log(Level.SEVERE, "Printing: Page initialization and painting was interrupted", e);
