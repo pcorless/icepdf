@@ -29,6 +29,7 @@ public class DigitalSignatureFactory {
     // current list of sub filter types, suspect a stronger then sha1 will be in the spec soon.
     public static final Name DSS_SUB_FILTER_PKCS7_DETACHED = new Name("adbe.pkcs7.detached");
     public static final Name DSS_SUB_FILTER_PKCS7_SHA1 = new Name("adbe.pkcs7.sha1");
+    public static final Name DSS_SUB_FILTER_CADES_DETACHED = new Name("ETSI.CAdES.detached");
     public static final Name DSS_SUB_FILTER_PKCS7__SHA1 = new Name("adbe.x509.rsa_sha1");
     // few examples with alternate ras sha1 name
     public static final Name DSS_SUB_FILTER_RSA_SHA1 = new Name("adbe.x509.rsa.sha1");
@@ -64,7 +65,8 @@ public class DigitalSignatureFactory {
         SignatureDictionary signatureDictionary = signatureFieldDictionary.getSignatureDictionary();
         // PKCS#7 detached and sha-1 digest method
         if (signatureDictionary.getSubFilter().equals(DSS_SUB_FILTER_PKCS7_DETACHED) ||
-                signatureDictionary.getSubFilter().equals(DSS_SUB_FILTER_PKCS7_SHA1)) {
+                signatureDictionary.getSubFilter().equals(DSS_SUB_FILTER_PKCS7_SHA1) ||
+                signatureDictionary.getSubFilter().equals(DSS_SUB_FILTER_CADES_DETACHED)) {
             return new Pkcs7Validator(signatureFieldDictionary);
         }
         // PKCS#1 RSA encryption and SHA-1 digest method
@@ -72,7 +74,6 @@ public class DigitalSignatureFactory {
                 signatureDictionary.getSubFilter().equals(DSS_SUB_FILTER_PKCS7__SHA1)) {
             return new Pkcs1Validator(signatureFieldDictionary);
         }
-
         return null;
     }
 
