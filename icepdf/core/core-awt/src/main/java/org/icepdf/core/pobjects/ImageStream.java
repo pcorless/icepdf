@@ -114,6 +114,8 @@ public class ImageStream extends Stream {
     private int width;
     private int height;
 
+    private ImageUtility imageUtility;
+
     /**
      * Create a new instance of a Stream.
      *
@@ -132,6 +134,7 @@ public class ImageStream extends Stream {
     }
 
     public void init() {
+        imageUtility = new ImageUtility();
         // get dimension of image stream
         width = library.getInt(entries, WIDTH_KEY);
         height = library.getInt(entries, HEIGHT_KEY);
@@ -144,6 +147,10 @@ public class ImageStream extends Stream {
         } else if (width == 0) {
             width = (int) (pageRatio * height);
         }
+    }
+
+    public ImageUtility getImageUtility() {
+        return imageUtility;
     }
 
     public int getWidth() {
@@ -374,7 +381,7 @@ public class ImageStream extends Stream {
             // finally push the bytes though the common image processor to try
             // and build a a Buffered image.
             try {
-                decodedImage = ImageUtility.makeImageWithRasterFromBytes(
+                decodedImage = imageUtility.makeImageWithRasterFromBytes(
                         colourSpace,
                         graphicsState,
                         width, height,
@@ -415,15 +422,15 @@ public class ImageStream extends Stream {
 //            ImageUtility.displayImage(decodedImage, pObjectReference.toString());
 //            ImageUtility.writeImage(decodedImage, pObjectReference.toString(), "D:\\log\\");
             if (isImageMask) {
-                decodedImage = ImageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
+                decodedImage = imageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
             }
 
             // apply common mask and sMask processing
             if (sMaskImage != null) {
-                decodedImage = ImageUtility.applyExplicitSMask(decodedImage, sMaskImage);
+                decodedImage = new ImageUtility().applyExplicitSMask(decodedImage, sMaskImage);
             }
             if (maskImage != null) {
-                decodedImage = ImageUtility.applyExplicitMask(decodedImage, maskImage);
+                decodedImage = new ImageUtility().applyExplicitMask(decodedImage, maskImage);
             }
 
             // experimental check for different blending modes and apply a basic white = transparent,
@@ -521,7 +528,7 @@ public class ImageStream extends Stream {
             }
         }
         try {
-            decodedImage = ImageUtility.makeImageWithRasterFromBytes(
+            decodedImage = imageUtility.makeImageWithRasterFromBytes(
                     colourSpace,
                     graphicsState,
                     width, height,
@@ -586,7 +593,7 @@ public class ImageStream extends Stream {
                 dataRead = MAX_BYTES_TO_READ_FOR_ENCODING;
             }
             // check the encoding type for colour conversion.
-            jpegEncoding = ImageUtility.getJPEGEncoding(data, dataRead);
+            jpegEncoding = imageUtility.getJPEGEncoding(data, dataRead);
 
             imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
@@ -614,15 +621,15 @@ public class ImageStream extends Stream {
             WritableRaster wr = (WritableRaster) reader.readRaster(0, param);
 
             if (jpegEncoding == ImageUtility.JPEG_ENC_RGB && bitspercomponent == 8) {
-                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                tmpImage = imageUtility.convertSpaceToRgb(wr, colourSpace, decode);
             } else if (jpegEncoding == ImageUtility.JPEG_ENC_CMYK && bitspercomponent == 8) {
-                tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                tmpImage = imageUtility.convertCmykToRgb(wr, decode);
             } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCbCr && bitspercomponent == 8 &&
                     !(colourSpace instanceof Indexed)) {
-                tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                tmpImage = imageUtility.convertYCbCrToRGB(wr, decode);
             } else if (jpegEncoding == ImageUtility.JPEG_ENC_YCCK && bitspercomponent == 8) {
                 // YCCK to RGB works better if an CMYK intermediate is used, but slower.
-                tmpImage = ImageUtility.convertYCCKToRgb(wr, decode);
+                tmpImage = imageUtility.convertYCCKToRgb(wr, decode);
             } else if (jpegEncoding == ImageUtility.JPEG_ENC_GRAY && bitspercomponent == 8) {
                 // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                 // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
@@ -632,33 +639,37 @@ public class ImageStream extends Stream {
                         !(colourSpace instanceof Indexed)) {
                     if (colourSpace instanceof Separation &&
                             ((Separation) colourSpace).isNamedColor()) {
-                        tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
+                        tmpImage = imageUtility.convertGrayToRgb(wr, decode);
                     } else {
-                        tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                        tmpImage = imageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                     }
                 } else {
                     if (colourSpace instanceof Indexed) {
-                        tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
+                        tmpImage = imageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
                     } else if (wr.getNumBands() == 1) {
-                        tmpImage = ImageUtility.makeGrayBufferedImage(wr);
+                        tmpImage = imageUtility.makeGrayBufferedImage(wr);
                     } else {
-                        tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                        tmpImage = imageUtility.convertYCbCrToRGB(wr, decode);
                     }
                 }
             } else {
                 if (colourSpace instanceof Indexed) {
-                    return ImageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
+                    return imageUtility.applyIndexColourModel(wr, colourSpace, bitspercomponent);
                 } // assume gray based jpeg.
                 if (wr.getNumBands() == 1) {
-                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                    tmpImage = imageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                 } else if (wr.getNumBands() == 2) {
-                    tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
+                    tmpImage = imageUtility.convertGrayToRgb(wr, decode);
                 }
                 // otherwise assume YCbCr bands = 3.
                 else if (wr.getNumBands() == 3) {
-                    tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
-                } else if (wr.getNumBands() == 4) {
-                    tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                    tmpImage = imageUtility.convertYCbCrToRGB(wr, decode);
+                }
+                // still some corner cases around 4  components and one or the other.
+                else if (wr.getNumBands() == 4 && !(colourSpace instanceof ICCBased)) {
+                    tmpImage = imageUtility.convertCmykToRgb(wr, decode);
+                } else {
+                    tmpImage = imageUtility.convertYCbCrToRGB(wr, decode);
                 }
             }
         } catch (IOException e) {
@@ -730,24 +741,24 @@ public class ImageStream extends Stream {
         // source licence.
         if (isLevigoJBIG2ImageReaderClass) {
             try {
-                tmpImage = ImageUtility.proJbig2Decode(
+                tmpImage = imageUtility.proJBig2Decode(
                         ImageIO.createImageInputStream(new ByteArrayInputStream(data)),
                         decodeParms, globalsStream);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Problem loading JBIG2 image using Levigo: ", e);
                 // fall back and try and load with the OS jbig2 implementation.
-                tmpImage = ImageUtility.jbig2Decode(
+                tmpImage = imageUtility.jbig2Decode(
                         data,
                         decodeParms, globalsStream);
             }
         } else {
-            tmpImage = ImageUtility.jbig2Decode(
+            tmpImage = imageUtility.jbig2Decode(
                     data,
                     decodeParms, globalsStream);
         }
         // apply decode
         if ((colourSpace instanceof DeviceGray)) {
-            tmpImage = ImageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
+            tmpImage = imageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
         }
 
         // apply the fill colour and alpha if masking is enabled.
@@ -822,7 +833,7 @@ public class ImageStream extends Stream {
                 try {
                     ColorSpace cs = iccBased.getColorSpace();
                     ColorConvertOp cco = new ColorConvertOp(cs, null);
-                    tmpImage = ImageUtility.makeRGBBufferedImage(wr);
+                    tmpImage = imageUtility.makeRGBBufferedImage(wr);
                     cco.filter(tmpImage, tmpImage);
                 } catch (Throwable e) {
                     logger.warning("Error processing ICC Color profile, failing " +
@@ -834,23 +845,23 @@ public class ImageStream extends Stream {
             }
             // apply respective colour models to the JPEG2000 image.
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
-                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                tmpImage = imageUtility.convertSpaceToRgb(wr, colourSpace, decode);
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
-                tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                tmpImage = imageUtility.convertCmykToRgb(wr, decode);
             } else if ((colourSpace instanceof DeviceGray)
                     && bitsPerComponent == 8) {
-                tmpImage = ImageUtility.makeGrayBufferedImage(wr);
+                tmpImage = imageUtility.makeGrayBufferedImage(wr);
             } else if (colourSpace instanceof Separation) {
                 if (colourSpace instanceof Separation &&
                         ((Separation) colourSpace).isNamedColor()) {
-                    tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
+                    tmpImage = imageUtility.convertGrayToRgb(wr, decode);
 //                    tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                 } else {
-                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                    tmpImage = imageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                 }
             } else if (colourSpace instanceof Indexed) {
                 // still some issue here with Chevron.pdf
-                tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
+                tmpImage = imageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
             }
         } catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
@@ -1009,11 +1020,9 @@ public class ImageStream extends Stream {
                             // get value used for this bit
                             int bit = in.getBits(bitsPerColour);
                             // check decode array if a colour inversion is needed
-                            if (decode != null) {
-                                // if index 0 > index 1 then we have a need for ainversion
-                                if (decode[0] > decode[1]) {
-                                    bit = (bit == maxColourValue) ? 0x00000000 : maxColourValue;
-                                }
+                            // if index 0 > index 1 then we have a need for ainversion
+                            if (decode[0] > decode[1]) {
+                                bit = (bit == maxColourValue) ? 0x00000000 : maxColourValue;
                             }
 
                             if (isDeviceGray) {

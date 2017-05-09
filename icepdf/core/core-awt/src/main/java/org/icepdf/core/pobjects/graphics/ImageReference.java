@@ -18,7 +18,10 @@ package org.icepdf.core.pobjects.graphics;
 import org.icepdf.core.events.PageImageEvent;
 import org.icepdf.core.events.PageLoadingEvent;
 import org.icepdf.core.events.PageLoadingListener;
-import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.ImageStream;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.util.Defs;
 
 import java.awt.*;
@@ -98,7 +101,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                 // try drawing the scaled image one more time.
                 aG.drawImage(scaledImage, aX, aY, aW, aH, null);
                 // store the scaled image for future repaints.
-                this.image = ImageUtility.createBufferedImage(scaledImage);
+                this.image = imageStream.getImageUtility().createBufferedImage(scaledImage);
             }
         }
     }
