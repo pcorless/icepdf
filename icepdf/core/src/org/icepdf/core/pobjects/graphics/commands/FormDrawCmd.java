@@ -154,7 +154,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                             g.getRenderingHints());
                     // compost all the images.
                     if (softMask != null) {
-                        BufferedImage formBuffer = ImageUtility.createTranslucentCompatibleImage(
+                        BufferedImage formBuffer = new ImageUtility().createTranslucentCompatibleImage(
                                 xFormBuffer.getWidth(), xFormBuffer.getHeight());
                         Graphics2D g2d = (Graphics2D) formBuffer.getGraphics();
 //                        java.util.List<Number> compRaw = formSoftMask.getBC();
@@ -172,7 +172,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 }
             } else if (isExtendGraphicState) {
                 BufferedImage shape = createBufferXObject(parentPage, xForm, null, renderingHints, true);
-                xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, shape);
+                xFormBuffer = new ImageUtility().applyExplicitOutline(xFormBuffer, shape);
             }
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
@@ -190,11 +190,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
 //            ImageUtility.displayImage(xFormBuffer, "base " + xForm.getPObjectReference() + " " + xFormBuffer.getHeight() + " x " + xFormBuffer.getHeight());
 //            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " + useLuminosity);
             if (!(gsSoftMask != null)) {
-                xFormBuffer = ImageUtility.applyExplicitSMask(xFormBuffer, sMaskBuffer);
+                xFormBuffer = new ImageUtility().applyExplicitSMask(xFormBuffer, sMaskBuffer);
             } else {
                 // todo try and figure out how to apply an AIS=false alpha to an xobject.
 //                xFormBuffer = ImageUtility.applyExplicitLuminosity(xFormBuffer, sMaskBuffer);
-                xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, sMaskBuffer);
+                xFormBuffer = new ImageUtility().applyExplicitOutline(xFormBuffer, sMaskBuffer);
             }
             // test for TR function
             if (softMask.getTR() != null) {

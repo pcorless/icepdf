@@ -115,7 +115,8 @@ public class ScaledImageReference extends CachedImageReference {
                     height = (int) Math.ceil(height * scaleFactor);
 
                     BufferedImage scaled;
-                    if (ImageUtility.hasAlpha(image)) {
+                    ImageUtility imageUtility = imageStream.getImageUtility();
+                    if (imageUtility.hasAlpha(image)) {
                         scaled = ImageUtility.createTranslucentCompatibleImage(width, height);
                     } else {
                         scaled = ImageUtility.createCompatibleImage(width, height);

@@ -47,24 +47,25 @@ import java.util.logging.Logger;
 @SuppressWarnings("serial")
 public class ImageUtility {
 
-    private static final Logger logger =
+    static final Logger logger =
             Logger.getLogger(ImageUtility.class.toString());
 
-    protected static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
+    static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
             0xFFFFFFFF,
             0xFF000000
     };
-    protected static final int[] GRAY_1_BIT_INDEX_TO_RGB = new int[]{
+    static final int[] GRAY_1_BIT_INDEX_TO_RGB = new int[]{
             0xFF000000,
             0xFFFFFFFF
     };
-    protected static final int[] GRAY_2_BIT_INDEX_TO_RGB = new int[]{
+    static final int[] GRAY_2_BIT_INDEX_TO_RGB = new int[]{
             0xFF000000,
             0xFF555555,
             0xFFAAAAAA,
             0xFFFFFFFF
-    }; // 0. 1 2 3 4 5. 6 7 8 9 A. B C D E F.     0/3, 1/3, 2/3, 3/3
-    protected static final int[] GRAY_4_BIT_INDEX_TO_RGB = new int[]{
+    };
+    // 0. 1 2 3 4 5. 6 7 8 9 A. B C D E F.     0/3, 1/3, 2/3, 3/3
+    static final int[] GRAY_4_BIT_INDEX_TO_RGB = new int[]{
             0xFF000000,
             0xFF111111,
             0xFF222222,
@@ -82,16 +83,17 @@ public class ImageUtility {
             0xFFEEEEEE,
             0xFFFFFFFF
     };
-    protected static final int JPEG_ENC_UNKNOWN_PROBABLY_YCbCr = 0;
-    protected static final int JPEG_ENC_RGB = 1;
-    protected static final int JPEG_ENC_CMYK = 2;
-    protected static final int JPEG_ENC_YCbCr = 3;
-    protected static final int JPEG_ENC_YCCK = 4;
-    protected static final int JPEG_ENC_GRAY = 5;
+
+    static final int JPEG_ENC_UNKNOWN_PROBABLY_YCbCr = 0;
+    static final int JPEG_ENC_RGB = 1;
+    static final int JPEG_ENC_CMYK = 2;
+    static final int JPEG_ENC_YCbCr = 3;
+    static final int JPEG_ENC_YCCK = 4;
+    static final int JPEG_ENC_GRAY = 5;
 
     private static boolean scaleQuality;
 
-    private static GraphicsConfiguration configuration = null;
+    private static GraphicsConfiguration configuration;
 
     static {
         try {
@@ -102,19 +104,15 @@ public class ImageUtility {
         }
 
         // decide if large images will be scaled
-        scaleQuality =
-                Defs.booleanProperty("org.icepdf.core.imageMaskScale.quality",
-                        true);
+        scaleQuality = Defs.booleanProperty("org.icepdf.core.imageMaskScale.quality", true);
     }
 
-    private static ImageUtility imageUtility;
-
-    private ImageUtility() {
+    public ImageUtility() {
 
     }
 
     /**
-     * Creates a new bufferd image using a GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+     * Creates a new buffered image using a GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
      * instance.  If not available (headless) we full back to raw buffer creation.
      *
      * @param width  width of new image.
@@ -135,7 +133,6 @@ public class ImageUtility {
      *
      * @param width  width of new image.
      * @param height height of new image.
-     * @return
      */
     public static BufferedImage createTranslucentCompatibleImage(int width, int height) {
         if (configuration != null) {
@@ -148,17 +145,10 @@ public class ImageUtility {
         }
     }
 
-    public static ImageUtility getInstance() {
-        if (imageUtility == null) {
-            imageUtility = new ImageUtility();
-        }
-        return imageUtility;
-    }
-
-    protected static BufferedImage alterBufferedImageAlpha(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
+    private BufferedImage alterBufferedImageAlpha(BufferedImage bi, int[] maskMinRGB, int[] maskMaxRGB) {
 
         // check for alpha, if not we need to create a copy
-        if (!ImageUtility.hasAlpha(bi)) {
+        if (!hasAlpha(bi)) {
             bi = createBufferedImage(bi);
         }
 
@@ -203,8 +193,7 @@ public class ImageUtility {
         return bi;
     }
 
-    public static void writeImage(final BufferedImage bufferedImage, final String fileName,
-                                  String baseOutputPath) {
+    public void writeImage(final BufferedImage bufferedImage, final String fileName, String baseOutputPath) {
         try {
             ImageIO.write(bufferedImage, "PNG",
                     new File(baseOutputPath + fileName + ".png"));
@@ -213,7 +202,7 @@ public class ImageUtility {
         }
     }
 
-    public static void displayImage(final BufferedImage bufferedImage, final String title) {
+    public void displayImage(final BufferedImage bufferedImage, final String title) {
 
         if (bufferedImage == null) {
             return;
@@ -250,8 +239,6 @@ public class ImageUtility {
                 f.setVisible(true);
             }
         });
-
-
     }
 
     /**
@@ -261,7 +248,7 @@ public class ImageUtility {
      * @param wr writable raster of image.
      * @return constructed image.
      */
-    protected static BufferedImage makeRGBABufferedImage(WritableRaster wr) {
+    protected BufferedImage makeRGBABufferedImage(WritableRaster wr) {
         return makeRGBABufferedImage(wr, Transparency.OPAQUE);
     }
 
@@ -274,8 +261,7 @@ public class ImageUtility {
      *                     opaque and translucent.
      * @return constructed image.
      */
-    protected static BufferedImage makeRGBABufferedImage(WritableRaster wr,
-                                                         final int transparency) {
+    private BufferedImage makeRGBABufferedImage(WritableRaster wr, final int transparency) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[4];
         for (int i = 0; i < bits.length; i++) {
@@ -288,7 +274,7 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
-    protected static BufferedImage makeBufferedImage(Raster raster) {
+    private BufferedImage makeBufferedImage(Raster raster) {
 
         // create a generic colour model and reuse the wraster,  intent
         // is that this should save quite bit of memory
@@ -301,12 +287,10 @@ public class ImageUtility {
         raster = colorModel.createCompatibleWritableRaster(raster.getWidth(),
                 raster.getHeight());
         return new BufferedImage(colorModel, (WritableRaster) raster, false, null);
-
-//        return new BufferedImage(raster.getWidth(), raster.getHeight(), BufferedImage.TYPE_INT_RGB);
     }
 
 
-    protected static BufferedImage makeRGBBufferedImage(WritableRaster wr) {
+    BufferedImage makeRGBBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         int[] bits = new int[3];
         for (int i = 0; i < bits.length; i++)
@@ -318,7 +302,7 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
-    protected static BufferedImage makeGrayBufferedImage(WritableRaster wr) {
+    BufferedImage makeGrayBufferedImage(WritableRaster wr) {
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
         int[] bits = new int[1];
         for (int i = 0; i < bits.length; i++)
@@ -332,7 +316,7 @@ public class ImageUtility {
 
     // This method returns a buffered image with the contents of an image from
     // java almanac
-    protected static BufferedImage makeRGBABufferedImageFromImage(Image image) {
+    protected BufferedImage makeRGBABufferedImageFromImage(Image image) {
 
         if (image instanceof BufferedImage) {
             return (BufferedImage) image;
@@ -374,9 +358,9 @@ public class ImageUtility {
                 return null;
             }
             if (hasAlpha) {
-                bImage = ImageUtility.createTranslucentCompatibleImage(width, height);
+                bImage = createTranslucentCompatibleImage(width, height);
             } else {
-                bImage = ImageUtility.createCompatibleImage(width, height);
+                bImage = createCompatibleImage(width, height);
             }
         }
         // Copy image to buffered image
@@ -391,7 +375,7 @@ public class ImageUtility {
     // returns true if the specified image has transparent pixels, from
     // java almanac
 
-    public static boolean hasAlpha(Image image) {
+    public boolean hasAlpha(Image image) {
         // If buffered image, the color model is readily available
         if (image instanceof BufferedImage) {
             BufferedImage bufferedImage = (BufferedImage) image;
@@ -419,7 +403,7 @@ public class ImageUtility {
      * @param out    return value
      *               always (2<sup>bitsPerComponent</sup> - 1).
      */
-    protected static void getNormalizedComponents(
+    protected void getNormalizedComponents(
             byte[] pixels,
             float[] decode,
             float[] out) {
@@ -429,7 +413,7 @@ public class ImageUtility {
         }
     }
 
-    protected static WritableRaster alterRasterRGBA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
+    protected WritableRaster alterRasterRGBA(WritableRaster wr, BufferedImage smaskImage, BufferedImage maskImage, int[] maskMinRGB, int[] maskMaxRGB) {
         Raster smaskRaster = null;
         int smaskWidth = 0;
         int smaskHeight = 0;
@@ -500,7 +484,6 @@ public class ImageUtility {
         return wr;
     }
 
-
     /**
      * (see 8.9.6.3, "Explicit Masking")
      * Explicit Masking algorithm, as of PDF 1.3.  The entry in an image dictionary
@@ -508,7 +491,7 @@ public class ImageUtility {
      * an explicit mask for the primary or base image.  The base image and the
      * image mask need not have the same resolution (width, height), but since
      * all images are defined on the unit square in user space, their boundaries on the
-     * page will conincide; that is, they will overlay each other.
+     * page will coincide; that is, they will overlay each other.
      * <p>
      * The image mask indicates indicates which places on the page are to be painted
      * and which are to be masked out (left unchanged).  Unmasked areas are painted
@@ -517,7 +500,7 @@ public class ImageUtility {
      * @param baseImage base image in which the mask weill be applied to
      * @param maskImage image mask to be applied to base image.
      */
-    public static BufferedImage applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
+    BufferedImage applyExplicitMask(BufferedImage baseImage, BufferedImage maskImage) {
         // check to see if we need to scale the mask to match the size of the
         // base image.
         int baseWidth;
@@ -533,13 +516,13 @@ public class ImageUtility {
         baseWidth = baseImage.getWidth();
         baseHeight = baseImage.getHeight();
 
-        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
+        boolean hasAlpha = hasAlpha(baseImage);
         BufferedImage argbImage;
         if (hasAlpha) {
             argbImage = baseImage;
         } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+            argbImage = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
         int[] srcBand = new int[baseWidth];
         int[] maskBnd = new int[baseWidth];
@@ -572,20 +555,20 @@ public class ImageUtility {
      * @param blendColor
      * @return
      */
-    public static BufferedImage applyBlendingMode(BufferedImage baseImage, Name blendingMode, Color blendColor) {
+    public BufferedImage applyBlendingMode(BufferedImage baseImage, Name blendingMode, Color blendColor) {
 
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
-        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
+        boolean hasAlpha = hasAlpha(baseImage);
         BufferedImage argbImage;
         if (hasAlpha) {
             argbImage = baseImage;
         } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+            argbImage = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
         int[] srcBand = new int[baseWidth];
         int[] blendBand = new int[baseWidth];
@@ -627,7 +610,7 @@ public class ImageUtility {
      *
      * @param baseImage base image in which the mask weill be applied to
      */
-    public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
+    public BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
 
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
@@ -638,13 +621,13 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
-        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
+        boolean hasAlpha = hasAlpha(baseImage);
         BufferedImage argbImage;
         if (hasAlpha) {
             argbImage = baseImage;
         } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+            argbImage = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
         int[] srcBand = new int[baseWidth];
         int[] sMaskBand = new int[baseWidth];
@@ -670,7 +653,7 @@ public class ImageUtility {
         return baseImage;
     }
 
-    public static BufferedImage applyExplicitLuminosity(BufferedImage baseImage, BufferedImage sMaskImage) {
+    public BufferedImage applyExplicitLuminosity(BufferedImage baseImage, BufferedImage sMaskImage) {
 
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
@@ -681,13 +664,13 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
-        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
+        boolean hasAlpha = hasAlpha(baseImage);
         BufferedImage argbImage;
         if (hasAlpha) {
             argbImage = baseImage;
         } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+            argbImage = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
 
         int[] srcBand = new int[baseWidth];
@@ -730,7 +713,7 @@ public class ImageUtility {
         return baseImage;
     }
 
-    public static BufferedImage applyExplicitOutline(BufferedImage baseImage, BufferedImage sMaskImage) {
+    public BufferedImage applyExplicitOutline(BufferedImage baseImage, BufferedImage sMaskImage) {
 
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
@@ -741,13 +724,13 @@ public class ImageUtility {
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
 
-        boolean hasAlpha = ImageUtility.hasAlpha(baseImage);
+        boolean hasAlpha = hasAlpha(baseImage);
         BufferedImage argbImage;
         if (hasAlpha) {
             argbImage = baseImage;
         } else {
             // aways create a new buffer as we need leave the pevioius image un change for some type of masks.
-            argbImage = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+            argbImage = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
 
         int[] srcBand = new int[baseWidth];
@@ -783,7 +766,7 @@ public class ImageUtility {
      * @param fill      fill value to apply to mask.
      * @return masked image encoded with the fill colour and transparency.
      */
-    protected static BufferedImage applyExplicitMask(BufferedImage baseImage, Color fill) {
+    BufferedImage applyExplicitMask(BufferedImage baseImage, Color fill) {
         // create an
         int baseWidth = baseImage.getWidth();
         int baseHeight = baseImage.getHeight();
@@ -792,7 +775,7 @@ public class ImageUtility {
         if (hasAlpha(baseImage)) {
             imageMask = baseImage;
         } else {
-            imageMask = ImageUtility.createTranslucentCompatibleImage(baseWidth, baseHeight);
+            imageMask = createTranslucentCompatibleImage(baseWidth, baseHeight);
         }
         // apply the mask by simply painting white to the base image where
         // the mask specified no colour.
@@ -822,8 +805,7 @@ public class ImageUtility {
      * from the raw image decode.  This method is only called from JPEG2000
      * code for now but will be consolidate as we move to to 5.0
      */
-    protected static BufferedImage applyIndexColourModel(
-            WritableRaster wr, PColorSpace colourSpace, int bitsPerComponent) {
+    BufferedImage applyIndexColourModel(WritableRaster wr, PColorSpace colourSpace, int bitsPerComponent) {
         BufferedImage img = null;
         try {
             colourSpace.init();
@@ -850,12 +832,10 @@ public class ImageUtility {
         return img;
     }
 
-    protected static BufferedImage proJbig2Decode(ImageInputStream imageInputStream,
-                                                  HashMap decodeParms,
-                                                  Stream globalsStream)
-            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, IOException, ClassNotFoundException, InstantiationException {
+    BufferedImage proJBig2Decode(ImageInputStream imageInputStream, HashMap decodeParams, Stream globalsStream)
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, IOException,
+            ClassNotFoundException, InstantiationException {
         BufferedImage tmpImage;
-
         try {
             // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
             // can comply with levigo's open source licence.
@@ -874,8 +854,8 @@ public class ImageUtility {
             Method setInput =
                     levigoJBIG2ImageReaderClass.getMethod("setInput", partypes);
             setInput.invoke(levigoJbig2Reader, arglist);
-            // apply deocde params if any.
-            if (decodeParms != null) {
+            // apply decode params if any.
+            if (decodeParams != null) {
                 if (globalsStream != null) {
                     byte[] globals = globalsStream.getDecodedStreamBytes(0);
                     if (globals != null && globals.length > 0) {
@@ -920,9 +900,7 @@ public class ImageUtility {
         return tmpImage;
     }
 
-    protected static BufferedImage jbig2Decode(byte[] data,
-                                               HashMap decodeParms,
-                                               Stream globalsStream) {
+    BufferedImage jbig2Decode(byte[] data, HashMap decodeParams, Stream globalsStream) {
         BufferedImage tmpImage = null;
         try {
             Class<?> jbig2DecoderClass = Class.forName("org.jpedal.jbig2.JBIG2Decoder");
@@ -931,7 +909,7 @@ public class ImageUtility {
                     jbig2DecoderClass.getDeclaredConstructor();
             Object jbig2Decoder = jbig2DecoderClassConstructor.newInstance();
             // get the decode params form the stream
-            if (decodeParms != null) {
+            if (decodeParams != null) {
                 if (globalsStream != null) {
                     byte[] globals = globalsStream.getDecodedStreamBytes(0);
                     if (globals != null && globals.length > 0) {
@@ -947,7 +925,6 @@ public class ImageUtility {
                 }
             }
             // decode the data stream, decoder.decodeJBIG2(data);
-
             Class<?> argTypes[] = new Class[]{byte[].class};
             Object arglist[] = new Object[]{data};
             Method decodeJBIG2 = jbig2DecoderClass.getMethod("decodeJBIG2", argTypes);
@@ -971,7 +948,7 @@ public class ImageUtility {
         return tmpImage;
     }
 
-    protected static int getJPEGEncoding(byte[] data, int dataLength) {
+    int getJPEGEncoding(byte[] data, int dataLength) {
         int jpegEncoding = JPEG_ENC_UNKNOWN_PROBABLY_YCbCr;
 
         boolean foundAPP14 = false;
@@ -1060,7 +1037,7 @@ public class ImageUtility {
         return jpegEncoding;
     }
 
-    public static BufferedImage applyGrayDecode(BufferedImage rgbImage, int bitsPerComponent, float[] decode) {
+    BufferedImage applyGrayDecode(BufferedImage rgbImage, int bitsPerComponent, float[] decode) {
         WritableRaster wr = rgbImage.getRaster();
         int[] cmap = null;
         if (bitsPerComponent == 1) {
@@ -1076,9 +1053,7 @@ public class ImageUtility {
         return rgbImage;
     }
 
-    public static BufferedImage convertSpaceToRgb(
-            Raster colourRaster, PColorSpace colorSpace,
-            float[] decode) {
+    BufferedImage convertSpaceToRgb(Raster colourRaster, PColorSpace colorSpace, float[] decode) {
         BufferedImage rgbImage = makeBufferedImage(colourRaster);
         WritableRaster rgbRaster = rgbImage.getRaster();
         // apply the decode filter
@@ -1090,16 +1065,14 @@ public class ImageUtility {
         return rgbImage;
     }
 
-    public static BufferedImage convertGrayToRgb(Raster grayRaster,
-                                                 float[] decode) {
-
+    BufferedImage convertGrayToRgb(Raster grayRaster, float[] decode) {
         // apply the decode filter
         DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
         decodeRasterOp.filter(grayRaster, (WritableRaster) grayRaster);
         // convert from gray.
         GrayRasterOp grayRasterOp = new GrayRasterOp(decode, null);
         grayRasterOp.filter(grayRaster, (WritableRaster) grayRaster);
-        return ImageUtility.makeGrayBufferedImage((WritableRaster) grayRaster);
+        return makeGrayBufferedImage((WritableRaster) grayRaster);
     }
 
     /**
@@ -1113,13 +1086,12 @@ public class ImageUtility {
      * @param cmykRaster CMYK base raster to convert to RGB.
      * @return Buffered image representation of raster.
      */
-    public static BufferedImage convertCmykToRgb(Raster cmykRaster,
-                                                 float[] decode) {
+    BufferedImage convertCmykToRgb(Raster cmykRaster, float[] decode) {
         BufferedImage rgbImage = makeBufferedImage(cmykRaster);
 
         if (!DeviceCMYK.isDisableICCCmykColorSpace()) {
             WritableRaster rgbRaster = rgbImage.getRaster();
-            ColorSpace rgbCS = rgbImage.getColorModel().getColorSpace();
+//            ColorSpace rgbCS = rgbImage.getColorModel().getColorSpace();
             // apply the decode filter
             DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
             decodeRasterOp.filter(cmykRaster, (WritableRaster) cmykRaster);
@@ -1141,9 +1113,7 @@ public class ImageUtility {
         }
     }
 
-    public static BufferedImage convertYCbCrToRGB(Raster yCbCrRaster,
-                                                  float[] decode) {
-
+    BufferedImage convertYCbCrToRGB(Raster yCbCrRaster, float[] decode) {
         BufferedImage rgbImage = makeBufferedImage(yCbCrRaster);
         WritableRaster rgbRaster = rgbImage.getRaster();
         // apply the decode filter
@@ -1156,13 +1126,11 @@ public class ImageUtility {
         return rgbImage;
     }
 
-    public static BufferedImage convertYCCKToRgb(Raster ycckRaster,
-                                                 float[] decode) {
+    BufferedImage convertYCCKToRgb(Raster ycckRaster, float[] decode) {
         BufferedImage rgbImage = makeBufferedImage(ycckRaster);
-
         if (!DeviceCMYK.isDisableICCCmykColorSpace()) {
             WritableRaster rgbRaster = rgbImage.getRaster();
-            ColorSpace rgbCS = rgbImage.getColorModel().getColorSpace();
+            //ColorSpace rgbCS = rgbImage.getColorModel().getColorSpace();
             // apply the decode filter
             DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
             decodeRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
@@ -1175,7 +1143,6 @@ public class ImageUtility {
             return rgbImage;
         } else {
             WritableRaster rgbRaster = rgbImage.getRaster();
-
             // apply the decode filter
             DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
             decodeRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
@@ -1190,7 +1157,7 @@ public class ImageUtility {
         }
     }
 
-    protected static BufferedImage makeImageWithRasterFromBytes(
+    BufferedImage makeImageWithRasterFromBytes(
             PColorSpace colourSpace,
             GraphicsState graphicsState,
             int width, int height,
@@ -1213,15 +1180,12 @@ public class ImageUtility {
                 colourSpace = iccBased.getAlternate();
             }
         }
-
         if (colourSpace instanceof DeviceGray) {
             if (imageMask && bitsPerComponent == 1) {
-
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 WritableRaster wr = Raster.createPackedRaster(db, width, height,
                         bitsPerComponent, new Point(0, 0));
-
                 // From PDF 1.6 spec, concerning ImageMask and Decode array:
                 // it in different places different ways.
                 // [0 1] (the default for an image mask), a sample value of 0 marks
@@ -1251,18 +1215,19 @@ public class ImageUtility {
                 //int data_length = data.length;
                 DataBuffer db = new DataBufferByte(data, dataLength);
                 WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
-                int[] cmap = null;
+                int[] cmap;
                 if (bitsPerComponent == 1) {
                     boolean defaultDecode = 0.0f == decode[0];
                     cmap = defaultDecode ? GRAY_1_BIT_INDEX_TO_RGB : GRAY_1_BIT_INDEX_TO_RGB_REVERSED;
-                } else if (bitsPerComponent == 2)
+                } else if (bitsPerComponent == 2) {
                     cmap = GRAY_2_BIT_INDEX_TO_RGB;
-                else if (bitsPerComponent == 4)
+                } else {
                     cmap = GRAY_4_BIT_INDEX_TO_RGB;
+                }
                 ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1, db.getDataType());
                 img = new BufferedImage(cm, wr, false, null);
             } else if (bitsPerComponent == 8) {
-                img = ImageUtility.createCompatibleImage(width, height);
+                img = createCompatibleImage(width, height);
                 // convert image data to rgb, seems to to give better colour tones. ?
                 int[] dataToRGB = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
                 copyDecodedStreamBytesIntoGray(data, dataToRGB, decode);
@@ -1278,7 +1243,7 @@ public class ImageUtility {
                 copyDecodedStreamBytesIntoRGB(data, dataToRGB);
                 // apply alpha data.
                 if (usingAlpha) {
-                    img = ImageUtility.alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
                 }
             }
         } else if (colourSpace instanceof DeviceCMYK) {
@@ -1327,7 +1292,7 @@ public class ImageUtility {
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
                     ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, true, -1, db.getDataType());
                     img = new BufferedImage(cm, wr, false, null);
-                    img = ImageUtility.alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
+                    img = alterBufferedImageAlpha(img, maskMinRGB, maskMaxRGB);
                 } else {
                     DataBuffer db = new DataBufferByte(data, dataLength);
                     WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
@@ -1405,7 +1370,7 @@ public class ImageUtility {
         return img;
     }
 
-    private static void copyDecodedStreamBytesIntoRGB(byte[] data, int[] pixels) {
+    private void copyDecodedStreamBytesIntoRGB(byte[] data, int[] pixels) {
         byte[] rgb = new byte[3];
         try {
             InputStream input = new ByteArrayInputStream(data);
@@ -1433,7 +1398,7 @@ public class ImageUtility {
         }
     }
 
-    private static void copyDecodedStreamBytesIntoGray(byte[] data, int[] pixels, float[] decode) {
+    private void copyDecodedStreamBytesIntoGray(byte[] data, int[] pixels, float[] decode) {
         byte[] rgb = new byte[1];
         boolean defaultDecode = 0.0f == decode[0];
         int Y;
@@ -1463,12 +1428,11 @@ public class ImageUtility {
     }
 
     // default version of createBufferedImage
-    public static BufferedImage createBufferedImage(Image imageIn) {
+    public BufferedImage createBufferedImage(Image imageIn) {
         return createBufferedImage(imageIn, BufferedImage.TYPE_INT_ARGB);
     }
 
-    public static BufferedImage createBufferedImage(Image imageIn,
-                                                    int imageType) {
+    private BufferedImage createBufferedImage(Image imageIn, int imageType) {
         BufferedImage bufferedImageOut = new BufferedImage(imageIn
                 .getWidth(null), imageIn.getHeight(null), imageType);
         Graphics g = bufferedImageOut.getGraphics();
@@ -1486,64 +1450,42 @@ public class ImageUtility {
      * @return array of altered baseImage and maskImage, should be same size on
      * return.
      */
-    public static BufferedImage[] scaleImagesToSameSize(BufferedImage baseImage,
-                                                        BufferedImage maskImage) {
+    private BufferedImage[] scaleImagesToSameSize(BufferedImage baseImage,
+                                                  BufferedImage maskImage) {
+        int width = baseImage.getWidth();
+        int height = baseImage.getHeight();
+        WritableRaster maskRaster = maskImage.getRaster();
+        int maskWidth = maskRaster.getWidth();
+        int maskHeight = maskRaster.getHeight();
         if (scaleQuality) {
-            int width = baseImage.getWidth();
-            int height = baseImage.getHeight();
-
-            WritableRaster maskRaster = maskImage.getRaster();
-            int maskWidth = maskRaster.getWidth();
-            int maskHeight = maskRaster.getHeight();
             // scale the image to match the image mask.
             if (width < maskWidth || height < maskHeight) {
                 // calculate scale factors.
-                double scaleX = maskWidth / (double) width;
-                double scaleY = maskHeight / (double) height;
-                // scale the mask to match the base image.
-                AffineTransform tx = new AffineTransform();
-                tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-                BufferedImage bim = op.filter(baseImage, null);
-                baseImage.flush();
-                baseImage = bim;
+                baseImage = scale(maskWidth, maskHeight, width, height, baseImage);
             } else if (width > maskWidth || height > maskHeight) {
                 // calculate scale factors.
-                double scaleX = width / (double) maskWidth;
-                double scaleY = height / (double) maskHeight;
-                // scale the mask to match the base image.
-                AffineTransform tx = new AffineTransform();
-                tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-                BufferedImage bim = op.filter(maskImage, null);
-                maskImage.flush();
-                maskImage = bim;
+                maskImage = scale(width, height, maskWidth, maskHeight, maskImage);
             }
             return new BufferedImage[]{baseImage, maskImage};
         } else {
-            int width = baseImage.getWidth();
-            int height = baseImage.getHeight();
-
-            WritableRaster maskRaster = maskImage.getRaster();
-            int maskWidth = maskRaster.getWidth();
-            int maskHeight = maskRaster.getHeight();
             // scale the mask to match the smaller image.
             if (width < maskWidth || height < maskHeight) {
                 // calculate scale factors.
-//                BufferedImage bim = (BufferedImage)
-//                        ImageUtility.getTrilinearScaledInstance(maskImage, width, height);
-                double scaleX = width / (double) maskWidth;
-                double scaleY = height / (double) maskHeight;
-                // scale the mask to match the base image.
-                AffineTransform tx = new AffineTransform();
-                tx.scale(scaleX, scaleY);
-                AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-                BufferedImage bim = op.filter(maskImage, null);
-                maskImage.flush();
-                maskImage = bim;
+                maskImage = scale(width, height, maskWidth, maskHeight, maskImage);
             }
             return new BufferedImage[]{baseImage, maskImage};
         }
+    }
+
+    private BufferedImage scale(int width, int height, int width2, int height2, BufferedImage image) {
+        double scaleX = width / (double) width2;
+        double scaleY = height / (double) height2;
+        AffineTransform tx = new AffineTransform();
+        tx.scale(scaleX, scaleY);
+        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+        BufferedImage bim = op.filter(image, null);
+        image.flush();
+        return bim;
     }
 
 }

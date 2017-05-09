@@ -98,7 +98,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                 // try drawing the scaled image one more time.
                 aG.drawImage(scaledImage, aX, aY, aW, aH, null);
                 // store the scaled image for future repaints.
-                this.image = ImageUtility.createBufferedImage(scaledImage);
+                this.image = imageStream.getImageUtility().createBufferedImage(scaledImage);
             }
         }
     }
