@@ -174,7 +174,7 @@ public class Shapes {
      *
      * @return all images in a page's content, if any.
      */
-    public ArrayList<Image> getImages() {
+    public ArrayList<Image> getImages() throws InterruptedException {
         ArrayList<Image> images = new ArrayList<Image>();
         for (Object object : shapes) {
             if (object instanceof ImageDrawCmd) {
