@@ -23,6 +23,8 @@ import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The MipMappedImageReference will create several scaled instance of the
@@ -34,6 +36,9 @@ import java.util.ArrayList;
  * @since 5.0
  */
 class MipMappedImageReference extends ImageReference {
+
+    private static final Logger logger =
+            Logger.getLogger(MipMappedImageReference.class.toString());
 
     private ArrayList<ImageReference> images;
 
@@ -63,7 +68,8 @@ class MipMappedImageReference extends ImageReference {
                 images.add(imageReference);
             }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.log(Level.FINER, "Error loading image: " + imageStream.getPObjectReference() +
+                    " " + imageStream.toString(), e);
         }
     }
 
