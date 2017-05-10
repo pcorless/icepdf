@@ -62,7 +62,7 @@ public class InlineImageStreamReference extends ImageReference {
     }
 
     @Override
-    public BufferedImage getImage() {
+    public BufferedImage getImage() throws InterruptedException {
         if (image == null && useProxy) {
             image = createImage();
         } else {

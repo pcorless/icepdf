@@ -80,7 +80,7 @@ public class ImageDrawCmd extends AbstractDrawCmd {
         }
     }
 
-    public Image getImage() {
+    public Image getImage() throws InterruptedException {
         return image.getImage();
     }
 
@@ -88,7 +88,7 @@ public class ImageDrawCmd extends AbstractDrawCmd {
     public Shape paintOperand(Graphics2D g, Page parentPage, Shape currentShape,
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
-                              boolean paintAlpha, PaintTimer paintTimer) {
+                              boolean paintAlpha, PaintTimer paintTimer) throws InterruptedException {
         if (optionalContentState.isVisible()) {
             if (isScaledPaint && (xIsScale || yIsScale)) {
                 calculateThinScale(base.getScaleX());
