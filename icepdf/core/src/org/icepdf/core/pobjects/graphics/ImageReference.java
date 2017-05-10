@@ -72,9 +72,9 @@ public abstract class ImageReference implements Callable<BufferedImage> {
 
     public abstract int getHeight();
 
-    public abstract BufferedImage getImage();
+    public abstract BufferedImage getImage() throws InterruptedException;
 
-    public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) {
+    public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) throws InterruptedException {
         BufferedImage image = getImage();
         if (image != null) {
             try {
@@ -92,8 +92,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                 } else if (width > 2000) {
                     width = 2000;
                 }
-                scaledImage = image.getScaledInstance(
-                        width, -1, Image.SCALE_SMOOTH);
+                scaledImage = image.getScaledInstance(width, -1, Image.SCALE_SMOOTH);
                 image.flush();
                 // try drawing the scaled image one more time.
                 aG.drawImage(scaledImage, aX, aY, aW, aH, null);
@@ -108,7 +107,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      *
      * @return decoded/encoded BufferedImage for the respective ImageStream.
      */
-    protected BufferedImage createImage() {
+    protected BufferedImage createImage() throws InterruptedException {
         try {
             // block until thread comes back.
             if (futureTask != null) {
@@ -120,6 +119,7 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.fine("Image loading interrupted");
+            throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
             logger.log(Level.FINE, "Image loading execution exception", e);
         }

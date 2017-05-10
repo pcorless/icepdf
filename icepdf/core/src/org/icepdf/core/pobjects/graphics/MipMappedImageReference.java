@@ -54,12 +54,16 @@ class MipMappedImageReference extends ImageReference {
         // disable proxy as we need to scale each image from the previous
         // and thus need to do the downscale in one shot.
         useProxy = false;
-        while (width > 20 && height > 20) {
-            width /= 2;
-            height /= 2;
-            imageReference = new ScaledImageReference(imageReference, graphicsState, resources,
-                    width, height, imageIndex, page);
-            images.add(imageReference);
+        try {
+            while (width > 20 && height > 20) {
+                width /= 2;
+                height /= 2;
+                imageReference = new ScaledImageReference(imageReference, graphicsState, resources,
+                        width, height, imageIndex, page);
+                images.add(imageReference);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -71,11 +75,11 @@ class MipMappedImageReference extends ImageReference {
         return images.get(0).getHeight();
     }
 
-    public BufferedImage getImage() {
+    public BufferedImage getImage() throws InterruptedException {
         return images.get(0).getImage();
     }
 
-    public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) {
+    public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) throws InterruptedException {
         ImageReference imageReference = chooseImage(aG, aX, aY, aW, aH);
         imageReference.drawImage(aG, aX, aY, aW, aH);
     }

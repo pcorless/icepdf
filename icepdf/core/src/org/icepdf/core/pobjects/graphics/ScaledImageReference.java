@@ -61,7 +61,7 @@ public class ScaledImageReference extends CachedImageReference {
     }
 
     public ScaledImageReference(ImageReference imageReference, GraphicsState graphicsState, Resources resources,
-                                int width, int height, int imageIndex, Page page) {
+                                int width, int height, int imageIndex, Page page) throws InterruptedException {
         super(imageReference.getImageStream(), graphicsState, resources, imageIndex, page);
 
         this.width = width;

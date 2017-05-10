@@ -42,7 +42,7 @@ public abstract class CachedImageReference extends ImageReference {
         this.reference = imageStream.getPObjectReference();
     }
 
-    public BufferedImage getImage() {
+    public BufferedImage getImage() throws InterruptedException {
         if (isNull) {
             return null;
         }
