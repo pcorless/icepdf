@@ -44,7 +44,7 @@ public class ImageReferenceFactory {
     // allow scaling of large images to improve clarity on screen
 
     public enum ImageReference {
-        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED // FLOYD_STEINBERG
+        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED, BLURRED // FLOYD_STEINBERG
     }
 
     private static ImageReference scaleType;
@@ -60,6 +60,8 @@ public class ImageReferenceFactory {
             scaleType = ImageReference.MIP_MAP;
         } else if ("smoothScaled".equals(imageReferencetype)) {
             scaleType = ImageReference.SMOOTH_SCALED;
+        } else if ("blurred".equals(imageReferencetype)) {
+            scaleType = ImageReference.BLURRED;
         } else {
             scaleType = ImageReference.DEFAULT;
         }
@@ -96,6 +98,8 @@ public class ImageReferenceFactory {
                 return new SmoothScaledImageReference(imageStream, graphicsState, resources, imageIndex, page);
             case MIP_MAP:
                 return new MipMappedImageReference(imageStream, graphicsState, resources, imageIndex, page);
+            case BLURRED:
+                return new BlurredImageReference(imageStream, graphicsState, resources, imageIndex, page);
             default:
                 return new ImageStreamReference(imageStream, graphicsState, resources, imageIndex, page);
         }
