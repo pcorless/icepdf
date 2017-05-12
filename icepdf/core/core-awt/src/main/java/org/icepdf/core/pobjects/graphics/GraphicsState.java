@@ -558,15 +558,11 @@ public class GraphicsState {
             parentGraphicState.shapes.add(new ColorDrawCmd(parentGraphicState.getFillColor()));
 
             // apply the old alpha fill, removed as we need to guarantee the stack is in the correct state.
-//            if (fillAlpha != parentGraphicState.getFillAlpha()) {
-//                parentGraphicState.shapes.add(new AlphaDrawCmd(
-//                        AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getFillAlpha())));
-//            }
-//
-//            if (strokeAlpha != parentGraphicState.getStrokeAlpha()) {
-//                parentGraphicState.shapes.add(new AlphaDrawCmd(
-//                        AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getStrokeAlpha())));
-//            }
+            parentGraphicState.shapes.add(new AlphaDrawCmd(
+                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getFillAlpha())));
+
+            parentGraphicState.shapes.add(new AlphaDrawCmd(
+                    AlphaComposite.getInstance(parentGraphicState.getAlphaRule(), parentGraphicState.getStrokeAlpha())));
             // stroke Color
 //            parentGraphicState.shapes.add(parentGraphicState.getStrokeColor());
         }
