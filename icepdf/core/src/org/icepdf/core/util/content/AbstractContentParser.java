@@ -814,7 +814,7 @@ public abstract class AbstractContentParser implements ContentParser {
                     shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(), alpha));
             }
             // apply the alpha as it's own composite
-            if (alpha > 0 && alpha < 1.0)
+            if (alpha >= 0 && alpha <= 1.0)
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
     }
