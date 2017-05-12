@@ -170,9 +170,8 @@ public class ImageStream extends Stream {
      * @param resources     resources containing image reference
      * @return new image object
      */
-    // was synchronized, not think it is needed?
     @SuppressWarnings("unchecked")
-    public synchronized BufferedImage getImage(GraphicsState graphicsState, Resources resources) throws InterruptedException {
+    public BufferedImage getImage(GraphicsState graphicsState, Resources resources) throws InterruptedException {
         // check the pool encase we already parse this image.
 
         if (pObjectReference != null) {
@@ -182,17 +181,14 @@ public class ImageStream extends Stream {
             }
         }
 
-        // parse colour space, lock is to insure that getColorSpace()
-        // will return only after colourSpace has been set.
-        synchronized (colorSpaceAssignmentLock) {
-            Object o = entries.get(COLORSPACE_KEY);
-            if (resources != null && o != null) {
-                colourSpace = resources.getColorSpace(o);
-            }
-            // assume b&w image is no colour space
-            if (colourSpace == null) {
-                colourSpace = new DeviceGray(library, null);
-            }
+        // parse colour space
+        Object o = entries.get(COLORSPACE_KEY);
+        if (resources != null && o != null) {
+            colourSpace = resources.getColorSpace(o);
+        }
+        // assume b&w image is no colour space
+        if (colourSpace == null) {
+            colourSpace = new DeviceGray(library, null);
         }
         // A flag indicating whether the image shall be treated as an image mask
         boolean isImageMask = isImageMask();
