@@ -805,16 +805,23 @@ public abstract class AbstractContentParser implements ContentParser {
             }
             float alpha = graphicState.getFillAlpha();
             if (graphicState.getExtGState() != null
-                    && graphicState.getExtGState().getBlendingMode() != null // && graphicState.getExtGState().getOverprintMode() == 1
+                    && graphicState.getExtGState().getBlendingMode() != null
+                    && graphicState.getExtGState().getBlendingMode() != BlendComposite.NORMAL_VALUE // && graphicState.getExtGState().getOverprintMode() == 1
                     ) {
                 // BlendComposite is still having trouble with alpha values < 1.0 and if we apply a blend to the top of
                 // the stack, the src pixels aren't the intended value.
-                if (shapes.getShapes().size() > 0)
+                if (!(shapes.getShapes().size() == 0 &&
+                        BlendComposite.OVERLAY_VALUE.equals(graphicState.getExtGState().getBlendingMode()))) {
                     shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(), alpha));
+                }
+                if (alpha >= 0 && alpha < 1.0) {
+                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+                }
             }
             // apply the alpha as it's own composite
-            if (alpha > 0 && alpha < 1.0)
+            else if (alpha >= 0 && alpha <= 1.0) {
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+            }
         }
     }
 
