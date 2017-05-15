@@ -419,7 +419,7 @@ public class TilingPattern extends Stream implements Pattern {
             paintPattern(canvas, tilingShapes, matrix, originalPageSpace, baseScale);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.log(Level.FINE, "Error painting tiling pattern.", e);
+            logger.log(Level.FINER, "Interrupted painting tiling pattern.");
         }
 
         // show it in a frame
