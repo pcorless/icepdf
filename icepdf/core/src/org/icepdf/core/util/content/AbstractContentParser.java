@@ -814,12 +814,14 @@ public abstract class AbstractContentParser implements ContentParser {
                         BlendComposite.OVERLAY_VALUE.equals(graphicState.getExtGState().getBlendingMode()))){
                     shapes.add(new BlendCompositeDrawCmd(graphicState.getExtGState().getBlendingMode(), alpha));
                 }
+                if (alpha >= 0 && alpha < 1.0) {
+                    setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
+                }
             }
             // apply the alpha as it's own composite
-            if (alpha >= 0 && alpha < 1.0) {
+            else if (alpha >= 0 && alpha <= 1.0) {
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
             }
-            System.out.println();
         }
     }
 
