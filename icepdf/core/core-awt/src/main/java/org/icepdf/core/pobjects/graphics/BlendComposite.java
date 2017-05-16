@@ -837,11 +837,26 @@ public final class BlendComposite implements Composite {
                         }
                     };
                 case SOFT_LIGHT:
-                    break;
+                    return new Blender() {
+                        @Override
+                        public int[] blend(int[] src, int[] dst) {
+                            int mRed = src[0] * dst[0] / 255;
+                            int mGreen = src[1] * dst[1] / 255;
+                            int mBlue = src[2] * dst[2] / 255;
+                            return new int[]{
+                                    mRed + src[0] * (255 - ((255 - src[0]) * (255 - dst[0]) / 255) - mRed) / 255,
+                                    mGreen + src[1] * (255 - ((255 - src[1]) * (255 - dst[1]) / 255) - mGreen) / 255,
+                                    mBlue + src[2] * (255 - ((255 - src[2]) * (255 - dst[2]) / 255) - mBlue),
+                                    Math.min(255, src[3] + dst[3] - (src[3] * dst[3]) / 255)};
+                        }
+                    };
                 case STAMP:
                     return new Blender() {
                         @Override
                         public int[] blend(int[] src, int[] dst) {
+                            if (src[3] == 0) {
+                                return dst;
+                            }
                             return new int[]{
                                     Math.max(0, Math.min(255, dst[0] + 2 * src[0] - 256)),
                                     Math.max(0, Math.min(255, dst[1] + 2 * src[1] - 256)),
@@ -862,9 +877,18 @@ public final class BlendComposite implements Composite {
                             };
                         }
                     };
+                default:
+                    logger.finer("Blender not implement for " + composite.getMode().name());
+                    return new Blender() {
+                        @Override
+                        public int[] blend(int[] src, int[] dst) {
+                            if (src[3] == 0) {
+                                return dst;
+                            }
+                            return src;
+                        }
+                    };
             }
-            throw new IllegalArgumentException("Blender not implement for " +
-                    composite.getMode().name());
         }
     }
 }
