@@ -46,7 +46,7 @@ public class BarcodeReader {
     // barcode reader hints
     private static Map<DecodeHintType, Object> hints;
     static {
-        // formats to scan for,; shorter list will make a shorter scan time.
+        // formats to scan for; shorter list will make a shorter scan time.
         List<BarcodeFormat> formats = new ArrayList<BarcodeFormat>();
         formats.addAll(Arrays.asList(
                 BarcodeFormat.UPC_A,
@@ -106,7 +106,7 @@ public class BarcodeReader {
         int pages = document.getNumberOfPages();
         for (int i = 0; i < pages; i++) {
             // capture each page, at a slightly higher zoom to give the scanner more data to work with.
-            BufferedImage image = (BufferedImage) document.getPageImage(0, GraphicsRenderingHints.PRINT,
+            BufferedImage image = (BufferedImage) document.getPageImage(i, GraphicsRenderingHints.PRINT,
                     Page.BOUNDARY_CROPBOX, 0, 3f);
 
             // ready the barcode scanner area.
