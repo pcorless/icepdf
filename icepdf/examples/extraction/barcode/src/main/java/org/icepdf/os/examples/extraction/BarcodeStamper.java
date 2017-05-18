@@ -13,6 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+package org.icepdf.os.examples.extraction;
 
 import com.google.zxing.*;
 import com.google.zxing.client.result.ParsedResult;

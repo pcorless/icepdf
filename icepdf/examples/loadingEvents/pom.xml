@@ -19,16 +19,12 @@
     <parent>
         <groupId>org.icepdf.os.examples</groupId>
         <artifactId>examples</artifactId>
-        <version>${project.version}</version>
+        <version>6.3.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>loading-events</artifactId>
     <packaging>jar</packaging>
     <name>ICEpdf OS :: Examples :: Loading Events</name>
-
-    <properties>
-        <batik.version>1.6</batik.version>
-    </properties>
 
     <build>
         <plugins>

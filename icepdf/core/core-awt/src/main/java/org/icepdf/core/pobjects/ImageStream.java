@@ -233,9 +233,9 @@ public class ImageStream extends Stream {
         Object maskObj = library.getObject(entries, MASK_KEY);
 
         // If present, this entry shall override the current soft mask in the
-        // graphics state, as well as the imageâ€™s Mask entry, if any. However,
-        // the other transparency-related graphics state parametersâ€”blend mode
-        // and alpha constantâ€”shall remain in effect.
+        // graphics state, as well as the image Mask entry, if any. However,
+        // the other transparency-related graphics state parameters blend mode
+        // and alpha constant shall remain in effect.
         if (smaskObj instanceof Stream) {
             ImageStream smaskStream = (ImageStream) smaskObj;
             if (smaskStream.isImageSubtype()) {

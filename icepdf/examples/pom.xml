@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.icepdf.os</groupId>
         <artifactId>icepdf</artifactId>
-        <version>${project.version}</version>
+        <version>6.3.0-SNAPSHOT</version>
     </parent>
     <groupId>org.icepdf.os.examples</groupId>
     <artifactId>examples</artifactId>
@@ -55,7 +55,7 @@
     <dependencies>
         <dependency>
             <groupId>org.icepdf.os</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>icepdf-core</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -70,7 +70,7 @@
         </dependency>
         <dependency>
             <groupId>org.icepdf.os</groupId>
-            <artifactId>viewer</artifactId>
+            <artifactId>icepdf-viewer</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

@@ -5,10 +5,9 @@
     <parent>
         <groupId>org.icepdf.os</groupId>
         <artifactId>icepdf</artifactId>
-        <version>${project.version}</version>
+        <version>6.3.0-SNAPSHOT</version>
     </parent>
-    <groupId>org.icepdf.os</groupId>
-    <artifactId>common-viewer</artifactId>
+    <artifactId>viewer</artifactId>
     <packaging>pom</packaging>
     <name>ICEpdf OS :: Viewer</name>
     <description>
@@ -24,18 +23,18 @@
     <dependencies>
         <dependency>
             <groupId>org.icepdf.os</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>icepdf-core</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>com.sun.media</artifactId>
-                    <groupId>jai_imageio</groupId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.media</groupId>
-                    <artifactId>jai_core</artifactId>
-                </exclusion>
-            </exclusions>
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>com.sun.media</artifactId>-->
+                    <!--<groupId>jai_imageio</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>javax.media</groupId>-->
+                    <!--<artifactId>jai_core</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
         </dependency>
     </dependencies>
 
@@ -43,7 +42,7 @@
         <dependencies>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>viewer</artifactId>
+                <artifactId>icepdf-viewer</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

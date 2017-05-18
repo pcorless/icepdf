@@ -4,8 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.icepdf.os</groupId>
-        <artifactId>common-viewer</artifactId>
-        <version>${parent.version}</version>
+        <artifactId>viewer</artifactId>
+        <version>6.3.0-SNAPSHOT</version>
     </parent>
     <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
@@ -39,5 +39,24 @@
         <url>http://sventon.icesoft.org/svn/repos/repo/list/icepdf/</url>
         <tag>trunk</tag>
     </scm>
+
+    <build>
+        <finalName>icepdf-viewer-${version}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>templating-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-verion-class</id>
+                        <goals>
+                            <goal>filter-sources</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

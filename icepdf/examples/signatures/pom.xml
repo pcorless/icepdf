@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.icepdf.os.examples</groupId>
         <artifactId>examples</artifactId>
-        <version>${project.version}</version>
+        <version>6.3.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>signature-verification</artifactId>
