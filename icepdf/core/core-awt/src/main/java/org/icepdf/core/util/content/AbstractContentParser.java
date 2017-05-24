@@ -721,7 +721,7 @@ public abstract class AbstractContentParser implements ContentParser {
                     double min = dashArray[0];
                     for (int i = 0, max = dashArray.length - 1; i < max; i++) {
                         float diff = dashArray[i] - dashArray[i + 1];
-                        if (diff > spread || diff < -spread) {
+                        if (Math.abs(diff) > spread) {
                             isOffice = true;
                         }
                         if (dashArray[i] < min) {
@@ -731,7 +731,7 @@ public abstract class AbstractContentParser implements ContentParser {
                     if (isOffice) {
                         min = Math.ceil(min);
                         for (int i = 0, max = dashArray.length; i < max; i++) {
-                            if (dashArray[i] <= min) {
+                            if (dashArray[i] <= min && dashArray[i] < 100) {
                                 // scale to PDF space.
                                 dashArray[i] = dashArray[i] * 1000;
                             }
