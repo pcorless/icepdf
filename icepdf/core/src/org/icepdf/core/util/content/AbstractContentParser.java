@@ -728,8 +728,8 @@ public abstract class AbstractContentParser implements ContentParser {
                             min = dashArray[i];
                         }
                     }
-                    min = Math.ceil(min);
                     if (isOffice) {
+                        min = Math.ceil(min);
                         for (int i = 0, max = dashArray.length; i < max; i++) {
                             if (dashArray[i] <= min) {
                                 // scale to PDF space.
