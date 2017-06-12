@@ -613,7 +613,9 @@ public abstract class AbstractContentParser implements ContentParser {
                         ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
                                 (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
                                 && (formXObject.getExtGState() != null &&
-                                (formXObject.getExtGState().getSMask() != null || formXObject.getExtGState().getBlendingMode() != null
+                                (formXObject.getExtGState().getSMask() != null ||
+                                        (formXObject.getExtGState().getBlendingMode() != null &&
+                                                !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
                                         || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
                                         && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
                         )) {
