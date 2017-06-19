@@ -24,7 +24,6 @@ import org.icepdf.ri.util.jxlayer.plaf.LayerUI;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
 
 /**
  * ScalableTextArea extends JTextArea overriding key method need to insure that
@@ -47,7 +46,7 @@ public class ScalableTextArea extends JTextArea implements ScalableField {
         getDocument().putProperty("i18n", Boolean.TRUE.toString());
         putClientProperty("i18n", Boolean.TRUE.toString());
         LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
-            private static final long serialVersionUID = 1155416379916342539L;
+            private static final long serialVersionUID = 1155416379916342570L;
             @SuppressWarnings("unchecked")
             @Override
             public void installUI(JComponent c) {
@@ -91,49 +90,14 @@ public class ScalableTextArea extends JTextArea implements ScalableField {
         super.paintBorder(g);
     }
 
-    private MouseEvent scaleMouseEvent(MouseEvent e) {
-        float zoom = documentViewModel.getViewZoom();
-        MouseEvent scaleMouseEvent = new MouseEvent((Component) e.getSource(),
-                e.getID(), e.getWhen(), e.getModifiers(),
-                (int) (e.getX() / zoom), (int) (e.getY() / zoom),
-                e.getClickCount(), e.isPopupTrigger(), e.getButton());
-        e.consume();
-        return scaleMouseEvent;
-    }
-
-    @Override
-    protected void processMouseEvent(MouseEvent e) {
-        MouseEvent newEvent = scaleMouseEvent(e);
-        super.processMouseEvent(newEvent);
-    }
-
-    @Override
-    protected void processMouseMotionEvent(MouseEvent e) {
-        MouseEvent newEvent = scaleMouseEvent(e);
-        super.processMouseMotionEvent(newEvent);
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         if (!active) {
             return;
         }
-        float zoom = documentViewModel.getViewZoom();
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        AffineTransform old = g2.getTransform();
-        g2.scale(zoom, zoom);
         // paint the component at the scale of the page.
-        super.paintComponent(g2);
-        g2.setTransform(old);
+        super.paintComponent(g);
     }
-
-    public void repaint(int x, int y, int width, int height) {
-//        super.repaint(0, 0, getWidth(), getHeight());
-        super.repaint();
-    }
-
 
     public boolean isActive() {
         return active;
