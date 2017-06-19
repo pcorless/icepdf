@@ -37,6 +37,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -171,7 +172,10 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
             // convert to user rect to page space along with the bounds.
             comp.setBounds(bounds);
-            comp.refreshAnnotationRect();
+            // avoid a potential rounding error in comp.refreshAnnotationRect(), stead we simply
+            // set the bbox to the rect which is just fine for highlight annotations.
+            Rectangle2D rect = annotation.getUserSpaceRectangle();
+            annotation.syncBBoxToUserSpaceRectangle(rect);
 
             // create component and add it to the page.
             // add them to the container, using absolute positioning.
