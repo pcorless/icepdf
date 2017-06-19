@@ -151,9 +151,9 @@ public class CircleAnnotation extends MarkupAnnotation {
         AffineTransform matrix = appearanceState.getMatrix();
         Shapes shapes = appearanceState.getShapes();
 
-        // we paint everythign in annotation space which is relative to the bbox.
+        // we paint everything in annotation space which is relative to the bbox.
         Rectangle2D bbox = appearanceState.getBbox();
-        bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
+        bbox.setRect(0, 0, userSpaceRectangle.getWidth(), userSpaceRectangle.getHeight());
 
         // setup the AP stream.
         setModifiedDate(PDate.formatDateTime(new Date()));

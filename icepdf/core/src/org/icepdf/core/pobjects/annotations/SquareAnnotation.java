@@ -149,7 +149,7 @@ public class SquareAnnotation extends MarkupAnnotation {
         Shapes shapes = appearanceState.getShapes();
         // we paint everything in annotation space which is relative to the bbox.
         Rectangle2D bbox = appearanceState.getBbox();
-        bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
+        bbox.setRect(0, 0, userSpaceRectangle.getWidth(), userSpaceRectangle.getHeight());
         // setup the AP stream.
         setModifiedDate(PDate.formatDateTime(new Date()));
         // refresh /rect entry to match bbox of the appearance stream.
@@ -168,9 +168,6 @@ public class SquareAnnotation extends MarkupAnnotation {
                 strokeWidth,
                 (int) userSpaceRectangle.getWidth() - strokeWidth * 2,
                 (int) userSpaceRectangle.getHeight() - strokeWidth * 2);
-
-        System.out.println(bbox);
-        System.out.println(userSpaceRectangle);
 
         shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
         shapes.add(new AlphaDrawCmd(
