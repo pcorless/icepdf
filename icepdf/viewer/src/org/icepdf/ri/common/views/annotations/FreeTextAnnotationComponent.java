@@ -149,12 +149,23 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         revalidate();
     }
 
+    @Override
+    public void validate() {
+        if (freeTextPane != null) {
+            freeTextPane.setFont(
+                    new Font(freeTextAnnotation.getFontName().toString(),
+                            Font.PLAIN,
+                            (int) (freeTextAnnotation.getFontSize() * documentViewModel.getViewZoom())));
+        }
+        super.validate();
+    }
+
     public void setAppearanceStream() {
         // copy over annotation properties from the free text annotation.
-        if (fontFile == null || freeTextAnnotation.isFontPropertyChanged()) {
-            fontFile = FontManager.getInstance().initialize().getType1AWTFont(
-                    freeTextAnnotation.getFontName(), freeTextAnnotation.getFontSize());
-        }
+        fontFile = FontManager.getInstance().initialize().getType1AWTFont(
+                freeTextAnnotation.getFontName(),
+                (int) (freeTextAnnotation.getFontSize() * documentViewModel.getViewZoom()));
+
         freeTextPane.setFont(fontFile);
         freeTextPane.setForeground(freeTextAnnotation.getFontColor());
 
