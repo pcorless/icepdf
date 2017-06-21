@@ -340,10 +340,9 @@ class StandardEncryption {
             int encryptionMode = encrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
             // Set up an RC4 cipher and try to decrypt:
             try {
-                SecretKeySpec key = new SecretKeySpec(rc4Key, "AES");
-
                 // Use above as key for the RC4 encryption function.
                 if (isRc4) {
+                    SecretKeySpec key = new SecretKeySpec(rc4Key, "RC4");
                     Cipher rc4 = Cipher.getInstance("RC4");
                     rc4.init(Cipher.DECRYPT_MODE, key);
                     // finally add the stream or string data
@@ -352,6 +351,7 @@ class StandardEncryption {
                 }
                 // use above a key for the AES encryption function.
                 else {
+                    SecretKeySpec key = new SecretKeySpec(rc4Key, "AES");
                     Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
                     if (encryptionMode == Cipher.DECRYPT_MODE) {
                         // calculate 16 byte initialization vector.
