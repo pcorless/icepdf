@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.icepdf.os</groupId>
     <artifactId>icepdf-viewer</artifactId>
-    <version>6.2.1_P01</version>
+    <version>6.2.5_beta_1</version>
     <packaging>jar</packaging>
     <name>ICEpdf Viewer RI</name>
     <url>http://www.icefaces.org</url>
@@ -39,18 +39,13 @@
         <distribution>repo</distribution>
       </license>
     </licenses>
-    <scm>
-        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/</connection>
-        <url>http://sventon.icesoft.org/svn/repos/repo/list/icepdf/</url>
-        <tag>icepdf-6.2.1_P01-maven</tag>
-    </scm>
 
     <dependencies>
 
         <dependency>
             <groupId>org.icepdf.os</groupId>
             <artifactId>icepdf-core</artifactId>
-            <version>6.2.1_P01-SNAPSHOT</version>
+            <version>6.2.5_beta_1</version>
         </dependency>
 
         <dependency>
