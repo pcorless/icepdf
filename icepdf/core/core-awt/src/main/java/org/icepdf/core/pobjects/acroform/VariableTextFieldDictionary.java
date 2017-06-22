@@ -179,7 +179,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             }
             ContentParser cp = ContentParserFactory.getInstance()
                     .getContentParser(library, resources);
-            cp.parseTextBlocks(new byte[][]{possibleContent.getBytes()});
+            // use full parser so we parse the font color.
+            cp.parse(new byte[][]{possibleContent.getBytes()}, null);
             GraphicsState gs = cp.getGraphicsState();
             if (gs != null) {
                 if (gs.getFillColor() != null) color = gs.getFillColor();
