@@ -575,7 +575,18 @@ public class LineAnnotation extends MarkupAnnotation {
 
         // adjust the line's start and end points for any potential move
         AffineTransform af = new AffineTransform();
-        af.setToTranslation(dx * pageTransform.getScaleX(), -dy * pageTransform.getScaleY());
+
+        double scaleX = pageTransform.getScaleX();
+        scaleX = scaleX == 0 ? 1 : scaleX;
+        double scaleY = pageTransform.getScaleY();
+        scaleY = scaleY == 0 ? 1 : scaleY;
+        // make the assumption that we always have angle shift of 90 degrees.
+        if (pageTransform.getShearX() != 0 && pageTransform.getShearY() != 0) {
+            af.setToTranslation(-dy * pageTransform.getShearX(), dx * pageTransform.getShearY());
+        } else {
+            af.setToTranslation(dx * scaleX, -dy * scaleY);
+        }
+
         af.transform(startOfLine, startOfLine);
         af.transform(endOfLine, endOfLine);
         setStartOfLine(startOfLine);
@@ -590,6 +601,7 @@ public class LineAnnotation extends MarkupAnnotation {
         // draw the basic line.
         Stroke stroke = getBorderStyleStroke();
         GeneralPath line = new GeneralPath();
+
         line.moveTo((float) startOfLine.getX(), (float) startOfLine.getY());
         line.lineTo((float) endOfLine.getX(), (float) endOfLine.getY());
         line.closePath();
