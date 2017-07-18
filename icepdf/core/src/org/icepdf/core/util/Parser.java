@@ -53,6 +53,7 @@ public class Parser {
     private InputStream reader;
     boolean lastTokenHString = false;
     private Stack<Object> stack = new Stack<Object>();
+    private Stack<Integer> offSetStack = new Stack<Integer>();
     private int parseMode;
     private boolean isTrailer;
     private int linearTraversalOffset;
@@ -93,15 +94,16 @@ public class Parser {
         Reference objectReference = null;
         try {
             reader.mark(1);
-            // capture the byte offset of this object so we can rebuild
-            // the cross reference entries for lazy loading after CG.
-            if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
-                linearTraversalOffset = ((BufferedMarkedInputStream) reader).getMarkedPosition();
-            }
             do { //while (!complete);
                 // keep track of currently parsed objects reference
                 // get the next token inside the object stream
                 try {
+                    // capture the byte offset of this object so we can rebuild
+                    // the cross reference entries for lazy loading after CG.
+                    if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
+                        offSetStack.push(((BufferedMarkedInputStream) reader).getMarkedPosition());
+                    }
+
                     nextToken = getToken();
                     // commented out for performance reasons
                     //Thread.yield();
@@ -144,6 +146,14 @@ public class Parser {
                     Number objectNumber = (Number) (stack.pop());
                     objectReference = new Reference(objectNumber,
                             generationNumber);
+                    // capture the byte offset of this object so we can rebuild
+                    // the cross reference entries for lazy loading after CG.
+                    if (library.isLinearTraversal() && reader instanceof BufferedMarkedInputStream) {
+                        offSetStack.pop();
+                        offSetStack.pop();
+                        linearTraversalOffset = offSetStack.pop();
+                        offSetStack.clear();
+                    }
                 }
                 // mark that we have reached the end of the object
                 else if (nextToken.equals("endobj") || nextToken.equals("endobject")
@@ -152,6 +162,7 @@ public class Parser {
                         // set flag to false, as we are done parsing an Object
                         inObject = false;
                         // return PObject,
+                        offSetStack.clear();
                         return addPObject(library, objectReference);
                         // else, we ignore as the endStream token also returns a
                         // PObject.
@@ -169,6 +180,7 @@ public class Parser {
                     if (inObject) {
                         inObject = false;
                         // return PObject,
+                        offSetStack.clear();
                         return addPObject(library, objectReference);
                     }
                 }

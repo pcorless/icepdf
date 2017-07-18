@@ -64,11 +64,11 @@ public class PredictorDecode extends ChunkingInputStream {
     protected static final Name COLORS_VALUE = new Name("Colors");
     protected static final Name BITS_PER_COMPONENT_VALUE = new Name("BitsPerComponent");
     protected static final Name EARLY_CHANGE_VALUE = new Name("EarlyChange");
-
+    // default values for non image streams.
     protected int predictor;
-    protected int numComponents;
-    protected int bitsPerComponent;
-    protected int width;
+    protected int numComponents = 1;
+    protected int bitsPerComponent = 8;
+    protected int width = 1;
     protected int bytesPerPixel = 1;// From RFC 2083 (PNG), it's bytes per pixel, rounded up to 1
 
     // reference to previous buffer
@@ -84,7 +84,8 @@ public class PredictorDecode extends ChunkingInputStream {
         if (widthNumber != null) {
             width = widthNumber.intValue();
         } else {
-            width = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+            int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+            if (columns > 0) width = columns;
         }
         // Since DecodeParms.BitsPerComponent has a default value, I don't think we'd
         //   look at entries.ColorSpace to know the number of components. But, here's the info:
