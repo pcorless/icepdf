@@ -1120,7 +1120,7 @@ public class DocumentViewControllerImpl
      *
      * @param zoom                  zoom level which should be in the range of zoomLevels array
      * @param becauseOfValidFitMode true will update ui elements with zoom state.
-     * @param zoomPointDelta        point to center on.
+     * @param zoomPointDelta        point to set viewport position.
      * @param pageIndex             page to zoom in on.
      * @return true if the zoom level changed, false otherwise.
      */
@@ -1139,7 +1139,10 @@ public class DocumentViewControllerImpl
         // grab previous zoom so that zoom factor can be calculated
         float previousZoom = getZoom();
         // apply zoom
+        Rectangle oldBounds = documentViewModel.getPageBounds(pageIndex);
+        // set the zoom
         boolean changed = documentViewModel.setViewZoom(zoom);
+        // send out the zoom property change events to the pages in the view.
         if (changed) {
             ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
             documentViewScrollPane.invalidate();
@@ -1148,18 +1151,21 @@ public class DocumentViewControllerImpl
             documentViewScrollPane.getViewport().getView().validate();
         }
 
-        // center zoom calculation, find current center and pass
-        // it along to zoomCenter function.
         if (changed) {
+            // get the page bounds.
             Rectangle bounds = documentViewModel.getPageBounds(pageIndex);
-            zoomPointDelta.setLocation(
-                    (zoomPointDelta.x / previousZoom) * zoom,
-                    (zoomPointDelta.y / previousZoom) * zoom);
-            zoomPointDelta.setLocation(bounds.x + zoomPointDelta.x,
-                    bounds.y + zoomPointDelta.y);
-            // view hasn't been update yet so we double set the position to make it take effect.
-            getViewPort().setViewPosition(zoomPointDelta);
-            getViewPort().setViewPosition(zoomPointDelta);
+            // transform the old viewport view location
+            double scale = bounds.getWidth() / oldBounds.getWidth();
+            int xScaled = (int) (zoomPointDelta.x * scale);
+            int yScaled = (int) (zoomPointDelta.y * scale);
+            Point newViewPosition = new Point(bounds.x + xScaled, bounds.y + yScaled);
+            getViewPort().setViewPosition(newViewPosition);
+            documentViewScrollPane.validate();
+
+            // do the bounds one more time as we sometimes get the incorrectly x,y.
+            bounds = documentViewModel.getPageBounds(pageIndex);
+            newViewPosition = new Point(bounds.x + xScaled, bounds.y + yScaled);
+            getViewPort().setViewPosition(newViewPosition);
         }
 
         // update the UI controls
