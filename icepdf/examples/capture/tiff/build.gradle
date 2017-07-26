@@ -5,6 +5,15 @@ description 'pdf to tiff image example'
 mainClassName = "org.icepdf.os.examples.capture.MultipleCapture"
 applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/'
+    }
+}
+
 dependencies {
     compile project(':viewer:viewer-awt')
+    compile 'javax.media:jai-core:1.1.3'
 }
