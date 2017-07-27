@@ -169,11 +169,14 @@ public class TextSelectionViewHandler extends TextSelection
 
                         // set the selected region.
                         page.setSelectionRectangle(modEvent, tmp);
+                        ((PageViewComponentImpl) page).getTextSelectionPageHandler().setRectToDraw(tmp);
 
                         // pass the selection movement on to the page.
                         boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
                         boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
-                        ((PageViewComponentImpl)page).getTextSelectionPageHandler().selection(modEvent, page, isMovingDown, isMovingRight);
+
+                        ((PageViewComponentImpl) page).getTextSelectionPageHandler()
+                                .selection(modEvent, page, isMovingDown, isMovingRight);
 
                     } else {
                         documentViewModel.removeSelectedPageText(page);
