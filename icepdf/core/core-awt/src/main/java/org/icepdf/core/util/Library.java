@@ -544,6 +544,12 @@ public class Library {
             Resources resources = new Resources(this, ht);
             addObject(resources, reference);
             return resources;
+        } else if (object instanceof Dictionary) {
+            // corner case: object is of an unexpected type,  grab the dictionary and try to continue.
+            HashMap ht = ((Dictionary) object).getEntries();
+            Resources resources = new Resources(this, ht);
+            addObject(resources, reference);
+            return resources;
         }
         return null;
     }
