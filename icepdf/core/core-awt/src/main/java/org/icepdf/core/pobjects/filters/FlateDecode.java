@@ -49,20 +49,16 @@ public class FlateDecode extends ChunkingInputStream {
 
 
     private InputStream originalInputKeptSolelyForDebugging;
-    private int width;
-    private int numComponents;
-    private int bitsPerComponent;
-    private int bpp = 1;            // From RFC 2083 (PNG), it's bytes per pixel, rounded up to 1
+    // default values for non image streams.
+    private int width = 1;
+    private int numComponents = 1;
+    private int bitsPerComponent = 8;
     private int predictor;
 
 
     public FlateDecode(Library library, HashMap props, InputStream input) {
         super();
         originalInputKeptSolelyForDebugging = input;
-        width = 0;
-        numComponents = 0;
-        bitsPerComponent = 0;
-        bpp = 1;
 
         int intermediateBufferSize = DEFAULT_BUFFER_SIZE;
 
@@ -81,10 +77,12 @@ public class FlateDecode extends ChunkingInputStream {
         }
         if (predictor != PredictorDecode.PREDICTOR_NONE) {
             Number widthNumber = library.getNumber(props, WIDTH_VALUE);
-            if (widthNumber != null)
+            if (widthNumber != null) {
                 width = widthNumber.intValue();
-            else
-                width = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+            } else {
+                int columns = library.getInt(decodeParmsDictionary, COLUMNS_VALUE);
+                if (columns > 0) width = columns;
+            }
 
             // Since DecodeParms.BitsPerComponent has a default value, I don't think we'd
             //   look at entries.ColorSpace to know the number of components. But, here's the info:
@@ -103,11 +101,8 @@ public class FlateDecode extends ChunkingInputStream {
                 bitsPerComponent = ((Number) bitsPerComponentDecodeParmsObj).intValue();
             }
 
-            bpp = Math.max(1, Utils.numBytesToHoldBits(numComponents * bitsPerComponent));
-
             // Make buffer exactly large enough for one row of data (without predictor)
-            intermediateBufferSize =
-                    Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
+            intermediateBufferSize = Utils.numBytesToHoldBits(width * numComponents * bitsPerComponent);
         }
 
         // Create the inflater input stream which will do the encoding

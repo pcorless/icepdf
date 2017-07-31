@@ -629,7 +629,8 @@ public class Document {
             if (pdfObject instanceof PObject) {
                 PObject tmp = (PObject) pdfObject;
                 // apply the offset value of the object.
-                tmp.setLinearTraversalOffset(objectsOffset + parser.getLinearTraversalOffset());
+                int offset = parser.getLinearTraversalOffset();
+                tmp.setLinearTraversalOffset(offset);
                 // store reference so we can rebuild the xref table.
                 documentObjects.add(tmp);
                 Object obj = tmp.getObject();
@@ -725,6 +726,7 @@ public class Document {
         if (!in.markSupported())
             return 0;
         try {
+            // still some oddness with regards to the returned offset.
             final int scanLength = 2048;
             final String scanFor = "%PDF-";
             final int scanForLength = scanFor.length();
@@ -789,6 +791,7 @@ public class Document {
                     in.reset();
                     return 0;
                 }
+                // currently only looking for first instance of the %, should probably look for full string.
                 if (data == scanFor.charAt(scanForIndex)) {
                     return i;
                 } else {
