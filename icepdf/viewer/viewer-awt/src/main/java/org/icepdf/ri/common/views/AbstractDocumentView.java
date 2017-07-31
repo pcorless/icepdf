@@ -23,10 +23,7 @@ import org.icepdf.ri.common.tools.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.FocusEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.logging.Level;
@@ -42,13 +39,16 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractDocumentView
         extends JComponent
-        implements DocumentView, PropertyChangeListener, MouseListener {
+        implements DocumentView, PropertyChangeListener, MouseListener, MouseMotionListener, ActionListener {
 
     private static final Logger logger =
             Logger.getLogger(AbstractDocumentView.class.toString());
 
     // background colour
     public static Color BACKGROUND_COLOUR;
+
+    // auto scroll refresh interval
+    private static int SCROLL_REFRESH_DELAY;
 
     static {
         // sets the shadow colour of the decorator.
@@ -64,7 +64,17 @@ public abstract class AbstractDocumentView
                 logger.warning("Error reading page shadow colour");
             }
         }
+        try {
+            SCROLL_REFRESH_DELAY = Defs.sysPropertyInt("org.icepdf.core.views.autoScroll.interval", 10);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error auto scroll speed value");
+            }
+        }
     }
+
+    private Timer autoScrollTimer;
+    private Point lastMouseLocation;
 
     // general layout of page component spacing.
     public static int verticalSpace = 2;
@@ -110,10 +120,15 @@ public abstract class AbstractDocumentView
 
         // add mouse listener
         addMouseListener(this);
+        addMouseMotionListener(this);
 
         // wheel listener
         mouseWheelZoom = new MouseWheelZoom(documentViewController, documentScrollpane);
         documentScrollpane.addMouseWheelListener(mouseWheelZoom);
+
+        // timer for auto scroll
+        autoScrollTimer = new Timer(SCROLL_REFRESH_DELAY, this);
+        autoScrollTimer.setInitialDelay(50);
 
         // listen for scroll bar manipulators
         documentViewController.getHorizontalScrollBar().addAdjustmentListener(this);
@@ -188,6 +203,9 @@ public abstract class AbstractDocumentView
         // mouse/wheel listener
         documentScrollpane.removeMouseWheelListener(mouseWheelZoom);
         removeMouseListener(this);
+        removeMouseMotionListener(this);
+        // stop the auto scroll timer
+        autoScrollTimer.stop();
 
         // focus management
         removeFocusListener(this);
@@ -297,7 +315,10 @@ public abstract class AbstractDocumentView
     }
 
     public void mouseReleased(MouseEvent e) {
-
+        // make sure we stop the scroll timer once the mouse is released.
+        if (autoScrollTimer != null && autoScrollTimer.isRunning()) {
+            autoScrollTimer.stop();
+        }
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -306,6 +327,94 @@ public abstract class AbstractDocumentView
 
     public void mouseExited(MouseEvent e) {
 
+    }
+
+    public void mouseMoved(MouseEvent e) {
+
+    }
+
+    public void mouseDragged(MouseEvent e) {
+        // as soon as we have drag event we can start the auto scroll timer.
+        lastMouseLocation = e.getPoint();
+        if (!autoScrollTimer.isRunning()) {
+            autoScrollTimer.start();
+        }
+    }
+
+    /**
+     * Checks to see if the mouse has exited the scroll pane viewport on the vertical plane.
+     *
+     * @return true if the mouse is north or south of the view port, false otherwise.
+     */
+    private boolean autoScrollViewVertical() {
+        if (documentScrollpane != null) {
+            Rectangle viewportBounds = documentScrollpane.getViewport().getViewRect();
+            Rectangle viewBounds = getBounds();
+            // check for northern edge
+            if (viewportBounds.getY() > 0 && lastMouseLocation.y < viewportBounds.getY()) {
+                JScrollBar verticalScrollBar = documentScrollpane.getVerticalScrollBar();
+                if (verticalScrollBar != null) {
+                    verticalScrollBar.setValue(verticalScrollBar.getValue() - verticalScrollBar.getBlockIncrement());
+                    lastMouseLocation.y -= verticalScrollBar.getBlockIncrement();
+                    return true;
+                }
+            }
+            // check for southern edge.
+            double bottom = viewportBounds.getY() + viewportBounds.getHeight();
+            if (bottom < viewBounds.getHeight() && lastMouseLocation.y > bottom) {
+                JScrollBar verticalScrollBar = documentScrollpane.getVerticalScrollBar();
+                if (verticalScrollBar != null) {
+                    verticalScrollBar.setValue(verticalScrollBar.getValue() + verticalScrollBar.getBlockIncrement());
+                    lastMouseLocation.y += verticalScrollBar.getBlockIncrement();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks to see if the mouse has exited the scroll pane viewport on the horizontal plane.
+     *
+     * @return true if the mouse is east or west of the view port, false otherwise.
+     */
+    private boolean autoScrollViewHorizontal() {
+        if (documentScrollpane != null) {
+            Rectangle viewportBounds = documentScrollpane.getViewport().getViewRect();
+            Rectangle viewBounds = getBounds();
+            // check for eastern edge
+            if (viewportBounds.getX() > 0 && lastMouseLocation.x < viewportBounds.getX()) {
+                JScrollBar horizontalScrollBar = documentScrollpane.getHorizontalScrollBar();
+                if (horizontalScrollBar != null) {
+                    horizontalScrollBar.setValue(horizontalScrollBar.getValue() - horizontalScrollBar.getBlockIncrement());
+                    lastMouseLocation.x -= horizontalScrollBar.getBlockIncrement();
+                    return true;
+                }
+            }
+            // check for western edge.
+            double right = viewportBounds.getX() + viewportBounds.getWidth();
+            if (right < viewBounds.getWidth() && lastMouseLocation.x > right) {
+                JScrollBar horizontalScrollBar = documentScrollpane.getHorizontalScrollBar();
+                if (horizontalScrollBar != null) {
+                    horizontalScrollBar.setValue(horizontalScrollBar.getValue() + horizontalScrollBar.getBlockIncrement());
+                    lastMouseLocation.x += horizontalScrollBar.getBlockIncrement();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Auto scroll timer action event, calls method that determine if mouse has left the main viewport on a mouse
+     * drag event.
+     *
+     * @param e mouse event
+     */
+    public void actionPerformed(ActionEvent e) {
+        if (!(autoScrollViewVertical() || autoScrollViewHorizontal())) {
+            autoScrollTimer.stop();
+        }
     }
 
     /**
