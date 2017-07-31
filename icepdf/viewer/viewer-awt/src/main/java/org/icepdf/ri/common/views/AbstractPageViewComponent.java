@@ -143,7 +143,7 @@ public abstract class AbstractPageViewComponent
                     currentPage.getViewText().clearSelected();
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.finer("Text selection clear interrupted");
             }
         }
     }
