@@ -139,7 +139,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     public void mousePressed(MouseEvent e) {
-        startOfLine = e.getPoint();
+        Point startPoint = e.getPoint();
+        startOfLine = new Point2D.Double(startPoint.getX(), startPoint.getY());
         // annotation selection box.
         int x = e.getX();
         int y = e.getY();
@@ -150,7 +151,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
     }
 
     public void mouseReleased(MouseEvent e) {
-        endOfLine = e.getPoint();
+        Point startPoint = e.getPoint();
+        endOfLine = new Point2D.Double(startPoint.getX(), startPoint.getY());
         updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
 
         // add a little padding or the end point icon types
@@ -213,7 +215,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
     public void mouseDragged(MouseEvent e) {
         updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
-        endOfLine = e.getPoint();
+        Point startPoint = e.getPoint();
+        endOfLine = new Point2D.Double(startPoint.getX(), startPoint.getY());
         pageViewComponent.repaint();
     }
 

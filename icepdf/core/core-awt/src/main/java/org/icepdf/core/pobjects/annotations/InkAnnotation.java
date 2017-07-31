@@ -60,7 +60,7 @@ public class InkAnnotation extends MarkupAnnotation {
     }
 
     @SuppressWarnings("unchecked")
-    public void init() throws InterruptedException{
+    public void init() throws InterruptedException {
         super.init();
         // look for an ink list
         List<List<Number>> inkLists = library.getArray(entries, INK_LIST_KEY);
@@ -188,7 +188,17 @@ public class InkAnnotation extends MarkupAnnotation {
 
         // update the circle for any dx/dy moves.
         AffineTransform af = new AffineTransform();
-        af.setToTranslation(dx * pageSpace.getScaleX(), -dy * pageSpace.getScaleY());
+        double scaleX = pageSpace.getScaleX();
+        scaleX = scaleX == 0 ? 1 : scaleX;
+        double scaleY = pageSpace.getScaleY();
+        scaleY = scaleY == 0 ? 1 : scaleY;
+        // make the assumption that we always have angle shift of 90 degrees.
+        if (pageSpace.getShearX() != 0 && pageSpace.getShearY() != 0) {
+            af.setToTranslation(-dy * pageSpace.getShearX(), dx * pageSpace.getShearY());
+        } else {
+            af.setToTranslation(dx * scaleX, -dy * scaleY);
+        }
+
         inkPath = af.createTransformedShape(inkPath);
         entries.put(INK_LIST_KEY, convertPathToArray(inkPath));
 
