@@ -124,7 +124,7 @@ public class SignatureValidationStatus {
         if (fieldDictionary != null) {
             // try and parse out the signer info.
             X509Certificate certificate = signatureValidator.getSignerCertificate();
-            X500Principal principal = certificate.getIssuerX500Principal();
+            X500Principal principal = certificate.getSubjectX500Principal();
             X500Name x500name = new X500Name(principal.getName());
             if (x500name.getRDNs() != null) {
                 commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
