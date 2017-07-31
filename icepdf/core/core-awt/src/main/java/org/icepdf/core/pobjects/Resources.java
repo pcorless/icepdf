@@ -172,7 +172,8 @@ public class Resources extends Dictionary {
                             font = (org.icepdf.core.pobjects.fonts.Font) ob;
                             String baseFont = font.getBaseFont();
                             if (s.getName().equals(baseFont) ||
-                                    baseFont.contains(s.getName())) {
+                                    // make sure we have an afm font,  cid font won't have the correct glyphs
+                                    (font.isAFMFont() && baseFont.contains(s.getName()))) {
                                 // cache the font for later use.
                                 library.addObject(font, (Reference) tmp);
                                 font.setPObjectReference((Reference) tmp);
