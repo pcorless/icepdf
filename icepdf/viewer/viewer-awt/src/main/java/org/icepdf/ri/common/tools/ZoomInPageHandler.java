@@ -86,7 +86,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
 
             // adjust the starting position of rectToDraw to match the actual
             // view position of the rectangle as the mouseEven position is
-            // is relative to the page and now the view.
+            // is relative to the page and not the view.
             int pageIndex = pageViewComponent.getPageIndex();
             Rectangle pageOffset = documentViewModel.getPageBounds(pageIndex);
             Rectangle absoluteRectToDraw = new Rectangle(
