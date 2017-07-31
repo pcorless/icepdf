@@ -2006,7 +2006,7 @@ public abstract class AbstractContentParser implements ContentParser {
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
                         af.getScaleX() * hScaling,
-                        af.getShearY(),
+                        af.getShearY() * hScaling,
                         af.getShearX(),
                         af.getScaleY(),
                         af.getTranslateX(), af.getTranslateY());
