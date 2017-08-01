@@ -126,7 +126,7 @@ public interface SignatureValidator {
      *
      * @return certificate chain.
      */
-    Collection<Certificate> getCertificateChain();
+    Collection<? extends Certificate> getCertificateChain();
 
     /**
      * Gets the last time the signature was validation cycle was completed.

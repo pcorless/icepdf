@@ -57,16 +57,15 @@ public class CertificateVerifier {
      *                                          successful (e.g. certification path cannot be built or some
      *                                          certificate in the chain is expired or CRL checks are failed)
      */
-    public static PKIXCertPathBuilderResult verifyCertificate(X509Certificate cert,
+    public static PKIXCertPathBuilderResult verifyCertificate(X509Certificate signerCert, X509Certificate[] cert,
                                                               Collection<X509Certificate> additionalCerts)
             throws CertificateVerificationException, CertificateExpiredException, SelfSignedVerificationException,
             RevocationVerificationException {
         try {
-            // Check for self-signed certificate
-            if (isSelfSigned(cert)) {
+            // Check for self-signed root certificate
+            if (isSelfSigned(signerCert)) {
                 throw new SelfSignedVerificationException("The certificate is self-signed.");
             }
-
             // Prepare a set of trusted root CA certificates
             // and a set of intermediate certificates
             Set<X509Certificate> trustedRootCerts = new HashSet<X509Certificate>();
@@ -78,14 +77,18 @@ public class CertificateVerifier {
                     intermediateCerts.add(additionalCert);
                 }
             }
+            // add in any specified intermediate certificates
+            for (int i = 0; i < cert.length; i++) {
+                intermediateCerts.add(cert[i]);
+            }
 
-            // Attempt to build the certification chain and verify it
+            // Attempt to build the certification chain and verify it, first element should always be the signer cert.
             PKIXCertPathBuilderResult verifiedCertChain =
-                    verifyCertificate(cert, trustedRootCerts, intermediateCerts);
+                    verifyCertificate(cert[0], trustedRootCerts, intermediateCerts);
 
             // Check whether the certificate is revoked by the CRL
             // given in its CRL distribution point extension
-            CRLVerifier.verifyCertificateCRLs(cert);
+            CRLVerifier.verifyCertificateCRLs(cert[0]);
 
             // The chain is built and verified. Return it as a result
             return verifiedCertChain;
@@ -96,34 +99,14 @@ public class CertificateVerifier {
                 }
             }
             throw new CertificateVerificationException(
-                    "Error building certification path: " + cert.getSubjectX500Principal(), certPathEx);
+                    "Error building certification path: " + signerCert.getSubjectX500Principal(), certPathEx);
         } catch (CertificateVerificationException cvex) {
             throw cvex;
         } catch (RevocationVerificationException e) {
             throw e;
         } catch (Exception ex) {
             throw new CertificateVerificationException(
-                    "Error verifying the certificate: " + cert.getSubjectX500Principal(), ex);
-        }
-    }
-
-    /**
-     * Checks whether given X.509 certificate is self-signed.
-     */
-    public static boolean isSelfSigned(X509Certificate cert)
-            throws CertificateException, NoSuchAlgorithmException,
-            NoSuchProviderException {
-        try {
-            // Try to verify certificate signature with its own public key
-            PublicKey key = cert.getPublicKey();
-            cert.verify(key);
-            return true;
-        } catch (SignatureException sigEx) {
-            // Invalid signature, not self-signed
-            return false;
-        } catch (InvalidKeyException keyEx) {
-            // Invalid key,  not self-signed
-            return false;
+                    "Error verifying the certificate: " + signerCert.getSubjectX500Principal(), ex);
         }
     }
 
@@ -169,5 +152,25 @@ public class CertificateVerifier {
         // Build and verify the certification chain
         CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
         return (PKIXCertPathBuilderResult) builder.build(pkixParams);
+    }
+
+    /**
+     * Checks whether given X.509 certificate is self-signed.
+     */
+    public static boolean isSelfSigned(X509Certificate cert)
+            throws CertificateException, NoSuchAlgorithmException,
+            NoSuchProviderException {
+        try {
+            // Try to verify certificate signature with its own public key
+            PublicKey key = cert.getPublicKey();
+            cert.verify(key);
+            return true;
+        } catch (SignatureException sigEx) {
+            // Invalid signature, not self-signed
+            return false;
+        } catch (InvalidKeyException keyEx) {
+            // Invalid key,  not self-signed
+            return false;
+        }
     }
 }

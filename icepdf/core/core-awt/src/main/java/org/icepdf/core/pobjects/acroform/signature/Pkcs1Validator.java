@@ -20,7 +20,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.jce.provider.X509CertParser;
 import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
@@ -29,6 +28,7 @@ import org.icepdf.core.util.Utils;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 /**
@@ -59,9 +59,8 @@ public class Pkcs1Validator extends AbstractPkcsValidator {
         byte[] certsKey = Utils.convertByteCharSequenceToByteArray(stringObject.getLiteralString());
 
         try {
-            X509CertParser x509CertParser = new X509CertParser();
-            x509CertParser.engineInit(new ByteArrayInputStream(certsKey));
-            certificateChain = x509CertParser.engineReadAll();
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509", "BC");
+            certificateChain = certificateFactory.generateCertificates(new ByteArrayInputStream(certsKey));
             signerCertificate = (X509Certificate) certificateChain.iterator().next();
 
             // content data is encrypted using the cert above.

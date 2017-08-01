@@ -20,9 +20,7 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.jce.provider.X509CertParser;
 import org.bouncycastle.tsp.TimeStampToken;
-import org.bouncycastle.x509.util.StreamParsingException;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
@@ -40,9 +38,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,7 +72,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     protected SignatureFieldDictionary signatureFieldDictionary;
 
     // signer certificate
-    protected Collection<Certificate> certificateChain;
+    protected Collection<? extends Certificate> certificateChain;
     protected X509Certificate signerCertificate;
     // digests used for verification
     protected String digestAlgorithmIdentifier;
@@ -301,14 +297,13 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         // <br>
         // Object tmp = signedData.getObjectAt(3);
 
-        // the certificateChain
-        X509CertParser x509CertParser = new X509CertParser();
-        x509CertParser.engineInit(new ByteArrayInputStream(cmsData));
         try {
-            certificateChain = x509CertParser.engineReadAll();
-        } catch (StreamParsingException e) {
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509", "BC");
+            certificateChain = certificateFactory.generateCertificates(new ByteArrayInputStream(cmsData));
+            signerCertificate = (X509Certificate) certificateChain.iterator().next();
+        } catch (Exception e) {
             logger.log(Level.WARNING, "Error parsing certificate data: ", e);
-            throw new SignatureIntegrityException("Error parsing certificate data ");
+            throw new SignatureIntegrityException(e);
         }
 
         /**
@@ -631,7 +626,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             while (aliases.hasMoreElements()) {
                 trusted.add((X509Certificate) trustStore.getCertificate(aliases.nextElement()));
             }
-            CertificateVerifier.verifyCertificate(cers[0], trusted);
+            CertificateVerifier.verifyCertificate(signerCertificate, cers, trusted);
             isCertificateChainTrusted = true;
             isCertificateDateValid = true;
             lastVerified = new Date();
@@ -697,7 +692,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      *
      * @return certificate chain of one or more certificates.
      */
-    public Collection<Certificate> getCertificateChain() {
+    public Collection<? extends Certificate> getCertificateChain() {
         return certificateChain;
     }
 
