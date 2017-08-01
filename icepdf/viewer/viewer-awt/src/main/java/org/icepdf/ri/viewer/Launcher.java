@@ -185,7 +185,7 @@ public class Launcher {
     private static void setupLookAndFeel(ResourceBundle messageBundle) {
 
         // Do Mac related-setup (if running on a Mac)
-        if (Defs.sysProperty("mrj.version") != null) {
+        if (Defs.sysProperty("os.name").contains("OS X")) {
             // Running on a mac
             // take the menu bar off the jframe
             Defs.setSystemProperty("apple.laf.useScreenMenuBar", "true");

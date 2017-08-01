@@ -298,7 +298,7 @@ public class SwingViewBuilder {
     private static boolean isDemo;
 
     static {
-        isMacOs = (Defs.sysProperty("mrj.version") != null);
+        isMacOs = Defs.sysProperty("os.name").contains("OS X");
         // check for demo system property
         isDemo = Defs.sysPropertyBoolean("org.icepdf.ri.viewer.demo", false);
     }
@@ -468,6 +468,7 @@ public class SwingViewBuilder {
             try {
                 // Generate and register the MacOSAdapter, passing it a hash of all the methods we wish to
                 // use as delegates for various com.apple.eawt.ApplicationListener methods
+                // for legacy OS X,  no longer works on macOS
                 MacOSAdapter.setQuitHandler(viewerController, viewerController.getClass().getDeclaredMethod("exit", (Class[]) null));
                 MacOSAdapter.setAboutHandler(viewerController, viewerController.getClass().getDeclaredMethod("showAboutDialog", (Class[]) null));
             } catch (Exception e) {
