@@ -49,16 +49,16 @@ import java.util.ResourceBundle;
 public class CertificatePropertiesDialog extends EscapeJDialog {
 
     protected static ResourceBundle messageBundle;
-    private Collection<Certificate> certs;
+    private Collection<? extends Certificate> certs;
 
-    public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle, Collection<Certificate> certs) {
+    public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle, Collection<? extends Certificate> certs) {
         super(parent, true);
         CertificatePropertiesDialog.messageBundle = messageBundle;
         this.certs = certs;
         buildUI();
     }
 
-    public CertificatePropertiesDialog(JDialog parent, ResourceBundle messageBundle, Collection<Certificate> certs) {
+    public CertificatePropertiesDialog(JDialog parent, ResourceBundle messageBundle, Collection<? extends Certificate> certs) {
         super(parent, true);
         CertificatePropertiesDialog.messageBundle = messageBundle;
         this.certs = certs;

@@ -29,16 +29,16 @@ public class SignatureCertTreeNode extends DefaultMutableTreeNode {
     private static final Logger logger =
             Logger.getLogger(SignatureTreeNode.class.toString());
 
-    private Collection<Certificate> certificateChain;
+    private Collection<? extends Certificate> certificateChain;
     private Image image;
 
-    public SignatureCertTreeNode(Object userObject, Collection<Certificate> certificateChain, Image image) {
+    public SignatureCertTreeNode(Object userObject, Collection<? extends Certificate> certificateChain, Image image) {
         super(userObject);
         this.certificateChain = certificateChain;
         this.image = image;
     }
 
-    public Collection<Certificate> getCertificateChain() {
+    public Collection<? extends Certificate> getCertificateChain() {
         return certificateChain;
     }
 
