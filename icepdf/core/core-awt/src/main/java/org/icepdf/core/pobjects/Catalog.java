@@ -256,8 +256,14 @@ public class Catalog extends Dictionary {
             viewerPrefInited = true;
             Object o = library.getObject(entries, VIEWERPREFERENCES_KEY);
             if (o != null) {
-                viewerPref = new ViewerPreferences(library, (HashMap) o);
-                viewerPref.init();
+                if (o instanceof HashMap) {
+                    viewerPref = new ViewerPreferences(library, (HashMap) o);
+                    viewerPref.init();
+                } // strange corner case where there is a incorrect reference.
+                else if (o instanceof Catalog) {
+                    viewerPref = new ViewerPreferences(library, ((Catalog) o).getEntries());
+                    viewerPref.init();
+                }
             }
         }
         return viewerPref;
