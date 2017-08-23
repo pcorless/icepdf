@@ -163,9 +163,8 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         actionsPanel = new ActionsPanel(controller);
         borderPanel = new BorderPanel(controller);
 
-        if (propertiesManager == null ||
-                PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
-                        PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS)) {
+        if (propertiesManager == null || propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS)) {
             flagsPanel = new FlagsPanel(controller);
         }
 

@@ -49,7 +49,7 @@ public class Main {
         }
 
         // Call the main method of the application's Main class
-        // using Reflection so that related classes resoving happens
+        // using Reflection so that related classes resolving happens
         // after splash window is shown up
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

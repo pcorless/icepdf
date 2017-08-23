@@ -77,6 +77,7 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 /**
  * SwingController is the meat of a PDF viewing application. It is the Controller
@@ -2267,14 +2268,12 @@ public class SwingController
         }
 
         // Set the default zoom level from the properties file
-        float defaultZoom = (float) PropertiesManager.checkAndStoreDoubleProperty(
-                propertiesManager,
+        float defaultZoom = propertiesManager.checkAndStoreFloatProperty(
                 PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
         documentViewController.setZoom(defaultZoom);
 
         // Set the default page fit mode
-        setPageFitMode(PropertiesManager.checkAndStoreIntegerProperty(
-                propertiesManager,
+        setPageFitMode(propertiesManager.checkAndStoreIntProperty(
                 PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                 DocumentViewController.PAGE_FIT_NONE), false);
 
@@ -2309,8 +2308,7 @@ public class SwingController
 
         // showUtilityPane will be true the document has an outline, but the
         // visibility can be over-ridden with the property application.utilitypane.show
-        boolean hideUtilityPane = PropertiesManager.checkAndStoreBooleanProperty(
-                propertiesManager,
+        boolean hideUtilityPane = propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_HIDE_UTILITYPANE, false);
         // hide utility pane
         if (hideUtilityPane) {
@@ -2320,8 +2318,7 @@ public class SwingController
         }
 
         // apply state value for whether form highlight is being used or not.
-        boolean showFormHighlight = PropertiesManager.checkAndStoreBooleanProperty(
-                propertiesManager,
+        boolean showFormHighlight = propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT, true);
         setFormHighlightVisible(showFormHighlight);
 
@@ -3067,21 +3064,13 @@ public class SwingController
      * @return a MediaSizeName given the conditions above.
      */
     private MediaSizeName loadDefaultPrinterProperties() {
-        int printMediaUnit =
-                PropertiesManager.checkAndStoreIntegerProperty(
-                        propertiesManager,
-                        PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT,
-                        1000);
-        double printMediaWidth =
-                PropertiesManager.checkAndStoreDoubleProperty(
-                        propertiesManager,
-                        PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH,
-                        215.9);
-        double printMediaHeight =
-                PropertiesManager.checkAndStoreDoubleProperty(
-                        propertiesManager,
-                        PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT,
-                        279.4);
+        Preferences viewerPreferences = propertiesManager.getPreferences();
+        int printMediaUnit = viewerPreferences.getInt(
+                PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT, 1000);
+        double printMediaWidth = viewerPreferences.getDouble(
+                PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH, 215.9);
+        double printMediaHeight = viewerPreferences.getDouble(
+                PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT, 279.4);
         // get the closed matching media name.
         return MediaSize.findMedia((float) printMediaWidth,
                 (float) printMediaHeight,
@@ -3103,19 +3092,20 @@ public class SwingController
 
         if (propertiesManager != null &&
                 printAttributeSet instanceof MediaSizeName) {
+            Preferences viewerPreferences = propertiesManager.getPreferences();
             MediaSizeName paper = (MediaSizeName) printAttributeSet;
             MediaSize mediaSize = MediaSize.getMediaSizeForName(paper);
             // write out the new page size property values.
             int printMediaUnit = MediaSize.MM;
-            propertiesManager.set(
+            viewerPreferences.put(
                     PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_UNIT,
                     String.valueOf(printMediaUnit));
             double printMediaWidth = mediaSize.getX(printMediaUnit);
-            propertiesManager.set(
+            viewerPreferences.put(
                     PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_WIDTH,
                     String.valueOf(printMediaWidth));
             double printMediaHeight = mediaSize.getY(printMediaUnit);
-            propertiesManager.set(
+            viewerPreferences.put(
                     PropertiesManager.PROPERTY_PRINT_MEDIA_SIZE_HEIGHT,
                     String.valueOf(printMediaHeight));
         }
@@ -3564,7 +3554,7 @@ public class SwingController
         document.setFormHighlight(viewModel.isWidgetAnnotationHighlight());
 
         // repaint the page.
-        ((AbstractDocumentView) documentViewController.getDocumentView()).repaint();
+        documentViewController.getDocumentView().repaint();
     }
 
     /**
@@ -3582,7 +3572,7 @@ public class SwingController
     public void toggleFormHighlight() {
         viewModel.setIsWidgetAnnotationHighlight(!viewModel.isWidgetAnnotationHighlight());
         // write the property for next viewing.
-        propertiesManager.setBoolean(PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT,
+        propertiesManager.getPreferences().putBoolean(PropertiesManager.PROPERTY_VIEWPREF_FORM_HIGHLIGHT,
                 viewModel.isWidgetAnnotationHighlight());
         reflectFormHighlightButtons();
 
@@ -3712,7 +3702,7 @@ public class SwingController
         } else {
             if (completeToolBar != null) {
                 completeToolBar.setVisible(
-                        !PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                        !propertiesManager.checkAndStoreBooleanProperty(
                                 PropertiesManager.PROPERTY_VIEWPREF_HIDETOOLBAR,
                                 false));
             }
@@ -3728,7 +3718,7 @@ public class SwingController
         } else {
             if ((viewer != null) && (viewer.getJMenuBar() != null)) {
                 viewer.getJMenuBar().setVisible(
-                        !PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                        !propertiesManager.checkAndStoreBooleanProperty(
                                 PropertiesManager.PROPERTY_VIEWPREF_HIDEMENUBAR,
                                 false));
             }
@@ -3743,9 +3733,9 @@ public class SwingController
                 }
             }
         } else {
-            if ((PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
-                    PropertiesManager.PROPERTY_VIEWPREF_FITWINDOW,
-                    false)) && (viewer != null)) {
+            if ((propertiesManager.checkAndStoreBooleanProperty(
+                    PropertiesManager.PROPERTY_VIEWPREF_FITWINDOW, false)) &&
+                    (viewer != null)) {
                 viewer.setSize(
                         documentViewController.getDocumentView().getDocumentSize());
             }
@@ -4663,7 +4653,7 @@ public class SwingController
             if (sourceSplitPane.getDividerLocation() != dividerLocation) {
                 if (propertiesManager != null && dividerLocation > 5) {
                     utilityAndDocumentSplitPaneLastDividerLocation = dividerLocation;
-                    propertiesManager.setInt(
+                    propertiesManager.getPreferences().putInt(
                             PropertiesManager.PROPERTY_DIVIDER_LOCATION,
                             utilityAndDocumentSplitPaneLastDividerLocation);
                 }

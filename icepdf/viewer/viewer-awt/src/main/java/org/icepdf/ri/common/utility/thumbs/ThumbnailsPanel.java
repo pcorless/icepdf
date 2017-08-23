@@ -58,8 +58,8 @@ public class ThumbnailsPanel extends JPanel {
         this.propertiesManager = propertiesManager;
         // assign thumbnail zoom from propertiesManager if available
         if (propertiesManager != null) {
-            thumbNailZoom = propertiesManager.getFloat(
-                    PropertiesManager.PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM);
+            thumbNailZoom = propertiesManager.getPreferences().getFloat(
+                    PropertiesManager.PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM, 1.0f);
         }
     }
 

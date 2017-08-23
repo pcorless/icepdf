@@ -275,7 +275,6 @@ public class SwingViewBuilder {
     private static final Logger logger =
             Logger.getLogger(SwingViewBuilder.class.toString());
 
-    public static final int TOOL_BAR_STYLE_FLOATING = 1;
     public static final int TOOL_BAR_STYLE_FIXED = 2;
     protected static final float[] DEFAULT_ZOOM_LEVELS = {
             0.05f, 0.10f, 0.25f, 0.50f, 0.75f,
@@ -293,7 +292,7 @@ public class SwingViewBuilder {
     protected ResourceBundle messageBundle;
     protected PropertiesManager propertiesManager;
 
-    public static boolean isMacOs;
+    protected static boolean isMacOs;
 
     private static boolean isDemo;
 
@@ -366,10 +365,12 @@ public class SwingViewBuilder {
 
         messageBundle = viewerController.getMessageBundle();
 
-        if (properties != null) {
-            viewerController.setPropertiesManager(properties);
-            this.propertiesManager = properties;
+        if (properties == null) {
+            propertiesManager = PropertiesManager.getInstance();
         }
+        viewerController.setPropertiesManager(properties);
+        this.propertiesManager = properties;
+
 
         // Attempt to override the highlight color from the properties file
         overrideHighlightColor();
@@ -379,13 +380,15 @@ public class SwingViewBuilder {
         documentViewController.setDocumentViewType(documentViewType, documentPageFitMode);
 
         buttonFont = bf;
-        if (buttonFont == null)
+        if (buttonFont == null) {
             buttonFont = buildButtonFont();
+        }
         showButtonText = bt;
         toolbarStyle = ts;
         zoomLevels = zl;
-        if (zoomLevels == null)
+        if (zoomLevels == null) {
             zoomLevels = DEFAULT_ZOOM_LEVELS;
+        }
         // set default doc view type, single page, facing page, etc.
         this.documentViewType = documentViewType;
         // set default view mode type, fit page, fit width, no-fit.
@@ -496,7 +499,7 @@ public class SwingViewBuilder {
     protected KeyStroke buildKeyStroke(int keyCode, int modifiers, boolean onRelease) {
         doubleCheckPropertiesManager();
 
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
                 true)) {
             return KeyStroke.getKeyStroke(keyCode, modifiers, onRelease);
@@ -516,7 +519,7 @@ public class SwingViewBuilder {
     protected int buildMnemonic(char mnemonic) {
         doubleCheckPropertiesManager();
 
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_KEYBOARD_SHORTCUTS,
                 true)) {
             return mnemonic;
@@ -1045,21 +1048,21 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         // Build the main set of toolbars based on the property file configuration
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_UTILITY))
             addToToolBar(toolbar, buildUtilityToolBar(embeddableComponent, propertiesManager));
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_PAGENAV))
             addToToolBar(toolbar, buildPageNavigationToolBar());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ZOOM))
             addToToolBar(toolbar, buildZoomToolBar());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT))
             addToToolBar(toolbar, buildFitToolBar());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE))
             addToToolBar(toolbar, buildRotateToolBar());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL))
             addToToolBar(toolbar, buildToolToolBar());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION))
             addToToolBar(toolbar, buildAnnotationlToolBar());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS))
             addToToolBar(toolbar, buildFormsToolBar());
 
         // we only add the configurable font engin in the demo version
@@ -1089,15 +1092,15 @@ public class SwingViewBuilder {
         // if embeddable component, we don't want to create the open dialog, as we
         // have no window manager for this case.
         if ((!embeddableComponent) &&
-                (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
+                (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN)))
             addToToolBar(toolbar, buildOpenFileButton());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE))
             addToToolBar(toolbar, buildSaveAsFileButton());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT))
             addToToolBar(toolbar, buildPrintButton());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_SEARCH))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_SEARCH))
             addToToolBar(toolbar, buildSearchButton());
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager, PropertiesManager.PROPERTY_SHOW_UTILITY_UPANE))
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_UPANE))
             addToToolBar(toolbar, buildShowHideUtilityPaneButton());
 
         // Don't bother with this toolbar if we don't have any visible buttons
@@ -1260,7 +1263,7 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         // Assign any different zoom ranges from the properties file if possible
-        zoomLevels = PropertiesManager.checkAndStoreFloatArrayProperty(propertiesManager,
+        zoomLevels = PropertiesManager.getInstance().checkAndStoreFloatArrayProperty(
                 PropertiesManager.PROPERTY_ZOOM_RANGES,
                 zoomLevels);
 
@@ -1375,15 +1378,15 @@ public class SwingViewBuilder {
     public JToolBar buildAnnotationlToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, false);
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION)) {
             addToToolBar(toolbar, buildSelectToolButton(Images.SIZE_LARGE));
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT)) {
             addToToolBar(toolbar, buildHighlightAnnotationToolButton(Images.SIZE_LARGE));
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(Images.SIZE_LARGE));
         }
@@ -1400,47 +1403,47 @@ public class SwingViewBuilder {
     public JToolBar buildAnnotationUtilityToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, true);
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_HIGHLIGHT)) {
             addToToolBar(toolbar, buildHighlightAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_STRIKE_OUT)) {
             addToToolBar(toolbar, buildStrikeOutAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_UNDERLINE)) {
             addToToolBar(toolbar, buildUnderlineAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_LINE)) {
             addToToolBar(toolbar, buildLineAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_LINK)) {
             addToToolBar(toolbar, buildLinkAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_ARROW)) {
             addToToolBar(toolbar, buildLineArrowAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_RECTANGLE)) {
             addToToolBar(toolbar, buildSquareAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_CIRCLE)) {
             addToToolBar(toolbar, buildCircleAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_INK)) {
             addToToolBar(toolbar, buildInkAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_FREE_TEXT)) {
             addToToolBar(toolbar, buildFreeTextAnnotationToolButton());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
         }
@@ -1666,8 +1669,7 @@ public class SwingViewBuilder {
         splitpane.setRightComponent(viewController.getViewContainer());
 
         // apply previously set divider location, default is -1
-        int dividerLocation = PropertiesManager.checkAndStoreIntegerProperty(
-                propertiesManager,
+        int dividerLocation = propertiesManager.checkAndStoreIntProperty(
                 PropertiesManager.PROPERTY_DIVIDER_LOCATION, 260);
         splitpane.setDividerLocation(dividerLocation);
 
@@ -1687,43 +1689,43 @@ public class SwingViewBuilder {
         doubleCheckPropertiesManager();
 
         // Build the main set of tabs based on the property file configuration
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_BOOKMARKS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.bookmarks.tab.title"),
                     buildOutlineComponents());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ATTACHMENTS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.attachments.tab.title"),
                     buildAttachmentPanle());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.search.tab.title"),
                     buildSearchPanel());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_THUMBNAILS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.thumbs.tab.title"),
                     buildThumbsPanel());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_LAYERS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.layers.tab.title"),
                     buildLayersComponents());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SIGNATURES)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.signatures.tab.title"),
                     buildSignatureComponents());
         }
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
@@ -1811,11 +1813,10 @@ public class SwingViewBuilder {
      */
     public JPanel buildStatusPanel() {
         // check to see if the status bars should be built.
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_STATUSBAR)) {
             JPanel statusPanel = new JPanel(new BorderLayout());
-
-            if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+            if (propertiesManager.checkAndStoreBooleanProperty(
                     PropertiesManager.PROPERTY_SHOW_STATUSBAR_STATUSLABEL)) {
                 JPanel pgPanel = new JPanel();
                 JLabel lbl = new JLabel(" ");
@@ -1827,22 +1828,21 @@ public class SwingViewBuilder {
                     viewerController.setStatusLabel(lbl);
                 }
             }
-
             JPanel viewPanel = new JPanel();
             // Only add actual buttons to the view panel if requested by the properties file
             // Regardless we'll add the parent JPanel, to preserve the same layout behaviour
-            if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+            if (propertiesManager.checkAndStoreBooleanProperty(
                     PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE)) {
-                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                if (propertiesManager.checkAndStoreBooleanProperty(
                         PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE))
                     viewPanel.add(buildPageViewSinglePageNonConToggleButton());
-                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                if (propertiesManager.checkAndStoreBooleanProperty(
                         PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_SINGLE_CONTINUOUS))
                     viewPanel.add(buildPageViewSinglePageConToggleButton());
-                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                if (propertiesManager.checkAndStoreBooleanProperty(
                         PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE))
                     viewPanel.add(buildPageViewFacingPageNonConToggleButton());
-                if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+                if (propertiesManager.checkAndStoreBooleanProperty(
                         PropertiesManager.PROPERTY_SHOW_STATUSBAR_VIEWMODE_DOUBLE_CONTINUOUS))
                     viewPanel.add(buildPageViewFacingPageConToggleButton());
             }
@@ -2126,7 +2126,8 @@ public class SwingViewBuilder {
             // Try to pull the color from our local properties file
             // If we can find a value, then set it as the system property
             if (propertiesManager != null) {
-                String newColor = propertiesManager.getString(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, null);
+                String newColor = propertiesManager.getPreferences()
+                        .get(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, null);
                 if (newColor != null) {
                     Defs.setSystemProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, newColor);
                 }

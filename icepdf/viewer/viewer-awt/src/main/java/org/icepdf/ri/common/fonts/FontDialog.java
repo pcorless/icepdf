@@ -7,7 +7,6 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -337,21 +336,13 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
             resetFontCacheButton.setEnabled(false);
             SwingWorker worker = new SwingWorker() {
                 public Object construct() {
-                    PropertiesManager properties = new PropertiesManager(
-                            System.getProperties(),
-                            ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-                    FontPropertiesManager fontPropertiesManager = new FontPropertiesManager(properties,
-                            System.getProperties(), messageBundle);
+                    FontPropertiesManager fontPropertiesManager = FontPropertiesManager.getInstance();
                     fontPropertiesManager.clearProperties();
-                    fontPropertiesManager.readDefaulFontPaths(null);
+                    fontPropertiesManager.readDefaultFontProperties();
                     fontPropertiesManager.saveProperties();
                     resetFontCacheButton.setEnabled(true);
 
-                    Runnable doSwingWork = new Runnable() {
-                        public void run() {
-                            resetFontCacheButton.setEnabled(true);
-                        }
-                    };
+                    Runnable doSwingWork = () -> resetFontCacheButton.setEnabled(true);
                     SwingUtilities.invokeLater(doSwingWork);
                     return null;
                 }

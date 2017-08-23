@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.prefs.Preferences;
+
+import static org.icepdf.ri.util.PropertiesManager.*;
 
 /**
  * An implementation of WindowManagementCallback to manage the viewer applications
@@ -37,6 +40,11 @@ import java.util.ResourceBundle;
  * @since 1.0
  */
 public class WindowManager implements WindowManagementCallback {
+
+    public static final String APPLICATION_WIDTH = "application.width";
+    public static final String APPLICATION_HEIGHT = "application.height";
+    public static final String APPLICATION_X_OFFSET = "application.x";
+    public static final String APPLICATION_Y_OFFSET = "application.y";
 
     private static WindowManager windowManager;
 
@@ -69,7 +77,7 @@ public class WindowManager implements WindowManagementCallback {
                     PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
 
-        // Annouce ourselves...
+        // Anounce ourselves...
         if (Defs.booleanProperty("org.icepdf.core.verbose", true)) {
             System.out.println("\nICEsoft ICEpdf Viewer " + Document.getLibraryVersion());
             System.out.println("Copyright ICEsoft Technologies, Inc.\n");
@@ -116,11 +124,11 @@ public class WindowManager implements WindowManagementCallback {
         // guild a new swing viewer with remembered view settings.
         int viewType = DocumentViewControllerImpl.ONE_PAGE_VIEW;
         int pageFit = DocumentViewController.PAGE_FIT_WINDOW_WIDTH;
+        Preferences viewerPreferences = getProperties().getPreferences();
         try {
-            viewType = getProperties().getInt("document.viewtype",
+            viewType = viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE,
                     DocumentViewControllerImpl.ONE_PAGE_VIEW);
-            pageFit = getProperties().getInt(
-                    PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+            pageFit = viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                     DocumentViewController.PAGE_FIT_WINDOW_WIDTH);
         } catch (NumberFormatException e) {
             // eating error, as we can continue with out alarm
@@ -131,20 +139,49 @@ public class WindowManager implements WindowManagementCallback {
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
-            int width = getProperties().getInt("application.width", 800);
-            int height = getProperties().getInt("application.height", 600);
-            frame.setSize(width, height);
-
-            int x = getProperties().getInt("application.x", 1);
-            int y = getProperties().getInt("application.y", 1);
-
-            frame.setLocation((int) (x + (newWindowInvocationCounter * 10)),
-                    (int) (y + (newWindowInvocationCounter * 10)));
-            ++newWindowInvocationCounter;
+            calculateStageLocation(frame);
             frame.setVisible(true);
         }
 
         return controller;
+    }
+
+    private void calculateStageLocation(JFrame frame) {
+        GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        Rectangle bounds = env.getMaximumWindowBounds();
+        Preferences prefs = getProperties().getPreferences();
+
+        // get the last used window size.
+        int width = prefs.getInt(APPLICATION_WIDTH, 800);
+        int height = prefs.getInt(APPLICATION_HEIGHT, 600);
+        // default center for width on primary screen.
+        int x = (int) (bounds.getMinX() + bounds.getWidth() / 2 - width / 2);
+        int y = (int) (bounds.getMinY() + bounds.getHeight() / 2 - height / 2);
+        // get teh last used window offset.
+        int previousX = prefs.getInt(APPLICATION_X_OFFSET, x);
+        int previousY = prefs.getInt(APPLICATION_Y_OFFSET, y);
+
+        // quick check to make sure the viewer will be visible in at least one screen, if not we default to primary
+        GraphicsDevice[] graphicsDevices = env.getScreenDevices();
+        ArrayList<GraphicsDevice> results = new ArrayList<GraphicsDevice>();
+        for (GraphicsDevice screen : graphicsDevices) {
+            GraphicsConfiguration config = screen.getDefaultConfiguration();
+            if (config.getBounds().contains(previousX, previousY, width, height)) {
+                results.add(screen);
+            }
+        }
+        // no intersection with a current screen then we go with the centering coordinates of the primary screen.
+        if (results.size() == 0) {
+            previousX = x;
+            previousY = y;
+        }
+        prefs.putInt(APPLICATION_X_OFFSET, previousX);
+        prefs.putInt(APPLICATION_Y_OFFSET, previousY);
+        // apply the corrected size and location.
+        frame.setSize(width, height);
+        frame.setLocation((int) (previousX + (newWindowInvocationCounter * 10)),
+                (int) (previousY + (newWindowInvocationCounter * 10)));
+        ++newWindowInvocationCounter;
     }
 
     public void disposeWindow(SwingController controller, JFrame viewer,
@@ -171,27 +208,29 @@ public class WindowManager implements WindowManagementCallback {
         if (controller != null && viewer != null) {
             //save width & height
             Rectangle sz = viewer.getBounds();
-            getProperties().setInt("application.x", sz.x);
-            getProperties().setInt("application.y", sz.y);
-            getProperties().setInt("application.height", sz.height);
-            getProperties().setInt("application.width", sz.width);
+            Preferences viewerPreferences = getProperties().getPreferences();
+            viewerPreferences.putInt(APPLICATION_X_OFFSET, sz.x);
+            viewerPreferences.putInt(APPLICATION_Y_OFFSET, sz.y);
+            viewerPreferences.putInt(APPLICATION_WIDTH, sz.width);
+            viewerPreferences.putInt(APPLICATION_HEIGHT, sz.height);
             if (properties != null) {
-                getProperties().set(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
-                        properties.getProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT));
-                int viewType = Integer.parseInt(properties.getProperty("document.viewtype"));
+                viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+                        viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, 0));
+                int viewType = Integer.parseInt(properties.getProperty(PROPERTY_DEFAULT_VIEW_TYPE));
                 // don't save the attachments view as it only applies to specific
                 // document types.
                 if (viewType != DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
-                    getProperties().set("document.viewtype",
-                            properties.getProperty("document.viewtype"));
+                    viewerPreferences.putInt(PROPERTY_DEFAULT_VIEW_TYPE,
+                            viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE, 1));
                 }
             }
-            getProperties().setDefaultFilePath(ViewModel.getDefaultFilePath());
-            getProperties().setDefaultURL(ViewModel.getDefaultURL());
+            if (ViewModel.getDefaultFilePath() != null) {
+                viewerPreferences.put(PROPERTY_DEFAULT_FILE_PATH, ViewModel.getDefaultFilePath());
+            }
+            if (ViewModel.getDefaultURL() != null) {
+                viewerPreferences.put(PROPERTY_DEFAULT_URL, ViewModel.getDefaultURL());
+            }
         }
-
-        // save all the rest, cookies, bookmarks, etc.
-        getProperties().saveAndEnd();
 
         // make sure all the controllers have been disposed.
         for (SwingController c : controllers) {

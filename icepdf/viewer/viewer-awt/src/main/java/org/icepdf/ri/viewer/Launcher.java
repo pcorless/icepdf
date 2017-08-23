@@ -23,10 +23,10 @@ import org.icepdf.ri.util.URLAccess;
 
 import javax.swing.*;
 import java.text.MessageFormat;
-import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 /**
  * <p>Launches the Viewer Application.  The following parameters can be used
@@ -55,8 +55,8 @@ public class Launcher {
     private static final Logger logger =
             Logger.getLogger(Launcher.class.toString());
 
-    // manages open windows
-    public static WindowManager windowManager;
+    public static final String APPLICATION_LOOK_AND_FEEL = "application.lookandfeel";
+
     // stores properties used by ICEpdf
     private static PropertiesManager propertiesManager;
 
@@ -66,7 +66,6 @@ public class Launcher {
 
         String contentURL = "";
         String contentFile = "";
-        String contentProperties = null;
         // parse command line arguments
         for (int i = 0; i < argv.length; i++) {
             if (i == argv.length - 1) { //each argument requires another
@@ -74,15 +73,16 @@ public class Launcher {
                 break;
             }
             String arg = argv[i];
-            if (arg.equals("-loadfile")) {
-                contentFile = argv[++i].trim();
-            } else if (arg.equals("-loadurl")) {
-                contentURL = argv[++i].trim();
-            } else if (arg.equals("-loadproperties")) {
-                contentProperties = argv[++i].trim();
-            } else {
-                brokenUsage = true;
-                break;
+            switch (arg) {
+                case "-loadfile":
+                    contentFile = argv[++i].trim();
+                    break;
+                case "-loadurl":
+                    contentURL = argv[++i].trim();
+                    break;
+                default:
+                    brokenUsage = true;
+                    break;
             }
         }
 
@@ -96,47 +96,38 @@ public class Launcher {
             System.exit(1);
         }
         // start the viewer
-        run(contentFile, contentURL, contentProperties, messageBundle);
+        run(contentFile, contentURL, messageBundle);
     }
 
     /**
      * Starts the viewe application.
      *
-     * @param contentFile       URI of a file which will be loaded at runtime, can be
-     *                          null.
-     * @param contentURL        URL of a file which will be loaded at runtime, can be
-     *                          null.
-     * @param contentProperties URI of a properties file which will be used in
-     *                          place of the default path
-     * @param messageBundle     messageBundle to pull strings from
+     * @param contentFile   URI of a file which will be loaded at runtime, can be
+     *                      null.
+     * @param contentURL    URL of a file which will be loaded at runtime, can be
+     *                      null.
+     * @param messageBundle messageBundle to pull strings from
      */
     private static void run(String contentFile,
                             String contentURL,
-                            String contentProperties,
                             ResourceBundle messageBundle) {
 
         // initiate the properties manager.
-        Properties sysProps = System.getProperties();
-        propertiesManager = new PropertiesManager(sysProps, contentProperties, messageBundle);
+        propertiesManager = PropertiesManager.getInstance();
 
-        // initiate font Cache manager, reads system font data and stores summary
-        // information in a properties file.  If new font are added to the OS
-        // then the properties file can be deleted to initiate a re-read of the
-        // font data.
-        new FontPropertiesManager(propertiesManager, sysProps, messageBundle);
-
-        // input new System properties
-        System.setProperties(sysProps);
+        // initiate font Cache manager, reads system if necessary,  load the cache otherwise.
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
         // set look & feel
         setupLookAndFeel(messageBundle);
 
-        ViewModel.setDefaultFilePath(propertiesManager.getDefaultFilePath());
-        ViewModel.setDefaultURL(propertiesManager.getDefaultURL());
-
+        ViewModel.setDefaultFilePath(propertiesManager.getPreferences().get(
+                PropertiesManager.PROPERTY_DEFAULT_FILE_PATH, null));
+        ViewModel.setDefaultURL(propertiesManager.getPreferences().get(
+                PropertiesManager.PROPERTY_DEFAULT_URL, null));
 
         // application instance
-        windowManager = WindowManager.createInstance(propertiesManager, messageBundle);
+        WindowManager windowManager = WindowManager.createInstance(propertiesManager, messageBundle);
         if (contentFile != null && contentFile.length() > 0) {
             windowManager.newWindow(contentFile);
             ViewModel.setDefaultFilePath(contentFile);
@@ -180,7 +171,7 @@ public class Launcher {
      * If a L&F has been specifically set then try and use it. If not
      * then resort to the 'native' system L&F.
      *
-     * @param messageBundle
+     * @param messageBundle application message bundle
      */
     private static void setupLookAndFeel(ResourceBundle messageBundle) {
 
@@ -194,9 +185,11 @@ public class Launcher {
             Defs.setSystemProperty("com.apple.mrj.application.apple.menu.about.name", appName);
         }
 
+        Preferences preferences = propertiesManager.getPreferences();
+
         String className =
-                propertiesManager.getLookAndFeel("application.lookandfeel",
-                        null);
+                propertiesManager.getLookAndFeel(APPLICATION_LOOK_AND_FEEL,
+                        null, messageBundle);
 
         if (className != null) {
             try {
@@ -206,7 +199,7 @@ public class Launcher {
 
                 // setup a patterned message
                 Object[] messageArguments = {
-                        propertiesManager.getString("application.lookandfeel")
+                        preferences.get(APPLICATION_LOOK_AND_FEEL, null)
                 };
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.launcher.URLError.dialog.message"));

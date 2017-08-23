@@ -284,7 +284,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         //Create the popup menu.
         contextMenu = new JPopupMenu();
 
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
             replyMenuItem = new JMenuItem(
                     messages.getString("viewer.annotation.popup.reply.label"));
@@ -316,7 +316,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         contextMenu.add(deleteMenuItem);
         contextMenu.addSeparator();
 
-        if (PropertiesManager.checkAndStoreBooleanProperty(propertiesManager,
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS)) {
             // addition of set status menu
             JMenu submenu = new JMenu(

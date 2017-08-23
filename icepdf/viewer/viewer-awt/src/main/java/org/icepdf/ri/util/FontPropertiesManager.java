@@ -16,419 +16,168 @@
 package org.icepdf.ri.util;
 
 import org.icepdf.core.pobjects.fonts.FontManager;
+import org.icepdf.ri.util.font.FontCache;
 
-import javax.swing.*;
-import java.io.*;
-import java.util.*;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 
 /**
- * <p>This class provides a very basic Font Properties Management system.  When this
- * class is initiated, the properites file "pdfviewerfontcache.properties" is
- * read from the default application file path.  If the file cannot be found then
- * all system fonts are read from the operating system and are written to the
- * "pdfviewerfontcache.properties" file.</p>
- * <br>
- * <p>This class is designed to speed up the load time of the viewer application
- * by reading already parsed font information from the properties file.  If new
- * fonts are added to the system, the "pdfviewerfontcache.properties" file can
- * be deleted to trigger this class to re-read the System fonts and re-create
- * a new "pdfviewerfontcache.properties" properites file.
- *
+ * <p>This class provides a basic Font Properties Management system.  In order for font substitution to work more
+ * reliable it is beneficial that it has read and cached all system fonts.  The scanning of system fonts can be time
+ * consuming and negatively effect the startup time of the library.  To speed up subsequent launches of the PDF library
+ * the fonts are stored using the Preferences API using a backing store determined by the JVM.</p>
+ * <p>
  * // read/store the font cache.
- * ResourceBundle messageBundle = ResourceBundle.getBundle(
- * PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
- * PropertiesManager properties = new PropertiesManager(System.getProperties(),
- * ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
- * new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+ * FontPropertiesManager.getInstance().loadOrReadSystemFonts();
+ * <p>
+ * <p>NOTE:  This class was significantly simplified in version 6.3 of ICEpdf and the release notes should be
+ * consulted if any custom font loading was implemented by the end user.</p>
  *
- * @since 2.0
+ * @since 6.3
  */
 public class FontPropertiesManager {
 
-    private static final Logger logger =
-            Logger.getLogger(FontPropertiesManager.class.toString());
+    private static final Logger logger = Logger.getLogger(FontPropertiesManager.class.toString());
 
-    private static final String DEFAULT_HOME_DIR = ".icesoft/icepdf_viewer";
-    private static final String LOCK_FILE = "_syslock";
-    private final static String USER_FILENAME = "pdfviewerfontcache.properties";
+    // can't use system level cache on window as of JDK 1.8_14, but should work in 9.
+    private static Preferences prefs = Preferences.userNodeForPackage(FontCache.class);
 
-    // format version number
-    private final static String FORMAT_VERSION = "6.0";
+    private static FontPropertiesManager fontPropertiesManager;
 
-    private FontManager fontManager;
+    private static FontManager fontManager = FontManager.getInstance();
 
-    private Properties sysProps;
-    private PropertiesManager props;
+    private FontPropertiesManager() {
 
-    private File userHome;
-
-    //the swingri home directory
-    private File dataDir;
-
-    //not to save the bookmarks and properties if lockDir == null, that is
-    //when we do not own the lock
-    private File lockDir;
-
-    private File propertyFile;
-
-    private ResourceBundle messageBundle;
+    }
 
     /**
-     * Create a new instance of the FontPropertiesManager class. This constructor will
-     * automatically scan the system for the available fonts.
-     * <br>
-     * Typical usage would look like this:<br>
-     * <pre>
-     * // read/store the font cache.
-     * ResourceBundle messageBundle = ResourceBundle.getBundle(
-     * PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-     * PropertiesManager properties = new PropertiesManager(System.getProperties(),
-     * ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+     * Gets the singleton instance of the FontPropertiesManager.
      *
-     * // creates a new cache properties file, does not read system fonts.
-     * FontPropertiesManager fontPropertiesManager =
-     * new FontPropertiesManager(properties, System.getProperties(), messageBundle, false);
-     * </pre>
-     *
-     * @param appProps      properties manager reference
-     * @param sysProps      system properties.
-     * @param messageBundle application message bundle.
+     * @return instance of FontPropertiesManager.
      */
-    public FontPropertiesManager(PropertiesManager appProps, Properties sysProps,
-                                 ResourceBundle messageBundle) {
-        this.sysProps = sysProps;
-        this.props = appProps;
-        this.messageBundle = messageBundle;
-        // create a new Font Manager.
-        this.fontManager = FontManager.getInstance();
+    public static FontPropertiesManager getInstance() {
+        if (fontPropertiesManager == null) {
+            fontPropertiesManager = new FontPropertiesManager();
+        }
+        return fontPropertiesManager;
+    }
 
-        setupHomeDir(null);
-
-        recordMofifTime();
-
-        setupLock();
-        // create the properties file and scan for font sif the
-        propertyFile = new File(dataDir, USER_FILENAME);
-        if (!propertyFile.exists()) {
-            // scan the system for know font locations.
-            readDefaulFontPaths(null);
-            // save the file
+    /**
+     * Checks to see if there is currently any cached properties in the the backing store; if so they are returned,
+     * otherwise a full read of the system fonts takes place and the results are stored in the backing store.
+     */
+    public void loadOrReadSystemFonts() {
+        if (isFontPropertiesEmpty()) {
+            readDefaultFontProperties();
             saveProperties();
         }else{
+            // load properties from cache into the fontManager
             loadProperties();
         }
-
     }
 
     /**
-     * Create a new instance of the FontPropertiesManager class.  This constructor will not scan
-     * the system for fonts.  The users must call one of the following methods to scan for fonts;
-     * {@link #readFontPaths} or {@link #readDefaulFontPaths(String[])}
+     * Reads the default font paths as defined by the {@link FontManager} class.  This method does not save
+     * any fonts to the backing store.
      *
-     * <br>
-     * Typical usage would look like this:<br>
-     * <pre>
-     * // read/store the font cache.
-     * ResourceBundle messageBundle = ResourceBundle.getBundle(
-     * PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-     * PropertiesManager properties = new PropertiesManager(System.getProperties(),
-     * ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-     * // creates a new cache properties file, does not read system fonts.
-     * FontPropertiesManager fontPropertiesManager = new FontPropertiesManager(properties, messageBundle, false);
-     * fontPropertiesManager.readFontPaths(null);
-     * </pre>
-     *
-     * @param appProps      properties manager reference
-     * @param messageBundle application message bundle.
+     * @param paths any extra paths that should be read as defined by the end user.
      */
-    public FontPropertiesManager(PropertiesManager appProps, ResourceBundle messageBundle) {
-        this.sysProps = appProps.getSystemProperties();
-        this.props = appProps;
-        this.messageBundle = messageBundle;
-        // create a new Font Manager.
-        this.fontManager = FontManager.getInstance();
-
-        setupHomeDir(null);
-
-        recordMofifTime();
-
-        setupLock();
-        // create the properties file
-        if (ownLock()) {
-            propertyFile = new File(dataDir, USER_FILENAME);
-        }
-    }
-
-    /**
-     * Removes the the properties file from the file system.
-     */
-    public synchronized void removeFontCacheFile() {
-        if (ownLock()) {
-            propertyFile = new File(dataDir, USER_FILENAME);
-            // load font properties from last invocation
-            boolean deleted = false;
-            if (propertyFile.exists()) {
-                try {
-                    deleted = propertyFile.delete();
-                } catch (SecurityException ex) {
-                    // log the error
-                    if (!deleted && logger.isLoggable(Level.WARNING)) {
-                        logger.log(Level.WARNING, "Error removing font properties file.", ex);
-                    }
-                }
+    public void readDefaultFontProperties(String... paths) {
+        try {
+            fontManager.readSystemFonts(paths);
+        } catch (Exception e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.WARNING, "Error reading system fonts path: ", e);
             }
         }
     }
 
     /**
-     * Clears any font references from the font managers internal cache.
-     */
-    public synchronized void clearProperties() {
-        fontManager.clearFontList();
-    }
-
-    /**
-     * Loads the properties file and loads any font data that it contains. If no font
-     * cache file is found then a new one is created and false is returned.  If a file
-     * is found the properties in it are loaded and added to the fontManager class, true is
-     * returned.
+     * Reads the only font paths defined by the param paths.  This method does not save any fonts to the backing store
+     * or read system fonts as defined by {@link FontManager#readSystemFonts(String[])}.
      *
-     * @return true if font file has been found and loaded, false otherwise.
+     * @param paths paths that should be read for system fonts.
      */
-    public synchronized boolean loadProperties() {
-
-        if (ownLock()) {
-            // load font properties from last invocation
-            if (propertyFile != null && propertyFile.exists()) {
-                try {
-                    InputStream in = new FileInputStream(propertyFile);
-                    try {
-                        Properties fontProps = fontManager.getFontProperties();
-                        fontProps.load(in);
-                        fontManager.setFontProperties(fontProps);
-                    } finally {
-                        in.close();
-                    }
-                } catch (IOException ex) {
-                    // check to make sure the storage relate dialogs can be shown
-                    if (getBoolean("application.showLocalStorageDialogs", true)) {
-                        Resources.showMessageDialog(null,
-                                JOptionPane.ERROR_MESSAGE, messageBundle,
-                                "fontManager.properties.title",
-                                "manager.properties.session.readError",
-                                ex);
-                    }
-                    // log the error
-                    if (logger.isLoggable(Level.WARNING)) {
-                        logger.log(Level.WARNING, "Error loading font properties cache", ex);
-                    }
-                    return false;
-                } catch (IllegalArgumentException e) {
-                    return false;
-                }
-                return true;
-            }
-            // If no font data, then read font data and save the new file.
-            else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Reads the specified file paths and loads any found font fonts in the font Manager.
-     * In order to persist the results a call to {@link #saveProperties()} needs to be called.
-     *
-     * @param fontPaths array of paths containing folders
-     */
-    public void readFontPaths(String[] fontPaths) {
-        // create program properties with default
+    public void readFontProperties(String... paths) {
         try {
             // If you application needs to look at other font directories
             // they can be added via the readSystemFonts method.
-            fontManager.readFonts(fontPaths);
-        } catch (Exception ex) {
+            fontManager.readFonts(paths);
+        } catch (Exception e) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "Error reading system paths:", ex);
+                logger.log(Level.WARNING, "Error reading system paths:", e);
             }
         }
     }
 
     /**
-     * Touches the properties file, writing out any font properties.
+     * Loads any font properties stored in the backing store and are passed to the {@link FontManager} class.  No
+     * changes are made to the backing store.
      */
-    public synchronized void saveProperties() {
-        if (ownLock()) {
-            try {
-                FileOutputStream out = new FileOutputStream(propertyFile);
-                try {
-                    Properties fontProps = fontManager.getFontProperties();
-                    fontProps.store(out, "-- ICEpdf Font properties --\n " + FORMAT_VERSION);
-                } finally {
-                    out.close();
-                }
-                recordMofifTime();
-            } catch (IOException ex) {
-                // check to make sure the storage relate dialogs can be shown
-                if (getBoolean("application.showLocalStorageDialogs", true)) {
-                    Resources.showMessageDialog(null,
-                            JOptionPane.ERROR_MESSAGE, messageBundle,
-                            "fontManager.properties.title",
-                            "manager.properties.saveError", ex);
-                }
-                // log the error
-                if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "Error saving font properties cache", ex);
-                }
-            }
-        }
-    }
-
-    private boolean ownLock() {
-        return lockDir != null;
-    }
-
-    private void recordMofifTime() {
-        Calendar c = new GregorianCalendar();
-        c.setTime(new Date());
-        c.set(Calendar.MINUTE, c.get(Calendar.MINUTE) + 1);
-        c.set(Calendar.SECOND, 0);
-    }
-
-    private void setupLock() {
-        if (dataDir == null) {
-            lockDir = null;
-        } else {
-            File dir = new File(dataDir, LOCK_FILE);
-            if (!dir.mkdir()) {
-
-                dir.delete();
-                if (!dir.mkdir()) {
-                    dir = null;
-                    if (getBoolean("application.showLocalStorageDialogs", true)) {
-                        Resources.showMessageDialog(null,
-                                JOptionPane.ERROR_MESSAGE, messageBundle,
-                                "fontManager.properties.title",
-                                "manager.properties.session.nolock", LOCK_FILE);
-                    }
-                }
-
-            }
-            lockDir = dir;
-        }
-    }
-
-    /**
-     * Sets the default font properties files by readying available system font paths.
-     *
-     * @param extraFontPaths extra font paths to load on top of the default paths.
-     * @return true if system font search returned without error, otherwise false.
-     */
-    public boolean readDefaulFontPaths(String[] extraFontPaths) {
-        // create program properties with default
+    public void loadProperties() {
         try {
-            // If you application needs to look at other font directories
-            // they can be added via the readSystemFonts method.
-            fontManager.readSystemFonts(extraFontPaths);
-        } catch (Exception ex) {
-            if (getBoolean("application.showLocalStorageDialogs", true)) {
-                Resources.showMessageDialog(null,
-                        JOptionPane.ERROR_MESSAGE, messageBundle,
-                        "fontManager.properties.title",
-                        "manager.properties.session.readError",
-                        ex);
-            }// log the error
+            Properties fontProps = fontManager.getFontProperties();
+            for (String names : prefs.keys()) {
+                fontProps.put(names, prefs.get(names, null));
+            }
+            fontManager.setFontProperties(fontProps);
+        } catch (BackingStoreException e) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "Error loading default properties", ex);
-            }
-            return false;
-        }
-        return true;
-    }
-
-    private void setupHomeDir(String homeString) {
-        if (homeString == null) {
-            homeString = sysProps.getProperty("swingri.home");
-        }
-
-        if (homeString != null) {
-            dataDir = new File(homeString);
-        } else {
-            userHome = new File(sysProps.getProperty("user.home"));
-            String dataDirStr = props.getString("application.datadir", DEFAULT_HOME_DIR);
-            dataDir = new File(userHome, dataDirStr);
-        }
-
-        if (!dataDir.isDirectory()) {
-            String path = dataDir.getAbsolutePath();
-            boolean create;
-            if (props.hasUserRejectedCreatingLocalDataDir()) {
-                create = false;
-            } else if (getBoolean("application.showLocalStorageDialogs", true)) {
-                create = Resources.showConfirmDialog(null,
-                        messageBundle, "fontManager.properties.title",
-                        "manager.properties.createNewDirectory", path);
-                if (!create)
-                    props.setUserRejectedCreatingLocalDataDir();
-            } else {
-                // Always create local-storage directory if show user prompt dialog setting is false.
-                create = true;
-            }
-
-            if (!create) {
-                dataDir = null;
-            } else {
-                dataDir.mkdirs();
-                if (!dataDir.isDirectory()) {
-                    // check to make sure that dialog should be shown on the error.
-                    if (getBoolean("application.showLocalStorageDialogs", true)) {
-                        Resources.showMessageDialog(null,
-                                JOptionPane.ERROR_MESSAGE, messageBundle,
-                                "fontManager.properties.title",
-                                "manager.properties.failedCreation",
-                                dataDir.getAbsolutePath());
-                    }
-                    dataDir = null;
-                }
+                logger.log(Level.WARNING, "Error writing system fonts to backing store: ", e);
             }
         }
     }
 
-    public boolean getBoolean(String propertyName, boolean defaultValue) {
-        Boolean result = getBooleanImpl(propertyName);
-        if (result == null) {
-            return defaultValue;
-        }
-        return result == Boolean.TRUE;
-    }
-
-    private Boolean getBooleanImpl(String propertyName) {
-        String value = props.getString(propertyName);
-        if (value != null) {
-            Boolean result = Parse.parseBoolean(value, messageBundle);
-            if (result != null) {
-                return result;
+    /**
+     * Clears the backing store of all font properties.
+     */
+    public void clearProperties() {
+        try {
+            prefs.clear();
+        } catch (BackingStoreException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.WARNING, "Error reading system paths:", e);
             }
-            props.remove(propertyName);
         }
-        value = props.getString(propertyName);
-        if (value != null) {
-            Boolean result = Parse.parseBoolean(value, null);
-            if (result != null) {
-                return result;
+    }
+
+    /**
+     * Saves all fonts properties defined in the {@link FontManager} to the backing store.
+     */
+    public void saveProperties() {
+        Properties fontProps = fontManager.getFontProperties();
+        for (Object key : fontProps.keySet()) {
+            prefs.put((String) key, fontProps.getProperty((String) key));
+        }
+    }
+
+    /**
+     * Check to see if any font properties are stored in the backing store.
+     *
+     * @return true if font properties backing store is empty, otherwise false.
+     */
+    public boolean isFontPropertiesEmpty() {
+        try {
+            return prefs.keys().length == 0;
+        } catch (BackingStoreException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.log(Level.WARNING, "Error writing system fonts to backing store: ", e);
             }
-            throwBrokenDefault(propertyName, value);
         }
-        return null;
+        return false;
     }
 
-    private void throwBrokenDefault(String propertyName, String value) {
-        throw new IllegalStateException("Broken default property '" + propertyName + "' value: '" + value + "'");
+    /**
+     * Gets the underlying fontManger instance which is also a singleton.
+     *
+     * @return
+     */
+    public static FontManager getFontManager() {
+        return fontManager;
     }
-
 }
+
