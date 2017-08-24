@@ -311,7 +311,7 @@ public class SwingViewBuilder {
         // Use all the defaults
         this(c, null, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
-                DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
+                DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, 0);
     }
 
     /**
@@ -324,7 +324,7 @@ public class SwingViewBuilder {
     public SwingViewBuilder(SwingController c, PropertiesManager properties) {
         this(c, properties, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED, null,
                 DocumentViewControllerImpl.ONE_PAGE_VIEW,
-                DocumentViewController.PAGE_FIT_WINDOW_HEIGHT);
+                DocumentViewController.PAGE_FIT_WINDOW_HEIGHT, 0);
     }
 
     /**
@@ -338,7 +338,22 @@ public class SwingViewBuilder {
                             int documentPageFitMode) {
         // Use all the defaults
         this(c, null, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED,
-                null, documentViewType, documentPageFitMode);
+                null, documentViewType, documentPageFitMode, 0);
+    }
+
+    /**
+     * Construct a SwingVewBuilder with all of the default settings
+     *
+     * @param c                   SwingController that will interact with the GUI
+     * @param documentViewType    view type to build , single page, single column etc.
+     * @param documentPageFitMode fit mode to initially load document with.
+     * @param rotation            default page rotation.
+     */
+    public SwingViewBuilder(SwingController c, int documentViewType,
+                            int documentPageFitMode, float rotation) {
+        // Use all the defaults
+        this(c, null, null, false, SwingViewBuilder.TOOL_BAR_STYLE_FIXED,
+                null, documentViewType, documentPageFitMode, rotation);
     }
 
     /**
@@ -349,7 +364,7 @@ public class SwingViewBuilder {
     public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
                             final int documentPageFitMode) {
-        this(c, null, bf, bt, ts, zl, documentViewType, documentPageFitMode);
+        this(c, null, bf, bt, ts, zl, documentViewType, documentPageFitMode, 0);
     }
 
     /**
@@ -360,7 +375,7 @@ public class SwingViewBuilder {
     public SwingViewBuilder(SwingController c, PropertiesManager properties,
                             Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
-                            final int documentPageFitMode) {
+                            final int documentPageFitMode, final float rotation) {
         viewerController = c;
 
         messageBundle = viewerController.getMessageBundle();
@@ -370,7 +385,6 @@ public class SwingViewBuilder {
         }
         viewerController.setPropertiesManager(properties);
         this.propertiesManager = properties;
-
 
         // Attempt to override the highlight color from the properties file
         overrideHighlightColor();

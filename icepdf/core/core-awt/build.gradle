@@ -3,7 +3,7 @@ description 'ICEpdf core library jar project'
 def sectionName = 'org/icepdf/core/'
 def baseJarName = 'icepdf'
 def baseAppendixName = 'core'
-def bouncyVersion = '1.54'
+def bouncyVersion = '1.57'
 
 // generatePomFileForCoreJarPublication
 publishing {

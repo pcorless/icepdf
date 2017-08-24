@@ -119,17 +119,7 @@ public class FontPropertiesManager {
      * changes are made to the backing store.
      */
     public void loadProperties() {
-        try {
-            Properties fontProps = fontManager.getFontProperties();
-            for (String names : prefs.keys()) {
-                fontProps.put(names, prefs.get(names, null));
-            }
-            fontManager.setFontProperties(fontProps);
-        } catch (BackingStoreException e) {
-            if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "Error writing system fonts to backing store: ", e);
-            }
-        }
+        fontManager.setFontProperties(prefs);
     }
 
     /**

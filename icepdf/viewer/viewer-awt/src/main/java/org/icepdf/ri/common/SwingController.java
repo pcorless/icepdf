@@ -73,11 +73,12 @@ import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+
+import static org.icepdf.ri.util.PropertiesManager.PROPERTY_DEFAULT_ROTATION;
 
 /**
  * SwingController is the meat of a PDF viewing application. It is the Controller
@@ -2267,10 +2268,15 @@ public class SwingController
             propertiesManager = windowManagementCallback.getProperties();
         }
 
-        // Set the default zoom level from the properties file
+        // Set the default zoom level from the backing store
         float defaultZoom = propertiesManager.checkAndStoreFloatProperty(
                 PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL);
         documentViewController.setZoom(defaultZoom);
+
+        // set the default rotation level form the backing store.
+        float defaultRotation = propertiesManager.checkAndStoreFloatProperty(
+                PropertiesManager.PROPERTY_DEFAULT_ROTATION, 0);
+        documentViewController.setRotation(defaultRotation);
 
         // Set the default page fit mode
         setPageFitMode(propertiesManager.checkAndStoreIntProperty(
@@ -4300,9 +4306,12 @@ public class SwingController
 
         // assign view properties so that they can be saved on close
         DocumentViewController viewControl = getDocumentViewController();
-        Properties viewProperties = new Properties();
-        viewProperties.setProperty(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, String.valueOf(viewControl.getFitMode()));
-        viewProperties.setProperty("document.viewtype", String.valueOf(viewControl.getViewMode()));
+        Preferences viewerPreferences = PropertiesManager.getInstance().getPreferences();
+        viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, viewControl.getFitMode());
+        viewerPreferences.putInt("document.viewtype", viewControl.getViewMode());
+        // last rotation.
+        float rotation = documentViewController.getDocumentViewModel().getViewRotation();
+        viewerPreferences.putFloat(PROPERTY_DEFAULT_ROTATION, rotation);
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();
@@ -4311,7 +4320,7 @@ public class SwingController
             dispose();
 
             if (wc != null) {
-                wc.disposeWindow(this, v, viewProperties);
+                wc.disposeWindow(this, v, viewerPreferences);
             }
         }
     }

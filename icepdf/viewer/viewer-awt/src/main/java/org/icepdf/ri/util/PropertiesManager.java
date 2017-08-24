@@ -52,6 +52,8 @@ public class PropertiesManager {
     public static final String PROPERTY_DIVIDER_LOCATION = "application.divider.location";
     // default page fit mode
     public static final String PROPERTY_DEFAULT_PAGEFIT = "document.pagefit.mode";
+    public static final String PROPERTY_DEFAULT_ROTATION = "document.rotation";
+    // page rotation
     public static final String PROPERTY_DEFAULT_VIEW_TYPE = "document.viewtype";
     // default print media size.
     public static final String PROPERTY_PRINT_MEDIA_SIZE_WIDTH = "document.print.mediasize.width";

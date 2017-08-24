@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 /**
  * <p>The <code>FontManager</code> class is responsible for finding available
@@ -252,26 +253,26 @@ public class FontManager {
      * <p>Reads font data from the Properties file.  All name and key data replaces
      * any existing font information.</p>
      *
-     * @param fontProperties Properties object containing valid font information.
+     * @param fontPreferences Properties object containing valid font information.
      * @throws IllegalArgumentException thrown, if there is a problem parsing the
      *                                  Properties file.  If thrown, the calling application should re-read
      *                                  the system fonts.
      */
-    public void setFontProperties(Properties fontProperties)
+    public void setFontProperties(Preferences fontPreferences)
             throws IllegalArgumentException {
         String errorString = "Error parsing font properties ";
         try {
-            fontList = new ArrayList<Object[]>(150);
-            Enumeration fonts = fontProperties.propertyNames();
+            fontList = new ArrayList<Object[]>(500);
+            String[] fontKeys = fontPreferences.keys();
             String name;
             String family;
             Integer decorations;
             String path;
             StringTokenizer tokens;
             // read in font information
-            while (fonts.hasMoreElements()) {
-                name = (String) fonts.nextElement();
-                tokens = new StringTokenizer((String) fontProperties.get(name), "|");
+            for (int i = 0, max = fontKeys.length; i < max; i++) {
+                name = fontKeys[i];
+                tokens = new StringTokenizer((String) fontPreferences.get(name, null), "|");
                 // get family, decoration and path tokens
                 family = tokens.nextToken();
                 decorations = new Integer(tokens.nextToken());

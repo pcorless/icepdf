@@ -34,12 +34,6 @@
         <url>http://jira.icesoft.org/browse/PDF/</url>
     </issueManagement>
 
-    <scm>
-        <connection>scm:svn:http://anonsvn.icesoft.org/repo/icepdf/</connection>
-        <url>http://sventon.icesoft.org/svn/repos/repo/list/icepdf/</url>
-        <tag>trunk</tag>
-    </scm>
-
     <build>
         <finalName>icepdf-core-${version}</finalName>
         <plugins>

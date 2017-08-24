@@ -20,7 +20,7 @@ import org.icepdf.ri.util.PropertiesManager;
 import javax.swing.*;
 import java.net.URL;
 import java.util.List;
-import java.util.Properties;
+import java.util.prefs.Preferences;
 
 /**
  * <p>An interface that describes the necessary methods needed for common
@@ -37,7 +37,7 @@ public interface WindowManagementCallback {
     public void newWindow(URL url);
 
     public void disposeWindow(SwingController controller, JFrame viewer,
-                              Properties properties);
+                              Preferences preferences);
 
     public void minimiseAllWindows();
 
@@ -48,7 +48,7 @@ public interface WindowManagementCallback {
     public List getWindowDocumentOriginList(SwingController giveIndex);
 
     public void quit(SwingController controller, JFrame viewer,
-                     Properties properties);
+                     Preferences preferences);
 
     public PropertiesManager getProperties();
 }

@@ -27,7 +27,6 @@ import java.awt.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
@@ -124,18 +123,20 @@ public class WindowManager implements WindowManagementCallback {
         // guild a new swing viewer with remembered view settings.
         int viewType = DocumentViewControllerImpl.ONE_PAGE_VIEW;
         int pageFit = DocumentViewController.PAGE_FIT_WINDOW_WIDTH;
+        float pageRotation = 0;
         Preferences viewerPreferences = getProperties().getPreferences();
         try {
             viewType = viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE,
                     DocumentViewControllerImpl.ONE_PAGE_VIEW);
             pageFit = viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                     DocumentViewController.PAGE_FIT_WINDOW_WIDTH);
+            pageRotation = viewerPreferences.getFloat(PropertiesManager.PROPERTY_DEFAULT_ROTATION, pageRotation);
         } catch (NumberFormatException e) {
             // eating error, as we can continue with out alarm
         }
 
         SwingViewBuilder factory =
-                new SwingViewBuilder(controller, viewType, pageFit);
+                new SwingViewBuilder(controller, viewType, pageFit, pageRotation);
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
@@ -185,9 +186,9 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     public void disposeWindow(SwingController controller, JFrame viewer,
-                              Properties properties) {
+                              Preferences preferences) {
         if (controllers.size() <= 1) {
-            quit(controller, viewer, properties);
+            quit(controller, viewer, preferences);
             return;
         }
 
@@ -204,7 +205,7 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     public void quit(SwingController controller, JFrame viewer,
-                     Properties properties) {
+                     Preferences preferences) {
         if (controller != null && viewer != null) {
             //save width & height
             Rectangle sz = viewer.getBounds();
@@ -216,7 +217,7 @@ public class WindowManager implements WindowManagementCallback {
             if (properties != null) {
                 viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
                         viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, 0));
-                int viewType = Integer.parseInt(properties.getProperty(PROPERTY_DEFAULT_VIEW_TYPE));
+                int viewType = preferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE, 1);
                 // don't save the attachments view as it only applies to specific
                 // document types.
                 if (viewType != DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
