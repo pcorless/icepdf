@@ -1,4 +1,19 @@
-package org.icepdf.ri.common.fonts;
+/*
+ * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+package org.icepdf.ri.common.properties;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
@@ -20,8 +35,8 @@ import java.util.Set;
  * This class is a utility for finding and reporting all font types in a document.  Each page in the document
  * is checked for valid font resources, if found the fonts are added to the calling FontDialog for addition to
  * a JTree of know document fonts.
- *
- * {@link org.icepdf.ri.common.fonts.FontDialog}
+ * <p>
+ * {@link FontDialog}
  *
  * @since 6.1.3
  */
@@ -43,7 +58,7 @@ public class FindFontsTask {
     private SwingController controller;
 
     // append nodes for found fonts.
-    private FontDialog fontDialog;
+    private FontPanel fontDialog;
 
     private boolean currentlySearching;
 
@@ -56,7 +71,7 @@ public class FindFontsTask {
      * @param controller    root controller object
      * @param messageBundle message bundle used for dialog text.
      */
-    public FindFontsTask(FontDialog fontDialog,
+    public FindFontsTask(FontPanel fontDialog,
                          SwingController controller,
                          ResourceBundle messageBundle) {
         this.controller = controller;

@@ -1,8 +1,22 @@
-package org.icepdf.ri.common.fonts;
+/*
+ * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+package org.icepdf.ri.common.properties;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.fonts.Font;
-import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.images.Images;
@@ -15,31 +29,21 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
-
 /**
- * This class is a reference implementation for displaying a PDF file's
- * font information.   The dialog will start a worker thread that will read all the document's font objects and
- * build a tree view of the all the fonts.  This font view is primarily for debug purposes to make it easier to track
- * font substitution results.  The dialog also provides an easy way to refresh the
- * "\.icesoft\icepdf-viewer\pdfviewerfontcache.properties' with out manually deleting the file and restarted the viewer.
+ * Panel display of document font properties.   The panel can be used as a fragment in any user interface.
  *
- * {@link org.icepdf.ri.common.fonts.FindFontsTask}
- * @since 6.1.3
+ * @since 6.3
  */
-@SuppressWarnings("serial")
-public class FontDialog extends EscapeJDialog implements ActionListener, WindowListener {
+public class FontPanel extends JPanel implements ActionListener {
 
     // refresh rate of gui elements
     private static final int TIMER_REFRESH = 20;
 
     // pointer to document which will be searched
     private Document document;
-    private SwingController controller;
 
     // list box to hold search results
     private JTree tree;
@@ -51,13 +55,13 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
     private JButton resetFontCacheButton;
 
     // task to complete in separate thread
-    protected FindFontsTask findFontsTask;
+    private FindFontsTask findFontsTask;
 
     // status label for font search
-    protected JLabel findMessage = new JLabel();
+    private JLabel findMessage = new JLabel();
 
     // time class to manage gui updates
-    protected Timer timer;
+    private Timer timer;
 
     // flag indicating if search is under way.
     private boolean isFindignFonts;
@@ -72,21 +76,11 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
     // layouts constraint
     private GridBagConstraints constraints;
 
-    /**
-     * Create a new instance of SearchPanel.
-     *
-     * @param controller root SwingController
-     */
-    public FontDialog(Frame frame, SwingController controller, boolean isModal) {
-        super(frame, isModal);
-        setFocusable(true);
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
-        setGui();
-        setDocument(controller.getDocument());
-    }
+    public FontPanel(Document doc, SwingController controller, ResourceBundle messageBundle) {
 
-    public void setDocument(Document doc) {
+        this.document = doc;
+        this.messageBundle = messageBundle;
+
         // First have to stop any existing font searches,  this shouldn't happen...
         if (timer != null)
             timer.stop();
@@ -114,6 +108,8 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
             findMessage.setText("");
         }
 
+        setGui();
+
         // start the task and the timer
         findFontsTask = new FindFontsTask(this, controller, messageBundle);
         findFontsTask.go();
@@ -134,11 +130,6 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
                 new MessageFormat(messageBundle.getString("viewer.dialog.fonts.info.substitution.type.label"));
         actualFontMessageForm =
                 new MessageFormat(messageBundle.getString("viewer.dialog.fonts.info.substitution.path.label"));
-
-        setTitle(messageBundle.getString("viewer.dialog.fonts.title"));
-        setResizable(true);
-
-        addWindowListener(this);
 
         // build the supporting tree objects
         rootTreeNode = new DefaultMutableTreeNode();
@@ -166,20 +157,16 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         // setup refresh timer for the font scan progress.
         timer = new Timer(TIMER_REFRESH, new TimerListener());
 
-        /**
-         * Build search GUI
-         */
         // content Panel
-        JPanel fontPropertiesPanel = new JPanel(new GridBagLayout());
-        fontPropertiesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+        this.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.dialog.fonts.border.label"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
-        this.setLayout(new BorderLayout(15, 15));
-        this.add(fontPropertiesPanel, BorderLayout.CENTER);
+//        this.setLayout(new BorderLayout(15, 15));
+        setLayout(new GridBagLayout());
 
         constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.NONE;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
         constraints.weighty = 0;
         constraints.anchor = GridBagConstraints.NORTH;
@@ -191,7 +178,7 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         constraints.insets = new Insets(10, 15, 10, 15);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(fontPropertiesPanel, scrollPane, 0, 1, 2, 1);
+        addGB(this, scrollPane, 0, 1, 2, 1);
 
         // add find message
         constraints.insets = new Insets(2, 10, 2, 10);
@@ -199,7 +186,7 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
-        addGB(fontPropertiesPanel, findMessage, 0, 2, 2, 1);
+        addGB(this, findMessage, 0, 2, 2, 1);
 
         resetFontCacheButton = new JButton(messageBundle.getString("viewer.dialog.fonts.resetCache.label"));
         resetFontCacheButton.setToolTipText(messageBundle.getString("viewer.dialog.fonts.resetCache.tip"));
@@ -208,18 +195,7 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         constraints.weighty = 0;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
-        addGB(fontPropertiesPanel, resetFontCacheButton, 0, 3, 1, 1);
-
-        okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
-        okButton.addActionListener(this);
-        constraints.insets = new Insets(2, 10, 2, 10);
-        constraints.weighty = 0;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.EAST;
-        addGB(fontPropertiesPanel, okButton, 1, 4, 1, 1);
-
-        setSize(640, 480);
-        setLocationRelativeTo(getOwner());
+        addGB(this, resetFontCacheButton, 0, 3, 1, 1);
     }
 
     /**
@@ -246,9 +222,10 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
 
     /**
      * Utility to aid in the creation of a new font properties node.
-     * @param label label for node.
+     *
+     * @param label         label for node.
      * @param messageFormat message formatter
-     * @param parent parent node.
+     * @param parent        parent node.
      */
     private void insertNode(Object label, MessageFormat messageFormat, DefaultMutableTreeNode parent) {
         if (label != null) {
@@ -313,28 +290,15 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
     }
 
     /**
-     * Insure the font search process is killed when the dialog is closed via the 'esc' key.
-     */
-    @Override
-    public void dispose() {
-        super.dispose();
-        closeWindowOperations();
-    }
-
-    /**
      * Two main actions are handle here, search and clear search.
      *
      * @param event awt action event.
      */
     public void actionPerformed(ActionEvent event) {
-        if (event.getSource() == okButton) {
-            // clean up the timer and worker thread.
-            closeWindowOperations();
-            dispose();
-        } else if (event.getSource() == resetFontCacheButton) {
+        if (event.getSource() == resetFontCacheButton) {
             // reset the font properties cache.
             resetFontCacheButton.setEnabled(false);
-            SwingWorker worker = new SwingWorker() {
+            org.icepdf.ri.common.SwingWorker worker = new SwingWorker() {
                 public Object construct() {
                     FontPropertiesManager fontPropertiesManager = FontPropertiesManager.getInstance();
                     fontPropertiesManager.clearProperties();
@@ -356,20 +320,8 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         // clean up the timer and worker thread.
         if (timer != null && timer.isRunning()) timer.stop();
         if (findFontsTask != null && findFontsTask.isCurrentlySearching()) findFontsTask.stop();
-        setVisible(false);
     }
 
-
-    /**
-     * Gridbag constructor helper
-     *
-     * @param panel     parent adding component too.
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan   rowspane of field
-     * @param colSpan   colspane of field.
-     */
     private void addGB(JPanel panel, Component component,
                        int x, int y,
                        int rowSpan, int colSpan) {
@@ -378,35 +330,6 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         constraints.gridwidth = rowSpan;
         constraints.gridheight = colSpan;
         panel.add(component, constraints);
-    }
-
-
-    public void windowOpened(WindowEvent e) {
-
-    }
-
-    public void windowClosing(WindowEvent e) {
-        closeWindowOperations();
-    }
-
-    public void windowClosed(WindowEvent e) {
-        closeWindowOperations();
-    }
-
-    public void windowIconified(WindowEvent e) {
-
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-
-    }
-
-    public void windowActivated(WindowEvent e) {
-
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-
     }
 
     /**
@@ -439,7 +362,6 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         // The text to be displayed on the screen for this item.
         String title;
 
-
         /**
          * Creates a new instance of a FindEntry.
          *
@@ -453,4 +375,5 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         }
 
     }
+
 }

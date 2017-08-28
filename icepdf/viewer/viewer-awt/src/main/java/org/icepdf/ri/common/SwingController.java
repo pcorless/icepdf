@@ -29,7 +29,9 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
-import org.icepdf.ri.common.fonts.FontDialog;
+import org.icepdf.ri.common.properties.FontDialog;
+import org.icepdf.ri.common.properties.InformationDialog;
+import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -1063,7 +1065,7 @@ public class SwingController
     public boolean isPdfCollection() {
         Catalog catalog = document.getCatalog();
         HashMap collection = catalog.getCollection();
-        if (collection != null ) {
+        if (collection != null) {
             // one final check as some docs will have meta data but will specify a page mode.
             // check to see that at least one of the files is a PDF
             if (catalog.getEmbeddedFilesNameTree() != null) {
@@ -1159,14 +1161,14 @@ public class SwingController
                             messageBundle.getString("viewer.toolbar.hideUtilityPane.label") :
                             messageBundle.getString("viewer.toolbar.showUtilityPane.label"));
         }
-        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null );
+        setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
         setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
         setEnabled(saveAsFileButton, opened);
         setEnabled(printButton, opened && canPrint && !pdfCollection);
         setEnabled(searchButton, opened && searchPanel != null && !pdfCollection);
-        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null );
+        setEnabled(showHideUtilityPaneButton, opened && utilityTabbedPane != null);
         setEnabled(currentPageNumberTextField, opened && nPages > 1 && !pdfCollection);
         if (numberOfPagesLabel != null) {
 
@@ -2227,7 +2229,7 @@ public class SwingController
         }
 
         // selected the utility tab defined by the page mode key
-        if (showUtilityPane){
+        if (showUtilityPane) {
             Name pageMode = catalog.getPageMode();
             if (pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) &&
                     utilityTabbedPane.indexOfComponent(outlinesScrollPane) > 0) {
@@ -2241,7 +2243,7 @@ public class SwingController
             } else if (pageMode.equals(Catalog.PAGE_MODE_USE_THUMBS_VALUE) &&
                     utilityTabbedPane.indexOfComponent(thumbnailsPanel) > 0) {
                 utilityTabbedPane.setSelectedComponent(thumbnailsPanel);
-            }else{
+            } else {
                 // Catalog.PAGE_MODE_USE_NONE_VALUE
                 showUtilityPane = false;
             }
@@ -2934,9 +2936,16 @@ public class SwingController
      * last modification date
      */
     public void showDocumentInformationDialog() {
-        DocumentInformationDialog did =
-                new DocumentInformationDialog(viewer, document, messageBundle);
+        InformationDialog did =
+                new InformationDialog(viewer, document, messageBundle);
         did.setVisible(true);
+    }
+
+    /**
+     * Show document font information.
+     */
+    public void showDocumentFontDialog() {
+        new FontDialog(viewer, this, document, messageBundle).setVisible(true);
     }
 
     /**
@@ -3613,7 +3622,7 @@ public class SwingController
     public void showSearchPanel() {
         if (utilityTabbedPane != null && searchPanel != null) {
             // make sure the utility pane is visible
-            if (!utilityTabbedPane.isVisible()){
+            if (!utilityTabbedPane.isVisible()) {
                 setUtilityPaneVisible(true);
             }
 
@@ -3895,7 +3904,7 @@ public class SwingController
             } else if (source == aboutMenuItem) {
                 showAboutDialog();
             } else if (source == fontInformationMenuItem) {
-                new FontDialog(viewer, this, true).setVisible(true);
+                showDocumentFontDialog();
             } else if (document != null) {
                 // get document previous icon
                 int documentIcon = getDocumentViewToolMode();
@@ -4018,6 +4027,7 @@ public class SwingController
             }
         } catch (Exception e) {
             final Exception f = e;
+            e.printStackTrace();
             Runnable doSwingWork = new Runnable() {
                 public void run() {
                     org.icepdf.ri.util.Resources.showMessageDialog(
@@ -4109,7 +4119,7 @@ public class SwingController
                     // get instance of the font factory
                     FontFactory.getInstance().toggleAwtFontSubstitution();
                     // refresh the document, refresh will happen by the component.
-                    ((AbstractDocumentView)documentViewController.getDocumentView()).firePropertyChange(
+                    ((AbstractDocumentView) documentViewController.getDocumentView()).firePropertyChange(
                             PropertyConstants.DOCUMENT_VIEW_DEMO_MODE_CHANGE, false, true);
                     doSetFocus = true;
                 }
