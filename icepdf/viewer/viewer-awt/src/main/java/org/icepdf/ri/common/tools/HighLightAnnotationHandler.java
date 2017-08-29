@@ -32,6 +32,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -40,6 +41,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.prefs.Preferences;
 
 /**
  * HighLightAnnotationHandler tool extends TextSelectionPageHandler which
@@ -154,7 +156,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                 annotation.setOpacity(TextMarkupAnnotation.HIGHLIGHT_ALPHA);
             }
             annotation.setContents(contents != null && enableHighlightContents ? contents : highLightType.toString());
-            annotation.setColor(annotation.getTextMarkupColor());
+            // before assigning the default colour check to see if there is an entry in the properties manager
+            checkTextMarkupColor(annotation);
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
             annotation.setTitleText(System.getProperty("user.name"));
             annotation.setMarkupBounds(highlightBounds);
@@ -186,6 +189,39 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             }
         }
         pageViewComponent.repaint();
+    }
+
+    private void checkTextMarkupColor(TextMarkupAnnotation annotation) {
+
+        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        Preferences preferences = propertiesManager.getPreferences();
+
+        Name subtype = annotation.getSubType();
+        Color color = null;
+        if (TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(subtype) &&
+                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, 0);
+            color = new Color(rgb);
+        } else if (TextMarkupAnnotation.SUBTYPE_STRIKE_OUT.equals(subtype) &&
+                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR, 0);
+            color = new Color(rgb);
+        } else if (TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(subtype) &&
+                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, 0);
+            color = new Color(rgb);
+        } else if (TextMarkupAnnotation.SUBTYPE_SQUIGGLY.equals(subtype) &&
+                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR, 0);
+            color = new Color(rgb);
+        }
+        // apply the settings or system property base colour for the given subtype.
+        if (color == null) {
+            annotation.setColor(annotation.getTextMarkupColor());
+        } else {
+            annotation.setColor(color);
+            annotation.setTextMarkupColor(color);
+        }
     }
 
     private String getSelectedText() {

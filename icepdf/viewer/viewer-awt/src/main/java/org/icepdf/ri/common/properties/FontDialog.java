@@ -80,19 +80,15 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
         okButton.addActionListener(this);
 
-        JPanel layoutPanel = new JPanel();
+        JPanel layoutPanel = new JPanel(new GridBagLayout());
         layoutPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
-        GridBagLayout layout = new GridBagLayout();
-        layoutPanel.setLayout(layout);
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
-        constraints.insets = new Insets(10, 15, 10, 15);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
         addGB(layoutPanel, fontPropertiesPanel, 0, 0, 1, 1);
 
-        constraints.insets = new Insets(2, 10, 10, 10);
         constraints.weighty = 0;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.CENTER;

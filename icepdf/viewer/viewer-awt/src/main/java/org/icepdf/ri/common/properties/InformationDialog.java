@@ -57,17 +57,18 @@ public class InformationDialog extends EscapeJDialog {
             }
         });
 
-        JPanel layoutPanel = new JPanel();
+        JPanel layoutPanel = new JPanel(new GridBagLayout());
         JPanel informationPanel = new InformationPanel(document, messageBundle);
-
         layoutPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
-        GridBagLayout layout = new GridBagLayout();
-        layoutPanel.setLayout(layout);
 
         constraints = new GridBagConstraints();
-        constraints.insets = new Insets(15, 5, 5, 5);
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
         constraints.anchor = GridBagConstraints.CENTER;
         addGB(layoutPanel, informationPanel, 0, 0, 1, 1);
+
+        constraints.fill = GridBagConstraints.NONE;
         addGB(layoutPanel, okButton, 0, 1, 1, 1);
 
         this.getContentPane().add(layoutPanel);

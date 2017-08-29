@@ -43,6 +43,8 @@ public class KeyEventConstants {
     public static final int MODIFIER_PRINT = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_EXIT = KeyEvent.VK_Q;
     public static final int MODIFIER_EXIT = MENU_SHORTCUT_KEY_MASK;
+    public static final int KEY_CODE_DOCUMENT_PROPERTIES = KeyEvent.VK_D;
+    public static final int MODIFIER_DOCUMENT_PROPERTIES = MENU_SHORTCUT_KEY_MASK;
 
     public static final int KEY_CODE_FIT_ACTUAL = KeyEvent.VK_1;
     public static final int MODIFIER_FIT_ACTUAL = MENU_SHORTCUT_KEY_MASK;

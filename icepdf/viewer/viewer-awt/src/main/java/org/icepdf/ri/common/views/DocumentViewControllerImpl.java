@@ -112,7 +112,6 @@ public class DocumentViewControllerImpl
     protected SecurityCallback securityCallback;
     protected PropertyChangeSupport changes = new PropertyChangeSupport(this);
 
-
     public DocumentViewControllerImpl(final SwingController viewerController) {
 
         this.viewerController = viewerController;

@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -564,9 +565,10 @@ public class SwingViewBuilder {
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
         addToMenu(fileMenu, buildExportTextMenuItem());
         fileMenu.addSeparator();
-        addToMenu(fileMenu, buildPermissionsMenuItem());
-        addToMenu(fileMenu, buildInformationMenuItem());
-        addToMenu(fileMenu, buildFontInformationMenuItem());
+        addToMenu(fileMenu, buildPropertiesMenuItem());
+//        addToMenu(fileMenu, buildPermissionsMenuItem());
+//        addToMenu(fileMenu, buildInformationMenuItem());
+//        addToMenu(fileMenu, buildFontInformationMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildPrintSetupMenuItem());
         addToMenu(fileMenu, buildPrintMenuItem());
@@ -620,6 +622,16 @@ public class SwingViewBuilder {
                 messageBundle.getString("viewer.menu.exportText.label"), null, null, null);
         if (viewerController != null && mi != null)
             viewerController.setExportTextMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildPropertiesMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.documentProperties.label"), null, null,
+                buildKeyStroke(KeyEventConstants.KEY_CODE_DOCUMENT_PROPERTIES,
+                        KeyEventConstants.MODIFIER_DOCUMENT_PROPERTIES));
+        if (viewerController != null && mi != null)
+            viewerController.setPropertiesMenuItem(mi);
         return mi;
     }
 
@@ -1511,14 +1523,20 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JToggleButton buildHighlightAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildHighlightAnnotationToolButton(final String imageSize) {
+        // put it all together for a dropdown button
+        AnnotationColorButton annotationColorButton = new AnnotationColorButton(
+                viewerController,
+                messageBundle,
+                TextMarkupAnnotation.SUBTYPE_HIGHLIGHT,
                 messageBundle.getString("viewer.toolbar.tool.highlight.label"),
                 messageBundle.getString("viewer.toolbar.tool.highlight.tooltip"),
-                "highlight_annot", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setHighlightAnnotationToolButton(btn);
-        return btn;
+                "highlight_annot_c", imageSize, buttonFont);
+        if (viewerController != null && annotationColorButton != null) {
+            viewerController.setHighlightAnnotationToolButton(annotationColorButton);
+        }
+        // put it all together for a dropdown button
+        return annotationColorButton;
     }
 
     public JToggleButton buildHighlightAnnotationUtilityToolButton(final String imageSize) {

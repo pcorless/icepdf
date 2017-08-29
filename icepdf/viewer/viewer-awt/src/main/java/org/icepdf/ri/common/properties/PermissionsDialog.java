@@ -50,7 +50,6 @@ public class PermissionsDialog extends EscapeJDialog {
                 setVisible(false);
                 dispose();
             }
-
         });
 
         // Place GUI elements on dialog
@@ -62,16 +61,13 @@ public class PermissionsDialog extends EscapeJDialog {
         layoutPanel.setLayout(layout);
 
         constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.NONE;
+        constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
-        constraints.anchor = GridBagConstraints.EAST;
-        constraints.insets = new Insets(5, 5, 5, 5);
-
-        // add labels
-        constraints.insets = new Insets(15, 5, 5, 5);
         constraints.anchor = GridBagConstraints.CENTER;
+
         addGB(layoutPanel, permissionsPanel, 0, 0, 1, 1);
+
+        constraints.fill = GridBagConstraints.NONE;
         addGB(layoutPanel, okButton, 0, 1, 1, 1);
 
         this.getContentPane().add(layoutPanel);

@@ -129,6 +129,15 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO = "application.annotation.show.markup.replyTo";
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS = "application.annotation.show.markup.setStatus";
 
+    // highlight annotation default colour and last used colours and labels.
+    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_COLOR = "application.viewerpreference.annotation.highlight.color";
+    public static final String PROPERTY_ANNOTATION_STRIKE_OUT_COLOR = "application.viewerpreference.annotation.strikeout.color";
+    public static final String PROPERTY_ANNOTATION_UNDERLINE_COLOR = "application.viewerpreference.annotation.underline.color";
+    public static final String PROPERTY_ANNOTATION_SQUIGGLY_COLOR = "application.viewerpreference.annotation.squiggly.color";
+
+    // we use the same recent colour list for all annotation types
+    public static final String PROPERTY_ANNOTATION_RECENT_COLORS = "application.viewerpreference.annotation.color.recent";
+
     private static PropertiesManager propertiesManager;
 
     private static Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);

@@ -18,7 +18,7 @@ package org.icepdf.ri.common;
 import java.io.File;
 
 /**
- * Data model for the view, which maintains state on how a Document is being
+ * Data model for the current controller, which maintains state on how a Document is being
  * presented to the user.
  * <br>
  * The default value of isShrinkToPrintableArea is true.
@@ -89,7 +89,7 @@ public class ViewModel {
      * property.
      *
      * @return true, to enable shrink to fit printable area;
-     *         false, otherwise.
+     * false, otherwise.
      */
     public boolean isShrinkToPrintableArea() {
         return isShrinkToPrintableArea;
@@ -127,6 +127,7 @@ public class ViewModel {
 
     /**
      * Indicates that widget highlighting is enabled.
+     *
      * @return true if enabled, otherwise false.
      */
     public boolean isWidgetAnnotationHighlight() {

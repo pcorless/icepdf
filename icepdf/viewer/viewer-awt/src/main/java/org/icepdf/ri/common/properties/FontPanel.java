@@ -158,11 +158,12 @@ public class FontPanel extends JPanel implements ActionListener {
         timer = new Timer(TIMER_REFRESH, new TimerListener());
 
         // content Panel
-        this.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+        JPanel documentFontPanel = new JPanel(new GridBagLayout());
+        documentFontPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.dialog.fonts.border.label"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
-//        this.setLayout(new BorderLayout(15, 15));
+
         setLayout(new GridBagLayout());
 
         constraints = new GridBagConstraints();
@@ -178,7 +179,7 @@ public class FontPanel extends JPanel implements ActionListener {
         constraints.insets = new Insets(10, 15, 10, 15);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(this, scrollPane, 0, 1, 2, 1);
+        addGB(documentFontPanel, scrollPane, 0, 1, 2, 1);
 
         // add find message
         constraints.insets = new Insets(2, 10, 2, 10);
@@ -186,7 +187,7 @@ public class FontPanel extends JPanel implements ActionListener {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
-        addGB(this, findMessage, 0, 2, 2, 1);
+        addGB(documentFontPanel, findMessage, 0, 2, 2, 1);
 
         resetFontCacheButton = new JButton(messageBundle.getString("viewer.dialog.fonts.resetCache.label"));
         resetFontCacheButton.setToolTipText(messageBundle.getString("viewer.dialog.fonts.resetCache.tip"));
@@ -195,7 +196,13 @@ public class FontPanel extends JPanel implements ActionListener {
         constraints.weighty = 0;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
-        addGB(this, resetFontCacheButton, 0, 3, 1, 1);
+        addGB(documentFontPanel, resetFontCacheButton, 0, 3, 1, 1);
+
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.insets = new Insets(5, 5, 5, 5);
+        addGB(this, documentFontPanel, 0, 0, 1, 1);
     }
 
     /**

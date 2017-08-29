@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -116,11 +118,6 @@ public class PermissionsPanel extends JPanel {
             }
         }
 
-
-        /**
-         * Place GUI elements on dialog
-         */
-
         setAlignmentY(JPanel.TOP_ALIGNMENT);
         GridBagLayout layout = new GridBagLayout();
         setLayout(layout);
@@ -128,58 +125,79 @@ public class PermissionsPanel extends JPanel {
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.insets = new Insets(5, 5, 5, 5);
 
-        // add labels
-        addGB(this,
+        // layout the document security section
+        JPanel documentSecurityPanel = new JPanel(new GridBagLayout());
+        documentSecurityPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.documentPermissions.security.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        addGB(documentSecurityPanel,
                 new JLabel(messageBundle.getString("viewer.dialog.documentPermissions.securityMethod.label")),
                 0, 0, 1, 1);
-        addGB(this, new JLabel("User Password:"),
-                0, 1, 1, 1);
-        addGB(this, new JLabel(
+        addGB(documentSecurityPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentPermissions.userPassword.label")),
+                0, 1, 1, 1);
+        addGB(documentSecurityPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.ownerPassword.label")),
                 0, 2, 1, 1);
-        addGB(this, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentPermissions.printing.label")),
-                0, 3, 1, 1);
-        addGB(this, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentPermissions.changing.label")),
-                0, 4, 1, 1);
-        addGB(this, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentPermissions.copyExtraction.label")),
-                0, 5, 1, 1);
-        addGB(this, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentPermissions.comments.label")),
-                0, 6, 1, 1);
-        addGB(this, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentPermissions.formFillingIn.label")),
-                0, 7, 1, 1);
-        addGB(this, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentPermissions.accessibility.label")),
-                0, 8, 1, 1);
-        addGB(this, new JLabel(
-                        messageBundle.getString("viewer.dialog.documentPermissions.assembly.label")),
-                0, 9, 1, 1);
-        addGB(this, new JLabel(
+        addGB(documentSecurityPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentPermissions.encryptionLevel.label")),
-                0, 10, 1, 1);
+                0, 3, 1, 1);
 
-        // add values
-        constraints.insets = new Insets(5, 5, 5, 5);
+        // layout the document restrictions section
+        JPanel documentRestrictionsPanel = new JPanel(new GridBagLayout());
+        documentRestrictionsPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.documentPermissions.restrictions.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        addGB(documentRestrictionsPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.printing.label")),
+                0, 0, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.changing.label")),
+                0, 1, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.copyExtraction.label")),
+                0, 2, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.comments.label")),
+                0, 3, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.formFillingIn.label")),
+                0, 4, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.accessibility.label")),
+                0, 5, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(
+                        messageBundle.getString("viewer.dialog.documentPermissions.assembly.label")),
+                0, 6, 1, 1);
+
+        // add the root security panels
+        constraints.fill = GridBagConstraints.BOTH;
+        addGB(this, documentSecurityPanel, 0, 0, 1, 1);
+        addGB(this, documentRestrictionsPanel, 0, 1, 1, 1);
+
+        // setup value constrains values
         constraints.anchor = GridBagConstraints.WEST;
-        addGB(this, new JLabel(securityMethod), 1, 0, 1, 1);
-        addGB(this, new JLabel(userPassword), 1, 1, 1, 1);
-        addGB(this, new JLabel(ownerPassword), 1, 2, 1, 1);
-        addGB(this, new JLabel(printing), 1, 3, 1, 1);
-        addGB(this, new JLabel(changing), 1, 4, 1, 1);
-        addGB(this, new JLabel(extraction), 1, 5, 1, 1);
-        addGB(this, new JLabel(authoring), 1, 6, 1, 1);
-        addGB(this, new JLabel(forms), 1, 7, 1, 1);
-        addGB(this, new JLabel(accessibility), 1, 8, 1, 1);
-        addGB(this, new JLabel(assembly), 1, 9, 1, 1);
-        addGB(this, new JLabel(level), 1, 10, 1, 1);
+        // security
+        addGB(documentSecurityPanel, new JLabel(securityMethod), 1, 0, 1, 1);
+        addGB(documentSecurityPanel, new JLabel(userPassword), 1, 1, 1, 1);
+        addGB(documentSecurityPanel, new JLabel(ownerPassword), 1, 2, 1, 1);
+        addGB(documentSecurityPanel, new JLabel(level), 1, 3, 1, 1);
+        // restrictions
+        addGB(documentRestrictionsPanel, new JLabel(printing), 1, 0, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(changing), 1, 1, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(extraction), 1, 2, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(authoring), 1, 3, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(forms), 1, 4, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(accessibility), 1, 5, 1, 1);
+        addGB(documentRestrictionsPanel, new JLabel(assembly), 1, 6, 1, 1);
+
+
+
     }
 
     /**

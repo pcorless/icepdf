@@ -19,6 +19,8 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PInfo;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.util.ResourceBundle;
 
@@ -65,52 +67,64 @@ public class InformationPanel extends JPanel {
                     documentInfo.getModDate().toString() : notAvailable;
         }
 
-        GridBagLayout layout = new GridBagLayout();
-        setLayout(layout);
+        setLayout(new GridBagLayout());
+        setAlignmentY(JPanel.TOP_ALIGNMENT);
+
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
-        constraints.anchor = GridBagConstraints.EAST;
+        constraints.weighty = 1.0;
+        constraints.anchor = GridBagConstraints.NORTHEAST;
         constraints.insets = new Insets(5, 5, 5, 5);
 
+        JPanel layoutPanel = new JPanel(new GridBagLayout());
+
+        layoutPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.documentInformation.description.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+
         // add labels
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.title.label")),
                 0, 0, 1, 1);
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.subject.label")),
                 0, 1, 1, 1);
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.author.label")),
                 0, 2, 1, 1);
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.keywords.label")),
                 0, 3, 1, 1);
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.creator.label")),
                 0, 4, 1, 1);
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.producer.label")),
                 0, 5, 1, 1);
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.created.label")),
                 0, 6, 1, 1);
-        addGB(this, new JLabel(
+        addGB(layoutPanel, new JLabel(
                         messageBundle.getString("viewer.dialog.documentInformation.modified.label")),
                 0, 7, 1, 1);
 
         // add values
-        constraints.anchor = GridBagConstraints.WEST;
-        addGB(this, new JLabel(title), 1, 0, 1, 1);
-        addGB(this, new JLabel(subject), 1, 1, 1, 1);
-        addGB(this, new JLabel(author), 1, 2, 1, 1);
-        addGB(this, new JLabel(keyWords), 1, 3, 1, 1);
-        addGB(this, new JLabel(creator), 1, 4, 1, 1);
-        addGB(this, new JLabel(producer), 1, 5, 1, 1);
-        addGB(this, new JLabel(creationDate), 1, 6, 1, 1);
-        addGB(this, new JLabel(modDate), 1, 7, 1, 1);
+        constraints.anchor = GridBagConstraints.NORTHWEST;
+        addGB(layoutPanel, new JLabel(title), 1, 0, 1, 1);
+        addGB(layoutPanel, new JLabel(subject), 1, 1, 1, 1);
+        addGB(layoutPanel, new JLabel(author), 1, 2, 1, 1);
+        addGB(layoutPanel, new JLabel(keyWords), 1, 3, 1, 1);
+        addGB(layoutPanel, new JLabel(creator), 1, 4, 1, 1);
+        addGB(layoutPanel, new JLabel(producer), 1, 5, 1, 1);
+        addGB(layoutPanel, new JLabel(creationDate), 1, 6, 1, 1);
+        addGB(layoutPanel, new JLabel(modDate), 1, 7, 1, 1);
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.insets = new Insets(5, 5, 5, 5);
+        addGB(this, layoutPanel, 0, 0, 1, 1);
     }
 
     private void addGB(JPanel layout, Component component,

@@ -32,6 +32,7 @@ import org.icepdf.core.util.Utils;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
+import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -119,6 +120,7 @@ public class SwingController
     private JMenuItem closeMenuItem;
     private JMenuItem saveAsFileMenuItem;
     private JMenuItem exportTextMenuItem;
+    private JMenuItem propertiesMenuItem;
     private JMenuItem permissionsMenuItem;
     private JMenuItem informationMenuItem;
     private JMenuItem fontInformationMenuItem;
@@ -179,7 +181,7 @@ public class SwingController
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomDynamicToolButton;
     private JToggleButton selectToolButton;
-    private JToggleButton highlightAnnotationToolButton;
+    private AbstractButton highlightAnnotationToolButton;
     private JToggleButton textAnnotationToolButton;
     private JToggleButton formHighlightButton;
     private JToggleButton linkAnnotationToolButton;
@@ -382,6 +384,14 @@ public class SwingController
      */
     public void setPermissionsMenuItem(JMenuItem mi) {
         permissionsMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setPropertiesMenuItem(JMenuItem mi) {
+        propertiesMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -835,7 +845,7 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setHighlightAnnotationToolButton(JToggleButton btn) {
+    public void setHighlightAnnotationToolButton(AbstractButton btn) {
         highlightAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1112,6 +1122,7 @@ public class SwingController
         setEnabled(closeMenuItem, opened);
         setEnabled(saveAsFileMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
+        setEnabled(propertiesMenuItem, opened);
         setEnabled(permissionsMenuItem, opened);
         setEnabled(informationMenuItem, opened);
         setEnabled(fontInformationMenuItem, opened);
@@ -2507,6 +2518,7 @@ public class SwingController
         saveAsFileMenuItem = null;
         exportTextMenuItem = null;
         permissionsMenuItem = null;
+        propertiesMenuItem = null;
         informationMenuItem = null;
         printSetupMenuItem = null;
         printMenuItem = null;
@@ -2946,6 +2958,20 @@ public class SwingController
      */
     public void showDocumentFontDialog() {
         new FontDialog(viewer, this, document, messageBundle).setVisible(true);
+    }
+
+    /**
+     * Show tabbed pane interface for document properties,  info, security and fonts.
+     */
+    public void showDocumentProperties() {
+        new PropertiesDialog(viewer, this, messageBundle).setVisible(true);
+    }
+
+    /**
+     * Show tabbed pane interface for viewer preferences,  info, security and fonts.
+     */
+    public void showViewerPreferences() {
+        new PropertiesDialog(viewer, this, messageBundle).setVisible(true);
     }
 
     /**
@@ -3912,27 +3938,15 @@ public class SwingController
                     // set cursor for document view
                     setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
 
-                    if (source == permissionsMenuItem) {
-                        Runnable doSwingWork = new Runnable() {
-                            public void run() {
-                                showDocumentPermissionsDialog();
-                            }
-                        };
+                    if (source == propertiesMenuItem) {
+                        Runnable doSwingWork = this::showDocumentProperties;
                         SwingUtilities.invokeLater(doSwingWork);
+                    } else if (source == permissionsMenuItem) {
+                        SwingUtilities.invokeLater(this::showDocumentPermissionsDialog);
                     } else if (source == informationMenuItem) {
-                        Runnable doSwingWork = new Runnable() {
-                            public void run() {
-                                showDocumentInformationDialog();
-                            }
-                        };
-                        SwingUtilities.invokeLater(doSwingWork);
+                        SwingUtilities.invokeLater(this::showDocumentInformationDialog);
                     } else if (source == printSetupMenuItem) {
-                        Runnable doSwingWork = new Runnable() {
-                            public void run() {
-                                showPrintSetupDialog();
-                            }
-                        };
-                        SwingUtilities.invokeLater(doSwingWork);
+                        SwingUtilities.invokeLater(this::showPrintSetupDialog);
                     } else if (source == printMenuItem) {
                         print(true);
                     } else if (source == printButton) {
@@ -3958,17 +3972,13 @@ public class SwingController
                             Toolkit.getDefaultToolkit().getSystemClipboard()
                                     .setContents(stringSelection, stringSelection);
                         } else {
-                            Runnable doSwingWork = new Runnable() {
-                                public void run() {
-                                    org.icepdf.ri.util.Resources.showMessageDialog(
-                                            viewer,
-                                            JOptionPane.INFORMATION_MESSAGE,
-                                            messageBundle,
-                                            "viewer.dialog.information.copyAll.title",
-                                            "viewer.dialog.information.copyAll.msg",
-                                            MAX_SELECT_ALL_PAGE_COUNT);
-                                }
-                            };
+                            Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
+                                    viewer,
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    messageBundle,
+                                    "viewer.dialog.information.copyAll.title",
+                                    "viewer.dialog.information.copyAll.msg",
+                                    MAX_SELECT_ALL_PAGE_COUNT);
                             SwingUtilities.invokeLater(doSwingWork);
                         }
                     } else if (source == selectAllMenuItem) {
@@ -4028,17 +4038,13 @@ public class SwingController
         } catch (Exception e) {
             final Exception f = e;
             e.printStackTrace();
-            Runnable doSwingWork = new Runnable() {
-                public void run() {
-                    org.icepdf.ri.util.Resources.showMessageDialog(
-                            viewer,
-                            JOptionPane.INFORMATION_MESSAGE,
-                            messageBundle,
-                            "viewer.dialog.error.exception.title",
-                            "viewer.dialog.error.exception.msg",
-                            f.getMessage());
-                }
-            };
+            Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
+                    viewer,
+                    JOptionPane.INFORMATION_MESSAGE,
+                    messageBundle,
+                    "viewer.dialog.error.exception.title",
+                    "viewer.dialog.error.exception.msg",
+                    f.getMessage());
             SwingUtilities.invokeLater(doSwingWork);
             logger.log(Level.FINE, "Error processing action event.", e);
         }
@@ -4166,6 +4172,7 @@ public class SwingController
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 }
             } else if (source == highlightAnnotationToolButton ||
+                    highlightAnnotationToolButton.equals(source) ||
                     source == highlightAnnotationUtilityToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
@@ -4278,7 +4285,7 @@ public class SwingController
 
         followOutlineItem(o);
 
-        // return focus so that arrow keys will work on list
+        // return focus so that dropDownArrowButton keys will work on list
         outlinesTree.requestFocus();
     }
 
@@ -4320,8 +4327,10 @@ public class SwingController
         viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, viewControl.getFitMode());
         viewerPreferences.putInt("document.viewtype", viewControl.getViewMode());
         // last rotation.
-        float rotation = documentViewController.getDocumentViewModel().getViewRotation();
-        viewerPreferences.putFloat(PROPERTY_DEFAULT_ROTATION, rotation);
+        if (documentViewController.getDocumentViewModel() != null) {
+            float rotation = documentViewController.getDocumentViewModel().getViewRotation();
+            viewerPreferences.putFloat(PROPERTY_DEFAULT_ROTATION, rotation);
+        }
 
         // save changes and close window
         boolean cancelled = saveChangesDialog();
