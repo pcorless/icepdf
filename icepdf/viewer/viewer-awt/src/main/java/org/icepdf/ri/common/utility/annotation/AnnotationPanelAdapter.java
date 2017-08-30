@@ -20,11 +20,13 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.util.ResourceBundle;
+import java.util.prefs.Preferences;
 
 /**
  * All annotation and action property panels have a common method for
@@ -55,12 +57,17 @@ public abstract class AnnotationPanelAdapter extends JPanel
     protected static final int TRANSPARENCY_MAX = 255;
     protected static final int TRANSPARENCY_INIT = 255;
 
+    protected Preferences preferences;
+
     protected AnnotationPanelAdapter(
             SwingController controller) {
         setDoubleBuffered(true);
         this.controller = controller;
         this.documentViewController = controller.getDocumentViewController();
         this.messageBundle = controller.getMessageBundle();
+
+        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        this.preferences = propertiesManager.getPreferences();
 
         // common selection lists.
         // line thicknesses.

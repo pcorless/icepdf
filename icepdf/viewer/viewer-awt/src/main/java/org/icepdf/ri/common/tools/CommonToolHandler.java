@@ -20,11 +20,13 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 /**
  * Common logic to all annotation handlers.
@@ -41,6 +43,8 @@ public class CommonToolHandler {
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
 
+    protected Preferences preferences;
+
     /**
      * Create a new common tool handler.  The tool handle can operate on a view or at the page level.  If the
      * handler only operates at the view level then pageViewComponent can be set to null;
@@ -55,6 +59,9 @@ public class CommonToolHandler {
         this.pageViewComponent = pageViewComponent;
         this.documentViewController = documentViewController;
         this.documentViewModel = documentViewModel;
+
+        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        preferences = propertiesManager.getPreferences();
     }
 
     protected AffineTransform getPageTransform() {

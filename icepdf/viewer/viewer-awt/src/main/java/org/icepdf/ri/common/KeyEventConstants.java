@@ -89,4 +89,6 @@ public class KeyEventConstants {
     public static final int MODIFIER_SELECT_ALL = MENU_SHORTCUT_KEY_MASK;
     public static final int KEY_CODE_DESELECT_ALL = KeyEvent.VK_A;
     public static final int MODIFIER_DESELECT_ALL = MENU_SHORTCUT_KEY_MASK | InputEvent.SHIFT_MASK;
+    public static final int KEY_CODE_PREFERENCES = KeyEvent.VK_K;
+    public static final int MODIFIER_PREFERENCES = MENU_SHORTCUT_KEY_MASK;
 }

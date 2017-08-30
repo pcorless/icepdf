@@ -29,6 +29,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.core.util.Utils;
+import org.icepdf.ri.common.preferences.PreferencesDialog;
 import org.icepdf.ri.common.properties.FontDialog;
 import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
@@ -122,6 +123,7 @@ public class SwingController
     private JMenuItem exportTextMenuItem;
     private JMenuItem propertiesMenuItem;
     private JMenuItem permissionsMenuItem;
+    private JMenuItem preferencesMenuItem;
     private JMenuItem informationMenuItem;
     private JMenuItem fontInformationMenuItem;
     private JMenuItem printSetupMenuItem;
@@ -480,6 +482,14 @@ public class SwingController
      */
     public void setDselectAllMenuItem(JMenuItem mi) {
         deselectAllMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setPreferencesMenuItem(JMenuItem mi) {
+        preferencesMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1123,6 +1133,7 @@ public class SwingController
         setEnabled(saveAsFileMenuItem, opened);
         setEnabled(exportTextMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(propertiesMenuItem, opened);
+
         setEnabled(permissionsMenuItem, opened);
         setEnabled(informationMenuItem, opened);
         setEnabled(fontInformationMenuItem, opened);
@@ -1136,6 +1147,7 @@ public class SwingController
         setEnabled(redoMenuItem, false);
         setEnabled(copyMenuItem, false);
         setEnabled(deleteMenuItem, false);
+        setEnabled(preferencesMenuItem, opened);
 
         setEnabled(selectAllMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(deselectAllMenuItem, false);
@@ -2533,6 +2545,7 @@ public class SwingController
         rotateRightMenuItem = null;
         showHideToolBarMenuItem = null;
         showHideUtilityPaneMenuItem = null;
+        preferencesMenuItem = null;
 
         firstPageMenuItem = null;
         previousPageMenuItem = null;
@@ -2971,7 +2984,7 @@ public class SwingController
      * Show tabbed pane interface for viewer preferences,  info, security and fonts.
      */
     public void showViewerPreferences() {
-        new PropertiesDialog(viewer, this, messageBundle).setVisible(true);
+        new PreferencesDialog(viewer, this, messageBundle).setVisible(true);
     }
 
     /**
@@ -3941,6 +3954,8 @@ public class SwingController
                     if (source == propertiesMenuItem) {
                         Runnable doSwingWork = this::showDocumentProperties;
                         SwingUtilities.invokeLater(doSwingWork);
+                    } else if (source == preferencesMenuItem) {
+                        SwingUtilities.invokeLater(this::showViewerPreferences);
                     } else if (source == permissionsMenuItem) {
                         SwingUtilities.invokeLater(this::showDocumentPermissionsDialog);
                     } else if (source == informationMenuItem) {

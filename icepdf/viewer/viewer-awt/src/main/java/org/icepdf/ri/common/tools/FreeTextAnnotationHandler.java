@@ -25,6 +25,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -82,7 +83,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
 
         // check the bounds on rectToDraw to try and avoid creating
         // an annotation that is very small.
@@ -102,9 +103,10 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
                         tBbox);
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(System.getProperty("user.name"));
-        annotation.setFontSize(24);
-        annotation.setFontName("Helvetica");
         annotation.setContents(" ");
+
+        // apply store settings
+        checkAndApplyPreferences(annotation);
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
@@ -119,8 +121,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
-            AnnotationCallback annotationCallback =
-                    documentViewController.getAnnotationCallback();
+            AnnotationCallback annotationCallback = documentViewController.getAnnotationCallback();
             annotationCallback.newAnnotation(pageViewComponent, comp);
         }
 
@@ -133,6 +134,35 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
     }
 
+    private void checkAndApplyPreferences(FreeTextAnnotation annotation) {
+
+        // apply free text colour
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, 0);
+            annotation.setFontColor(new Color(rgb));
+        }
+        // apply fill colour
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, 0);
+            annotation.setFillColor(new Color(rgb));
+        }
+        // apply border colour
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, 0);
+            annotation.setColor(new Color(rgb));
+        }
+        // font
+        String fontName = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, "Helvetica");
+        annotation.setFontName(fontName);
+        // apply font size
+        int fontSize = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, 24);
+        annotation.setFontSize(fontSize);
+        // opacity
+        int opacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY, 255);
+        annotation.setOpacity(opacity);
+
+    }
+
     public void mouseEntered(MouseEvent e) {
 
     }
@@ -142,7 +172,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     }
 
     public void mouseDragged(MouseEvent e) {
-        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
     }
 
     public void mouseMoved(MouseEvent e) {

@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -209,6 +210,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     }
 
     public void actionPerformed(ActionEvent e) {
+
         if (e.getSource() == strokeColorButton) {
             Color chosenColor =
                     JColorChooser.showDialog(strokeColorButton,
@@ -219,6 +221,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 // change the colour of the button background
                 setButtonBackgroundColor(strokeColorButton, chosenColor);
                 freeTextAnnotation.setColor(chosenColor);
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR, chosenColor.getRGB());
             }
         } else if (e.getSource() == fillColorButton) {
             Color chosenColor =
@@ -230,6 +233,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 // change the colour of the button background
                 setButtonBackgroundColor(fillColorButton, chosenColor);
                 freeTextAnnotation.setFillColor(chosenColor);
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR, chosenColor.getRGB());
             }
         } else if (e.getSource() == fontColorButton) {
             Color chosenColor =
@@ -241,6 +245,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 // change the colour of the button background
                 setButtonBackgroundColor(fontColorButton, chosenColor);
                 freeTextAnnotation.setFontColor(chosenColor);
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, chosenColor.getRGB());
             }
         }
         // save the action state back to the document structure.
@@ -251,6 +256,8 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
     public void stateChanged(ChangeEvent e) {
         alphaSliderChange(e, freeTextAnnotation);
+        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY,
+                freeTextAnnotation.getOpacityNormalized());
     }
 
     /**

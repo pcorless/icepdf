@@ -27,6 +27,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -58,7 +59,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
             BasicStroke.JOIN_MITER,
             1.0f);
 
-    protected static Color lineColor;
+    protected static Color inkColor;
 
     static {
 
@@ -67,7 +68,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
             String color = Defs.sysProperty(
                     "org.icepdf.core.views.page.annotation.ink.line.color", "#00ff00");
             int colorValue = ColorUtil.convertColor(color);
-            lineColor =
+            inkColor =
                     new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("00ff00", 16));
         } catch (NumberFormatException e) {
@@ -92,6 +93,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     public InkAnnotationHandler(DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(documentViewController, pageViewComponent, documentViewModel);
+        checkPreferences();
     }
 
     public void paintTool(Graphics g) {
@@ -99,7 +101,8 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
             Graphics2D gg = (Graphics2D) g;
             Color oldColor = gg.getColor();
             Stroke oldStroke = gg.getStroke();
-            gg.setColor(lineColor);
+
+            gg.setColor(inkColor);
             gg.setStroke(stroke);
             gg.draw(inkPath);
             gg.setColor(oldColor);
@@ -120,6 +123,12 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         }
         inkPath.moveTo(e.getX(), e.getY());
         pageViewComponent.repaint();
+    }
+
+    protected void checkPreferences() {
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, -1) != -1) {
+            inkColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, -1));
+        }
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -143,7 +152,9 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
                         Annotation.SUBTYPE_INK,
                         tBbox);
 
-        annotation.setColor(lineColor);
+        checkPreferences();
+
+        annotation.setColor(inkColor);
         annotation.setBorderStyle(borderStyle);
         annotation.setInkPath(tInkPath);
 

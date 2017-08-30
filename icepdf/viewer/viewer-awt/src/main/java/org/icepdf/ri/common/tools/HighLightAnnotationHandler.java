@@ -41,7 +41,6 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.prefs.Preferences;
 
 /**
  * HighLightAnnotationHandler tool extends TextSelectionPageHandler which
@@ -192,10 +191,6 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
     }
 
     private void checkTextMarkupColor(TextMarkupAnnotation annotation) {
-
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
-        Preferences preferences = propertiesManager.getPreferences();
-
         Name subtype = annotation.getSubType();
         Color color = null;
         if (TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(subtype) &&

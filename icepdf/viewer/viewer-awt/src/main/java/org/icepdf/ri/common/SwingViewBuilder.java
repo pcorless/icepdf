@@ -698,6 +698,8 @@ public class SwingViewBuilder {
         viewMenu.addSeparator();
         addToMenu(viewMenu, buildSelectAllMenuItem());
         addToMenu(viewMenu, buildDeselectAllMenuItem());
+        viewMenu.addSeparator();
+        addToMenu(viewMenu, buildPreferencesMenuItem());
         return viewMenu;
     }
 
@@ -758,6 +760,16 @@ public class SwingViewBuilder {
                         KeyEventConstants.MODIFIER_DESELECT_ALL));
         if (viewerController != null && mi != null)
             viewerController.setDselectAllMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildPreferencesMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.edit.preferences.label"),
+                null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_PREFERENCES,
+                        KeyEventConstants.MODIFIER_PREFERENCES));
+        if (viewerController != null && mi != null)
+            viewerController.setPreferencesMenuItem(mi);
         return mi;
     }
 

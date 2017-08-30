@@ -129,14 +129,46 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO = "application.annotation.show.markup.replyTo";
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS = "application.annotation.show.markup.setStatus";
 
-    // highlight annotation default colour and last used colours and labels.
-    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_COLOR = "application.viewerpreference.annotation.highlight.color";
-    public static final String PROPERTY_ANNOTATION_STRIKE_OUT_COLOR = "application.viewerpreference.annotation.strikeout.color";
-    public static final String PROPERTY_ANNOTATION_UNDERLINE_COLOR = "application.viewerpreference.annotation.underline.color";
-    public static final String PROPERTY_ANNOTATION_SQUIGGLY_COLOR = "application.viewerpreference.annotation.squiggly.color";
+    // private/public annotation property, last used stored, default is true or public.
+    public static final String PROPERTY_ANNOTATION_VISIBILITY_PERMISSION = "application.viewer.preference.annotation.permission.public";
+
+    // highlight annotation default colour as defined by the last used colour for each type.
+    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_COLOR = "application.viewer.preference.annotation.highlight.color";
+    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY = "application.viewer.preference.annotation.highlight.opacity";
+    public static final String PROPERTY_ANNOTATION_STRIKE_OUT_COLOR = "application.viewer.preference.annotation.strikeout.color";
+    public static final String PROPERTY_ANNOTATION_STRIKE_OUT_OPACITY = "application.viewer.preference.annotation.strikeout.opacity";
+    public static final String PROPERTY_ANNOTATION_UNDERLINE_COLOR = "application.viewer.preference.annotation.underline.color";
+    public static final String PROPERTY_ANNOTATION_UNDERLINE_OPACITY = "application.viewer.preference.annotation.underline.opacity";
+    public static final String PROPERTY_ANNOTATION_SQUIGGLY_COLOR = "application.viewer.preference.annotation.squiggly.color";
+    public static final String PROPERTY_ANNOTATION_SQUIGGLY_OPACITY = "application.viewer.preference.annotation.squiggly.opacity";
+    public static final String PROPERTY_ANNOTATION_TEXT_COLOR = "application.viewer.preference.annotation.text.color";
+    public static final String PROPERTY_ANNOTATION_TEXT_OPACITY = "application.viewer.preference.annotation.text.opacity";
+    public static final String PROPERTY_ANNOTATION_TEXT_ICON = "application.viewer.preference.annotation.text.icon";
+    public static final String PROPERTY_ANNOTATION_INK_COLOR = "application.viewer.preference.annotation.ink.color";
+    public static final String PROPERTY_ANNOTATION_INK_OPACITY = "application.viewer.preference.annotation.ink.opacity";
+    // annotation types with stroke and fill colours
+    public static final String PROPERTY_ANNOTATION_SQUARE_COLOR = "application.viewer.preference.annotation.square.color";
+    public static final String PROPERTY_ANNOTATION_SQUARE_FILL_COLOR = "application.viewer.preference.annotation.square.fill.color";
+    public static final String PROPERTY_ANNOTATION_CIRCLE_COLOR = "application.viewer.preference.annotation.circle.color";
+    public static final String PROPERTY_ANNOTATION_CIRCLE_FILL_COLOR = "application.viewer.preference.annotation.circle.fill.color";
+    public static final String PROPERTY_ANNOTATION_LINE_COLOR = "application.viewer.preference.annotation.line.color";
+    public static final String PROPERTY_ANNOTATION_LINE_FILL_COLOR = "application.viewer.preference.annotation.line.fill.color";
+    public static final String PROPERTY_ANNOTATION_ARROW_COLOR = "application.viewer.preference.annotation.arrow.color";
+    public static final String PROPERTY_ANNOTATION_ARROW_FILL_COLOR = "application.viewer.preference.annotation.arrow.fill.color";
+    // free text, quite a lot of properties
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_COLOR = "application.viewer.preference.annotation.freetext.color";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_SIZE = "application.viewer.preference.annotation.freetext.size";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_FONT = "application.viewer.preference.annotation.freetext.font";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_OPACITY = "application.viewer.preference.annotation.freetext.opacity";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_FILL_COLOR = "application.viewer.preference.annotation.freetext.fill.color";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_BORDER_COLOR = "application.viewer.preference.annotation.freetext.border.color";
 
     // we use the same recent colour list for all annotation types
-    public static final String PROPERTY_ANNOTATION_RECENT_COLORS = "application.viewerpreference.annotation.color.recent";
+    public static final String PROPERTY_ANNOTATION_RECENT_COLORS = "application.viewer.preference.annotation.color.recent";
+    // resent colour and labels, disabled by default.
+    public static final String PROPERTY_ANNOTATION_RECENT_LABELS_ENABLED = "application.viewer.preference.annotation.recent.labels.enabled";
+    public static final String PROPERTY_ANNOTATION_RECENT_LABEL_NAMES = "application.viewer.preference.annotation.recent.label.names";
+    public static final String PROPERTY_ANNOTATION_RECENT_LABEL_COLORS = "application.viewer.preference.annotation.recent.label.colors";
 
     private static PropertiesManager propertiesManager;
 

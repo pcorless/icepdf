@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -131,6 +132,9 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
                 // change the colour of the button background
                 colorBorderButton.setBackground(chosenColor);
                 annotation.setColor(chosenColor);
+
+                // store the chosen colour
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, chosenColor.getRGB());
 
                 // save the action state back to the document structure.
                 updateCurrentAnnotation();
