@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -340,6 +341,21 @@ public class PDate {
     }
 
     /**
+     * Gets a LocalDateTime of the PDate object that can be used for localization and other JDK tasks.
+     *
+     * @return a new instance of a LocalDateTime representing the PDate values
+     */
+    public LocalDateTime asLocalDateTime() {
+        int y = Integer.parseInt(year);
+        int m = Integer.parseInt(month);
+        int d = Integer.parseInt(day);
+        int h = Integer.parseInt(hour);
+        int min = Integer.parseInt(minute);
+        int sec = Integer.parseInt(second);
+        return LocalDateTime.of(y, m, d, h, min, sec);
+    }
+
+    /**
      * Utility mehtod for parsing Adobe standard date format,
      * (D:YYYYMMDDHHmmSSOHH'mm').
      *
@@ -471,6 +487,7 @@ public class PDate {
     public static String formatDateTime(Date time) {
         return formatDateTime(time, TimeZone.getDefault());
     }
+
 
     public static PDate createDate(Date date) {
         return new PDate(null, formatDateTime(date));

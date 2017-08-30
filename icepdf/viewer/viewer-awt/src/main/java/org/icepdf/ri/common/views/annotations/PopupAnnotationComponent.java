@@ -38,8 +38,12 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 
@@ -161,8 +165,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         commentTree.setShowsRootHandles(true);
         commentTree.setScrollsOnExpand(true);
         commentTree.setRootVisible(false);
-        commentTree.getSelectionModel().setSelectionMode(
-                TreeSelectionModel.SINGLE_TREE_SELECTION);
+        commentTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         commentTree.addTreeSelectionListener(this);
         // expand the tree
         refreshTree(commentTree);
@@ -204,8 +207,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         creationLabel = new JLabel();
         if (selectedMarkupAnnotation != null &&
                 selectedMarkupAnnotation.getCreationDate() != null) {
-            creationLabel.setText(
-                    selectedMarkupAnnotation.getCreationDate().toString());
+            LocalDateTime creationDate = selectedMarkupAnnotation.getCreationDate().asLocalDateTime();
+            DateTimeFormatter formatter = DateTimeFormatter
+                    .ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.getDefault());
+            creationLabel.setText(creationDate.format(formatter));
         }
 
         // main layout panel
