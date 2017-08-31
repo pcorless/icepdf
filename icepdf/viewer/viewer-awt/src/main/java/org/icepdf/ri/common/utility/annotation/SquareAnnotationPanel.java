@@ -17,6 +17,7 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
+import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
@@ -155,7 +156,7 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == colorBorderButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(colorBorderButton,
+                    RgbColorChooser.showDialog(colorBorderButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.square.colorBorderChooserTitle"),
                             colorBorderButton.getBackground());
@@ -168,7 +169,7 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
             }
         } else if (e.getSource() == colorFillButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(colorFillButton,
+                    RgbColorChooser.showDialog(colorFillButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.square.colorInteriorChooserTitle"),
                             colorFillButton.getBackground());

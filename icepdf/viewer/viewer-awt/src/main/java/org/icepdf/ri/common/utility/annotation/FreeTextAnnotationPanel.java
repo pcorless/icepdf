@@ -17,6 +17,7 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
@@ -215,7 +216,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
         if (e.getSource() == strokeColorButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(strokeColorButton,
+                    RgbColorChooser.showDialog(strokeColorButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.freeText.border.color.ChooserTitle"),
                             strokeColorButton.getBackground());
@@ -227,7 +228,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
             }
         } else if (e.getSource() == fillColorButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(fillColorButton,
+                    RgbColorChooser.showDialog(fillColorButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.freeText.fill.color.ChooserTitle"),
                             fillColorButton.getBackground());
@@ -239,7 +240,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
             }
         } else if (e.getSource() == fontColorButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(fillColorButton,
+                    RgbColorChooser.showDialog(fillColorButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.freeText.font.color.ChooserTitle"),
                             fontColorButton.getBackground());

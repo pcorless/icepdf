@@ -17,6 +17,7 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
+import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
@@ -144,7 +145,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == colorButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(colorButton,
+                    RgbColorChooser.showDialog(colorButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.line.colorChooserTitle"),
                             colorButton.getBackground());
@@ -162,7 +163,7 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             }
         } else if (e.getSource() == internalColorButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(internalColorButton,
+                    RgbColorChooser.showDialog(internalColorButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.line.colorInternalChooserTitle"),
                             internalColorButton.getBackground());

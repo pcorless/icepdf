@@ -17,6 +17,7 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
+import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
@@ -122,7 +123,7 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == colorButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(colorButton,
+                    RgbColorChooser.showDialog(colorButton,
                             messageBundle.getString("viewer.utilityPane.annotation.textMarkup.colorChooserTitle"),
                             colorButton.getBackground());
             if (chosenColor != null) {

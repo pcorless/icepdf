@@ -17,6 +17,7 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
+import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
@@ -124,7 +125,7 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == colorBorderButton) {
             Color chosenColor =
-                    JColorChooser.showDialog(colorBorderButton,
+                    RgbColorChooser.showDialog(colorBorderButton,
                             messageBundle.getString(
                                     "viewer.utilityPane.annotation.ink.colorBorderChooserTitle"),
                             colorBorderButton.getBackground());
