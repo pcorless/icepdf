@@ -48,6 +48,11 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
         this.parentComponent = parentComponent;
     }
 
+    @Override
+    protected void checkAndApplyPreferences() {
+
+    }
+
     public void mouseDragged(MouseEvent e) {
         // handle text selection drags.
         if (documentViewController != null) {

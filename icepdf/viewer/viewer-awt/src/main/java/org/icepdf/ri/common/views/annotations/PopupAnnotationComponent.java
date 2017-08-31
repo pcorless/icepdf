@@ -148,6 +148,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }
 
+    @Override
+    public org.icepdf.core.pobjects.Document getDocument() {
+        return super.getDocument();
+    }
+
     private void buildGUI() {
 
         List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
@@ -183,11 +188,19 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         // Set the
         selectedMarkupAnnotation = parentAnnotation;
 
+        // try and make the popup the same colour as the annotations fill color
+        Color popupBackgroundColor = backgroundColor;
+        // todo needs some work to apply softer colors so text can always be seen.
+        if (parentAnnotation.getColor() != null) {
+            Color color = parentAnnotation.getColor().brighter();
+            popupBackgroundColor = color;
+//            popupBackgroundColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 80);
+        }
+
         // minimize button
         minimizeButton = new JButton("  _  ");
         minimizeButton.addActionListener(this);
-        minimizeButton.setBackground(backgroundColor);
-        minimizeButton.setOpaque(true);
+        minimizeButton.setBackground(popupBackgroundColor);
         minimizeButton.setContentAreaFilled(false);
         minimizeButton.setBorder(BorderFactory.createLineBorder(borderColor));
         minimizeButton.setBorderPainted(true);
@@ -217,10 +230,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         // main layout panel
         GridBagLayout layout = new GridBagLayout();
         commentPanel = new JPanel(layout);
-        commentPanel.setBackground(backgroundColor);
+        commentPanel.setBackground(popupBackgroundColor);
         commentPanel.setBorder(BorderFactory.createLineBorder(borderColor));
         this.setLayout(new BorderLayout());
         this.add(commentPanel);
+//        this.setBackground(Color.WHITE);
 
         /**
          * Build search GUI

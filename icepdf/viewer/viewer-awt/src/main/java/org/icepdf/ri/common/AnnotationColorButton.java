@@ -15,10 +15,7 @@
  */
 package org.icepdf.ri.common;
 
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.AncestorEvent;
@@ -28,7 +25,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
 /**
  * Custom drop down button wrapper based on the "Swing Hacks" tips & tools for Building Killer GUI's,
@@ -41,9 +37,8 @@ public class AnnotationColorButton extends AbstractButton
 
     private static final Logger logger = Logger.getLogger(AnnotationColorButton.class.toString());
 
-    protected Name annotationSubType;
     protected AnnotationColorPropertyPanel annotationColorPropertyPanel;
-    protected ColorToggleButton toggleComponent;
+    protected ColorToggleButton colorToggleButton;
     protected JButton dropDownArrowButton;
     protected JWindow popup;
 
@@ -51,55 +46,28 @@ public class AnnotationColorButton extends AbstractButton
 
     public AnnotationColorButton(SwingController swingController,
                                  ResourceBundle messageBundle,
-                                 Name annotationSubType,
                                  String title, String toolTip, String imageName,
                                  final String imageSize, java.awt.Font font) {
         super();
         this.swingController = swingController;
-        this.annotationSubType = annotationSubType;
 
-        toggleComponent = new ColorToggleButton();
-        toggleComponent.setColorBound(new Rectangle(5, 9, 12, 13));
-        toggleComponent.setFont(font);
-        toggleComponent.setToolTipText(toolTip);
-        toggleComponent.setPreferredSize(new Dimension(32, 32));
-        toggleComponent.setRolloverEnabled(true);
+        colorToggleButton = new ColorToggleButton();
+        colorToggleButton.setFont(font);
+        colorToggleButton.setToolTipText(toolTip);
+        colorToggleButton.setPreferredSize(new Dimension(32, 32));
+        colorToggleButton.setRolloverEnabled(true);
 
         try {
-            toggleComponent.setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
-            toggleComponent.setPressedIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
-            toggleComponent.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
-            toggleComponent.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
+            colorToggleButton.setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
+            colorToggleButton.setPressedIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
+            colorToggleButton.setRolloverIcon(new ImageIcon(Images.get(imageName + "_r" + imageSize + ".png")));
+            colorToggleButton.setDisabledIcon(new ImageIcon(Images.get(imageName + "_i" + imageSize + ".png")));
         } catch (NullPointerException e) {
             logger.warning("Failed to load toolbar toggle drop down button images: " + imageName + "_i" + imageSize + ".png");
         }
-        toggleComponent.setBorder(BorderFactory.createEmptyBorder());
-        toggleComponent.setContentAreaFilled(false);
-        toggleComponent.setFocusPainted(true);
-        // apply the settings colour
-        Color color = null;
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
-        if (TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(annotationSubType) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, 0);
-            color = new Color(rgb);
-        } else if (TextMarkupAnnotation.SUBTYPE_STRIKE_OUT.equals(annotationSubType) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR, 0);
-            color = new Color(rgb);
-        } else if (TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(annotationSubType) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, 0);
-            color = new Color(rgb);
-        } else if (TextMarkupAnnotation.SUBTYPE_SQUIGGLY.equals(annotationSubType) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR, 0);
-            color = new Color(rgb);
-        }
-        // apply the settings or system property base colour for the given subtype.
-        if (color != null) {
-            toggleComponent.setColor(color);
-        }
+        colorToggleButton.setBorder(BorderFactory.createEmptyBorder());
+        colorToggleButton.setContentAreaFilled(false);
+        colorToggleButton.setFocusPainted(true);
 
         dropDownArrowButton = new JButton(new MetalComboBoxIcon());
         dropDownArrowButton.setBorder(BorderFactory.createEmptyBorder());
@@ -109,7 +77,7 @@ public class AnnotationColorButton extends AbstractButton
 
         // assign the drop down window and setup a properties change event.
         this.annotationColorPropertyPanel =
-                new AnnotationColorPropertyPanel(swingController, messageBundle, annotationSubType);
+                new AnnotationColorPropertyPanel(swingController, messageBundle);
         this.annotationColorPropertyPanel.setCallback(this);
 
         Insets insets = dropDownArrowButton.getMargin();
@@ -133,8 +101,8 @@ public class AnnotationColorButton extends AbstractButton
         c.gridy = 0;
         c.fill = GridBagConstraints.BOTH;
         c.insets = new Insets(0, 0, 0, 0);
-        gbl.setConstraints(toggleComponent, c);
-        add(toggleComponent);
+        gbl.setConstraints(colorToggleButton, c);
+        add(colorToggleButton);
 
         c.weightx = 0;
         c.gridx++;
@@ -143,25 +111,14 @@ public class AnnotationColorButton extends AbstractButton
     }
 
     public void setColor(Color newColor) {
-        toggleComponent.setColor(newColor);
-        toggleComponent.repaint();
-        Preferences preferences = PropertiesManager.getInstance().getPreferences();
-        if (annotationSubType.equals(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT)) {
-            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, newColor.getRGB());
-        } else if (annotationSubType.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
-            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR, newColor.getRGB());
-        } else if (annotationSubType.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
-            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, newColor.getRGB());
-        } else if (annotationSubType.equals(TextMarkupAnnotation.SUBTYPE_SQUIGGLY)) {
-            preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR, newColor.getRGB());
-        }
-        // TODO add other annotation button types.
+        colorToggleButton.setColor(newColor);
+        colorToggleButton.repaint();
         popup.setVisible(false);
     }
 
     public void actionPerformed(ActionEvent evt) {
         // set the button as selected
-        toggleComponent.setSelected(true);
+        colorToggleButton.setSelected(true);
 
         // build popup window
         popup = new JWindow(getFrame(null));
@@ -174,8 +131,8 @@ public class AnnotationColorButton extends AbstractButton
         popup.pack();
 
         // show the popup window
-        Point pt = toggleComponent.getLocationOnScreen();
-        pt.translate(toggleComponent.getWidth() - popup.getWidth(), toggleComponent.getHeight());
+        Point pt = colorToggleButton.getLocationOnScreen();
+        pt.translate(colorToggleButton.getWidth() - popup.getWidth(), colorToggleButton.getHeight());
         popup.setLocation(pt);
         popup.toFront();
         popup.setVisible(true);
@@ -214,32 +171,32 @@ public class AnnotationColorButton extends AbstractButton
 
     public void setEnabled(boolean enabled) {
         if (annotationColorPropertyPanel != null) annotationColorPropertyPanel.setEnabled(enabled);
-        if (toggleComponent != null) toggleComponent.setEnabled(enabled);
+        if (colorToggleButton != null) colorToggleButton.setEnabled(enabled);
         if (dropDownArrowButton != null) dropDownArrowButton.setEnabled(enabled);
     }
 
     @Override
     public boolean isSelected() {
-        return toggleComponent.isSelected();
+        return colorToggleButton.isSelected();
     }
 
     @Override
     public void setSelected(boolean b) {
-        toggleComponent.setSelected(b);
+        colorToggleButton.setSelected(b);
     }
 
     @Override
     public ButtonModel getModel() {
-        return toggleComponent.getModel();
+        return colorToggleButton.getModel();
     }
 
     @Override
     public void addItemListener(ItemListener l) {
-        toggleComponent.addItemListener(l);
+        colorToggleButton.addItemListener(l);
     }
 
     @Override
     public boolean equals(Object obj) {
-        return toggleComponent.equals(obj);
+        return colorToggleButton.equals(obj);
     }
 }

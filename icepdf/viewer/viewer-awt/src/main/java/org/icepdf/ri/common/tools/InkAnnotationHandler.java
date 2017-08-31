@@ -60,6 +60,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
             1.0f);
 
     protected static Color inkColor;
+    protected static int opacity;
 
     static {
 
@@ -76,6 +77,10 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
                 logger.warning("Error reading Ink Annotation line colour");
             }
         }
+        // sets annotation opacity
+        opacity = Defs.intProperty(
+                "org.icepdf.core.views.page.annotation.ink.line.opacity", 255);
+
     }
 
     // start and end point
@@ -93,7 +98,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
     public InkAnnotationHandler(DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(documentViewController, pageViewComponent, documentViewModel);
-        checkPreferences();
+        checkAndApplyPreferences();
     }
 
     public void paintTool(Graphics g) {
@@ -104,6 +109,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
 
             gg.setColor(inkColor);
             gg.setStroke(stroke);
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity / 255.0f));
             gg.draw(inkPath);
             gg.setColor(oldColor);
             gg.setStroke(oldStroke);
@@ -125,10 +131,9 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         pageViewComponent.repaint();
     }
 
-    protected void checkPreferences() {
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, -1) != -1) {
-            inkColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, -1));
-        }
+    protected void checkAndApplyPreferences() {
+        inkColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, inkColor.getRGB()));
+        opacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY, opacity);
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -152,11 +157,12 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
                         Annotation.SUBTYPE_INK,
                         tBbox);
 
-        checkPreferences();
+        checkAndApplyPreferences();
 
         annotation.setColor(inkColor);
         annotation.setBorderStyle(borderStyle);
         annotation.setInkPath(tInkPath);
+        annotation.setOpacity(opacity);
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);

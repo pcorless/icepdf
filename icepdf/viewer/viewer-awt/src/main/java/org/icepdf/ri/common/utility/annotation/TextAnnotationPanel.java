@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -113,6 +114,8 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             updateCurrentAnnotation();
             currentAnnotationComponent.resetAppearanceShapes();
             currentAnnotationComponent.repaint();
+
+            preferences.put(PropertiesManager.PROPERTY_ANNOTATION_TEXT_ICON, annotation.getIconName().toString());
         }
     }
 
@@ -131,12 +134,14 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 updateCurrentAnnotation();
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
+
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, chosenColor.getRGB());
             }
         }
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, annotation);
+        alphaSliderChange(e, annotation, PropertiesManager.PROPERTY_ANNOTATION_TEXT_OPACITY);
     }
 
     /**

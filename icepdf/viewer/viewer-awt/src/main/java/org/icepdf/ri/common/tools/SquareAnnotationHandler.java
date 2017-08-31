@@ -28,6 +28,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -54,47 +55,52 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
 
     protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
 
-    protected static BasicStroke stroke;
-    protected static float strokeWidth;
-    protected static Color lineColor;
-    protected static Color internalColor;
-    protected static boolean useInternalColor;
+    private static BasicStroke stroke;
+    private static float strokeWidth;
+    private static Color lineColor;
+    private static Color internalColor;
+    private static boolean useInternalColor;
+    private static int defaultOpacity;
 
     static {
 
         // sets annotation squareCircle stroke colour
         try {
             String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.squareCircle.stroke.color", "#ff0000");
+                    "org.icepdf.core.views.page.annotation.square.stroke.color", "#ff0000");
             int colorValue = ColorUtil.convertColor(color);
             lineColor =
                     new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("ff0000", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading squareCircle Annotation stroke colour");
+                logger.warning("Error reading squareAnnotation stroke colour");
             }
         }
 
         // sets annotation link squareCircle colour
         useInternalColor = Defs.booleanProperty(
-                "org.icepdf.core.views.page.annotation.squareCircle.fill.enabled", false);
+                "org.icepdf.core.views.page.annotation.square.fill.enabled", false);
 
         // sets annotation link squareCircle colour
         try {
             String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.squareCircle.fill.color", "#ffffff");
+                    "org.icepdf.core.views.page.annotation.square.fill.color", "#ffffff");
             int colorValue = ColorUtil.convertColor(color);
             internalColor =
                     new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("ffffff", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Error reading squareCircle Annotation fill colour");
+                logger.warning("Error reading square Annotation fill colour");
             }
         }
 
-        strokeWidth = (float) Defs.doubleProperty("org.icepdf.core.views.page.annotation.squareCircle.stroke.width",
+        // sets annotation opacity
+        defaultOpacity = Defs.intProperty(
+                "org.icepdf.core.views.page.annotation.square.fill.opacity", 255);
+
+        strokeWidth = (float) Defs.doubleProperty("org.icepdf.core.views.page.annotation.square.stroke.width",
                 DEFAULT_STROKE_WIDTH);
 
         // need to make the stroke cap, thickness configurable. Or potentially
@@ -123,6 +129,9 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                                    DocumentViewModel documentViewModel) {
         super(documentViewController, pageViewComponent, documentViewModel);
         borderStyle.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+
+        // make sure we are drawing the facade with the correct look and feel.
+        checkAndApplyPreferences();
     }
 
     public void paintTool(Graphics g) {
@@ -131,6 +140,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
             Color oldColor = gg.getColor();
             Stroke oldStroke = gg.getStroke();
             gg.setStroke(stroke);
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, defaultOpacity / 255.0f));
             if (useInternalColor) {
                 gg.setColor(internalColor);
                 gg.fill(rectangle);
@@ -177,7 +187,11 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                         documentViewModel.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_SQUARE,
                         tBbox);
+
+        checkAndApplyPreferences();
+
         annotation.setColor(lineColor);
+        annotation.setOpacity(defaultOpacity);
         if (annotation.isFillColor() || useInternalColor) {
             annotation.setFillColor(internalColor);
             if (!annotation.isFillColor()) {
@@ -219,6 +233,16 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         rectangle = null;
         // clear the rectangle
         clearRectangle(pageViewComponent);
+    }
+
+    @Override
+    protected void checkAndApplyPreferences() {
+        defaultOpacity = preferences.getInt(
+                PropertiesManager.PROPERTY_ANNOTATION_SQUARE_OPACITY, defaultOpacity);
+        lineColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR, lineColor.getRGB()));
+        internalColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_ANNOTATION_SQUARE_FILL_COLOR, internalColor.getRGB()));
     }
 
     public void mouseEntered(MouseEvent e) {

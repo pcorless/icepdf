@@ -108,6 +108,10 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
 
     }
 
+    protected void checkAndApplyPreferences() {
+
+    }
+
     public void mouseEntered(MouseEvent e) {
 
     }

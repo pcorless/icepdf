@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -128,16 +129,41 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
                 colorButton.setBackground(chosenColor);
                 annotation.setTextMarkupColor(chosenColor);
 
+                // save the last used colour
+                Name subtype = annotation.getSubType();
+                String colourProperty = PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR;
+                if (subtype.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+                    colourProperty = PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR;
+                } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
+                    colourProperty = PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR;
+                } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_SQUIGGLY)) {
+                    colourProperty = PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR;
+                }
+                // update the toolbar to match the last used colour?
+                preferences.putInt(colourProperty, chosenColor.getRGB());
+
                 // save the action state back to the document structure.
                 updateCurrentAnnotation();
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
+
+
             }
         }
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, annotation);
+        Name subtype = annotation.getSubType();
+        String opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY;
+        if (subtype.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+            opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_OPACITY;
+        } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
+            opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_OPACITY;
+        } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_SQUIGGLY)) {
+            opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_OPACITY;
+        }
+
+        alphaSliderChange(e, annotation, opacityProperty);
     }
 
 

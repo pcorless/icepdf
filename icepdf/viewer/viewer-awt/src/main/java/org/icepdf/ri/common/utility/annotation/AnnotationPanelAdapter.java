@@ -134,12 +134,13 @@ public abstract class AnnotationPanelAdapter extends JPanel
      * @param e change event.
      * @param annotation annotation to apply the opacity value to.
      */
-    protected void alphaSliderChange(ChangeEvent e, MarkupAnnotation annotation){
+    protected void alphaSliderChange(ChangeEvent e, MarkupAnnotation annotation, String preferenceName) {
         JSlider source = (JSlider)e.getSource();
         int alpha = source.getValue();
         if (!source.getValueIsAdjusting() && alpha != annotation.getOpacityNormalized()) {
             // set the annotation value
             annotation.setOpacity(alpha);
+            preferences.putInt(preferenceName, alpha);
             // send update to callback
             updateCurrentAnnotation();
             // reset the appearance stream.

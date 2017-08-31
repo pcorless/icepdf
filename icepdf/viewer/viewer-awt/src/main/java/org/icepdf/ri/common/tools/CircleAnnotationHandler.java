@@ -18,16 +18,21 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
+import org.icepdf.core.util.ColorUtil;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * CircleAnnotationHandler tool is responsible for painting representation of
@@ -41,10 +46,77 @@ import java.awt.geom.Ellipse2D;
  * @since 5.0
  */
 public class CircleAnnotationHandler extends SquareAnnotationHandler {
+
+    private CircleAnnotation annotation;
+
+    private static final Logger logger =
+            Logger.getLogger(CircleAnnotationHandler.class.toString());
+
+    protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
+
+    private static BasicStroke stroke;
+    private static float strokeWidth;
+    private static Color lineColor;
+    private static Color internalColor;
+    private static boolean useInternalColor;
+    private static int defaultOpacity;
+
+    static {
+
+        // sets annotation squareCircle stroke colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.circle.stroke.color", "#ff0000");
+            int colorValue = ColorUtil.convertColor(color);
+            lineColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ff0000", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading circle Annotation stroke colour");
+            }
+        }
+
+        // sets annotation link squareCircle colour
+        useInternalColor = Defs.booleanProperty(
+                "org.icepdf.core.views.page.annotation.circle.fill.enabled", false);
+
+        // sets annotation link squareCircle colour
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.annotation.circle.fill.color", "#ffffff");
+            int colorValue = ColorUtil.convertColor(color);
+            internalColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("ffffff", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading circle Annotation fill colour");
+            }
+        }
+
+        // sets annotation opacity
+        defaultOpacity = Defs.intProperty(
+                "org.icepdf.core.views.page.annotation.squareCircle.fill.opacity", 255);
+
+        strokeWidth = (float) Defs.doubleProperty("org.icepdf.core.views.page.annotation.circle.stroke.width",
+                DEFAULT_STROKE_WIDTH);
+
+        // need to make the stroke cap, thickness configurable. Or potentially
+        // static from the AnnotationHandle so it would look like the last
+        // settings where remembered.
+        stroke = new BasicStroke(strokeWidth,
+                BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_MITER,
+                1.0f);
+    }
+
     public CircleAnnotationHandler(DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent,
                                    DocumentViewModel documentViewModel) {
         super(documentViewController, pageViewComponent, documentViewModel);
+
+        checkAndApplyPreferences();
     }
 
     /**
@@ -66,8 +138,11 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
             Color oldColor = gg.getColor();
             Stroke oldStroke = gg.getStroke();
             gg.setStroke(stroke);
-//            gg.setColor(internalColor);
-//            gg.fill(circle);
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, defaultOpacity / 255.0f));
+            if (useInternalColor) {
+                gg.setColor(internalColor);
+                gg.fill(circle);
+            }
             gg.setColor(lineColor);
             gg.draw(circle);
             g.setColor(oldColor);
@@ -98,15 +173,23 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
 
         // create annotations types that that are rectangle based;
         // which is actually just link annotations
-        CircleAnnotation annotation = (CircleAnnotation)
+        annotation = (CircleAnnotation)
                 AnnotationFactory.buildAnnotation(
                         documentViewModel.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_CIRCLE,
                         tBbox);
+
+        checkAndApplyPreferences();
+
         annotation.setColor(lineColor);
-        if (annotation.isFillColor()) {
+        annotation.setOpacity(defaultOpacity);
+        if (annotation.isFillColor() || useInternalColor) {
             annotation.setFillColor(internalColor);
+            if (!annotation.isFillColor()) {
+                annotation.setFillColor(true);
+            }
         }
+
         annotation.setRectangle(rectangle);
         annotation.setBorderStyle(borderStyle);
 
@@ -141,5 +224,15 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         rectangle = null;
         // clear the rectangle
         clearRectangle(pageViewComponent);
+    }
+
+    @Override
+    protected void checkAndApplyPreferences() {
+        defaultOpacity = preferences.getInt(
+                PropertiesManager.PROPERTY_ANNOTATION_CIRCLE_OPACITY, defaultOpacity);
+        lineColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_ANNOTATION_CIRCLE_COLOR, lineColor.getRGB()));
+        internalColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_ANNOTATION_CIRCLE_FILL_COLOR, internalColor.getRGB()));
     }
 }

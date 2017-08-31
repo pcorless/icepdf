@@ -46,6 +46,11 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         selectionBoxColour = Color.DARK_GRAY;
     }
 
+    @Override
+    protected void checkAndApplyPreferences() {
+
+    }
+
     public void mouseDragged(MouseEvent e) {
         // handle text selection drags.
         if (documentViewController != null) {

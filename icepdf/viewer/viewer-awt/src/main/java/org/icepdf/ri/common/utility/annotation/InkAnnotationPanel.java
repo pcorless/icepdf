@@ -145,7 +145,7 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, annotation);
+        alphaSliderChange(e, annotation, PropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY);
     }
 
     /**

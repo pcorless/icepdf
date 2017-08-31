@@ -95,6 +95,11 @@ public class TextSelection extends SelectionBoxHandler {
         super(documentViewController, pageViewComponent, documentViewModel);
     }
 
+    @Override
+    protected void checkAndApplyPreferences() {
+
+    }
+
     /**
      * Handles double and triple left mouse clicks to select a word or line of text respectively.
      *

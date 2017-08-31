@@ -21,6 +21,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
+import java.util.logging.Logger;
 
 /**
  * LineArrowAnnotationHandler tool is responsible for painting representation of
@@ -35,6 +36,9 @@ import java.awt.*;
  * @since 5.0
  */
 public class LineArrowAnnotationHandler extends LineAnnotationHandler {
+
+    private static final Logger logger =
+            Logger.getLogger(LineAnnotationHandler.class.toString());
 
 
     public LineArrowAnnotationHandler(DocumentViewController documentViewController,
@@ -51,9 +55,9 @@ public class LineArrowAnnotationHandler extends LineAnnotationHandler {
             Graphics2D gg = (Graphics2D) g;
             Color oldColor = gg.getColor();
             Stroke oldStroke = gg.getStroke();
-            g.setColor(lineColor);
+            gg.setColor(lineColor);
             gg.setStroke(stroke);
-
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity / 255.0f));
             // draw the line
             gg.drawLine((int) startOfLine.getX(), (int) startOfLine.getY(),
                     (int) endOfLine.getX(), (int) endOfLine.getY());
@@ -71,6 +75,5 @@ public class LineArrowAnnotationHandler extends LineAnnotationHandler {
             gg.setStroke(oldStroke);
         }
     }
-
 
 }

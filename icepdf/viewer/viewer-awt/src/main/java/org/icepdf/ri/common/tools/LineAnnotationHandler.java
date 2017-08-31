@@ -30,6 +30,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -68,6 +69,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
     protected static Color lineColor;
     protected static Color internalColor;
+    protected static int opacity;
 
     static {
 
@@ -98,6 +100,9 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
                 logger.warning("Error reading line Annotation fill colour");
             }
         }
+        // sets annotation opacity
+        opacity = Defs.intProperty(
+                "org.icepdf.core.views.page.annotation.line.fill.opacity", 255);
     }
 
     protected static Name startLineEnding = LineAnnotation.LINE_END_NONE;
@@ -122,6 +127,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         super(documentViewController, pageViewComponent, documentViewModel);
         startLineEnding = LineAnnotation.LINE_END_NONE;
         endLineEnding = LineAnnotation.LINE_END_NONE;
+
+        checkAndApplyPreferences();
     }
 
     public void paintTool(Graphics g) {
@@ -131,6 +138,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
             Stroke oldStroke = gg.getStroke();
             g.setColor(lineColor);
             gg.setStroke(stroke);
+            gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity / 255.0f));
             g.drawLine((int) startOfLine.getX(), (int) startOfLine.getY(),
                     (int) endOfLine.getX(), (int) endOfLine.getY());
             g.setColor(oldColor);
@@ -175,8 +183,13 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setStartOfLine(points[0]);
         annotation.setEndOfLine(points[1]);
         annotation.setBorderStyle(borderStyle);
+
+        // apply preferences
+        checkAndApplyPreferences();
+
         annotation.setColor(lineColor);
         annotation.setInteriorColor(internalColor);
+        annotation.setOpacity(opacity);
 
         // setup the markup properties.
         annotation.setContents(annotation.getSubType().toString());
@@ -211,6 +224,13 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         // clear the rectangle
         clearRectangle(pageViewComponent);
         startOfLine = endOfLine = null;
+    }
+
+    protected void checkAndApplyPreferences() {
+        lineColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_COLOR, lineColor.getRGB()));
+        internalColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_FILL_COLOR,
+                internalColor.getRGB()));
+        opacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_LINE_OPACITY, opacity);
     }
 
     public void mouseDragged(MouseEvent e) {

@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -162,6 +163,8 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
                 // change the colour of the button background
                 setButtonBackgroundColor(colorBorderButton, chosenColor);
                 annotation.setColor(chosenColor);
+
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_SQUARE_COLOR, chosenColor.getRGB());
             }
         } else if (e.getSource() == colorFillButton) {
             Color chosenColor =
@@ -173,6 +176,8 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
                 // change the colour of the button background
                 setButtonBackgroundColor(colorFillButton, chosenColor);
                 annotation.setFillColor(chosenColor);
+
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_SQUARE_FILL_COLOR, chosenColor.getRGB());
             }
         }
         // save the action state back to the document structure.
@@ -182,7 +187,7 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, annotation);
+        alphaSliderChange(e, annotation, PropertiesManager.PROPERTY_ANNOTATION_SQUARE_OPACITY);
     }
 
     /**

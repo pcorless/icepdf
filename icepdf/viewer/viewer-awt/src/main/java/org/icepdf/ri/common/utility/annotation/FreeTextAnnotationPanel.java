@@ -173,8 +173,10 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         if (e.getStateChange() == ItemEvent.SELECTED) {
             if (e.getSource() == fontNameBox) {
                 freeTextAnnotation.setFontName((String) item.getValue());
+                preferences.put(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, freeTextAnnotation.getFontName());
             } else if (e.getSource() == fontSizeBox) {
                 freeTextAnnotation.setFontSize((Integer) item.getValue());
+                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, freeTextAnnotation.getFontSize());
             } else if (e.getSource() == strokeTypeBox) {
                 Boolean visible = (Boolean) item.getValue();
                 freeTextAnnotation.setStrokeType(visible);
@@ -255,9 +257,8 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, freeTextAnnotation);
-        preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY,
-                freeTextAnnotation.getOpacityNormalized());
+        alphaSliderChange(e, freeTextAnnotation, PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY);
+        ;
     }
 
     /**

@@ -50,6 +50,8 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
     private static final Logger logger =
             Logger.getLogger(LineAnnotationHandler.class.toString());
 
+    private FreeTextAnnotation annotation;
+
     /**
      * New Text selection handler.  Make sure to correctly and and remove
      * this mouse and text listeners.
@@ -96,7 +98,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
         // create annotations types that that are rectangle based;
         // which is actually just link annotations
-        FreeTextAnnotation annotation = (FreeTextAnnotation)
+        annotation = (FreeTextAnnotation)
                 AnnotationFactory.buildAnnotation(
                         documentViewModel.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_FREE_TEXT,
@@ -106,7 +108,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         annotation.setContents(" ");
 
         // apply store settings
-        checkAndApplyPreferences(annotation);
+        checkAndApplyPreferences();
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
@@ -134,8 +136,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
 
     }
 
-    private void checkAndApplyPreferences(FreeTextAnnotation annotation) {
-
+    protected void checkAndApplyPreferences() {
         // apply free text colour
         if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, -1) != -1) {
             int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_COLOR, 0);

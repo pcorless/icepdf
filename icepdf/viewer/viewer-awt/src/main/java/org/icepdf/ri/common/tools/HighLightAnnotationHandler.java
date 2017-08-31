@@ -72,6 +72,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
     }
 
     protected Name highLightType;
+    protected TextMarkupAnnotation annotation;
 
     public HighLightAnnotationHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent,
@@ -144,19 +145,16 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
             // create annotations types that that are rectangle based;
             // which is actually just link annotations
-            TextMarkupAnnotation annotation = (TextMarkupAnnotation)
+            annotation = (TextMarkupAnnotation)
                     AnnotationFactory.buildAnnotation(
                             documentViewModel.getDocument().getPageTree().getLibrary(),
                             highLightType,
                             tBbox);
 
             // pass outline shapes and bounds to create the highlight shapes
-            if (TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(highLightType)) {
-                annotation.setOpacity(TextMarkupAnnotation.HIGHLIGHT_ALPHA);
-            }
             annotation.setContents(contents != null && enableHighlightContents ? contents : highLightType.toString());
             // before assigning the default colour check to see if there is an entry in the properties manager
-            checkTextMarkupColor(annotation);
+            checkAndApplyPreferences();
             annotation.setCreationDate(PDate.formatDateTime(new Date()));
             annotation.setTitleText(System.getProperty("user.name"));
             annotation.setMarkupBounds(highlightBounds);
@@ -190,24 +188,10 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         pageViewComponent.repaint();
     }
 
-    private void checkTextMarkupColor(TextMarkupAnnotation annotation) {
-        Name subtype = annotation.getSubType();
+    protected void checkAndApplyPreferences() {
         Color color = null;
-        if (TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(subtype) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, -1) != -1) {
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, -1) != -1) {
             int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, 0);
-            color = new Color(rgb);
-        } else if (TextMarkupAnnotation.SUBTYPE_STRIKE_OUT.equals(subtype) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR, 0);
-            color = new Color(rgb);
-        } else if (TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(subtype) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR, 0);
-            color = new Color(rgb);
-        } else if (TextMarkupAnnotation.SUBTYPE_SQUIGGLY.equals(subtype) &&
-                preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR, 0);
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.
@@ -217,6 +201,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             annotation.setColor(color);
             annotation.setTextMarkupColor(color);
         }
+        annotation.setOpacity(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY,
+                TextMarkupAnnotation.HIGHLIGHT_ALPHA));
     }
 
     private String getSelectedText() {

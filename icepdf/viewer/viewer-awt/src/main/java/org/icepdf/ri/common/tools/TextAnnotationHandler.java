@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.StateManager;
@@ -28,6 +29,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -53,7 +55,11 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
     private static final Logger logger =
             Logger.getLogger(TextAnnotationHandler.class.toString());
+
     protected static Color defaultFillColor;
+    protected static String defaultIcon;
+    protected static int defaultOpacity;
+
     static {
 
         // sets annotation text fill colour
@@ -69,6 +75,15 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                 logger.warning("Error reading text annotation fill colour");
             }
         }
+
+        // sets annotation opacity
+        defaultOpacity = Defs.intProperty(
+                "org.icepdf.core.views.page.annotation.text.fill.opacity", 255);
+
+
+        // sets annotation text fill colour
+        defaultIcon = Defs.sysProperty("org.icepdf.core.views.page.annotation.text.icon",
+                TextAnnotation.COMMENT_ICON.toString());
     }
 
     protected static final Dimension ICON_SIZE = new Dimension(23, 23);
@@ -77,6 +92,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                                  AbstractPageViewComponent pageViewComponent,
                                  DocumentViewModel documentViewModel) {
         super(documentViewController, pageViewComponent, documentViewModel);
+        checkAndApplyPreferences();
     }
 
     public void paintTool(Graphics g) {
@@ -104,13 +120,31 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         textAnnotation.setTitleText(System.getProperty("user.name"));
         textAnnotation.setContents("");
 
-        // setup some default state
-        textAnnotation.setIconName(TextAnnotation.COMMENT_ICON);
-        textAnnotation.setState(TextAnnotation.STATE_UNMARKED);
+
+        textAnnotation.setIconName(new Name(defaultIcon));
         textAnnotation.setColor(defaultFillColor);
+        textAnnotation.setOpacity(defaultOpacity);
+        textAnnotation.setState(TextAnnotation.STATE_UNMARKED);
 
         // set the content stream
         textAnnotation.setBBox(new Rectangle(0, 0, bbox.width, bbox.height));
+        textAnnotation.resetAppearanceStream(pageSpace);
+
+        return textAnnotation;
+    }
+
+    public TextAnnotation createTextAnnotationInstance(Library library, Rectangle bbox,
+                                                       AffineTransform pageSpace) {
+
+        TextAnnotation textAnnotation = TextAnnotationHandler.createTextAnnotation(library, bbox, pageSpace);
+
+        // setup some default state
+        checkAndApplyPreferences();
+
+        textAnnotation.setIconName(new Name(defaultIcon));
+        textAnnotation.setColor(defaultFillColor);
+        textAnnotation.setOpacity(defaultOpacity);
+
         textAnnotation.resetAppearanceStream(pageSpace);
 
         return textAnnotation;
@@ -158,7 +192,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
         // text annotation are special as the annotation has fixed size.
         TextAnnotation markupAnnotation =
-                createTextAnnotation(documentViewModel.getDocument().getPageTree().getLibrary(),
+                createTextAnnotationInstance(documentViewModel.getDocument().getPageTree().getLibrary(),
                         tBbox, pageTransform);
 
         // create the annotation object.
@@ -226,6 +260,15 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         // set the annotation tool to he select tool
         documentViewController.getParentController().setDocumentToolMode(
                 DocumentViewModel.DISPLAY_TOOL_SELECTION);
+    }
+
+    protected void checkAndApplyPreferences() {
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
+            defaultFillColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
+        }
+        defaultIcon = preferences.get(
+                PropertiesManager.PROPERTY_ANNOTATION_TEXT_ICON, TextAnnotation.COMMENT_ICON.toString());
+        defaultOpacity = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_OPACITY, 255);
     }
 
     public void mouseEntered(MouseEvent e) {

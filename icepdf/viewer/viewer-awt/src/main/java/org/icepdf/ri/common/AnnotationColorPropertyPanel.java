@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common;
 
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -48,9 +47,12 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
     private JButton colourPickerButton;
     private JButton preferencesButton;
 
+    // last selected color;
+    private Color lastColor = Color.RED;
+
     protected AnnotationColorButton annotationColorButton;
 
-    public AnnotationColorPropertyPanel(SwingController swingController, ResourceBundle messageBundle, Name annotationType) {
+    public AnnotationColorPropertyPanel(SwingController swingController, ResourceBundle messageBundle) {
         super(new GridBagLayout());
         this.swingController = swingController;
         this.messageBundle = messageBundle;
@@ -172,22 +174,25 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             // todo add tab selection option
             swingController.showViewerPreferences();
         } else if (source.equals(colourPickerButton)) {
-            //  add colour to recent colour list, only show rgb pallet and setup default colour
-            Color newColor = JColorChooser.showDialog(
+            // add colour to recent colour list, only show rgb pallet and setup default colour
+            Color newColor = RgbColorChooser.showDialog(
                     this,
                     messageBundle.getString("viewer.popup.annotation.color.morecolors.label"),
-                    Color.RED);
-            annotationColorButton.setColor(newColor);
-            buildRecentColour(newColor);
-            // store the new recent colour
-            Preferences preferences = PropertiesManager.getInstance().getPreferences();
-            String rawRecents = preferences.get(PROPERTY_ANNOTATION_RECENT_COLORS, null);
-            if (rawRecents != null) {
-                rawRecents = newColor.getRGB() + "|" + rawRecents;
-            } else {
-                rawRecents = String.valueOf(newColor.getRGB());
+                    lastColor);
+            // assign the new color
+            if (newColor != null) {
+                annotationColorButton.setColor(newColor);
+                buildRecentColour(newColor);
+                // store the new recent colour
+                Preferences preferences = PropertiesManager.getInstance().getPreferences();
+                String rawRecents = preferences.get(PROPERTY_ANNOTATION_RECENT_COLORS, null);
+                if (rawRecents != null) {
+                    rawRecents = newColor.getRGB() + "|" + rawRecents;
+                } else {
+                    rawRecents = String.valueOf(newColor.getRGB());
+                }
+                preferences.put(PROPERTY_ANNOTATION_RECENT_COLORS, rawRecents);
             }
-            preferences.put(PROPERTY_ANNOTATION_RECENT_COLORS, rawRecents);
         }
     }
 
@@ -233,6 +238,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             addActionListener(e -> {
                 buildRecentColour(getBackground());
                 annotationColorButton.setColor(getBackground());
+                lastColor = getBackground();
             });
         }
 

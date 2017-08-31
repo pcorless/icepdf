@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common;
 
-import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -1537,10 +1536,9 @@ public class SwingViewBuilder {
 
     public AbstractButton buildHighlightAnnotationToolButton(final String imageSize) {
         // put it all together for a dropdown button
-        AnnotationColorButton annotationColorButton = new AnnotationColorButton(
+        HighlightAnnotationButton annotationColorButton = new HighlightAnnotationButton(
                 viewerController,
                 messageBundle,
-                TextMarkupAnnotation.SUBTYPE_HIGHLIGHT,
                 messageBundle.getString("viewer.toolbar.tool.highlight.label"),
                 messageBundle.getString("viewer.toolbar.tool.highlight.tooltip"),
                 "highlight_annot_c", imageSize, buttonFont);

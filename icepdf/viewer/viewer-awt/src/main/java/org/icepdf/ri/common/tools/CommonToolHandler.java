@@ -33,7 +33,7 @@ import java.util.prefs.Preferences;
  *
  * @since 5.0
  */
-public class CommonToolHandler {
+public abstract class CommonToolHandler {
 
     private static final Logger logger =
             Logger.getLogger(CommonToolHandler.class.toString());
@@ -63,6 +63,8 @@ public class CommonToolHandler {
         PropertiesManager propertiesManager = PropertiesManager.getInstance();
         preferences = propertiesManager.getPreferences();
     }
+
+    protected abstract void checkAndApplyPreferences();
 
     protected AffineTransform getPageTransform() {
         return getPageTransform(pageViewComponent);

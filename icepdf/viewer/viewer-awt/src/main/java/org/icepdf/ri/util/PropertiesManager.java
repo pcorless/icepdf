@@ -133,6 +133,7 @@ public class PropertiesManager {
     public static final String PROPERTY_ANNOTATION_VISIBILITY_PERMISSION = "application.viewer.preference.annotation.permission.public";
 
     // highlight annotation default colour as defined by the last used colour for each type.
+    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR = "application.viewer.preference.annotation.highlight.button.color";
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_COLOR = "application.viewer.preference.annotation.highlight.color";
     public static final String PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY = "application.viewer.preference.annotation.highlight.opacity";
     public static final String PROPERTY_ANNOTATION_STRIKE_OUT_COLOR = "application.viewer.preference.annotation.strikeout.color";
@@ -149,12 +150,16 @@ public class PropertiesManager {
     // annotation types with stroke and fill colours
     public static final String PROPERTY_ANNOTATION_SQUARE_COLOR = "application.viewer.preference.annotation.square.color";
     public static final String PROPERTY_ANNOTATION_SQUARE_FILL_COLOR = "application.viewer.preference.annotation.square.fill.color";
+    public static final String PROPERTY_ANNOTATION_SQUARE_OPACITY = "application.viewer.preference.annotation.square.fill.opacity";
     public static final String PROPERTY_ANNOTATION_CIRCLE_COLOR = "application.viewer.preference.annotation.circle.color";
     public static final String PROPERTY_ANNOTATION_CIRCLE_FILL_COLOR = "application.viewer.preference.annotation.circle.fill.color";
+    public static final String PROPERTY_ANNOTATION_CIRCLE_OPACITY = "application.viewer.preference.annotation.circle.fill.opacity";
     public static final String PROPERTY_ANNOTATION_LINE_COLOR = "application.viewer.preference.annotation.line.color";
     public static final String PROPERTY_ANNOTATION_LINE_FILL_COLOR = "application.viewer.preference.annotation.line.fill.color";
-    public static final String PROPERTY_ANNOTATION_ARROW_COLOR = "application.viewer.preference.annotation.arrow.color";
-    public static final String PROPERTY_ANNOTATION_ARROW_FILL_COLOR = "application.viewer.preference.annotation.arrow.fill.color";
+    public static final String PROPERTY_ANNOTATION_LINE_OPACITY = "application.viewer.preference.annotation.line.fill.opcity";
+    public static final String PROPERTY_ANNOTATION_LINE_ARROW_COLOR = "application.viewer.preference.annotation.arrow.color";
+    public static final String PROPERTY_ANNOTATION_LINE_ARROW_FILL_COLOR = "application.viewer.preference.annotation.arrow.fill.color";
+    public static final String PROPERTY_ANNOTATION_LINE_ARROW_OPACITY = "application.viewer.preference.annotation.arrow.fill.opacity";
     // free text, quite a lot of properties
     public static final String PROPERTY_ANNOTATION_FREE_TEXT_COLOR = "application.viewer.preference.annotation.freetext.color";
     public static final String PROPERTY_ANNOTATION_FREE_TEXT_SIZE = "application.viewer.preference.annotation.freetext.size";
