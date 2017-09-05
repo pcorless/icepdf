@@ -190,8 +190,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
     protected void checkAndApplyPreferences() {
         Color color = null;
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, -1) != -1) {
-            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR, 0);
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, 0);
             color = new Color(rgb);
         }
         // apply the settings or system property base colour for the given subtype.

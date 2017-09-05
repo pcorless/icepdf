@@ -96,6 +96,12 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION = "application.utilitypane.show.annotation";
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS = "application.utilitypane.show.annotation.flags";
     public static final String PROPERTY_SHOW_UTILITYPANE_SIGNATURES = "application.utilitypane.show.signatures";
+    // properties use dot hide/show preferences pane tabs.
+    public static final String PROPERTY_SHOW_PREFERENCES_GENERAL = "application.preferences.show.general";
+    public static final String PROPERTY_SHOW_PREFERENCES_ANNOTATIONS = "application.preferences.show.annotations";
+    public static final String PROPERTY_SHOW_PREFERENCES_IMAGING = "application.preferences.show.imaging";
+    public static final String PROPERTY_SHOW_PREFERENCES_FONTS = "application.preferences.show.fonts";
+    public static final String PROPERTY_SHOW_PREFERENCES_ADVANCED = "application.preferences.show.advanced";
     // default utility pane thumbnail zoom size for non-embedded files
     public static final String PROPERTY_UTILITYPANE_THUMBNAILS_ZOOM = "application.utilitypane.thumbnail.zoom";
     // properties used for default zoom levels
@@ -170,10 +176,8 @@ public class PropertiesManager {
 
     // we use the same recent colour list for all annotation types
     public static final String PROPERTY_ANNOTATION_RECENT_COLORS = "application.viewer.preference.annotation.color.recent";
-    // resent colour and labels, disabled by default.
-    public static final String PROPERTY_ANNOTATION_RECENT_LABELS_ENABLED = "application.viewer.preference.annotation.recent.labels.enabled";
-    public static final String PROPERTY_ANNOTATION_RECENT_LABEL_NAMES = "application.viewer.preference.annotation.recent.label.names";
-    public static final String PROPERTY_ANNOTATION_RECENT_LABEL_COLORS = "application.viewer.preference.annotation.recent.label.colors";
+    // resent colour and labels, enabled automatically if there is more then one.
+    public static final String PROPERTY_ANNOTATION_RECENT_COLOR_LABEL = "application.viewer.preference.annotation.recent.color.labels";
 
     private static PropertiesManager propertiesManager;
 

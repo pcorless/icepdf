@@ -13,7 +13,22 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common;
+package org.icepdf.ri.common.preferences;
 
-public class ColorProperty {
+import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.util.PropertiesManager;
+
+import javax.swing.*;
+import java.util.ResourceBundle;
+
+/**
+ * Contains general setting for the viewer reference implementation.
+ *
+ * @since 6.3
+ */
+public class GeneralPreferencesPanel extends JPanel {
+
+    public GeneralPreferencesPanel(SwingController swingController, PropertiesManager propertiesManager,
+                                   ResourceBundle messageBundle) {
+    }
 }

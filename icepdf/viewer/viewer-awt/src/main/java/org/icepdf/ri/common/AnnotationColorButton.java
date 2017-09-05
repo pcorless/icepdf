@@ -116,6 +116,10 @@ public class AnnotationColorButton extends AbstractButton
         popup.setVisible(false);
     }
 
+    public void refreshColorPanel() {
+        annotationColorPropertyPanel.refreshColorPanel();
+    }
+
     public void actionPerformed(ActionEvent evt) {
         // set the button as selected
         colorToggleButton.setSelected(true);

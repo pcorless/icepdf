@@ -15,9 +15,9 @@
  */
 package org.icepdf.ri.common.preferences;
 
-import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,6 +28,15 @@ import java.util.ResourceBundle;
  * Default values can still be added to the ICEpdfDefault.properties.  As a general rule system properties should
  * be used when using the rendering core only and the PreferenceDialog should be used when configuring the Viewer RI.
  *
+ * Panel visibility can be controlled with the followign preference values.
+ * <ul>
+ *     <li>PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL</li>
+ *     <li>PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS</li>
+ *     <li>PropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING</li>
+ *     <li>PropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS</li>
+ *     <li>PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED</li>
+ * </ul>
+ *
  * @since 6.3
  */
 public class PreferencesDialog extends EscapeJDialog {
@@ -35,12 +44,11 @@ public class PreferencesDialog extends EscapeJDialog {
     // layouts constraint
     private GridBagConstraints constraints;
 
+    private JTabbedPane propertiesTabbedPane;
+
     public PreferencesDialog(JFrame frame, SwingController swingController,
                              ResourceBundle messageBundle) {
         super(frame, true);
-
-        Document document = swingController.getDocument();
-
         setTitle(messageBundle.getString("viewer.dialog.viewerPreferences.title"));
 
         // Create GUI elements
@@ -53,23 +61,46 @@ public class PreferencesDialog extends EscapeJDialog {
             }
         });
 
-//        JTabbedPane propertiesTabbedPane = new JTabbedPane();
-//        propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
-//
-//        // build the description
-//        propertiesTabbedPane.addTab(
-//                messageBundle.getString("viewer.dialog.documentProperties.tab.description"),
-//                new InformationPanel(document, messageBundle));
-//
-//        // build out the security tab
-//        propertiesTabbedPane.addTab(
-//                messageBundle.getString("viewer.dialog.documentProperties.tab.security"),
-//                new PermissionsPanel(document, messageBundle));
-//
-//        // build out the fonts tab.
-//        propertiesTabbedPane.addTab(
-//                messageBundle.getString("viewer.dialog.documentProperties.tab.fonts"),
-//                new FontPanel(document, swingController, messageBundle));
+        propertiesTabbedPane = new JTabbedPane();
+        propertiesTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
+
+        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+
+        // build the general preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.general.title"),
+                    new GeneralPreferencesPanel(swingController, propertiesManager, messageBundle));
+        }
+        // build the annotation preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.title"),
+                    new AnnotationPreferencesPanel(swingController, propertiesManager, messageBundle));
+        }
+        // build the imaging preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.imaging.title"),
+                    new ImagingPreferencesPanel(swingController, propertiesManager, messageBundle));
+        }
+        // build the fonts preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.fonts.title"),
+                    new FontsPreferencesPanel(swingController, propertiesManager, messageBundle));
+        }
+        // build the advanced preferences tab
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED)) {
+            propertiesTabbedPane.addTab(
+                    messageBundle.getString("viewer.dialog.viewerPreferences.section.advanced.title"),
+                    new FontsPreferencesPanel(swingController, propertiesManager, messageBundle));
+        }
 
         JPanel layoutPanel = new JPanel(new GridBagLayout());
 
@@ -79,7 +110,7 @@ public class PreferencesDialog extends EscapeJDialog {
         constraints.weighty = 0;
         constraints.insets = new Insets(5, 5, 5, 5);
         constraints.anchor = GridBagConstraints.NORTH;
-//        addGB(layoutPanel, propertiesTabbedPane, 0, 0, 1, 1);
+        addGB(layoutPanel, propertiesTabbedPane, 0, 0, 1, 1);
 
         constraints.fill = GridBagConstraints.NONE;
         addGB(layoutPanel, okButton, 0, 1, 1, 1);
@@ -89,6 +120,27 @@ public class PreferencesDialog extends EscapeJDialog {
 
         setSize(540, 440);
         setLocationRelativeTo(frame);
+    }
+
+    /**
+     * Allows for the selection of a specific preference panel on first view.
+     *
+     * @param selectedPreference
+     */
+    public void setSelectedPreference(final String selectedPreference) {
+
+        PropertiesManager propertiesManager = PropertiesManager.getInstance();
+        if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL.equals(selectedPreference)) {
+            propertiesTabbedPane.setSelectedIndex(0);
+        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS.equals(selectedPreference)) {
+            propertiesTabbedPane.setSelectedIndex(1);
+        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING.equals(selectedPreference)) {
+            propertiesTabbedPane.setSelectedIndex(2);
+        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS.equals(selectedPreference)) {
+            propertiesTabbedPane.setSelectedIndex(3);
+        } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED.equals(selectedPreference)) {
+            propertiesTabbedPane.setSelectedIndex(4);
+        }
     }
 
     private void addGB(JPanel layout, Component component,

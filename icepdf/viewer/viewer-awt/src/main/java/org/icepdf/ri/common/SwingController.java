@@ -183,7 +183,7 @@ public class SwingController
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomDynamicToolButton;
     private JToggleButton selectToolButton;
-    private AbstractButton highlightAnnotationToolButton;
+    private AnnotationColorButton highlightAnnotationToolButton;
     private JToggleButton textAnnotationToolButton;
     private JToggleButton formHighlightButton;
     private JToggleButton linkAnnotationToolButton;
@@ -855,7 +855,7 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setHighlightAnnotationToolButton(AbstractButton btn) {
+    public void setHighlightAnnotationToolButton(AnnotationColorButton btn) {
         highlightAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -2988,6 +2988,15 @@ public class SwingController
     }
 
     /**
+     * Show tabbed pane interface for viewer preferences,  info, security and fonts.
+     */
+    public void showViewerPreferences(final String selectedPreference) {
+        PreferencesDialog preferencesDialog = new PreferencesDialog(viewer, this, messageBundle);
+        preferencesDialog.setSelectedPreference(selectedPreference);
+        preferencesDialog.setVisible(true);
+    }
+
+    /**
      * Show a print setup dialog, to alter the ViewerModel's PageFormat
      *
      * @see ViewModel
@@ -4700,6 +4709,10 @@ public class SwingController
                             PropertiesManager.PROPERTY_DIVIDER_LOCATION,
                             utilityAndDocumentSplitPaneLastDividerLocation);
                 }
+            }
+        } else if (propertyName.equals(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE)) {
+            if (highlightAnnotationToolButton != null) {
+                highlightAnnotationToolButton.refreshColorPanel();
             }
         }
     }

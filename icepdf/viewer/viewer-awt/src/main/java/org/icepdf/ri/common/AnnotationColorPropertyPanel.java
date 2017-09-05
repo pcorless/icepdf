@@ -75,8 +75,8 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         constraints.anchor = GridBagConstraints.WEST;
 
         // labels section
-        labeledColorPanel = new JPanel();
-        labeledColorPanel.setVisible(false);
+        labeledColorPanel = new JPanel(new GridBagLayout());
+        buildLabeledColour();
         addGB(this, labeledColorPanel, 0, 0, 10, 1);
 
         // addition of standard colours.
@@ -100,7 +100,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
 
         // recent colour panel
         recentColorsPanel = new JPanel(new GridBagLayout());
-        buildRecentColour(null);
+        buildRecentColours(null);
         constraints.insets = new Insets(0, 0, 0, 0);
         addGB(this, recentColorsPanel, 0, 3, 10, 1);
 
@@ -119,7 +119,16 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         this.annotationColorButton = annotationColorButton;
     }
 
-    public void buildRecentColour(Color newColor) {
+    /**
+     * Forces the dynamic labeled colours and recent colour sub buttons to be refreshed, should be called
+     * after a preference panel update.
+     */
+    public void refreshColorPanel() {
+        buildLabeledColour();
+        buildRecentColours(null);
+    }
+
+    public void buildRecentColours(Color newColor) {
         recentColorsPanel.removeAll();
         // add the section header
         addGB(recentColorsPanel,
@@ -166,13 +175,39 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         }
     }
 
+    private void buildLabeledColour() {
+        labeledColorPanel.removeAll();
+        ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+        if (colorLabels.size() == 0) {
+            labeledColorPanel.setVisible(false);
+            return;
+        }
+        // add the section header
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.BOTH;
+        addGB(labeledColorPanel,
+                new JLabel(messageBundle.getString("viewer.popup.annotation.color.labels.label")),
+                0, 0, 2, 1);
+        constraints.insets = new Insets(2, 2, 2, 2);
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.NONE;
+        // add the current color labels.
+        int y = 1;
+        Color color;
+        for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
+            color = colorLabel.getColor();
+            addGB(labeledColorPanel, new ColorButton(color.getRed(), color.getGreen(), color.getBlue()),
+                    0, y, 1, 1);
+            addGB(labeledColorPanel, new JLabel(colorLabel.getLabel()), 1, y, 1, 1);
+            y++;
+        }
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
         if (source.equals(preferencesButton)) {
-            // todo add tab selection option
-            swingController.showViewerPreferences();
+            swingController.showViewerPreferences(PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS);
         } else if (source.equals(colourPickerButton)) {
             // add colour to recent colour list, only show rgb pallet and setup default colour
             Color newColor = RgbColorChooser.showDialog(
@@ -182,7 +217,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             // assign the new color
             if (newColor != null) {
                 annotationColorButton.setColor(newColor);
-                buildRecentColour(newColor);
+                buildRecentColours(newColor);
                 // store the new recent colour
                 Preferences preferences = PropertiesManager.getInstance().getPreferences();
                 String rawRecents = preferences.get(PROPERTY_ANNOTATION_RECENT_COLORS, null);
@@ -220,7 +255,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
          * @param b blue value
          */
         ColorButton(int r, int g, int b) {
-            setButtonBackgroundColor(new Color(r, g, b));
+            ColorChooserButton.setButtonBackgroundColor(new Color(r, g, b), this);
             setPreferredSize(new Dimension(15, 15));
             addActionListener(e -> {
                 annotationColorButton.setColor(getBackground());
@@ -233,25 +268,14 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
          * @param rgb int colour value.
          */
         ColorButton(int rgb) {
-            setButtonBackgroundColor(new Color(rgb));
+            ColorChooserButton.setButtonBackgroundColor(new Color(rgb), this);
             setPreferredSize(new Dimension(15, 15));
             addActionListener(e -> {
-                buildRecentColour(getBackground());
+                buildRecentColours(getBackground());
                 annotationColorButton.setColor(getBackground());
                 lastColor = getBackground();
             });
         }
 
-        protected void setButtonBackgroundColor(Color color) {
-            if (color != null) {
-                if (color.getAlpha() < 255) {
-                    color = new Color(color.getRGB());
-                }
-                setBackground(color);
-                setBorder(BorderFactory.createLineBorder(Color.lightGray));
-                setContentAreaFilled(false);
-                setOpaque(true);
-            }
-        }
     }
 }
