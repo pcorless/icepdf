@@ -54,6 +54,8 @@ public class PropertyConstants {
     ANNOTATION_FOCUS_GAINED = "annotationFocusGained",
             ANNOTATION_FOCUS_LOST = "annotationFocusLost",
 
+    ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE = "annotationPropertyPanelChange",
+
     // not in use
     ANNOTATION_NEW_LINK = "annotationNewLink";
 
