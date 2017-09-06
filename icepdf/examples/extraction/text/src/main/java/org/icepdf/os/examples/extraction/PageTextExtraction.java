@@ -21,14 +21,12 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.ResourceBundle;
 
 /**
  * The <code>PageTextExtraction</code> class is an example of how to extract
@@ -44,11 +42,7 @@ public class PageTextExtraction {
         String filePath = args[0];
 
         // read/store the font cache.
-        ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-        PropertiesManager properties = new PropertiesManager(System.getProperties(),
-                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
         // open the url
         Document document = new Document();

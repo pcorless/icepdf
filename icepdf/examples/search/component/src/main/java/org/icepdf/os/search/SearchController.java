@@ -21,11 +21,9 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import java.util.ArrayList;
-import java.util.ResourceBundle;
 
 /**
  * The <code>SearchHighlight</code> class is an example of how to use
@@ -52,11 +50,7 @@ public class SearchController {
         String filePath = args[0];
 
         // read/store the font cache.
-        ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-        PropertiesManager properties = new PropertiesManager(System.getProperties(),
-                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
         // get search terms from command line
         String[] terms = new String[args.length - 1];

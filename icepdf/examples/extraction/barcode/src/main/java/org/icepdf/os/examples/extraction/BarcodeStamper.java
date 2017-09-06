@@ -25,10 +25,8 @@ import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -53,6 +51,7 @@ public class BarcodeStamper {
 
     // barcode reader hints
     private static Map<DecodeHintType, Object> hints;
+
     static {
         // formats to scan for; shorter list will make a shorter scan time.
         List<BarcodeFormat> formats = new ArrayList<BarcodeFormat>();
@@ -87,11 +86,8 @@ public class BarcodeStamper {
         String filePath = args[0];
 
         // read/store the font cache.
-        ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-        PropertiesManager properties = new PropertiesManager(System.getProperties(),
-                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+        // read stored system font properties.
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
         // start the barcode scan
         try {
@@ -136,10 +132,10 @@ public class BarcodeStamper {
             }
 
             // stamp the pages's barcodes with bounds and meta data.
-            Graphics2D pageGs =  (Graphics2D)image.getGraphics();
+            Graphics2D pageGs = (Graphics2D) image.getGraphics();
 
             pageGs.setStroke(new BasicStroke(5.0f));
-            pageGs.setFont(new Font("Arial",Font.BOLD, 24));
+            pageGs.setFont(new Font("Arial", Font.BOLD, 24));
             for (Result result : results) {
                 ParsedResult parsedResult = ResultParser.parseResult(result);
                 System.out.println("\tformat: " + result.getBarcodeFormat() +
@@ -151,7 +147,7 @@ public class BarcodeStamper {
                     ResultPoint rp = result.getResultPoints()[pointIndex];
                     if (pointIndex == 0) {
                         generalPath.moveTo(rp.getX(), rp.getY());
-                    }else if (pointIndex < max){
+                    } else if (pointIndex < max) {
                         generalPath.lineTo(rp.getX(), rp.getY());
                     }
                 }
@@ -160,15 +156,15 @@ public class BarcodeStamper {
                 pageGs.draw(generalPath);
                 ResultPoint rp = result.getResultPoints()[0];
                 pageGs.setColor(Color.RED);
-                pageGs.drawString(result.getBarcodeFormat().toString() + ": " +result.getText(), rp.getX(), rp.getY()-5);
+                pageGs.drawString(result.getBarcodeFormat().toString() + ": " + result.getText(), rp.getX(), rp.getY() - 5);
                 found++;
             }
             // write the image to disk.
             File file = new File("imageCapture_" + i + ".png");
-            ImageIO.write(image, "png", file );
+            ImageIO.write(image, "png", file);
             image.flush();
         }
-        System.out.println("Scan complete found " + found +" codes.");
+        System.out.println("Scan complete found " + found + " codes.");
         document.dispose();
     }
 }

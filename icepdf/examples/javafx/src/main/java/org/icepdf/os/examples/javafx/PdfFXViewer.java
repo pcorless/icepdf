@@ -14,6 +14,7 @@ package org.icepdf.os.examples.javafx;
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 import javafx.application.Application;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
@@ -28,7 +29,6 @@ import org.icepdf.ri.util.PropertiesManager;
 import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ResourceBundle;
 
 /**
  * Example of integrating ICEpdf into a JavaFX application using Java 8 and SwingNode.
@@ -93,23 +93,23 @@ public class PdfFXViewer extends Application {
                 // create the viewer ri components.
                 swingController = new SwingController();
                 swingController.setIsEmbeddedComponent(true);
-                PropertiesManager properties = new PropertiesManager(System.getProperties(),
-                        ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+
 
                 // read/store the font cache.
-                ResourceBundle messageBundle = ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-                new FontPropertiesManager(properties, System.getProperties(), messageBundle);
-                properties.set(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, "1.25");
-                properties.set(PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN, "false");
-                properties.set(PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE, "false");
-                properties.set(PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT, "false");
+                FontPropertiesManager.getInstance().loadOrReadSystemFonts();
+
+                PropertiesManager properties = PropertiesManager.getInstance();
+                properties.checkAndStoreFloatProperty(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_OPEN, false);
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_SAVE, false);
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_UTILITY_PRINT, false);
                 // hide the status bar
-                properties.set(PropertiesManager.PROPERTY_SHOW_STATUSBAR, "false");
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_STATUSBAR, false);
                 // hide a few toolbars, just to show how the prefered size of the viewer changes.
-                properties.set(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT, "false");
-                properties.set(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE, "false");
-                properties.set(PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL, "false");
-                properties.set(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS, "false");
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FIT, false);
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_ROTATE, false);
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_TOOL, false);
+                properties.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_TOOLBAR_FORMS, false);
 
                 swingController.getDocumentViewController().setAnnotationCallback(
                         new org.icepdf.ri.common.MyAnnotationCallback(swingController.getDocumentViewController()));

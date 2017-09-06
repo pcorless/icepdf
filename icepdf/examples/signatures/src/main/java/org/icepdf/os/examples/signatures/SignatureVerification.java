@@ -25,12 +25,10 @@ import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.ResourceBundle;
 
 /**
  * The <code>SignatureVerification</code> class is an example of how to validate the signatures
@@ -43,11 +41,7 @@ public class SignatureVerification {
 
     static {
         // read/store the font cache.
-        ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-        PropertiesManager properties = new PropertiesManager(System.getProperties(),
-                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
     }
 
     public static void main(String[] args) {

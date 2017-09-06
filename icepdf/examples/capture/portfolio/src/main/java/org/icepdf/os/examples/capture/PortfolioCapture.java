@@ -5,7 +5,6 @@ import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -17,7 +16,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -45,11 +43,7 @@ public class PortfolioCapture {
         String filePath = args[0];
 
         // read/store the font cache.
-        ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-        PropertiesManager properties = new PropertiesManager(System.getProperties(),
-                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
         // start the capture
         PortfolioCapture portfolioCapture = new PortfolioCapture();

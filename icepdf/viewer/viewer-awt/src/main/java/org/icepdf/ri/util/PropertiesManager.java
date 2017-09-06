@@ -277,7 +277,7 @@ public class PropertiesManager {
     }
 
     public float checkAndStoreFloatProperty(String propertyName) {
-        return checkAndStoreIntProperty(propertyName, 1);
+        return checkAndStoreFloatProperty(propertyName, 1);
     }
 
     /**

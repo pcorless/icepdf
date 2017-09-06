@@ -2146,10 +2146,8 @@ public class SwingViewBuilder {
      * if we don't already have a propertiesManager object
      */
     protected void doubleCheckPropertiesManager() {
-        if ((propertiesManager == null) &&
-                (viewerController != null) &&
-                (viewerController.getWindowManagementCallback() != null)) {
-            propertiesManager = viewerController.getWindowManagementCallback().getProperties();
+        if (propertiesManager == null) {
+            propertiesManager = PropertiesManager.getInstance();
         }
     }
 

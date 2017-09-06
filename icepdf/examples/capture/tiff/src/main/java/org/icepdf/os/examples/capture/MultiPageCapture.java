@@ -15,7 +15,6 @@ package org.icepdf.os.examples.capture;
  * governing permissions and limitations under the License.
  */
 
-
 import org.icepdf.core.exceptions.PDFException;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
@@ -23,7 +22,6 @@ import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -38,8 +36,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Properties;
-import java.util.ResourceBundle;
 
 /**
  * The <code>MultiPageCapture</code> class is an example of how to save page
@@ -63,12 +59,7 @@ public class MultiPageCapture {
 
         // read system fonts from cached list, speeds up initial application startup
         // for systems with a large number of fonts.
-        ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-        Properties sysProps = System.getProperties();
-        PropertiesManager propertiesManager = new PropertiesManager(sysProps, messageBundle);
-        new FontPropertiesManager(propertiesManager, sysProps, messageBundle);
-
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
         // Verify that ImageIO can output TIFF
         Iterator<ImageWriter> iterator = ImageIO.getImageWritersByFormatName("tiff");

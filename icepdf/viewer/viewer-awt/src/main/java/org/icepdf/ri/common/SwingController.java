@@ -2289,8 +2289,8 @@ public class SwingController
 
         // Refresh the properties manager object if we don't already have one
         // This would be not null if the UI was constructed manually
-        if ((propertiesManager == null) && (windowManagementCallback != null)) {
-            propertiesManager = windowManagementCallback.getProperties();
+        if (propertiesManager == null) {
+            propertiesManager = propertiesManager.getInstance();
         }
 
         // Set the default zoom level from the backing store

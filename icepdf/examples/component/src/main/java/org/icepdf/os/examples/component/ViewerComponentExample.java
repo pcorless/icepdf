@@ -21,7 +21,6 @@ import org.icepdf.ri.util.FontPropertiesManager;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
-import java.util.ResourceBundle;
 
 /**
  * The <code>ViewerComponentExample</code> class is an example of how to use
@@ -42,18 +41,13 @@ public class ViewerComponentExample {
                 SwingController controller = new SwingController();
                 controller.setIsEmbeddedComponent(true);
 
-                PropertiesManager properties = new PropertiesManager(
-                        System.getProperties(),
-                        ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
+                // read stored system font properties.
+                FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
-                // read/store the font cache.
-                ResourceBundle messageBundle = ResourceBundle.getBundle(
-                        PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-                new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+                PropertiesManager properties = PropertiesManager.getInstance();
+                properties.checkAndStoreFloatProperty(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, 1.25f);
 
-                properties.set(PropertiesManager.PROPERTY_DEFAULT_ZOOM_LEVEL, "1.25");
-
-                SwingViewBuilder factory = new SwingViewBuilder(controller, properties);
+                SwingViewBuilder factory = new SwingViewBuilder(controller);
 
                 // add interactive mouse link annotation support via callback
                 controller.getDocumentViewController().setAnnotationCallback(

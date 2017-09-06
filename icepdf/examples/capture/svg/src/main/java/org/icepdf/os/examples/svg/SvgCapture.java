@@ -9,12 +9,9 @@ import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.ri.util.FontPropertiesManager;
-import org.icepdf.ri.util.PropertiesManager;
 import org.w3c.dom.DOMImplementation;
 
 import java.io.*;
-import java.lang.InterruptedException;
-import java.util.ResourceBundle;
 
 /**
  * The <code>org.icepdf.os.examples.SvgCapture</code> class is an example of how to save a PDF page as an SVG document.
@@ -35,11 +32,7 @@ public class SvgCapture {
         String filePath = args[0];
 
         // read/store the font cache.
-        ResourceBundle messageBundle = ResourceBundle.getBundle(
-                PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
-        PropertiesManager properties = new PropertiesManager(System.getProperties(),
-                ResourceBundle.getBundle(PropertiesManager.DEFAULT_MESSAGE_BUNDLE));
-        new FontPropertiesManager(properties, System.getProperties(), messageBundle);
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
 
         // start the capture
         SvgCapture pageCapture = new SvgCapture();
