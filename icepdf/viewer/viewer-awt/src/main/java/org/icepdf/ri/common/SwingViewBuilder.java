@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -23,8 +24,10 @@ import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;
 import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
+import org.icepdf.ri.common.views.AbstractDocumentView;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.views.PageViewDecorator;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.MacOSAdapter;
 import org.icepdf.ri.util.PropertiesManager;
@@ -37,6 +40,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 /**
  * <p>The purpose of this class is to facilitate in the building of user interface components
@@ -383,11 +387,10 @@ public class SwingViewBuilder {
         if (properties == null) {
             propertiesManager = PropertiesManager.getInstance();
         }
-        viewerController.setPropertiesManager(properties);
-        this.propertiesManager = properties;
+        viewerController.setPropertiesManager(propertiesManager);
 
-        // Attempt to override the highlight color from the properties file
-        overrideHighlightColor();
+        // Apply viewer preferences settings to various core system properties.
+        overrideHighlightColor(propertiesManager);
 
         // update View Controller with previewer document page fit and view type info
         DocumentViewControllerImpl documentViewController = (DocumentViewControllerImpl) viewerController.getDocumentViewController();
@@ -2152,27 +2155,28 @@ public class SwingViewBuilder {
     }
 
     /**
-     * Method to attempt to override the system property highlight color
-     * If the current color is blank, we'll try to pull the same property from
-     * our local propertiesManager and, if found, apply it to the system properties
-     * This affects the search highlight coloring
+     * Method to attempt to override the system properties with various values form the preferences cllass.
      */
-    protected void overrideHighlightColor() {
-        // Attempt to override the default highlight color
-        // We will only attempt this if a -D system parameter was not passed
-        if (Defs.sysProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR) == null) {
-            doubleCheckPropertiesManager();
+    protected void overrideHighlightColor(PropertiesManager propertiesManager) {
 
-            // Try to pull the color from our local properties file
-            // If we can find a value, then set it as the system property
-            if (propertiesManager != null) {
-                String newColor = propertiesManager.getPreferences()
-                        .get(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, null);
-                if (newColor != null) {
-                    Defs.setSystemProperty(PropertiesManager.SYSPROPERTY_HIGHLIGHT_COLOR, newColor);
-                }
-            }
-        }
+        Preferences preferences = propertiesManager.getPreferences();
+
+        // apply text selection and highlight colors from prefernces.
+        Page.highlightColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB()));
+        Page.selectionColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_TEXT_SELECTION_COLOR, Page.selectionColor.getRGB()));
+
+        // page view settings.
+        PageViewDecorator.pageShadowColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_PAGE_VIEW_SHADOW_COLOR, PageViewDecorator.pageShadowColor.getRGB()));
+        PageViewDecorator.pageColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_PAGE_VIEW_PAPER_COLOR, PageViewDecorator.pageColor.getRGB()));
+        PageViewDecorator.pageBorderColor = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
+        AbstractDocumentView.backgroundColour = new Color(preferences.getInt(
+                PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
+
     }
 
     protected Font buildButtonFont() {

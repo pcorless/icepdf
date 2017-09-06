@@ -115,10 +115,10 @@ public class PreferencesDialog extends EscapeJDialog {
         constraints.fill = GridBagConstraints.NONE;
         addGB(layoutPanel, okButton, 0, 1, 1, 1);
 
-        this.setLayout(new BorderLayout(15, 15));
+        this.setLayout(new BorderLayout(5, 5));
         this.add(layoutPanel, BorderLayout.NORTH);
 
-        setSize(540, 440);
+        setSize(550, 450);
         setLocationRelativeTo(frame);
     }
 

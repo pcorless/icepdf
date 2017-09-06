@@ -181,14 +181,16 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         if (colorLabels.size() == 0) {
             labeledColorPanel.setVisible(false);
             return;
+        } else {
+            labeledColorPanel.setVisible(true);
         }
         // add the section header
+        constraints.insets = new Insets(2, 2, 2, 2);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.BOTH;
         addGB(labeledColorPanel,
                 new JLabel(messageBundle.getString("viewer.popup.annotation.color.labels.label")),
                 0, 0, 2, 1);
-        constraints.insets = new Insets(2, 2, 2, 2);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.NONE;
         // add the current color labels.
@@ -257,6 +259,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         ColorButton(int r, int g, int b) {
             ColorChooserButton.setButtonBackgroundColor(new Color(r, g, b), this);
             setPreferredSize(new Dimension(15, 15));
+            setSize(15, 15);
             addActionListener(e -> {
                 annotationColorButton.setColor(getBackground());
             });
@@ -270,6 +273,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         ColorButton(int rgb) {
             ColorChooserButton.setButtonBackgroundColor(new Color(rgb), this);
             setPreferredSize(new Dimension(15, 15));
+            setSize(15, 15);
             addActionListener(e -> {
                 buildRecentColours(getBackground());
                 annotationColorButton.setColor(getBackground());

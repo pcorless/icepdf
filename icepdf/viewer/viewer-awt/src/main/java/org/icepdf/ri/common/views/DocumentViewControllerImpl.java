@@ -117,7 +117,7 @@ public class DocumentViewControllerImpl
         this.viewerController = viewerController;
 
         documentViewScrollPane = new JScrollPane();
-        documentViewScrollPane.getViewport().setBackground(AbstractDocumentView.BACKGROUND_COLOUR);
+        documentViewScrollPane.getViewport().setBackground(AbstractDocumentView.backgroundColour);
 
         // set scroll bar speeds
         documentViewScrollPane.getVerticalScrollBar().setUnitIncrement(20);

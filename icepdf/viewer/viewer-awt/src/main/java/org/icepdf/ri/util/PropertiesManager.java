@@ -59,8 +59,14 @@ public class PropertiesManager {
     public static final String PROPERTY_PRINT_MEDIA_SIZE_WIDTH = "document.print.mediasize.width";
     public static final String PROPERTY_PRINT_MEDIA_SIZE_HEIGHT = "document.print.mediasize.height";
     public static final String PROPERTY_PRINT_MEDIA_SIZE_UNIT = "document.print.mediasize.unit";
-    // system properties
-    public static final String SYSPROPERTY_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlight.color";
+    // highlight and selection text colours.
+    public static final String PROPERTY_TEXT_SELECTION_COLOR = "org.icepdf.core.views.page.text.selection.color";
+    public static final String PROPERTY_TEXT_HIGHLIGHT_COLOR = "org.icepdf.core.views.page.text.highlight.color";
+    // page view colour settings.
+    public static final String PROPERTY_PAGE_VIEW_SHADOW_COLOR = "org.icepdf.core.views.page.shadow.color";
+    public static final String PROPERTY_PAGE_VIEW_PAPER_COLOR = "org.icepdf.core.views.page.paper.color";
+    public static final String PROPERTY_PAGE_VIEW_BORDER_COLOR = "org.icepdf.core.views.page.border.color";
+    public static final String PROPERTY_PAGE_VIEW_BACKGROUND_COLOR = "org.icepdf.core.views.background.color";
     // properties used to hide/show toolbars
     public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";

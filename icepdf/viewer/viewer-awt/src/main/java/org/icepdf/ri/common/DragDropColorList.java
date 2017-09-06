@@ -36,7 +36,7 @@ import static org.icepdf.ri.util.PropertiesManager.PROPERTY_ANNOTATION_RECENT_CO
 public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
 
     // use ascii '27' or ESC as the delimiting character when storing the color list.
-    private static final String SEPARATOR = "\u0027";
+    private static final String SEPARATOR = "\u001b";
 
     private DefaultListModel<ColorLabel> model;
 

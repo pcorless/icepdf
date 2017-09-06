@@ -76,7 +76,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
     private void buildGUI() {
         // add all page components to gridlayout panel
         pagesPanel = new JPanel();
-        pagesPanel.setBackground(BACKGROUND_COLOUR);
+        pagesPanel.setBackground(backgroundColour);
         // two column equals facing page view continuous
         GridLayout gridLayout = new GridLayout(0, 2, horizontalSpace, verticalSpace);
         pagesPanel.setLayout(gridLayout);
@@ -229,7 +229,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
 
     public void paintComponent(Graphics g) {
         Rectangle clipBounds = g.getClipBounds();
-        g.setColor(BACKGROUND_COLOUR);
+        g.setColor(backgroundColour);
         g.fillRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
         // paint selection box
         super.paintComponent(g);

@@ -45,7 +45,7 @@ public abstract class AbstractDocumentView
             Logger.getLogger(AbstractDocumentView.class.toString());
 
     // background colour
-    public static Color BACKGROUND_COLOUR;
+    public static Color backgroundColour;
 
     // auto scroll refresh interval
     private static int SCROLL_REFRESH_DELAY;
@@ -56,7 +56,7 @@ public abstract class AbstractDocumentView
             String color = Defs.sysProperty(
                     "org.icepdf.core.views.background.color", "#808080");
             int colorValue = ColorUtil.convertColor(color);
-            BACKGROUND_COLOUR =
+            backgroundColour =
                     new Color(colorValue >= 0 ? colorValue :
                             Integer.parseInt("808080", 16));
         } catch (NumberFormatException e) {

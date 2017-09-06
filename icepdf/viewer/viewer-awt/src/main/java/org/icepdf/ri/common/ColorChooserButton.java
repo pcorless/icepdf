@@ -30,7 +30,7 @@ public class ColorChooserButton extends JButton {
         ColorChooserButton.setButtonBackgroundColor(color, this);
         setPreferredSize(new Dimension(width, height));
         addActionListener(e -> {
-            Color newColor = RgbColorChooser.showDialog(this, "new color", null);
+            Color newColor = RgbColorChooser.showDialog(this, "new color", getBackground());
             ColorChooserButton.setButtonBackgroundColor(newColor, this);
         });
     }
@@ -38,8 +38,9 @@ public class ColorChooserButton extends JButton {
     public ColorChooserButton(Color color) {
         ColorChooserButton.setButtonBackgroundColor(color, this);
         setPreferredSize(new Dimension(25, 22));
+        setSize(25, 22);
         addActionListener(e -> {
-            Color newColor = RgbColorChooser.showDialog(this, "new color", null);
+            Color newColor = RgbColorChooser.showDialog(this, "new color", getBackground());
             ColorChooserButton.setButtonBackgroundColor(newColor, this);
         });
     }
