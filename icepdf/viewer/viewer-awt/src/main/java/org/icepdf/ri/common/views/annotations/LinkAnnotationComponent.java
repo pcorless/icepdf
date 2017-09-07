@@ -49,7 +49,7 @@ public class LinkAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
-
+        super.resetAppearanceShapes();
     }
 
     public void paintComponent(Graphics g) {

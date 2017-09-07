@@ -95,7 +95,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         addGB(this, new ColorButton(0, 176, 80), 5, 2, 1, 1);
         addGB(this, new ColorButton(0, 176, 240), 6, 2, 1, 1);
         addGB(this, new ColorButton(0, 112, 192), 7, 2, 1, 1);
-        addGB(this, new ColorButton(0, 32, 96), 8, 2, 1, 1);
+        addGB(this, new ColorButton(32, 76, 112), 8, 2, 1, 1);
         addGB(this, new ColorButton(112, 48, 160), 9, 2, 1, 1);
 
         // recent colour panel

@@ -48,6 +48,7 @@ public class SquareAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
+        super.resetAppearanceShapes();
         refreshAnnotationRect();
         SquareAnnotation squareAnnotation = (SquareAnnotation) annotation;
         squareAnnotation.resetAppearanceStream(getPageTransform());

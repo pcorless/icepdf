@@ -42,7 +42,7 @@ public class PolygonAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
-
+        super.resetAppearanceShapes();
     }
 
     @Override

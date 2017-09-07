@@ -276,6 +276,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
     @Override
     public void resetAppearanceShapes() {
+        super.resetAppearanceShapes();
         setAppearanceStream();
         annotation.resetAppearanceStream(getPageTransform());
     }

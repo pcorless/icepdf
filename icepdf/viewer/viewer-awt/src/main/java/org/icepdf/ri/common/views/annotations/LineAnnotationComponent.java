@@ -61,6 +61,7 @@ public class LineAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
+        super.resetAppearanceShapes();
         refreshAnnotationRect();
         LineAnnotation textMarkupAnnotation = (LineAnnotation) annotation;
         textMarkupAnnotation.resetAppearanceStream(dx, dy, getPageTransform());

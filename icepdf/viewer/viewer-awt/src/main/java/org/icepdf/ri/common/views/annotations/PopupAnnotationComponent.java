@@ -190,11 +190,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         // try and make the popup the same colour as the annotations fill color
         Color popupBackgroundColor = backgroundColor;
-        // todo needs some work to apply softer colors so text can always be seen.
         if (parentAnnotation.getColor() != null) {
-            Color color = parentAnnotation.getColor().brighter();
-            popupBackgroundColor = color;
-//            popupBackgroundColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 80);
+            popupBackgroundColor = checkColor(parentAnnotation.getColor());
         }
 
         // minimize button
@@ -779,10 +776,20 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     public void resetAppearanceShapes() {
         MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
         if (parentAnnotation.getColor() != null) {
-            Color color = parentAnnotation.getColor().brighter();
+            Color color = checkColor(parentAnnotation.getColor());
             minimizeButton.setBackground(color);
             commentPanel.setBackground(color);
         }
+    }
+
+    /**
+     * Some work is needed here to get xor painting for darker background colors and black text.
+     */
+    private Color checkColor(Color newColor) {
+        if (newColor.equals(Color.BLACK)) {
+            newColor = backgroundColor;
+        }
+        return newColor.brighter();
     }
 
     class PopupTreeListener extends MouseAdapter {
@@ -808,8 +815,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         private void maybeShowPopup(MouseEvent e) {
             if (e.isPopupTrigger()) {
-                contextMenu.show(e.getComponent(),
-                        e.getX(), e.getY());
+                contextMenu.show(e.getComponent(), e.getX(), e.getY());
             }
         }
     }

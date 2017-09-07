@@ -41,7 +41,7 @@ public class PolyLineAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
-
+        super.resetAppearanceShapes();
     }
 
     @Override

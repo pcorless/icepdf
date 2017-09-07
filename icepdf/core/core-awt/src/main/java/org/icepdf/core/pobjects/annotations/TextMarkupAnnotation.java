@@ -125,8 +125,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
      */
     private Shape[] quadrilaterals;
 
-    private Color textMarkupColor;
-
     private GeneralPath markupPath;
     private ArrayList<Shape> markupBounds;
 
@@ -160,11 +158,11 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             }
         }
         if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
-            textMarkupColor = highlightColor;
+            color = highlightColor;
         } else if (SUBTYPE_STRIKE_OUT.equals(subtype)) {
-            textMarkupColor = strikeOutColor;
+            color = strikeOutColor;
         } else if (SUBTYPE_UNDERLINE.equals(subtype)) {
-            textMarkupColor = underlineColor;
+            color = underlineColor;
         } else if (SUBTYPE_SQUIGGLY.equals(subtype)) {
             // not implemented
         }
@@ -271,7 +269,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
         if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
             shapes.add(new ShapeDrawCmd(markupPath));
-            shapes.add(new ColorDrawCmd(textMarkupColor));
+            shapes.add(new ColorDrawCmd(color));
             shapes.add(new FillDrawCmd());
             shapes.add(new AlphaDrawCmd(
                     AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
@@ -285,7 +283,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 strikeOutPath.lineTo((float) bound.getMaxX(), y);
                 strikeOutPath.closePath();
                 shapes.add(new ShapeDrawCmd(strikeOutPath));
-                shapes.add(new ColorDrawCmd(textMarkupColor));
+                shapes.add(new ColorDrawCmd(color));
                 shapes.add(new DrawDrawCmd());
             }
         } else if (SUBTYPE_UNDERLINE.equals(subtype)) {
@@ -297,7 +295,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 underlinePath.lineTo((float) bound.getMaxX(), (float) bound.getMinY());
                 underlinePath.closePath();
                 shapes.add(new ShapeDrawCmd(underlinePath));
-                shapes.add(new ColorDrawCmd(textMarkupColor));
+                shapes.add(new ColorDrawCmd(color));
                 shapes.add(new DrawDrawCmd());
             }
         } else if (SUBTYPE_SQUIGGLY.equals(subtype)) {
@@ -405,11 +403,11 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     }
 
     public Color getTextMarkupColor() {
-        return textMarkupColor;
+        return color;
     }
 
     public void setTextMarkupColor(Color textMarkupColor) {
-        this.textMarkupColor = textMarkupColor;
+        this.color = textMarkupColor;
     }
 
 }

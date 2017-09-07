@@ -44,6 +44,7 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
+        super.resetAppearanceShapes();
         TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation) annotation;
         textMarkupAnnotation.resetAppearanceStream(getPageTransform());
     }

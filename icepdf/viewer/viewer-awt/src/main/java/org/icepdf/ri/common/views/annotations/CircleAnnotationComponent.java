@@ -52,6 +52,7 @@ public class CircleAnnotationComponent extends MarkupAnnotationComponent {
 
     @Override
     public void resetAppearanceShapes() {
+        super.resetAppearanceShapes();
         refreshAnnotationRect();
         CircleAnnotation circleAnnotation = (CircleAnnotation) annotation;
         circleAnnotation.resetAppearanceStream(getPageTransform());
