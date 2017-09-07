@@ -20,6 +20,8 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
@@ -60,7 +62,7 @@ public class ImagingPreferencesPanel extends JPanel {
                         ImageReferenceFactory.ImageReference.SMOOTH_SCALED),
                 new ImageReferenceItem(messageBundle.getString(
                         "viewer.dialog.viewerPreferences.section.imaging.imageReference.blurred.label"),
-                        ImageReferenceFactory.ImageReference.BLURRED),
+                        ImageReferenceFactory.ImageReference.BLURRED)
         };
 
         imageReferenceComboBox = new JComboBox<>(imageReferenceItems);
@@ -74,6 +76,10 @@ public class ImagingPreferencesPanel extends JPanel {
 
         JPanel imagingPreferencesPanel = new JPanel(new GridBagLayout());
         imagingPreferencesPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        imagingPreferencesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.imaging.imageReference.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;

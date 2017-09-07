@@ -18,9 +18,8 @@ package org.icepdf.ri.common.properties;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.images.Images;
-import org.icepdf.ri.util.FontPropertiesManager;
+import org.icepdf.ri.util.font.ClearFontCacheWorker;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -305,20 +304,7 @@ public class FontPanel extends JPanel implements ActionListener {
         if (event.getSource() == resetFontCacheButton) {
             // reset the font properties cache.
             resetFontCacheButton.setEnabled(false);
-            org.icepdf.ri.common.SwingWorker worker = new SwingWorker() {
-                public Object construct() {
-                    FontPropertiesManager fontPropertiesManager = FontPropertiesManager.getInstance();
-                    fontPropertiesManager.clearProperties();
-                    fontPropertiesManager.readDefaultFontProperties();
-                    fontPropertiesManager.saveProperties();
-                    resetFontCacheButton.setEnabled(true);
-
-                    Runnable doSwingWork = () -> resetFontCacheButton.setEnabled(true);
-                    SwingUtilities.invokeLater(doSwingWork);
-                    return null;
-                }
-            };
-            worker.setThreadPriority(Thread.MIN_PRIORITY);
+            org.icepdf.ri.common.SwingWorker worker = new ClearFontCacheWorker(resetFontCacheButton);
             worker.start();
         }
     }

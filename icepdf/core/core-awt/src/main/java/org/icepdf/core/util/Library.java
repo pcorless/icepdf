@@ -51,8 +51,8 @@ public class Library {
     protected static ThreadPoolExecutor commonThreadPool;
     protected static ThreadPoolExecutor imageThreadPool;
 
-    protected static int commonPoolThreads;
-    protected static int imagePoolThreads;
+    public static int commonPoolThreads;
+    public static int imagePoolThreads;
     private static final long KEEP_ALIVE_TIME = 90;
 
     static {
@@ -77,10 +77,10 @@ public class Library {
             log.warning("Error reading buffered scale factor");
         }
 
-        log.fine("Starting ICEpdf Thread Pools: " +
-                (commonPoolThreads + imagePoolThreads) +
-                " threads.");
-        initializeThreadPool();
+//        log.fine("Starting ICEpdf Thread Pools: " +
+//                (commonPoolThreads + imagePoolThreads) +
+//                " threads.");
+//        initializeThreadPool();
     }
 
     // new incremental file loader class.
@@ -774,6 +774,7 @@ public class Library {
             });
         }
 
+        log.fine("Starting ICEpdf image proxy Pool: " + imageThreadPool + " threads.");
         if (imageThreadPool == null || imageThreadPool.isShutdown()) {
             imageThreadPool = new ThreadPoolExecutor(
                     imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
@@ -801,7 +802,7 @@ public class Library {
 
     public static void execute(Runnable runnable) {
         try {
-            if (commonThreadPool.isShutdown()) {
+            if (commonThreadPool == null || commonThreadPool.isShutdown()) {
                 initializeThreadPool();
             }
             commonThreadPool.execute(runnable);
@@ -812,7 +813,7 @@ public class Library {
 
     public static void executeImage(FutureTask callable) {
         try {
-            if (imageThreadPool.isShutdown()) {
+            if (imageThreadPool == null || imageThreadPool.isShutdown()) {
                 initializeThreadPool();
             }
             imageThreadPool.execute(callable);

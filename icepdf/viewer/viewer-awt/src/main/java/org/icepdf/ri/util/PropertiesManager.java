@@ -69,6 +69,10 @@ public class PropertiesManager {
     public static final String PROPERTY_PAGE_VIEW_BACKGROUND_COLOR = "org.icepdf.core.views.background.color";
     // image reference type.
     public static final String PROPERTY_IMAGING_REFERENCE_TYPE = "org.icepdf.core.imageReference";
+    // advanced threading properties
+    public static final String PROPERTY_IMAGE_PROXY_ENABLED = "org.icepdf.core.imageProxy";
+    public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";
+    public static final String PROPERTY_COMMON_THREAD_COUNT = "org.icepdf.core.library.threadPoolSize";
     // properties used to hide/show toolbars
     public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";

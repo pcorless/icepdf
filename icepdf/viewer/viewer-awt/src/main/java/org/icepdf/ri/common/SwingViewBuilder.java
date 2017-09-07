@@ -16,8 +16,10 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.ImageReference;
 import org.icepdf.core.pobjects.graphics.ImageReferenceFactory;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
@@ -2181,6 +2183,11 @@ public class SwingViewBuilder {
         // image reference type.
         ImageReferenceFactory.imageReferenceType = ImageReferenceFactory.getImageReferenceType(
                 preferences.get(PropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, "default"));
+
+        // advanced reference types.
+        Library.commonPoolThreads = preferences.getInt(PropertiesManager.PROPERTY_COMMON_THREAD_COUNT, Library.commonPoolThreads);
+        Library.imagePoolThreads = preferences.getInt(PropertiesManager.PROPERTY_IMAGE_PROXY_THREAD_COUNT, Library.imagePoolThreads);
+        ImageReference.useProxy = preferences.getBoolean(PropertiesManager.PROPERTY_IMAGE_PROXY_ENABLED, ImageReference.useProxy);
 
     }
 

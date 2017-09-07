@@ -99,7 +99,7 @@ public class PreferencesDialog extends EscapeJDialog {
                 PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.advanced.title"),
-                    new FontsPreferencesPanel(swingController, propertiesManager, messageBundle));
+                    new AdvancedPreferencesPanel(swingController, propertiesManager, messageBundle));
         }
 
         JPanel layoutPanel = new JPanel(new GridBagLayout());

@@ -17,8 +17,14 @@ package org.icepdf.ri.common.preferences;
 
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.util.PropertiesManager;
+import org.icepdf.ri.util.font.ClearFontCacheWorker;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 /**
@@ -26,9 +32,71 @@ import java.util.ResourceBundle;
  *
  * @since 6.3
  */
-public class FontsPreferencesPanel extends JPanel {
+public class FontsPreferencesPanel extends JPanel implements ActionListener {
+
+    // layouts constraint
+    private GridBagConstraints constraints;
+
+    // clear and rescan system for fonts and rewrite file.
+    private JButton resetFontCacheButton;
 
     public FontsPreferencesPanel(SwingController swingController, PropertiesManager propertiesManager,
                                  ResourceBundle messageBundle) {
+        super(new GridBagLayout());
+        setAlignmentY(JPanel.TOP_ALIGNMENT);
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.weightx = 1;
+        constraints.weighty = 0;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(5, 5, 5, 5);
+
+        // build out the font cache reset button.
+        JPanel fontCachePreferencesPanel = new JPanel(new GridBagLayout());
+        fontCachePreferencesPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        fontCachePreferencesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.fonts.fontCache.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+
+        resetFontCacheButton = new JButton(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.fonts.fontCache.button.label"));
+        resetFontCacheButton.addActionListener(this);
+
+        constraints.anchor = GridBagConstraints.WEST;
+        addGB(fontCachePreferencesPanel, new JLabel(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.fonts.fontCache.label")), 0, 0, 1, 1);
+        constraints.anchor = GridBagConstraints.EAST;
+        addGB(fontCachePreferencesPanel, resetFontCacheButton, 1, 0, 1, 1);
+
+        constraints.anchor = GridBagConstraints.NORTHWEST;
+        constraints.fill = GridBagConstraints.BOTH;
+        addGB(this, fontCachePreferencesPanel, 0, 0, 1, 1);
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 1, 1, 1);
+
     }
+
+    @Override
+    public void actionPerformed(ActionEvent event) {
+        if (event.getSource() == resetFontCacheButton) {
+            // reset the font properties cache.
+            resetFontCacheButton.setEnabled(false);
+            org.icepdf.ri.common.SwingWorker worker = new ClearFontCacheWorker(resetFontCacheButton);
+            worker.start();
+        }
+    }
+
+    private void addGB(JPanel layout, Component component,
+                       int x, int y,
+                       int rowSpan, int colSpan) {
+        constraints.gridx = x;
+        constraints.gridy = y;
+        constraints.gridwidth = rowSpan;
+        constraints.gridheight = colSpan;
+        layout.add(component, constraints);
+    }
+
 }
