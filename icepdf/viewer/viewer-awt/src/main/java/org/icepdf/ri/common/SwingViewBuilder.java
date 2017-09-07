@@ -16,6 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.ImageReferenceFactory;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
@@ -2161,7 +2162,7 @@ public class SwingViewBuilder {
 
         Preferences preferences = propertiesManager.getPreferences();
 
-        // apply text selection and highlight colors from prefernces.
+        // apply text selection and highlight colors from preferences.
         Page.highlightColor = new Color(preferences.getInt(
                 PropertiesManager.PROPERTY_TEXT_HIGHLIGHT_COLOR, Page.highlightColor.getRGB()));
         Page.selectionColor = new Color(preferences.getInt(
@@ -2176,6 +2177,10 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, PageViewDecorator.pageBorderColor.getRGB()));
         AbstractDocumentView.backgroundColour = new Color(preferences.getInt(
                 PropertiesManager.PROPERTY_PAGE_VIEW_BACKGROUND_COLOR, AbstractDocumentView.backgroundColour.getRGB()));
+
+        // image reference type.
+        ImageReferenceFactory.imageReferenceType = ImageReferenceFactory.getImageReferenceType(
+                preferences.get(PropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, "default"));
 
     }
 

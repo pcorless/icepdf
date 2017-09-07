@@ -198,8 +198,10 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         Color color;
         for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
             color = colorLabel.getColor();
+            constraints.weightx = 0;
             addGB(labeledColorPanel, new ColorButton(color.getRed(), color.getGreen(), color.getBlue()),
                     0, y, 1, 1);
+            constraints.weightx = 1.0;
             addGB(labeledColorPanel, new JLabel(colorLabel.getLabel()), 1, y, 1, 1);
             y++;
         }

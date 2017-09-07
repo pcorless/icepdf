@@ -67,6 +67,8 @@ public class PropertiesManager {
     public static final String PROPERTY_PAGE_VIEW_PAPER_COLOR = "org.icepdf.core.views.page.paper.color";
     public static final String PROPERTY_PAGE_VIEW_BORDER_COLOR = "org.icepdf.core.views.page.border.color";
     public static final String PROPERTY_PAGE_VIEW_BACKGROUND_COLOR = "org.icepdf.core.views.background.color";
+    // image reference type.
+    public static final String PROPERTY_IMAGING_REFERENCE_TYPE = "org.icepdf.core.imageReference";
     // properties used to hide/show toolbars
     public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";

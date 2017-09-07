@@ -44,38 +44,52 @@ public class ImageReferenceFactory {
     // allow scaling of large images to improve clarity on screen
 
     public enum ImageReference {
-        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED, BLURRED // FLOYD_STEINBERG
+        DEFAULT, SCALED, MIP_MAP, SMOOTH_SCALED, BLURRED;
+
+
     }
 
-    private static ImageReference scaleType;
+    public static ImageReference imageReferenceType;
 
     static {
         // decide if large images will be scaled
-        String imageReferencetype =
+        String imageReferenceType =
                 Defs.sysProperty("org.icepdf.core.imageReference",
                         "default");
-        if ("scaled".equals(imageReferencetype)) {
-            scaleType = ImageReference.SCALED;
-        } else if ("mipmap".equals(imageReferencetype)) {
-            scaleType = ImageReference.MIP_MAP;
-        } else if ("smoothScaled".equals(imageReferencetype)) {
-            scaleType = ImageReference.SMOOTH_SCALED;
-        } else if ("blurred".equals(imageReferencetype)) {
-            scaleType = ImageReference.BLURRED;
-        } else {
-            scaleType = ImageReference.DEFAULT;
-        }
+        ImageReferenceFactory.imageReferenceType = getImageReferenceType(imageReferenceType);
     }
 
     private ImageReferenceFactory() {
     }
 
-    public static ImageReference getScaleType() {
-        return scaleType;
+    public static ImageReference getImageReferenceType() {
+        return imageReferenceType;
     }
 
-    public static void setScaleType(ImageReference scaleType) {
-        ImageReferenceFactory.scaleType = scaleType;
+    public static void setImageReferenceType(ImageReference imageReferenceType) {
+        ImageReferenceFactory.imageReferenceType = imageReferenceType;
+    }
+
+    /**
+     * Takes a given imageReferenceType name and returns the associated enum type.
+     *
+     * @param imageReferenceType image type to get enum for.
+     * @return associated ImageReference enum or ImageReference.DEFAULT if no mapping can be found.
+     */
+    public static ImageReference getImageReferenceType(String imageReferenceType) {
+        ImageReference scaleType;
+        if ("scaled".equals(imageReferenceType) || "SCALED".equals(imageReferenceType)) {
+            scaleType = ImageReference.SCALED;
+        } else if ("mipmap".equals(imageReferenceType) || "MIP_MAP".equals(imageReferenceType)) {
+            scaleType = ImageReference.MIP_MAP;
+        } else if ("smoothScaled".equals(imageReferenceType) || "SMOOTH_SCALED".equals(imageReferenceType)) {
+            scaleType = ImageReference.SMOOTH_SCALED;
+        } else if ("blurred".equals(imageReferenceType) || "BLURRED".equals(imageReferenceType)) {
+            scaleType = ImageReference.BLURRED;
+        } else {
+            scaleType = ImageReference.DEFAULT;
+        }
+        return scaleType;
     }
 
     /**
@@ -91,7 +105,7 @@ public class ImageReferenceFactory {
     public static org.icepdf.core.pobjects.graphics.ImageReference
     getImageReference(ImageStream imageStream, Resources resources, GraphicsState graphicsState,
                       Integer imageIndex, Page page) {
-        switch (scaleType) {
+        switch (imageReferenceType) {
             case SCALED:
                 return new ScaledImageReference(imageStream, graphicsState, resources, imageIndex, page);
             case SMOOTH_SCALED:
