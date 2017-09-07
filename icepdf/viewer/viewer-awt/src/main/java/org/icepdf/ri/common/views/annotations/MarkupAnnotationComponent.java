@@ -80,6 +80,34 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
     }
 
     @Override
+    public void resetAppearanceShapes() {
+        // our only purpose is to update the popup annotation color.
+        if (markupAnnotation != null) {
+            PopupAnnotation popup = markupAnnotation.getPopupAnnotation();
+            if (popup != null) {
+                // toggle the visibility of the popup
+                popup.setOpen(!popup.isOpen());
+                // find the popup component
+                ArrayList<AbstractAnnotationComponent> annotationComponents =
+                        pageViewComponent.getAnnotationComponents();
+                Reference compReference;
+                Reference popupReference = popup.getPObjectReference();
+                for (AnnotationComponent annotationComponent : annotationComponents) {
+                    compReference = annotationComponent.getAnnotation().getPObjectReference();
+                    // find the component and toggle it's visibility, null check just encase compRef is direct.
+                    if (compReference != null && compReference.equals(popupReference)) {
+                        if (annotationComponent instanceof PopupAnnotationComponent) {
+                            PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComponent);
+                            popupComponent.resetAppearanceShapes();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    @Override
     public void mouseClicked(MouseEvent e) {
         super.mouseClicked(e);
         // on double click toggle the visibility of the popup component.

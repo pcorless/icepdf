@@ -777,7 +777,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
     @Override
     public void resetAppearanceShapes() {
-
+        MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
+        if (parentAnnotation.getColor() != null) {
+            Color color = parentAnnotation.getColor().brighter();
+            minimizeButton.setBackground(color);
+            commentPanel.setBackground(color);
+        }
     }
 
     class PopupTreeListener extends MouseAdapter {
