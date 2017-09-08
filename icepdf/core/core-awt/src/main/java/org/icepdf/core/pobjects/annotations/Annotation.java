@@ -424,6 +424,12 @@ public abstract class Annotation extends Dictionary {
      * to other annotation properties, such as position and size.
      */
     public static final int FLAG_LOCKED_CONTENTS = 0x0200;
+
+    /**
+     * Custom bit, for flagging an annotation as private and only viewable by a users with the same
+     * user name.  Default value is unset or public.
+     */
+    public static final int FLAG_PRIVATE_CONTENTS = 0x0400;
     /**
      * Border style
      */
@@ -1668,6 +1674,16 @@ public abstract class Annotation extends Dictionary {
 
     public boolean getFlagLockedContents() {
         return ((getInt(FLAG_KEY) & FLAG_LOCKED_CONTENTS) != 0);
+    }
+
+    /**
+     * Gets the value of the FLAG_PRIVATE_CONTENTS flag at bit 11.  The value can be used to determine the visibility
+     * of an annotation to a given user.
+     *
+     * @return true if the private contents flag as been set, otherwise false.
+     */
+    public boolean getFlagPrivateContents() {
+        return ((getInt(FLAG_KEY) & FLAG_PRIVATE_CONTENTS) != 0);
     }
 
     public boolean getFlagLocked() {
