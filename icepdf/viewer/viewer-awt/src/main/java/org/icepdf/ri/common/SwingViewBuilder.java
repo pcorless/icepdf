@@ -297,7 +297,7 @@ public class SwingViewBuilder {
     protected int documentViewType;
     protected int documentPageFitMode;
     protected ResourceBundle messageBundle;
-    protected PropertiesManager propertiesManager;
+    protected static PropertiesManager propertiesManager;
 
     protected static boolean isMacOs;
 
@@ -502,7 +502,7 @@ public class SwingViewBuilder {
         return menuBar;
     }
 
-    protected KeyStroke buildKeyStroke(int keyCode, int modifiers) {
+    protected static KeyStroke buildKeyStroke(int keyCode, int modifiers) {
         return buildKeyStroke(keyCode, modifiers, false);
     }
 
@@ -516,7 +516,7 @@ public class SwingViewBuilder {
      * @param onRelease to build
      * @return built KeyStroke
      */
-    protected KeyStroke buildKeyStroke(int keyCode, int modifiers, boolean onRelease) {
+    protected static KeyStroke buildKeyStroke(int keyCode, int modifiers, boolean onRelease) {
         doubleCheckPropertiesManager();
 
         if (propertiesManager.checkAndStoreBooleanProperty(
@@ -565,6 +565,7 @@ public class SwingViewBuilder {
             addToMenu(fileMenu, openFileMenuItem);
             addToMenu(fileMenu, openURLMenuItem);
         }
+        addToMenu(fileMenu, buildRecentFileMenuItem());
         fileMenu.addSeparator();
         addToMenu(fileMenu, buildCloseMenuItem());
         addToMenu(fileMenu, buildSaveAsFileMenuItem());
@@ -583,6 +584,17 @@ public class SwingViewBuilder {
             addToMenu(fileMenu, buildExitMenuItem());
         }
         return fileMenu;
+    }
+
+    public JMenu buildRecentFileMenuItem() {
+        if (propertiesManager.checkAndStoreBooleanProperty(PropertiesManager.PROPERTY_SHOW_MENU_RECENT_FILES)) {
+            JMenu recentFilesSubMenu = new JMenu(messageBundle.getString("viewer.menu.open.recentFiles.label"));
+            viewerController.setRecentFilesSubMenu(recentFilesSubMenu);
+            viewerController.refreshRecentFileMenuItem();
+            return recentFilesSubMenu;
+        } else {
+            return null;
+        }
     }
 
     public JMenuItem buildOpenFileMenuItem() {
@@ -2092,7 +2104,7 @@ public class SwingViewBuilder {
      * @param text display text for the menu item
      * @return menu item complete with text and action listener
      */
-    protected JMenuItem makeMenuItem(String text, KeyStroke accel) {
+    protected static JMenuItem makeMenuItem(String text, KeyStroke accel) {
         JMenuItem jmi = new JMenuItem(text);
         if (accel != null)
             jmi.setAccelerator(accel);
@@ -2151,7 +2163,7 @@ public class SwingViewBuilder {
      * Method to try to get the properties manager from the window management callback,
      * if we don't already have a propertiesManager object
      */
-    protected void doubleCheckPropertiesManager() {
+    protected static void doubleCheckPropertiesManager() {
         if (propertiesManager == null) {
             propertiesManager = PropertiesManager.getInstance();
         }

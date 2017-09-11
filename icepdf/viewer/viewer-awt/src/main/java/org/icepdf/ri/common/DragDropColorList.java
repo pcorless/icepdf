@@ -35,9 +35,6 @@ import static org.icepdf.ri.util.PropertiesManager.PROPERTY_ANNOTATION_RECENT_CO
  */
 public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
 
-    // use ascii '27' or ESC as the delimiting character when storing the color list.
-    private static final String SEPARATOR = "\u001b";
-
     private DefaultListModel<ColorLabel> model;
 
     private Preferences preferences;
@@ -95,9 +92,10 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         // add the new name/value pair to the preferences
         String currentColorLabels = preferences.get(PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
         if (currentColorLabels.length() == 0) {
-            currentColorLabels = color.getRGB() + SEPARATOR + label;
+            currentColorLabels = color.getRGB() + PropertiesManager.PROPERTY_TOKEN_SEPARATOR + label;
         } else {
-            currentColorLabels += SEPARATOR + color.getRGB() + SEPARATOR + label;
+            currentColorLabels += PropertiesManager.PROPERTY_TOKEN_SEPARATOR + color.getRGB() +
+                    PropertiesManager.PROPERTY_TOKEN_SEPARATOR + label;
         }
         preferences.put(PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, currentColorLabels);
     }
@@ -128,7 +126,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
     static ArrayList<ColorLabel> retrieveColorLabels() {
         String currentColorLabels = PropertiesManager.getInstance().getPreferences().get(
                 PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
-        StringTokenizer toker = new StringTokenizer(currentColorLabels, SEPARATOR);
+        StringTokenizer toker = new StringTokenizer(currentColorLabels, PropertiesManager.PROPERTY_TOKEN_SEPARATOR);
         ArrayList<ColorLabel> colorLabels = new ArrayList<>();
         while (toker.hasMoreTokens()) {
             int rgb = Integer.parseInt(toker.nextToken());
@@ -143,9 +141,10 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         int size = colorLabels.size();
         int i = 0;
         for (ColorLabel colorLabel : colorLabels) {
-            encodedColorLabels.append(colorLabel.getColor().getRGB()).append(SEPARATOR).append(colorLabel.getLabel());
+            encodedColorLabels.append(colorLabel.getColor().getRGB()).append(
+                    PropertiesManager.PROPERTY_TOKEN_SEPARATOR).append(colorLabel.getLabel());
             i++;
-            if (i != size) encodedColorLabels.append(SEPARATOR);
+            if (i != size) encodedColorLabels.append(PropertiesManager.PROPERTY_TOKEN_SEPARATOR);
         }
         preferences.put(PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, encodedColorLabels.toString());
         firePropertyChange(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, null, true);

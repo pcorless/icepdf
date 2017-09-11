@@ -140,7 +140,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         ArrayList<Color> recentColors = new ArrayList<>(10);
         // if we have some colour parse out the colours
         if (rawRecents != null) {
-            StringTokenizer toker = new StringTokenizer(rawRecents, "|");
+            StringTokenizer toker = new StringTokenizer(rawRecents, PropertiesManager.PROPERTY_TOKEN_SEPARATOR);
             while (toker.hasMoreTokens()) {
                 recentColors.add(0, new Color(Integer.parseInt(toker.nextToken())));
             }
@@ -226,7 +226,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
                 Preferences preferences = PropertiesManager.getInstance().getPreferences();
                 String rawRecents = preferences.get(PROPERTY_ANNOTATION_RECENT_COLORS, null);
                 if (rawRecents != null) {
-                    rawRecents = newColor.getRGB() + "|" + rawRecents;
+                    rawRecents = newColor.getRGB() + PropertiesManager.PROPERTY_TOKEN_SEPARATOR + rawRecents;
                 } else {
                     rawRecents = String.valueOf(newColor.getRGB());
                 }

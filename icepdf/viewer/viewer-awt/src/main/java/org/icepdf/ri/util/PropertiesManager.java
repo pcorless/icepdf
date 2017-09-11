@@ -40,6 +40,9 @@ public class PropertiesManager {
     private static final Logger logger =
             Logger.getLogger(PropertiesManager.class.toString());
 
+    // use ascii '27' or ESC as the delimiting character when storing multiple values in one property name.
+    public static final String PROPERTY_TOKEN_SEPARATOR = "\u001b";
+
     //default file for all not specified properties
     private static final String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";
     public static final String DEFAULT_PROP_FILE_PATH = "org/icepdf/ri/viewer/res/";
@@ -47,6 +50,8 @@ public class PropertiesManager {
 
     public static final String PROPERTY_DEFAULT_FILE_PATH = "application.default.filepath";
     public static final String PROPERTY_DEFAULT_URL = "application.default.url";
+
+    public static final String PROPERTY_RECENT_FILES_SIZE = "application.menu.recent.file.size";
 
     // window properties
     public static final String PROPERTY_DIVIDER_LOCATION = "application.divider.location";
@@ -74,6 +79,7 @@ public class PropertiesManager {
     public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";
     public static final String PROPERTY_COMMON_THREAD_COUNT = "org.icepdf.core.library.threadPoolSize";
     // properties used to hide/show toolbars
+    public static final String PROPERTY_SHOW_MENU_RECENT_FILES = "application.toolbar.show.resentfiles";
     public static final String PROPERTY_SHOW_TOOLBAR_UTILITY = "application.toolbar.show.utility";
     public static final String PROPERTY_SHOW_TOOLBAR_PAGENAV = "application.toolbar.show.pagenav";
     public static final String PROPERTY_SHOW_TOOLBAR_ZOOM = "application.toolbar.show.zoom";
@@ -190,6 +196,9 @@ public class PropertiesManager {
     public static final String PROPERTY_ANNOTATION_RECENT_COLORS = "application.viewer.preference.annotation.color.recent";
     // resent colour and labels, enabled automatically if there is more then one.
     public static final String PROPERTY_ANNOTATION_RECENT_COLOR_LABEL = "application.viewer.preference.annotation.recent.color.labels";
+
+    // store for recently opened files.
+    public static final String PROPERTY_RECENTLY_OPENED_FILES = "application.viewer.preference.recent.files";
 
     private static PropertiesManager propertiesManager;
 

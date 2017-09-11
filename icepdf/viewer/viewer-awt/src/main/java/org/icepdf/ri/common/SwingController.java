@@ -55,6 +55,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PrintQuality;
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
@@ -73,16 +74,17 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import static org.icepdf.ri.util.PropertiesManager.PROPERTY_DEFAULT_ROTATION;
+import static org.icepdf.ri.util.PropertiesManager.*;
 
 /**
  * SwingController is the meat of a PDF viewing application. It is the Controller
@@ -117,6 +119,7 @@ public class SwingController
     protected static final int MAX_SELECT_ALL_PAGE_COUNT = 250;
 
     private JMenuItem openFileMenuItem;
+    private JMenu recentFilesSubMenu;
     private JMenuItem openURLMenuItem;
     private JMenuItem closeMenuItem;
     private JMenuItem saveAsFileMenuItem;
@@ -347,6 +350,13 @@ public class SwingController
     public void setOpenFileMenuItem(JMenuItem mi) {
         openFileMenuItem = mi;
         mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setRecentFilesSubMenu(JMenu mi) {
+        recentFilesSubMenu = mi;
     }
 
     /**
@@ -1794,6 +1804,73 @@ public class SwingController
     }
 
     /**
+     * Adds the recently opened file to the "Recently Opened" file list.
+     *
+     * @param path path to be added to recent files list.
+     */
+    protected void addRecentFileEntry(Path path) {
+        // get reference to the backing store.
+        Preferences preferences = propertiesManager.getPreferences();
+        int maxListSize = preferences.getInt(PROPERTY_RECENT_FILES_SIZE, 8);
+        String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
+        StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
+        ArrayList<String> recentPaths = new ArrayList<>(maxListSize);
+        String fileName, filePath;
+        while (toker.hasMoreTokens()) {
+            fileName = toker.nextToken();
+            filePath = toker.nextToken();
+            recentPaths.add(fileName + PROPERTY_TOKEN_SEPARATOR + Paths.get(filePath));
+        }
+        // add our new path the start of the list, remove any existing file names.
+        String newRecentFile = path.getFileName() + PROPERTY_TOKEN_SEPARATOR + path.toString();
+        if (recentPaths.contains(newRecentFile)) {
+            recentPaths.remove(newRecentFile);
+        }
+        recentPaths.add(0, newRecentFile);
+        // trim the list
+        if (recentPaths.size() > maxListSize) {
+            int size = recentPaths.size();
+            for (int i = size - maxListSize; i > 0; i--) {
+                recentPaths.remove(size - i);
+            }
+        }
+        // put the list back in teh properties.
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String recentPath : recentPaths) {
+            stringBuilder.append(recentPath).append(PROPERTY_TOKEN_SEPARATOR);
+        }
+        preferences.put(PROPERTY_RECENTLY_OPENED_FILES, stringBuilder.toString());
+
+        refreshRecentFileMenuItem();
+    }
+
+    /**
+     * Builds out the recent file list and assembles the menuItems.
+     */
+    protected void refreshRecentFileMenuItem() {
+        if (recentFilesSubMenu != null) {
+            recentFilesSubMenu.removeAll();
+
+            Preferences preferences = propertiesManager.getPreferences();
+            String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
+            StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
+            String fileName;
+            int count = 0;
+            while (toker.hasMoreTokens()) {
+                fileName = toker.nextToken();
+                final String filePath = toker.nextToken();
+                JMenuItem mi = SwingViewBuilder.makeMenuItem(
+                        fileName,
+                        SwingViewBuilder.buildKeyStroke(KeyEvent.VK_0 + count,
+                                KeyEventConstants.MODIFIER_OPEN_FILE));
+                mi.addActionListener(e -> openFileInSomeViewer(filePath));
+                recentFilesSubMenu.add(mi);
+                count++;
+            }
+        }
+    }
+
+    /**
      * Setup the security handle if specified, if not then creates and uses the default implementation.
      *
      * @param document         document to set securityCallback on .
@@ -1824,6 +1901,8 @@ public class SwingController
                 }
 
                 setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+
+                addRecentFileEntry(Paths.get(pathname));
 
                 // load the document
                 document = new Document();
