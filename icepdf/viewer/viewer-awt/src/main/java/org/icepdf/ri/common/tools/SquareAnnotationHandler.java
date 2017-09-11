@@ -227,8 +227,10 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         }
 
         // set the annotation tool to he select tool
-        documentViewController.getParentController().setDocumentToolMode(
-                DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED, false)) {
+            documentViewController.getParentController().setDocumentToolMode(
+                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        }
 
         rectangle = null;
         // clear the rectangle

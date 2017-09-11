@@ -132,7 +132,15 @@ public class PropertiesManager {
     public static final String PROPERTY_VIEWPREF_HIDEMENUBAR = "application.viewerpreferences.hidemenubar";
     public static final String PROPERTY_VIEWPREF_FITWINDOW = "application.viewerpreferences.fitwindow";
     public static final String PROPERTY_VIEWPREF_FORM_HIGHLIGHT = "application.viewerpreferences.form.highlight";
-
+    // annotation handler default to selection tool after annotation is created.
+    public static final String PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED = "application.annotation.highlight.selection.enabled";
+    public static final String PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED = "application.annotation.line.selection.enabled";
+    public static final String PROPERTY_ANNOTATION_LINK_SELECTION_ENABLED = "application.annotation.link.selection.enabled";
+    public static final String PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED = "application.annotation.rectangle.selection.enabled";
+    public static final String PROPERTY_ANNOTATION_CIRCLE_SELECTION_ENABLED = "application.annotation.circle.selection.enabled";
+    public static final String PROPERTY_ANNOTATION_INK_SELECTION_ENABLED = "application.annotation.ink.selection.enabled";
+    public static final String PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED = "application.annotation.freetext.selection.enabled";
+    public static final String PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED = "application.annotation.text.selection.enabled";
     // properties used to control visibility of annotation controls on main utility panel.
     public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.show.highlight";
     public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_UNDERLINE = "application.toolbar.annotation.show.underline";
@@ -148,6 +156,15 @@ public class PropertiesManager {
     // Individual controls for the annotation toolbar button commands
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION = "application.toolbar.show.annotation.selection";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT = "application.toolbar.show.annotation.highlight";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE = "application.toolbar.show.annotation.underline";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_STRIKE_OUT = "application.toolbar.show.annotation.strikeout";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINE = "application.toolbar.show.annotation.line";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINK = "application.toolbar.show.annotation.link";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_ARROW = "application.toolbar.show.annotation.arrow";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_RECTANGLE = "application.toolbar.show.annotation.rectangle";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_CIRCLE = "application.toolbar.show.annotation.circle";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_INK = "application.toolbar.show.annotation.ink";
+    public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_FREE_TEXT = "application.toolbar.show.annotation.freetext";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT = "application.toolbar.show.annotation.text";
     // Individual control of the markup annotation context menu
     public static final String PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO = "application.annotation.show.markup.replyTo";

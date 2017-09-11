@@ -325,7 +325,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
     }
 
-    abstract public void paintComponent(Graphics g);
+    public void paintComponent(Graphics g) {
+    }
 
     abstract public void resetAppearanceShapes();
 

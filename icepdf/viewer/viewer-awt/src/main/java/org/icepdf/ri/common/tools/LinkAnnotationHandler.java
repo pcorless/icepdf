@@ -23,6 +23,7 @@ import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.event.MouseInputListener;
 import java.awt.*;
@@ -100,8 +101,10 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
         }
 
         // set the annotation tool to he select tool
-        documentViewController.getParentController().setDocumentToolMode(
-                DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_LINK_SELECTION_ENABLED, false)) {
+            documentViewController.getParentController().setDocumentToolMode(
+                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        }
 
         // clear the rectangle
         clearRectangle(pageViewComponent);

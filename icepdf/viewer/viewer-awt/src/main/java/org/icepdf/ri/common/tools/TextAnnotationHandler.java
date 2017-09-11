@@ -31,6 +31,7 @@ import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
 import org.icepdf.ri.util.PropertiesManager;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -38,6 +39,7 @@ import java.awt.geom.NoninvertibleTransformException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 /**
  * TextAnnotationHandler tool is responsible creating a new comment type
@@ -250,6 +252,13 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         // resets user space rectangle to match bbox converted to page space
         comp2.refreshAnnotationRect();
 
+        // make sure we paint the popup correctly.  Given how we build the component, layout doesn't always get called
+        // on first view.
+        SwingUtilities.invokeLater(() -> {
+            comp2.revalidate();
+            comp2.repaint();
+        });
+
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
@@ -258,8 +267,10 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         }
 
         // set the annotation tool to he select tool
-        documentViewController.getParentController().setDocumentToolMode(
-                DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED, false)) {
+            documentViewController.getParentController().setDocumentToolMode(
+                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        }
     }
 
     protected void checkAndApplyPreferences() {

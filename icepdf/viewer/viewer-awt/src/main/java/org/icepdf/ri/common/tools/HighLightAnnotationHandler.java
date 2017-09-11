@@ -109,8 +109,10 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         createTextMarkupAnnotation(highlightBounds);
 
         // set the annotation tool to he select tool
-//        documentViewController.getParentController().setDocumentToolMode(
-//                DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_SELECTION_ENABLED, false)) {
+            documentViewController.getParentController().setDocumentToolMode(
+                    DocumentViewModel.DISPLAY_TOOL_SELECTION);
+        }
     }
 
 

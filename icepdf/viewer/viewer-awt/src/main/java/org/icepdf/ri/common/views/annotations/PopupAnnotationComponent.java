@@ -115,10 +115,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
             }
         }
 
+        buildGUI();
+
         boolean isVisible = popupAnnotation.isOpen();
         setVisible(isVisible);
 
-        buildGUI();
+
     }
 
     public void mouseMoved(MouseEvent me) {
@@ -230,8 +232,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         commentPanel.setBackground(popupBackgroundColor);
         commentPanel.setBorder(BorderFactory.createLineBorder(borderColor));
         this.setLayout(new BorderLayout());
-        this.add(commentPanel);
-//        this.setBackground(Color.WHITE);
+        this.add(commentPanel, BorderLayout.CENTER);
+        this.setBackground(Color.RED);
 
         /**
          * Build search GUI
@@ -765,11 +767,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
             }
         }
         return null;
-    }
-
-    @Override
-    public void paintComponent(Graphics g) {
-
     }
 
     @Override
