@@ -44,9 +44,9 @@ public class PropertiesManager {
     public static final String PROPERTY_TOKEN_SEPARATOR = "\u001b";
 
     //default file for all not specified properties
-    private static final String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";
-    public static final String DEFAULT_PROP_FILE_PATH = "org/icepdf/ri/viewer/res/";
-    public static final String DEFAULT_MESSAGE_BUNDLE = "org.icepdf.ri.resources.MessageBundle";
+    public static String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";
+    public static String DEFAULT_PROP_FILE_PATH = "org/icepdf/ri/viewer/res/";
+    public static String DEFAULT_MESSAGE_BUNDLE = "org.icepdf.ri.resources.MessageBundle";
 
     public static final String PROPERTY_DEFAULT_FILE_PATH = "application.default.filepath";
     public static final String PROPERTY_DEFAULT_URL = "application.default.url";
@@ -142,17 +142,17 @@ public class PropertiesManager {
     public static final String PROPERTY_ANNOTATION_FREE_TEXT_SELECTION_ENABLED = "application.annotation.freetext.selection.enabled";
     public static final String PROPERTY_ANNOTATION_TEXT_SELECTION_ENABLED = "application.annotation.text.selection.enabled";
     // properties used to control visibility of annotation controls on main utility panel.
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.show.highlight";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_UNDERLINE = "application.toolbar.annotation.show.underline";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_STRIKE_OUT = "application.toolbar.annotation.show.strikeout";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_LINE = "application.toolbar.annotation.show.line";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_LINK = "application.toolbar.annotation.show.link";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_ARROW = "application.toolbar.annotation.show.arrow";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_RECTANGLE = "application.toolbar.annotation.show.rectangle";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_CIRCLE = "application.toolbar.annotation.show.circle";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_INK = "application.toolbar.annotation.show.ink";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_FREE_TEXT = "application.toolbar.annotation.show.freetext";
-    public static final String PROPERTY_SHOW_UTILITY_ANNOTATION_TEXT = "application.toolbar.annotation.show.text";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_HIGHLIGHT = "application.toolbar.annotation.show.highlight";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_UNDERLINE = "application.toolbar.annotation.show.underline";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_STRIKE_OUT = "application.toolbar.annotation.show.strikeout";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_LINE = "application.toolbar.annotation.show.line";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_LINK = "application.toolbar.annotation.show.link";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_ARROW = "application.toolbar.annotation.show.arrow";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_RECTANGLE = "application.toolbar.annotation.show.rectangle";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_CIRCLE = "application.toolbar.annotation.show.circle";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_INK = "application.toolbar.annotation.show.ink";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_FREE_TEXT = "application.toolbar.annotation.show.freetext";
+    public static final String PROPERTY_SHOW_PROPERTIES_ANNOTATION_TEXT = "application.toolbar.annotation.show.text";
     // Individual controls for the annotation toolbar button commands
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_SELECTION = "application.toolbar.show.annotation.selection";
     public static final String PROPERTY_SHOW_TOOLBAR_ANNOTATION_HIGHLIGHT = "application.toolbar.show.annotation.highlight";
@@ -444,9 +444,9 @@ public class PropertiesManager {
                         preferences.put(key, defaultProps.getProperty(key));
                     }
                 } finally {
-                    in.close();
+                    if (in != null) in.close();
                 }
-            } catch (IOException ex) {
+            } catch (Throwable ex) {
                 // log the error
                 if (logger.isLoggable(Level.WARNING)) {
                     logger.log(Level.WARNING, "Error loading default properties cache", ex);
