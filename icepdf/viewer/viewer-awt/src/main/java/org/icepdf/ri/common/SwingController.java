@@ -186,11 +186,9 @@ public class SwingController
     private JToggleButton zoomInToolButton;
     private JToggleButton zoomDynamicToolButton;
     private JToggleButton selectToolButton;
+    // main annotation toolbar
     private AnnotationColorButton highlightAnnotationToolButton;
-    private JToggleButton textAnnotationToolButton;
-    private JToggleButton formHighlightButton;
     private JToggleButton linkAnnotationToolButton;
-    private JToggleButton highlightAnnotationUtilityToolButton;
     private JToggleButton strikeOutAnnotationToolButton;
     private JToggleButton underlineAnnotationToolButton;
     private JToggleButton lineAnnotationToolButton;
@@ -199,7 +197,20 @@ public class SwingController
     private JToggleButton circleAnnotationToolButton;
     private JToggleButton inkAnnotationToolButton;
     private JToggleButton freeTextAnnotationToolButton;
-    private JToggleButton textAnnotationUtilityToolButton;
+    private AnnotationColorButton textAnnotationToolButton;
+    private JToggleButton formHighlightButton;
+    // annotation properties toolbar.
+    private JToggleButton linkAnnotationPropertiesToolButton;
+    private JToggleButton highlightAnnotationPropertiesToolButton;
+    private JToggleButton strikeOutAnnotationPropertiesToolButton;
+    private JToggleButton underlineAnnotationPropertiesToolButton;
+    private JToggleButton lineAnnotationPropertiesToolButton;
+    private JToggleButton lineArrowAnnotationPropertiesToolButton;
+    private JToggleButton squareAnnotationPropertiesToolButton;
+    private JToggleButton circleAnnotationPropertiesToolButton;
+    private JToggleButton inkAnnotationPropertiesToolButton;
+    private JToggleButton freeTextAnnotationPropertiesToolButton;
+    private JToggleButton textAnnotationPropertiesToolButton;
     private JToolBar completeToolBar;
     // Printing in background thread monitors
     private ProgressMonitor printProgressMonitor;
@@ -858,7 +869,79 @@ public class SwingController
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
     public void setLinkAnnotationToolButton(JToggleButton btn) {
-        linkAnnotationToolButton = btn;
+        this.linkAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
+        this.strikeOutAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setUnderlineAnnotationToolButton(JToggleButton btn) {
+        this.underlineAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setLineAnnotationToolButton(JToggleButton btn) {
+        this.lineAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setLineArrowAnnotationToolButton(JToggleButton btn) {
+        this.lineArrowAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setSquareAnnotationToolButton(JToggleButton btn) {
+        this.squareAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setCircleAnnotationToolButton(JToggleButton btn) {
+        this.circleAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setInkAnnotationToolButton(JToggleButton btn) {
+        this.inkAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setFreeTextAnnotationToolButton(JToggleButton btn) {
+        this.freeTextAnnotationToolButton = btn;
+        btn.addItemListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setLinkAnnotationPropertiesToolButton(JToggleButton btn) {
+        linkAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
@@ -873,79 +956,79 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setHighlightAnnotationUtilityToolButton(JToggleButton btn) {
-        highlightAnnotationUtilityToolButton = btn;
+    public void setHighlightAnnotationPropertiesToolButton(JToggleButton btn) {
+        highlightAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
-        strikeOutAnnotationToolButton = btn;
+    public void setStrikeOutAnnotationPropertiesToolButton(JToggleButton btn) {
+        strikeOutAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setUnderlineAnnotationToolButton(JToggleButton btn) {
-        underlineAnnotationToolButton = btn;
+    public void setUnderlineAnnotationPropertiesToolButton(JToggleButton btn) {
+        underlineAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setLineAnnotationToolButton(JToggleButton btn) {
-        lineAnnotationToolButton = btn;
+    public void setLineAnnotationPropertiesToolButton(JToggleButton btn) {
+        lineAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setLineArrowAnnotationToolButton(JToggleButton btn) {
-        lineArrowAnnotationToolButton = btn;
+    public void setLineArrowAnnotationPropertiesToolButton(JToggleButton btn) {
+        lineArrowAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setSquareAnnotationToolButton(JToggleButton btn) {
-        squareAnnotationToolButton = btn;
+    public void setSquareAnnotationPropertiesToolButton(JToggleButton btn) {
+        squareAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setCircleAnnotationToolButton(JToggleButton btn) {
-        circleAnnotationToolButton = btn;
+    public void setCircleAnnotationPropertiesToolButton(JToggleButton btn) {
+        circleAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setInkAnnotationToolButton(JToggleButton btn) {
-        inkAnnotationToolButton = btn;
+    public void setInkAnnotationPropertiesToolButton(JToggleButton btn) {
+        inkAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setFreeTextAnnotationToolButton(JToggleButton btn) {
-        freeTextAnnotationToolButton = btn;
+    public void setFreeTextAnnotationPropertiesToolButton(JToggleButton btn) {
+        freeTextAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setTextAnnotationToolButton(JToggleButton btn) {
+    public void setTextAnnotationToolButton(AnnotationColorButton btn) {
         textAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -962,8 +1045,8 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setTextAnnotationUtilityToolButton(JToggleButton btn) {
-        textAnnotationUtilityToolButton = btn;
+    public void setTextAnnotationPropertiesToolButton(JToggleButton btn) {
+        textAnnotationPropertiesToolButton = btn;
         btn.addItemListener(this);
     }
 
@@ -1227,19 +1310,28 @@ public class SwingController
         setEnabled(zoomDynamicToolButton, opened && !pdfCollection);
         setEnabled(textSelectToolButton, opened && canExtract && !pdfCollection);
         setEnabled(selectToolButton, opened && canModify && !pdfCollection);
-        setEnabled(linkAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(highlightAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(highlightAnnotationUtilityToolButton, opened && canModify && !pdfCollection);
         setEnabled(strikeOutAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(underlineAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(lineAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(linkAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(lineArrowAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(squareAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(circleAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(inkAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(freeTextAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection);
-        setEnabled(textAnnotationUtilityToolButton, opened && canModify && !pdfCollection);
+        setEnabled(linkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(highlightAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(strikeOutAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(underlineAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(lineAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(lineArrowAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(squareAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(circleAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(inkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(freeTextAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
+        setEnabled(textAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(formHighlightButton, opened && !pdfCollection && hasForms());
         setEnabled(fontEngineButton, opened && !pdfCollection);
         setEnabled(facingPageViewContinuousButton, opened && !pdfCollection);
@@ -1602,29 +1694,25 @@ public class SwingController
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_SELECTION
                 ));
-        reflectSelectionInButton(linkAnnotationToolButton,
-                documentViewController.isToolModeSelected(
-                        DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION
-                ));
         reflectSelectionInButton(highlightAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
-                ));
-        reflectSelectionInButton(highlightAnnotationUtilityToolButton,
-                documentViewController.isToolModeSelected(
-                        DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
-                ));
-        reflectSelectionInButton(strikeOutAnnotationToolButton,
-                documentViewController.isToolModeSelected(
-                        DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION
                 ));
         reflectSelectionInButton(underlineAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION
                 ));
+        reflectSelectionInButton(strikeOutAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION
+                ));
         reflectSelectionInButton(lineAnnotationToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION
+                ));
+        reflectSelectionInButton(linkAnnotationToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION
                 ));
         reflectSelectionInButton(lineArrowAnnotationToolButton,
                 documentViewController.isToolModeSelected(
@@ -1650,7 +1738,47 @@ public class SwingController
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION
                 ));
-        reflectSelectionInButton(textAnnotationUtilityToolButton,
+        reflectSelectionInButton(linkAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION
+                ));
+        reflectSelectionInButton(highlightAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION
+                ));
+        reflectSelectionInButton(strikeOutAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION
+                ));
+        reflectSelectionInButton(underlineAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION
+                ));
+        reflectSelectionInButton(lineAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION
+                ));
+        reflectSelectionInButton(lineArrowAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION
+                ));
+        reflectSelectionInButton(squareAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION
+                ));
+        reflectSelectionInButton(circleAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION
+                ));
+        reflectSelectionInButton(inkAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION
+                ));
+        reflectSelectionInButton(freeTextAnnotationPropertiesToolButton,
+                documentViewController.isToolModeSelected(
+                        DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION
+                ));
+        reflectSelectionInButton(textAnnotationPropertiesToolButton,
                 documentViewController.isToolModeSelected(
                         DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION
                 ));
@@ -2676,19 +2804,29 @@ public class SwingController
         zoomDynamicToolButton = null;
         textSelectToolButton = null;
         selectToolButton = null;
-        linkAnnotationToolButton = null;
         highlightAnnotationToolButton = null;
-        highlightAnnotationUtilityToolButton = null;
-        underlineAnnotationToolButton = null;
         strikeOutAnnotationToolButton = null;
+        underlineAnnotationToolButton = null;
         lineAnnotationToolButton = null;
+        linkAnnotationToolButton = null;
         lineArrowAnnotationToolButton = null;
         squareAnnotationToolButton = null;
         circleAnnotationToolButton = null;
         inkAnnotationToolButton = null;
         freeTextAnnotationToolButton = null;
         textAnnotationToolButton = null;
-        textAnnotationUtilityToolButton = null;
+
+        linkAnnotationPropertiesToolButton = null;
+        highlightAnnotationPropertiesToolButton = null;
+        underlineAnnotationPropertiesToolButton = null;
+        strikeOutAnnotationPropertiesToolButton = null;
+        lineAnnotationPropertiesToolButton = null;
+        lineArrowAnnotationPropertiesToolButton = null;
+        squareAnnotationPropertiesToolButton = null;
+        circleAnnotationPropertiesToolButton = null;
+        inkAnnotationPropertiesToolButton = null;
+        freeTextAnnotationPropertiesToolButton = null;
+        textAnnotationPropertiesToolButton = null;
         formHighlightButton = null;
 
         fontEngineButton = null;
@@ -4274,38 +4412,44 @@ public class SwingController
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
                 }
             } else if (source == highlightAnnotationToolButton ||
-                    highlightAnnotationToolButton.equals(source) ||
-                    source == highlightAnnotationUtilityToolButton) {
+                    (highlightAnnotationToolButton != null && highlightAnnotationToolButton.equals(source)) ||
+                    source == highlightAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_HIGHLIGHT_ANNOTATION);
                 }
-            } else if (source == strikeOutAnnotationToolButton) {
+            } else if (source == strikeOutAnnotationToolButton ||
+                    source == strikeOutAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_STRIKEOUT_ANNOTATION);
                 }
-            } else if (source == underlineAnnotationToolButton) {
+            } else if (source == underlineAnnotationToolButton ||
+                    source == underlineAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_UNDERLINE_ANNOTATION);
                 }
-            } else if (source == lineAnnotationToolButton) {
+            } else if (source == lineAnnotationToolButton ||
+                    source == lineAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ANNOTATION);
                 }
-            } else if (source == lineArrowAnnotationToolButton) {
+            } else if (source == lineArrowAnnotationToolButton ||
+                    source == lineArrowAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINE_ARROW_ANNOTATION);
                 }
-            } else if (source == squareAnnotationToolButton) {
+            } else if (source == squareAnnotationToolButton ||
+                    source == squareAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SQUARE_ANNOTATION);
                 }
-            } else if (source == circleAnnotationToolButton) {
+            } else if (source == circleAnnotationToolButton ||
+                    source == circleAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
@@ -4315,13 +4459,15 @@ public class SwingController
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
                 }
-            } else if (source == freeTextAnnotationToolButton) {
+            } else if (source == freeTextAnnotationToolButton ||
+                    source == freeTextAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_FREE_TEXT_ANNOTATION);
                 }
             } else if (source == textAnnotationToolButton ||
-                    source == textAnnotationUtilityToolButton) {
+                    (textAnnotationToolButton != null && textAnnotationToolButton.equals(source)) ||
+                    source == textAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_ANNOTATION);

@@ -1442,9 +1442,49 @@ public class SwingViewBuilder {
             addToToolBar(toolbar, buildHighlightAnnotationToolButton(Images.SIZE_LARGE));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_UNDERLINE)) {
+            addToToolBar(toolbar, buildUnderlineAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_STRIKE_OUT)) {
+            addToToolBar(toolbar, buildStrikeOutAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINE)) {
+            addToToolBar(toolbar, buildLineAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_LINK)) {
+            addToToolBar(toolbar, buildLinkAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_ARROW)) {
+            addToToolBar(toolbar, buildLineArrowAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_RECTANGLE)) {
+            addToToolBar(toolbar, buildSquareAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_CIRCLE)) {
+            addToToolBar(toolbar, buildCircleAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_INK)) {
+            addToToolBar(toolbar, buildInkAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_FREE_TEXT)) {
+            addToToolBar(toolbar, buildFreeTextAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(Images.SIZE_LARGE));
         }
+//        if (propertiesManager.checkAndStoreBooleanProperty(
+//                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
+//            addToToolBar(toolbar, buildTextAnnotationToolButton(Images.SIZE_LARGE));
+//        }
         return toolbar;
     }
 
@@ -1455,52 +1495,52 @@ public class SwingViewBuilder {
         return toolbar;
     }
 
-    public JToolBar buildAnnotationUtilityToolBar() {
+    public JToolBar buildAnnotationPropertiesToolBar() {
         JToolBar toolbar = new JToolBar();
         commonToolBarSetup(toolbar, true);
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_HIGHLIGHT)) {
-            addToToolBar(toolbar, buildHighlightAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_HIGHLIGHT_ENABLED)) {
+            addToToolBar(toolbar, buildHighlightAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_STRIKE_OUT)) {
-            addToToolBar(toolbar, buildStrikeOutAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_STRIKE_OUT_ENABLED)) {
+            addToToolBar(toolbar, buildStrikeOutAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_UNDERLINE)) {
-            addToToolBar(toolbar, buildUnderlineAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_UNDERLINE_ENABLED)) {
+            addToToolBar(toolbar, buildUnderlineAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_LINE)) {
-            addToToolBar(toolbar, buildLineAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINE_ENABLED)) {
+            addToToolBar(toolbar, buildLineAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_LINK)) {
-            addToToolBar(toolbar, buildLinkAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_LINK_ENABLED)) {
+            addToToolBar(toolbar, buildLinkAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_ARROW)) {
-            addToToolBar(toolbar, buildLineArrowAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_ARROW_ENABLED)) {
+            addToToolBar(toolbar, buildLineArrowAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_RECTANGLE)) {
-            addToToolBar(toolbar, buildSquareAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_RECTANGLE_ENABLED)) {
+            addToToolBar(toolbar, buildSquareAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_CIRCLE)) {
-            addToToolBar(toolbar, buildCircleAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_CIRCLE_ENABLED)) {
+            addToToolBar(toolbar, buildCircleAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_INK)) {
-            addToToolBar(toolbar, buildInkAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_INK_ENABLED)) {
+            addToToolBar(toolbar, buildInkAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_FREE_TEXT)) {
-            addToToolBar(toolbar, buildFreeTextAnnotationToolButton());
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_FREE_TEXT_ENABLED)) {
+            addToToolBar(toolbar, buildFreeTextAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITY_ANNOTATION_TEXT)) {
-            addToToolBar(toolbar, buildTextAnnotationUtilityToolButton(Images.SIZE_MEDIUM));
+                PropertiesManager.PROPERTY_ANNOTATION_PROPERTIES_TEXT_ENABLED)) {
+            addToToolBar(toolbar, buildTextAnnotationPropertiesToolButton(Images.SIZE_MEDIUM));
         }
         return toolbar;
     }
@@ -1542,16 +1582,6 @@ public class SwingViewBuilder {
         return btn;
     }
 
-    public JToggleButton buildLinkAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
-                messageBundle.getString("viewer.toolbar.tool.link.label"),
-                messageBundle.getString("viewer.toolbar.tool.link.tooltip"),
-                "link_annot", Images.SIZE_MEDIUM, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setLinkAnnotationToolButton(btn);
-        return btn;
-    }
-
     public AbstractButton buildHighlightAnnotationToolButton(final String imageSize) {
         // put it all together for a dropdown button
         HighlightAnnotationButton annotationColorButton = new HighlightAnnotationButton(
@@ -1560,108 +1590,110 @@ public class SwingViewBuilder {
                 messageBundle.getString("viewer.toolbar.tool.highlight.label"),
                 messageBundle.getString("viewer.toolbar.tool.highlight.tooltip"),
                 "highlight_annot_c", imageSize, buttonFont);
-        if (viewerController != null && annotationColorButton != null) {
+        if (viewerController != null) {
             viewerController.setHighlightAnnotationToolButton(annotationColorButton);
         }
         // put it all together for a dropdown button
         return annotationColorButton;
     }
 
-    public JToggleButton buildHighlightAnnotationUtilityToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
-                messageBundle.getString("viewer.toolbar.tool.highlight.label"),
-                messageBundle.getString("viewer.toolbar.tool.highlight.tooltip"),
-                "highlight_annot", imageSize, buttonFont);
-        if (viewerController != null && btn != null)
-            viewerController.setHighlightAnnotationUtilityToolButton(btn);
-        return btn;
-    }
-
-    public JToggleButton buildStrikeOutAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildStrikeOutAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.strikeOut.label"),
                 messageBundle.getString("viewer.toolbar.tool.strikeOut.tooltip"),
-                "strikeout", Images.SIZE_MEDIUM, buttonFont);
+                "strikeout", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setStrikeOutAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildUnderlineAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildUnderlineAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.underline.label"),
                 messageBundle.getString("viewer.toolbar.tool.underline.tooltip"),
-                "underline", Images.SIZE_MEDIUM, buttonFont);
+                "underline", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setUnderlineAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildLineAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildLineAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.line.label"),
                 messageBundle.getString("viewer.toolbar.tool.line.tooltip"),
-                "line", Images.SIZE_MEDIUM, buttonFont);
+                "line", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setLineAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildLineArrowAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildLinkAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
+                messageBundle.getString("viewer.toolbar.tool.link.label"),
+                messageBundle.getString("viewer.toolbar.tool.link.tooltip"),
+                "link_annot", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setLinkAnnotationToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildLineArrowAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.lineArrow.label"),
                 messageBundle.getString("viewer.toolbar.tool.lineArrow.tooltip"),
-                "arrow", Images.SIZE_MEDIUM, buttonFont);
+                "arrow", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setLineArrowAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildSquareAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildSquareAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.rectangle.label"),
                 messageBundle.getString("viewer.toolbar.tool.rectangle.tooltip"),
-                "square", Images.SIZE_MEDIUM, buttonFont);
+                "square", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setSquareAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildCircleAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildCircleAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.circle.label"),
                 messageBundle.getString("viewer.toolbar.tool.circle.tooltip"),
-                "circle", Images.SIZE_MEDIUM, buttonFont);
+                "circle", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setCircleAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildInkAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildInkAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.ink.label"),
                 messageBundle.getString("viewer.toolbar.tool.ink.tooltip"),
-                "ink", Images.SIZE_MEDIUM, buttonFont);
+                "ink", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setInkAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildFreeTextAnnotationToolButton() {
-        JToggleButton btn = makeToolbarToggleButtonSmall(
+    public JToggleButton buildFreeTextAnnotationToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.freeText.label"),
                 messageBundle.getString("viewer.toolbar.tool.freeText.tooltip"),
-                "freetext_annot", Images.SIZE_MEDIUM, buttonFont);
+                "freetext_annot", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setFreeTextAnnotationToolButton(btn);
         return btn;
     }
 
-    public JToggleButton buildTextAnnotationToolButton(final String imageSize) {
-        JToggleButton btn = makeToolbarToggleButton(
+    public AbstractButton buildTextAnnotationToolButton(final String imageSize) {
+        TextAnnotationButton btn = new TextAnnotationButton(
+                viewerController,
+                messageBundle,
                 messageBundle.getString("viewer.toolbar.tool.textAnno.label"),
                 messageBundle.getString("viewer.toolbar.tool.textAnno.tooltip"),
-                "text_annot", Images.SIZE_MEDIUM, buttonFont);
+                "text_annot_c", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setTextAnnotationToolButton(btn);
         return btn;
@@ -1671,19 +1703,121 @@ public class SwingViewBuilder {
         JToggleButton btn = makeToolbarToggleButton(
                 messageBundle.getString("viewer.toolbar.tool.forms.highlight.label"),
                 messageBundle.getString("viewer.toolbar.tool.forms.highlight.tooltip"),
-                "form_highlight", Images.SIZE_LARGE, buttonFont);
+                "form_highlight", imageSize, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setFormHighlightButton(btn);
         return btn;
     }
 
-    public JToggleButton buildTextAnnotationUtilityToolButton(final String imageSize) {
+
+    public JToggleButton buildLinkAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.link.label"),
+                messageBundle.getString("viewer.toolbar.tool.link.tooltip"),
+                "link_annot", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setLinkAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+
+    public JToggleButton buildHighlightAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.highlight.label"),
+                messageBundle.getString("viewer.toolbar.tool.highlight.tooltip"),
+                "highlight_annot", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setHighlightAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildStrikeOutAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.strikeOut.label"),
+                messageBundle.getString("viewer.toolbar.tool.strikeOut.tooltip"),
+                "strikeout", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setStrikeOutAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildUnderlineAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.underline.label"),
+                messageBundle.getString("viewer.toolbar.tool.underline.tooltip"),
+                "underline", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setUnderlineAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildLineAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.line.label"),
+                messageBundle.getString("viewer.toolbar.tool.line.tooltip"),
+                "line", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setLineAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildLineArrowAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.lineArrow.label"),
+                messageBundle.getString("viewer.toolbar.tool.lineArrow.tooltip"),
+                "arrow", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setLineArrowAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildSquareAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.rectangle.label"),
+                messageBundle.getString("viewer.toolbar.tool.rectangle.tooltip"),
+                "square", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setSquareAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildCircleAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.circle.label"),
+                messageBundle.getString("viewer.toolbar.tool.circle.tooltip"),
+                "circle", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setCircleAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildInkAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.ink.label"),
+                messageBundle.getString("viewer.toolbar.tool.ink.tooltip"),
+                "ink", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setInkAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildFreeTextAnnotationPropertiesToolButton(final String imageSize) {
+        JToggleButton btn = makeToolbarToggleButtonSmall(
+                messageBundle.getString("viewer.toolbar.tool.freeText.label"),
+                messageBundle.getString("viewer.toolbar.tool.freeText.tooltip"),
+                "freetext_annot", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setFreeTextAnnotationPropertiesToolButton(btn);
+        return btn;
+    }
+
+    public JToggleButton buildTextAnnotationPropertiesToolButton(final String imageSize) {
         JToggleButton btn = makeToolbarToggleButtonSmall(
                 messageBundle.getString("viewer.toolbar.tool.textAnno.label"),
                 messageBundle.getString("viewer.toolbar.tool.textAnno.tooltip"),
-                "text_annot", Images.SIZE_MEDIUM, buttonFont);
+                "text_annot", imageSize, buttonFont);
         if (viewerController != null && btn != null)
-            viewerController.setTextAnnotationUtilityToolButton(btn);
+            viewerController.setTextAnnotationPropertiesToolButton(btn);
         return btn;
     }
 
@@ -1853,7 +1987,7 @@ public class SwingViewBuilder {
 
     public AnnotationPanel buildAnnotationPanel() {
         AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, propertiesManager);
-        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationUtilityToolBar());
+        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationPropertiesToolBar());
         if (viewerController != null)
             viewerController.setAnnotationPanel(annotationPanel);
         return annotationPanel;

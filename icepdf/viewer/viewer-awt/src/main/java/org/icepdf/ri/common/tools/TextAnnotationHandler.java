@@ -274,8 +274,15 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
     }
 
     protected void checkAndApplyPreferences() {
-        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
-            defaultFillColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
+        if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, -1) != -1) {
+            int rgb = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_BUTTON_COLOR, 0);
+            defaultFillColor = new Color(rgb);
+        }
+
+        if (defaultFillColor == null) {
+            if (preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1) != -1) {
+                defaultFillColor = new Color(preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_TEXT_COLOR, -1));
+            }
         }
         defaultIcon = preferences.get(
                 PropertiesManager.PROPERTY_ANNOTATION_TEXT_ICON, TextAnnotation.COMMENT_ICON.toString());

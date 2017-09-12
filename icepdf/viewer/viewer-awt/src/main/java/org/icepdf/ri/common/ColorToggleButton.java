@@ -69,6 +69,7 @@ public class ColorToggleButton extends JToggleButton {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (isEnabled()) {
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         } else {
