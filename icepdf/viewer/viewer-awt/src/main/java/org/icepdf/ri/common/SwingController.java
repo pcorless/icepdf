@@ -4938,6 +4938,9 @@ public class SwingController
             if (highlightAnnotationToolButton != null) {
                 highlightAnnotationToolButton.refreshColorPanel();
             }
+            if (textAnnotationToolButton != null) {
+                textAnnotationToolButton.refreshColorPanel();
+            }
         }
     }
 }

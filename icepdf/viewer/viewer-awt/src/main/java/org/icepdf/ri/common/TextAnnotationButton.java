@@ -35,6 +35,7 @@ public class TextAnnotationButton extends AnnotationColorButton {
     private static GeneralPath textIconPath;
 
     static {
+        textIconPath = new GeneralPath();
         textIconPath.moveTo(0, 0);
         textIconPath.curveTo(1.407, -0.402, 2.422, -0.484, 4.03, -0.484);
         textIconPath.curveTo(10.786, -0.484, 16.262, 3.419, 16.262, 8.232);
