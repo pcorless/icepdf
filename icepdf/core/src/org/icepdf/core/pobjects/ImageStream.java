@@ -33,10 +33,9 @@ import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 import java.awt.image.WritableRaster;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -900,22 +899,58 @@ public class ImageStream extends Stream {
         }
         int size = rows * ((columns + 7) >> 3);
         byte[] decodedStreamData = new byte[size];
-        CCITTFaxDecoder decoder = new CCITTFaxDecoder(1, columns, rows);
-        decoder.setAlign(encodedByteAlign);
-        // pick three three possible fax encoding.
+
         try {
+            Class<?> tmDecoder = Class.forName("com.twelvemonkeys.imageio.plugins.tiff.CCITTFaxDecoderStream");
+
+            Constructor tmDecoderConst = tmDecoder.getConstructor(InputStream.class, int.class, int.class, int.class, long.class);
+            tmDecoderConst.setAccessible(true);
+            Method tmDecoderSetByteAligned = tmDecoder.getMethod("setOptionByteAligned", boolean.class);
+            tmDecoderSetByteAligned.setAccessible(true);
+
+            int compression = 0;
+            long options = 0;
             if (k == 0) {
-                decoder.decodeT41D(decodedStreamData, streamData, 0, rows);
+                compression = 3; // Group 3 1D
             } else if (k > 0) {
-                decoder.decodeT42D(decodedStreamData, streamData, 0, rows);
-            } else if (k < 0) {
-                decoder.decodeT6(decodedStreamData, streamData, 0, rows);
+                // Group 3 2D
+                compression = 3;
+                options = 1;
+            } else {
+                // Group 4
+                compression = 4;
+            }
+
+            ByteArrayInputStream bis = new ByteArrayInputStream(streamData);
+            InputStream decoderStream = (InputStream) tmDecoderConst.newInstance(bis, columns, compression, 1, options);
+            tmDecoderSetByteAligned.invoke(decoderStream, encodedByteAlign);
+
+            try (DataInputStream dis = new DataInputStream(decoderStream)) {
+                dis.readFully(decodedStreamData);
             }
         } catch (Exception e) {
-            logger.warning("Error decoding CCITTFax image k: " + k);
-            // IText 5.03 doesn't correctly assign a k value for the deocde,
-            // as  result we can try one more time using the T6.
-            decoder.decodeT6(decodedStreamData, streamData, 0, rows);
+            if (!(e instanceof ClassNotFoundException)) {
+                // Only ignore TM not found
+                logger.log(Level.WARNING, "com.twelvemonkeys.imageio.plugins.tiff.CCITTFaxDecoderStream", e);
+            }
+
+            CCITTFaxDecoder decoder = new CCITTFaxDecoder(1, columns, rows);
+            decoder.setAlign(encodedByteAlign);
+            // pick three three possible fax encoding.
+            try {
+                if (k == 0) {
+                    decoder.decodeT41D(decodedStreamData, streamData, 0, rows);
+                } else if (k > 0) {
+                    decoder.decodeT42D(decodedStreamData, streamData, 0, rows);
+                } else if (k < 0) {
+                    decoder.decodeT6(decodedStreamData, streamData, 0, rows);
+                }
+            } catch (Exception e2) {
+                logger.warning("Error decoding CCITTFax image k: " + k);
+                // IText 5.03 doesn't correctly assign a k value for the deocde,
+                // as  result we can try one more time using the T6.
+                decoder.decodeT6(decodedStreamData, streamData, 0, rows);
+            }
         }
         // check the black is value flag, no one likes inverted colours.
         if (!blackIs1) {
