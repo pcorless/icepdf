@@ -25,12 +25,14 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -164,18 +166,26 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         annotation.setInkPath(tInkPath);
         annotation.setOpacity(opacity);
 
+        AffineTransform pageTransform = getPageTransformInverse();
+
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream(getPageTransform());
+        annotation.resetAppearanceStream(pageTransform);
 
         // create the annotation object.
-        AbstractAnnotationComponent comp =
+        MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
                         annotation,
                         documentViewController,
                         pageViewComponent, documentViewModel);
         // set the bounds and refresh the userSpace rectangle
         comp.setBounds(bBox);
+
+        // associate popup to location
+        PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
+        popupAnnotationComponent.setBoudsRelativeToParent(
+                bBox.x + (bBox.width / 2), bBox.y + (bBox.height / 2), pageTransform);
+        popupAnnotationComponent.setVisible(false);
 
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {

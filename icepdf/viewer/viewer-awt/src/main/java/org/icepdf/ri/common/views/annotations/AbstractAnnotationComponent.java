@@ -135,6 +135,9 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected Point startOfMousePress;
     protected Point endOfMousePress;
 
+    // context Menu
+    protected JPopupMenu contextMenu;
+
     protected ResourceBundle messageBundle;
 
     public AbstractAnnotationComponent(Annotation annotation,
@@ -172,14 +175,6 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                     documentViewModel.getPageBoundary(),
                     documentViewModel.getViewRotation(),
                     documentViewModel.getViewZoom());
-            final Rectangle location =
-                    at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    setBounds(location);
-                }
-            });
-
 
             // update zoom and rotation state
             currentRotation = documentViewModel.getViewRotation();
@@ -278,7 +273,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         }
         // store the new annotation rectangle in its original user space
         Rectangle2D rect = annotation.getUserSpaceRectangle();
-        rect = new Rectangle2D.Double(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+//        rect = new Rectangle2D.Double(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
         Rectangle bounds = getBounds();
         rect.setRect(commonBoundsNormalization(new GeneralPath(bounds), at));
         annotation.syncBBoxToUserSpaceRectangle(rect);

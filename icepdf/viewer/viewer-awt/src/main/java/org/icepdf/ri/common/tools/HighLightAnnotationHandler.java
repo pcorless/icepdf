@@ -30,8 +30,9 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -145,6 +146,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
 
             Rectangle tBbox = convertToPageSpace(highlightBounds, highlightPath);
 
+            AffineTransform pageTransform = getPageTransformInverse();
+
             // create annotations types that that are rectangle based;
             // which is actually just link annotations
             annotation = (TextMarkupAnnotation)
@@ -163,10 +166,10 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             annotation.setMarkupPath(highlightPath);
             annotation.setBBox(tBbox);
             // finalized the appearance properties.
-            annotation.resetAppearanceStream(getPageTransform());
+            annotation.resetAppearanceStream(pageTransform);
 
             // create new annotation given the general path
-            AbstractAnnotationComponent comp =
+            MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                     AnnotationComponentFactory.buildAnnotationComponent(
                             annotation,
                             documentViewController,
@@ -178,6 +181,12 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             // set the bbox to the rect which is just fine for highlight annotations.
             Rectangle2D rect = annotation.getUserSpaceRectangle();
             annotation.syncBBoxToUserSpaceRectangle(rect);
+
+            // associate popup to location
+            PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
+            popupAnnotationComponent.setBoudsRelativeToParent(
+                    bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, pageTransform);
+            popupAnnotationComponent.setVisible(false);
 
             // create component and add it to the page.
             // add them to the container, using absolute positioning.
@@ -211,7 +220,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         Page currentPage = pageViewComponent.getPage();
         String selectedText = null;
         try {
-            selectedText =  currentPage.getViewText().getSelected().toString();
+            selectedText = currentPage.getViewText().getSelected().toString();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.fine("HighLightAnnotation initialization interrupted.");

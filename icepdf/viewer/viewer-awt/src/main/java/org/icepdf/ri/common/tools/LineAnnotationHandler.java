@@ -28,8 +28,9 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -191,6 +192,8 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         annotation.setInteriorColor(internalColor);
         annotation.setOpacity(opacity);
 
+        AffineTransform pageTransform = getPageTransformInverse();
+
         // setup the markup properties.
         annotation.setContents(annotation.getSubType().toString());
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
@@ -198,10 +201,10 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
 
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(tBbox);
-        annotation.resetAppearanceStream(getPageTransform());
+        annotation.resetAppearanceStream(pageTransform);
 
         // create the annotation object.
-        AbstractAnnotationComponent comp =
+        MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
                         annotation,
                         documentViewController,
@@ -210,6 +213,13 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         Rectangle bbox = new Rectangle(rectToDraw.x, rectToDraw.y,
                 rectToDraw.width, rectToDraw.height);
         comp.setBounds(bbox);
+
+        // associate popup to location
+        PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
+        popupAnnotationComponent.setBoudsRelativeToParent(
+                bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
+        popupAnnotationComponent.setVisible(false);
+
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =

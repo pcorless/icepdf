@@ -38,18 +38,13 @@ import java.awt.geom.Rectangle2D;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public class LinkAnnotationComponent extends MarkupAnnotationComponent {
+public class LinkAnnotationComponent extends AbstractAnnotationComponent {
 
     public LinkAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent,
                                    DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isShowInvisibleBorder = true;
-    }
-
-    @Override
-    public void resetAppearanceShapes() {
-        super.resetAppearanceShapes();
     }
 
     public void paintComponent(Graphics g) {
@@ -97,5 +92,15 @@ public class LinkAnnotationComponent extends MarkupAnnotationComponent {
                         (int) rect.getHeight());
             }
         }
+    }
+
+    @Override
+    public boolean isActive() {
+        return false;
+    }
+
+    @Override
+    public void resetAppearanceShapes() {
+
     }
 }

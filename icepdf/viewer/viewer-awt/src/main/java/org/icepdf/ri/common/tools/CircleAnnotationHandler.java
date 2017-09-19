@@ -24,12 +24,14 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,11 +68,11 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         // sets annotation squareCircle stroke colour
         try {
             String color = Defs.sysProperty(
-                    "org.icepdf.core.views.page.annotation.circle.stroke.color", "#ff0000");
+                    "org.icepdf.core.views.page.annotation.circle.stroke.color", "#00ff00");
             int colorValue = ColorUtil.convertColor(color);
             lineColor =
                     new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("ff0000", 16));
+                            Integer.parseInt("00ff00", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading circle Annotation stroke colour");
@@ -157,7 +159,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
      * @param e mouse event.
      */
     public void mouseReleased(MouseEvent e) {
-        updateSelectionSize(e.getX(),e.getY(), pageViewComponent);
+        updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
 
         // convert the rectangle to page space
         rectangle = convertToPageSpace(rectangle);
@@ -193,12 +195,14 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         annotation.setRectangle(rectangle);
         annotation.setBorderStyle(borderStyle);
 
+        AffineTransform pageTransform = getPageTransformInverse();
+
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(new Rectangle(0, 0, tBbox.width, tBbox.height));
-        annotation.resetAppearanceStream(getPageTransform());
+        annotation.resetAppearanceStream(pageTransform);
 
         // create the annotation object.
-        AbstractAnnotationComponent comp =
+        MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
                         annotation,
                         documentViewController,
@@ -209,6 +213,12 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         comp.setBounds(bbox);
         // resets user space rectangle to match bbox converted to page space
         comp.refreshAnnotationRect();
+
+        // associate popup to location
+        PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
+        popupAnnotationComponent.setBoudsRelativeToParent(
+                bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
+        popupAnnotationComponent.setVisible(false);
 
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {

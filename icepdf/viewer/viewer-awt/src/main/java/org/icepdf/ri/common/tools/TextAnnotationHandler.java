@@ -27,15 +27,14 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -177,13 +176,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
     public void mouseReleased(MouseEvent e) {
 
-        AffineTransform pageTransform = getPageTransform();
-        AffineTransform pageInverseTransform = new AffineTransform();
-        try {
-            pageInverseTransform = pageTransform.createInverse();
-        } catch (NoninvertibleTransformException ex) {
-            logger.log(Level.FINE, "Error converting to page space.", ex);
-        }
+        AffineTransform pageTransform = getPageTransformInverse();
+        AffineTransform pageInverseTransform = getPageTransform();
         Dimension scaledSize = new Dimension(
                 (int) Math.abs(ICON_SIZE.width * pageInverseTransform.getScaleX()),
                 (int) Math.abs(ICON_SIZE.height * pageInverseTransform.getScaleY()));
@@ -198,7 +192,7 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                         tBbox, pageTransform);
 
         // create the annotation object.
-        AbstractAnnotationComponent comp =
+        MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
                         markupAnnotation,
                         documentViewController,
@@ -215,55 +209,19 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
             annotationCallback.newAnnotation(pageViewComponent, comp);
         }
 
-        /**
-         * now create the respective popup annotation
-         */
-
-        // position the new popup on the icon center.
-        Rectangle bBox2 = new Rectangle(e.getX() + scaledSize.width / 2,
+        // setup the popup so that it will show near the annotation.
+        PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
+        popupAnnotationComponent.setBoudsRelativeToParent(
+                e.getX() + scaledSize.width / 2,
                 e.getY() + scaledSize.height / 2,
-                (int) Math.abs(215 * pageInverseTransform.getScaleX()),
-                (int) Math.abs(150 * pageInverseTransform.getScaleY()));
-
-        // make sure the popup stays within the page bounds.
-        Rectangle pageBounds = pageViewComponent.getBounds();
-        if (!pageBounds.contains(bBox2.getX(), bBox2.getY(),
-                bBox2.getWidth(), bBox2.getHeight())) {
-            // center on the icon as before but take into account height width
-            // and it will be drawn more or less on the page.
-            bBox2.setLocation(bBox2.x - bBox2.width, bBox2.y - bBox2.height);
-        }
-
-        // convert bbox and start and end line points.
-        Rectangle tBbox2 = convertToPageSpace(bBox2).getBounds();
-
-        // text annotation are special as the annotation has fixed size.
-        PopupAnnotation popupAnnotation = createPopupAnnotation(
-                documentViewModel.getDocument().getPageTree().getLibrary(),
-                tBbox2, markupAnnotation, pageTransform);
-
-        // create the annotation object.
-        AbstractAnnotationComponent comp2 = AnnotationComponentFactory.buildAnnotationComponent(
-                popupAnnotation,
-                documentViewController,
-                pageViewComponent, documentViewModel);
-        // set the bounds and refresh the userSpace rectangle
-        comp2.setBounds(bBox2);
-        // resets user space rectangle to match bbox converted to page space
-        comp2.refreshAnnotationRect();
-
-        // make sure we paint the popup correctly.  Given how we build the component, layout doesn't always get called
-        // on first view.
-        SwingUtilities.invokeLater(() -> {
-            comp2.revalidate();
-            comp2.repaint();
-        });
+                pageInverseTransform);
+        popupAnnotationComponent.setVisible(true);
 
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
                     documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp2);
+            annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
         }
 
         // set the annotation tool to he select tool

@@ -1893,7 +1893,7 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ATTACHMENTS)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.attachments.tab.title"),
-                    buildAttachmentPanle());
+                    buildAttachmentPanel());
         }
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_SEARCH)) {
@@ -1978,7 +1978,7 @@ public class SwingViewBuilder {
         return searchPanel;
     }
 
-    public AttachmentPanel buildAttachmentPanle() {
+    public AttachmentPanel buildAttachmentPanel() {
         AttachmentPanel attachmentPanel = new AttachmentPanel(viewerController);
         if (viewerController != null)
             viewerController.setAttachmentPanel(attachmentPanel);
@@ -1986,6 +1986,14 @@ public class SwingViewBuilder {
     }
 
     public AnnotationPanel buildAnnotationPanel() {
+        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, propertiesManager);
+        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationPropertiesToolBar());
+        if (viewerController != null)
+            viewerController.setAnnotationPanel(annotationPanel);
+        return annotationPanel;
+    }
+
+    public AnnotationPanel buildAnnotationPropertiesPanel() {
         AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, propertiesManager);
         annotationPanel.setAnnotationUtilityToolbar(buildAnnotationPropertiesToolBar());
         if (viewerController != null)

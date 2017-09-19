@@ -22,7 +22,6 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.*;
-import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -37,6 +36,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -44,7 +44,6 @@ import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.logging.Level;
 
 /**
@@ -66,6 +65,8 @@ import java.util.logging.Level;
 public class PopupAnnotationComponent extends AbstractAnnotationComponent
         implements TreeSelectionListener, ActionListener, DocumentListener {
 
+    public static int DEFAULT_WIDTH = 215;
+    public static int DEFAULT_HEIGHT = 150;
     public static Color backgroundColor = new Color(252, 253, 227);
     public static Color borderColor = new Color(153, 153, 153);
 
@@ -81,19 +82,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     protected JTree commentTree;
     protected JScrollPane commentTreeScrollPane;
     protected MarkupAnnotation selectedMarkupAnnotation;
-    // add and remove commands
-    protected JMenuItem replyMenuItem;
-    protected JMenuItem deleteMenuItem;
-    // status change commands.
-    protected JMenuItem statusNoneMenuItem;
-    protected JMenuItem statusAcceptedItem;
-    protected JMenuItem statusCancelledMenuItem;
-    protected JMenuItem statusCompletedMenuItem;
-    protected JMenuItem statusRejectedMenuItem;
-    // generic commands, open/minimize all
-    protected JMenuItem openAllMenuItem;
-    protected JMenuItem minimizeAllMenuItem;
-    protected JPopupMenu contextMenu;
+
 
     public PopupAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
@@ -142,6 +131,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
             initiateMouseMoved(e);
         }
         repaint();
+    }
+
+    @Override
+    public void setVisible(boolean aFlag) {
+        super.setVisible(aFlag);
+        if (selectedMarkupAnnotation != null) {
+            popupAnnotation.setOpen(aFlag);
+        }
     }
 
     @Override
@@ -287,6 +284,27 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         buildContextMenu();
     }
 
+    public void setBoudsRelativeToParent(int x, int y, AffineTransform pageInverseTransform) {
+        Rectangle pageBounds = pageViewComponent.getBounds();
+        // position the new popup on the icon center.
+        Rectangle bBox2 = new Rectangle(x, y,
+                (int) Math.abs(DEFAULT_WIDTH * pageInverseTransform.getScaleX()),
+                (int) Math.abs(DEFAULT_HEIGHT * pageInverseTransform.getScaleY()));
+
+        // make sure the popup stays within the page bounds.
+        if (!pageBounds.contains(bBox2.getX(), bBox2.getY(),
+                bBox2.getWidth(), bBox2.getHeight())) {
+            // center on the icon as before but take into account height width
+            // and it will be drawn more or less on the page.
+            // todo: need to improve coordinate adjustment
+            bBox2.setLocation(bBox2.x - bBox2.width, bBox2.y - bBox2.height);
+        }
+        // set the bounds and refresh the userSpace rectangle
+        setBounds(bBox2);
+        // resets user space rectangle to match bbox converted to page space
+        refreshAnnotationRect();
+    }
+
     private void refreshTree(JTree tree) {
         ((DefaultTreeModel) (tree.getModel())).reload();
         for (int i = 0; i < tree.getRowCount(); i++) {
@@ -295,81 +313,92 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     }
 
     public void buildContextMenu() {
-
-        ResourceBundle messages =
-                documentViewController.getParentController().getMessageBundle();
-        PropertiesManager propertiesManager = documentViewController.getParentController().getPropertiesManager();
-
         //Create the popup menu.
-        contextMenu = new JPopupMenu();
-
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_REPLY_TO)) {
-            replyMenuItem = new JMenuItem(
-                    messages.getString("viewer.annotation.popup.reply.label"));
-            // build out reply and delete
-            replyMenuItem.addActionListener(this);
-            contextMenu.add(replyMenuItem);
-        }
-        deleteMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.delete.label"));
-        // status change commands.
-        statusNoneMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.status.none.label"));
-        statusAcceptedItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.status.accepted.label"));
-        statusCancelledMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.status.cancelled.label"));
-        statusCompletedMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.status.completed.label"));
-        statusRejectedMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.status.rejected.label"));
-        // generic commands, open/minimize all
-        openAllMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.openAll.label"));
-        minimizeAllMenuItem = new JMenuItem(
-                messages.getString("viewer.annotation.popup.minimizeAll.label"));
-
-        // build out delete
-        deleteMenuItem.addActionListener(this);
-        contextMenu.add(deleteMenuItem);
-        contextMenu.addSeparator();
-
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_ANNOTATION_MARKUP_SET_STATUS)) {
-            // addition of set status menu
-            JMenu submenu = new JMenu(
-                    messages.getString("viewer.annotation.popup.status.label"));
-//        ButtonGroup group = new ButtonGroup();
-            statusNoneMenuItem.addActionListener(this);
-//        group.add(statusNoneMenuItem);
-            submenu.add(statusNoneMenuItem);
-            statusAcceptedItem.addActionListener(this);
-//        group.add(statusAcceptedItem);
-            submenu.add(statusAcceptedItem);
-            statusCancelledMenuItem.addActionListener(this);
-//        group.add(statusCancelledMenuItem);
-            submenu.add(statusCancelledMenuItem);
-            statusCompletedMenuItem.addActionListener(this);
-//        group.add(statusCompletedMenuItem);
-            submenu.add(statusCompletedMenuItem);
-            statusRejectedMenuItem.addActionListener(this);
-//        group.add(statusRejectedMenuItem);
-            submenu.add(statusRejectedMenuItem);
-            contextMenu.add(submenu);
-            contextMenu.addSeparator();
-        }
-
-        // generic commands, open/minimize all
-        openAllMenuItem.addActionListener(this);
-        contextMenu.add(openAllMenuItem);
-        minimizeAllMenuItem.addActionListener(this);
-        contextMenu.add(minimizeAllMenuItem);
-
+        contextMenu = new MarkupAnnotationPopup(this, documentViewController,
+                getPageViewComponent(), documentViewModel, false);
         // Add listener to components that can bring up popup menus.
-        MouseListener popupListener = new PopupListener();
-        textArea.addMouseListener(popupListener);
+        MouseListener popupListener = new PopupListener(contextMenu);
         commentPanel.addMouseListener(popupListener);
+    }
+
+    public void replyToSelectedMarkupExecute() {
+        // setup title message
+        Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+        MessageFormat formatter = new MessageFormat(
+                messageBundle.getString("viewer.annotation.popup.replyTo.label"));
+        String annotationTitle = formatter.format(argument);
+
+        // show the currently selected markup comment.
+        setVisible(true);
+
+        createNewTextAnnotation(
+                annotationTitle,
+                "",
+                TextAnnotation.STATE_MODEL_REVIEW,
+                TextAnnotation.STATE_REVIEW_NONE);
+    }
+
+    /**
+     * Deletes the root annotation element or the selected tree node of the annotation popup view depending on the
+     * the value of the deleteRoot parameter.
+     *
+     * @param deleteRoot true delete the entire annotation sub comments,  false delete just the selected node.
+     */
+    public void deleteSelectedMarkupExecute(boolean deleteRoot) {
+
+        // show the currently selected markup comment.
+        setVisible(true);
+
+        // remove the annotation
+        AnnotationComponent annotationComponent;
+        if (deleteRoot) {
+            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+            annotationComponent = findAnnotationComponent(markupAnnotation);
+        } else {
+            annotationComponent = findAnnotationComponent(selectedMarkupAnnotation);
+        }
+        documentViewController.deleteAnnotation(annotationComponent);
+        // remove the annotations popup
+        annotationComponent = findAnnotationComponent(selectedMarkupAnnotation.getPopupAnnotation());
+        documentViewController.deleteAnnotation(annotationComponent);
+
+        // check if any annotations have an IRT reference and delete
+        // the markup component chain
+        removeMarkupInReplyTo(selectedMarkupAnnotation.getPObjectReference());
+
+
+        // rebuild the tree, which is easier then pruning at this point
+        List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
+        MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
+
+        // check first if there are anny annotation that point to this one as
+        // an IRT.  If there aren't any then the selectedAnnotation is the parent
+        // other wise we need to build out
+        DefaultMutableTreeNode root =
+                new DefaultMutableTreeNode("Root");
+        boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
+        commentTree.removeTreeSelectionListener(this);
+        ((DefaultTreeModel) (commentTree.getModel())).setRoot(root);
+        commentTree.addTreeSelectionListener(this);
+        // reload the tree model
+        refreshTree(commentTree);
+        if (!isIRT) {
+            commentTreeScrollPane.setVisible(false);
+        }
+        commentPanel.revalidate();
+    }
+
+    public void setStatusSelectedMarkupExecute(String messageTitle, String messageBody, String status) {
+        // setup title message
+        Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+        MessageFormat formatter = new MessageFormat(messageTitle);
+        String title = formatter.format(argument);
+        // setup content message
+        argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
+        formatter = new MessageFormat(messageBody);
+        String content = formatter.format(argument);
+        createNewTextAnnotation(title, content,
+                TextAnnotation.STATE_MODEL_REVIEW, status);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -380,130 +409,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         if (source == minimizeButton) {
             this.setVisible(false);
             popupAnnotation.setOpen(false);
-        } else if (source == replyMenuItem) {
-
-            // setup title message
-            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            MessageFormat formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.replyTo.label"));
-            String annotationTitle = formatter.format(argument);
-
-            createNewTextAnnotation(
-                    annotationTitle,
-                    "",
-                    TextAnnotation.STATE_MODEL_REVIEW,
-                    TextAnnotation.STATE_REVIEW_NONE);
-        } else if (source == deleteMenuItem) {
-            // remove the annotation
-            AnnotationComponent annotationComponent = findAnnotationComponent(selectedMarkupAnnotation);
-            documentViewController.deleteAnnotation(annotationComponent);
-            // remove the annotations popup
-            annotationComponent = findAnnotationComponent(selectedMarkupAnnotation.getPopupAnnotation());
-            documentViewController.deleteAnnotation(annotationComponent);
-
-            // check if any annotations have an IRT reference and delete
-            // the markup component chain
-            removeMarkupInReplyTo(selectedMarkupAnnotation.getPObjectReference());
-
-            // rebuild the tree, which is easier then pruning at this point
-            List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
-            MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
-
-            // check first if there are anny annotation that point to this one as
-            // an IRT.  If there aren't any then the selectedAnnotation is the parent
-            // other wise we need to build out
-            DefaultMutableTreeNode root =
-                    new DefaultMutableTreeNode("Root");
-            boolean isIRT = buildCommentTree(parentAnnotation, annotations, root);
-            commentTree.removeTreeSelectionListener(this);
-            ((DefaultTreeModel) (commentTree.getModel())).setRoot(root);
-            commentTree.addTreeSelectionListener(this);
-            // reload the tree model
-            refreshTree(commentTree);
-            if (!isIRT) {
-                commentTreeScrollPane.setVisible(false);
-            }
-            commentPanel.revalidate();
-
-        } else if (source == statusNoneMenuItem) {
-            // setup title message
-            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            MessageFormat formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.none.title"));
-            String title = formatter.format(argument);
-            // setup content message
-            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.none.msg"));
-            String content = formatter.format(argument);
-            createNewTextAnnotation(title, content,
-                    TextAnnotation.STATE_MODEL_REVIEW,
-                    TextAnnotation.STATE_REVIEW_NONE);
-        } else if (source == statusAcceptedItem) {
-            // setup title message
-            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            MessageFormat formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.accepted.title"));
-            String title = formatter.format(argument);
-            // setup content message
-            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.accepted.msg"));
-            String content = formatter.format(argument);
-            createNewTextAnnotation(title, content,
-                    TextAnnotation.STATE_MODEL_REVIEW,
-                    TextAnnotation.STATE_REVIEW_NONE);
-        } else if (source == statusCancelledMenuItem) {
-            // setup title message
-            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            MessageFormat formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.cancelled.title"));
-            String title = formatter.format(argument);
-            // setup content message
-            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.cancelled.msg"));
-            String content = formatter.format(argument);
-            createNewTextAnnotation(title, content,
-                    TextAnnotation.STATE_MODEL_REVIEW,
-                    TextAnnotation.STATE_REVIEW_NONE);
-        } else if (source == statusCompletedMenuItem) {
-            // setup title message
-            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            MessageFormat formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.completed.title"));
-            String title = formatter.format(argument);
-            // setup content message
-            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.completed.msg"));
-            String content = formatter.format(argument);
-            createNewTextAnnotation(title, content,
-                    TextAnnotation.STATE_MODEL_REVIEW,
-                    TextAnnotation.STATE_REVIEW_NONE);
-        } else if (source == statusRejectedMenuItem) {
-            // setup title message
-            Object[] argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            MessageFormat formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.rejected.title"));
-            String title = formatter.format(argument);
-            // setup content message
-            argument = new Object[]{selectedMarkupAnnotation.getTitleText()};
-            formatter = new MessageFormat(
-                    messageBundle.getString("viewer.annotation.popup.status.rejected.msg"));
-            String content = formatter.format(argument);
-            createNewTextAnnotation(title, content,
-                    TextAnnotation.STATE_MODEL_REVIEW,
-                    TextAnnotation.STATE_REVIEW_NONE);
-        } else if (source == openAllMenuItem) {
-            showHidePopupAnnotations(true);
-
-        } else if (source == minimizeAllMenuItem) {
-            showHidePopupAnnotations(false);
         }
     }
 
-    private void showHidePopupAnnotations(boolean visible) {
+    public void showHidePopupAnnotations(boolean visible) {
         ArrayList<AbstractAnnotationComponent> annotationComponents =
                 pageViewComponent.getAnnotationComponents();
         for (AnnotationComponent annotationComponent : annotationComponents) {
@@ -538,13 +447,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         addAnnotationComponent(markupAnnotation);
 
         // create the new text and popup annotations
-        PopupAnnotation popupAnnotation =
-                TextAnnotationHandler.createPopupAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
-                        this.popupAnnotation.getUserSpaceRectangle().getBounds(),
-                        markupAnnotation, getPageTransform());
-        popupAnnotation.setOpen(false);
-        addAnnotationComponent(popupAnnotation);
+//        PopupAnnotation popupAnnotation =
+//                TextAnnotationHandler.createPopupAnnotation(
+//                        documentViewModel.getDocument().getPageTree().getLibrary(),
+//                        this.popupAnnotation.getUserSpaceRectangle().getBounds(),
+//                        markupAnnotation, getPageTransform());
+//        popupAnnotation.setOpen(false);
+//        addAnnotationComponent(popupAnnotation);
 
         // finally add the node as child to the selected node
         DefaultMutableTreeNode node = (DefaultMutableTreeNode)
@@ -677,6 +586,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
                         inReplyToAnnotation.getPObjectReference().equals(reference)) {
                     // found one no were to attach it to.
                     root.add(new DefaultMutableTreeNode(markupAnnotation));
+                    selectedMarkupAnnotation = markupAnnotation;
                 }
             }
         }
@@ -716,7 +626,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
     private boolean checkForIRT(MarkupAnnotation parentAnnotation,
                                 List<Annotation> annotations) {
-        if (parentAnnotation != null) {
+        if (parentAnnotation != null && annotations != null) {
             Reference reference = parentAnnotation.getPObjectReference();
             for (Annotation annotation : annotations) {
                 if (annotation instanceof MarkupAnnotation) {
@@ -736,7 +646,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         // draw them off screen
         Rectangle bBox = new Rectangle(-20, -20, 20, 20);
         // create the annotation object.
-        AbstractAnnotationComponent comp =
+        MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
                         annotation,
                         documentViewController,
@@ -745,6 +655,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         comp.setBounds(bBox);
         // resets user space rectangle to match bbox converted to page space
         comp.refreshAnnotationRect();
+        comp.setVisible(false);
+        comp.getPopupAnnotationComponent().setVisible(false);
 
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {
@@ -800,7 +712,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         }
     }
 
-    class PopupListener extends MouseAdapter {
+    public static class PopupListener extends MouseAdapter {
+
+        protected JPopupMenu contextMenu;
+
+        public PopupListener(JPopupMenu contextMenu) {
+            this.contextMenu = contextMenu;
+        }
 
         public void mousePressed(MouseEvent e) {
             maybeShowPopup(e);

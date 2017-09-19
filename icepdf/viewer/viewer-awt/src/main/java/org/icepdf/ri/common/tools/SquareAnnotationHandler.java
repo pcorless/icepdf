@@ -26,8 +26,9 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -202,12 +203,14 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         annotation.setRectangle(rectangle);
         annotation.setBorderStyle(borderStyle);
 
+        AffineTransform pageTransform = getPageTransformInverse();
+
         // pass outline shapes and bounds to create the highlight shapes
         annotation.setBBox(new Rectangle(0, 0, tBbox.width, tBbox.height));
-        annotation.resetAppearanceStream(getPageTransform());
+        annotation.resetAppearanceStream(pageTransform);
 
         // create the annotation object.
-        AbstractAnnotationComponent comp =
+        MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
                         annotation,
                         documentViewController,
@@ -218,6 +221,13 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         comp.setBounds(bbox);
         // resets user space rectangle to match bbox converted to page space
         comp.refreshAnnotationRect();
+
+        // associate popup to location
+        PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
+        popupAnnotationComponent.setBoudsRelativeToParent(
+                bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
+        popupAnnotationComponent.setVisible(false);
+
 
         // add them to the container, using absolute positioning.
         if (documentViewController.getAnnotationCallback() != null) {

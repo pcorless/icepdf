@@ -66,11 +66,11 @@ public abstract class CommonToolHandler {
 
     protected abstract void checkAndApplyPreferences();
 
-    protected AffineTransform getPageTransform() {
-        return getPageTransform(pageViewComponent);
+    protected AffineTransform getPageTransformInverse() {
+        return getPageTransformInverse(pageViewComponent);
     }
 
-    protected AffineTransform getPageTransform(AbstractPageViewComponent pageViewComponent) {
+    protected AffineTransform getPageTransformInverse(AbstractPageViewComponent pageViewComponent) {
         Page currentPage = pageViewComponent.getPage();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
@@ -81,6 +81,19 @@ public abstract class CommonToolHandler {
         } catch (NoninvertibleTransformException e) {
             logger.log(Level.FINE, "Error page space transform", e);
         }
+        return at;
+    }
+
+    protected AffineTransform getPageTransform() {
+        return getPageTransform(pageViewComponent);
+    }
+
+    protected AffineTransform getPageTransform(AbstractPageViewComponent pageViewComponent) {
+        Page currentPage = pageViewComponent.getPage();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
         return at;
     }
 

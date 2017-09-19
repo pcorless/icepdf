@@ -4406,7 +4406,8 @@ public class SwingController
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_SELECTION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_SELECTION);
                 }
-            } else if (source == linkAnnotationToolButton) {
+            } else if (source == linkAnnotationToolButton ||
+                    source == linkAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_LINK_ANNOTATION);
@@ -4454,7 +4455,8 @@ public class SwingController
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_CIRCLE_ANNOTATION);
                 }
-            } else if (source == inkAnnotationToolButton) {
+            } else if (source == inkAnnotationToolButton ||
+                    source == inkAnnotationPropertiesToolButton) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
                     tool = DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION;
                     setDocumentToolMode(DocumentViewModelImpl.DISPLAY_TOOL_INK_ANNOTATION);
