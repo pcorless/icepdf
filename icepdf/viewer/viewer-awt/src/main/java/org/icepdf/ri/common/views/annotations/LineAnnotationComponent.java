@@ -17,6 +17,7 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
+import org.icepdf.ri.common.utility.annotation.properties.LineAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -33,7 +34,7 @@ import java.awt.event.MouseEvent;
  * The Viewer RI implementation contains a LineAnnotationPanel class which
  * can edit the various properties of this component.
  *
- * @see org.icepdf.ri.common.utility.annotation.LineAnnotationPanel
+ * @see LineAnnotationPanel
  * @since 5.0
  */
 @SuppressWarnings("serial")

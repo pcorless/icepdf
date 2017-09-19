@@ -17,6 +17,7 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
+import org.icepdf.ri.common.utility.annotation.properties.CircleAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -32,7 +33,7 @@ import java.awt.event.MouseEvent;
  * The Viewer RI implementation contains a CircleAnnotationPanel class which
  * can edit the various properties of this component.
  *
- * @see org.icepdf.ri.common.utility.annotation.CircleAnnotationPanel
+ * @see CircleAnnotationPanel
  * @since 5.0
  */
 @SuppressWarnings("serial")

@@ -227,6 +227,13 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         // resets user space rectangle to match bbox converted to page space
         comp.refreshAnnotationRect();
 
+        // add them to the container, using absolute positioning.
+        if (documentViewController.getAnnotationCallback() != null) {
+            AnnotationCallback annotationCallback =
+                    documentViewController.getAnnotationCallback();
+            annotationCallback.newAnnotation(pageViewComponent, comp);
+        }
+
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoudsRelativeToParent(
@@ -238,7 +245,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
                     documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
+            annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
         }
 
         // set the annotation tool to he select tool

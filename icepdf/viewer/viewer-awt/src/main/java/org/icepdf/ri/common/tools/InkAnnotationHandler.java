@@ -184,6 +184,13 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         // set the bounds and refresh the userSpace rectangle
         comp.setBounds(bBox);
 
+        // add them to the container, using absolute positioning.
+        if (documentViewController.getAnnotationCallback() != null) {
+            AnnotationCallback annotationCallback =
+                    documentViewController.getAnnotationCallback();
+            annotationCallback.newAnnotation(pageViewComponent, comp);
+        }
+
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoudsRelativeToParent(
@@ -194,7 +201,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
                     documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
+            annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
         }
 
         // set the annotation tool to he select tool

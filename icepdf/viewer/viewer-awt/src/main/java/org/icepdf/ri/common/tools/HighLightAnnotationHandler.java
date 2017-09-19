@@ -175,6 +175,13 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                             documentViewController,
                             pageViewComponent, documentViewModel);
 
+            // add the main highlight annotation
+            if (documentViewController.getAnnotationCallback() != null) {
+                AnnotationCallback annotationCallback =
+                        documentViewController.getAnnotationCallback();
+                annotationCallback.newAnnotation(pageViewComponent, comp);
+            }
+
             // convert to user rect to page space along with the bounds.
             comp.setBounds(bounds);
             // avoid a potential rounding error in comp.refreshAnnotationRect(), stead we simply
@@ -188,12 +195,11 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                     bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, pageTransform);
             popupAnnotationComponent.setVisible(false);
 
-            // create component and add it to the page.
-            // add them to the container, using absolute positioning.
+            // get the callback for the popup
             if (documentViewController.getAnnotationCallback() != null) {
                 AnnotationCallback annotationCallback =
                         documentViewController.getAnnotationCallback();
-                annotationCallback.newAnnotation(pageViewComponent, comp);
+                annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
             }
         }
         pageViewComponent.repaint();

@@ -13,23 +13,15 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.annotation;
+package org.icepdf.ri.common.utility.annotation.properties;
 
-import org.icepdf.ri.common.EscapeJDialog;
-
-import javax.swing.*;
-import java.awt.*;
+import org.icepdf.ri.common.views.AnnotationComponent;
 
 /**
- * Common abstract class for all annotation dialogs.
- *
  * @since 4.0
  */
-public abstract class AnnotationDialogAdapter extends EscapeJDialog
-        implements AnnotationProperties {
+public interface AnnotationProperties {
 
-    protected AnnotationDialogAdapter(JFrame owner, boolean modal)
-            throws HeadlessException {
-        super(owner, modal);
-    }
+    public abstract void setAnnotationComponent(AnnotationComponent annotation);
+
 }

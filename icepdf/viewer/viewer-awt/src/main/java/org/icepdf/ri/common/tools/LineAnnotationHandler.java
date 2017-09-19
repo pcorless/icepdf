@@ -214,6 +214,13 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
                 rectToDraw.width, rectToDraw.height);
         comp.setBounds(bbox);
 
+        // add them to the container, using absolute positioning.
+        if (documentViewController.getAnnotationCallback() != null) {
+            AnnotationCallback annotationCallback =
+                    documentViewController.getAnnotationCallback();
+            annotationCallback.newAnnotation(pageViewComponent, comp);
+        }
+
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoudsRelativeToParent(
@@ -224,7 +231,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
                     documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
+            annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
         }
 
         // set the annotation tool to he select tool

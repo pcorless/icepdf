@@ -20,7 +20,8 @@ import org.icepdf.core.pobjects.graphics.ImageReference;
 import org.icepdf.core.pobjects.graphics.ImageReferenceFactory;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
-import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.MarkupAnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.properties.AnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
@@ -1923,7 +1924,7 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION)) {
             utilityTabbedPane.add(
                     messageBundle.getString("viewer.utilityPane.annotation.tab.title"),
-                    buildAnnotationPanel());
+                    buildMarkupAnnotationPanel()); //buildAnnotationPanel()
         }
 
         // Ensure something was added to the utility pane, otherwise reset it to null
@@ -1993,6 +1994,13 @@ public class SwingViewBuilder {
         return annotationPanel;
     }
 
+    public MarkupAnnotationPanel buildMarkupAnnotationPanel() {
+        MarkupAnnotationPanel annotationPanel = new MarkupAnnotationPanel(viewerController, propertiesManager);
+        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationPropertiesToolBar());
+        if (viewerController != null)
+            viewerController.setMarkupAnnotationPanel(annotationPanel);
+        return annotationPanel;
+    }
 
     /**
      * Builds the status bar panel containing a status label on the left and

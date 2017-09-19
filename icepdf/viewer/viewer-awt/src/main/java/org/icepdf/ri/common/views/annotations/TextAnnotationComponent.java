@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.ri.common.utility.annotation.properties.TextAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
  * The Viewer RI implementation contains a TextAnnotationPanel class which
  * can edit the various properties of this component.
  *
- * @see org.icepdf.ri.common.utility.annotation.TextAnnotationPanel
+ * @see TextAnnotationPanel
  * @since 5.0
  */
 @SuppressWarnings("serial")

@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.TextSpriteDrawCmd;
+import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -59,7 +60,7 @@ import java.util.logging.Logger;
  * JTextArea component that is made to look like the respective annotations
  * appearance stream.
  *
- * @see org.icepdf.ri.common.utility.annotation.FreeTextAnnotationPanel
+ * @see FreeTextAnnotationPanel
  * @since 5.0
  */
 @SuppressWarnings("serial")

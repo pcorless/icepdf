@@ -13,10 +13,10 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.annotation;
+package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.InkAnnotation;
+import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -34,29 +34,30 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
 /**
- * InkAnnotationPanel is a configuration panel for changing the properties
- * of a InkAnnotationComponent and the underlying annotation component.
+ * TextAnnotationPanel is a configuration panel for changing the properties
+ * of a TextAnnotationComponent and the underlying annotation component.
  *
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
+public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements ItemListener,
         ActionListener, ChangeListener {
 
     // default list values.
-    private static final int DEFAULT_LINE_THICKNESS = 0;
-    private static final int DEFAULT_LINE_STYLE = 0;
-    private static final Color DEFAULT_BORDER_COLOR = Color.RED;
+    private static final int DEFAULT_TEXT_MARKUP_TYPE = 0;
+    private static final Color DEFAULT_BORDER_COLOR = Color.BLACK;
 
-    // link action appearance properties.
-    private JComboBox lineThicknessBox;
-    private JComboBox lineStyleBox;
-    private JButton colorBorderButton;
+    // text markup sub types.
+    private static ValueLabelItem[] TEXT_MARKUP_TYPE_LIST;
+
+    // text markup appearance properties.
+    private JComboBox textMarkupTypes;
+    private JButton colorButton;
     private JSlider transparencySlider;
 
-    private InkAnnotation annotation;
+    private TextMarkupAnnotation annotation;
 
-    public InkAnnotationPanel(SwingController controller) {
+    public TextMarkupAnnotationPanel(SwingController controller) {
         super(controller);
         setLayout(new GridBagLayout());
 
@@ -71,7 +72,6 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
 
         revalidate();
     }
-
 
     /**
      * Method that should be called when a new AnnotationComponent is selected by the user
@@ -92,28 +92,24 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
         this.currentAnnotationComponent = newAnnotation;
 
         // For convenience grab the Annotation object wrapped by the component
-        annotation = (InkAnnotation)
+        annotation = (TextMarkupAnnotation)
                 currentAnnotationComponent.getAnnotation();
 
-        applySelectedValue(lineThicknessBox, annotation.getLineThickness());
-        applySelectedValue(lineStyleBox, annotation.getLineStyle());
-        setButtonBackgroundColor(colorBorderButton, annotation.getColor());
+        applySelectedValue(textMarkupTypes, annotation.getSubType());
+        setButtonBackgroundColor(colorButton, annotation.getTextMarkupColor());
         transparencySlider.setValue(Math.round(annotation.getOpacity() * 255));
 
         // disable appearance input if we have a invisible rectangle
-        safeEnable(lineThicknessBox, true);
-        safeEnable(lineStyleBox, true);
-        safeEnable(colorBorderButton, true);
+        safeEnable(textMarkupTypes, true);
+        safeEnable(colorButton, true);
         safeEnable(transparencySlider, true);
     }
 
     public void itemStateChanged(ItemEvent e) {
         ValueLabelItem item = (ValueLabelItem) e.getItem();
         if (e.getStateChange() == ItemEvent.SELECTED) {
-            if (e.getSource() == lineThicknessBox) {
-                annotation.getBorderStyle().setStrokeWidth((Float) item.getValue());
-            } else if (e.getSource() == lineStyleBox) {
-                annotation.getBorderStyle().setBorderStyle((Name) item.getValue());
+            if (e.getSource() == textMarkupTypes) {
+                annotation.setSubtype((Name) item.getValue());
             }
             // save the action state back to the document structure.
             updateCurrentAnnotation();
@@ -123,42 +119,70 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == colorBorderButton) {
+        if (e.getSource() == colorButton) {
             Color chosenColor =
-                    RgbColorChooser.showDialog(colorBorderButton,
+                    RgbColorChooser.showDialog(colorButton,
                             messageBundle.getString(
-                                    "viewer.utilityPane.annotation.ink.colorBorderChooserTitle"),
-                            colorBorderButton.getBackground());
+                                    "viewer.utilityPane.annotation.textMarkup.colorChooserTitle"),
+                            colorButton.getBackground());
             if (chosenColor != null) {
                 // change the colour of the button background
-                colorBorderButton.setBackground(chosenColor);
-                annotation.setColor(chosenColor);
+                colorButton.setBackground(chosenColor);
+                annotation.setTextMarkupColor(chosenColor);
 
-                // store the chosen colour
-                preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_INK_COLOR, chosenColor.getRGB());
+                // save the last used colour
+                Name subtype = annotation.getSubType();
+                String colourProperty = PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_COLOR;
+                if (subtype.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+                    colourProperty = PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_COLOR;
+                } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
+                    colourProperty = PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_COLOR;
+                } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_SQUIGGLY)) {
+                    colourProperty = PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_COLOR;
+                }
+                // update the toolbar to match the last used colour?
+                preferences.putInt(colourProperty, chosenColor.getRGB());
 
                 // save the action state back to the document structure.
                 updateCurrentAnnotation();
                 currentAnnotationComponent.resetAppearanceShapes();
                 currentAnnotationComponent.repaint();
+
+
             }
         }
     }
 
     public void stateChanged(ChangeEvent e) {
-        alphaSliderChange(e, annotation, PropertiesManager.PROPERTY_ANNOTATION_INK_OPACITY);
+        Name subtype = annotation.getSubType();
+        String opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_OPACITY;
+        if (subtype.equals(TextMarkupAnnotation.SUBTYPE_UNDERLINE)) {
+            opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_UNDERLINE_OPACITY;
+        } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT)) {
+            opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_STRIKE_OUT_OPACITY;
+        } else if (subtype.equals(TextMarkupAnnotation.SUBTYPE_SQUIGGLY)) {
+            opacityProperty = PropertiesManager.PROPERTY_ANNOTATION_SQUIGGLY_OPACITY;
+        }
+
+        alphaSliderChange(e, annotation, opacityProperty);
     }
+
 
     /**
      * Method to create link annotation GUI.
      */
     private void createGUI() {
 
-        // Create and setup an Appearance panel
-        setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
-                messageBundle.getString("viewer.utilityPane.annotation.ink.appearance.title"),
-                TitledBorder.LEFT,
-                TitledBorder.DEFAULT_POSITION));
+        // text markup types.
+        if (TEXT_MARKUP_TYPE_LIST == null) {
+            TEXT_MARKUP_TYPE_LIST = new ValueLabelItem[]{
+                    new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT,
+                            "Highlight"),
+                    new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT,
+                            "Strikeout"),
+                    new ValueLabelItem(TextMarkupAnnotation.SUBTYPE_UNDERLINE,
+                            "Underline")};
+        }
 
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -167,35 +191,34 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(1, 2, 1, 2);
 
-        // Line thickness
-        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
-        lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
-        lineThicknessBox.addItemListener(this);
-        JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.lineThickness"));
+        // Create and setup an Appearance panel
+        setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.utilityPane.annotation.textMarkup.appearance.title"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        // Text markup type
+        textMarkupTypes = new JComboBox(TEXT_MARKUP_TYPE_LIST);
+        textMarkupTypes.setSelectedIndex(DEFAULT_TEXT_MARKUP_TYPE);
+        textMarkupTypes.addItemListener(this);
+        JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.textMarkup.highlightType"));
         addGB(this, label, 0, 0, 1, 1);
-        addGB(this, lineThicknessBox, 1, 0, 1, 1);
-        // Line style
-        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
-        lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
-        lineStyleBox.addItemListener(this);
-        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.lineStyle"));
-        addGB(this, label, 0, 1, 1, 1);
-        addGB(this, lineStyleBox, 1, 1, 1, 1);
+        addGB(this, textMarkupTypes, 1, 0, 1, 1);
+
         // border colour
-        colorBorderButton = new JButton(" ");
-        colorBorderButton.addActionListener(this);
-        colorBorderButton.setOpaque(true);
-        colorBorderButton.setBackground(DEFAULT_BORDER_COLOR);
-        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.colorBorderLabel"));
+        colorButton = new JButton(" ");
+        colorButton.addActionListener(this);
+        colorButton.setOpaque(true);
+        colorButton.setBackground(DEFAULT_BORDER_COLOR);
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.textMarkup.colorLabel"));
         addGB(this, label, 0, 2, 1, 1);
-        addGB(this, colorBorderButton, 1, 2, 1, 1);
+        addGB(this, colorButton, 1, 2, 1, 1);
 
         // transparency slider
         transparencySlider = buildAlphaSlider();
         transparencySlider.setMajorTickSpacing(255);
         transparencySlider.setPaintLabels(true);
         transparencySlider.addChangeListener(this);
-        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.transparencyLabel"));
+        label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.textMarkup.transparencyLabel"));
         addGB(this, label, 0, 3, 1, 1);
         addGB(this, transparencySlider, 1, 3, 1, 1);
 
@@ -209,9 +232,8 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
 
-        safeEnable(lineThicknessBox, enabled);
-        safeEnable(lineStyleBox, enabled);
-        safeEnable(colorBorderButton, enabled);
+        safeEnable(textMarkupTypes, enabled);
+        safeEnable(colorButton, enabled);
         safeEnable(transparencySlider, enabled);
     }
 

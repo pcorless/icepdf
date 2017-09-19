@@ -35,8 +35,9 @@ import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
-import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
-import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesDialog;
+import org.icepdf.ri.common.utility.annotation.MarkupAnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.properties.AnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.properties.AnnotationPropertiesDialog;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
@@ -224,6 +225,7 @@ public class SwingController
     private LayersPanel layersPanel;
     private SignaturesPanel signaturesPanel;
     private AnnotationPanel annotationPanel;
+    private MarkupAnnotationPanel markupAnnotationPanel;
     private JTabbedPane utilityTabbedPane;
     private JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
@@ -1114,6 +1116,11 @@ public class SwingController
         annotationPanel = lp;
     }
 
+
+    public void setMarkupAnnotationPanel(MarkupAnnotationPanel lp) {
+        markupAnnotationPanel = lp;
+    }
+
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
@@ -1656,6 +1663,9 @@ public class SwingController
             // disabled the annotation edit panels, selection will activate them again.
             if (annotationPanel != null) {
                 annotationPanel.setEnabled(false);
+            }
+            if (markupAnnotationPanel != null) {
+                markupAnnotationPanel.setEnabled(false);
             }
 
             // repaint the page views.
@@ -2626,6 +2636,9 @@ public class SwingController
         // disable the annotation properties panel by default
         if (annotationPanel != null) {
             annotationPanel.setEnabled(false);
+        }
+        if (markupAnnotationPanel != null) {
+            markupAnnotationPanel.setEnabled(false);
         }
 
         // set the go to page combo box in the mainToolbar
@@ -3922,17 +3935,24 @@ public class SwingController
      * @see #setUtilityPaneVisible(boolean)
      */
     public void showAnnotationPanel(AnnotationComponent selectedAnnotation) {
-        if (utilityTabbedPane != null && annotationPanel != null) {
+        if (utilityTabbedPane != null) {
             // Pass the selected annotation to the link panel
-            if (selectedAnnotation != null) {
+            if (annotationPanel != null && selectedAnnotation != null) {
                 annotationPanel.setEnabled(true);
                 annotationPanel.setAnnotationComponent(selectedAnnotation);
+            }
+            if (markupAnnotationPanel != null && selectedAnnotation != null) {
+                markupAnnotationPanel.setEnabled(true);
+//                markupAnnotationPanel.setAnnotationComponent(selectedAnnotation);
             }
             setUtilityPaneVisible(true);
 
             // select the annotationPanel tab
-            if (utilityTabbedPane.getSelectedComponent() != annotationPanel) {
+            if (annotationPanel != null && utilityTabbedPane.getSelectedComponent() != annotationPanel) {
                 safelySelectUtilityPanel(annotationPanel);
+            }
+            if (markupAnnotationPanel != null && utilityTabbedPane.getSelectedComponent() != markupAnnotationPanel) {
+                safelySelectUtilityPanel(markupAnnotationPanel);
             }
 
         }

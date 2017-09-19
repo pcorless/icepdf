@@ -217,6 +217,12 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         // resets user space rectangle to match bbox converted to page space
         comp.refreshAnnotationRect();
 
+        if (documentViewController.getAnnotationCallback() != null) {
+            AnnotationCallback annotationCallback =
+                    documentViewController.getAnnotationCallback();
+            annotationCallback.newAnnotation(pageViewComponent, comp);
+        }
+
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoudsRelativeToParent(
@@ -227,7 +233,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
                     documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
+            annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
         }
 
         // set the annotation tool to he select tool

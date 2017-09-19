@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
+import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.*;
 
 import javax.swing.*;
@@ -58,7 +59,7 @@ import java.util.logging.Level;
  * for editing, replying and deleting TextAnnotation comments.
  * appearance stream.
  *
- * @see org.icepdf.ri.common.utility.annotation.FreeTextAnnotationPanel
+ * @see FreeTextAnnotationPanel
  * @since 5.0
  */
 @SuppressWarnings("serial")
@@ -314,7 +315,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
     public void buildContextMenu() {
         //Create the popup menu.
-        contextMenu = new MarkupAnnotationPopup((MarkupAnnotationComponent) getAnnotationParentComponent(), documentViewController,
+        MarkupAnnotationComponent comp = (MarkupAnnotationComponent) getAnnotationParentComponent();
+        contextMenu = new MarkupAnnotationPopup(comp, documentViewController,
                 getPageViewComponent(), documentViewModel, false);
         // Add listener to components that can bring up popup menus.
         MouseListener popupListener = new PopupListener(contextMenu);
@@ -717,26 +719,4 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         }
     }
 
-    public static class PopupListener extends MouseAdapter {
-
-        protected JPopupMenu contextMenu;
-
-        public PopupListener(JPopupMenu contextMenu) {
-            this.contextMenu = contextMenu;
-        }
-
-        public void mousePressed(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        public void mouseReleased(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        private void maybeShowPopup(MouseEvent e) {
-            if (e.isPopupTrigger()) {
-                contextMenu.show(e.getComponent(), e.getX(), e.getY());
-            }
-        }
-    }
 }

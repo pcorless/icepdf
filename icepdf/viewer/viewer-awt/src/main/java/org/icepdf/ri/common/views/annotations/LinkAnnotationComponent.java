@@ -18,14 +18,12 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.ri.common.utility.annotation.properties.LinkAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Rectangle2D;
 
@@ -38,7 +36,7 @@ import java.awt.geom.Rectangle2D;
  * The Viewer RI implementation contains a LinkAnnotationPanel class which
  * can edit the various properties of this component.
  *
- * @see org.icepdf.ri.common.utility.annotation.LinkAnnotationPanel
+ * @see LinkAnnotationPanel
  * @since 5.0
  */
 @SuppressWarnings("serial")
@@ -119,28 +117,5 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent {
     @Override
     public void resetAppearanceShapes() {
 
-    }
-
-    public class PopupListener extends MouseAdapter {
-
-        protected JPopupMenu contextMenu;
-
-        public PopupListener(JPopupMenu contextMenu) {
-            this.contextMenu = contextMenu;
-        }
-
-        public void mousePressed(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        public void mouseReleased(MouseEvent e) {
-            maybeShowPopup(e);
-        }
-
-        private void maybeShowPopup(MouseEvent e) {
-            if (e.isPopupTrigger() && isAnnotationEditable()) {
-                contextMenu.show(e.getComponent(), e.getX(), e.getY());
-            }
-        }
     }
 }

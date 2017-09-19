@@ -14,7 +14,7 @@
  * governing permissions and limitations under the License.
  */
 
-package org.icepdf.ri.common.utility.annotation;
+package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.ri.common.SwingController;
