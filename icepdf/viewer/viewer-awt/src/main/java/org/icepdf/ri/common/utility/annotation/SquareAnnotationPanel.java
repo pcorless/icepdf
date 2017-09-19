@@ -258,6 +258,11 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.square.transparencyLabel"));
         addGB(this, label, 0, 5, 1, 1);
         addGB(this, transparencySlider, 1, 5, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 6, 1, 1);
+
     }
 
     @Override

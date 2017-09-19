@@ -221,6 +221,11 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.textMarkup.transparencyLabel"));
         addGB(this, label, 0, 3, 1, 1);
         addGB(this, transparencySlider, 1, 3, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 4, 1, 1);
+
     }
 
     @Override

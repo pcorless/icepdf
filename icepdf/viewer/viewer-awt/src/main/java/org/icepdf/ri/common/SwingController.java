@@ -36,6 +36,7 @@ import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationPropertiesDialog;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
@@ -3214,6 +3215,16 @@ public class SwingController
     }
 
     /**
+     * Show tabbed pane interface for annotation properties.
+     */
+    public void showAnnotationProperties(AnnotationComponent annotationComponent) {
+        AnnotationPropertiesDialog annotationPropertiesDialog =
+                new AnnotationPropertiesDialog(viewer, this, messageBundle);
+        annotationPropertiesDialog.setAnnotationComponent(annotationComponent);
+        annotationPropertiesDialog.setVisible(true);
+    }
+
+    /**
      * Show a print setup dialog, to alter the ViewerModel's PageFormat
      *
      * @see ViewModel
@@ -4133,7 +4144,7 @@ public class SwingController
             } else if (source == exitMenuItem) {
                 boolean isCanceled = saveChangesDialog();
                 if (!isCanceled && windowManagementCallback != null) {
-                    windowManagementCallback.disposeWindow(this, viewer, null);
+                    windowManagementCallback.disposeWindow(this, viewer, propertiesManager.getPreferences());
                 }
             } else if (source == showHideToolBarMenuItem) {
                 toggleToolBarVisibility();

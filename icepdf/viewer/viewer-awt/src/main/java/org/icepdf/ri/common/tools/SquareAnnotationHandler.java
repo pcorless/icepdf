@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -35,6 +36,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -190,6 +192,9 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
                         tBbox);
 
         checkAndApplyPreferences();
+
+        annotation.setCreationDate(PDate.formatDateTime(new Date()));
+        annotation.setTitleText(System.getProperty("user.name"));
 
         annotation.setColor(lineColor);
         annotation.setOpacity(defaultOpacity);

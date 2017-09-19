@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
@@ -33,6 +34,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -182,7 +184,8 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
                         tBbox);
 
         checkAndApplyPreferences();
-
+        annotation.setCreationDate(PDate.formatDateTime(new Date()));
+        annotation.setTitleText(System.getProperty("user.name"));
         annotation.setColor(lineColor);
         annotation.setOpacity(defaultOpacity);
         if (annotation.isFillColor() || useInternalColor) {

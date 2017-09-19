@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
@@ -34,6 +35,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -160,7 +162,8 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
                         tBbox);
 
         checkAndApplyPreferences();
-
+        annotation.setCreationDate(PDate.formatDateTime(new Date()));
+        annotation.setTitleText(System.getProperty("user.name"));
         annotation.setColor(inkColor);
         annotation.setBorderStyle(borderStyle);
         annotation.setInkPath(tInkPath);

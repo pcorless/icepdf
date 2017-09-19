@@ -45,7 +45,7 @@ public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
 
     public FlagsPanel(SwingController controller) {
         super(controller);
-        setLayout(new GridLayout(4, 2, 5, 2));
+        setLayout(new GridBagLayout());
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -113,6 +113,14 @@ public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
                 messageBundle.getString("viewer.utilityPane.annotation.flags.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.weightx = 1.0;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(1, 2, 1, 2);
+
         // build out the yes no list.
         ValueLabelItem[] flagList = new ValueLabelItem[]{
                 new ValueLabelItem(Boolean.TRUE,
@@ -123,22 +131,30 @@ public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
         // no rotate
         noRotateComboBox = new JComboBox(flagList);
         noRotateComboBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.noRotate")));
-        add(noRotateComboBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.noRotate")),
+                0, 0, 1, 1);
+        addGB(this, noRotateComboBox, 1, 0, 1, 1);
         // no zoom
         noZoomComboBox = new JComboBox(flagList);
         noZoomComboBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.noZoom")));
-        add(noZoomComboBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.noZoom")),
+                0, 1, 1, 1);
+        addGB(this, noZoomComboBox, 1, 1, 1, 1);
         // read only
         readOnlyComboBox = new JComboBox(flagList);
         readOnlyComboBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.readOnly")));
-        add(readOnlyComboBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.readOnly")),
+                0, 2, 1, 1);
+        addGB(this, readOnlyComboBox, 1, 2, 1, 1);
         // read only
         printableComboBox = new JComboBox(flagList);
         printableComboBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.printable")));
-        add(printableComboBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.printable")),
+                0, 3, 1, 1);
+        addGB(this, printableComboBox, 1, 3, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 4, 0, 1);
     }
 }

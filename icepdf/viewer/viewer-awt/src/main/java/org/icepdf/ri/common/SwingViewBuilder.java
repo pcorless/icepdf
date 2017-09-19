@@ -1993,13 +1993,6 @@ public class SwingViewBuilder {
         return annotationPanel;
     }
 
-    public AnnotationPanel buildAnnotationPropertiesPanel() {
-        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, propertiesManager);
-        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationPropertiesToolBar());
-        if (viewerController != null)
-            viewerController.setAnnotationPanel(annotationPanel);
-        return annotationPanel;
-    }
 
     /**
      * Builds the status bar panel containing a status label on the left and

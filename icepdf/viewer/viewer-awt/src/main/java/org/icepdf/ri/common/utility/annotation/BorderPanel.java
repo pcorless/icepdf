@@ -57,7 +57,7 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
 
     public BorderPanel(SwingController controller) {
         super(controller);
-        setLayout(new GridLayout(4, 2, 5, 2));
+        setLayout(new GridBagLayout());
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -185,35 +185,47 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
                 messageBundle.getString("viewer.utilityPane.annotation.border.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.weightx = 1.0;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(1, 2, 1, 2);
+
         // border type box
         linkTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
         linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
         linkTypeBox.addItemListener(this);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.border.linkType")));
-        add(linkTypeBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.linkType")),
+                0, 0, 1, 1);
+        addGB(this, linkTypeBox, 1, 0, 1, 1);
         // border thickness
         lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
-        add(new JLabel(messageBundle.getString(
-                "viewer.utilityPane.annotation.border.lineThickness")));
-        add(lineThicknessBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.lineThickness")),
+                0, 1, 1, 1);
+        addGB(this, lineThicknessBox, 1, 1, 1, 1);
         // border style
         lineStyleBox = new JComboBox(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.border.lineStyle")));
-        add(lineStyleBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.lineStyle")),
+                0, 2, 1, 1);
+        addGB(this, lineStyleBox, 1, 2, 1, 1);
         // border colour
         colorButton = new JButton(" ");
         colorButton.addActionListener(this);
         colorButton.setOpaque(true);
         colorButton.setBackground(DEFAULT_BORDER_COLOR);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.border.colorLabel")));
-        add(colorButton);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.colorLabel")),
+                0, 3, 1, 1);
+        addGB(this, colorButton, 1, 3, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 4, 0, 1);
     }
 
     @Override

@@ -49,7 +49,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
 
     public LinkAnnotationPanel(SwingController controller) {
         super(controller);
-        setLayout(new GridLayout(1, 2, 5, 2));
+        setLayout(new GridBagLayout());
 
         // Setup the basics of the panel
         setFocusable(true);
@@ -122,18 +122,32 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 new ValueLabelItem(LinkAnnotation.HIGHLIGHT_PUSH,
                         messageBundle.getString("viewer.utilityPane.annotation.link.push"))};
 
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.weightx = 1.0;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(1, 2, 1, 2);
+
         // Create and setup an Appearance panel
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.utilityPane.annotation.link.appearance.title"),
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
+
         // highlight style box.
         highlightStyleBox = new JComboBox(highlightStyleList);
         highlightStyleBox.setSelectedIndex(DEFAULT_HIGHLIGHT_STYLE);
         highlightStyleBox.addItemListener(this);
-        add(new JLabel(
-                messageBundle.getString("viewer.utilityPane.annotation.link.highlightType")));
-        add(highlightStyleBox);
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.link.highlightType")),
+                0, 0, 1, 1);
+        addGB(this, highlightStyleBox,
+                1, 0, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 2, 1, 1);
+
     }
 
     @Override

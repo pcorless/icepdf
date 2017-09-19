@@ -175,6 +175,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                     documentViewModel.getPageBoundary(),
                     documentViewModel.getViewRotation(),
                     documentViewModel.getViewZoom());
+            Rectangle location = at.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds();
+            setBounds(location);
 
             // update zoom and rotation state
             currentRotation = documentViewModel.getViewRotation();
@@ -390,6 +392,8 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     }
 
     public void mousePressed(MouseEvent e) {
+
+        requestFocus();
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.
         isMousePressed = true;
@@ -421,21 +425,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
             initiateMouseMoved(e);
         }
 
-        // on mouse pressed event to annotation callback if we are in normal viewing
-        // mode. A and AA dictionaries are taken into consideration.
-        boolean actionFired = additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_D_KEY, e);
 
-        // fire the main action associated with the
-        if (!actionFired && !(AbstractPageViewComponent.isAnnotationTool(
-                documentViewModel.getViewToolMode())) &&
-                isInteractiveAnnotationsEnabled) {
-            if (documentViewController.getAnnotationCallback() != null) {
-                // get the A and AA entries.
-                Action action = annotation.getAction();
-                documentViewController.getAnnotationCallback()
-                        .processAnnotationAction(annotation, action, x, y);
-            }
-        }
         repaint();
     }
 
@@ -629,10 +619,28 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                         .updateAnnotation(this);
             }
         }
+        if (mouseEvent != null && mouseEvent.getButton() == MouseEvent.BUTTON1) {
 
-        // on mouse released event to annotation callback if we are in normal viewing
-        // mode. A and AA dictionaries are taken into consideration.
-        additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_U_KEY, mouseEvent);
+            // on mouse released event to annotation callback if we are in normal viewing
+            // mode. A and AA dictionaries are taken into consideration.
+            additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_U_KEY, mouseEvent);
+
+            // on lef mouse pressed event to annotation callback if we are in normal viewing
+            // mode. A and AA dictionaries are taken into consideration.
+            boolean actionFired = additionalActionsHandler(AdditionalActionsDictionary.ANNOTATION_D_KEY, mouseEvent);
+
+            // fire the main action associated with the
+            if (!actionFired && !(AbstractPageViewComponent.isAnnotationTool(
+                    documentViewModel.getViewToolMode())) &&
+                    isInteractiveAnnotationsEnabled) {
+                if (documentViewController.getAnnotationCallback() != null) {
+                    // get the A and AA entries.
+                    Action action = annotation.getAction();
+                    documentViewController.getAnnotationCallback()
+                            .processAnnotationAction(annotation, action, mouseEvent.getX(), mouseEvent.getY());
+                }
+            }
+        }
 
         repaint();
 

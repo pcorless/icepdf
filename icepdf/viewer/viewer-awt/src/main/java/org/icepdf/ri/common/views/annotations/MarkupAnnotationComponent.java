@@ -85,10 +85,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
 
     public void buildContextMenu() {
         //Create the popup menu.
-
-        PopupAnnotationComponent comp = getPopupAnnotationComponent();
-
-        contextMenu = new MarkupAnnotationPopup(comp, documentViewController,
+        contextMenu = new MarkupAnnotationPopup(this, documentViewController,
                 getPageViewComponent(), documentViewModel, true);
         // Add listener to components that can bring up popup menus.
         MouseListener popupListener = new PopupAnnotationComponent.PopupListener(contextMenu);

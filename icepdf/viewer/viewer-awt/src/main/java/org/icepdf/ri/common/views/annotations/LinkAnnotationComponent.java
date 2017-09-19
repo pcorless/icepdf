@@ -22,7 +22,11 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -45,16 +49,29 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent {
                                    DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isShowInvisibleBorder = true;
+
+        AnnotationPopup annotationPopup = new AnnotationPopup(this, documentViewController,
+                getPageViewComponent(), documentViewModel);
+        annotationPopup.buildGui();
+
+        contextMenu = annotationPopup;
+        // Add listener to components that can bring up popup menus.
+        MouseListener popupListener = new PopupListener(contextMenu);
+        addMouseListener(popupListener);
     }
 
-    public void paintComponent(Graphics g) {
-        // sniff out tool bar state to set correct annotation border
-        isEditable = ((documentViewModel.getViewToolMode() ==
+    private boolean isAnnotationEditable() {
+        return ((documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 documentViewModel.getViewToolMode() ==
                         DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION) &&
                 !(annotation.getFlagReadOnly() || annotation.getFlagLocked() ||
                         annotation.getFlagInvisible() || annotation.getFlagHidden()));
+    }
+
+    public void paintComponent(Graphics g) {
+        // sniff out tool bar state to set correct annotation border
+        isEditable = isAnnotationEditable();
 
         // paint rollover effects.
         if (isMousePressed && !(documentViewModel.getViewToolMode() ==
@@ -102,5 +119,28 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent {
     @Override
     public void resetAppearanceShapes() {
 
+    }
+
+    public class PopupListener extends MouseAdapter {
+
+        protected JPopupMenu contextMenu;
+
+        public PopupListener(JPopupMenu contextMenu) {
+            this.contextMenu = contextMenu;
+        }
+
+        public void mousePressed(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+
+        public void mouseReleased(MouseEvent e) {
+            maybeShowPopup(e);
+        }
+
+        private void maybeShowPopup(MouseEvent e) {
+            if (e.isPopupTrigger() && isAnnotationEditable()) {
+                contextMenu.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
     }
 }

@@ -189,7 +189,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         // try and make the popup the same colour as the annotations fill color
         Color popupBackgroundColor = backgroundColor;
-        if (parentAnnotation.getColor() != null) {
+        if (parentAnnotation != null && parentAnnotation.getColor() != null) {
             popupBackgroundColor = checkColor(parentAnnotation.getColor());
         }
 
@@ -314,7 +314,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
     public void buildContextMenu() {
         //Create the popup menu.
-        contextMenu = new MarkupAnnotationPopup(this, documentViewController,
+        contextMenu = new MarkupAnnotationPopup((MarkupAnnotationComponent) getAnnotationParentComponent(), documentViewController,
                 getPageViewComponent(), documentViewModel, false);
         // Add listener to components that can bring up popup menus.
         MouseListener popupListener = new PopupListener(contextMenu);
@@ -338,6 +338,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
                 TextAnnotation.STATE_REVIEW_NONE);
     }
 
+    public AnnotationComponent getAnnotationParentComponent() {
+        return findAnnotationComponent(popupAnnotation.getParent());
+    }
+
     /**
      * Deletes the root annotation element or the selected tree node of the annotation popup view depending on the
      * the value of the deleteRoot parameter.
@@ -352,14 +356,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         // remove the annotation
         AnnotationComponent annotationComponent;
         if (deleteRoot) {
-            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
-            annotationComponent = findAnnotationComponent(markupAnnotation);
+            annotationComponent = getAnnotationParentComponent();
         } else {
             annotationComponent = findAnnotationComponent(selectedMarkupAnnotation);
         }
         documentViewController.deleteAnnotation(annotationComponent);
         // remove the annotations popup
-        annotationComponent = findAnnotationComponent(selectedMarkupAnnotation.getPopupAnnotation());
+        annotationComponent = getAnnotationParentComponent();
         documentViewController.deleteAnnotation(annotationComponent);
 
         // check if any annotations have an IRT reference and delete
@@ -500,7 +503,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
                 if (documentViewController.getAnnotationCallback() != null) {
                     AnnotationCallback annotationCallback =
                             documentViewController.getAnnotationCallback();
-                    AnnotationComponent annotationComponent = findAnnotationComponent(popupAnnotation.getParent());
+                    AnnotationComponent annotationComponent = getAnnotationParentComponent();
                     annotationCallback.updateAnnotation(annotationComponent);
                 }
             }
@@ -669,13 +672,15 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     private AnnotationComponent findAnnotationComponent(Annotation annotation) {
         ArrayList<AbstractAnnotationComponent> annotationComponents =
                 pageViewComponent.getAnnotationComponents();
-        Reference compReference;
-        Reference annotationReference = annotation.getPObjectReference();
-        for (AnnotationComponent annotationComponent : annotationComponents) {
-            compReference = annotationComponent.getAnnotation().getPObjectReference();
-            // find the component and toggle it's visibility.
-            if (compReference != null && compReference.equals(annotationReference)) {
-                return annotationComponent;
+        if (annotationComponents != null) {
+            Reference compReference;
+            Reference annotationReference = annotation.getPObjectReference();
+            for (AnnotationComponent annotationComponent : annotationComponents) {
+                compReference = annotationComponent.getAnnotation().getPObjectReference();
+                // find the component and toggle it's visibility.
+                if (compReference != null && compReference.equals(annotationReference)) {
+                    return annotationComponent;
+                }
             }
         }
         return null;

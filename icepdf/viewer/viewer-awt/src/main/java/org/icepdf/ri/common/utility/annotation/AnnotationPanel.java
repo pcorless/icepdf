@@ -66,7 +66,8 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         addGB(annotationPanel, annotationUtilityToolbar, 0, 0, 1, 1);
     }
 
-    public AnnotationPanelAdapter buildAnnotationPropertyPanel(AnnotationComponent annotationComp) {
+    public static AnnotationPanelAdapter buildAnnotationPropertyPanel(AnnotationComponent annotationComp,
+                                                                      SwingController controller) {
         if (annotationComp != null) {
             // check action type
             Annotation annotation = annotationComp.getAnnotation();
@@ -104,7 +105,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         if (annotationPropertyPanel != null) {
             annotationPanel.remove(annotationPropertyPanel);
         }
-        annotationPropertyPanel = buildAnnotationPropertyPanel(annotation);
+        annotationPropertyPanel = buildAnnotationPropertyPanel(annotation, controller);
         if (annotationPropertyPanel != null) {
             annotationPropertyPanel.setAnnotationComponent(annotation);
             addGB(annotationPanel, annotationPropertyPanel, 0, 1, 1, 1);
@@ -159,7 +160,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
         constraints.insets = new Insets(5, 1, 5, 1);
 
         // add everything back again.
-        annotationPropertyPanel = buildAnnotationPropertyPanel(null);
+        annotationPropertyPanel = buildAnnotationPropertyPanel(null, controller);
         actionsPanel = new ActionsPanel(controller);
         borderPanel = new BorderPanel(controller);
 

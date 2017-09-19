@@ -275,6 +275,11 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.transparencyLabel"));
         addGB(this, label, 0, 6, 1, 1);
         addGB(this, transparencySlider, 1, 6, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 7, 1, 1);
+
     }
 
     @Override

@@ -410,6 +410,11 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.transparencyLabel"));
         addGB(this, label, 0, 9, 1, 1);
         addGB(this, transparencySlider, 1, 9, 1, 1);
+
+        // little spacer
+        constraints.weighty = 1.0;
+        addGB(this, new Label(" "), 0, 10, 1, 1);
+
     }
 
     @Override
