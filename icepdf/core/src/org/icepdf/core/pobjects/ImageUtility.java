@@ -92,6 +92,7 @@ public class ImageUtility {
     static final int JPEG_ENC_GRAY = 5;
 
     private static boolean scaleQuality;
+    private static int scaleWidth, scaleHeight;
 
     private static GraphicsConfiguration configuration;
 
@@ -105,6 +106,11 @@ public class ImageUtility {
 
         // decide if large images will be scaled
         scaleQuality = Defs.booleanProperty("org.icepdf.core.imageMaskScale.quality", true);
+
+        // minimum size the image has to be before we apply restriction on size when scalling image mask and base image
+        // to the same image size.
+        scaleWidth = Defs.intProperty("org.icepdf.core.imageMaskScale.width", 1500);
+        scaleHeight = Defs.intProperty("org.icepdf.core.imageMaskScale.height", 1500);
     }
 
     public ImageUtility() {
@@ -202,7 +208,7 @@ public class ImageUtility {
         }
     }
 
-    public void displayImage(final BufferedImage bufferedImage, final String title) {
+    public static void displayImage(final BufferedImage bufferedImage, final String title) {
 
         if (bufferedImage == null) {
             return;
@@ -1461,6 +1467,15 @@ public class ImageUtility {
             // scale the image to match the image mask.
             if (width < maskWidth || height < maskHeight) {
                 // calculate scale factors.
+                // MS Publisher ues a very strange masking technique where the base image is 2x2 and the mask
+                // is a massive image that we can't work with with a normal amount of memory.  So we
+                // we shrink anything that is really big.
+                if (maskWidth > scaleWidth || maskHeight > scaleHeight) {
+                    // hmm, lets shrink the image by a 10th.
+                    maskImage = scale(maskWidth / 10, maskHeight / 10, maskWidth, maskHeight, maskImage);
+                    maskWidth = maskImage.getRaster().getWidth();
+                    maskHeight = maskImage.getRaster().getHeight();
+                }
                 baseImage = scale(maskWidth, maskHeight, width, height, baseImage);
             } else if (width > maskWidth || height > maskHeight) {
                 // calculate scale factors.
