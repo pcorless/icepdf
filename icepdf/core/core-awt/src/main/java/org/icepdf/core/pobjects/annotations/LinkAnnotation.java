@@ -185,6 +185,11 @@ public class LinkAnnotation extends Annotation {
         return HIGHLIGHT_INVERT;
     }
 
+    public void setHighlightMode(Name mode) {
+        entries.put(HIGHLIGHT_MODE_KEY, mode);
+    }
+
+
     /**
      * A destination to be displayed when the annotation is ativated.  Only
      * permitted if an A entry is not present.
