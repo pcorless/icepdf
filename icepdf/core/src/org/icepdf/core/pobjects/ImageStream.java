@@ -1051,9 +1051,10 @@ public class ImageStream extends Stream {
                             //  of converting the pixels via the PColorSpace, so we'll
                             //  break this into the two cases
                             if (isDeviceRGB) {
-                                red = in.getBits(bitsPerColour);
-                                green = in.getBits(bitsPerColour);
-                                blue = in.getBits(bitsPerColour);
+                                // binary values  so either 0 or 1, we must convert to 0-255
+                                red = in.getBits(bitsPerColour) * 255;
+                                green = in.getBits(bitsPerColour) * 255;
+                                blue = in.getBits(bitsPerColour) * 255;
                                 // combine the colour together
                                 imageBits[x] = (alpha << 24) | (red << 16) |
                                         (green << 8) | blue;
