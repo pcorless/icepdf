@@ -674,7 +674,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     private AnnotationComponent findAnnotationComponent(Annotation annotation) {
         ArrayList<AbstractAnnotationComponent> annotationComponents =
                 pageViewComponent.getAnnotationComponents();
-        if (annotationComponents != null) {
+        if (annotationComponents != null && annotation != null) {
             Reference compReference;
             Reference annotationReference = annotation.getPObjectReference();
             for (AnnotationComponent annotationComponent : annotationComponents) {

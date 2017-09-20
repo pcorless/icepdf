@@ -47,6 +47,8 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     // appearance properties to take care of.
     private Name highlightStyle;
 
+    private LinkAnnotation linkAnnotation;
+
     public LinkAnnotationPanel(SwingController controller) {
         super(controller);
         setLayout(new GridBagLayout());
@@ -83,7 +85,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         this.currentAnnotationComponent = newAnnotation;
 
         // For convenience grab the Annotation object wrapped by the component
-        LinkAnnotation linkAnnotation =
+        linkAnnotation =
                 (LinkAnnotation) currentAnnotationComponent.getAnnotation();
 
         // apply values to appears
@@ -99,6 +101,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         if (e.getStateChange() == ItemEvent.SELECTED) {
             if (e.getSource() == highlightStyleBox) {
                 highlightStyle = (Name) item.getValue();
+                linkAnnotation.setHighlightMode(highlightStyle);
             }
             // save the action state back to the document structure.
             updateCurrentAnnotation();

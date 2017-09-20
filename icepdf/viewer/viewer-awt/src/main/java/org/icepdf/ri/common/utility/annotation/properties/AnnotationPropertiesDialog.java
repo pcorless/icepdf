@@ -71,7 +71,7 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         this.setLayout(new BorderLayout(15, 15));
         this.add(layoutPanel, BorderLayout.NORTH);
 
-        setSize(300, 315);
+        setSize(350, 315);
         setLocationRelativeTo(frame);
     }
 

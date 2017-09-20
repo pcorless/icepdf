@@ -23,7 +23,9 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Rectangle2D;
 
@@ -54,7 +56,7 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent {
 
         contextMenu = annotationPopup;
         // Add listener to components that can bring up popup menus.
-        MouseListener popupListener = new PopupListener(contextMenu);
+        MouseListener popupListener = new LinkPopupListener(contextMenu);
         addMouseListener(popupListener);
     }
 
@@ -117,5 +119,18 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent {
     @Override
     public void resetAppearanceShapes() {
 
+    }
+
+    public class LinkPopupListener extends PopupListener {
+
+        public LinkPopupListener(JPopupMenu contextMenu) {
+            super(contextMenu);
+        }
+
+        protected void maybeShowPopup(MouseEvent e) {
+            if (e.isPopupTrigger() && isAnnotationEditable()) {
+                contextMenu.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
     }
 }
