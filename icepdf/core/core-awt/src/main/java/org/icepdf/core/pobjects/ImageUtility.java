@@ -845,9 +845,9 @@ public class ImageUtility {
         try {
             // ICEpdf-pro has a commercial license of the levigo library but the OS library can use it to if the project
             // can comply with levigo's open source licence.
-            Class<?> levigoJBIG2ImageReaderClass = Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-            Class<?> jbig2ImageReaderSpiClass = Class.forName("com.levigo.jbig2.JBIG2ImageReaderSpi");
-            Class<?> jbig2GlobalsClass = Class.forName("com.levigo.jbig2.JBIG2Globals");
+            Class<?> levigoJBIG2ImageReaderClass = Class.forName("org.apache.pdfbox.jbig2.JBIG2ImageReader");
+            Class<?> jbig2ImageReaderSpiClass = Class.forName("org.apache.pdfbox.jbig2.JBIG2ImageReaderSpi");
+            Class<?> jbig2GlobalsClass = Class.forName("org.apache.pdfbox.jbig2.JBIG2Globals");
             Object jbig2ImageReaderSpi = jbig2ImageReaderSpiClass.newInstance();
             Constructor levigoJbig2DecoderClassConstructor =
                     levigoJBIG2ImageReaderClass.getDeclaredConstructor(javax.imageio.spi.ImageReaderSpi.class);

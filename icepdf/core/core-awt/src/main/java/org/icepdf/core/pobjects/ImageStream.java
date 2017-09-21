@@ -83,7 +83,8 @@ public class ImageStream extends Stream {
     private PColorSpace colourSpace;
     private final Object colorSpaceAssignmentLock = new Object();
 
-    private static boolean isLevigoJBIG2ImageReaderClass;
+    // check to see if the pdfbox jbig2 library is on the class path.
+    private static boolean isJbig2ImageReaderClass;
 
     /**
      * Gets the value of the system property "org.icepdf.core.ccittfax.checkParentBlackIs1".
@@ -100,8 +101,8 @@ public class ImageStream extends Stream {
                 Defs.sysPropertyBoolean("org.icepdf.core.ccittfax.jai",
                         false);
         try {
-            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-            isLevigoJBIG2ImageReaderClass = true;
+            Class.forName("org.apache.pdfbox.jbig2.JBIG2ImageReader");
+            isJbig2ImageReaderClass = true;
             logger.info("Levigo JBIG2 image library was found on classpath");
         } catch (ClassNotFoundException e) {
             logger.info("Levigo JBIG2 image library was not found on classpath");
@@ -714,7 +715,7 @@ public class ImageStream extends Stream {
     private BufferedImage jbig2Decode(int width, int height,
                                       PColorSpace colourSpace,
                                       int bitsPerComponent, float[] decode) {
-        BufferedImage tmpImage;
+        BufferedImage tmpImage = null;
 
         // get the decode params form the stream
         HashMap decodeParms = library.getDictionary(entries, DECODEPARMS_KEY);
@@ -731,29 +732,25 @@ public class ImageStream extends Stream {
                         * colourSpace.getNumComponents()
                         * bitsPerComponent / 8);
 
-        // ICEpdf-pro has a commercial license of the levigo library but the OS
-        // library can use it to if the project can comply with levigo's open
-        // source licence.
-        if (isLevigoJBIG2ImageReaderClass) {
+        // levigo library is now under the apache license and included with all version of our library.
+        if (isJbig2ImageReaderClass) {
             try {
                 tmpImage = imageUtility.proJBig2Decode(
                         ImageIO.createImageInputStream(new ByteArrayInputStream(data)),
                         decodeParms, globalsStream);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Problem loading JBIG2 image using Levigo: ", e);
+                logger.log(Level.WARNING, "Problem loading JBIG2 image using pdfbox: ", e);
                 // fall back and try and load with the OS jbig2 implementation.
                 tmpImage = imageUtility.jbig2Decode(
                         data,
                         decodeParms, globalsStream);
             }
+            // apply decode
+            if ((colourSpace instanceof DeviceGray)) {
+                tmpImage = imageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
+            }
         } else {
-            tmpImage = imageUtility.jbig2Decode(
-                    data,
-                    decodeParms, globalsStream);
-        }
-        // apply decode
-        if ((colourSpace instanceof DeviceGray)) {
-            tmpImage = imageUtility.applyGrayDecode(tmpImage, bitsPerComponent, decode);
+            logger.warning("Could not find  pdfbox jbig2 image decoder on classpath.");
         }
 
         // apply the fill colour and alpha if masking is enabled.
@@ -780,7 +777,8 @@ public class ImageStream extends Stream {
                 logger.info(
                         "ImageIO missing required plug-in to read JPEG 2000 images. " +
                                 "You can download the JAI ImageIO Tools from: " +
-                                "http://www.oracle.com/technetwork/java/current-142188.html");
+                                "http://www.oracle.com/technetwork/java/javasebusiness/" +
+                                "downloads/java-archive-downloads-java-client-419417.html");
                 return null;
             }
             // decode the image.
