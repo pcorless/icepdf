@@ -26,7 +26,7 @@ import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
 import org.icepdf.ri.common.utility.search.SearchPanel;
-import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.AbstractDocumentView;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -1965,7 +1965,7 @@ public class SwingViewBuilder {
     }
 
     public JComponent buildSignatureComponents() {
-        SignaturesPanel signaturesPanel = new SignaturesPanel(viewerController);
+        SignaturesHandlerPanel signaturesPanel = new SignaturesHandlerPanel(viewerController);
         if (viewerController != null) {
             viewerController.setSignaturesPanel(signaturesPanel);
         }

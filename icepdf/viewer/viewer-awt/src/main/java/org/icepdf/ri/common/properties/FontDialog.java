@@ -18,6 +18,7 @@ package org.icepdf.ri.common.properties;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.fonts.FindFontsTask;
 
 import javax.swing.*;
 import java.awt.*;
@@ -76,7 +77,7 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         setResizable(true);
         addWindowListener(this);
 
-        fontPropertiesPanel = new FontPanel(document, controller, messageBundle);
+        fontPropertiesPanel = new FontPanel(document, controller, messageBundle, this);
         okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
         okButton.addActionListener(this);
 

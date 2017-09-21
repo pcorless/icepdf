@@ -35,6 +35,8 @@ public class PropertiesDialog extends EscapeJDialog {
     // layouts constraint
     private GridBagConstraints constraints;
 
+    private FontPanel fontPanel;
+
     public PropertiesDialog(JFrame frame, SwingController swingController,
                             ResourceBundle messageBundle) {
         super(frame, true);
@@ -67,9 +69,11 @@ public class PropertiesDialog extends EscapeJDialog {
                 new PermissionsPanel(document, messageBundle));
 
         // build out the fonts tab.
+        fontPanel = new FontPanel(document, swingController, messageBundle, this);
+        addWindowListener(fontPanel);
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.fonts"),
-                new FontPanel(document, swingController, messageBundle));
+                fontPanel);
         JPanel layoutPanel = new JPanel(new GridBagLayout());
 
         constraints = new GridBagConstraints();

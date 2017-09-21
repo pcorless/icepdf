@@ -42,7 +42,7 @@ import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlineItemTreeNode;
 import org.icepdf.ri.common.utility.search.SearchPanel;
-import org.icepdf.ri.common.utility.signatures.SignaturesPanel;
+import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
@@ -223,7 +223,7 @@ public class SwingController
     private AttachmentPanel attachmentPanel;
     private ThumbnailsPanel thumbnailsPanel;
     private LayersPanel layersPanel;
-    private SignaturesPanel signaturesPanel;
+    private SignaturesHandlerPanel signaturesPanel;
     private AnnotationPanel annotationPanel;
     private MarkupAnnotationPanel markupAnnotationPanel;
     private JTabbedPane utilityTabbedPane;
@@ -1105,7 +1105,7 @@ public class SwingController
         layersPanel = tn;
     }
 
-    public void setSignaturesPanel(SignaturesPanel tn) {
+    public void setSignaturesPanel(SignaturesHandlerPanel tn) {
         signaturesPanel = tn;
     }
 
