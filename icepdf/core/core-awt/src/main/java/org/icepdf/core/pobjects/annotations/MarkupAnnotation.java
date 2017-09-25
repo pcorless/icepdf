@@ -293,6 +293,10 @@ public abstract class MarkupAnnotation extends Annotation {
         return creationDate;
     }
 
+    public boolean isInReplyTo() {
+        return library.getObject(entries, IRT_KEY) != null;
+    }
+
     public MarkupAnnotation getInReplyToAnnotation() {
         return inReplyToAnnotation;
     }

@@ -47,17 +47,16 @@ public class PropertyConstants {
     ANNOTATION_SELECTED = "annotationSelected",
             ANNOTATION_DESELECTED = "annotationDeselected",
 
-    ANNOTATION_DELETED = "annotationDeleted",
+    ANNOTATION_ADDED = "annotationAdded",
+            ANNOTATION_UPDATED = "annotationUpdated",
+            ANNOTATION_DELETED = "annotationDeleted",
 
     ANNOTATION_BOUNDS = "annotationBounds",
 
     ANNOTATION_FOCUS_GAINED = "annotationFocusGained",
             ANNOTATION_FOCUS_LOST = "annotationFocusLost",
 
-    ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE = "annotationPropertyPanelChange",
-
-    // not in use
-    ANNOTATION_NEW_LINK = "annotationNewLink";
+    ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE = "annotationPropertyPanelChange";
 
 
 }

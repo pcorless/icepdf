@@ -538,6 +538,8 @@ public abstract class Annotation extends Dictionary {
     protected Name subtype;
     // content flag
     protected String content;
+    // unique name of annotation
+    protected String name;
     // borders style of the annotation, can be null
     protected BorderStyle borderStyle;
     // border defined by vector
@@ -1832,6 +1834,25 @@ public abstract class Annotation extends Dictionary {
 
     public void setContents(String content) {
         this.content = setString(CONTENTS_KEY, content);
+    }
+
+    /**
+     * Gets the annotation name.  Should be unique.
+     *
+     * @return annotation name.
+     */
+    public String getName() {
+        name = getString(NM_KEY);
+        return name;
+    }
+
+    /**
+     * Sets the annotation name.  No checks are made to insure the name is unique.
+     *
+     * @param name sets the name value of the annotation.
+     */
+    public void setName(String name) {
+        this.name = setString(CONTENTS_KEY, name);
     }
 
     /**
