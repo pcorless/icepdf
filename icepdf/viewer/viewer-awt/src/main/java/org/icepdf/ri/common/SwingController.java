@@ -2501,6 +2501,10 @@ public class SwingController
             signaturesPanel.setDocument(document);
         }
 
+        if (markupAnnotationPanel != null) {
+            markupAnnotationPanel.setDocument(document);
+        }
+
         if (attachmentPanel != null) {
             attachmentPanel.setDocument(document);
         }
@@ -2868,6 +2872,9 @@ public class SwingController
         }
         if (signaturesPanel != null) {
             signaturesPanel.dispose();
+        }
+        if (markupAnnotationPanel != null) {
+            markupAnnotationPanel.dispose();
         }
         if (utilityTabbedPane != null) {
             utilityTabbedPane.removeAll();

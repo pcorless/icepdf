@@ -27,7 +27,6 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
@@ -176,11 +175,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                             pageViewComponent, documentViewModel);
 
             // add the main highlight annotation
-            if (documentViewController.getAnnotationCallback() != null) {
-                AnnotationCallback annotationCallback =
-                        documentViewController.getAnnotationCallback();
-                annotationCallback.newAnnotation(pageViewComponent, comp);
-            }
+            documentViewController.addNewAnnotation(comp);
 
             // convert to user rect to page space along with the bounds.
             comp.setBounds(bounds);
@@ -195,12 +190,6 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                     bounds.x + bounds.width / 2, bounds.y + bounds.height / 2, pageTransform);
             popupAnnotationComponent.setVisible(false);
 
-            // get the callback for the popup
-            if (documentViewController.getAnnotationCallback() != null) {
-                AnnotationCallback annotationCallback =
-                        documentViewController.getAnnotationCallback();
-                annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
-            }
         }
         pageViewComponent.repaint();
     }

@@ -218,6 +218,12 @@ public class PropertiesManager {
     // store for recently opened files.
     public static final String PROPERTY_RECENTLY_OPENED_FILES = "application.viewer.preference.recent.files";
 
+    // store of sort, filter and quick colour markup annotation utility pane persisted values.
+    public static final String PROPERTY_ANNOTATION_SORT_COLUMN = "application.viewer.utility.annotation.sort.column";
+    public static final String PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN = "application.viewer.utility.annotation.filter.author.column";
+    public static final String PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN = "application.viewer.utility.annotation.filter.type.column";
+    public static final String PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN = "application.viewer.utility.annotation.filter.color.column";
+
     private static PropertiesManager propertiesManager;
 
     private static Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);
@@ -245,6 +251,7 @@ public class PropertiesManager {
     public Preferences getPreferences() {
         return preferences;
     }
+
 
     public boolean checkAndStoreBooleanProperty(String propertyName) {
         return checkAndStoreBooleanProperty(propertyName, true);

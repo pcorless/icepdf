@@ -2346,7 +2346,7 @@ public class SwingViewBuilder {
 
     }
 
-    protected Font buildButtonFont() {
+    public static Font buildButtonFont() {
         return new java.awt.Font("Helvetica", java.awt.Font.PLAIN, 9);
     }
 

@@ -111,11 +111,7 @@ public abstract class AnnotationPanelAdapter extends JPanel
      * of doing things and is still very common of link Annotations. .
      */
     protected void updateCurrentAnnotation() {
-
-        if (documentViewController.getAnnotationCallback() != null) {
-            documentViewController.getAnnotationCallback()
-                    .updateAnnotation(currentAnnotationComponent);
-        }
+        documentViewController.updateAnnotation(currentAnnotationComponent);
     }
 
     /**

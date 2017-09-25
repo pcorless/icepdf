@@ -25,7 +25,6 @@ import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.TextSpriteDrawCmd;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
@@ -225,12 +224,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                 if (contentTextChange) {
                     contentTextChange = false;
                     resetAppearanceShapes();
-                    if (documentViewController.getAnnotationCallback() != null) {
-                        AnnotationCallback annotationCallback =
-                                documentViewController.getAnnotationCallback();
-                        // notification that annotation was updated.
-                        annotationCallback.updateAnnotation(this);
-                    }
+                    documentViewController.updateAnnotation(this);
                 }
                 if (freeText instanceof ScalableTextArea) {
                     ((ScalableTextArea) freeText).setActive(false);

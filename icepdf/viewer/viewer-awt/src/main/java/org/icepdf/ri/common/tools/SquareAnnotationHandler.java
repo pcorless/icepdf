@@ -24,7 +24,6 @@ import org.icepdf.core.pobjects.annotations.SquareAnnotation;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
@@ -228,25 +227,13 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         comp.refreshAnnotationRect();
 
         // add them to the container, using absolute positioning.
-        if (documentViewController.getAnnotationCallback() != null) {
-            AnnotationCallback annotationCallback =
-                    documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
-        }
+        documentViewController.addNewAnnotation(comp);
 
         // associate popup to location
         PopupAnnotationComponent popupAnnotationComponent = comp.getPopupAnnotationComponent();
         popupAnnotationComponent.setBoudsRelativeToParent(
                 bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
-
-
-        // add them to the container, using absolute positioning.
-        if (documentViewController.getAnnotationCallback() != null) {
-            AnnotationCallback annotationCallback =
-                    documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
-        }
 
         // set the annotation tool to he select tool
         if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_SQUARE_SELECTION_ENABLED, false)) {

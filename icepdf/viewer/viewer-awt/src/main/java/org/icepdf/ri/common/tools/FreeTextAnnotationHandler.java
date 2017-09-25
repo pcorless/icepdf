@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.AnnotationCallback;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
@@ -122,10 +121,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         comp.refreshAnnotationRect();
 
         // add them to the container, using absolute positioning.
-        if (documentViewController.getAnnotationCallback() != null) {
-            AnnotationCallback annotationCallback = documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
-        }
+        documentViewController.addNewAnnotation(comp);
 
         // request focus so that editing can take place.
         comp.requestFocus();

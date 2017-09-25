@@ -1282,6 +1282,43 @@ public class DocumentViewControllerImpl
         }
     }
 
+    public void addNewAnnotation(AnnotationComponent annotationComponent) {
+        if (documentViewModel != null && annotationComponent != null) {
+
+            // parent component
+            PageViewComponent pageComponent =
+                    annotationComponent.getPageViewComponent();
+
+            if (annotationCallback != null) {
+                annotationCallback.newAnnotation(pageComponent, annotationComponent);
+            }
+
+            // fire event notification
+            firePropertyChange(PropertyConstants.ANNOTATION_ADDED,
+                    null, annotationComponent);
+
+            // clear previously selected annotation and fire event.
+            assignSelectedAnnotation(null);
+
+            // repaint the view.
+            documentView.repaint();
+        }
+    }
+
+    public void updateAnnotation(AnnotationComponent annotationComponent) {
+        if (documentViewModel != null && annotationComponent != null) {
+            if (annotationCallback != null) {
+                annotationCallback.updateAnnotation(annotationComponent);
+            }
+            // fire event notification
+            firePropertyChange(PropertyConstants.ANNOTATION_UPDATED,
+                    null, annotationComponent);
+
+            // repaint the view.
+            documentView.repaint();
+        }
+    }
+
     public void deleteAnnotation(AnnotationComponent annotationComponent) {
         if (documentViewModel != null && annotationComponent != null) {
 
@@ -1295,7 +1332,7 @@ public class DocumentViewControllerImpl
 
             // fire event notification
             firePropertyChange(PropertyConstants.ANNOTATION_DELETED,
-                    documentViewModel.getCurrentAnnotation(),
+                    annotationComponent,
                     null);
 
             // clear previously selected annotation and fire event.

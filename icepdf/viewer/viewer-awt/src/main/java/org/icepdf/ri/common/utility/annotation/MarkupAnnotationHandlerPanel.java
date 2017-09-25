@@ -1,0 +1,281 @@
+/*
+ * Copyright 2006-2017 ICEsoft Technologies Canada Corp.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+package org.icepdf.ri.common.utility.annotation;
+
+
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.ri.common.AbstractTask;
+import org.icepdf.ri.common.AbstractWorkerPanel;
+import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.AnnotationSelector;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.MarkupAnnotationPopupMenu;
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.PopupListener;
+
+import javax.swing.*;
+import javax.swing.tree.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+/**
+ * The MarkupAnnotationHandlerPanel lists all the markup annotations in a document. A worker thread is used scan
+ * the documents for annotations and any found annotations are stored for display.  The MarkupAnnotationHandlerPanel
+ * has several control to sort and filter the data returned by this task.
+ */
+@SuppressWarnings("serial")
+public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements PropertyChangeListener {
+
+    // task to complete in separate thread
+    private AbstractTask<FindMarkupAnnotationTask> findMarkupAnnotationTask;
+
+    protected DefaultMutableTreeNode pageTreeNode;
+
+    public MarkupAnnotationHandlerPanel(SwingController controller) {
+        super(controller);
+
+        nodeSelectionListener = new AnnotationNodeSelectionListener();
+        cellRenderer = new AnnotationCellRender();
+        rootNodeLabel = messageBundle.getString("viewer.utilityPane.markupAnnotation.title");
+
+        // listen for annotations changes.
+        ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
+
+        // build frame of tree but SigVerificationTask does the work.
+        buildUI();
+
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (PropertyConstants.ANNOTATION_DELETED.equals(evt.getPropertyName())) {
+            if (evt.getOldValue() instanceof MarkupAnnotationComponent) {
+                // find an remove the markup annotation node.
+                MarkupAnnotationComponent comp = (MarkupAnnotationComponent) evt.getOldValue();
+                MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
+                for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
+                    AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
+                    if (node != null) {
+                        TreePath path = new TreePath(node.getPath());
+                        DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode)
+                                (path.getLastPathComponent());
+                        MutableTreeNode parent = (MutableTreeNode) (currentNode.getParent());
+                        if (parent != null) {
+                            treeModel.removeNodeFromParent(currentNode);
+                            break;
+                        }
+                    }
+                }
+            }
+        } else if (PropertyConstants.ANNOTATION_UPDATED.equals(evt.getPropertyName())) {
+            if (evt.getNewValue() instanceof PopupAnnotationComponent) {
+                // find the markup annotation
+                PopupAnnotationComponent comp = (PopupAnnotationComponent) evt.getNewValue();
+                PopupAnnotation popupAnnotation = (PopupAnnotation) comp.getAnnotation();
+                if (popupAnnotation.getParent() != null) {
+                    MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+                    // only update root pop annotation comment
+                    if (!markupAnnotation.isInReplyTo()) {
+                        for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
+                            AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
+                            if (node != null) {
+                                node.applyMessage(markupAnnotation, messageBundle);
+                                ((DefaultTreeModel) tree.getModel()).nodeChanged(node);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+            }
+        } else if (PropertyConstants.ANNOTATION_ADDED.equals(evt.getPropertyName())) {
+            // rebuild the tree so we get a good sort etc and do  worker thread setup.
+            if (evt.getNewValue() instanceof MarkupAnnotationComponent) {
+                resetTree();
+                buildWorkerTaskUI();
+            }
+        } else if (PropertyConstants.ANNOTATION_SELECTED.equals(evt.getPropertyName()) ||
+                PropertyConstants.ANNOTATION_FOCUS_GAINED.equals(evt.getPropertyName())) {
+            // on a focus or selection change we make the respective tree node visible
+            if (evt.getNewValue() instanceof MarkupAnnotationComponent) {
+                // try and find the node in the tree.
+                MarkupAnnotationComponent comp = (MarkupAnnotationComponent) evt.getNewValue();
+                MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
+                for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
+                    AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
+                    if (node != null) {
+                        TreePath path = new TreePath(node.getPath());
+                        tree.setSelectionPath(path);
+                        tree.scrollPathToVisible(path);
+                        break;
+                    }
+                }
+            }
+        } else if (PropertyConstants.ANNOTATION_DESELECTED.equals(evt.getPropertyName()) ||
+                PropertyConstants.ANNOTATION_FOCUS_LOST.equals(evt.getPropertyName())) {
+            tree.setSelectionPath(null);
+        }
+    }
+
+
+    protected AnnotationTreeNode findAnnotationTreeNode(TreeNode treeNode, MarkupAnnotation markupAnnotation) {
+        for (int i = 0; i < treeNode.getChildCount(); i++) {
+            Object currentChild = treeNode.getChildAt(i);
+            if (currentChild instanceof AnnotationTreeNode) {
+                AnnotationTreeNode annotationTreeNode = (AnnotationTreeNode) currentChild;
+                MarkupAnnotation annotation = (MarkupAnnotation) annotationTreeNode.getAnnotation();
+                if (markupAnnotation.equals(annotation)) {
+
+                    return annotationTreeNode;
+                }
+            }
+        }
+        return null;
+    }
+
+
+    public void setDocument(Document document) {
+        super.setDocument(document);
+    }
+
+    public void buildUI() {
+        super.buildUI();
+        // setup validation progress bar and status label
+        buildProgressBar();
+    }
+
+    public void addAnnotation(Annotation annotation) {
+        if (annotation instanceof MarkupAnnotation) {
+            descendFormTree(pageTreeNode, annotation);
+            expandAllNodes();
+        }
+    }
+
+    @Override
+    protected void buildWorkerTaskUI() {
+// First have to stop any existing validation processes.
+        stopWorkerTask();
+
+        if (currentDocument != null) {
+            PageTree pageTree = currentDocument.getCatalog().getPageTree();
+            // build out the tree
+            if (pageTree.getNumberOfPages() > 0) {
+                if (!timer.isRunning()) {
+                    // show the progress components.
+                    progressLabel.setVisible(true);
+                    progressBar.setVisible(true);
+                    // start a new verification task
+                    if (findMarkupAnnotationTask == null) {
+                        findMarkupAnnotationTask = new FindMarkupAnnotationTask(this, controller, messageBundle);
+                    }
+                    workerTask = findMarkupAnnotationTask;
+                    progressBar.setMaximum(findMarkupAnnotationTask.getLengthOfTask());
+                    // start the task and the timer
+                    findMarkupAnnotationTask.getTask().startTask();
+                    timer.start();
+                }
+            }
+        }
+    }
+
+    void addPageGroup(String nodeLabel) {
+        pageTreeNode = new DefaultMutableTreeNode(nodeLabel);
+        pageTreeNode.setAllowsChildren(true);
+        treeModel.insertNodeInto(pageTreeNode, rootTreeNode, rootTreeNode.getChildCount());
+    }
+
+    void addAnnotation(Object annotation) {
+        descendFormTree(pageTreeNode, annotation);
+        expandAllNodes();
+    }
+
+    /**
+     * Recursively set highlight on all the form fields.
+     *
+     * @param annotationObject root form node.
+     */
+    private void descendFormTree(DefaultMutableTreeNode currentRoot, Object annotationObject) {
+        if (!(annotationObject instanceof AbstractWidgetAnnotation) && annotationObject instanceof Annotation) {
+            AnnotationTreeNode annotationTreeNode = new AnnotationTreeNode((Annotation) annotationObject, messageBundle);
+            treeModel.insertNodeInto(annotationTreeNode, currentRoot, currentRoot.getChildCount());
+        }
+    }
+
+    @Override
+    public void selectTreeNodeUserObject(Object userObject) {
+
+    }
+
+    /**
+     * NodeSelectionListener handles the root node context menu creation display and command execution.
+     */
+    private class AnnotationNodeSelectionListener extends NodeSelectionListener {
+
+        @Override
+        public void setTree(JTree tree) {
+            super.setTree(tree);
+            // Add listener to components that can bring up popup menus.
+            MouseListener popupListener = new PopupListener(contextMenu);
+            addMouseListener(popupListener);
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int x = e.getX();
+            int y = e.getY();
+            int row = tree.getRowForLocation(x, y);
+            TreePath path = tree.getPathForRow(row);
+            if (path != null) {
+                Object node = path.getLastPathComponent();
+                if (node instanceof AnnotationTreeNode) {
+                    AnnotationTreeNode formNode = (AnnotationTreeNode) node;
+                    // on double click, navigate to page and set focus of component.
+                    Annotation annotation = formNode.getAnnotation();
+                    AnnotationComponent comp = AnnotationSelector.SelectAnnotationComponent(controller, annotation);
+                    if (comp instanceof MarkupAnnotationComponent) {
+                        if (e.getButton() == MouseEvent.BUTTON1) {
+                            // toggle the popup annotations visibility on double click
+                            MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) comp;
+                            if (e.getClickCount() == 1) {
+                                documentViewController.firePropertyChange(PropertyConstants.ANNOTATION_SELECTED, null,
+                                        markupAnnotationComponent);
+                            } else if (e.getClickCount() == 2) {
+                                PopupAnnotationComponent popupAnnotationComponent =
+                                        markupAnnotationComponent.getPopupAnnotationComponent();
+                                popupAnnotationComponent.setVisible(!popupAnnotationComponent.isVisible());
+                            }
+                        }
+                        if ((e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)) {
+                            contextMenu = new MarkupAnnotationPopupMenu((MarkupAnnotationComponent) comp, documentViewController,
+                                    null, documentViewModel, true);
+                            contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

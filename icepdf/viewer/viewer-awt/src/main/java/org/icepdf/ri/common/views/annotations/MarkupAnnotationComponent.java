@@ -23,7 +23,10 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
-import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -85,7 +88,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
 
     public void buildContextMenu() {
         //Create the popup menu.
-        contextMenu = new MarkupAnnotationPopup(this, documentViewController,
+        contextMenu = new MarkupAnnotationPopupMenu(this, documentViewController,
                 getPageViewComponent(), documentViewModel, true);
         // Add listener to components that can bring up popup menus.
         MouseListener popupListener = new PopupListener(contextMenu);
@@ -185,11 +188,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
         comp.refreshAnnotationRect();
 
         // add them to the container, using absolute positioning.
-        if (documentViewController.getAnnotationCallback() != null) {
-            AnnotationCallback annotationCallback =
-                    documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
-        }
+        documentViewController.addNewAnnotation(comp);
         pageViewComponent.revalidate();
         return (PopupAnnotationComponent) comp;
     }

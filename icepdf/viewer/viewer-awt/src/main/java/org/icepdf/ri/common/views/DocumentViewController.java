@@ -171,6 +171,10 @@ public interface DocumentViewController {
 
     public void setSecurityCallback(SecurityCallback securityCallback);
 
+    public void addNewAnnotation(AnnotationComponent annotationComponent);
+
+    public void updateAnnotation(AnnotationComponent annotationComponent);
+
     public void deleteCurrentAnnotation();
 
     public void deleteAnnotation(AnnotationComponent annotationComponent);

@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -43,6 +44,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -137,9 +139,16 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     @Override
     public void setVisible(boolean aFlag) {
         super.setVisible(aFlag);
+        // do a quick check to make sure the popup will be big enough to be visible
+        Rectangle bounds = getBounds();
+        if (bounds.width < DEFAULT_WIDTH || bounds.height < DEFAULT_HEIGHT) {
+            setBounds(bounds.x, bounds.y, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        }
+
         if (selectedMarkupAnnotation != null) {
             popupAnnotation.setOpen(aFlag);
         }
+
     }
 
     @Override
@@ -316,7 +325,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     public void buildContextMenu() {
         //Create the popup menu.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent) getAnnotationParentComponent();
-        contextMenu = new MarkupAnnotationPopup(comp, documentViewController,
+        contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController,
                 getPageViewComponent(), documentViewModel, false);
         // Add listener to components that can bring up popup menus.
         MouseListener popupListener = new PopupListener(contextMenu);
@@ -499,15 +508,11 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         Document document = e.getDocument();
         try {
             if (document.getLength() > 0) {
+                selectedMarkupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
                 selectedMarkupAnnotation.setContents(
                         document.getText(0, document.getLength()));
                 // add them to the container, using absolute positioning.
-                if (documentViewController.getAnnotationCallback() != null) {
-                    AnnotationCallback annotationCallback =
-                            documentViewController.getAnnotationCallback();
-                    AnnotationComponent annotationComponent = getAnnotationParentComponent();
-                    annotationCallback.updateAnnotation(annotationComponent);
-                }
+                documentViewController.updateAnnotation(this);
             }
         } catch (BadLocationException ex) {
             logger.log(Level.FINE, "Error updating markup annotation content", ex);
@@ -530,7 +535,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
                 textArea.setText(selectedMarkupAnnotation.getContents());
                 textArea.getDocument().addDocumentListener(this);
             }
-            if (creationLabel != null) {
+            if (creationLabel != null && selectedMarkupAnnotation.getCreationDate() != null) {
                 creationLabel.setText(selectedMarkupAnnotation.getCreationDate().toString());
             }
         }
@@ -664,11 +669,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         comp.getPopupAnnotationComponent().setVisible(false);
 
         // add them to the container, using absolute positioning.
-        if (documentViewController.getAnnotationCallback() != null) {
-            AnnotationCallback annotationCallback =
-                    documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
-        }
+        documentViewController.addNewAnnotation(comp);
     }
 
     private AnnotationComponent findAnnotationComponent(Annotation annotation) {

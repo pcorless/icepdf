@@ -24,6 +24,8 @@ import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Markup specific annotation context menu support, includes delete and properties commands,
@@ -32,7 +34,10 @@ import java.awt.event.ActionEvent;
  * @since 6.3
  */
 @SuppressWarnings("serial")
-public class MarkupAnnotationPopup extends AnnotationPopup {
+public class MarkupAnnotationPopupMenu extends AnnotationPopup {
+
+    private static final Logger logger =
+            Logger.getLogger(MarkupAnnotationPopupMenu.class.toString());
 
     protected MarkupAnnotationComponent markupAnnotationComponent;
     // reply commands
@@ -50,8 +55,8 @@ public class MarkupAnnotationPopup extends AnnotationPopup {
     // delete root annotation and all child popup annotations.
     protected boolean deleteRoot;
 
-    public MarkupAnnotationPopup(MarkupAnnotationComponent markupAnnotationComponent, DocumentViewController documentViewController,
-                                 AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel, boolean deleteRoot) {
+    public MarkupAnnotationPopupMenu(MarkupAnnotationComponent markupAnnotationComponent, DocumentViewController documentViewController,
+                                     AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel, boolean deleteRoot) {
         super(markupAnnotationComponent, documentViewController, pageViewComponent, documentViewModel);
         this.markupAnnotationComponent = markupAnnotationComponent;
         this.deleteRoot = deleteRoot;
@@ -129,27 +134,32 @@ public class MarkupAnnotationPopup extends AnnotationPopup {
         Object source = e.getSource();
         if (source == null) return;
 
+        if (markupAnnotationComponent == null) {
+            logger.log(Level.WARNING, "Markup Annotation is null");
+            return;
+        }
+
         if (source == replyMenuItem) {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            popupAnnotationComponent.replyToSelectedMarkupExecute();
+            if (popupAnnotationComponent != null) popupAnnotationComponent.replyToSelectedMarkupExecute();
         } else if (source == deleteMenuItem) {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            popupAnnotationComponent.deleteSelectedMarkupExecute(deleteRoot);
+            if (popupAnnotationComponent != null) popupAnnotationComponent.deleteSelectedMarkupExecute(deleteRoot);
         } else if (source == statusNoneMenuItem) {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            popupAnnotationComponent.setStatusSelectedMarkupExecute(
+            if (popupAnnotationComponent != null) popupAnnotationComponent.setStatusSelectedMarkupExecute(
                     messageBundle.getString("viewer.annotation.popup.status.none.title"),
                     messageBundle.getString("viewer.annotation.popup.status.none.msg"),
                     TextAnnotation.STATE_REVIEW_NONE);
         } else if (source == statusAcceptedItem) {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            popupAnnotationComponent.setStatusSelectedMarkupExecute(
+            if (popupAnnotationComponent != null) popupAnnotationComponent.setStatusSelectedMarkupExecute(
                     messageBundle.getString("viewer.annotation.popup.status.accepted.title"),
                     messageBundle.getString("viewer.annotation.popup.status.accepted.msg"),
                     TextAnnotation.STATE_ACCEPTED);
         } else if (source == statusCancelledMenuItem) {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            popupAnnotationComponent.setStatusSelectedMarkupExecute(
+            if (popupAnnotationComponent != null) popupAnnotationComponent.setStatusSelectedMarkupExecute(
                     messageBundle.getString("viewer.annotation.popup.status.cancelled.title"),
                     messageBundle.getString("viewer.annotation.popup.status.cancelled.msg"),
                     TextAnnotation.STATE_CANCELLED);
@@ -161,7 +171,7 @@ public class MarkupAnnotationPopup extends AnnotationPopup {
                     TextAnnotation.STATE_COMPLETED);
         } else if (source == statusRejectedMenuItem) {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            popupAnnotationComponent.setStatusSelectedMarkupExecute(
+            if (popupAnnotationComponent != null) popupAnnotationComponent.setStatusSelectedMarkupExecute(
                     messageBundle.getString("viewer.annotation.popup.status.rejected.title"),
                     messageBundle.getString("viewer.annotation.popup.status.rejected.msg"),
                     TextAnnotation.STATE_REJECTED);
@@ -170,11 +180,12 @@ public class MarkupAnnotationPopup extends AnnotationPopup {
             popupAnnotationComponent.showHidePopupAnnotations(true);
         } else if (source == minimizeAllMenuItem) {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            popupAnnotationComponent.showHidePopupAnnotations(false);
+            if (popupAnnotationComponent != null) popupAnnotationComponent.showHidePopupAnnotations(false);
         } else if (source == propertiesMenuItem) {
             SwingController swingController = (SwingController) documentViewController.getParentController();
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-            swingController.showAnnotationProperties(popupAnnotationComponent.getAnnotationParentComponent());
+            if (popupAnnotationComponent != null)
+                swingController.showAnnotationProperties(popupAnnotationComponent.getAnnotationParentComponent());
         }
     }
 }

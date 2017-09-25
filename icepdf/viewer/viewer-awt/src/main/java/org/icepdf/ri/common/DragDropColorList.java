@@ -123,7 +123,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         storeColorLabels(colorLabels);
     }
 
-    static ArrayList<ColorLabel> retrieveColorLabels() {
+    public static ArrayList<ColorLabel> retrieveColorLabels() {
         String currentColorLabels = PropertiesManager.getInstance().getPreferences().get(
                 PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
         StringTokenizer toker = new StringTokenizer(currentColorLabels, PropertiesManager.PROPERTY_TOKEN_SEPARATOR);

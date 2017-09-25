@@ -209,6 +209,7 @@ public abstract class AbstractWorkerPanel extends JPanel {
         }
     }
 
+
     /**
      * Travers tree model and try and select a node that has a matching user object.
      *
@@ -223,6 +224,7 @@ public abstract class AbstractWorkerPanel extends JPanel {
         tree.setSelectionPath(null);
         rootTreeNode.removeAllChildren();
         treeModel.nodeStructureChanged(rootTreeNode);
+        treeModel.reload();
     }
 
     // quick and dirty expand all.

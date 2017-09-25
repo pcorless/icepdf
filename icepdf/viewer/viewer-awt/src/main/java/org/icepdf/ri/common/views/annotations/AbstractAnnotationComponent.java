@@ -52,7 +52,7 @@ import java.util.logging.Logger;
  *
  * @since 5.0
  */
-public abstract class AbstractAnnotationComponent extends JComponent implements FocusListener,
+public abstract class AbstractAnnotationComponent<T extends Annotation> extends JComponent implements FocusListener,
         MouseInputListener, AnnotationComponent {
 
     protected static final Logger logger =
@@ -110,7 +110,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
     protected float currentZoom;
     protected float currentRotation;
 
-    protected Annotation annotation;
+    protected T annotation;
     protected boolean isMousePressed;
     protected boolean resized;
     protected boolean wasResized;
@@ -140,7 +140,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
 
     protected ResourceBundle messageBundle;
 
-    public AbstractAnnotationComponent(Annotation annotation,
+    public AbstractAnnotationComponent(T annotation,
                                        DocumentViewController documentViewController,
                                        AbstractPageViewComponent pageViewComponent,
                                        DocumentViewModel documentViewModel) {
@@ -209,7 +209,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
         removeMouseMotionListener(this);
     }
 
-    public Annotation getAnnotation() {
+    public T getAnnotation() {
         return annotation;
     }
 
@@ -614,10 +614,7 @@ public abstract class AbstractAnnotationComponent extends JComponent implements 
                     previousAnnotationState, new AnnotationState(this));
 
             // notify the annotation callback of the annotation resize.
-            if (documentViewController.getAnnotationCallback() != null) {
-                documentViewController.getAnnotationCallback()
-                        .updateAnnotation(this);
-            }
+            documentViewController.updateAnnotation(this);
         }
         if (mouseEvent != null && mouseEvent.getButton() == MouseEvent.BUTTON1) {
 

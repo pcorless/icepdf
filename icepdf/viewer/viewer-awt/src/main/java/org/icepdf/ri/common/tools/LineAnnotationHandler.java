@@ -218,7 +218,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         if (documentViewController.getAnnotationCallback() != null) {
             AnnotationCallback annotationCallback =
                     documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, comp);
+            documentViewController.addNewAnnotation(comp);
         }
 
         // associate popup to location
@@ -226,13 +226,6 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         popupAnnotationComponent.setBoudsRelativeToParent(
                 bbox.x + (bbox.width / 2), bbox.y + (bbox.height / 2), pageTransform);
         popupAnnotationComponent.setVisible(false);
-
-        // add them to the container, using absolute positioning.
-        if (documentViewController.getAnnotationCallback() != null) {
-            AnnotationCallback annotationCallback =
-                    documentViewController.getAnnotationCallback();
-            annotationCallback.newAnnotation(pageViewComponent, popupAnnotationComponent);
-        }
 
         // set the annotation tool to he select tool
         if (preferences.getBoolean(PropertiesManager.PROPERTY_ANNOTATION_LINE_SELECTION_ENABLED, false)) {

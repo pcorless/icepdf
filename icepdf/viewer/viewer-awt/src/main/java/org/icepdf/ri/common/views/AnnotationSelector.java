@@ -36,7 +36,7 @@ public class AnnotationSelector {
      * @param widgetAnnotation annotation to do search for wrapping component.
      * @return true if component could be found, false otherwise.
      */
-    public static boolean SelectAnnotationComponent(SwingController controller, Annotation widgetAnnotation) {
+    public static AnnotationComponent SelectAnnotationComponent(SwingController controller, Annotation widgetAnnotation) {
         // turn out the parent is seldom used correctly and generally just points to page zero.
         // so we need to do a deep search for the annotation.
         Document document = controller.getDocument();
@@ -71,11 +71,11 @@ public class AnnotationSelector {
                     if (widgetAnnotation.getPObjectReference().equals(
                             annotationComponent.getAnnotation().getPObjectReference())) {
                         annotationComponent.requestFocus();
-                        break;
+                        return annotationComponent;
                     }
                 }
             }
         }
-        return found;
+        return null;
     }
 }
