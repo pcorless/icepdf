@@ -30,6 +30,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 /**
@@ -41,15 +43,19 @@ import java.util.prefs.Preferences;
  */
 public class MarkupAnnotationPanel extends JPanel implements ItemListener, ActionListener {
 
+    private static final Logger logger =
+            Logger.getLogger(MarkupAnnotationPanel.class.toString());
 
     public String COLUMN_PROPERTY = "Column";
 
     public enum SortColumn {PAGE, AUTHOR, DATE, TYPE, COLOR}
 
-    public enum FilterColumn {
-        ALL,
-        AUTHOR_CURRENT, AUTHOR_OTHER, TYPE_TEXT,
-        TYPE_HIGHLIGHT, TYPE_STRIKEOUT, TYPE_UNDERLINE, TYPE_LINE, TYPE_SQUARE, TYPE_CIRCLE, TYPE_INK, TYPE_FREE_TEXT
+    public enum FilterAuthorColumn {
+        ALL, AUTHOR_CURRENT, AUTHOR_OTHER,
+    }
+
+    public enum FilterSubTypeColumn {
+        ALL, TEXT, HIGHLIGHT, STRIKEOUT, UNDERLINE, LINE, SQUARE, CIRCLE, INK, FREETEXT
     }
 
     // layouts constraint
@@ -107,33 +113,33 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         // assemble filter by author
         filterAuthorActions = new ArrayList<>(3);
         filterAuthorActions.add(new FilterAuthorAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.all.label"), FilterColumn.ALL));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.all.label"), FilterAuthorColumn.ALL));
         filterAuthorActions.add(new FilterAuthorAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.current.label"), FilterColumn.AUTHOR_CURRENT));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.current.label"), FilterAuthorColumn.AUTHOR_CURRENT));
         filterAuthorActions.add(new FilterAuthorAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.others.label"), FilterColumn.AUTHOR_OTHER));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.others.label"), FilterAuthorColumn.AUTHOR_OTHER));
         // assemble filter by type
         filterTypeActions = new ArrayList<>(10);
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.all.label"), FilterColumn.ALL));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.all.label"), FilterSubTypeColumn.ALL));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.text.label"), FilterColumn.TYPE_TEXT));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.text.label"), FilterSubTypeColumn.TEXT));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.highlight.label"), FilterColumn.TYPE_HIGHLIGHT));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.highlight.label"), FilterSubTypeColumn.HIGHLIGHT));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.underline.label"), FilterColumn.TYPE_UNDERLINE));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.underline.label"), FilterSubTypeColumn.UNDERLINE));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.strikeout.label"), FilterColumn.TYPE_STRIKEOUT));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.strikeout.label"), FilterSubTypeColumn.STRIKEOUT));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.line.label"), FilterColumn.TYPE_LINE));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.line.label"), FilterSubTypeColumn.LINE));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.square.label"), FilterColumn.TYPE_SQUARE));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.square.label"), FilterSubTypeColumn.SQUARE));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.circle.label"), FilterColumn.TYPE_CIRCLE));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.circle.label"), FilterSubTypeColumn.CIRCLE));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.ink.label"), FilterColumn.TYPE_INK));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.ink.label"), FilterSubTypeColumn.INK));
         filterTypeActions.add(new FilterTypeAction(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.freeText.label"), FilterColumn.TYPE_FREE_TEXT));
+                "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.freeText.label"), FilterSubTypeColumn.FREETEXT));
 
         buildGUI();
 
@@ -168,8 +174,8 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         addGB(this, markupAnnotationPanel, 0, 1, 1, 1);
 
         buildSearchBar();
-        buildSortFilterToolBar();
         buildMarkupAnnotationCommentView();
+        buildSortFilterToolBar();
 
         buildStatusBar();
     }
@@ -245,11 +251,11 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byColor.label"));
 
         // build out author submenu, all, current user, other users
-        defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, FilterColumn.ALL.toString());
+        defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN, FilterAuthorColumn.ALL.toString());
         filterAuthorAction = buildMenuItemGroup(authorFilterMenuItem, filterAuthorActions, defaultColumn, filterAuthorAction);
 
         // build out markup annotation types.
-        defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, FilterColumn.ALL.toString());
+        defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, FilterSubTypeColumn.ALL.toString());
         filterTypeAction = buildMenuItemGroup(typeFilterMenuItem, filterTypeActions, defaultColumn, filterTypeAction);
 
         // build colour submenu based on colour labels
@@ -364,11 +370,20 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     }
 
     protected void sortAndFilterAnnotationData() {
-        // should be able to do this quick enough to stay on the awt thread.
-        System.out.println(sortAction.getValue(COLUMN_PROPERTY) + " " +
-                filterTypeAction.getValue(COLUMN_PROPERTY) + " " +
-                filterAuthorAction.getValue(COLUMN_PROPERTY) + " " +
-                filterColorAction.getValue(COLUMN_PROPERTY));
+        // push the work off the a worker thread
+        SortColumn sortType = (SortColumn) sortAction.getValue(COLUMN_PROPERTY);
+        FilterSubTypeColumn filterType = (FilterSubTypeColumn) filterTypeAction.getValue(COLUMN_PROPERTY);
+        FilterAuthorColumn filterAuthor = (FilterAuthorColumn) filterAuthorAction.getValue(COLUMN_PROPERTY);
+        Color filterColor = (Color) filterColorAction.getValue(COLUMN_PROPERTY);
+
+        if (logger.isLoggable(Level.FINE)) {
+            System.out.println(sortType + " " +
+                    filterType + " " +
+                    filterAuthor + " " +
+                    filterColor);
+        }
+
+        markupAnnotationHandlerPanel.sortAndFilterAnnotationData(sortType, filterType, filterAuthor, filterColor);
     }
 
     @Override
@@ -415,7 +430,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     }
 
     class FilterTypeAction extends AbstractAction {
-        public FilterTypeAction(String label, FilterColumn column) {
+        public FilterTypeAction(String label, FilterSubTypeColumn column) {
             this.putValue(Action.NAME, label);
             this.putValue(COLUMN_PROPERTY, column);
         }
@@ -428,7 +443,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     }
 
     class FilterAuthorAction extends AbstractAction {
-        public FilterAuthorAction(String label, FilterColumn column) {
+        public FilterAuthorAction(String label, FilterAuthorColumn column) {
             this.putValue(Action.NAME, label);
             this.putValue(COLUMN_PROPERTY, column);
         }

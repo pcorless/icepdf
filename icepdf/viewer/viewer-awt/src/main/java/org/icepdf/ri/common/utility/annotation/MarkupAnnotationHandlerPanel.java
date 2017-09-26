@@ -36,6 +36,7 @@ import org.icepdf.ri.common.views.annotations.PopupListener;
 
 import javax.swing.*;
 import javax.swing.tree.*;
+import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
@@ -53,6 +54,11 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
     private AbstractTask<FindMarkupAnnotationTask> findMarkupAnnotationTask;
 
     protected DefaultMutableTreeNode pageTreeNode;
+
+    private MarkupAnnotationPanel.SortColumn sortType;
+    private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
+    private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
+    private Color filterColor;
 
     public MarkupAnnotationHandlerPanel(SwingController controller) {
         super(controller);
@@ -156,6 +162,18 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         return null;
     }
 
+    public void sortAndFilterAnnotationData(MarkupAnnotationPanel.SortColumn sortType,
+                                            MarkupAnnotationPanel.FilterSubTypeColumn filterType,
+                                            MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
+                                            Color filterColor) {
+        this.sortType = sortType;
+        this.filterType = filterType;
+        this.filterAuthor = filterAuthor;
+        this.filterColor = filterColor;
+
+        resetTree();
+        buildWorkerTaskUI();
+    }
 
     public void setDocument(Document document) {
         super.setDocument(document);
@@ -189,12 +207,13 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                     progressBar.setVisible(true);
                     // start a new verification task
                     if (findMarkupAnnotationTask == null) {
-                        findMarkupAnnotationTask = new FindMarkupAnnotationTask(this, controller, messageBundle);
+                        findMarkupAnnotationTask = new FindMarkupAnnotationTask(this,
+                                controller, messageBundle);
                     }
                     workerTask = findMarkupAnnotationTask;
                     progressBar.setMaximum(findMarkupAnnotationTask.getLengthOfTask());
                     // start the task and the timer
-                    findMarkupAnnotationTask.getTask().startTask();
+                    findMarkupAnnotationTask.getTask().startTask(sortType, filterType, filterAuthor, filterColor);
                     timer.start();
                 }
             }
