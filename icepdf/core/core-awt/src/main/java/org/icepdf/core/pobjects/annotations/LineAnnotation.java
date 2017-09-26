@@ -526,18 +526,7 @@ public class LineAnnotation extends MarkupAnnotation {
         }
 
         // parse out interior colour, specific to link annotations.
-        interiorColor = null; // we default to black but probably should be null
-        List C = (List) getObject(IC_KEY);
-        // parse thought rgb colour.
-        if (C != null && C.size() >= 3) {
-            float red = ((Number) C.get(0)).floatValue();
-            float green = ((Number) C.get(1)).floatValue();
-            float blue = ((Number) C.get(2)).floatValue();
-            red = Math.max(0.0f, Math.min(1.0f, red));
-            green = Math.max(0.0f, Math.min(1.0f, green));
-            blue = Math.max(0.0f, Math.min(1.0f, blue));
-            interiorColor = new Color(red, green, blue);
-        }
+        interiorColor = getColor(IC_KEY);
 
         // check if there is an AP entry, if no generate the shapes data
         // from the other properties.

@@ -527,6 +527,9 @@ public abstract class Annotation extends Dictionary {
     protected HashMap<Name, Appearance> appearances = new HashMap<Name, Appearance>(3);
     protected Name currentAppearance;
 
+    // page index
+    protected int pageIndex = -1;
+
     // modified date.
     protected PDate modifiedDate;
     protected boolean hasBlendingMode;
@@ -685,18 +688,7 @@ public abstract class Annotation extends Dictionary {
         }
 
         // parse out border colour, specific to link annotations.
-        color = null; // null as some borders are set as transparent via no colour
-        List C = (List) getObject(COLOR_KEY);
-        // parse thought rgb colour.
-        if (C != null && C.size() >= 3) {
-            float red = ((Number) C.get(0)).floatValue();
-            float green = ((Number) C.get(1)).floatValue();
-            float blue = ((Number) C.get(2)).floatValue();
-            red = Math.max(0.0f, Math.min(1.0f, red));
-            green = Math.max(0.0f, Math.min(1.0f, green));
-            blue = Math.max(0.0f, Math.min(1.0f, blue));
-            color = new Color(red, green, blue);
-        }
+        color = getColor(); // null as some borders are set as transparent via no colour
 
         // if no creation date check for M or modified.
         Object value = library.getObject(entries, M_KEY);
@@ -1118,6 +1110,13 @@ public abstract class Annotation extends Dictionary {
                 page = ((Annotation) annot).getPage();
         }
         return page;
+    }
+
+    public int getPageIndex() {
+        if (pageIndex < 0) {
+            pageIndex = getPage().getPageIndex();
+        }
+        return pageIndex;
     }
 
     /**
@@ -1576,7 +1575,25 @@ public abstract class Annotation extends Dictionary {
      * @return A Color for the border, or null if none is to be used
      */
     public Color getColor() {
+        if (color == null) {
+            color = getColor(COLOR_KEY);
+        }
         return color;
+    }
+
+    protected Color getColor(Name key) {
+        List C = (List) getObject(key);
+        // parse thought rgb colour.
+        if (C != null && C.size() >= 3) {
+            float red = ((Number) C.get(0)).floatValue();
+            float green = ((Number) C.get(1)).floatValue();
+            float blue = ((Number) C.get(2)).floatValue();
+            red = Math.max(0.0f, Math.min(1.0f, red));
+            green = Math.max(0.0f, Math.min(1.0f, green));
+            blue = Math.max(0.0f, Math.min(1.0f, blue));
+            return new Color(red, green, blue);
+        }
+        return null;
     }
 
     /**
@@ -1708,6 +1725,18 @@ public abstract class Annotation extends Dictionary {
             flag = flag | flagKey;
             entries.put(FLAG_KEY, flag);
         }
+    }
+
+    public PDate getModifiedDate() {
+        if (modifiedDate == null) {
+            Object value = library.getObject(entries, M_KEY);
+            if (value != null && value instanceof StringObject) {
+                StringObject text = (StringObject) value;
+                modifiedDate = new PDate(securityManager,
+                        text.getDecryptedLiteralString(securityManager));
+            }
+        }
+        return modifiedDate;
     }
 
     public void setModifiedDate(String modifiedDate) {

@@ -478,6 +478,17 @@ public class PDate {
     }
 
     /**
+     * Simple date compare ignoring time. No compensation is made for timezone rounding.
+     *
+     * @param date date to compare.
+     * @return true of the date's year, month and day are equal.
+     */
+    public boolean equalsDay(PDate date) {
+        // little slow,  consider making time vars short.
+        return this.year.equals(date.year) && this.month.equals(date.month) && this.day.equals(date.day);
+    }
+
+    /**
      * Formats a date/time according to the PDF specification.
      * (D:YYYYMMDDHHmmSSOHH'mm').
      *

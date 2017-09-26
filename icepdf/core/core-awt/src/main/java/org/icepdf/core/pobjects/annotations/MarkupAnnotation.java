@@ -221,6 +221,9 @@ public abstract class MarkupAnnotation extends Annotation {
 
 
     public String getTitleText() {
+        if (titleText == null) {
+            titleText = getString(T_KEY);
+        }
         return titleText;
     }
 
@@ -290,6 +293,10 @@ public abstract class MarkupAnnotation extends Annotation {
     }
 
     public PDate getCreationDate() {
+        if (creationDate == null) {
+            // try to get the modified date.
+            creationDate = getModifiedDate();
+        }
         return creationDate;
     }
 
