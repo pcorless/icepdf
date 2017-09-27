@@ -57,9 +57,9 @@ public class AnnotationColorToggleButton extends AbstractColorButton {
 
     }
 
-    public void setColor(Color newColor) {
+    public void setColor(Color newColor, boolean fireChangeEvent) {
         ((PaintButtonInterface) colorButton).setColor(newColor);
         colorButton.repaint();
-        popup.setVisible(false);
+        if (popup != null) popup.setVisible(false);
     }
 }

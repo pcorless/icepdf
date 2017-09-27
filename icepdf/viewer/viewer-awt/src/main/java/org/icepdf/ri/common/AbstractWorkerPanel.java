@@ -119,7 +119,7 @@ public abstract class AbstractWorkerPanel extends JPanel {
 
         // add progress
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(this, progressBar, 0, 2, 1, 1);
+        addGB(this, progressBar, 1, 1, 1, 1);
     }
 
     /**
@@ -172,7 +172,7 @@ public abstract class AbstractWorkerPanel extends JPanel {
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(this, scrollPane, 0, 0, 1, 1);
+        addGB(this, scrollPane, 0, 0, 2, 1);
     }
 
     /**

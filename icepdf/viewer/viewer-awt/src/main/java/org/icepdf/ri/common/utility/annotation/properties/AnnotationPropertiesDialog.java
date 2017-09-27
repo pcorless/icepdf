@@ -115,6 +115,7 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.annotationProperties.tab.action.title"),
                 actionsPanel);
+        actionsPanel.setAnnotationComponent(annotation);
 
         // check if flags should be shown.
         if (flagsPanel != null) {

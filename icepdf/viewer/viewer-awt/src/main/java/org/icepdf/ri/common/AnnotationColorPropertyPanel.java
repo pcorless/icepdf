@@ -220,7 +220,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
                     lastColor);
             // assign the new color
             if (newColor != null) {
-                annotationColorButton.setColor(newColor);
+                annotationColorButton.setColor(newColor, false);
                 buildRecentColours(newColor);
                 // store the new recent colour
                 Preferences preferences = PropertiesManager.getInstance().getPreferences();
@@ -263,7 +263,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             setPreferredSize(new Dimension(15, 15));
             setSize(15, 15);
             addActionListener(e -> {
-                annotationColorButton.setColor(getBackground());
+                annotationColorButton.setColor(getBackground(), true);
             });
         }
 
@@ -278,7 +278,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             setSize(15, 15);
             addActionListener(e -> {
                 buildRecentColours(getBackground());
-                annotationColorButton.setColor(getBackground());
+                annotationColorButton.setColor(getBackground(), false);
                 lastColor = getBackground();
             });
         }

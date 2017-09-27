@@ -52,8 +52,8 @@ public class HighlightAnnotationToggleButton extends AnnotationColorToggleButton
         setupLayout();
     }
 
-    public void setColor(Color newColor) {
-        super.setColor(newColor);
+    public void setColor(Color newColor, boolean fireChangeEvent) {
+        super.setColor(newColor, fireChangeEvent);
         // set the colour back to the respective preference
         Preferences preferences = PropertiesManager.getInstance().getPreferences();
         preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_HIGHLIGHT_BUTTON_COLOR, newColor.getRGB());

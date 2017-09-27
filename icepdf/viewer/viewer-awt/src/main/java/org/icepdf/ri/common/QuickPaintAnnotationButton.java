@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -77,14 +78,21 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
             paintButton.setColor(color);
         }
 
+        addPropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, swingController);
+
         setupLayout();
     }
 
-    public void setColor(Color newColor) {
-        super.setColor(newColor);
+    public void setColor(Color newColor, boolean fireChangeEvent) {
+        super.setColor(newColor, fireChangeEvent);
         // set the colour back to the respective preference
         Preferences preferences = PropertiesManager.getInstance().getPreferences();
         preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_QUICK_COLOR, newColor.getRGB());
+
+        if (fireChangeEvent) {
+            firePropertyChange(
+                    PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, null, newColor);
+        }
     }
 
 }

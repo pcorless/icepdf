@@ -87,7 +87,7 @@ public abstract class AbstractColorButton extends AbstractButton
         add(dropDownArrowButton);
     }
 
-    public abstract void setColor(Color newColor);
+    public abstract void setColor(Color newColor, boolean fireChangeEvent);
 
     public void refreshColorPanel() {
         annotationColorPropertyPanel.refreshColorPanel();

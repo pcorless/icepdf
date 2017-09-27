@@ -16,7 +16,10 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -81,7 +84,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     private Action filterColorAction;
 
 
-    private AbstractButton quickColorDropDownButton;
+    private QuickPaintAnnotationButton quickPaintAnnotationButton;
 
     private MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
 
@@ -154,6 +157,31 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         constraints.insets = new Insets(0, 0, 0, 0);
         addGB(this, annotationUtilityToolbar, 0, 0, 1, 1);
     }
+
+    public void colorPanelChanged() {
+        // todo colour change made, update search and our change .
+    }
+
+    public void quickColorChanged(Color newValue) {
+        System.out.println("fired " + newValue);
+        AnnotationComponent annotationComponent = markupAnnotationHandlerPanel.getSelectedAnnotation();
+
+        if (annotationComponent != null) {
+            Annotation annotation = annotationComponent.getAnnotation();
+            annotation.setColor(newValue);
+
+            // save the action state back to the document structure.
+            controller.getDocumentViewController().updateAnnotation(annotationComponent);
+            annotationComponent.resetAppearanceShapes();
+            annotationComponent.repaint();
+        }
+    }
+
+
+    public QuickPaintAnnotationButton getQuickPaintAnnotationButton() {
+        return quickPaintAnnotationButton;
+    }
+
 
     private void buildGUI() {
         constraints = new GridBagConstraints();
@@ -291,7 +319,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         filterDropDownButton.add(colorFilterMenuItem);
         filterDropDownButton.add(typeFilterMenuItem);
 
-        quickColorDropDownButton = new QuickPaintAnnotationButton(
+        quickPaintAnnotationButton = new QuickPaintAnnotationButton(
                 controller,
                 messageBundle,
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.quickColorButton.label"),
@@ -299,6 +327,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
                 "paint_bucket",
                 Images.SIZE_LARGE,
                 SwingViewBuilder.buildButtonFont());
+        quickPaintAnnotationButton.setEnabled(false);
 
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
@@ -314,7 +343,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
 
         constraints.anchor = GridBagConstraints.EAST;
         constraints.weightx = 0.05;
-        addGB(filterSortToolPanel, quickColorDropDownButton, 3, 0, 1, 1);
+        addGB(filterSortToolPanel, quickPaintAnnotationButton, 3, 0, 1, 1);
 
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
@@ -329,6 +358,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
 
     public void dispose() {
         markupAnnotationHandlerPanel.dispose();
+        removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
     }
 
     private Action buildMenuItemGroup(JMenuItem menuItem, ArrayList<Action> actions, String defaultColumn, Action currentAction) {
@@ -348,7 +378,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     }
 
     protected void buildMarkupAnnotationCommentView() {
-        markupAnnotationHandlerPanel = new MarkupAnnotationHandlerPanel(controller);
+        markupAnnotationHandlerPanel = new MarkupAnnotationHandlerPanel(controller, this);
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(0, 0, 0, 0);

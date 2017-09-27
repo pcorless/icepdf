@@ -55,13 +55,16 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
 
     protected DefaultMutableTreeNode pageTreeNode;
 
+    protected MarkupAnnotationPanel parentMarkupAnnotationPanel;
+
     private MarkupAnnotationPanel.SortColumn sortType;
     private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
     private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
     private Color filterColor;
 
-    public MarkupAnnotationHandlerPanel(SwingController controller) {
+    public MarkupAnnotationHandlerPanel(SwingController controller, MarkupAnnotationPanel parentMarkupAnnotationPanel) {
         super(controller);
+        this.parentMarkupAnnotationPanel = parentMarkupAnnotationPanel;
 
         nodeSelectionListener = new AnnotationNodeSelectionListener();
         cellRenderer = new AnnotationCellRender();
@@ -144,6 +147,20 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                 PropertyConstants.ANNOTATION_FOCUS_LOST.equals(evt.getPropertyName())) {
 //            tree.setSelectionPath(null);
         }
+    }
+
+    protected AnnotationComponent getSelectedAnnotation() {
+        TreePath selectedTreePath = tree.getSelectionPath();
+        if (selectedTreePath != null) {
+            Object node = selectedTreePath.getLastPathComponent();
+            if (node instanceof AnnotationTreeNode) {
+                AnnotationTreeNode annotationTreeNode = (AnnotationTreeNode) selectedTreePath.getLastPathComponent();
+                return AnnotationSelector.SelectAnnotationComponent(controller, annotationTreeNode.getAnnotation());
+            }
+
+
+        }
+        return null;
     }
 
 
@@ -281,6 +298,8 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                             if (e.getClickCount() == 1) {
                                 documentViewController.firePropertyChange(PropertyConstants.ANNOTATION_SELECTED, null,
                                         markupAnnotationComponent);
+                                parentMarkupAnnotationPanel.getQuickPaintAnnotationButton().setColor(
+                                        markupAnnotationComponent.getAnnotation().getColor(), false);
                             } else if (e.getClickCount() == 2) {
                                 markupAnnotationComponent.togglePopupAnnotationVisibility();
                             }
@@ -290,7 +309,12 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                                     null, documentViewModel, true);
                             contextMenu.show(e.getComponent(), e.getX(), e.getY());
                         }
+                        parentMarkupAnnotationPanel.getQuickPaintAnnotationButton().setEnabled(true);
+                    } else {
+                        parentMarkupAnnotationPanel.getQuickPaintAnnotationButton().setEnabled(false);
                     }
+                } else {
+                    parentMarkupAnnotationPanel.getQuickPaintAnnotationButton().setEnabled(false);
                 }
             }
         }
