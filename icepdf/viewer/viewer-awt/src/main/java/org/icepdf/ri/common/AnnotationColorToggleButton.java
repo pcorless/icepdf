@@ -23,21 +23,21 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 /**
- * AnnotationColorButton is a base construct for drop down button that uses a JButton as the main control.
+ * AnnotationColorToggleButton is a base construct for drop down button that uses a JToggleButton as the main control.
  *
  * @since 6.3
  */
-public class AnnotationColorButton extends AbstractColorButton {
+public class AnnotationColorToggleButton extends AbstractColorButton {
 
     private static final Logger logger = Logger.getLogger(AnnotationColorToggleButton.class.toString());
 
-    public AnnotationColorButton(SwingController swingController,
-                                 ResourceBundle messageBundle,
-                                 String title, String toolTip, String imageName,
-                                 final String imageSize, java.awt.Font font) {
+    public AnnotationColorToggleButton(SwingController swingController,
+                                       ResourceBundle messageBundle,
+                                       String title, String toolTip, String imageName,
+                                       final String imageSize, java.awt.Font font) {
         super(swingController, messageBundle);
 
-        colorButton = new ColorButton();
+        colorButton = new ColorToggleButton();
         colorButton.setFont(font);
         colorButton.setToolTipText(toolTip);
         colorButton.setPreferredSize(new Dimension(32, 32));

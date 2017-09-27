@@ -161,12 +161,17 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
 
         Rectangle tBbox = convertToPageSpace(bBox).getBounds();
 
-        // apply creation date and title for the markup annotation
-        // so the popup has some content
+        // we may have an new markup or one that just didn't have a popup.
         if (markupAnnotation != null && isNew) {
-            markupAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
-            markupAnnotation.setTitleText(System.getProperty("user.name"));
-            markupAnnotation.setContents("");
+            if (markupAnnotation.getCreationDate() == null) {
+                markupAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
+            }
+            if (markupAnnotation.getTitleText() == null) {
+                markupAnnotation.setTitleText(System.getProperty("user.name"));
+            }
+            if (markupAnnotation.getContents() == null) {
+                markupAnnotation.setContents("");
+            }
         }
 
         PopupAnnotation annotation =
@@ -177,7 +182,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
         markupAnnotation.setPopupAnnotation(annotation);
 
         // create the annotation object.
-        AbstractAnnotationComponent comp =
+        PopupAnnotationComponent comp = (PopupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
                         annotation,
                         documentViewController,
@@ -200,36 +205,40 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
         // on double click toggle the visibility of the popup component.
         if (isInteractivePopupAnnotationsEnabled && e.getClickCount() == 2) {
             // we have an annotation so toggle it's visibility
-            if (markupAnnotation != null) {
-                PopupAnnotation popup = markupAnnotation.getPopupAnnotation();
-                if (popup != null) {
-                    popup.setOpen(!popup.isOpen());
-                    PopupAnnotationComponent popupComponent = getPopupAnnotationComponent();
-                    popupComponent.setVisible(popup.isOpen());
-                    // make sure the popup is drawn on the page and
-                    // not outside the page clip.
-                    Rectangle popupBounds = popupComponent.getBounds();
-                    Rectangle pageBounds = pageViewComponent.getBounds();
-                    if (!pageBounds.contains(popupBounds.getX(), popupBounds.getY(),
-                            popupBounds.getWidth(), popupBounds.getHeight())) {
-                        int x = popupBounds.x;
-                        int y = popupBounds.y;
-                        if (x + popupBounds.width > pageBounds.width) {
-                            x = x - (popupBounds.width - (pageBounds.width - popupBounds.x));
-                        }
-                        if (y + popupBounds.height > pageBounds.height) {
-                            y = y - (popupBounds.height - (pageBounds.height - popupBounds.y));
-                        }
-                        popupBounds.setLocation(x, y);
-                        popupComponent.setBounds(popupBounds);
+            togglePopupAnnotationVisibility();
+        }
+    }
+
+    public void togglePopupAnnotationVisibility() {
+        if (markupAnnotation != null) {
+            PopupAnnotation popup = markupAnnotation.getPopupAnnotation();
+            if (popup != null) {
+                popup.setOpen(!popup.isOpen());
+                PopupAnnotationComponent popupComponent = getPopupAnnotationComponent();
+                popupComponent.setVisible(popup.isOpen());
+                // make sure the popup is drawn on the page and
+                // not outside the page clip.
+                Rectangle popupBounds = popupComponent.getBounds();
+                Rectangle pageBounds = pageViewComponent.getBounds();
+                if (!pageBounds.contains(popupBounds.getX(), popupBounds.getY(),
+                        popupBounds.getWidth(), popupBounds.getHeight())) {
+                    int x = popupBounds.x;
+                    int y = popupBounds.y;
+                    if (x + popupBounds.width > pageBounds.width) {
+                        x = x - (popupBounds.width - (pageBounds.width - popupBounds.x));
                     }
+                    if (y + popupBounds.height > pageBounds.height) {
+                        y = y - (popupBounds.height - (pageBounds.height - popupBounds.y));
+                    }
+                    popupBounds.setLocation(x, y);
+                    popupComponent.setBounds(popupBounds);
                 }
-                // no markupAnnotation so we need to create one and display for
-                // the addition comments.
-                else {
-                    // convert bbox and start and end line points.
-                    createPopupAnnotationComponent(true);
-                }
+            }
+            // no markupAnnotation so we need to create one and display for
+            // the addition comments.
+            else {
+                // convert bbox and start and end line points.
+                createPopupAnnotationComponent(true);
             }
         }
     }

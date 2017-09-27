@@ -81,11 +81,9 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     private Action filterColorAction;
 
 
-    private JButton quickColorDropDownButton;
+    private AbstractButton quickColorDropDownButton;
 
     private MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
-
-    private JLabel statusLabel;
 
     public MarkupAnnotationPanel(SwingController controller, PropertiesManager propertiesManager) {
         this.messageBundle = controller.getMessageBundle();
@@ -177,7 +175,6 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         buildMarkupAnnotationCommentView();
         buildSortFilterToolBar();
 
-        buildStatusBar();
     }
 
     protected void buildSearchBar() {
@@ -294,10 +291,14 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         filterDropDownButton.add(colorFilterMenuItem);
         filterDropDownButton.add(typeFilterMenuItem);
 
-        quickColorDropDownButton = new JButton(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.quickColorButton.label"));
-        quickColorDropDownButton.setToolTipText(messageBundle.getString(
-                "viewer.utilityPane.markupAnnotation.toolbar.quickColorButton.tooltip"));
+        quickColorDropDownButton = new QuickPaintAnnotationButton(
+                controller,
+                messageBundle,
+                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.quickColorButton.label"),
+                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.quickColorButton.tooltip"),
+                "paint_bucket",
+                Images.SIZE_LARGE,
+                SwingViewBuilder.buildButtonFont());
 
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
@@ -356,14 +357,6 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         addGB(markupAnnotationPanel, markupAnnotationHandlerPanel, 0, 2, 1, 1);
     }
 
-    protected void buildStatusBar() {
-        statusLabel = new JLabel("Status:");
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        constraints.weighty = 0.01;
-        addGB(markupAnnotationPanel, statusLabel, 0, 3, 1, 1);
-    }
 
     public void setDocument(Document document) {
         markupAnnotationHandlerPanel.setDocument(document);
@@ -481,4 +474,6 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
             sortAndFilterAnnotationData();
         }
     }
+
+
 }

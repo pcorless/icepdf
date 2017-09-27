@@ -223,6 +223,7 @@ public class PropertiesManager {
     public static final String PROPERTY_ANNOTATION_FILTER_AUTHOR_COLUMN = "application.viewer.utility.annotation.filter.author.column";
     public static final String PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN = "application.viewer.utility.annotation.filter.type.column";
     public static final String PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN = "application.viewer.utility.annotation.filter.color.column";
+    public static final String PROPERTY_ANNOTATION_QUICK_COLOR = "application.viewer.utility.annotation.filter.quick.color";
 
     private static PropertiesManager propertiesManager;
 

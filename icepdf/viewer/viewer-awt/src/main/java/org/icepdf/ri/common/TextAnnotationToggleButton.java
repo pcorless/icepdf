@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
  *
  * @since 6.3
  */
-public class TextAnnotationButton extends AnnotationColorButton {
+public class TextAnnotationToggleButton extends AnnotationColorToggleButton {
 
     // define the bounded shape used to colourize the icon with the current colour
     private static GeneralPath textIconPath;
@@ -52,11 +52,12 @@ public class TextAnnotationButton extends AnnotationColorButton {
         textIconPath.closePath();
     }
 
-    public TextAnnotationButton(SwingController swingController, ResourceBundle messageBundle, String title,
-                                String toolTip, String imageName, String imageSize, Font font) {
+    public TextAnnotationToggleButton(SwingController swingController, ResourceBundle messageBundle, String title,
+                                      String toolTip, String imageName, String imageSize, Font font) {
         super(swingController, messageBundle, title, toolTip, imageName, imageSize, font);
 
-        colorToggleButton.setColorBound(textIconPath);
+        PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
+        paintButton.setColorBound(textIconPath);
 
         // apply the settings colour
         Color color = null;
@@ -67,8 +68,10 @@ public class TextAnnotationButton extends AnnotationColorButton {
         }
         // apply the settings or system property base colour for the given subtype.
         if (color != null) {
-            colorToggleButton.setColor(color);
+            paintButton.setColor(color);
         }
+
+        setupLayout();
     }
 
     public void setColor(Color newColor) {

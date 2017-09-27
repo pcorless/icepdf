@@ -1585,7 +1585,7 @@ public class SwingViewBuilder {
 
     public AbstractButton buildHighlightAnnotationToolButton(final String imageSize) {
         // put it all together for a dropdown button
-        HighlightAnnotationButton annotationColorButton = new HighlightAnnotationButton(
+        HighlightAnnotationToggleButton annotationColorButton = new HighlightAnnotationToggleButton(
                 viewerController,
                 messageBundle,
                 messageBundle.getString("viewer.toolbar.tool.highlight.label"),
@@ -1689,7 +1689,7 @@ public class SwingViewBuilder {
     }
 
     public AbstractButton buildTextAnnotationToolButton(final String imageSize) {
-        TextAnnotationButton btn = new TextAnnotationButton(
+        TextAnnotationToggleButton btn = new TextAnnotationToggleButton(
                 viewerController,
                 messageBundle,
                 messageBundle.getString("viewer.toolbar.tool.textAnno.label"),

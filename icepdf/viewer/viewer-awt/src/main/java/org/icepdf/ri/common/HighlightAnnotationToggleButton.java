@@ -27,14 +27,15 @@ import java.util.prefs.Preferences;
  *
  * @since 6.3
  */
-public class HighlightAnnotationButton extends AnnotationColorButton {
+public class HighlightAnnotationToggleButton extends AnnotationColorToggleButton {
 
-    public HighlightAnnotationButton(SwingController swingController, ResourceBundle messageBundle, String title,
-                                     String toolTip, String imageName, String imageSize, Font font) {
+    public HighlightAnnotationToggleButton(SwingController swingController, ResourceBundle messageBundle, String title,
+                                           String toolTip, String imageName, String imageSize, Font font) {
         super(swingController, messageBundle, title, toolTip, imageName, imageSize, font);
 
         // define the bounded shape used to colourize the icon with the current colour
-        colorToggleButton.setColorBound(new Rectangle(5, 9, 12, 13));
+        PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
+        paintButton.setColorBound(new Rectangle(5, 9, 12, 13));
 
         // apply the settings colour
         Color color = null;
@@ -45,8 +46,10 @@ public class HighlightAnnotationButton extends AnnotationColorButton {
         }
         // apply the settings or system property base colour for the given subtype.
         if (color != null) {
-            colorToggleButton.setColor(color);
+            paintButton.setColor(color);
         }
+
+        setupLayout();
     }
 
     public void setColor(Color newColor) {

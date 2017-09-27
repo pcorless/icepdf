@@ -142,7 +142,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
             }
         } else if (PropertyConstants.ANNOTATION_DESELECTED.equals(evt.getPropertyName()) ||
                 PropertyConstants.ANNOTATION_FOCUS_LOST.equals(evt.getPropertyName())) {
-            tree.setSelectionPath(null);
+//            tree.setSelectionPath(null);
         }
     }
 
@@ -282,9 +282,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                                 documentViewController.firePropertyChange(PropertyConstants.ANNOTATION_SELECTED, null,
                                         markupAnnotationComponent);
                             } else if (e.getClickCount() == 2) {
-                                PopupAnnotationComponent popupAnnotationComponent =
-                                        markupAnnotationComponent.getPopupAnnotationComponent();
-                                popupAnnotationComponent.setVisible(!popupAnnotationComponent.isVisible());
+                                markupAnnotationComponent.togglePopupAnnotationVisibility();
                             }
                         }
                         if ((e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)) {

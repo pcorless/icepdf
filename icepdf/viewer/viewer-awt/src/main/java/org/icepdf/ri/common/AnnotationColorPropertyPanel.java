@@ -50,7 +50,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
     // last selected color;
     private Color lastColor = Color.RED;
 
-    protected AnnotationColorButton annotationColorButton;
+    protected AbstractColorButton annotationColorButton;
 
     public AnnotationColorPropertyPanel(SwingController swingController, ResourceBundle messageBundle) {
         super(new GridBagLayout());
@@ -115,7 +115,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         addGB(this, preferencesButton, 0, 5, 10, 1);
     }
 
-    public void setCallback(AnnotationColorButton annotationColorButton) {
+    public void setCallback(AbstractColorButton annotationColorButton) {
         this.annotationColorButton = annotationColorButton;
     }
 

@@ -26,6 +26,7 @@ import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.common.utility.signatures.SigVerificationTask;
+import org.icepdf.ri.common.views.AnnotationSelector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -47,11 +48,17 @@ public class FindMarkupAnnotationTask extends AbstractTask {
 
     protected static ArrayList<DragDropColorList.ColorLabel> colorLabels;
 
+    // status summary labels
     protected MessageFormat loadingMessage;
+    protected MessageFormat completeMessage;
+    protected MessageFormat completeFilteredMessage;
+
+    // sort/grouping labels
     protected MessageFormat pageLabelFormat;
     protected MessageFormat authorLabelFormat;
     protected MessageFormat dateLabelFormat;
     protected MessageFormat colorLabelFormat;
+
 
     // append nodes for found fonts.
     private MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
@@ -72,6 +79,11 @@ public class FindMarkupAnnotationTask extends AbstractTask {
 
         loadingMessage = new MessageFormat(
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.view.loadingAnnotations.label"));
+        completeMessage = new MessageFormat(
+                messageBundle.getString("viewer.utilityPane.markupAnnotation.view.loadingComplete.label"));
+        completeFilteredMessage = new MessageFormat(
+                messageBundle.getString("viewer.utilityPane.markupAnnotation.view.summaryFiltered.label"));
+
         pageLabelFormat = new MessageFormat(
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.view.tree.page.label"));
         authorLabelFormat = new MessageFormat(
@@ -121,7 +133,8 @@ public class FindMarkupAnnotationTask extends AbstractTask {
             taskRunning = true;
 
             colorLabels = DragDropColorList.retrieveColorLabels();
-
+            int totalAnnotations = 0;
+            int filteredAnnotationCount = 0;
             try {
                 current = 0;
                 try {
@@ -148,6 +161,7 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                                         Object annotation = library.getObject(annotationReference);
                                         if (annotation instanceof MarkupAnnotation) {
                                             MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;
+                                            totalAnnotations++;
                                             // apply any filters
                                             // author
                                             boolean filter = false;
@@ -190,6 +204,7 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                         }
                         // sort the annotations.
                         markupAnnotations.sort(new AnnotationComparator(sortType));
+                        filteredAnnotationCount = markupAnnotations.size();
                         // build the tree
                         MarkupAnnotation previousMarkupAnnotation = null;
                         for (MarkupAnnotation markupAnnotation : markupAnnotations) {
@@ -210,9 +225,14 @@ public class FindMarkupAnnotationTask extends AbstractTask {
 
                         }
                     }
-                    // update the dialog and end the task
-                    taskStatusMessage = messageBundle.getString(
-                            "viewer.utilityPane.markupAnnotation.view.loadingComplete.label");
+                    // update status message to show sort and filter results.
+                    if (!filterAuthor.equals(MarkupAnnotationPanel.FilterAuthorColumn.ALL) ||
+                            !filterType.equals(MarkupAnnotationPanel.FilterSubTypeColumn.ALL) ||
+                            filterColor != null) {
+                        taskStatusMessage = completeFilteredMessage.format(new Object[]{filteredAnnotationCount, totalAnnotations});
+                    } else {
+                        taskStatusMessage = completeMessage.format(new Object[]{totalAnnotations, totalAnnotations});
+                    }
                     done = true;
                 } catch (Exception e) {
                     logger.log(Level.FINER, "Error loading annotations.", e);
@@ -233,6 +253,9 @@ public class FindMarkupAnnotationTask extends AbstractTask {
         if (MarkupAnnotationPanel.SortColumn.PAGE.equals(sortColumn)) {
             if (previousMarkupAnnotation == null ||
                     previousMarkupAnnotation.getPageIndex() != markupAnnotation.getPageIndex()) {
+                if (markupAnnotation.getPageIndex() < 0) {
+                    AnnotationSelector.AssignAnnotationPage(controller, markupAnnotation);
+                }
                 pageLabel = pageLabelFormat.format(new Object[]{markupAnnotation.getPageIndex() + 1});
             }
         } else if (MarkupAnnotationPanel.SortColumn.AUTHOR.equals(sortColumn)) {
@@ -260,7 +283,8 @@ public class FindMarkupAnnotationTask extends AbstractTask {
             }
         } else if (MarkupAnnotationPanel.SortColumn.COLOR.equals(sortColumn)) {
             if (previousMarkupAnnotation == null ||
-                    !previousMarkupAnnotation.getColor().equals(markupAnnotation.getColor())) {
+                    (previousMarkupAnnotation.getColor() != null &&
+                            !previousMarkupAnnotation.getColor().equals(markupAnnotation.getColor()))) {
                 pageLabel = colorLabelFormat.format(new Object[]{
                         markupAnnotation.getColor() != null ? findColor(markupAnnotation.getColor()) : ""});
             }

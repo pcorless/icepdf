@@ -189,7 +189,7 @@ public class SwingController
     private JToggleButton zoomDynamicToolButton;
     private JToggleButton selectToolButton;
     // main annotation toolbar
-    private AnnotationColorButton highlightAnnotationToolButton;
+    private AnnotationColorToggleButton highlightAnnotationToolButton;
     private JToggleButton linkAnnotationToolButton;
     private JToggleButton strikeOutAnnotationToolButton;
     private JToggleButton underlineAnnotationToolButton;
@@ -199,7 +199,7 @@ public class SwingController
     private JToggleButton circleAnnotationToolButton;
     private JToggleButton inkAnnotationToolButton;
     private JToggleButton freeTextAnnotationToolButton;
-    private AnnotationColorButton textAnnotationToolButton;
+    private AnnotationColorToggleButton textAnnotationToolButton;
     private JToggleButton formHighlightButton;
     // annotation properties toolbar.
     private JToggleButton linkAnnotationPropertiesToolButton;
@@ -951,7 +951,7 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setHighlightAnnotationToolButton(AnnotationColorButton btn) {
+    public void setHighlightAnnotationToolButton(AnnotationColorToggleButton btn) {
         highlightAnnotationToolButton = btn;
         btn.addItemListener(this);
     }
@@ -1031,7 +1031,7 @@ public class SwingController
     /**
      * Called by SwingViewerBuilder, so that SwingController can setup event handling
      */
-    public void setTextAnnotationToolButton(AnnotationColorButton btn) {
+    public void setTextAnnotationToolButton(AnnotationColorToggleButton btn) {
         textAnnotationToolButton = btn;
         btn.addItemListener(this);
     }

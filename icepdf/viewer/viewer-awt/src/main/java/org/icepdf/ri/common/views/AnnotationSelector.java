@@ -16,6 +16,7 @@
 package org.icepdf.ri.common.views;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.ri.common.SwingController;
@@ -47,10 +48,12 @@ public class AnnotationSelector {
         int pageIndex;
         for (pageIndex = 0; pageIndex < pages; pageIndex++) {
             // check is page's annotation array for a matching reference.
-            ArrayList<Reference> annotationReferences = document.getPageTree().getPage(pageIndex).getAnnotationReferences();
+            Page page = document.getPageTree().getPage(pageIndex);
+            ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
             if (annotationReferences != null) {
                 for (Reference reference : annotationReferences) {
                     if (reference.equals(widgetAnnotation.getPObjectReference())) {
+                        widgetAnnotation.setPage(page);
                         // found, so navigate to page which will start the full page load off awt thread.
                         if (controller.getCurrentPageNumber() != pageIndex) {
                             controller.showPage(pageIndex);
@@ -77,5 +80,27 @@ public class AnnotationSelector {
             }
         }
         return null;
+    }
+
+    public static int AssignAnnotationPage(SwingController controller, Annotation widgetAnnotation) {
+        Document document = controller.getDocument();
+        java.util.List<AbstractPageViewComponent> pageViewComponentList =
+                controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
+        int pages = controller.getPageTree().getNumberOfPages();
+        int pageIndex;
+        for (pageIndex = 0; pageIndex < pages; pageIndex++) {
+            // check is page's annotation array for a matching reference.
+            Page page = document.getPageTree().getPage(pageIndex);
+            ArrayList<Reference> annotationReferences = page.getAnnotationReferences();
+            if (annotationReferences != null) {
+                for (Reference reference : annotationReferences) {
+                    if (reference.equals(widgetAnnotation.getPObjectReference())) {
+                        widgetAnnotation.setPage(page);
+                        return pageIndex;
+                    }
+                }
+            }
+        }
+        return -1;
     }
 }
