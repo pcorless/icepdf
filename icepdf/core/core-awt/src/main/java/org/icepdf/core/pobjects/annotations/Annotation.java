@@ -1112,11 +1112,23 @@ public abstract class Annotation extends Dictionary {
         return page;
     }
 
+    public void setPage(Page page) {
+        if (page != null) {
+            entries.put(PARENT_PAGE_KEY, page.getPObjectReference());
+            pageIndex = page.getPageIndex();
+        }
+    }
+
     public int getPageIndex() {
         if (pageIndex < 0) {
-            pageIndex = getPage().getPageIndex();
+            Page parent = getPage();
+            if (parent != null) pageIndex = parent.getPageIndex();
         }
         return pageIndex;
+    }
+
+    public void setPageIndex(int pageIndex) {
+        this.pageIndex = pageIndex;
     }
 
     /**
