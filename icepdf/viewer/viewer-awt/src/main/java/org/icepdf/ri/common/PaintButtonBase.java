@@ -30,6 +30,8 @@ public class PaintButtonBase {
     protected float alpha = 0.35f;
     protected float alphaDisabled = 0.10f;
     protected AbstractButton button;
+    protected boolean fill = true;
+    protected boolean back = true;
 
     public PaintButtonBase(AbstractButton button) {
         this.button = button;
@@ -66,15 +68,26 @@ public class PaintButtonBase {
         return alpha;
     }
 
+    public void setFill(boolean fill) {
+        this.fill = fill;
+    }
+
+    public void setBack(boolean back) {
+        this.back = back;
+    }
+
     protected void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        if (button.isEnabled()) {
+        Composite comp = g2d.getComposite();
+        if (button == null || button.isEnabled()) {
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         } else {
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaDisabled));
         }
         if (color != null) g2d.setColor(color);
-        if (colorBound != null) g2d.fill(colorBound);
+        if (colorBound != null && fill) g2d.fill(colorBound);
+        else if (colorBound != null) g2d.draw(colorBound);
+        g2d.setComposite(comp);
     }
 }

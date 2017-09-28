@@ -174,6 +174,9 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
             controller.getDocumentViewController().updateAnnotation(annotationComponent);
             annotationComponent.resetAppearanceShapes();
             annotationComponent.repaint();
+
+            // repaint the tree
+            markupAnnotationHandlerPanel.repaint();
         }
     }
 

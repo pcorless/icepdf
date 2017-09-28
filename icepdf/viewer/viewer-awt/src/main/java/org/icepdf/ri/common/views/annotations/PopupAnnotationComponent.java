@@ -76,7 +76,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     public static Color borderColor = new Color(153, 153, 153);
 
     public static boolean PRIVATE_PROPERTY_ENABLED;
-
     static {
         PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
                 "org.icepdf.core.views.page.annotation.privateProperty.enabled", false);
