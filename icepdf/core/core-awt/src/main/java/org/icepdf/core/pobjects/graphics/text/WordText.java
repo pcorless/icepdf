@@ -46,7 +46,7 @@ public class WordText extends AbstractText implements TextSelect {
     // constitutes a potential space between glyphs.
     public static int spaceFraction;
 
-    private static boolean autoSpaceInsertion;
+    public static boolean autoSpaceInsertion;
 
     static {
         // sets the shadow colour of the decorator.
@@ -94,6 +94,22 @@ public class WordText extends AbstractText implements TextSelect {
 
     public void setWhiteSpace(boolean whiteSpace) {
         isWhiteSpace = whiteSpace;
+    }
+
+    protected boolean detectNewLine(GlyphText sprite) {
+        if (currentGlyph != null && autoSpaceInsertion) {
+            // last added glyph
+            Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();
+            float currentYCoord = sprite.getTextExtractionBounds().y;
+            float previousYCoord = currentGlyph.getTextExtractionBounds().y;
+            // half previous glyph width will be used to determine a space
+            float tolerance = bounds1.height / spaceFraction;
+            // checking the y coordinate as well as any shift normall means a new work, this might need to get fuzzy later.
+            float ydiff = Math.abs(currentYCoord - previousYCoord);
+            return ydiff > tolerance;
+        } else {
+            return false;
+        }
     }
 
     protected boolean detectSpace(GlyphText sprite) {
@@ -162,7 +178,7 @@ public class WordText extends AbstractText implements TextSelect {
         return c >= 48 && c <= 57;
     }
 
-    protected WordText buildSpaceWord(GlyphText sprite) {
+    protected WordText buildSpaceWord(GlyphText sprite, boolean autoSpaceInsertion) {
 
         // because we are in a normalized user space we can work with ints
         Rectangle2D.Float bounds1 = currentGlyph.getTextExtractionBounds();

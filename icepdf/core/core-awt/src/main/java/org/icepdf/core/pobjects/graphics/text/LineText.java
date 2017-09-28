@@ -32,7 +32,7 @@ public class LineText extends AbstractText implements TextSelect {
     private List<WordText> words;
 
     public LineText() {
-        words = new ArrayList<WordText>(16);
+        words = new ArrayList<>(16);
     }
 
     public Rectangle2D.Float getBounds() {
@@ -74,11 +74,26 @@ public class LineText extends AbstractText implements TextSelect {
             // ready new word
             currentWord = null;
         }
+        // we just a a new work sorting later will add the line breaks
+        else if (getCurrentWord().detectNewLine(sprite)) {
+            // add the break
+            WordText spaceWord = currentWord.buildSpaceWord(sprite, false);
+            spaceWord.setWhiteSpace(true);
+            // add space word,
+            addWord(spaceWord);
+            // ready a new word
+            currentWord = null;
+            // add as a new word, nothing special otherwise
+            WordText newWord = new WordText();
+            newWord.setWhiteSpace(true);
+            newWord.addText(sprite);
+            addWord(newWord);
+        }
         // detect if there should be any spaces between the new sprite
         // and the last sprite.
         else if (getCurrentWord().detectSpace(sprite)) {
             // build space word.
-            WordText spaceWord = currentWord.buildSpaceWord(sprite);
+            WordText spaceWord = currentWord.buildSpaceWord(sprite, WordText.autoSpaceInsertion);
             spaceWord.setWhiteSpace(true);
             // add space word,
             addWord(spaceWord);
