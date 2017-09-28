@@ -101,7 +101,9 @@ public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
         super.setEnabled(enabled);
         noRotateComboBox.setEnabled(enabled);
         noZoomComboBox.setEnabled(enabled);
-        readOnlyComboBox.setEnabled(enabled);
+        // leaving this always enabled just so users can change it back in editor mode.
+        // does this make sense?  not sure could argue either way.
+        readOnlyComboBox.setEnabled(true);
         printableComboBox.setEnabled(enabled);
     }
 

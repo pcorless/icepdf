@@ -83,6 +83,7 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
 
         if (annotationPropertyPanel != null) {
             annotationPropertyPanel.setAnnotationComponent(annotation);
+            annotationPropertyPanel.setEnabled(true);
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.annotationProperties.tab.default.title"),
                     annotationPropertyPanel);
@@ -105,6 +106,7 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
                 annotationPropertyPanel instanceof InkAnnotationPanel ||
                 annotationPropertyPanel instanceof FreeTextAnnotationPanel ||
                 annotation instanceof PopupAnnotationComponent)) {
+            borderPanel.setEnabled(true);
             borderPanel.setAnnotationComponent(annotation);
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.annotationProperties.tab.border.title"),
@@ -115,10 +117,12 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.annotationProperties.tab.action.title"),
                 actionsPanel);
+        actionsPanel.setEnabled(true);
         actionsPanel.setAnnotationComponent(annotation);
 
         // check if flags should be shown.
         if (flagsPanel != null) {
+            flagsPanel.setEnabled(true);
             flagsPanel.setAnnotationComponent(annotation);
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.annotationProperties.tab.flags.title"),
@@ -126,8 +130,11 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
         }
 
         // disable the component if the annotation is readonly.
-        if (!annotation.isEditable()) {
-            setEnabled(annotation.isEditable());
+        if (annotation.getAnnotation().getFlagReadOnly()) {
+            if (annotationPropertyPanel != null) annotationPropertyPanel.setEnabled(false);
+            if (actionsPanel != null) actionsPanel.setEnabled(false);
+            if (borderPanel != null) borderPanel.setEnabled(false);
+            if (flagsPanel != null) flagsPanel.setEnabled(false);
         }
     }
 
