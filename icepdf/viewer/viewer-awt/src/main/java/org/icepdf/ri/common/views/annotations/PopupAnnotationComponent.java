@@ -21,9 +21,11 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
 import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -73,6 +75,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     public static Color backgroundColor = new Color(252, 253, 227);
     public static Color borderColor = new Color(153, 153, 153);
 
+    public static boolean PRIVATE_PROPERTY_ENABLED;
+
+    static {
+        PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
+                "org.icepdf.core.views.page.annotation.privateProperty.enabled", false);
+    }
+
+
     protected PopupAnnotation popupAnnotation;
 
     // layouts constraint
@@ -82,6 +92,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     protected JTextArea textArea;
     protected JLabel creationLabel;
     protected JButton minimizeButton;
+    protected JToggleButton privateToggleButton;
     protected JTree commentTree;
     protected JScrollPane commentTreeScrollPane;
     protected MarkupAnnotation selectedMarkupAnnotation;
@@ -212,6 +223,20 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         minimizeButton.setBorderPainted(true);
         minimizeButton.addActionListener(this);
 
+        // lock button
+        privateToggleButton = new JToggleButton();
+        boolean isPrivate = popupAnnotation.getParent() != null &&
+                popupAnnotation.getParent().getFlagPrivateContents();
+        privateToggleButton.setSelected(isPrivate);
+        privateToggleButton.addActionListener(this);
+        privateToggleButton.setBackground(popupBackgroundColor);
+        privateToggleButton.setContentAreaFilled(false);
+        privateToggleButton.setBorder(BorderFactory.createLineBorder(borderColor));
+        privateToggleButton.setBorderPainted(true);
+        privateToggleButton.setIcon(new ImageIcon(Images.get("private_unlocked.png")));
+        privateToggleButton.setPressedIcon(new ImageIcon(Images.get("private_locked.png")));
+        privateToggleButton.setSelectedIcon(new ImageIcon(Images.get("private_locked.png")));
+
         // text area edited the selected annotation markup contents.
         String contents = popupAnnotation.getParent() != null ?
                 popupAnnotation.getParent().getContents() : "";
@@ -264,7 +289,13 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         // add minimize button
         constraints.fill = GridBagConstraints.REMAINDER;
         constraints.weightx = 0;
-        addGB(commentPanel, minimizeButton, 2, 0, 1, 1);
+        constraints.insets = new Insets(1, 1, 1, 1);
+        if (PRIVATE_PROPERTY_ENABLED) {
+            addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
+        }
+        constraints.insets = new Insets(1, 1, 1, 5);
+        addGB(commentPanel, minimizeButton, 3, 0, 1, 1);
+        constraints.insets = new Insets(1, 5, 1, 5);
 
         // add comment tree if there are any IRT's
         constraints.fill = GridBagConstraints.BOTH;
@@ -272,7 +303,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         constraints.weightx = 1.0;
         constraints.weighty = .6;
         commentTreeScrollPane.setVisible(isIRT);
-        addGB(commentPanel, commentTreeScrollPane, 0, 1, 3, 1);
+        addGB(commentPanel, commentTreeScrollPane, 0, 1, 4, 1);
 
         // creation date of selected comment
         constraints.insets = new Insets(1, 5, 1, 5);
@@ -288,7 +319,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         constraints.insets = new Insets(1, 5, 5, 5);
         constraints.weightx = 1.0;
         constraints.weighty = .4;
-        addGB(commentPanel, textArea, 0, 3, 3, 1);
+        addGB(commentPanel, textArea, 0, 3, 4, 1);
 
         // command test
         buildContextMenu();
@@ -423,6 +454,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         if (source == minimizeButton) {
             this.setVisible(false);
             popupAnnotation.setOpen(false);
+        } else if (source == privateToggleButton) {
+            boolean selected = privateToggleButton.isSelected();
+            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+            if (markupAnnotation != null) {
+                markupAnnotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, selected);
+                markupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
+                documentViewController.updateAnnotation(findAnnotationComponent(markupAnnotation));
+            }
         }
     }
 
@@ -695,6 +734,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         if (parentAnnotation.getColor() != null) {
             Color color = checkColor(parentAnnotation.getColor());
             minimizeButton.setBackground(color);
+            privateToggleButton.setBackground(color);
             commentPanel.setBackground(color);
         }
     }
