@@ -123,8 +123,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         } else if (PropertyConstants.ANNOTATION_ADDED.equals(evt.getPropertyName())) {
             // rebuild the tree so we get a good sort etc and do  worker thread setup.
             if (evt.getNewValue() instanceof MarkupAnnotationComponent) {
-                resetTree();
-                buildWorkerTaskUI();
+                refreshMarkupTree();
             }
         } else if (PropertyConstants.ANNOTATION_SELECTED.equals(evt.getPropertyName()) ||
                 PropertyConstants.ANNOTATION_FOCUS_GAINED.equals(evt.getPropertyName())) {
@@ -188,6 +187,10 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         this.filterAuthor = filterAuthor;
         this.filterColor = filterColor;
 
+        refreshMarkupTree();
+    }
+
+    public void refreshMarkupTree() {
         resetTree();
         buildWorkerTaskUI();
     }

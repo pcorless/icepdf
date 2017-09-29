@@ -4982,11 +4982,7 @@ public class SwingController
                 textAnnotationToolButton.refreshColorPanel();
             }
             if (markupAnnotationPanel != null) {
-                markupAnnotationPanel.colorPanelChanged();
-            }
-        } else if (propertyName.equals(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE)) {
-            if (markupAnnotationPanel != null) {
-                markupAnnotationPanel.quickColorChanged((Color) newValue);
+                markupAnnotationPanel.refreshColorPanel();
             }
         }
     }

@@ -17,9 +17,11 @@ package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -29,8 +31,8 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -44,7 +46,7 @@ import java.util.prefs.Preferences;
  *
  * @since 6.3
  */
-public class MarkupAnnotationPanel extends JPanel implements ItemListener, ActionListener {
+public class MarkupAnnotationPanel extends JPanel implements ActionListener, PropertyChangeListener {
 
     private static final Logger logger =
             Logger.getLogger(MarkupAnnotationPanel.class.toString());
@@ -75,6 +77,8 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     private JButton searchButton;
     private JButton clearSearchButton;
 
+    private JMenu colorFilterMenuItem;
+
     private ArrayList<Action> sortActions;
     private Action sortAction;
     private ArrayList<Action> filterAuthorActions;
@@ -98,6 +102,9 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         this.propertiesManager = propertiesManager;
 
         setFocusable(true);
+
+        ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
+        addPropertyChangeListener(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, controller);
 
         // assemble sort actions
         sortActions = new ArrayList<>(5);
@@ -158,25 +165,39 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         addGB(this, annotationUtilityToolbar, 0, 0, 1, 1);
     }
 
-    public void colorPanelChanged() {
-        // todo colour change made, update search and our change .
-    }
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
 
-    public void quickColorChanged(Color newValue) {
-        System.out.println("fired " + newValue);
-        AnnotationComponent annotationComponent = markupAnnotationHandlerPanel.getSelectedAnnotation();
+        Object newValue = evt.getNewValue();
+        Object oldValue = evt.getOldValue();
+        String propertyName = evt.getPropertyName();
+        if (propertyName.equals(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE)) {
+            AnnotationComponent annotationComponent = markupAnnotationHandlerPanel.getSelectedAnnotation();
 
-        if (annotationComponent != null) {
-            Annotation annotation = annotationComponent.getAnnotation();
-            annotation.setColor(newValue);
+            if (annotationComponent != null && newValue instanceof Color) {
+                Annotation annotation = annotationComponent.getAnnotation();
+                annotation.setColor((Color) newValue);
 
-            // save the action state back to the document structure.
-            controller.getDocumentViewController().updateAnnotation(annotationComponent);
-            annotationComponent.resetAppearanceShapes();
-            annotationComponent.repaint();
+                // save the action state back to the document structure.
+                controller.getDocumentViewController().updateAnnotation(annotationComponent);
+                annotationComponent.resetAppearanceShapes();
+                annotationComponent.repaint();
 
-            // repaint the tree
-            markupAnnotationHandlerPanel.repaint();
+                // repaint the tree
+                if (filterColorAction != null) {
+                    markupAnnotationHandlerPanel.refreshMarkupTree();
+                } else {
+                    markupAnnotationHandlerPanel.repaint();
+                }
+            }
+        } else if (propertyName.equals(PropertyConstants.ANNOTATION_SELECTED) ||
+                propertyName.equals(PropertyConstants.ANNOTATION_FOCUS_GAINED)) {
+            AnnotationComponent annotationComponent = (AnnotationComponent) newValue;
+            if (annotationComponent != null &&
+                    annotationComponent.getAnnotation() instanceof MarkupAnnotation) {
+                quickPaintAnnotationButton.setColor(annotationComponent.getAnnotation().getColor(), false);
+                quickPaintAnnotationButton.setEnabled(true);
+            }
         }
     }
 
@@ -275,7 +296,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.label"));
         JMenu typeFilterMenuItem = new JMenu(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byType.label"));
-        JMenu colorFilterMenuItem = new JMenu(messageBundle.getString(
+        colorFilterMenuItem = new JMenu(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byColor.label"));
 
         // build out author submenu, all, current user, other users
@@ -286,36 +307,7 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
         defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_FILTER_TYPE_COLUMN, FilterSubTypeColumn.ALL.toString());
         filterTypeAction = buildMenuItemGroup(typeFilterMenuItem, filterTypeActions, defaultColumn, filterTypeAction);
 
-        // build colour submenu based on colour labels
-        ButtonGroup filterColorMenuGroup = new ButtonGroup();
-        JCheckBoxMenuItem filterColorAllMenuItem = new JCheckBoxMenuItem();
-        filterColorAllMenuItem.setAction(new FilterColorAction(
-                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.option.byColor.all.label"),
-                null));
-        colorFilterMenuItem.add(filterColorAllMenuItem);
-        filterColorMenuGroup.add(filterColorAllMenuItem);
-        ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-        int defaultColor = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, -1);
-        JCheckBoxMenuItem filterColorMenuItem;
-        if (colorLabels.size() > 0) {
-            for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
-                filterColorMenuItem = new JCheckBoxMenuItem();
-                FilterColorAction sortAction = new FilterColorAction(
-                        colorLabel.getLabel(),
-                        colorLabel.getColor());
-                filterColorMenuItem.setAction(sortAction);
-                colorFilterMenuItem.add(filterColorMenuItem);
-                filterColorMenuGroup.add(filterColorMenuItem);
-                if (defaultColor != -1 && defaultColor == sortAction.getColorRGB()) {
-                    filterColorMenuItem.setSelected(true);
-                    filterColorAction = sortAction;
-                }
-            }
-        }
-        if (defaultColor == -1) {
-            filterColorAllMenuItem.setSelected(true);
-            filterColorAction = filterColorAllMenuItem.getAction();
-        }
+        refreshColorPanel();
 
         // put it all together.
         filterDropDownButton.add(authorFilterMenuItem);
@@ -362,6 +354,40 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
     public void dispose() {
         markupAnnotationHandlerPanel.dispose();
         removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
+    }
+
+    public void refreshColorPanel() {
+        colorFilterMenuItem.removeAll();
+        // build colour submenu based on colour labels
+        ButtonGroup filterColorMenuGroup = new ButtonGroup();
+        JCheckBoxMenuItem filterColorAllMenuItem = new JCheckBoxMenuItem();
+        filterColorAllMenuItem.setAction(new FilterColorAction(
+                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.option.byColor.all.label"),
+                null));
+        colorFilterMenuItem.add(filterColorAllMenuItem);
+        filterColorMenuGroup.add(filterColorAllMenuItem);
+        ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+        int defaultColor = preferences.getInt(PropertiesManager.PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN, -1);
+        JCheckBoxMenuItem filterColorMenuItem;
+        if (colorLabels.size() > 0) {
+            for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
+                filterColorMenuItem = new JCheckBoxMenuItem();
+                FilterColorAction sortAction = new FilterColorAction(
+                        colorLabel.getLabel(),
+                        colorLabel.getColor());
+                filterColorMenuItem.setAction(sortAction);
+                colorFilterMenuItem.add(filterColorMenuItem);
+                filterColorMenuGroup.add(filterColorMenuItem);
+                if (defaultColor != -1 && defaultColor == sortAction.getColorRGB()) {
+                    filterColorMenuItem.setSelected(true);
+                    filterColorAction = sortAction;
+                }
+            }
+        }
+        if (defaultColor == -1) {
+            filterColorAllMenuItem.setSelected(true);
+            filterColorAction = filterColorAllMenuItem.getAction();
+        }
     }
 
     private Action buildMenuItemGroup(JMenuItem menuItem, ArrayList<Action> actions, String defaultColumn, Action currentAction) {
@@ -414,12 +440,12 @@ public class MarkupAnnotationPanel extends JPanel implements ItemListener, Actio
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
-    }
-
-    @Override
-    public void itemStateChanged(ItemEvent e) {
-        Object object = e.getItem();
+        Object source = e.getSource();
+        if (source == searchButton) {
+            System.out.println("search");
+        } else if (source == clearSearchButton) {
+            System.out.println("clear");
+        }
     }
 
     /**

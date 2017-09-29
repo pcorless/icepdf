@@ -90,7 +90,7 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
         preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_QUICK_COLOR, newColor.getRGB());
 
         if (fireChangeEvent) {
-            firePropertyChange(
+            swingController.getDocumentViewController().firePropertyChange(
                     PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, null, newColor);
         }
     }

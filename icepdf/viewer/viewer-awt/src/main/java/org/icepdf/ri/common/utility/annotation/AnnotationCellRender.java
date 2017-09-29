@@ -77,6 +77,7 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
     public static GeneralPath inkColorOutline;
     public static GeneralPath strikeOutColorOutline;
     public static GeneralPath underlineColorOutline;
+    public static GeneralPath lineColorOutline;
 
     static {
         squareColorOutline = new GeneralPath();
@@ -141,6 +142,14 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
         underlineColorOutline.lineTo(20, 17);
         underlineColorOutline.lineTo(4, 17);
         underlineColorOutline.closePath();
+
+        lineColorOutline = new GeneralPath();
+        lineColorOutline.moveTo(20, 6);
+        lineColorOutline.lineTo(16, 1);
+        lineColorOutline.lineTo(9, 1);
+        lineColorOutline.lineTo(3, 7);
+        lineColorOutline.lineTo(7, 15);
+        lineColorOutline.lineTo(11, 11);
     }
 
 
@@ -173,7 +182,10 @@ public class AnnotationCellRender extends DefaultTreeCellRenderer {
         } else if (annotation instanceof FreeTextAnnotation) {
             setIcon(ANNOTATION_FREE_TEXT_ICON);
         } else if (annotation instanceof LineAnnotation) {
-            setIcon(ANNOTATION_LINE_ICON);
+            ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_line_c_tree.png"));
+            tmp.setColor(annotation.getColor(), 1f, false, false);
+            tmp.setColorBound(lineColorOutline);
+            setIcon(tmp);
         } else if (annotation instanceof SquareAnnotation) {
             ImageColorIcon tmp = new ImageColorIcon(Images.get("annot_square_c_tree.png"));
             tmp.setColor(annotation.getColor(), 1f, false, false);
