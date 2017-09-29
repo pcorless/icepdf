@@ -16,9 +16,12 @@
 package org.icepdf.ri.common.utility.annotation;
 
 import org.icepdf.core.pobjects.annotations.*;
+import org.icepdf.ri.common.utility.search.SearchPanel;
 
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * AnnotationTreeNode is used by the annotation utility tab tree.  The class is pretty straight forward and is
@@ -33,9 +36,11 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
             Logger.getLogger(AnnotationTreeNode.class.toString());
 
     private Annotation annotation;
+    private Pattern searchPattern;
 
-    public AnnotationTreeNode(Annotation annotation, ResourceBundle messageBundle) {
+    public AnnotationTreeNode(Annotation annotation, ResourceBundle messageBundle, Pattern searchPattern) {
         this.annotation = annotation;
+        this.searchPattern = searchPattern;
         // setup label.
         applyMessage(annotation, messageBundle);
     }
@@ -56,6 +61,24 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
         // todo trim to a specific width.
         if (text == null || text.length() == 0) {
             text = getNullMessage(messageBundle);
+        } else if (searchPattern != null) {
+            // pepper the text with html so we can show hits.
+            Matcher matcher = searchPattern.matcher(text);
+            StringBuilder stringBuilder = new StringBuilder(SearchPanel.HTML_TAG_START);
+            int lastEnd = 0;
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                stringBuilder.append(text.substring(lastEnd, start));
+                stringBuilder.append(SearchPanel.BOLD_TAG_START);
+                stringBuilder.append(text.substring(start, end));
+                stringBuilder.append(SearchPanel.BOLD_TAG_END);
+                lastEnd = end;
+            }
+            if (lastEnd < text.length()) {
+                stringBuilder.append(text.substring(lastEnd));
+            }
+            text = stringBuilder.toString();
         }
         setUserObject(text);
     }

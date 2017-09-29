@@ -35,9 +35,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * MarkupAnnotationPanel allows users to easily search, sort, filter and view markup annotations and their popup
@@ -232,6 +233,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     protected void buildSearchBar() {
         JPanel searchPanel = new JPanel(new GridBagLayout());
         searchTextField = new JTextField();
+        searchTextField.addActionListener(this);
         // todo do add graphics for search and clear (binocular an cross...)
         searchButton = new JButton(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.search.searchButton.label"));
@@ -428,23 +430,30 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         FilterAuthorColumn filterAuthor = (FilterAuthorColumn) filterAuthorAction.getValue(COLUMN_PROPERTY);
         Color filterColor = (Color) filterColorAction.getValue(COLUMN_PROPERTY);
 
-        if (logger.isLoggable(Level.FINE)) {
-            System.out.println(sortType + " " +
-                    filterType + " " +
-                    filterAuthor + " " +
-                    filterColor);
+        // setup search pattern
+        Pattern searchPattern = null;
+        String searchTerm = searchTextField.getText();
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            searchPattern = Pattern.compile(searchTerm);
+            // todo we can add search flags at a later date, via drop down on search or checkboxes.
         }
 
-        markupAnnotationHandlerPanel.sortAndFilterAnnotationData(sortType, filterType, filterAuthor, filterColor);
+        markupAnnotationHandlerPanel.sortAndFilterAnnotationData(searchPattern, sortType, filterType, filterAuthor, filterColor);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
-        if (source == searchButton) {
-            System.out.println("search");
+        if (source == searchButton || source == searchTextField) {
+            try {
+                sortAndFilterAnnotationData();
+            } catch (PatternSyntaxException syntaxException) {
+                logger.warning("Error processing search pattern syntax");
+                markupAnnotationHandlerPanel.setProgressLabel(syntaxException.getMessage());
+            }
         } else if (source == clearSearchButton) {
-            System.out.println("clear");
+            searchTextField.setText("");
+            sortAndFilterAnnotationData();
         }
     }
 

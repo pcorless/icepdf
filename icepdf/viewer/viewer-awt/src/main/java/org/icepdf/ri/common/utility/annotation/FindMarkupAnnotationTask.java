@@ -40,6 +40,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FindMarkupAnnotationTask extends AbstractTask {
 
@@ -103,10 +105,12 @@ public class FindMarkupAnnotationTask extends AbstractTask {
      * Start the task, start searching the document for the pattern.
      * Color
      */
-    public void startTask(final MarkupAnnotationPanel.SortColumn sortType,
-                          final MarkupAnnotationPanel.FilterSubTypeColumn filterType,
-                          final MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
-                          final Color filterColor) {
+    public void startTask(
+            final Pattern searchPattern,
+            final MarkupAnnotationPanel.SortColumn sortType,
+            final MarkupAnnotationPanel.FilterSubTypeColumn filterType,
+            final MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
+            final Color filterColor) {
         final SwingWorker worker = new SwingWorker() {
             public Object construct() {
                 current = 0;
@@ -114,7 +118,7 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                 canceled = false;
                 taskStatusMessage = null;
                 return new FindMarkupAnnotationTask.ActualTask(
-                        sortType, filterType, filterAuthor, filterColor);
+                        searchPattern, sortType, filterType, filterAuthor, filterColor);
             }
         };
         worker.setThreadPriority(Thread.NORM_PRIORITY);
@@ -125,7 +129,8 @@ public class FindMarkupAnnotationTask extends AbstractTask {
      * The actual long running task.  This runs in a SwingWorker thread.
      */
     private class ActualTask {
-        ActualTask(MarkupAnnotationPanel.SortColumn sortType,
+        ActualTask(Pattern searchPattern,
+                   MarkupAnnotationPanel.SortColumn sortType,
                    MarkupAnnotationPanel.FilterSubTypeColumn filterType,
                    MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
                    Color filterColor) {
@@ -140,6 +145,7 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                 try {
                     Document currentDocument = controller.getDocument();
                     if (currentDocument != null) {
+                        // iterate over markup annotations
                         Library library = currentDocument.getCatalog().getLibrary();
                         int pageCount = currentDocument.getPageTree().getNumberOfPages();
                         ArrayList<MarkupAnnotation> markupAnnotations = new ArrayList<>();
@@ -165,12 +171,14 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                                             // apply any filters
                                             // author
                                             boolean filter = false;
-                                            if (filterAuthor.equals(MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER)) {
+                                            if (filterAuthor.equals(
+                                                    MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_OTHER)) {
                                                 if (markupAnnotation.getTitleText() == null ||
                                                         markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
                                                     filter = true;
                                                 }
-                                            } else if (filterAuthor.equals(MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT)) {
+                                            } else if (filterAuthor.equals(
+                                                    MarkupAnnotationPanel.FilterAuthorColumn.AUTHOR_CURRENT)) {
                                                 if (markupAnnotation.getTitleText() == null ||
                                                         !markupAnnotation.getTitleText().equalsIgnoreCase(userName)) {
                                                     filter = true;
@@ -183,7 +191,6 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                                                     filter = true;
                                                 }
                                             }
-
                                             // filter by type
                                             if (!filterType.equals(MarkupAnnotationPanel.FilterSubTypeColumn.ALL)) {
                                                 if (markupAnnotation.getSubType() != null) {
@@ -195,8 +202,17 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                                                     filter = true;
                                                 }
                                             }
+                                            // app search regex
+                                            if (searchPattern != null) {
+                                                Matcher matcher = searchPattern.matcher(
+                                                        ((MarkupAnnotation) annotation).getContents());
+                                                filter = !matcher.find();
+                                            }
+
                                             // apply the filter flag
-                                            if (!filter) markupAnnotations.add(markupAnnotation);
+                                            if (!filter) {
+                                                markupAnnotations.add(markupAnnotation);
+                                            }
                                         }
                                     }
                                 }
@@ -215,14 +231,12 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                                 // add the annotation node
                                 SwingUtilities.invokeLater(() -> {
                                     // add the node
-                                    markupAnnotationHandlerPanel.addAnnotation(markupAnnotation);
+                                    markupAnnotationHandlerPanel.addAnnotation(markupAnnotation, searchPattern);
                                     // try repainting the container
                                     markupAnnotationHandlerPanel.repaint();
                                 });
                                 Thread.yield();
-
                             }
-
                         }
                     }
                     // update status message to show sort and filter results.

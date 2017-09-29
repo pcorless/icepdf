@@ -50,10 +50,10 @@ public class SearchPanel extends JPanel implements ActionListener,
         TreeSelectionListener {
 
     // markup for search context.
-    private static final String HTML_TAG_START = "<html>";
-    private static final String HTML_TAG_END = "</html>";
-    private static final String BOLD_TAG_START = "<b>";
-    private static final String BOLD_TAG_END = "</b>";
+    public static final String HTML_TAG_START = "<html>";
+    public static final String HTML_TAG_END = "</html>";
+    public static final String BOLD_TAG_START = "<b>";
+    public static final String BOLD_TAG_END = "</b>";
 
     // layouts constraint
     private GridBagConstraints constraints;

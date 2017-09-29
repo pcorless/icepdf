@@ -41,6 +41,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.regex.Pattern;
 
 /**
  * The MarkupAnnotationHandlerPanel lists all the markup annotations in a document. A worker thread is used scan
@@ -57,6 +58,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
 
     protected MarkupAnnotationPanel parentMarkupAnnotationPanel;
 
+    private Pattern searchPattern;
     private MarkupAnnotationPanel.SortColumn sortType;
     private MarkupAnnotationPanel.FilterSubTypeColumn filterType;
     private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
@@ -118,8 +120,8 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                         }
                     }
                 }
-
             }
+            tree.repaint();
         } else if (PropertyConstants.ANNOTATION_ADDED.equals(evt.getPropertyName())) {
             // rebuild the tree so we get a good sort etc and do  worker thread setup.
             if (evt.getNewValue() instanceof MarkupAnnotationComponent) {
@@ -178,10 +180,11 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         return null;
     }
 
-    public void sortAndFilterAnnotationData(MarkupAnnotationPanel.SortColumn sortType,
+    public void sortAndFilterAnnotationData(Pattern searchPattern, MarkupAnnotationPanel.SortColumn sortType,
                                             MarkupAnnotationPanel.FilterSubTypeColumn filterType,
                                             MarkupAnnotationPanel.FilterAuthorColumn filterAuthor,
                                             Color filterColor) {
+        this.searchPattern = searchPattern;
         this.sortType = sortType;
         this.filterType = filterType;
         this.filterAuthor = filterAuthor;
@@ -205,11 +208,15 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         buildProgressBar();
     }
 
-    public void addAnnotation(Annotation annotation) {
+    public void addAnnotation(Annotation annotation, Pattern searchPattern) {
         if (annotation instanceof MarkupAnnotation) {
-            descendFormTree(pageTreeNode, annotation);
+            descendFormTree(pageTreeNode, annotation, searchPattern);
             expandAllNodes();
         }
+    }
+
+    public void setProgressLabel(String label) {
+        progressLabel.setText(label);
     }
 
     @Override
@@ -233,7 +240,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                     workerTask = findMarkupAnnotationTask;
                     progressBar.setMaximum(findMarkupAnnotationTask.getLengthOfTask());
                     // start the task and the timer
-                    findMarkupAnnotationTask.getTask().startTask(sortType, filterType, filterAuthor, filterColor);
+                    findMarkupAnnotationTask.getTask().startTask(searchPattern, sortType, filterType, filterAuthor, filterColor);
                     timer.start();
                 }
             }
@@ -246,19 +253,19 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         treeModel.insertNodeInto(pageTreeNode, rootTreeNode, rootTreeNode.getChildCount());
     }
 
-    void addAnnotation(Object annotation) {
-        descendFormTree(pageTreeNode, annotation);
-        expandAllNodes();
-    }
+//    void addAnnotation(Object annotation) {
+//        descendFormTree(pageTreeNode, annotation);
+//        expandAllNodes();
+//    }
 
     /**
      * Recursively set highlight on all the form fields.
      *
      * @param annotationObject root form node.
      */
-    private void descendFormTree(DefaultMutableTreeNode currentRoot, Object annotationObject) {
+    private void descendFormTree(DefaultMutableTreeNode currentRoot, Object annotationObject, Pattern searchPattern) {
         if (!(annotationObject instanceof AbstractWidgetAnnotation) && annotationObject instanceof Annotation) {
-            AnnotationTreeNode annotationTreeNode = new AnnotationTreeNode((Annotation) annotationObject, messageBundle);
+            AnnotationTreeNode annotationTreeNode = new AnnotationTreeNode((Annotation) annotationObject, messageBundle, searchPattern);
             treeModel.insertNodeInto(annotationTreeNode, currentRoot, currentRoot.getChildCount());
         }
     }
