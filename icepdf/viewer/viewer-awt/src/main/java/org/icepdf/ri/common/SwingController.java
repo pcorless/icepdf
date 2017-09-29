@@ -1248,11 +1248,9 @@ public class SwingController
         setEnabled(redoMenuItem, false);
         setEnabled(copyMenuItem, false);
         setEnabled(deleteMenuItem, false);
-        setEnabled(preferencesMenuItem, opened);
 
         setEnabled(selectAllMenuItem, opened && canExtract && !pdfCollection);
         setEnabled(deselectAllMenuItem, false);
-
 
         setEnabled(fitActualSizeMenuItem, opened && !pdfCollection);
         setEnabled(fitPageMenuItem, opened && !pdfCollection);
@@ -4208,6 +4206,8 @@ public class SwingController
                 showAboutDialog();
             } else if (source == fontInformationMenuItem) {
                 showDocumentFontDialog();
+            } else if (source == preferencesMenuItem) {
+                SwingUtilities.invokeLater(this::showViewerPreferences);
             } else if (document != null) {
                 // get document previous icon
                 int documentIcon = getDocumentViewToolMode();
@@ -4218,8 +4218,6 @@ public class SwingController
                     if (source == propertiesMenuItem) {
                         Runnable doSwingWork = this::showDocumentProperties;
                         SwingUtilities.invokeLater(doSwingWork);
-                    } else if (source == preferencesMenuItem) {
-                        SwingUtilities.invokeLater(this::showViewerPreferences);
                     } else if (source == permissionsMenuItem) {
                         SwingUtilities.invokeLater(this::showDocumentPermissionsDialog);
                     } else if (source == informationMenuItem) {
