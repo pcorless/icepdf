@@ -113,6 +113,22 @@ public interface DocumentSearchController {
                              boolean wholeWord);
 
     /**
+     * Add the search term to the list of search terms.  The term is split
+     * into words based on white space and punctuation. No checks are done
+     * for duplication.
+     * <br>
+     * A new search needs to be executed for this change to take place.
+     *
+     * @param term          single word or phrase to search for.
+     * @param caseSensitive is search case sensitive.
+     * @param wholeWord     is search whole word sensitive.
+     * @param regex         enable regex processing on a word by word level.
+     * @return searchTerm newly create search term.
+     */
+    SearchTerm addSearchTerm(String term, boolean caseSensitive,
+                             boolean wholeWord, boolean regex);
+
+    /**
      * Removes the specified search term from the search. A new search needs
      * to be executed for this change to take place.
      *

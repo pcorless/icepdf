@@ -16,6 +16,7 @@
 package org.icepdf.core.search;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Text searchs are used by the search controller to search for text in a
@@ -37,6 +38,9 @@ public class SearchTerm {
     private boolean caseSensitive;
     // whole word search.
     private boolean wholeWord;
+    // allow for regex compare
+    private boolean regex;
+    private Pattern searchPattern;
 
     /**
      * Creates a new search term.
@@ -52,6 +56,15 @@ public class SearchTerm {
         this.terms = terms;
         this.caseSensitive = caseSensitive;
         this.wholeWord = wholeWord;
+    }
+
+    public SearchTerm(String term, ArrayList<String> terms,
+                      boolean caseSensitive, boolean wholeWord, boolean regex) {
+        this.term = term;
+        this.terms = terms;
+        this.caseSensitive = caseSensitive;
+        this.wholeWord = wholeWord;
+        this.regex = regex;
     }
 
     /**
@@ -88,6 +101,18 @@ public class SearchTerm {
      */
     public boolean isWholeWord() {
         return wholeWord;
+    }
+
+    public boolean isRegex() {
+        return regex;
+    }
+
+    public Pattern getRegexPattern() {
+        if (searchPattern != null) return searchPattern;
+        if (regex && term != null && !term.isEmpty()) {
+            searchPattern = Pattern.compile(term, caseSensitive ? Pattern.CASE_INSENSITIVE : 0);
+        }
+        return searchPattern;
     }
 
     @Override
