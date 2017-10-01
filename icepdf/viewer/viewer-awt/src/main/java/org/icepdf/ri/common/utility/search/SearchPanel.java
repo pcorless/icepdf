@@ -35,6 +35,9 @@ import java.text.Format;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * This class is the GUI component for the SearchTextTask.  This panel can be
@@ -48,6 +51,9 @@ import java.util.ResourceBundle;
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel implements ActionListener,
         TreeSelectionListener {
+
+    private static final Logger logger =
+            Logger.getLogger(SearchPanel.class.toString());
 
     // markup for search context.
     public static final String HTML_TAG_START = "<html>";
@@ -506,6 +512,19 @@ public class SearchPanel extends JPanel implements ActionListener,
 
                 // clean the previous results and repaint the tree
                 resetTree();
+
+                // do a quick check to make sure we have valida expression.
+                if (regexCheckbox.isSelected()) {
+                    try {
+                        Pattern.compile(searchTextField.getText());
+                    } catch (PatternSyntaxException e) {
+                        // log and show the error in the status label.
+                        logger.warning("Error processing search pattern syntax");
+                        findMessage.setText(e.getMessage());
+                        return;
+                    }
+
+                }
 
                 // start a new search text task
                 searchTextTask = new SearchTextTask(this,
