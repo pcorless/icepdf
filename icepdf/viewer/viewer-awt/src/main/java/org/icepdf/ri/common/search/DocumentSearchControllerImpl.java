@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Document search controller used to manage document searches.  This class
@@ -146,8 +148,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             int searchPhraseFoundCount = term.getTerms().size();
             // list of found words for highlighting, as hits can span
             // lines and pages
-            ArrayList<WordText> searchPhraseHits =
-                    new ArrayList<WordText>(searchPhraseFoundCount);
+            ArrayList<WordText> searchPhraseHits = new ArrayList<>(searchPhraseFoundCount);
 
             // start iteration over words.
             ArrayList<LineText> pageLines = pageText.getPageLines();
@@ -177,6 +178,14 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             else {
                                 searchPhraseHits.clear();
                                 searchPhraseHitCount = 0;
+                            }
+                        } else if (term.isRegex()) {
+                            Pattern pattern = term.getRegexPattern();
+                            Matcher matcher = pattern.matcher(wordString);
+                            if (matcher.find()) {
+                                // add word to potentials
+                                searchPhraseHits.add(word);
+                                searchPhraseHitCount++;
                             }
                         }
                         // otherwise we look for an index of hits
@@ -304,6 +313,14 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 searchPhraseHits.clear();
                                 searchPhraseHitCount = 0;
                             }
+                        } else if (term.isRegex()) {
+                            Pattern pattern = term.getRegexPattern();
+                            Matcher matcher = pattern.matcher(wordString);
+                            if (matcher.find()) {
+                                // add word to potentials
+                                searchPhraseHits.add(word);
+                                searchPhraseHitCount++;
+                            }
                         }
                         // otherwise we look for an index of hits
                         else {
@@ -390,7 +407,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         if (hits > 0) {
             PageText searchText = searchModel.getPageTextHit(pageIndex);
             if (searchText != null) {
-                ArrayList<WordText> words = new ArrayList<WordText>(hits);
+                ArrayList<WordText> words = new ArrayList<>(hits);
                 ArrayList<LineText> pageLines = searchText.getPageLines();
                 if (pageLines != null) {
                     for (LineText pageLine : pageLines) {
@@ -424,8 +441,13 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public SearchTerm addSearchTerm(String term, boolean caseSensitive,
                                     boolean wholeWord) {
-        // keep origional copy
-        String origionalTerm = String.valueOf(term);
+        return addSearchTerm(term, caseSensitive, wholeWord, false);
+    }
+
+    @Override
+    public SearchTerm addSearchTerm(String term, boolean caseSensitive, boolean wholeWord, boolean regex) {
+        // keep original copy
+        String originalTerm = String.valueOf(term);
 
         // check criteria for case sensitivity.
         if (!caseSensitive) {
@@ -436,7 +458,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<String> searchPhrase = searchPhraseParser(term);
         // finally add the search term to the list and return it for management
         SearchTerm searchTerm =
-                new SearchTerm(origionalTerm, searchPhrase, caseSensitive, wholeWord);
+                new SearchTerm(originalTerm, searchPhrase, caseSensitive, wholeWord, regex);
         searchModel.addSearchTerm(searchTerm);
         return searchTerm;
     }

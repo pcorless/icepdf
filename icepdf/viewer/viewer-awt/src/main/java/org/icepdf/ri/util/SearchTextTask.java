@@ -58,6 +58,7 @@ public class SearchTextTask {
     private boolean caseSensitive;
     private boolean cumulative;
     private boolean showPages;
+    private boolean regex;
     private boolean r2L;
 
     // parent swing controller
@@ -92,6 +93,7 @@ public class SearchTextTask {
                           boolean cumulative,
                           boolean showPages,
                           boolean r2L,
+                          boolean regex,
                           ResourceBundle messageBundle) {
         this.controller = controller;
         this.pattern = pattern;
@@ -102,6 +104,7 @@ public class SearchTextTask {
         this.wholeWord = wholeWord;
         this.caseSensitive = caseSensitive;
         this.cumulative = cumulative;
+        this.regex = regex;
         this.showPages = showPages;
         this.r2L = r2L;
 
@@ -203,7 +206,7 @@ public class SearchTextTask {
                     searchController.clearAllSearchHighlight();
                 }
                 searchController.addSearchTerm(pattern,
-                        caseSensitive, wholeWord);
+                        caseSensitive, wholeWord, regex);
 
                 Document document = controller.getDocument();
                 // iterate over each page in the document

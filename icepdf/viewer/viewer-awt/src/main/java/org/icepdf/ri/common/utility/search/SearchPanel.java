@@ -77,6 +77,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     // search option check boxes.
     private JCheckBox caseSensitiveCheckbox;
     private JCheckBox wholeWordCheckbox;
+    private JCheckBox regexCheckbox;
     private JCheckBox cumulativeCheckbox;
     private JCheckBox showPagesCheckbox;
     // page index of the last added node.
@@ -225,115 +226,18 @@ public class SearchPanel extends JPanel implements ActionListener,
         // search options check boxes.
         wholeWordCheckbox = new JCheckBox(messageBundle.getString(
                 "viewer.utilityPane.search.wholeWordCheckbox.label"));
+        wholeWordCheckbox.addActionListener(this);
+        wholeWordCheckbox.setEnabled(false);
+        regexCheckbox = new JCheckBox(messageBundle.getString(
+                "viewer.utilityPane.search.regexCheckbox.label"), true);
+        regexCheckbox.addActionListener(this);
         caseSensitiveCheckbox = new JCheckBox(messageBundle.getString(
                 "viewer.utilityPane.search.caseSenstiveCheckbox.label"));
         cumulativeCheckbox = new JCheckBox(messageBundle.getString(
                 "viewer.utilityPane.search.cumlitiveCheckbox.label"));
         showPagesCheckbox = new JCheckBox(messageBundle.getString(
                 "viewer.utilityPane.search.showPagesCheckbox.label"), true);
-        showPagesCheckbox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                if (event.getSource() != null) {
-                    // Determine if the user just selected or deselected the Show Pages checkbox
-                    // If selected we'll want to combine all the leaf results into page nodes containing a series of results
-                    // Otherwise we'll want to explode the parent/node page folders into basic leafs showing the results
-                    if (((JCheckBox) event.getSource()).isSelected()) {
-                        if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
-                            DefaultMutableTreeNode currentChild; // the current node we're handling
-                            DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to 
-                            int newPageNumber; // page number of the current result node
-                            int storedPageNumber = -1; // the page number of the node we're adding to                                  
-                            int storedResultCount = 0; // the count of results that are on the storedPageNumber
-                            Object[] messageArguments; // arguments used for formatting the labels
-
-                            // Loop through the results tree
-                            for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
-                                currentChild = (DefaultMutableTreeNode) rootTreeNode.getChildAt(i);
-
-                                // Ensure we have a FindEntry object
-                                if (currentChild.getUserObject() instanceof FindEntry) {
-                                    newPageNumber = ((FindEntry) currentChild.getUserObject()).getPageNumber();
-
-                                    // Check if the page number for the current node matches the stored number
-                                    // If it does we will want to add the node to the existing page node,
-                                    //  otherwise we'll want to create a new page node and start adding to that
-                                    if (storedPageNumber == newPageNumber) {
-                                        storedResultCount++;
-
-                                        if (storedChildParent != null) {
-                                            // Remove the old parentless child from the tree
-                                            treeModel.removeNodeFromParent(currentChild);
-
-                                            // Add the child back to the new page node
-                                            storedChildParent.add(currentChild);
-                                            currentChild.setParent(storedChildParent);
-
-                                            // Reduce the loop count by one since we moved a node from the root to a page node
-                                            i--;
-                                        }
-                                    } else {
-                                        // Update the label of the page node, so that the result count is correct
-                                        if (storedChildParent != null) {
-                                            messageArguments = new Object[]{
-                                                    String.valueOf(storedPageNumber + 1),
-                                                    storedResultCount, storedResultCount};
-                                            storedChildParent.setUserObject(
-                                                    new FindEntry(searchResultMessageForm.format(messageArguments),
-                                                            storedPageNumber));
-                                        }
-
-                                        // Reset the stored variables
-                                        storedPageNumber = newPageNumber;
-                                        storedResultCount = 1;
-
-                                        treeModel.removeNodeFromParent(currentChild);
-
-                                        // Create a new page node and move the current leaf to it
-                                        messageArguments = new Object[]{
-                                                String.valueOf(storedPageNumber + 1),
-                                                storedResultCount, storedResultCount};
-                                        storedChildParent = new DefaultMutableTreeNode(
-                                                new FindEntry(searchResultMessageForm.format(messageArguments),
-                                                        storedPageNumber),
-                                                true);
-                                        storedChildParent.add(currentChild);
-                                        currentChild.setParent(storedChildParent);
-
-                                        // Put the new page node into the overall tree
-                                        treeModel.insertNodeInto(storedChildParent, rootTreeNode, i);
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
-                            // Now add the children back into the tree, this time without parent nodes
-                            DefaultMutableTreeNode currentChild;
-                            int rootChildCount = rootTreeNode.getChildCount();
-
-                            // Loop through all children page nodes and explode the children out into leafs under the root node
-                            // Then we'll remove the parent nodes so we're just left with leafs under the root
-                            for (int i = 0; i < rootChildCount; i++) {
-                                currentChild = (DefaultMutableTreeNode) rootTreeNode.getChildAt(0);
-
-                                if (currentChild.getChildCount() > 0) {
-                                    // Get any subchildren and reinsert them as plain leafs on the root
-                                    // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent indexes
-                                    for (int j = 0; j < currentChild.getChildCount(); j++) {
-                                        treeModel.insertNodeInto(
-                                                new DefaultMutableTreeNode(
-                                                        ((DefaultMutableTreeNode) currentChild.getChildAt(j)).getUserObject(),
-                                                        false),
-                                                rootTreeNode, rootTreeNode.getChildCount());
-                                    }
-                                }
-                                treeModel.removeNodeFromParent(currentChild);
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        showPagesCheckbox.addActionListener(this);
 
         /**
          * Build search GUI
@@ -380,36 +284,34 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.insets = new Insets(5, 1, 1, 5);
         constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, caseSensitiveCheckbox, 0, 3, 2, 1);
-
+        // search configuration panel
+        JPanel searchConfigurationPanel = new JPanel(new GridBagLayout());
         // add whole word checkbox
+        addGB(searchConfigurationPanel, regexCheckbox, 0, 0, 1, 1);
+        // add whole word checkbox
+        addGB(searchConfigurationPanel, wholeWordCheckbox, 1, 0, 1, 1);
+        // case sensitivity
         constraints.insets = new Insets(1, 1, 1, 5);
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, wholeWordCheckbox, 0, 4, 2, 1);
-
+        addGB(searchConfigurationPanel, caseSensitiveCheckbox, 0, 1, 1, 1);
         // add cumulative checkbox
-        constraints.insets = new Insets(1, 1, 1, 5);
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, cumulativeCheckbox, 0, 5, 2, 1);
-
+        addGB(searchConfigurationPanel, cumulativeCheckbox, 1, 1, 1, 1);
         // add show pages checkbox
-        constraints.insets = new Insets(1, 1, 1, 5);
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, showPagesCheckbox, 0, 6, 2, 1);
+        addGB(searchConfigurationPanel, showPagesCheckbox, 0, 2, 2, 1);
+        addGB(searchPanel, searchConfigurationPanel, 0, 4, 2, 1);
 
         // Add Results label
         constraints.insets = new Insets(10, 5, 1, 5);
         constraints.fill = GridBagConstraints.NONE;
         addGB(searchPanel, new JLabel(messageBundle.getString(
                         "viewer.utilityPane.search.results.label")),
-                0, 7, 2, 1);
+                0, 5, 2, 1);
 
         // add the lit to scroll pane
         constraints.fill = GridBagConstraints.BOTH;
         constraints.insets = new Insets(1, 5, 1, 5);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(searchPanel, scrollPane, 0, 8, 2, 1);
+        addGB(searchPanel, scrollPane, 0, 6, 2, 1);
 
         // add find message
         constraints.insets = new Insets(1, 5, 1, 5);
@@ -417,12 +319,12 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         findMessage.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
-        addGB(searchPanel, findMessage, 0, 9, 2, 1);
+        addGB(searchPanel, findMessage, 0, 7, 2, 1);
 
         // add progress
         constraints.insets = new Insets(5, 5, 1, 5);
         constraints.fill = GridBagConstraints.HORIZONTAL;
-        addGB(searchPanel, progressBar, 0, 10, 2, 1);
+        addGB(searchPanel, progressBar, 0, 8, 2, 1);
     }
 
     public void setVisible(boolean flag) {
@@ -614,6 +516,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                         cumulativeCheckbox.isSelected(),
                         showPagesCheckbox.isSelected(),
                         false,
+                        regexCheckbox.isSelected(),
                         messageBundle);
                 isSearching = true;
 
@@ -647,6 +550,110 @@ public class SearchPanel extends JPanel implements ActionListener,
             // reset high light states.
             controller.getDocumentSearchController().clearAllSearchHighlight();
             controller.getDocumentViewController().getViewContainer().repaint();
+        } else if (source == regexCheckbox) {
+            wholeWordCheckbox.setEnabled(!regexCheckbox.isSelected());
+        } else if (source == wholeWordCheckbox) {
+            regexCheckbox.setEnabled(!wholeWordCheckbox.isSelected());
+        } else if (source == showPagesCheckbox) {
+            if (event.getSource() != null) {
+                // Determine if the user just selected or deselected the Show Pages checkbox
+                // If selected we'll want to combine all the leaf results into page nodes containing a series of results
+                // Otherwise we'll want to explode the parent/node page folders into basic leafs showing the results
+                if (((JCheckBox) event.getSource()).isSelected()) {
+                    if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
+                        DefaultMutableTreeNode currentChild; // the current node we're handling
+                        DefaultMutableTreeNode storedChildParent = null; // the newest page node we're adding to
+                        int newPageNumber; // page number of the current result node
+                        int storedPageNumber = -1; // the page number of the node we're adding to
+                        int storedResultCount = 0; // the count of results that are on the storedPageNumber
+                        Object[] messageArguments; // arguments used for formatting the labels
+
+                        // Loop through the results tree
+                        for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
+                            currentChild = (DefaultMutableTreeNode) rootTreeNode.getChildAt(i);
+
+                            // Ensure we have a FindEntry object
+                            if (currentChild.getUserObject() instanceof FindEntry) {
+                                newPageNumber = ((FindEntry) currentChild.getUserObject()).getPageNumber();
+
+                                // Check if the page number for the current node matches the stored number
+                                // If it does we will want to add the node to the existing page node,
+                                //  otherwise we'll want to create a new page node and start adding to that
+                                if (storedPageNumber == newPageNumber) {
+                                    storedResultCount++;
+
+                                    if (storedChildParent != null) {
+                                        // Remove the old parentless child from the tree
+                                        treeModel.removeNodeFromParent(currentChild);
+
+                                        // Add the child back to the new page node
+                                        storedChildParent.add(currentChild);
+                                        currentChild.setParent(storedChildParent);
+
+                                        // Reduce the loop count by one since we moved a node from the root to a page node
+                                        i--;
+                                    }
+                                } else {
+                                    // Update the label of the page node, so that the result count is correct
+                                    if (storedChildParent != null) {
+                                        messageArguments = new Object[]{
+                                                String.valueOf(storedPageNumber + 1),
+                                                storedResultCount, storedResultCount};
+                                        storedChildParent.setUserObject(
+                                                new FindEntry(searchResultMessageForm.format(messageArguments),
+                                                        storedPageNumber));
+                                    }
+
+                                    // Reset the stored variables
+                                    storedPageNumber = newPageNumber;
+                                    storedResultCount = 1;
+
+                                    treeModel.removeNodeFromParent(currentChild);
+
+                                    // Create a new page node and move the current leaf to it
+                                    messageArguments = new Object[]{
+                                            String.valueOf(storedPageNumber + 1),
+                                            storedResultCount, storedResultCount};
+                                    storedChildParent = new DefaultMutableTreeNode(
+                                            new FindEntry(searchResultMessageForm.format(messageArguments),
+                                                    storedPageNumber),
+                                            true);
+                                    storedChildParent.add(currentChild);
+                                    currentChild.setParent(storedChildParent);
+
+                                    // Put the new page node into the overall tree
+                                    treeModel.insertNodeInto(storedChildParent, rootTreeNode, i);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if ((rootTreeNode != null) && (rootTreeNode.getChildCount() > 0)) {
+                        // Now add the children back into the tree, this time without parent nodes
+                        DefaultMutableTreeNode currentChild;
+                        int rootChildCount = rootTreeNode.getChildCount();
+
+                        // Loop through all children page nodes and explode the children out into leafs under the root node
+                        // Then we'll remove the parent nodes so we're just left with leafs under the root
+                        for (int i = 0; i < rootChildCount; i++) {
+                            currentChild = (DefaultMutableTreeNode) rootTreeNode.getChildAt(0);
+
+                            if (currentChild.getChildCount() > 0) {
+                                // Get any subchildren and reinsert them as plain leafs on the root
+                                // We need to wrap the user object in a new mutable tree node to stop any conflicts with parent indexes
+                                for (int j = 0; j < currentChild.getChildCount(); j++) {
+                                    treeModel.insertNodeInto(
+                                            new DefaultMutableTreeNode(
+                                                    ((DefaultMutableTreeNode) currentChild.getChildAt(j)).getUserObject(),
+                                                    false),
+                                            rootTreeNode, rootTreeNode.getChildCount());
+                                }
+                            }
+                            treeModel.removeNodeFromParent(currentChild);
+                        }
+                    }
+                }
+            }
         }
     }
 
