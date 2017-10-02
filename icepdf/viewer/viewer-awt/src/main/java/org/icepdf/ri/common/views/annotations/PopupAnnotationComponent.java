@@ -76,9 +76,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     public static Color borderColor = new Color(153, 153, 153);
 
     public static boolean PRIVATE_PROPERTY_ENABLED;
+
     static {
         PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
-                "org.icepdf.core.views.page.annotation.privateProperty.enabled", false);
+                "org.icepdf.core.page.annotation.privateProperty.enabled", false);
     }
 
 
@@ -95,6 +96,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     protected JTree commentTree;
     protected JScrollPane commentTreeScrollPane;
     protected MarkupAnnotation selectedMarkupAnnotation;
+
+    private String userName = System.getProperty("user.name");
 
 
     public PopupAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
@@ -293,8 +296,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         constraints.fill = GridBagConstraints.REMAINDER;
         constraints.weightx = 0;
         constraints.insets = new Insets(1, 1, 1, 1);
+        // user that created the comment is the only one that can actually make it private.
         if (PRIVATE_PROPERTY_ENABLED) {
-            addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
+            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+            if (markupAnnotation != null && userName.equals(markupAnnotation.getTitleText())) {
+                addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
+            }
         }
         constraints.insets = new Insets(1, 1, 1, 5);
         addGB(commentPanel, minimizeButton, 3, 0, 1, 1);

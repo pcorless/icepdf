@@ -19,6 +19,7 @@ import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -77,6 +78,7 @@ public class Page extends Dictionary {
 
     // text selection colour
     public static Color selectionColor;
+    public static boolean PRIVATE_PROPERTY_ENABLED;
 
     static {
         // sets the shadow colour of the decorator.
@@ -92,6 +94,9 @@ public class Page extends Dictionary {
                 logger.warning("Error reading text selection colour");
             }
         }
+
+        PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
+                "org.icepdf.core.page.annotation.privateProperty.enabled", false);
     }
 
     // text highlight colour
@@ -182,6 +187,8 @@ public class Page extends Dictionary {
 
     // page has default rotation value
     private float pageRotation = 0;
+
+    private String userName = System.getProperty("user.name");
 
     private int pageIndex;
     private int imageCount;
@@ -305,6 +312,7 @@ public class Page extends Dictionary {
                 else if (annotObj instanceof HashMap) { // HashMap lacks "Type"->"Annot" entry
                     a = Annotation.buildAnnotation(library, (HashMap) annotObj);
                 }
+
                 // set the object reference, so we can save the state correct
                 // and update any references accordingly.
                 try {
@@ -314,8 +322,24 @@ public class Page extends Dictionary {
                         a.setPObjectReference(ref);
                         a.init();
                     }
-                    // add any found annotations to the vector.
-                    annotations.add(a);
+                    if (PRIVATE_PROPERTY_ENABLED && a.getFlagPrivateContents()) {
+                        // check to make sure we don't show n annotation if the username doesn't match the creator
+                        if (a instanceof MarkupAnnotation) {
+                            MarkupAnnotation markupAnnotation = (MarkupAnnotation) a;
+                            String creator = markupAnnotation.getTitleText();
+                            if (creator.equals(userName)) {
+                                annotations.add(a);
+                            } else {
+                                // other wise we skip it all together but make sure the popup is hidden.
+                                if (markupAnnotation.getPopupAnnotation() != null) {
+                                    markupAnnotation.getPopupAnnotation().setOpen(false);
+                                }
+                            }
+                        }
+                    } else {
+                        // add any found annotations to the vector.
+                        annotations.add(a);
+                    }
                 } catch (IllegalStateException e) {
                     logger.warning("Malformed annotation could not be initialized. " +
                             a != null ? " " + a.getPObjectReference() + a.getEntries() : "");
@@ -403,7 +427,7 @@ public class Page extends Dictionary {
                     // from the same thread.
                     inited = true;
 
-                }catch(InterruptedException e){
+                } catch (InterruptedException e) {
                     throw new InterruptedException(e.getMessage());
                 } catch (Exception e) {
                     shapes = new Shapes();
@@ -579,7 +603,7 @@ public class Page extends Dictionary {
      *                             for search terms.
      */
     public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom,
-                                 boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException  {
+                                 boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
         if (!inited) {
             init();
         }
@@ -709,7 +733,7 @@ public class Page extends Dictionary {
         return at;
     }
 
-    public static AffineTransform getPageRotation(AffineTransform at, double totalRotation, float width, float height){
+    public static AffineTransform getPageRotation(AffineTransform at, double totalRotation, float width, float height) {
         if (totalRotation == 0) {
             // do nothing
         } else if (totalRotation == 90) {
