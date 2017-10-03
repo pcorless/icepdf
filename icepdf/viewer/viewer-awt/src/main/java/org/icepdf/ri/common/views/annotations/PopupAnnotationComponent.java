@@ -88,6 +88,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     // layouts constraint
     private GridBagConstraints constraints;
 
+    protected Color popupBackgroundColor;
+
     protected JPanel commentPanel;
     protected JTextArea textArea;
     protected JLabel creationLabel;
@@ -98,7 +100,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     protected MarkupAnnotation selectedMarkupAnnotation;
 
     private String userName = System.getProperty("user.name");
-
 
     public PopupAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
@@ -150,6 +151,16 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     }
 
     @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        // borderColor
+        g.setColor(popupBackgroundColor);
+        g.fillRect(0, 0, getWidth(), getHeight());
+        g.setColor(borderColor);
+        g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
+    }
+
+    @Override
     public void setVisible(boolean aFlag) {
         super.setVisible(aFlag);
         // do a quick check to make sure the popup will be big enough to be visible
@@ -161,7 +172,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         if (selectedMarkupAnnotation != null) {
             popupAnnotation.setOpen(aFlag);
         }
-
+        if (getParent() != null) getParent().repaint();
     }
 
     @Override
@@ -211,7 +222,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         selectedMarkupAnnotation = parentAnnotation;
 
         // try and make the popup the same colour as the annotations fill color
-        Color popupBackgroundColor = backgroundColor;
+        popupBackgroundColor = backgroundColor;
         if (parentAnnotation != null && parentAnnotation.getColor() != null) {
             popupBackgroundColor = checkColor(parentAnnotation.getColor());
         }
@@ -268,21 +279,26 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         GridBagLayout layout = new GridBagLayout();
         commentPanel = new JPanel(layout);
         commentPanel.setBackground(popupBackgroundColor);
-        commentPanel.setBorder(BorderFactory.createLineBorder(borderColor));
-        this.setLayout(new BorderLayout());
-        this.add(commentPanel, BorderLayout.CENTER);
-        this.setBackground(Color.RED);
-
+//        commentPanel.setBorder(BorderFactory.createLineBorder(borderColor));
+        this.setLayout(new GridBagLayout());
         /**
          * Build search GUI
          */
         constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.insets = new Insets(0, 0, 0, 0);
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        addGB(this, commentPanel, 0, 0, 1, 1);
+        /**
+         * Build search GUI
+         */
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
         constraints.weighty = 0;
         constraints.anchor = GridBagConstraints.NORTH;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(1, 5, 1, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
 
         // currently selected title
         constraints.fill = GridBagConstraints.EAST;
@@ -303,20 +319,20 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
                 addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
             }
         }
-        constraints.insets = new Insets(1, 1, 1, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
         addGB(commentPanel, minimizeButton, 3, 0, 1, 1);
         constraints.insets = new Insets(1, 5, 1, 5);
 
         // add comment tree if there are any IRT's
         constraints.fill = GridBagConstraints.BOTH;
-        constraints.insets = new Insets(1, 5, 1, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
         constraints.weightx = 1.0;
         constraints.weighty = .6;
         commentTreeScrollPane.setVisible(isIRT);
         addGB(commentPanel, commentTreeScrollPane, 0, 1, 4, 1);
 
         // creation date of selected comment
-        constraints.insets = new Insets(1, 5, 1, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
         constraints.weightx = 1.0;
         constraints.weighty = 0;
         constraints.fill = GridBagConstraints.EAST;
@@ -326,7 +342,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         // add the text area
         constraints.fill = GridBagConstraints.BOTH;
-        constraints.insets = new Insets(1, 5, 5, 5);
+        constraints.insets = new Insets(1, 1, 1, 1);
         constraints.weightx = 1.0;
         constraints.weighty = .4;
         addGB(commentPanel, textArea, 0, 3, 4, 1);
@@ -605,7 +621,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
      * @param rowSpan   rowspane of field
      * @param colSpan   colspane of field.
      */
-    private void addGB(JPanel panel, Component component,
+    private void addGB(JComponent panel, Component component,
                        int x, int y,
                        int rowSpan, int colSpan) {
         constraints.gridx = x;

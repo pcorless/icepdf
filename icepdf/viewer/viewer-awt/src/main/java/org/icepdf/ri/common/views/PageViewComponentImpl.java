@@ -11,9 +11,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.tools.*;
-import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
-import org.icepdf.ri.common.views.annotations.AnnotationComponentFactory;
-import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.common.views.annotations.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -361,11 +359,15 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void addAnnotation(AnnotationComponent annotation) {
         // delegate to handler.
         if (annotationComponents == null) {
-            annotationComponents = new ArrayList<AbstractAnnotationComponent>();
+            annotationComponents = new ArrayList<>();
         }
         annotationComponents.add((AbstractAnnotationComponent) annotation);
         if (annotation instanceof PopupAnnotationComponent) {
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
+        } else if (annotation instanceof MarkupAnnotationComponent) {
+            this.add(new MarkupGlueComponent((MarkupAnnotationComponent) annotation),
+                    JLayeredPane.PALETTE_LAYER);
+            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.DEFAULT_LAYER);
         } else {
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.DEFAULT_LAYER);
         }
@@ -418,6 +420,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                                     // add to layout
                                     if (comp instanceof PopupAnnotationComponent) {
                                         parent.add(comp, JLayeredPane.POPUP_LAYER);
+                                    } else if (comp instanceof MarkupAnnotationComponent) {
+                                        parent.add(new MarkupGlueComponent((MarkupAnnotationComponent) comp),
+                                                JLayeredPane.PALETTE_LAYER);
+                                        parent.add(comp, JLayeredPane.DEFAULT_LAYER);
                                     } else {
                                         parent.add(comp, JLayeredPane.DEFAULT_LAYER);
                                     }
