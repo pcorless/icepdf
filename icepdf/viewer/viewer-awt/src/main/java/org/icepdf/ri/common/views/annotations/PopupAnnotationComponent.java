@@ -759,6 +759,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
         if (parentAnnotation.getColor() != null) {
             Color color = checkColor(parentAnnotation.getColor());
+            popupBackgroundColor = color;
             minimizeButton.setBackground(color);
             privateToggleButton.setBackground(color);
             commentPanel.setBackground(color);
