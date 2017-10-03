@@ -159,16 +159,17 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
         // add, edit remove controls.
         constraints.insets = new Insets(5, 5, 5, 1);
         constraints.fill = GridBagConstraints.NONE;
-        constraints.weightx = 0;
-        constraints.weighty = 0;
+        constraints.weightx = 0.01;
+        constraints.weighty = 1.0;
         addGB(panel, colorButton, 0, 1, 1, 1);
 
+        constraints.fill = GridBagConstraints.NONE;
         constraints.insets = new Insets(5, 1, 5, 1);
-        constraints.weightx = 1;
+        constraints.weightx = 1.0;
         constraints.fill = GridBagConstraints.BOTH;
         addGB(panel, colorLabelTextField, 1, 1, 1, 1);
 
-        constraints.weightx = 0;
+        constraints.weightx = 0.01;
         constraints.fill = GridBagConstraints.NONE;
         addGB(panel, addNamedColorButton, 2, 1, 1, 1);
         addGB(panel, updateNamedColorButton, 3, 1, 1, 1);
@@ -217,6 +218,8 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
             colorLabelTextField.setText("");
         } else if (source == updateNamedColorButton) {
             dragDropColorList.updateNamedColor(colorButton.getBackground(), colorLabelTextField.getText());
+            // deselect the list, so that add is more easily selected
+            dragDropColorList.clearSelection();
         } else if (source == removeNamedColorButton) {
             dragDropColorList.removeSelectedNamedColor();
         }
