@@ -25,6 +25,7 @@ import org.icepdf.ri.common.SwingController;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -230,7 +231,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
         // if we have a hit we'll add it to the model cache
         if (hitCount > 0) {
-            searchModel.addPageSearchHit(pageIndex, pageText);
+            searchModel.addPageSearchHit(pageIndex, pageText, hitCount);
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Found search hits on page " + pageIndex +
                         " hit count " + hitCount);
@@ -383,7 +384,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
         // if we have a hit we'll add it to the model cache
         if (searchHits.size() > 0) {
-            searchModel.addPageSearchHit(pageIndex, pageText);
+            searchModel.addPageSearchHit(pageIndex, pageText, searchHits.size());
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Found search hits on page " + pageIndex +
                         " hit count " + searchHits.size());
@@ -425,6 +426,128 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             }
         }
         return null;
+    }
+
+    @Override
+    public WordText nextSearchHit() {
+        int searchPageCursor = searchModel.getSearchPageCursor();
+        int searchLineCursor = searchModel.getSearchLineCursor();
+        int searchWordCursor = searchModel.getSearchWordCursor();
+        int pageCount = viewerController.getDocument().getNumberOfPages();
+
+        if (searchPageCursor < pageCount) {
+            WordText word;
+            // move to the next hit, start at -1 after a search clear
+            searchWordCursor++;
+            for (int i = searchPageCursor; i < pageCount; i++) {
+                if (searchModel.isPageSearchHit(i)) {
+                    if (searchModel.getPageTextHit(i) == null) {
+                        searchHighlightPage(i);
+                    }
+                    PageText pageText = searchModel.getPageTextHit(i);
+                    if (pageText != null) {
+                        pageText.clearHighlightedCursor();
+                        ArrayList<LineText> pageLines = pageText.getPageLines();
+                        for (int k = searchLineCursor, maxk = pageLines.size(); k < maxk; k++) {
+                            LineText lineText = pageLines.get(k);
+                            List<WordText> words = lineText.getWords();
+                            for (int j = searchWordCursor, maxj = words.size(); j < maxj; j++) {
+                                word = words.get(j);
+                                if (word.isHighlighted()) {
+                                    word.setHighlightCursor(true);
+                                    searchModel.setSearchPageCursor(i);
+                                    searchModel.setSearchLineCursor(k);
+                                    searchModel.setSearchWordCursor(j);
+                                    showWord(i, word);
+                                    return word;
+                                }
+                            }
+                            searchWordCursor = 0;
+                        }
+                        searchLineCursor = 0;
+                    }
+                }
+            }
+            // if no more highlights left we go to the firs page.
+            searchModel.setSearchPageCursor(0);
+            searchModel.setSearchLineCursor(0);
+            searchModel.setSearchWordCursor(-1);
+            return nextSearchHit();
+        }
+        return null;
+    }
+
+    /**
+     * Navigate tot he page that the current word is on.
+     *
+     * @param pageNumber page number to navigate to
+     * @param word       word that has been marked as a cursor.
+     */
+    private void showWord(int pageNumber, WordText word) {
+        viewerController.showPage(pageNumber);
+        // todo shift page as needed to line with word.
+        // Rectangle2D rect = word.getBounds();
+    }
+
+    @Override
+    public WordText previousSearchHit() {
+        int searchPageCursor = searchModel.getSearchPageCursor();
+        int searchLineCursor = searchModel.getSearchLineCursor();
+        int searchWordCursor = searchModel.getSearchWordCursor();
+        int pageCount = viewerController.getDocument().getNumberOfPages();
+
+        if (searchPageCursor < pageCount) {
+            WordText word;
+            // move to the next hit, start at -1 after a search clear
+            searchWordCursor--;
+            for (int i = searchPageCursor; i >= 0; i--) {
+                if (searchModel.isPageSearchHit(i)) {
+                    if (searchModel.getPageTextHit(i) == null) {
+                        searchHighlightPage(i);
+                    }
+                    PageText pageText = searchModel.getPageTextHit(i);
+                    if (pageText != null) {
+                        pageText.clearHighlightedCursor();
+                        ArrayList<LineText> pageLines = pageText.getPageLines();
+                        if (pageLines.size() > 0) {
+                            if (searchWordCursor < 0) searchLineCursor--;
+                            if (searchLineCursor < 0) searchLineCursor = pageLines.size() - 1;
+                            for (int k = searchLineCursor; k >= 0; k--) {
+                                LineText lineText = pageLines.get(k);
+                                List<WordText> words = lineText.getWords();
+                                if (searchWordCursor < 0) searchWordCursor = words.size() - 1;
+                                for (int j = searchWordCursor; j >= 0; j--) {
+                                    word = words.get(j);
+                                    if (word.isHighlighted()) {
+                                        word.setHighlightCursor(true);
+                                        searchModel.setSearchPageCursor(i);
+                                        searchModel.setSearchLineCursor(k);
+                                        searchModel.setSearchWordCursor(j);
+                                        showWord(i, word);
+                                        return word;
+                                    }
+                                }
+                                searchWordCursor = -1;
+                            }
+                        }
+                        searchLineCursor = -1;
+                    }
+                }
+            }
+            // if no more highlights left we go to the last page.
+            searchModel.setSearchPageCursor(pageCount - 1);
+            searchModel.setSearchLineCursor(-1);
+            searchModel.setSearchWordCursor(-1);
+            return previousSearchHit();
+        }
+        return null;
+    }
+
+    @Override
+    public void setCurrentPage(int page) {
+        searchModel.setSearchPageCursor(page);
+        searchModel.setSearchLineCursor(0);
+        searchModel.setSearchWordCursor(-1);
     }
 
     /**
@@ -524,12 +647,13 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     protected PageText getPageText(int pageIndex) {
         PageText pageText = null;
+        if (document == null) document = viewerController.getDocument();
         try {
             if (viewerController != null) {
                 // get access to currently open document instance.
-                pageText = viewerController.getDocument().getPageViewText(pageIndex);
+                pageText = viewerController.getDocument().getPageText(pageIndex);
             } else if (document != null) {
-                pageText = document.getPageViewText(pageIndex);
+                pageText = document.getPageText(pageIndex);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

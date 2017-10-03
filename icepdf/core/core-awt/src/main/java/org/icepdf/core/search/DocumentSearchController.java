@@ -98,6 +98,32 @@ public interface DocumentSearchController {
     ArrayList<WordText> searchPage(int pageIndex);
 
     /**
+     * Sets the search hit cursor to  a particular page to aid in large page jumps when other
+     * navigation controls are used to navigate around the document.
+     *
+     * @param page page number.
+     */
+    void setCurrentPage(int page);
+
+    /**
+     * Gets the next word that is marked as hit.  The word's highlightCursor flag is also set
+     * allowing it to be painted differently then regular highlight flagged text.  If the last
+     * page and word hit of the document is reached then the first page will be displayed next.
+     *
+     * @return next search hit work if any, otherwise null.
+     */
+    WordText nextSearchHit();
+
+    /**
+     * Gets the previous word that is marked as hit.  The word's highlightCursor flag is also set
+     * allowing it to be painted differently then regular highlight flagged text.  If the first
+     * page and word hit of the document is reached then the last page will be displayed next.
+     *
+     * @return next search hit work if any, otherwise null.
+     */
+    WordText previousSearchHit();
+
+    /**
      * Add the search term to the list of search terms.  The term is split
      * into words based on white space and punctuation. No checks are done
      * for duplication.

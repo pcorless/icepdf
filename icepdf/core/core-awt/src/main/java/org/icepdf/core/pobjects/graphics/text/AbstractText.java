@@ -45,11 +45,14 @@ public abstract class AbstractText implements Text {
     protected boolean selected;
     // highlight state
     protected boolean highlight;
+    protected boolean highlightCursor;
 
     // highlight hint for quicker painting
     protected boolean hasSelected;
     // highlight hint for quicker painting
     protected boolean hasHighlight;
+    // highlight cursor hint for quicker painting
+    protected boolean hasHighlightCursor;
 
     /**
      * Gets the bounds of the respective text object normalized to page
@@ -171,6 +174,22 @@ public abstract class AbstractText implements Text {
      */
     public void setHasSelected(boolean hasSelected) {
         this.hasSelected = hasSelected;
+    }
+
+    public boolean isHighlightCursor() {
+        return highlightCursor;
+    }
+
+    public void setHighlightCursor(boolean highlightCursor) {
+        this.highlightCursor = highlightCursor;
+    }
+
+    public boolean hasHighlightCursor() {
+        return hasHighlightCursor;
+    }
+
+    public void setHasHighlightCursor(boolean hasHighlightCursor) {
+        this.hasHighlightCursor = hasHighlightCursor;
     }
 
     /**

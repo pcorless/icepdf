@@ -22,13 +22,15 @@ package org.icepdf.core.pobjects.graphics.text;
  */
 public interface TextSelect {
 
-    public void clearSelected();
+    void clearSelected();
 
-    public StringBuilder getSelected();
+    StringBuilder getSelected();
 
-    public void clearHighlighted();
+    void clearHighlighted();
 
-    public void selectAll();
+    void clearHighlightedCursor();
+
+    void selectAll();
 //
 //    public void deselectAll();
 //

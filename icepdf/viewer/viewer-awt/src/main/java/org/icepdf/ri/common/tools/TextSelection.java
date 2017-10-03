@@ -355,7 +355,11 @@ public class TextSelection extends SelectionBoxHandler {
                                     gg.fill(textPath);
                                 }
                                 if (wordText.isHighlighted()) {
-                                    gg.setColor(Page.highlightColor);
+                                    if (wordText.isHighlightCursor()) {
+                                        gg.setColor(Page.highlightCursorColor);
+                                    } else {
+                                        gg.setColor(Page.highlightColor);
+                                    }
                                     gg.fill(textPath);
                                 }
                             }

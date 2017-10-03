@@ -76,9 +76,11 @@ public class Page extends Dictionary {
      */
     public static final float SELECTION_ALPHA = 0.3f;
 
+    public static boolean PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
+            "org.icepdf.core.page.annotation.privateProperty.enabled", false);
+
     // text selection colour
     public static Color selectionColor;
-    public static boolean PRIVATE_PROPERTY_ENABLED;
 
     static {
         // sets the shadow colour of the decorator.
@@ -88,15 +90,12 @@ public class Page extends Dictionary {
             int colorValue = ColorUtil.convertColor(color);
             selectionColor =
                     new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("99c1da", 16));
+                            Integer.parseInt("0077FF", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text selection colour");
             }
         }
-
-        PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
-                "org.icepdf.core.page.annotation.privateProperty.enabled", false);
     }
 
     // text highlight colour
@@ -110,10 +109,29 @@ public class Page extends Dictionary {
             int colorValue = ColorUtil.convertColor(color);
             highlightColor =
                     new Color(colorValue >= 0 ? colorValue :
-                            Integer.parseInt("ff99ff", 16));
+                            Integer.parseInt("CC00FF", 16));
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text highlight colour");
+            }
+        }
+    }
+
+    // text highlight cursor colour
+    public static Color highlightCursorColor;
+
+    static {
+        // sets the shadow colour of the decorator.
+        try {
+            String color = Defs.sysProperty(
+                    "org.icepdf.core.views.page.text.highlightCursorColor", "#FF6600");
+            int colorValue = ColorUtil.convertColor(color);
+            highlightCursorColor =
+                    new Color(colorValue >= 0 ? colorValue :
+                            Integer.parseInt("FF6600", 16));
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text highlight cursor colour");
             }
         }
     }

@@ -303,6 +303,29 @@ public class PageText implements TextSelect {
         }
     }
 
+    public void clearHighlightedCursor() {
+        for (LineText lineText : pageLines) {
+            lineText.clearHighlightedCursor();
+        }
+        for (LineText lineText : sortedPageLines) {
+            lineText.clearHighlightedCursor();
+        }
+        // check optional content.
+        if (optionalPageLines != null) {
+            // iterate over optional content keys and extract text from visible groups
+            Set<OptionalContents> keys = optionalPageLines.keySet();
+            ArrayList<LineText> optionalLines;
+            for (OptionalContents key : keys) {
+                if (key != null && key.isVisible()) {
+                    optionalLines = optionalPageLines.get(key).getAllPageLines();
+                    for (LineText lineText : optionalLines) {
+                        lineText.clearHighlightedCursor();
+                    }
+                }
+            }
+        }
+    }
+
     public StringBuilder getSelected() {
         StringBuilder selectedText = new StringBuilder();
         ArrayList<LineText> pageLines = getPageLines();

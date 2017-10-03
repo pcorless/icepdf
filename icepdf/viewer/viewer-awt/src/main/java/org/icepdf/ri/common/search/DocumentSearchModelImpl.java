@@ -50,6 +50,11 @@ public class DocumentSearchModelImpl {
     // you never know.
     private ArrayList<SearchTerm> searchTerms;
 
+    //cursor for next/previous word
+    private int searchPageCursor = -1;
+    private int searchLineCursor = -1;
+    private int searchWordCursor = -1;
+
     /**
      * Creates a new instance with empty search terms and search result caches.
      */
@@ -92,9 +97,16 @@ public class DocumentSearchModelImpl {
      *
      * @param pageIndex page index of search hit(s)
      * @param pageText  PageText for the given page index.
+     * @param hits search results hit count, used to setup word search cursor.
      */
-    public void addPageSearchHit(int pageIndex, PageText pageText) {
-        searchResultCache.put(pageIndex, new WeakReference<PageText>(pageText));
+    public void addPageSearchHit(int pageIndex, PageText pageText, int hits) {
+        // mark the first page a hit show up on, this is our starting position
+        if (searchPageCursor == -1) {
+            searchPageCursor = pageIndex;
+            searchLineCursor = 0;
+            searchWordCursor = -1;
+        }
+        searchResultCache.put(pageIndex, new WeakReference<>(pageText));
     }
 
     /**
@@ -120,7 +132,7 @@ public class DocumentSearchModelImpl {
 
     public PageText getPageTextHit(int pageIndex) {
         WeakReference<PageText> ref = searchResultCache.get(pageIndex);
-        if (ref.get() != null) {
+        if (ref != null && ref.get() != null) {
             return ref.get();
         } else {
             return null;
@@ -177,6 +189,11 @@ public class DocumentSearchModelImpl {
      */
     public void clearSearchResults() {
 
+        //cursor for next/previous word
+        searchPageCursor = -1;
+        searchLineCursor = -1;
+        searchWordCursor = -1;
+
         // reset highlights
         // get list of searched results and clear pages.
         Collection<WeakReference<PageText>> pagTextHits = searchResultCache.values();
@@ -190,5 +207,29 @@ public class DocumentSearchModelImpl {
         // clear caches.
         searchResultCache.clear();
         searchTerms.clear();
+    }
+
+    public int getSearchPageCursor() {
+        return searchPageCursor;
+    }
+
+    public void setSearchPageCursor(int searchPageCursor) {
+        this.searchPageCursor = searchPageCursor;
+    }
+
+    public int getSearchWordCursor() {
+        return searchWordCursor;
+    }
+
+    public void setSearchWordCursor(int searchWordCursor) {
+        this.searchWordCursor = searchWordCursor;
+    }
+
+    public int getSearchLineCursor() {
+        return searchLineCursor;
+    }
+
+    public void setSearchLineCursor(int searchLineCursor) {
+        this.searchLineCursor = searchLineCursor;
     }
 }

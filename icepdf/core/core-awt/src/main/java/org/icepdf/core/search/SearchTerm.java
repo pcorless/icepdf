@@ -110,7 +110,7 @@ public class SearchTerm {
     public Pattern getRegexPattern() {
         if (searchPattern != null) return searchPattern;
         if (regex && term != null && !term.isEmpty()) {
-            searchPattern = Pattern.compile(term, caseSensitive ? Pattern.CASE_INSENSITIVE : 0);
+            searchPattern = Pattern.compile(term, !caseSensitive ? Pattern.CASE_INSENSITIVE : 0);
         }
         return searchPattern;
     }

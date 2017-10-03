@@ -72,8 +72,12 @@ public class KeyEventConstants {
     public static final int KEY_CODE_LAST_PAGE = KeyEvent.VK_DOWN;
     public static final int MODIFIER_LAST_PAGE = MENU_SHORTCUT_KEY_MASK;
 
-    public static final int KEY_CODE_SEARCH = KeyEvent.VK_S;
+    public static final int KEY_CODE_SEARCH = KeyEvent.VK_F;
     public static final int MODIFIER_SEARCH = MENU_SHORTCUT_KEY_MASK;
+    public static final int KEY_CODE_SEARCH_NEXT = KeyEvent.VK_F3;
+    public static final int MODIFIER_SEARCH_NEXT = 0;
+    public static final int KEY_CODE_SEARCH_PREVIOUS = KeyEvent.VK_F3;
+    public static final int MODIFIER_SEARCH_PREVIOUS = InputEvent.SHIFT_MASK;
     public static final int KEY_CODE_GOTO = KeyEvent.VK_N;
     public static final int MODIFIER_GOTO = MENU_SHORTCUT_KEY_MASK;
 

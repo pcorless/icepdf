@@ -368,6 +368,8 @@ public class SearchPanel extends JPanel implements ActionListener,
                     try {
                         controller.setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
                         controller.showPage(tmp.getPageNumber());
+                        // move the cursor so we can easily show hits on the page with f3
+                        controller.getDocumentSearchController().setCurrentPage(tmp.getPageNumber());
                     } finally {
                         controller.setDisplayTool(oldTool);
                     }

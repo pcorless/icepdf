@@ -902,6 +902,9 @@ public class SwingViewBuilder {
         addToMenu(documentMenu, buildLastPageMenuItem());
         documentMenu.addSeparator();
         addToMenu(documentMenu, buildSearchMenuItem());
+        addToMenu(documentMenu, buildSearchNextMenuItem());
+        addToMenu(documentMenu, buildSearchPreviousMenuItem());
+        documentMenu.addSeparator();
         addToMenu(documentMenu, buildGoToPageMenuItem());
         return documentMenu;
     }
@@ -952,6 +955,24 @@ public class SwingViewBuilder {
                 buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH, KeyEventConstants.MODIFIER_SEARCH));
         if (viewerController != null && mi != null)
             viewerController.setSearchMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildSearchNextMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.document.search.next.label"),
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH_NEXT, KeyEventConstants.MODIFIER_SEARCH_NEXT));
+        if (viewerController != null && mi != null)
+            viewerController.setSearchNextMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildSearchPreviousMenuItem() {
+        JMenuItem mi = makeMenuItem(
+                messageBundle.getString("viewer.menu.document.search.previous.label"),
+                buildKeyStroke(KeyEventConstants.KEY_CODE_SEARCH_PREVIOUS, KeyEventConstants.MODIFIER_SEARCH_PREVIOUS));
+        if (viewerController != null && mi != null)
+            viewerController.setSearchPreviousMenuItem(mi);
         return mi;
     }
 

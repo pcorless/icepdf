@@ -154,6 +154,8 @@ public class SwingController
     private JMenuItem nextPageMenuItem;
     private JMenuItem lastPageMenuItem;
     private JMenuItem searchMenuItem;
+    private JMenuItem searchNextMenuItem;
+    private JMenuItem searchPreviousMenuItem;
     private JMenuItem goToPageMenuItem;
     private JMenuItem minimiseAllMenuItem;
     private JMenuItem bringAllToFrontMenuItem;
@@ -626,6 +628,22 @@ public class SwingController
      */
     public void setSearchMenuItem(JMenuItem mi) {
         searchMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setSearchNextMenuItem(JMenuItem mi) {
+        searchNextMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
+    /**
+     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     */
+    public void setSearchPreviousMenuItem(JMenuItem mi) {
+        searchPreviousMenuItem = mi;
         mi.addActionListener(this);
     }
 
@@ -1285,6 +1303,8 @@ public class SwingController
         }
         setEnabled(showHideUtilityPaneMenuItem, opened && utilityTabbedPane != null);
         setEnabled(searchMenuItem, opened && searchPanel != null && !pdfCollection);
+        setEnabled(searchNextMenuItem, opened && searchPanel != null && !pdfCollection);
+        setEnabled(searchPreviousMenuItem, opened && searchPanel != null && !pdfCollection);
         setEnabled(goToPageMenuItem, opened && nPages > 1 && !pdfCollection);
 
         setEnabled(saveAsFileButton, opened);
@@ -2775,6 +2795,8 @@ public class SwingController
         nextPageMenuItem = null;
         lastPageMenuItem = null;
         searchMenuItem = null;
+        searchNextMenuItem = null;
+        searchPreviousMenuItem = null;
         goToPageMenuItem = null;
 
         minimiseAllMenuItem = null;
@@ -3933,6 +3955,18 @@ public class SwingController
         }
     }
 
+    public void nextSearchResult() {
+        if (documentSearchController != null) {
+            documentSearchController.nextSearchHit();
+        }
+    }
+
+    public void previousSearchResult() {
+        if (documentSearchController != null) {
+            documentSearchController.previousSearchHit();
+        }
+    }
+
     /**
      * Make the Annotation Link Panel visible, and if necessary, the utility pane that encloses it
      *
@@ -4300,6 +4334,10 @@ public class SwingController
                     } else if (source == searchMenuItem || source == searchButton) {
                         cancelSetFocus = true;
                         showSearchPanel();
+                    } else if (source == searchNextMenuItem) {
+                        nextSearchResult();
+                    } else if (source == searchPreviousMenuItem) {
+                        previousSearchResult();
                     } else if (source == goToPageMenuItem) {
                         showPageSelectionDialog();
                     } else if (source == currentPageNumberTextField) {

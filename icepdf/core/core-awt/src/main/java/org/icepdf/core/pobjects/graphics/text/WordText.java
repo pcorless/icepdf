@@ -331,6 +331,14 @@ public class WordText extends AbstractText implements TextSelect {
         }
     }
 
+    public void clearHighlightedCursor() {
+        setHasHighlightCursor(false);
+        setHighlightCursor(false);
+        for (GlyphText glyph : glyphs) {
+            glyph.setHasHighlightCursor(false);
+        }
+    }
+
     public void selectAll() {
         setSelected(true);
         setHasSelected(true);

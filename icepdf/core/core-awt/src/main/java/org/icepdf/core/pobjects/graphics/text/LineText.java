@@ -196,6 +196,14 @@ public class LineText extends AbstractText implements TextSelect {
         }
     }
 
+    public void clearHighlightedCursor() {
+        setHasHighlightCursor(false);
+        setHighlightCursor(false);
+        for (WordText word : words) {
+            word.setHighlightCursor(false);
+        }
+    }
+
     /**
      * Interates over child elements getting the selected text as defined by
      * the child glyphs unicode value. Line breaks and spaces are preserved
