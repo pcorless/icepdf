@@ -558,8 +558,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                         setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
-
-                case Cursor.MOVE_CURSOR:
+                default:
                     if (isMovable) {
                         Rectangle bounds = getBounds();
                         bounds.translate(dx, dy);
@@ -568,6 +567,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                         setCursor(Cursor.getPredefinedCursor(cursor));
                     }
                     break;
+
             }
             validate();
         }

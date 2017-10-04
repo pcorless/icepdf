@@ -40,6 +40,10 @@ public class MarkupGlueComponent extends JComponent {
         setSize(new Dimension(bound.width, bound.height));
     }
 
+    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
+        return markupAnnotationComponent;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);

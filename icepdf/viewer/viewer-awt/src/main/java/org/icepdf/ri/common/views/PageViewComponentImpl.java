@@ -381,6 +381,18 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
     public void removeAnnotation(AnnotationComponent annotationComp) {
         annotationComponents.remove(annotationComp);
         this.remove((AbstractAnnotationComponent) annotationComp);
+        // make sure we remove the glue
+        if (annotationComp instanceof MarkupAnnotationComponent) {
+            synchronized (this.getTreeLock()) {
+                Component[] components = this.getComponents();
+                for (Component component : components) {
+                    if (component instanceof MarkupGlueComponent &&
+                            ((MarkupGlueComponent) component).getMarkupAnnotationComponent().equals(annotationComp)) {
+                        this.remove(component);
+                    }
+                }
+            }
+        }
     }
 
     public void pageInitializedCallback(Page page) {

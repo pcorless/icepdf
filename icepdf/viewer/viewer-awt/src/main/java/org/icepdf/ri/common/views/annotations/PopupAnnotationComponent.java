@@ -316,7 +316,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         GridBagLayout layout = new GridBagLayout();
         commentPanel = new JPanel(layout);
         commentPanel.setBackground(popupBackgroundColor);
-//        commentPanel.setBorder(BorderFactory.createLineBorder(borderColor));
         this.setLayout(new GridBagLayout());
         /**
          * Build search GUI
@@ -383,6 +382,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         constraints.weightx = 1.0;
         constraints.weighty = .4;
         addGB(commentPanel, textArea, 0, 3, 4, 1);
+
+        // setup move on coloured background
+        commentPanel.addMouseListener(this);
+        commentPanel.addMouseMotionListener(this);
 
         // command test
         buildContextMenu();
