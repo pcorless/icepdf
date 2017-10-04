@@ -225,6 +225,13 @@ public class PropertiesManager {
     public static final String PROPERTY_ANNOTATION_FILTER_COLOR_COLUMN = "application.viewer.utility.annotation.filter.color.column";
     public static final String PROPERTY_ANNOTATION_QUICK_COLOR = "application.viewer.utility.annotation.filter.quick.color";
 
+    // search panel settings
+    public static final String PROPERTY_SEARCH_PANEL_REGEX_ENABLED = "application.viewer.utility.search.regex.enabled";
+    public static final String PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED = "application.viewer.utility.search.whole.words.enabled";
+    public static final String PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED = "application.viewer.utility.search.case.sensitive.enabled";
+    public static final String PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED = "application.viewer.utility.search.case.cumulative.enabled";
+    public static final String PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED = "application.viewer.utility.search.case.pages.enabled";
+
     private static PropertiesManager propertiesManager;
 
     private static Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);

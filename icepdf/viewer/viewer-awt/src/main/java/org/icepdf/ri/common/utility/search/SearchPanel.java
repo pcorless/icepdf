@@ -36,8 +36,11 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static org.icepdf.ri.util.PropertiesManager.*;
 
 /**
  * This class is the GUI component for the SearchTextTask.  This panel can be
@@ -68,6 +71,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     // pointer to document which will be searched
     private Document document;
     private SwingController controller;
+    private Preferences preferences;
 
     // tree view of the groups and panels
     //private ResultsTree resultsTree;
@@ -229,20 +233,33 @@ public class SearchPanel extends JPanel implements ActionListener,
                 "viewer.utilityPane.search.clearSearchButton.label"));
         clearSearchButton.addActionListener(this);
 
+        // apply default preferences
+        preferences = controller.getPropertiesManager().getPreferences();
+        boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
+        boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
+        boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
+        boolean isCumulative = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, false);
+        boolean isShowPages = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, true);
+
         // search options check boxes.
         wholeWordCheckbox = new JCheckBox(messageBundle.getString(
-                "viewer.utilityPane.search.wholeWordCheckbox.label"));
+                "viewer.utilityPane.search.wholeWordCheckbox.label"), isWholeWord);
         wholeWordCheckbox.addActionListener(this);
-        wholeWordCheckbox.setEnabled(false);
         regexCheckbox = new JCheckBox(messageBundle.getString(
-                "viewer.utilityPane.search.regexCheckbox.label"), true);
+                "viewer.utilityPane.search.regexCheckbox.label"), isRegex);
         regexCheckbox.addActionListener(this);
         caseSensitiveCheckbox = new JCheckBox(messageBundle.getString(
-                "viewer.utilityPane.search.caseSenstiveCheckbox.label"));
+                "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
+        caseSensitiveCheckbox.addActionListener(this);
+        if (isRegex || isWholeWord) {
+            regexCheckbox.setEnabled(isRegex);
+            wholeWordCheckbox.setEnabled(isWholeWord);
+        }
         cumulativeCheckbox = new JCheckBox(messageBundle.getString(
-                "viewer.utilityPane.search.cumlitiveCheckbox.label"));
+                "viewer.utilityPane.search.cumlitiveCheckbox.label"), isCumulative);
+        cumulativeCheckbox.addActionListener(this);
         showPagesCheckbox = new JCheckBox(messageBundle.getString(
-                "viewer.utilityPane.search.showPagesCheckbox.label"), true);
+                "viewer.utilityPane.search.showPagesCheckbox.label"), isShowPages);
         showPagesCheckbox.addActionListener(this);
 
         /**
@@ -501,7 +518,6 @@ public class SearchPanel extends JPanel implements ActionListener,
      * @param event awt action event.
      */
     public void actionPerformed(ActionEvent event) {
-
         Object source = event.getSource();
         // Start/ stop a search
         if (searchTextField.getText().length() > 0 &&
@@ -573,10 +589,17 @@ public class SearchPanel extends JPanel implements ActionListener,
             controller.getDocumentViewController().getViewContainer().repaint();
         } else if (source == regexCheckbox) {
             wholeWordCheckbox.setEnabled(!regexCheckbox.isSelected());
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, regexCheckbox.isSelected());
         } else if (source == wholeWordCheckbox) {
             regexCheckbox.setEnabled(!wholeWordCheckbox.isSelected());
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, wholeWordCheckbox.isSelected());
+        } else if (source == cumulativeCheckbox) {
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, cumulativeCheckbox.isSelected());
+        } else if (source == caseSensitiveCheckbox) {
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, caseSensitiveCheckbox.isSelected());
         } else if (source == showPagesCheckbox) {
             if (event.getSource() != null) {
+                preferences.putBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, showPagesCheckbox.isSelected());
                 // Determine if the user just selected or deselected the Show Pages checkbox
                 // If selected we'll want to combine all the leaf results into page nodes containing a series of results
                 // Otherwise we'll want to explode the parent/node page folders into basic leafs showing the results
