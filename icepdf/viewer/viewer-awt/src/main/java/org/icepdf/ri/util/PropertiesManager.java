@@ -114,6 +114,9 @@ public class PropertiesManager {
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION = "application.utilitypane.show.annotation";
     public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS = "application.utilitypane.show.annotation.flags";
     public static final String PROPERTY_SHOW_UTILITYPANE_SIGNATURES = "application.utilitypane.show.signatures";
+    // sub control for annotation tabs
+    public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP = "application.utilitypane.show.annotation.markup";
+    public static final String PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS = "application.utilitypane.show.annotation.dests";
     // properties use dot hide/show preferences pane tabs.
     public static final String PROPERTY_SHOW_PREFERENCES_GENERAL = "application.preferences.show.general";
     public static final String PROPERTY_SHOW_PREFERENCES_ANNOTATIONS = "application.preferences.show.annotations";

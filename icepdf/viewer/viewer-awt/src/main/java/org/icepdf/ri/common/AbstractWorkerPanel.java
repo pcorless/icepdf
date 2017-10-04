@@ -38,7 +38,7 @@ import java.util.ResourceBundle;
  * The annotation's properties panel are located on the right utility pane and can only show the editable properties
  * for one annotation type at a time.
  */
-public abstract class AbstractWorkerPanel extends JPanel {
+public abstract class AbstractWorkerPanel extends JPanel implements MutableDocument {
 
     protected DocumentViewController documentViewController;
     protected Document currentDocument;

@@ -58,7 +58,11 @@ public class PropertyConstants {
 
     ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE = "annotationPropertyPanelChange",
 
-    ANNOTATION_QUICK_COLOR_CHANGE = "annotationQuikcColorPropertyChange";
+    ANNOTATION_QUICK_COLOR_CHANGE = "annotationQuikcColorPropertyChange",
+
+    DESTINATION_ADDED = "destinationAdded",
+            DESTINATION_UPDATED = "destinationUpdated",
+            DESTINATION_DELETED = "destinationDeleted";
 
 
 }

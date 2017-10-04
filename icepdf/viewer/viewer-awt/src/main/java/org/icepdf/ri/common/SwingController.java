@@ -35,8 +35,7 @@ import org.icepdf.ri.common.properties.InformationDialog;
 import org.icepdf.ri.common.properties.PermissionsDialog;
 import org.icepdf.ri.common.properties.PropertiesDialog;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
-import org.icepdf.ri.common.utility.annotation.MarkupAnnotationPanel;
-import org.icepdf.ri.common.utility.annotation.properties.AnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
 import org.icepdf.ri.common.utility.annotation.properties.AnnotationPropertiesDialog;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
@@ -228,7 +227,6 @@ public class SwingController extends ComponentAdapter
     private LayersPanel layersPanel;
     private SignaturesHandlerPanel signaturesPanel;
     private AnnotationPanel annotationPanel;
-    private MarkupAnnotationPanel markupAnnotationPanel;
     private JTabbedPane utilityTabbedPane;
     private JSplitPane utilityAndDocumentSplitPane;
     private int utilityAndDocumentSplitPaneLastDividerLocation;
@@ -1128,16 +1126,9 @@ public class SwingController extends ComponentAdapter
         signaturesPanel = tn;
     }
 
-    /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
-     */
+
     public void setAnnotationPanel(AnnotationPanel lp) {
         annotationPanel = lp;
-    }
-
-
-    public void setMarkupAnnotationPanel(MarkupAnnotationPanel lp) {
-        markupAnnotationPanel = lp;
     }
 
     /**
@@ -1684,12 +1675,9 @@ public class SwingController extends ComponentAdapter
                 reflectToolInToolButtons();
             }
 
-            // disabled the annotation edit panels, selection will activate them again.
+            // disabled the annotation panels, selection will activate them again.
             if (annotationPanel != null) {
                 annotationPanel.setEnabled(false);
-            }
-            if (markupAnnotationPanel != null) {
-                markupAnnotationPanel.setEnabled(false);
             }
 
             // repaint the page views.
@@ -2525,8 +2513,8 @@ public class SwingController extends ComponentAdapter
             signaturesPanel.setDocument(document);
         }
 
-        if (markupAnnotationPanel != null) {
-            markupAnnotationPanel.setDocument(document);
+        if (annotationPanel != null) {
+            annotationPanel.setDocument(document);
         }
 
         if (attachmentPanel != null) {
@@ -2664,9 +2652,6 @@ public class SwingController extends ComponentAdapter
         // disable the annotation properties panel by default
         if (annotationPanel != null) {
             annotationPanel.setEnabled(false);
-        }
-        if (markupAnnotationPanel != null) {
-            markupAnnotationPanel.setEnabled(false);
         }
 
         // set the go to page combo box in the mainToolbar
@@ -2899,8 +2884,8 @@ public class SwingController extends ComponentAdapter
         if (signaturesPanel != null) {
             signaturesPanel.dispose();
         }
-        if (markupAnnotationPanel != null) {
-            markupAnnotationPanel.dispose();
+        if (annotationPanel != null) {
+            annotationPanel.dispose();
         }
         if (utilityTabbedPane != null) {
             utilityTabbedPane.removeAll();
@@ -3985,20 +3970,13 @@ public class SwingController extends ComponentAdapter
             // Pass the selected annotation to the link panel
             if (annotationPanel != null && selectedAnnotation != null) {
                 annotationPanel.setEnabled(true);
-                annotationPanel.setAnnotationComponent(selectedAnnotation);
-            }
-            if (markupAnnotationPanel != null && selectedAnnotation != null) {
-                markupAnnotationPanel.setEnabled(true);
-//                markupAnnotationPanel.setAnnotationComponent(selectedAnnotation);
+//                annotationPanel.setAnnotationComponent(selectedAnnotation);
             }
             setUtilityPaneVisible(true);
 
             // select the annotationPanel tab
             if (annotationPanel != null && utilityTabbedPane.getSelectedComponent() != annotationPanel) {
                 safelySelectUtilityPanel(annotationPanel);
-            }
-            if (markupAnnotationPanel != null && utilityTabbedPane.getSelectedComponent() != markupAnnotationPanel) {
-                safelySelectUtilityPanel(markupAnnotationPanel);
             }
 
         }
@@ -4965,9 +4943,6 @@ public class SwingController extends ComponentAdapter
                 }
                 // disable the delete menu
                 setEnabled(deleteMenuItem, false);
-                if (annotationPanel != null) {
-                    annotationPanel.setEnabled(false);
-                }
             }
         }
         // annotation bounds have changed.
@@ -5008,8 +4983,9 @@ public class SwingController extends ComponentAdapter
             if (textAnnotationToolButton != null) {
                 textAnnotationToolButton.refreshColorPanel();
             }
-            if (markupAnnotationPanel != null) {
-                markupAnnotationPanel.refreshColorPanel();
+            if (annotationPanel != null &&
+                    annotationPanel.getMarkupAnnotationPanel() != null) {
+                annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
             }
         }
     }

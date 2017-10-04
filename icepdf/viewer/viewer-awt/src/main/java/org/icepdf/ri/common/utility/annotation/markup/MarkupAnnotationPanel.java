@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.annotation;
+package org.icepdf.ri.common.utility.annotation.markup;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -26,8 +26,6 @@ import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -47,7 +45,7 @@ import java.util.regex.PatternSyntaxException;
  *
  * @since 6.3
  */
-public class MarkupAnnotationPanel extends JPanel implements ActionListener, PropertyChangeListener {
+public class MarkupAnnotationPanel extends JPanel implements ActionListener, PropertyChangeListener, MutableDocument {
 
     private static final Logger logger =
             Logger.getLogger(MarkupAnnotationPanel.class.toString());
@@ -87,7 +85,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private ArrayList<Action> filterTypeActions;
     private Action filterTypeAction;
     private Action filterColorAction;
-
 
     private QuickPaintAnnotationButton quickPaintAnnotationButton;
 
@@ -218,10 +215,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         constraints.insets = new Insets(0, 0, 0, 0);
 
         markupAnnotationPanel = new JPanel(new GridBagLayout());
-        markupAnnotationPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
-                messageBundle.getString("viewer.utilityPane.markupAnnotation.title"),
-                TitledBorder.LEFT,
-                TitledBorder.DEFAULT_POSITION));
         addGB(this, markupAnnotationPanel, 0, 1, 1, 1);
 
         buildSearchBar();
@@ -359,6 +352,11 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     }
 
     public void refreshColorPanel() {
+        // update the quick color drop down.
+        if (quickPaintAnnotationButton != null) {
+            quickPaintAnnotationButton.refreshColorPanel();
+        }
+
         colorFilterMenuItem.removeAll();
         // build colour submenu based on colour labels
         ButtonGroup filterColorMenuGroup = new ButtonGroup();

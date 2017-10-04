@@ -13,7 +13,7 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.annotation;
+package org.icepdf.ri.common.utility.annotation.markup;
 
 
 import org.icepdf.core.pobjects.Document;
@@ -26,6 +26,8 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
+import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.AnnotationSelector;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
@@ -150,7 +152,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         }
     }
 
-    protected AnnotationComponent getSelectedAnnotation() {
+    public AnnotationComponent getSelectedAnnotation() {
         TreePath selectedTreePath = tree.getSelectionPath();
         if (selectedTreePath != null) {
             Object node = selectedTreePath.getLastPathComponent();

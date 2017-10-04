@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.utility.annotation.properties;
 
+import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.NameNode;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
@@ -147,7 +148,12 @@ public class NameTreeNode extends DefaultMutableTreeNode {
                 StringObject name;
                 Reference ref;
                 for (int i = 0, max = namesAndValues.size(); i < max; i += 2) {
-                    name = (StringObject) namesAndValues.get(i);
+                    Object tmp = namesAndValues.get(i);
+                    if (tmp instanceof StringObject) {
+                        name = (StringObject) tmp;
+                    } else {
+                        name = new LiteralStringObject((String) namesAndValues.get(i));
+                    }
                     ref = (Reference) namesAndValues.get(i + 1);
                     add(new NameTreeNode(name, ref));
                 }
