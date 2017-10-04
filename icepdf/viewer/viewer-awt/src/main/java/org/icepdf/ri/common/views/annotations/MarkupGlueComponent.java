@@ -54,7 +54,6 @@ public class MarkupGlueComponent extends JComponent {
 
         Rectangle bounds = getBounds();
         Graphics2D g2d = (Graphics2D) g;
-        g2d.setClip(0, 0, bounds.width, bounds.height);
 
         if (popupAnnotationComponent.isVisible()) {
             g2d.setColor(markupAnnotationComponent.getAnnotation().getColor());
@@ -71,12 +70,8 @@ public class MarkupGlueComponent extends JComponent {
             int popupW = popupBounds.width;
             int popupH = popupBounds.height;
 
-            int markupX = markupBounds.x;
-            int markupY = markupBounds.y;
             int markupXC = (int) markupBounds.getCenterX();
             int markupYC = (int) markupBounds.getCenterY();
-            int markupW = markupBounds.width;
-            int markupH = markupBounds.height;
 
             float angle = (float) Math.toDegrees(Math.atan2(markupYC - popupYC, markupXC - popupXC));
             if (angle < 0) {

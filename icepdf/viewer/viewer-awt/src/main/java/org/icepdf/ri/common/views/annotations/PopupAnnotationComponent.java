@@ -151,6 +151,43 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     }
 
     @Override
+    public void setBounds(int x, int y, int width, int height) {
+
+        // check to make sure the new bounds will be visible, if not we correct them
+        // this reads, ugly, sorry...
+        Rectangle currentBounds = getBounds();
+        Dimension pageSize = pageViewComponent.getSize();
+        if (currentBounds.x != x || currentBounds.y != y) {
+            if (x < 0) {
+                if (currentBounds.width != width) width += x;
+                x = 0;
+            } else if (x + width > pageSize.width) {
+                x = pageSize.width - currentBounds.width;
+            }
+            if (y < 0) {
+                if (currentBounds.height != height) height += y;
+                y = 0;
+            } else if (y + height > pageSize.height) {
+                y = pageSize.height - currentBounds.height;
+            }
+        }
+        if (currentBounds.width != width || currentBounds.height != height) {
+            // we have a resize, make sure the component is contained in the page.
+            if (x + width > pageSize.width) {
+                width = pageSize.width - x;
+            } else if (y + height > pageSize.height) {
+                height = pageSize.height - y;
+            }
+        }
+        super.setBounds(x, y, width, height);
+    }
+
+    @Override
+    public void setBounds(Rectangle r) {
+        setBounds(r.x, r.y, r.width, r.height);
+    }
+
+    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         // borderColor

@@ -125,23 +125,22 @@ public class PageViewDecorator extends JComponent {
     public void paint(Graphics g) {
 
         Graphics2D g2d = (Graphics2D) g;
-        Point location = pageViewComponent.getLocation();
         Dimension size = pageViewComponent.getPreferredSize();
 
         // paper
         g2d.setColor(pageColor);
-        g2d.fillRect(location.x, location.y, size.width, size.height);
-
-        // paper shadow
-        g2d.setColor(pageShadowColor);
-        g2d.fillRect(location.x + SHADOW_SIZE, location.y + size.height, size.width - SHADOW_SIZE, SHADOW_SIZE);
-        g2d.fillRect(location.x + size.width, location.y + SHADOW_SIZE, SHADOW_SIZE, size.height);
-
-        super.paint(g);
+        g2d.fillRect(0, 0, size.width, size.height);
 
         // paper border
         g2d.setColor(pageBorderColor);
-        g2d.drawRect(location.x, location.y, size.width, size.height);
+        g2d.drawRect(0, 0, size.width, size.height);
+
+        // paper shadow
+        g2d.setColor(pageShadowColor);
+        g2d.fillRect(SHADOW_SIZE, size.height, size.width - SHADOW_SIZE, SHADOW_SIZE);
+        g2d.fillRect(size.width, SHADOW_SIZE, SHADOW_SIZE, size.height);
+
+        super.paint(g);
     }
 
     public PageViewComponent getPageViewComponent() {

@@ -369,7 +369,7 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     JLayeredPane.PALETTE_LAYER);
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.DEFAULT_LAYER);
         } else {
-            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.DEFAULT_LAYER);
+            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
         }
     }
 
@@ -422,10 +422,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                                         parent.add(comp, JLayeredPane.POPUP_LAYER);
                                     } else if (comp instanceof MarkupAnnotationComponent) {
                                         parent.add(new MarkupGlueComponent((MarkupAnnotationComponent) comp),
-                                                JLayeredPane.PALETTE_LAYER);
-                                        parent.add(comp, JLayeredPane.DEFAULT_LAYER);
+                                                JLayeredPane.DEFAULT_LAYER);
+                                        parent.add(comp, JLayeredPane.PALETTE_LAYER);
                                     } else {
-                                        parent.add(comp, JLayeredPane.DEFAULT_LAYER);
+                                        parent.add(comp, JLayeredPane.PALETTE_LAYER);
                                     }
                                     comp.revalidate();
                                     comp.repaint();

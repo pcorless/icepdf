@@ -19,6 +19,7 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
+import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -192,8 +193,10 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
         Component comp = container.findComponentAt(e.getPoint());
         if (comp instanceof PageViewComponentImpl) {
             return (PageViewComponentImpl) comp;
-        } else {
-            return null;
+        } else if (comp instanceof MarkupGlueComponent) {
+            comp = comp.getParent();
+            if (comp instanceof PageViewComponentImpl) return (PageViewComponentImpl) comp;
         }
+        return null;
     }
 }
