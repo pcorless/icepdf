@@ -50,6 +50,7 @@ import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.ri.util.PropertiesManager;
 import org.icepdf.ri.util.TextExtractionTask;
 import org.icepdf.ri.util.URLAccess;
+import org.icepdf.ri.viewer.WindowManager;
 
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Media;
@@ -102,7 +103,7 @@ import static org.icepdf.ri.util.PropertiesManager.*;
  * @see ViewModel
  * @since 2.0
  */
-public class SwingController
+public class SwingController extends ComponentAdapter
         implements Controller, ActionListener, FocusListener, ItemListener,
         TreeSelectionListener, WindowListener, DropTargetListener,
         KeyListener, PropertyChangeListener {
@@ -1181,6 +1182,11 @@ public class SwingController
     public void setViewerFrame(JFrame v) {
         viewer = v;
         viewer.addWindowListener(this);
+        viewer.addComponentListener(this);
+        if (windowManagementCallback == null) {
+            // apply last opened window location
+            WindowManager.newWindowLocation(viewer);
+        }
         // add drag and drop listeners
         new DropTarget(viewer, // component
                 DnDConstants.ACTION_COPY_OR_MOVE, // actions
@@ -2920,6 +2926,7 @@ public class SwingController
         statusLabel = null;
         if (viewer != null) {
             viewer.removeWindowListener(this);
+            viewer.removeComponentListener(this);
             viewer.removeAll();
         }
         viewModel = null;
@@ -4168,38 +4175,18 @@ public class SwingController
 
         try {
             if (source == openFileMenuItem || source == openFileButton) {
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        openFile();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                openFile();
             } else if (source == openURLMenuItem) {
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        openURL();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                openURL();
             } else if (source == closeMenuItem) {
                 boolean isCanceled = saveChangesDialog();
                 if (!isCanceled) {
                     closeDocument();
                 }
             } else if (source == saveAsFileMenuItem || source == saveAsFileButton) {
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        saveFile();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                saveFile();
             } else if (source == exportTextMenuItem) {
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        exportText();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                exportText();
             } else if (source == exitMenuItem) {
                 boolean isCanceled = saveChangesDialog();
                 if (!isCanceled && windowManagementCallback != null) {
@@ -4208,34 +4195,18 @@ public class SwingController
             } else if (source == showHideToolBarMenuItem) {
                 toggleToolBarVisibility();
             } else if (source == minimiseAllMenuItem) {
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        SwingController sc = SwingController.this;
-                        if (sc.getWindowManagementCallback() != null)
-                            sc.getWindowManagementCallback().minimiseAllWindows();
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                if (getWindowManagementCallback() != null) {
+                    getWindowManagementCallback().minimiseAllWindows();
+                }
             } else if (source == bringAllToFrontMenuItem) {
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        SwingController sc = SwingController.this;
-                        if (sc.getWindowManagementCallback() != null)
-                            sc.getWindowManagementCallback().bringAllWindowsToFront(sc);
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                if (getWindowManagementCallback() != null) {
+                    getWindowManagementCallback().bringAllWindowsToFront(this);
+                }
             } else if (windowListMenuItems != null && windowListMenuItems.contains(source)) {
                 final int index = windowListMenuItems.indexOf(source);
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        SwingController sc = SwingController.this;
-                        if (sc.getWindowManagementCallback() != null) {
-                            sc.getWindowManagementCallback().bringWindowToFront(index);
-                        }
-                    }
-                };
-                SwingUtilities.invokeLater(doSwingWork);
+                if (getWindowManagementCallback() != null) {
+                    getWindowManagementCallback().bringWindowToFront(index);
+                }
             } else if (source == aboutMenuItem) {
                 showAboutDialog();
             } else if (source == fontInformationMenuItem) {
@@ -4352,7 +4323,6 @@ public class SwingController
             }
         } catch (Exception e) {
             final Exception f = e;
-            e.printStackTrace();
             Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
                     viewer,
                     JOptionPane.INFORMATION_MESSAGE,
@@ -4645,6 +4615,9 @@ public class SwingController
         WindowManagementCallback wc = windowManagementCallback;
         JFrame v = viewer;
 
+        // save last used location.
+        WindowManager.saveViewerState(v);
+
         // assign view properties so that they can be saved on close
         DocumentViewController viewControl = getDocumentViewController();
         Preferences viewerPreferences = PropertiesManager.getInstance().getPreferences();
@@ -4694,6 +4667,24 @@ public class SwingController
      * related to PDF Document manipulation
      */
     public void windowOpened(WindowEvent e) {
+    }
+
+    //
+    // ComponentAdapter class
+    //
+
+    @Override
+    public void componentResized(ComponentEvent e) {
+        if (viewer != null) {
+            WindowManager.saveViewerState(viewer);
+        }
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent e) {
+        if (viewer != null) {
+            WindowManager.saveViewerState(viewer);
+        }
     }
 
     //

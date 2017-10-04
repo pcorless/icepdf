@@ -51,7 +51,7 @@ public class WindowManager implements WindowManagementCallback {
 
     private ArrayList<SwingController> controllers;
 
-    private long newWindowInvocationCounter = 0;
+    private int newWindowInvocationCounter = 0;
 
     private ResourceBundle messageBundle = null;
 
@@ -140,17 +140,27 @@ public class WindowManager implements WindowManagementCallback {
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
-            calculateStageLocation(frame);
+            newWindowLocation(frame, newWindowInvocationCounter);
             frame.setVisible(true);
         }
 
         return controller;
     }
 
-    private void calculateStageLocation(JFrame frame) {
+    /**
+     * Loads the last used windows location as well as other frame related settings and insures the frame is
+     * visible.
+     *
+     * @param frame parent window containers.
+     */
+    public static void newWindowLocation(JFrame frame) {
+        newWindowLocation(frame, 0);
+    }
+
+    private static void newWindowLocation(JFrame frame, int newWindowInvocationCounter) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Rectangle bounds = env.getMaximumWindowBounds();
-        Preferences prefs = getProperties().getPreferences();
+        Preferences prefs = PropertiesManager.getInstance().getPreferences();
 
         // get the last used window size.
         int width = prefs.getInt(APPLICATION_WIDTH, 800);
@@ -164,7 +174,7 @@ public class WindowManager implements WindowManagementCallback {
 
         // quick check to make sure the viewer will be visible in at least one screen, if not we default to primary
         GraphicsDevice[] graphicsDevices = env.getScreenDevices();
-        ArrayList<GraphicsDevice> results = new ArrayList<GraphicsDevice>();
+        ArrayList<GraphicsDevice> results = new ArrayList<>();
         for (GraphicsDevice screen : graphicsDevices) {
             GraphicsConfiguration config = screen.getDefaultConfiguration();
             if (config.getBounds().contains(previousX, previousY, width, height)) {
@@ -180,9 +190,36 @@ public class WindowManager implements WindowManagementCallback {
         prefs.putInt(APPLICATION_Y_OFFSET, previousY);
         // apply the corrected size and location.
         frame.setSize(width, height);
-        frame.setLocation((int) (previousX + (newWindowInvocationCounter * 10)),
-                (int) (previousY + (newWindowInvocationCounter * 10)));
+        frame.setLocation((previousX + (newWindowInvocationCounter * 10)),
+                (previousY + (newWindowInvocationCounter * 10)));
         ++newWindowInvocationCounter;
+    }
+
+    public static void saveViewerState(JFrame viewer) {
+        if (viewer != null) {
+            //save width & height
+            Rectangle sz = viewer.getBounds();
+            Preferences viewerPreferences = PropertiesManager.getInstance().getPreferences();
+            viewerPreferences.putInt(APPLICATION_X_OFFSET, sz.x);
+            viewerPreferences.putInt(APPLICATION_Y_OFFSET, sz.y);
+            viewerPreferences.putInt(APPLICATION_WIDTH, sz.width);
+            viewerPreferences.putInt(APPLICATION_HEIGHT, sz.height);
+            viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
+                    viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, 0));
+            int viewType = viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE, 1);
+            // don't save the attachments view as it only applies to specific
+            // document types.
+            if (viewType != DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
+                viewerPreferences.putInt(PROPERTY_DEFAULT_VIEW_TYPE,
+                        viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE, 1));
+            }
+            if (ViewModel.getDefaultFilePath() != null) {
+                viewerPreferences.put(PROPERTY_DEFAULT_FILE_PATH, ViewModel.getDefaultFilePath());
+            }
+            if (ViewModel.getDefaultURL() != null) {
+                viewerPreferences.put(PROPERTY_DEFAULT_URL, ViewModel.getDefaultURL());
+            }
+        }
     }
 
     public void disposeWindow(SwingController controller, JFrame viewer,
@@ -206,32 +243,7 @@ public class WindowManager implements WindowManagementCallback {
 
     public void quit(SwingController controller, JFrame viewer,
                      Preferences preferences) {
-        if (controller != null && viewer != null) {
-            //save width & height
-            Rectangle sz = viewer.getBounds();
-            Preferences viewerPreferences = getProperties().getPreferences();
-            viewerPreferences.putInt(APPLICATION_X_OFFSET, sz.x);
-            viewerPreferences.putInt(APPLICATION_Y_OFFSET, sz.y);
-            viewerPreferences.putInt(APPLICATION_WIDTH, sz.width);
-            viewerPreferences.putInt(APPLICATION_HEIGHT, sz.height);
-            if (properties != null) {
-                viewerPreferences.putInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT,
-                        viewerPreferences.getInt(PropertiesManager.PROPERTY_DEFAULT_PAGEFIT, 0));
-                int viewType = preferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE, 1);
-                // don't save the attachments view as it only applies to specific
-                // document types.
-                if (viewType != DocumentViewControllerImpl.USE_ATTACHMENTS_VIEW) {
-                    viewerPreferences.putInt(PROPERTY_DEFAULT_VIEW_TYPE,
-                            viewerPreferences.getInt(PROPERTY_DEFAULT_VIEW_TYPE, 1));
-                }
-            }
-            if (ViewModel.getDefaultFilePath() != null) {
-                viewerPreferences.put(PROPERTY_DEFAULT_FILE_PATH, ViewModel.getDefaultFilePath());
-            }
-            if (ViewModel.getDefaultURL() != null) {
-                viewerPreferences.put(PROPERTY_DEFAULT_URL, ViewModel.getDefaultURL());
-            }
-        }
+        saveViewerState(viewer);
 
         // make sure all the controllers have been disposed.
         for (SwingController c : controllers) {
@@ -292,7 +304,7 @@ public class WindowManager implements WindowManagementCallback {
     public List getWindowDocumentOriginList(SwingController giveIndex) {
         Integer foundIndex = null;
         int count = controllers.size();
-        List<Object> list = new ArrayList<Object>(count + 1);
+        List<Object> list = new ArrayList<>(count + 1);
         for (int i = 0; i < count; i++) {
             Object toAdd = null;
             SwingController controller = controllers.get(i);
