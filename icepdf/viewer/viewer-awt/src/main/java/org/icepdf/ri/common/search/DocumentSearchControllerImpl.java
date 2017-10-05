@@ -430,6 +430,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     @Override
     public WordText nextSearchHit() {
+        if (searchModel.getPageSearchHitsSize() == 0) return null;
         int searchPageCursor = searchModel.getSearchPageCursor();
         int searchLineCursor = searchModel.getSearchLineCursor();
         int searchWordCursor = searchModel.getSearchWordCursor();
@@ -491,6 +492,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
     @Override
     public WordText previousSearchHit() {
+        if (searchModel.getPageSearchHitsSize() == 0) return null;
         int searchPageCursor = searchModel.getSearchPageCursor();
         int searchLineCursor = searchModel.getSearchLineCursor();
         int searchWordCursor = searchModel.getSearchWordCursor();

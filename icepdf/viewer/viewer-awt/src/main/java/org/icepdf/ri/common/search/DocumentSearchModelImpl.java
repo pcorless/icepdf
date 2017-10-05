@@ -121,6 +121,15 @@ public class DocumentSearchModelImpl {
     }
 
     /**
+     * Gets the number of pages that have hits.
+     *
+     * @return search hit number, zero indicates no hits.
+     */
+    public int getPageSearchHitsSize() {
+        return searchResultCache.keySet().size();
+    }
+
+    /**
      * Check the page index to see if there is a search result.
      *
      * @param pageIndex index of page to search
