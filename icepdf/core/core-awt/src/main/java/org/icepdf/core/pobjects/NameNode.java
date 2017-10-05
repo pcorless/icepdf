@@ -164,13 +164,10 @@ public class NameNode extends Dictionary {
 
 
     private Object search(String name) {
-//System.out.println("search()  for: " + name + "  lowerLimit: " + lowerLimit + "  upperLimit: " + upperLimit + " " + name);
         if (kidsReferences != null) {
-//System.out.print("search()  kids ... ");
             if (lowerLimit != null) {
                 int cmp = lowerLimit.compareTo(name);
                 if (cmp > 0) {
-//System.out.println("skLESSER");
                     return NOT_FOUND_IS_LESSER;
                 } else if (cmp == 0)
                     return getNode(0).search(name);
@@ -178,22 +175,16 @@ public class NameNode extends Dictionary {
             if (upperLimit != null) {
                 int cmp = upperLimit.compareTo(name);
                 if (cmp < 0) {
-//System.out.println("skGREATER");
                     return NOT_FOUND_IS_GREATER;
                 } else if (cmp == 0)
                     return getNode(kidsReferences.size() - 1).search(name);
             }
-//System.out.println("skBETWEEN");
-
             return binarySearchKids(0, kidsReferences.size() - 1, name);
         } else if (namesAndValues != null) {
-//System.out.print("search()  names ... ");
             int numNamesAndValues = namesAndValues.size();
-
             if (lowerLimit != null) {
                 int cmp = lowerLimit.compareTo(name);
                 if (cmp > 0) {
-//System.out.println("snLESSER");
                     return NOT_FOUND_IS_LESSER;
                 } else if (cmp == 0) {
                     ensureNamesDecrypted();
@@ -208,7 +199,6 @@ public class NameNode extends Dictionary {
             if (upperLimit != null) {
                 int cmp = upperLimit.compareTo(name);
                 if (cmp < 0) {
-//System.out.println("snGREATER");
                     return NOT_FOUND_IS_GREATER;
                 } else if (cmp == 0) {
                     ensureNamesDecrypted();
@@ -220,8 +210,6 @@ public class NameNode extends Dictionary {
                     }
                 }
             }
-//System.out.println("snBETWEEN");
-
             ensureNamesDecrypted();
             Object ret = binarySearchNames(0, numNamesAndValues - 1, name);
             if (ret == NOT_FOUND || ret == NOT_FOUND_IS_LESSER || ret == NOT_FOUND_IS_GREATER)
@@ -236,15 +224,11 @@ public class NameNode extends Dictionary {
             return NOT_FOUND;
         int pivot = firstIndex + ((lastIndex - firstIndex) / 2);
         Object ret = getNode(pivot).search(name);
-//System.out.print("binarySearchKids  [ " + firstIndex + ", " + lastIndex + " ]  pivot: " + pivot + "  name: " + name + " ... ");
         if (ret == NOT_FOUND_IS_LESSER) {
-//System.out.println("kLESSER");
             return binarySearchKids(firstIndex, pivot - 1, name);
         } else if (ret == NOT_FOUND_IS_GREATER) {
-//System.out.println("kGREATER");
             return binarySearchKids(pivot + 1, lastIndex, name);
         } else if (ret == NOT_FOUND) {
-//System.out.println("kNOT FOUND");
             // This shouldn't happen, so is either a bug, or a miss coded PDF file
             for (int i = firstIndex; i <= lastIndex; i++) {
                 if (i == pivot)
@@ -264,19 +248,15 @@ public class NameNode extends Dictionary {
             return NOT_FOUND;
         int pivot = firstIndex + ((lastIndex - firstIndex) / 2);
         pivot &= 0xFFFFFFFE; // Clear LSB to ensure even index
-//System.out.print("binarySearchNames  [ " + firstIndex + ", " + lastIndex + " ]  pivot: " + pivot + "  size: " + namesAndValues.size() + "  compare  " + name + " to " + namesAndValues.get(pivot).toString() + " ... ");
         int cmp = namesAndValues.get(pivot).compareTo(name);
         if (cmp == 0) {
-//System.out.println("nEQUAL");
             Object ob = namesAndValues.get(pivot + 1);
             if (ob instanceof Reference)
                 ob = library.getObject((Reference) ob);
             return ob;
         } else if (cmp > 0) {
-//System.out.println("nLESSER");
             return binarySearchNames(firstIndex, pivot - 1, name);
         } else if (cmp < 0) {
-//System.out.println("nGREATER");
             return binarySearchNames(pivot + 2, lastIndex, name);
         }
         return NOT_FOUND;

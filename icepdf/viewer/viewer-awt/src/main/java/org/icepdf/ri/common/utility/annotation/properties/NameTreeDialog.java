@@ -17,6 +17,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.NameTree;
 import org.icepdf.ri.common.EscapeJDialog;
+import org.icepdf.ri.common.NameJTree;
+import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
@@ -122,14 +124,15 @@ public class NameTreeDialog extends EscapeJDialog
         nameTreePanel.setLayout(layout);
 
         constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.anchor = GridBagConstraints.NORTH;
+        constraints.insets = new Insets(5, 15, 5, 15);
+        addGB(nameTreePanel, nameTreeScroller, 0, 0, 1, 1);
+        constraints.anchor = GridBagConstraints.CENTER;
         constraints.fill = GridBagConstraints.NONE;
         constraints.weightx = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
-        constraints.anchor = GridBagConstraints.EAST;
-        constraints.insets = new Insets(5, 5, 5, 5);
-
-        constraints.anchor = GridBagConstraints.CENTER;
-        addGB(nameTreePanel, nameTreeScroller, 0, 0, 1, 1);
         addGB(nameTreePanel, okCancelPanel, 0, 1, 1, 1);
 
         this.getContentPane().add(nameTreePanel);

@@ -16,11 +16,16 @@
 package org.icepdf.ri.common.utility.annotation.destinations;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.NameTree;
+import org.icepdf.core.pobjects.Names;
 import org.icepdf.ri.common.MutableDocument;
+import org.icepdf.ri.common.NameJTree;
+import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -50,7 +55,8 @@ public class DestinationsPanel extends JPanel implements MutableDocument {
     private SwingController controller;
     private ResourceBundle messageBundle;
 
-    private DestinationsHandlerPanel destinationsHandlerPanel;
+    private Document document;
+    private NameJTree nameJTree;
 
     public DestinationsPanel(SwingController controller, PropertiesManager propertiesManager) {
         messageBundle = controller.getMessageBundle();
@@ -61,21 +67,35 @@ public class DestinationsPanel extends JPanel implements MutableDocument {
         this.controller = controller;
         this.propertiesManager = propertiesManager;
 
-        destinationsHandlerPanel = new DestinationsHandlerPanel(controller, this);
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(0, 0, 0, 0);
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        addGB(this, destinationsHandlerPanel, 0, 0, 1, 1);
+
+        nameJTree = new NameJTree();
+        JScrollPane scrollPane = new JScrollPane(nameJTree);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        addGB(this, scrollPane, 0, 0, 1, 1);
 
         setFocusable(true);
     }
 
     @Override
     public void setDocument(Document document) {
-        destinationsHandlerPanel.setDocument(document);
+        this.document = document;
+        Names names = document.getCatalog().getNames();
+        if (names != null && names.getDestsNameTree() != null) {
+            NameTree nameTree = names.getDestsNameTree();
+            if (nameTree != null) {
+                nameJTree.setModel(new DefaultTreeModel(new NameTreeNode(nameTree.getRoot(), messageBundle)));
+                nameJTree.setRootVisible(true);
+                nameJTree.setShowsRootHandles(true);
+            }
+        }
     }
 
     /**

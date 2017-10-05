@@ -38,27 +38,8 @@ public class AnnotationPanel extends JPanel {
     public AnnotationPanel(SwingController swingController,
                            ResourceBundle messageBundle) {
 
-        annotationTabbedPane = new JTabbedPane();
+        annotationTabbedPane = new JTabbedPane(SwingConstants.TOP);
         annotationTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
-
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
-
-        markupAnnotationPanel = new MarkupAnnotationPanel(swingController, propertiesManager);
-        destinationsPanel = new DestinationsPanel(swingController, propertiesManager);
-
-        // build the general preferences tab
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP)) {
-            annotationTabbedPane.addTab(
-                    messageBundle.getString("viewer.utilityPane.markupAnnotation.title"),
-                    markupAnnotationPanel);
-        }
-        if (propertiesManager.checkAndStoreBooleanProperty(
-                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS)) {
-            annotationTabbedPane.addTab(
-                    messageBundle.getString("viewer.utilityPane.destinations.title"),
-                    destinationsPanel);
-        }
 
         setLayout(new GridBagLayout());
         constraints = new GridBagConstraints();
@@ -69,11 +50,20 @@ public class AnnotationPanel extends JPanel {
         addGB(this, annotationTabbedPane, 0, 0, 1, 1);
     }
 
+    public void addMarkupAnnotationPanel(MarkupAnnotationPanel panel, String title) {
+        markupAnnotationPanel = panel;
+        annotationTabbedPane.add(markupAnnotationPanel, title);
+    }
+
+    public void addDestinationPanel(DestinationsPanel panel, String title) {
+        destinationsPanel = panel;
+        annotationTabbedPane.add(destinationsPanel, title);
+    }
+
     public void setDocument(Document document) {
         if (markupAnnotationPanel != null) {
             markupAnnotationPanel.setDocument(document);
         }
-
         if (destinationsPanel != null) {
             destinationsPanel.setDocument(document);
         }

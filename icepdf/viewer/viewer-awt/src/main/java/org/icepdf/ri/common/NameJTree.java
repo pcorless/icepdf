@@ -13,12 +13,9 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.annotation.properties;
-
-import org.icepdf.ri.images.Images;
+package org.icepdf.ri.common;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
 
 /**
@@ -32,11 +29,7 @@ public class NameJTree extends JTree {
         getSelectionModel().setSelectionMode(
                 TreeSelectionModel.SINGLE_TREE_SELECTION);
         // change the look & feel of the jtree
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-        renderer.setOpenIcon(new ImageIcon(Images.get("page.gif")));
-        renderer.setClosedIcon(new ImageIcon(Images.get("page.gif")));
-        renderer.setLeafIcon(new ImageIcon(Images.get("page.gif")));
-        setCellRenderer(renderer);
+        setCellRenderer(new DestinationCellRender());
 
         setModel(null);
         setRootVisible(true);

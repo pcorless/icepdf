@@ -21,6 +21,8 @@ import org.icepdf.core.pobjects.graphics.ImageReferenceFactory;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.utility.annotation.AnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.destinations.DestinationsPanel;
+import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
 import org.icepdf.ri.common.utility.attachment.AttachmentPanel;
 import org.icepdf.ri.common.utility.layers.LayersPanel;
 import org.icepdf.ri.common.utility.outline.OutlinesTree;
@@ -386,8 +388,9 @@ public class SwingViewBuilder {
         viewerController = c;
 
         messageBundle = viewerController.getMessageBundle();
+        propertiesManager = properties;
 
-        if (properties == null) {
+        if (propertiesManager == null) {
             propertiesManager = PropertiesManager.getInstance();
         }
         viewerController.setPropertiesManager(propertiesManager);
@@ -2008,9 +2011,35 @@ public class SwingViewBuilder {
 
     public AnnotationPanel buildAnnotationPanel() {
         AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, messageBundle);
+        // build the comments panel
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP)) {
+            MarkupAnnotationPanel markupAnnotationPanel = buildMarkupAnnotationPanel();
+            annotationPanel.addMarkupAnnotationPanel(markupAnnotationPanel,
+                    messageBundle.getString("viewer.utilityPane.markupAnnotation.title"));
+        }
+        // build the destinations panel
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS)) {
+            DestinationsPanel destinationPanel = buildDestinationsPanel();
+            annotationPanel.addDestinationPanel(destinationPanel,
+                    messageBundle.getString("viewer.utilityPane.destinations.title"));
+        }
+
         if (viewerController != null)
             viewerController.setAnnotationPanel(annotationPanel);
         return annotationPanel;
+    }
+
+    public MarkupAnnotationPanel buildMarkupAnnotationPanel() {
+        MarkupAnnotationPanel annotationPanel = new MarkupAnnotationPanel(viewerController, propertiesManager);
+        annotationPanel.setAnnotationUtilityToolbar(buildAnnotationPropertiesToolBar());
+        return annotationPanel;
+    }
+
+    public DestinationsPanel buildDestinationsPanel() {
+        DestinationsPanel destinationsPanel = new DestinationsPanel(viewerController, propertiesManager);
+        return destinationsPanel;
     }
 
     /**

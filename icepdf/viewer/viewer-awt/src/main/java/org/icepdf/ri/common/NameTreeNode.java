@@ -13,11 +13,10 @@
  * express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package org.icepdf.ri.common.utility.annotation.properties;
+package org.icepdf.ri.common;
 
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.NameNode;
-import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StringObject;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -35,7 +34,7 @@ public class NameTreeNode extends DefaultMutableTreeNode {
     private NameNode item;
     // or a leaf node but not both.
     private StringObject name;
-    private Reference reference;
+    private Object value;
 
     private ResourceBundle messageBundle;
     private MessageFormat formatter;
@@ -75,11 +74,11 @@ public class NameTreeNode extends DefaultMutableTreeNode {
         }
     }
 
-    public NameTreeNode(StringObject name, Reference ref) {
+    public NameTreeNode(StringObject name, Object value) {
         super();
         leaf = true;
         this.name = name;
-        this.reference = ref;
+        this.value = value;
         setUserObject(name);
     }
 
@@ -99,8 +98,8 @@ public class NameTreeNode extends DefaultMutableTreeNode {
         return name;
     }
 
-    public Reference getReference() {
-        return reference;
+    public Object getReference() {
+        return value;
     }
 
     public boolean isRootNode() {
@@ -146,7 +145,7 @@ public class NameTreeNode extends DefaultMutableTreeNode {
             if (item.getNamesAndValues() != null) {
                 List namesAndValues = item.getNamesAndValues();
                 StringObject name;
-                Reference ref;
+                Object value;
                 for (int i = 0, max = namesAndValues.size(); i < max; i += 2) {
                     Object tmp = namesAndValues.get(i);
                     if (tmp instanceof StringObject) {
@@ -154,8 +153,8 @@ public class NameTreeNode extends DefaultMutableTreeNode {
                     } else {
                         name = new LiteralStringObject((String) namesAndValues.get(i));
                     }
-                    ref = (Reference) namesAndValues.get(i + 1);
-                    add(new NameTreeNode(name, ref));
+                    value = namesAndValues.get(i + 1);
+                    add(new NameTreeNode(name, value));
                 }
             }
         }

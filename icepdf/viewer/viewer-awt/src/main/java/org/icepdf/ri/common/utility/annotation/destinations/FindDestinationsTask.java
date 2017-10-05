@@ -4,13 +4,12 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.NameTree;
 import org.icepdf.core.pobjects.Names;
 import org.icepdf.core.util.Library;
-import org.icepdf.ri.common.AbstractTask;
-import org.icepdf.ri.common.DragDropColorList;
-import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.common.utility.signatures.SigVerificationTask;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
@@ -88,12 +87,19 @@ public class FindDestinationsTask extends AbstractTask {
                 try {
                     Document currentDocument = controller.getDocument();
                     if (currentDocument != null) {
-                        // iterate over markup annotations
+                        // NameTree node builds the tree lazily which is fine for selection, but for manipulation
+                        // we need to build the full tree so we can keep track of selection paths.
                         Library library = currentDocument.getCatalog().getLibrary();
                         Names names = currentDocument.getCatalog().getNames();
                         if (names != null && names.getDestsNameTree() != null) {
-                            NameTree tree = names.getDestsNameTree();
+                            NameTree nameTree = names.getDestsNameTree();
                             taskStatusMessage = loadingMessage.format(new Object[]{0, 0});
+
+                            NameJTree nameJTree = new NameJTree();
+                            nameJTree.setModel(new DefaultTreeModel(
+                                    new NameTreeNode(nameTree.getRoot(), messageBundle)));
+
+                            SwingUtilities.invokeLater(() -> destinationsPanel.setNameJTree(nameJTree));
                         }
 
                     }

@@ -4,16 +4,13 @@ import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.util.PropertyConstants;
-import org.icepdf.ri.common.AbstractTask;
-import org.icepdf.ri.common.AbstractWorkerPanel;
-import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.annotations.PopupListener;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -35,7 +32,7 @@ public class DestinationsHandlerPanel extends AbstractWorkerPanel implements Pro
         this.parentDestinationsPanel = parentDestinationsPanel;
 
         nodeSelectionListener = new DestinationNodeSelectionListener();
-        cellRenderer = new DefaultTreeCellRenderer();// AnnotationCellRender();
+        cellRenderer = new DestinationCellRender();
         rootNodeLabel = messageBundle.getString("viewer.utilityPane.destinations.title");
 
         // listen for destinations changes.
@@ -84,6 +81,10 @@ public class DestinationsHandlerPanel extends AbstractWorkerPanel implements Pro
         super.buildUI();
         // setup validation progress bar and status label
         buildProgressBar();
+    }
+
+    public void setNameJTree(NameJTree nameJTree) {
+        tree = nameJTree;
     }
 
     public void addDestination(String name, Destination destination) {

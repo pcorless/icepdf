@@ -153,11 +153,11 @@ public class WindowManager implements WindowManagementCallback {
      *
      * @param frame parent window containers.
      */
-    public static void newWindowLocation(JFrame frame) {
+    public static void newWindowLocation(Container frame) {
         newWindowLocation(frame, 0);
     }
 
-    private static void newWindowLocation(JFrame frame, int newWindowInvocationCounter) {
+    private static void newWindowLocation(Container frame, int newWindowInvocationCounter) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Rectangle bounds = env.getMaximumWindowBounds();
         Preferences prefs = PropertiesManager.getInstance().getPreferences();
@@ -195,7 +195,7 @@ public class WindowManager implements WindowManagementCallback {
         ++newWindowInvocationCounter;
     }
 
-    public static void saveViewerState(JFrame viewer) {
+    public static void saveViewerState(Container viewer) {
         if (viewer != null) {
             //save width & height
             Rectangle sz = viewer.getBounds();
