@@ -31,13 +31,15 @@ public class MarkupGlueComponent extends JComponent {
     protected MarkupAnnotationComponent markupAnnotationComponent;
     protected PopupAnnotationComponent popupAnnotationComponent;
 
-    public MarkupGlueComponent(MarkupAnnotationComponent markupAnnotationComponent) {
+    public MarkupGlueComponent(MarkupAnnotationComponent markupAnnotationComponent, PopupAnnotationComponent popupAnnotationComponent) {
         this.markupAnnotationComponent = markupAnnotationComponent;
-        popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
-        Rectangle bound = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
-        setBounds(markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds()));
-        setPreferredSize(new Dimension(bound.width, bound.height));
-        setSize(new Dimension(bound.width, bound.height));
+        this.popupAnnotationComponent = popupAnnotationComponent;
+        if (popupAnnotationComponent != null) {
+            Rectangle bound = markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds());
+            setBounds(markupAnnotationComponent.getBounds().union(popupAnnotationComponent.getBounds()));
+            setPreferredSize(new Dimension(bound.width, bound.height));
+            setSize(new Dimension(bound.width, bound.height));
+        }
     }
 
     public MarkupAnnotationComponent getMarkupAnnotationComponent() {

@@ -15,8 +15,8 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.InkAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -40,7 +40,7 @@ import java.awt.event.MouseEvent;
 public class InkAnnotationComponent extends MarkupAnnotationComponent {
 
 
-    public InkAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public InkAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
                                   AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isShowInvisibleBorder = false;

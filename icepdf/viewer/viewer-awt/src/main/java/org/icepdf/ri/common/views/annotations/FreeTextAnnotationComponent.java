@@ -15,9 +15,9 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.TextSprite;
@@ -74,7 +74,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     private boolean contentTextChange;
     private FreeTextAnnotation freeTextAnnotation;
 
-    public FreeTextAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public FreeTextAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
                                        final AbstractPageViewComponent pageViewComponent,
                                        final DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);

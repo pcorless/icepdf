@@ -15,8 +15,8 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.CircleAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.CircleAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -40,7 +40,7 @@ import java.awt.event.MouseEvent;
 public class CircleAnnotationComponent extends MarkupAnnotationComponent {
 
 
-    public CircleAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public CircleAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isShowInvisibleBorder = false;

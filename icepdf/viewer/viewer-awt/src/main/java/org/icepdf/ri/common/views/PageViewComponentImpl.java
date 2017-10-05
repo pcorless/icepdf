@@ -365,7 +365,9 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         if (annotation instanceof PopupAnnotationComponent) {
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.POPUP_LAYER);
         } else if (annotation instanceof MarkupAnnotationComponent) {
-            this.add(new MarkupGlueComponent((MarkupAnnotationComponent) annotation),
+            MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
+            PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
+            this.add(new MarkupGlueComponent(markupAnnotationComponent, popupAnnotationComponent),
                     JLayeredPane.PALETTE_LAYER);
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.DEFAULT_LAYER);
         } else {
@@ -418,8 +420,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                     if (annotationComponents == null) {
                         annotationComponents = new ArrayList<>(annotations.size());
                         Annotation annotation;
-                        for (Annotation annotation1 : annotations) {
-                            annotation = annotation1;
+                        for (int i = 0, max = annotations.size(); i < max; i++) {
+                            annotation = annotations.get(i);
                             // parser can sometimes return an empty array depending on the PDF syntax being used.
                             if (annotation != null) {
                                 final AbstractAnnotationComponent comp =
@@ -431,11 +433,26 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                                     annotationComponents.add(comp);
                                     // add to layout
                                     if (comp instanceof PopupAnnotationComponent) {
-                                        parent.add(comp, JLayeredPane.POPUP_LAYER);
+                                        PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) comp;
+                                        // check if we have created the parent markup,  if so add the glue
+                                        MarkupAnnotationComponent markupAnnotationComponent =
+                                                popupAnnotationComponent.getMarkupAnnotationComponent();
+                                        if (markupAnnotationComponent != null) {
+                                            parent.add(new MarkupGlueComponent(markupAnnotationComponent,
+                                                    popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
+                                        }
+                                        parent.add(popupAnnotationComponent, JLayeredPane.POPUP_LAYER);
                                     } else if (comp instanceof MarkupAnnotationComponent) {
-                                        parent.add(new MarkupGlueComponent((MarkupAnnotationComponent) comp),
-                                                JLayeredPane.DEFAULT_LAYER);
-                                        parent.add(comp, JLayeredPane.PALETTE_LAYER);
+                                        MarkupAnnotationComponent markupAnnotationComponent =
+                                                (MarkupAnnotationComponent) comp;
+                                        PopupAnnotationComponent popupAnnotationComponent =
+                                                markupAnnotationComponent.getPopupAnnotationComponent();
+                                        // we may or may not have create the popup, if so we create the glue
+                                        if (popupAnnotationComponent != null) {
+                                            parent.add(new MarkupGlueComponent(markupAnnotationComponent,
+                                                    popupAnnotationComponent), JLayeredPane.DEFAULT_LAYER);
+                                        }
+                                        parent.add(markupAnnotationComponent, JLayeredPane.PALETTE_LAYER);
                                     } else {
                                         parent.add(comp, JLayeredPane.PALETTE_LAYER);
                                     }

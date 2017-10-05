@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.Defs;
@@ -57,7 +56,7 @@ import java.util.logging.Logger;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public abstract class MarkupAnnotationComponent extends AbstractAnnotationComponent {
+public abstract class MarkupAnnotationComponent extends AbstractAnnotationComponent<MarkupAnnotation> {
 
     protected static final Logger logger =
             Logger.getLogger(MarkupAnnotationComponent.class.toString());
@@ -70,17 +69,11 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                         "org.icepdf.core.annotations.interactive.popup.enabled", true);
     }
 
-    protected MarkupAnnotation markupAnnotation;
-
-    public MarkupAnnotationComponent(Annotation annotation,
+    public MarkupAnnotationComponent(MarkupAnnotation annotation,
                                      DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent,
                                      DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
-
-        if (annotation instanceof MarkupAnnotation) {
-            markupAnnotation = (MarkupAnnotation) annotation;
-        }
 
         // command test
         buildContextMenu();
@@ -98,8 +91,8 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
     @Override
     public void resetAppearanceShapes() {
         // our only purpose is to update the popup annotation color.
-        if (markupAnnotation != null) {
-            PopupAnnotation popup = markupAnnotation.getPopupAnnotation();
+        if (annotation != null) {
+            PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup != null) {
                 // toggle the visibility of the popup
                 popup.setOpen(!popup.isOpen());
@@ -123,18 +116,17 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
     }
 
     public PopupAnnotationComponent getPopupAnnotationComponent() {
-        if (markupAnnotation != null) {
-            PopupAnnotation popup = markupAnnotation.getPopupAnnotation();
+        if (annotation != null) {
+            PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup == null) {
                 PopupAnnotationComponent popupAnnotationComponent = createPopupAnnotationComponent(false);
-                markupAnnotation.setPopupAnnotation((PopupAnnotation) popupAnnotationComponent.getAnnotation());
+                annotation.setPopupAnnotation((PopupAnnotation) popupAnnotationComponent.getAnnotation());
                 return popupAnnotationComponent;
             }
 
             if (popup != null) {
                 // find the popup component
-                ArrayList<AbstractAnnotationComponent> annotationComponents =
-                        pageViewComponent.getAnnotationComponents();
+                ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
                 Reference compReference;
                 Reference popupReference = popup.getPObjectReference();
                 for (AnnotationComponent annotationComponent : annotationComponents) {
@@ -148,6 +140,11 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                         break;
                     }
                 }
+//                // we didn't fin a component so we'll create one.
+//                PopupAnnotationComponent popupAnnotationComponent = createPopupAnnotationComponent(true);
+//                annotation.setPopupAnnotation(popup);
+//                annotationComponents.add(popupAnnotationComponent);
+//                return popupAnnotationComponent;
             }
         }
         return null;
@@ -162,29 +159,32 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
         Rectangle tBbox = convertToPageSpace(bBox).getBounds();
 
         // we may have an new markup or one that just didn't have a popup.
-        if (markupAnnotation != null && isNew) {
-            if (markupAnnotation.getCreationDate() == null) {
-                markupAnnotation.setCreationDate(PDate.formatDateTime(new Date()));
+        if (annotation != null && isNew) {
+            if (annotation.getCreationDate() == null) {
+                annotation.setCreationDate(PDate.formatDateTime(new Date()));
             }
-            if (markupAnnotation.getTitleText() == null) {
-                markupAnnotation.setTitleText(System.getProperty("user.name"));
+            if (annotation.getTitleText() == null) {
+                annotation.setTitleText(System.getProperty("user.name"));
             }
-            if (markupAnnotation.getContents() == null) {
-                markupAnnotation.setContents("");
+            if (annotation.getContents() == null) {
+                annotation.setContents("");
             }
         }
+        PopupAnnotation popupAnnotation;
+        if (annotation.getPopupAnnotation() == null) {
+            popupAnnotation = TextAnnotationHandler.createPopupAnnotation(
+                    documentViewModel.getDocument().getPageTree().getLibrary(),
+                    tBbox, annotation, getPageTransform());
+            annotation.setPopupAnnotation(popupAnnotation);
+        } else {
+            popupAnnotation = annotation.getPopupAnnotation();
+        }
 
-        PopupAnnotation annotation =
-                TextAnnotationHandler.createPopupAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
-                        tBbox, markupAnnotation, getPageTransform());
-
-        markupAnnotation.setPopupAnnotation(annotation);
 
         // create the annotation object.
         PopupAnnotationComponent comp = (PopupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
+                        popupAnnotation,
                         documentViewController,
                         pageViewComponent, documentViewModel);
         // set the bounds and refresh the userSpace rectangle
@@ -195,7 +195,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
         // add them to the container, using absolute positioning.
         documentViewController.addNewAnnotation(comp);
         pageViewComponent.revalidate();
-        return (PopupAnnotationComponent) comp;
+        return comp;
     }
 
 
@@ -210,8 +210,8 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
     }
 
     public void togglePopupAnnotationVisibility() {
-        if (markupAnnotation != null) {
-            PopupAnnotation popup = markupAnnotation.getPopupAnnotation();
+        if (annotation != null) {
+            PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup != null) {
                 popup.setOpen(!popup.isOpen());
                 PopupAnnotationComponent popupComponent = getPopupAnnotationComponent();

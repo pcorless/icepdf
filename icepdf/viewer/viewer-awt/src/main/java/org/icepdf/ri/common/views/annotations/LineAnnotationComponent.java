@@ -15,8 +15,8 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.LineAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -41,7 +41,7 @@ import java.awt.event.MouseEvent;
 public class LineAnnotationComponent extends MarkupAnnotationComponent {
 
 
-    public LineAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public LineAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isRollover = false;

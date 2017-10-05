@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.SquareAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -40,7 +40,7 @@ import java.awt.event.MouseEvent;
 public class SquareAnnotationComponent extends MarkupAnnotationComponent {
 
 
-    public SquareAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public SquareAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
         isRollover = false;

@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -33,7 +33,7 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
     private static final Logger logger =
             Logger.getLogger(TextMarkupAnnotationComponent.class.toString());
 
-    public TextMarkupAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public TextMarkupAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
                                          AbstractPageViewComponent pageViewComponent,
                                          DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);

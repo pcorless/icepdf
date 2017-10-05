@@ -18,9 +18,7 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
-import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
@@ -78,34 +76,34 @@ public class AnnotationComponentFactory {
                 return new LinkAnnotationComponent(annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (TextMarkupAnnotation.isTextMarkupAnnotation(subtype)) {
-                return new TextMarkupAnnotationComponent(annotation, documentViewController,
+                return new TextMarkupAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_LINE.equals(subtype)) {
-                return new LineAnnotationComponent(annotation, documentViewController,
+                return new LineAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_CIRCLE.equals(subtype)) {
-                return new CircleAnnotationComponent(annotation, documentViewController,
+                return new CircleAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_POLYGON.equals(subtype)) {
-                return new PolygonAnnotationComponent(annotation, documentViewController,
+                return new PolygonAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_POLYLINE.equals(subtype)) {
-                return new PolyLineAnnotationComponent(annotation, documentViewController,
+                return new PolyLineAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_SQUARE.equals(subtype)) {
-                return new SquareAnnotationComponent(annotation, documentViewController,
+                return new SquareAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_POPUP.equals(subtype)) {
-                return new PopupAnnotationComponent(annotation, documentViewController,
+                return new PopupAnnotationComponent((PopupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_TEXT.equals(subtype)) {
-                return new TextAnnotationComponent(annotation, documentViewController,
+                return new TextAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_INK.equals(subtype)) {
-                return new InkAnnotationComponent(annotation, documentViewController,
+                return new InkAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_FREE_TEXT.equals(subtype)) {
-                return new FreeTextAnnotationComponent(annotation, documentViewController,
+                return new FreeTextAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent, documentViewModel);
             } else if (Annotation.SUBTYPE_WIDGET.equals(subtype)) {
                 AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;

@@ -67,7 +67,7 @@ import java.util.logging.Level;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public class PopupAnnotationComponent extends AbstractAnnotationComponent
+public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupAnnotation>
         implements TreeSelectionListener, ActionListener, DocumentListener {
 
     public static int DEFAULT_WIDTH = 215;
@@ -81,9 +81,6 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         PRIVATE_PROPERTY_ENABLED = Defs.booleanProperty(
                 "org.icepdf.core.page.annotation.privateProperty.enabled", false);
     }
-
-
-    protected PopupAnnotation popupAnnotation;
 
     // layouts constraint
     private GridBagConstraints constraints;
@@ -101,7 +98,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
     private String userName = System.getProperty("user.name");
 
-    public PopupAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public PopupAnnotationComponent(PopupAnnotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
         super(annotation, documentViewController, pageViewComponent, documentViewModel);
 
@@ -111,19 +108,16 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         isResizable = true;
         isShowInvisibleBorder = false;
 
-        if (annotation instanceof PopupAnnotation) {
-            popupAnnotation = (PopupAnnotation) annotation;
-            try {
-                popupAnnotation.init();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.fine("Popup annotation component instance creation was interrupted");
-            }
+        try {
+            annotation.init();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.fine("Popup annotation component instance creation was interrupted");
         }
 
         buildGUI();
 
-        boolean isVisible = popupAnnotation.isOpen();
+        boolean isVisible = annotation.isOpen();
         setVisible(isVisible);
 
 
@@ -207,7 +201,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         }
 
         if (selectedMarkupAnnotation != null) {
-            popupAnnotation.setOpen(aFlag);
+            annotation.setOpen(aFlag);
         }
         if (getParent() != null) getParent().repaint();
     }
@@ -226,7 +220,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     private void buildGUI() {
 
         List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
-        MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
+        MarkupAnnotation parentAnnotation = annotation.getParent();
 
         // check first if there are anny annotation that point to this one as
         // an IRT.  If there aren't any then the selectedAnnotation is the parent
@@ -277,8 +271,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         // lock button
         privateToggleButton = new JToggleButton();
-        boolean isPrivate = popupAnnotation.getParent() != null &&
-                popupAnnotation.getParent().getFlagPrivateContents();
+        boolean isPrivate = annotation.getParent() != null &&
+                annotation.getParent().getFlagPrivateContents();
         privateToggleButton.setToolTipText(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
         privateToggleButton.setSelected(isPrivate);
@@ -292,8 +286,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         privateToggleButton.setSelectedIcon(new ImageIcon(Images.get("private_locked.png")));
 
         // text area edited the selected annotation markup contents.
-        String contents = popupAnnotation.getParent() != null ?
-                popupAnnotation.getParent().getContents() : "";
+        String contents = annotation.getParent() != null ?
+                annotation.getParent().getContents() : "";
         textArea = new JTextArea(contents != null ? contents : "");
         textArea.setFont(new JLabel().getFont());
         textArea.setBorder(BorderFactory.createLineBorder(borderColor));
@@ -350,7 +344,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         constraints.insets = new Insets(1, 1, 1, 1);
         // user that created the comment is the only one that can actually make it private.
         if (PRIVATE_PROPERTY_ENABLED) {
-            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+            MarkupAnnotation markupAnnotation = annotation.getParent();
             if (markupAnnotation != null && userName.equals(markupAnnotation.getTitleText())) {
                 addGB(commentPanel, privateToggleButton, 2, 0, 1, 1);
             }
@@ -447,7 +441,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
     }
 
     public AnnotationComponent getAnnotationParentComponent() {
-        return findAnnotationComponent(popupAnnotation.getParent());
+        return findAnnotationComponent(annotation.getParent());
     }
 
     /**
@@ -480,7 +474,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
         // rebuild the tree, which is easier then pruning at this point
         List<Annotation> annotations = pageViewComponent.getPage().getAnnotations();
-        MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
+        MarkupAnnotation parentAnnotation = annotation.getParent();
 
         // check first if there are anny annotation that point to this one as
         // an IRT.  If there aren't any then the selectedAnnotation is the parent
@@ -519,10 +513,10 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         // hide the window on minimize
         if (source == minimizeButton) {
             this.setVisible(false);
-            popupAnnotation.setOpen(false);
+            annotation.setOpen(false);
         } else if (source == privateToggleButton) {
             boolean selected = privateToggleButton.isSelected();
-            MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
+            MarkupAnnotation markupAnnotation = annotation.getParent();
             if (markupAnnotation != null) {
                 markupAnnotation.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, selected);
                 markupAnnotation.setModifiedDate(PDate.formatDateTime(new Date()));
@@ -650,6 +644,28 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
         return false;
     }
 
+    public MarkupAnnotationComponent getMarkupAnnotationComponent() {
+        if (annotation != null) {
+            MarkupAnnotation markupAnnotation = annotation.getParent();
+            if (markupAnnotation != null) {
+                // find the popup component
+                ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
+                Reference compReference;
+                Reference markupReference = markupAnnotation.getPObjectReference();
+                for (AnnotationComponent annotationComponent : annotationComponents) {
+                    compReference = annotationComponent.getAnnotation().getPObjectReference();
+                    // find the component and toggle it's visibility, null check just encase compRef is direct.
+                    if (compReference != null && compReference.equals(markupReference)) {
+                        if (annotationComponent instanceof MarkupAnnotationComponent) {
+                            return ((MarkupAnnotationComponent) annotationComponent);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     /**
      * Gridbag constructor helper
@@ -796,7 +812,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent
 
     @Override
     public void resetAppearanceShapes() {
-        MarkupAnnotation parentAnnotation = popupAnnotation.getParent();
+        MarkupAnnotation parentAnnotation = annotation.getParent();
         if (parentAnnotation.getColor() != null) {
             Color color = checkColor(parentAnnotation.getColor());
             popupBackgroundColor = color;
