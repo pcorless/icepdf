@@ -362,6 +362,16 @@ public class WordText extends AbstractText implements TextSelect {
         return previousGlyphText;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof WordText) {
+            WordText wordText = (WordText) obj;
+            return wordText.getBounds().equals(this.getBounds()) &&
+                    wordText.getText().equals(this.getText());
+        }
+        return super.equals(obj);
+    }
+
     public String toString() {
         return getText();
     }

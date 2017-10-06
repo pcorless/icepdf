@@ -370,6 +370,37 @@ public class PageText implements TextSelect {
     }
 
     /**
+     * Utility to find the currently displayed word instance as there is a chance that a page's PageText has been
+     * reinstantiated.
+     *
+     * @param word text to find.
+     * @return current object of the same wordText value.
+     */
+    public WordText find(WordText word) {
+        for (LineText lineText : pageLines) {
+            for (WordText wordText : lineText.getWords()) {
+                if (word.equals(wordText)) return wordText;
+            }
+        }
+        if (optionalPageLines != null) {
+            // iterate over optional content keys and extract text from visible groups
+            Set<OptionalContents> keys = optionalPageLines.keySet();
+            ArrayList<LineText> optionalLines;
+            for (OptionalContents key : keys) {
+                if (key != null && key.isVisible()) {
+                    optionalLines = optionalPageLines.get(key).getAllPageLines();
+                    for (LineText lineText : optionalLines) {
+                        for (WordText wordText : lineText.getWords()) {
+                            if (word.equals(wordText)) return wordText;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Sorts the given pageLines vertically (y coordinate) in page space. .
      *
      * @param pageLines page lines to sort, not directly sorted, new array is created for sorted data.

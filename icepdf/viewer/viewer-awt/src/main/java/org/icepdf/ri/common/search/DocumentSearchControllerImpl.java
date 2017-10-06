@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.search;
 
+import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -23,6 +24,7 @@ import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.ri.common.SwingController;
 
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -481,13 +483,17 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     /**
      * Navigate tot he page that the current word is on.
      *
-     * @param pageNumber page number to navigate to
+     * @param pageIndex page number to navigate to
      * @param word       word that has been marked as a cursor.
      */
-    private void showWord(int pageNumber, WordText word) {
-        viewerController.showPage(pageNumber);
-        // todo shift page as needed to line with word.
-        // Rectangle2D rect = word.getBounds();
+    public void showWord(int pageIndex, WordText word) {
+        viewerController.showPage(pageIndex);
+        // navigate to the location
+        Rectangle2D.Float bounds = word.getBounds();
+
+        viewerController.getDocumentViewController().setDestinationTarget(
+                new Destination(viewerController.getDocument().getPageTree().getPage(pageIndex),
+                        (int) bounds.x, (int) (bounds.y + bounds.height + 100)));
     }
 
     @Override

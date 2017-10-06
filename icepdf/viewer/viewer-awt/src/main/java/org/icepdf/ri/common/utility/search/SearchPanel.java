@@ -17,6 +17,7 @@ package org.icepdf.ri.common.utility.search;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
+import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
@@ -30,6 +31,7 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.Rectangle2D;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
@@ -326,7 +328,7 @@ public class SearchPanel extends JPanel implements ActionListener,
         constraints.insets = new Insets(10, 5, 1, 5);
         constraints.fill = GridBagConstraints.NONE;
         addGB(searchPanel, new JLabel(messageBundle.getString(
-                        "viewer.utilityPane.search.results.label")),
+                "viewer.utilityPane.search.results.label")),
                 0, 5, 2, 1);
 
         // add the lit to scroll pane
@@ -383,10 +385,25 @@ public class SearchPanel extends JPanel implements ActionListener,
                 if (controller != null) {
                     int oldTool = controller.getDocumentViewToolMode();
                     try {
+                        int pageIndex = tmp.getPageNumber();
+                        WordText wordText = tmp.getWordText();
+                        Rectangle2D.Float bounds = wordText.getBounds();
                         controller.setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
-                        controller.showPage(tmp.getPageNumber());
+                        // navigate to the word.
+                        controller.getDocumentSearchController().showWord(pageIndex, wordText);
+                        // clear the current cursor and set it to this word
+                        PageText pageText = controller.getDocument().getPageViewText(pageIndex);
+                        pageText.clearHighlightedCursor();
                         // move the cursor so we can easily show hits on the page with f3
-                        controller.getDocumentSearchController().setCurrentPage(tmp.getPageNumber());
+                        controller.getDocumentSearchController().setCurrentPage(pageIndex);
+                        // find the word in the current pageText, object may be stale.
+                        wordText = pageText.find(wordText);
+                        if (wordText != null) {
+                            wordText.setHasHighlightCursor(true);
+                            wordText.setHighlightCursor(true);
+                        }
+                    } catch (InterruptedException e1) {
+                        logger.finer("Page text retrieval interrupted.");
                     } finally {
                         controller.setDisplayTool(oldTool);
                     }
@@ -413,7 +430,7 @@ public class SearchPanel extends JPanel implements ActionListener,
             if ((showPages) &&
                     (lastNodePageIndex != pageNumber)) {
                 parentNode = new DefaultMutableTreeNode(
-                        new FindEntry(title, pageNumber), true);
+                        new FindEntry(title, pageNumber, null), true);
                 treeModel.insertNodeInto(parentNode, rootTreeNode,
                         rootTreeNode.getChildCount());
             } else {
@@ -424,7 +441,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 addObject(parentNode,
                         new DefaultMutableTreeNode(
                                 new FindEntry(generateResultPreview(
-                                        currentText.getWords()), pageNumber),
+                                        currentText.getWords()), pageNumber, currentText.getWords()),
                                 false), false);
             }
 
@@ -645,7 +662,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                                                 storedResultCount, storedResultCount};
                                         storedChildParent.setUserObject(
                                                 new FindEntry(searchResultMessageForm.format(messageArguments),
-                                                        storedPageNumber));
+                                                        storedPageNumber, null));
                                     }
 
                                     // Reset the stored variables
@@ -660,7 +677,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                                             storedResultCount, storedResultCount};
                                     storedChildParent = new DefaultMutableTreeNode(
                                             new FindEntry(searchResultMessageForm.format(messageArguments),
-                                                    storedPageNumber),
+                                                    storedPageNumber, null),
                                             true);
                                     storedChildParent.add(currentChild);
                                     currentChild.setParent(storedChildParent);
@@ -849,17 +866,28 @@ public class SearchPanel extends JPanel implements ActionListener,
         // The destination to be displayed when this item is activated
         int pageNumber;
 
+        WordText wordText;
+
         /**
          * Creates a new instance of a FindEntry.
          *
          * @param title      display title
          * @param pageNumber page number where the hit(s) occured
          */
-        FindEntry(String title, int pageNumber) {
+        FindEntry(String title, int pageNumber, List<WordText> currentText) {
             super();
             this.pageNumber = pageNumber;
             this.title = title;
             setUserObject(title);
+            // store the search hit so we can use it's bounds for navigation and cursor painting
+            if (currentText != null) {
+                for (WordText currentWord : currentText) {
+                    if (currentWord.isHighlighted()) {
+                        wordText = currentWord;
+                        break;
+                    }
+                }
+            }
         }
 
         /**
@@ -869,6 +897,16 @@ public class SearchPanel extends JPanel implements ActionListener,
          */
         public int getPageNumber() {
             return pageNumber;
+        }
+
+        /**
+         * Gets the associated worded marked as highlighted.  Not this object may not be the same as the object
+         * currently being painted.
+         *
+         * @return word marked as search.
+         */
+        public WordText getWordText() {
+            return wordText;
         }
     }
 }

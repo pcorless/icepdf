@@ -124,6 +124,15 @@ public interface DocumentSearchController {
     WordText previousSearchHit();
 
     /**
+     * Thew page view if applicable should navigate to the page and word specified.  There is no quarentee
+     * the work will be highlighted.
+     *
+     * @param pageIndex page index to navigate to
+     * @param word      word to show.
+     */
+    void showWord(int pageIndex, WordText word);
+
+    /**
      * Add the search term to the list of search terms.  The term is split
      * into words based on white space and punctuation. No checks are done
      * for duplication.

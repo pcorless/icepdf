@@ -107,6 +107,19 @@ public class Destination {
         init();
     }
 
+    public Destination(Page page, int x, int y) {
+        library = page.getLibrary();
+
+        ArrayList<Object> destination = new ArrayList<>();
+        destination.add(page.getPObjectReference());
+        destination.add(TYPE_XYZ);
+        destination.add(x);
+        destination.add(y);
+        destination.add(null);
+        object = destination;
+        init();
+    }
+
     /**
      * Initiate the Destination. Retrieve any needed attributes.
      */
