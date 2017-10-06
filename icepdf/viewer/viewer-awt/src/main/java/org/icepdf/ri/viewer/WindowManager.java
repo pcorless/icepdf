@@ -45,13 +45,15 @@ public class WindowManager implements WindowManagementCallback {
     public static final String APPLICATION_X_OFFSET = "application.x";
     public static final String APPLICATION_Y_OFFSET = "application.y";
 
+    public static final int NEW_WINDOW_OFFSET = 10;
+
     private static WindowManager windowManager;
 
     private PropertiesManager properties;
 
     private ArrayList<SwingController> controllers;
 
-    private int newWindowInvocationCounter = 0;
+    private static int newWindowInvocationCounter = 0;
 
     private ResourceBundle messageBundle = null;
 
@@ -140,7 +142,7 @@ public class WindowManager implements WindowManagementCallback {
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
-            newWindowLocation(frame, newWindowInvocationCounter);
+            newWindowLocation(frame);
             frame.setVisible(true);
         }
 
@@ -154,10 +156,6 @@ public class WindowManager implements WindowManagementCallback {
      * @param frame parent window containers.
      */
     public static void newWindowLocation(Container frame) {
-        newWindowLocation(frame, 0);
-    }
-
-    private static void newWindowLocation(Container frame, int newWindowInvocationCounter) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Rectangle bounds = env.getMaximumWindowBounds();
         Preferences prefs = PropertiesManager.getInstance().getPreferences();
@@ -190,9 +188,9 @@ public class WindowManager implements WindowManagementCallback {
         prefs.putInt(APPLICATION_Y_OFFSET, previousY);
         // apply the corrected size and location.
         frame.setSize(width, height);
-        frame.setLocation((previousX + (newWindowInvocationCounter * 10)),
-                (previousY + (newWindowInvocationCounter * 10)));
-        ++newWindowInvocationCounter;
+        int offset = newWindowInvocationCounter > 0 ? NEW_WINDOW_OFFSET : 0;
+        frame.setLocation(previousX + offset, previousY + offset);
+        newWindowInvocationCounter++;
     }
 
     public static void saveViewerState(Container viewer) {
