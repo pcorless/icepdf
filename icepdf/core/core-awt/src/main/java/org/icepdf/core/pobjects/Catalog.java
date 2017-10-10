@@ -173,6 +173,23 @@ public class Catalog extends Dictionary {
         return outlines;
     }
 
+    public boolean addNamedDestination(String name, Destination destination) {
+        library.getStateManager();
+        System.out.println("adding " + name + " " + destination);
+        return false;
+    }
+
+    public boolean updateNamedDestination(String name, Destination destination) {
+        System.out.println("updating " + name + " " + destination);
+        return true;
+    }
+
+    public boolean deleteNamedDestination(String name) {
+        System.out.println("delete " + name);
+        return false;
+    }
+
+
     /**
      * A collection dictionary that a conforming reader shall use to enhance the presentation of file attachments
      * stored in the PDF document.

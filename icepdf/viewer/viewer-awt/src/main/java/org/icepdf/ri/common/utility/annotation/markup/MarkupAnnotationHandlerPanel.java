@@ -88,7 +88,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
             if (evt.getOldValue() instanceof MarkupAnnotationComponent) {
                 // find an remove the markup annotation node.
                 MarkupAnnotationComponent comp = (MarkupAnnotationComponent) evt.getOldValue();
-                MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
+                MarkupAnnotation markupAnnotation = comp.getAnnotation();
                 for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
                     AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
                     if (node != null) {
@@ -107,7 +107,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
             if (evt.getNewValue() instanceof PopupAnnotationComponent) {
                 // find the markup annotation
                 PopupAnnotationComponent comp = (PopupAnnotationComponent) evt.getNewValue();
-                PopupAnnotation popupAnnotation = (PopupAnnotation) comp.getAnnotation();
+                PopupAnnotation popupAnnotation = comp.getAnnotation();
                 if (popupAnnotation.getParent() != null) {
                     MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
                     // only update root pop annotation comment
@@ -135,7 +135,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
             if (evt.getNewValue() instanceof MarkupAnnotationComponent) {
                 // try and find the node in the tree.
                 MarkupAnnotationComponent comp = (MarkupAnnotationComponent) evt.getNewValue();
-                MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
+                MarkupAnnotation markupAnnotation = comp.getAnnotation();
                 for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
                     AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
                     if (node != null) {

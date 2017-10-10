@@ -15,13 +15,19 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.utility.annotation.destinations.NameTreeEditDialog;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewModel;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ResourceBundle;
 
 /**
  * The AnnotationSelectionHandler is responsible for deselecting all annotations
@@ -30,11 +36,15 @@ import java.awt.event.MouseEvent;
  * @since 5.0
  */
 public class AnnotationSelectionHandler extends MouseAdapter
-        implements ToolHandler {
+        implements ToolHandler, ActionListener {
 
     protected DocumentViewController documentViewController;
     protected DocumentViewModel documentViewModel;
     protected AbstractPageViewComponent pageViewComponent;
+
+    private JPopupMenu contextMenu;
+    private JMenuItem addMenuItem;
+    private int x, y;
 
     public AnnotationSelectionHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent,
@@ -42,12 +52,34 @@ public class AnnotationSelectionHandler extends MouseAdapter
         this.documentViewController = documentViewController;
         this.documentViewModel = documentViewModel;
         this.pageViewComponent = pageViewComponent;
+
+        ResourceBundle messageBundle = documentViewController.getParentController().getMessageBundle();
+        contextMenu = new JPopupMenu();
+        addMenuItem = new JMenuItem(messageBundle.getString(
+                "viewer.utilityPane.destinations.view.selectionTool.contextMenu.add.label"));
+        addMenuItem.addActionListener(this);
+        contextMenu.add(addMenuItem);
     }
 
     public void mouseClicked(MouseEvent e) {
         documentViewController.clearSelectedAnnotations();
-        if (pageViewComponent != null)
+        if (pageViewComponent != null) {
             pageViewComponent.requestFocus();
+        }
+        if (e.getButton() == MouseEvent.BUTTON3) {
+            x = e.getX();
+            y = e.getY();
+            contextMenu.show(e.getComponent(), x, y);
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == addMenuItem) {
+            // create popup for adding a new destination.
+            new NameTreeEditDialog((SwingController) documentViewController.getParentController(),
+                    pageViewComponent.getPage(), x, y).setVisible(true);
+        }
     }
 
     public void paintTool(Graphics g) {

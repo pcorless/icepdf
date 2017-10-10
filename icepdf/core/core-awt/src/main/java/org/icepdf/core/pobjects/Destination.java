@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
@@ -83,11 +84,11 @@ public class Destination {
     private Name type;
 
     // Specified by /XYZ in the core, /(left)(top)(zoom)
-    private Float left = null;
-    private Float bottom = null;
-    private Float right = null;
-    private Float top = null;
-    private Float zoom = null;
+    private Float left;
+    private Float bottom;
+    private Float right;
+    private Float top;
+    private Float zoom;
 
     // named Destination name, can be a name or String
     private Name namedDestination;
@@ -130,6 +131,15 @@ public class Destination {
             return;
         }
         inited = true;
+
+        if (object instanceof Reference) {
+            object = library.getObject((Reference) object);
+        }
+
+        // some name tree's use this format which is closer to an action format for defining a destination.
+        if (object instanceof HashMap) {
+            object = ((HashMap) object).get(GoToAction.DESTINATION_KEY);
+        }
 
         // if vector we have found /XYZ
         if (object instanceof List) {

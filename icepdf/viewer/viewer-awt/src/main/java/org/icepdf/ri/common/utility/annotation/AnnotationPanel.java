@@ -87,6 +87,10 @@ public class AnnotationPanel extends JPanel {
         return markupAnnotationPanel;
     }
 
+    public DestinationsPanel getDestinationsPanel() {
+        return destinationsPanel;
+    }
+
     public void dispose() {
         markupAnnotationPanel.dispose();
 //        removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);

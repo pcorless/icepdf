@@ -4987,6 +4987,12 @@ public class SwingController extends ComponentAdapter
                     annotationPanel.getMarkupAnnotationPanel() != null) {
                 annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
             }
+        } else if (propertyName.equals(PropertyConstants.DESTINATION_ADDED) ||
+                propertyName.equals(PropertyConstants.DESTINATION_UPDATED) ||
+                propertyName.equals(PropertyConstants.DESTINATION_DELETED)) {
+            if (annotationPanel != null && annotationPanel.getDestinationsPanel() != null) {
+                annotationPanel.getDestinationsPanel().refreshNameTree();
+            }
         }
     }
 }

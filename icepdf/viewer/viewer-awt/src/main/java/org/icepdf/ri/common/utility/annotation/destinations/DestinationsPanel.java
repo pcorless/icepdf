@@ -15,9 +15,9 @@
  */
 package org.icepdf.ri.common.utility.annotation.destinations;
 
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.NameTree;
-import org.icepdf.core.pobjects.Names;
+import org.icepdf.core.pobjects.*;
+import org.icepdf.core.util.Library;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.NameJTree;
 import org.icepdf.ri.common.NameTreeNode;
@@ -25,8 +25,15 @@ import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -42,7 +49,8 @@ import java.util.prefs.Preferences;
  *
  * @since 6.3
  */
-public class DestinationsPanel extends JPanel implements MutableDocument {
+public class DestinationsPanel extends JPanel
+        implements MutableDocument, TreeSelectionListener, MouseListener, ActionListener {
 
     private static final Logger logger =
             Logger.getLogger(DestinationsPanel.class.toString());
@@ -57,6 +65,10 @@ public class DestinationsPanel extends JPanel implements MutableDocument {
 
     private Document document;
     private NameJTree nameJTree;
+
+    private JPopupMenu contextMenu;
+    private JMenuItem deleteNameTreeNode;
+    private JMenuItem editNameTreeNode;
 
     public DestinationsPanel(SwingController controller, PropertiesManager propertiesManager) {
         messageBundle = controller.getMessageBundle();
@@ -75,18 +87,31 @@ public class DestinationsPanel extends JPanel implements MutableDocument {
         constraints.weighty = 1.0;
 
         nameJTree = new NameJTree();
+        nameJTree.addTreeSelectionListener(this);
+        nameJTree.addMouseListener(this);
         JScrollPane scrollPane = new JScrollPane(nameJTree);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
+        contextMenu = new JPopupMenu();
+        editNameTreeNode = new JMenuItem(messageBundle.getString(
+                "viewer.utilityPane.destinations.view.contextMenu.edit.label"));
+        editNameTreeNode.addActionListener(this);
+        contextMenu.add(editNameTreeNode);
+        contextMenu.addSeparator();
+        deleteNameTreeNode = new JMenuItem(messageBundle.getString(
+                "viewer.utilityPane.destinations.view.contextMenu.delete.label"));
+        deleteNameTreeNode.addActionListener(this);
+        contextMenu.add(deleteNameTreeNode);
+
         addGB(this, scrollPane, 0, 0, 1, 1);
 
         setFocusable(true);
+
+        addPropertyChangeListener(PropertyConstants.DESTINATION_UPDATED, controller);
     }
 
-    @Override
-    public void setDocument(Document document) {
-        this.document = document;
+    public void refreshNameTree() {
         Names names = document.getCatalog().getNames();
         if (names != null && names.getDestsNameTree() != null) {
             NameTree nameTree = names.getDestsNameTree();
@@ -96,6 +121,88 @@ public class DestinationsPanel extends JPanel implements MutableDocument {
                 nameJTree.setShowsRootHandles(true);
             }
         }
+    }
+
+    @Override
+    public void setDocument(Document document) {
+        this.document = document;
+        refreshNameTree();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        Object source = e.getSource();
+        TreePath selectedTreePath = nameJTree.getSelectionPath();
+        if (selectedTreePath != null) {
+            NameTreeNode nameTreeNode = (NameTreeNode) selectedTreePath.getLastPathComponent();
+            if (source == editNameTreeNode) {
+                new NameTreeEditDialog(controller, nameTreeNode.getName().toString(), nameTreeNode.getReference())
+                        .setVisible(true);
+
+            } else if (source == deleteNameTreeNode) {
+                Catalog catalog = controller.getDocument().getCatalog();
+                catalog.deleteNamedDestination(nameTreeNode.getName().toString());
+                controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_DELETED,
+                        null, null);
+            }
+        }
+    }
+
+    @Override
+    public void valueChanged(TreeSelectionEvent e) {
+
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        int x = e.getX();
+        int y = e.getY();
+        int row = nameJTree.getRowForLocation(x, y);
+        TreePath path = nameJTree.getPathForRow(row);
+        if (path != null) {
+            Object node = path.getLastPathComponent();
+            if (node instanceof NameTreeNode) {
+                if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
+                    // on double click we navigate to the nameTree's node
+                    NameTreeNode selectedNode = (NameTreeNode) node;
+                    if (selectedNode.getReference() != null && selectedNode.isLeaf()) {
+                        Object tmp = selectedNode.getReference();
+                        Library library = controller.getDocument().getCatalog().getLibrary();
+                        if (tmp instanceof Reference) {
+                            tmp = library.getObject((Reference) tmp);
+                        }
+                        Destination dest = new Destination(library, tmp);
+                        controller.getDocumentViewController().setDestinationTarget(dest);
+                    }
+                } else if (e.getClickCount() == 1 && e.getButton() == MouseEvent.BUTTON3) {
+                    NameTreeNode selectedNode = (NameTreeNode) node;
+                    nameJTree.setSelectionPath(new TreePath(selectedNode.getPath()));
+                    if (selectedNode.getReference() != null && selectedNode.isLeaf()) {
+                        contextMenu.show(e.getComponent(), e.getX(), e.getY());
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
     }
 
     /**
