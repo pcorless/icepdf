@@ -168,6 +168,9 @@ public class Destination {
                 if (nameTree != null) {
                     Object o = nameTree.searchName(s);
                     if (o != null) {
+                        if (o instanceof PObject) {
+                            o = ((PObject) o).getObject();
+                        }
                         if (o instanceof List) {
                             parse((List) o);
                             found = true;
