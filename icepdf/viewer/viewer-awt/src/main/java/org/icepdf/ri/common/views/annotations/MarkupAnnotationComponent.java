@@ -120,7 +120,9 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
             PopupAnnotation popup = annotation.getPopupAnnotation();
             if (popup == null) {
                 PopupAnnotationComponent popupAnnotationComponent = createPopupAnnotationComponent(false);
-                annotation.setPopupAnnotation((PopupAnnotation) popupAnnotationComponent.getAnnotation());
+                annotation.setPopupAnnotation(popupAnnotationComponent.getAnnotation());
+                popupAnnotationComponent.getAnnotation().setOpen(false);
+                popupAnnotationComponent.setVisible(false);
                 return popupAnnotationComponent;
             }
 
