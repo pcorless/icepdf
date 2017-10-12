@@ -133,6 +133,7 @@ public class Catalog extends Dictionary {
         if (tmp != null) {
             names = new Names(library, (HashMap) tmp);
             names.init();
+            names.setPObjectReference((Reference) entries.get(NAMES_KEY));
         }
 
         // load the Acroform data.
@@ -173,20 +174,42 @@ public class Catalog extends Dictionary {
         return outlines;
     }
 
+    /**
+     * Adds a destination to the names tree of a document.  If no names exist a new tree is created and attached
+     * to the document catalogue.  State manager is updated appropriately to allow the new state to be saved.
+     *
+     * @param name        name of name tree insert label
+     * @param destination associated destination
+     * @return true if the addition was successful.
+     */
     public boolean addNamedDestination(String name, Destination destination) {
         library.getStateManager();
         System.out.println("adding " + name + " " + destination);
-        return false;
+        return true;
     }
 
-    public boolean updateNamedDestination(String name, Destination destination) {
+    /**
+     * Updates an existing name in the name tree replacing the name title and destination.
+     *
+     * @param name        new name of destination.
+     * @param destination new destination value
+     * @return true if the update was successful
+     */
+    public boolean updateNamedDestination(String name, String newName, Destination destination) {
         System.out.println("updating " + name + " " + destination);
         return true;
     }
 
+    /**
+     * Remove a node in the name tree with the specified name
+     *
+     * @param name name of name tree node to remove.
+     * @return true if deletion was successful.
+     */
     public boolean deleteNamedDestination(String name) {
-        System.out.println("delete " + name);
-        return false;
+        // we're deleting names, so we assume we always have valid name tree.
+        NameTree nameTree = getNames().getDestsNameTree();
+        return nameTree.deleteNode(name);
     }
 
 

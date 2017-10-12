@@ -1321,8 +1321,7 @@ public abstract class Annotation extends Dictionary {
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance == null) return;
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-        if (appearanceState.getShapes() != null) {
-
+        if (appearanceState != null && appearanceState.getShapes() != null) {
             AffineTransform matrix = appearanceState.getMatrix();
             Rectangle2D bbox = appearanceState.getBbox();
 

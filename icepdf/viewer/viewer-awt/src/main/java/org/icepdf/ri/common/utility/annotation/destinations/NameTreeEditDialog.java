@@ -17,9 +17,11 @@ package org.icepdf.ri.common.utility.annotation.destinations;
 
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.EscapeJDialog;
+import org.icepdf.ri.common.NameTreeNode;
 import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
@@ -39,9 +41,9 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
     private SwingController controller;
     private ResourceBundle messageBundle;
 
+    private NameTreeNode nameTreeNode;
     private String name;
     private Destination destination;
-    private boolean isNew;
 
     private JButton okButton;
     private JButton cancelButton;
@@ -59,14 +61,19 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
         setGui();
     }
 
-    public NameTreeEditDialog(SwingController controller, String name, Object destination) {
+    public NameTreeEditDialog(SwingController controller, NameTreeNode treeNode) {
         super(controller.getViewerFrame(), true);
         this.controller = controller;
+        nameTreeNode = treeNode;
         messageBundle = controller.getMessageBundle();
-        this.name = name;
+        this.name = treeNode.getName().toString();
         // figure out what the destination package is.
-        this.destination = new Destination(controller.getDocument().getCatalog().getLibrary(), destination);
+        this.destination = new Destination(controller.getDocument().getCatalog().getLibrary(), treeNode.getReference());
         setGui();
+    }
+
+    public NameTreeNode getNameTreeNode() {
+        return nameTreeNode;
     }
 
     @Override
@@ -74,7 +81,7 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
 
         if (e.getSource() == okButton) {
             Catalog catalog = controller.getDocument().getCatalog();
-
+            String oldName = name;
             name = nameTextField.getText();
             destination = implicitDestinationPanel.getDestination(catalog.getLibrary());
             if (name == null) {
@@ -86,10 +93,10 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
             }
 
             boolean updated;
-            if (isNew) {
+            if (nameTreeNode == null) {
                 updated = catalog.addNamedDestination(name, destination);
             } else {
-                updated = catalog.updateNamedDestination(name, destination);
+                updated = catalog.updateNamedDestination(oldName, name, destination);
             }
             if (!updated) {
                 errorLabel.setText(messageBundle.getString(
@@ -97,8 +104,15 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
                 return;
             } else {
                 // fire property change event to rebuild name tree.
-                controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_UPDATED,
-                        null, null);
+                if (nameTreeNode != null) {
+                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
+                    controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_UPDATED,
+                            oldName, nameTreeNode);
+                } else {
+                    nameTreeNode = new NameTreeNode(new LiteralStringObject(name), destination);
+                    controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_ADDED,
+                            oldName, nameTreeNode);
+                }
                 setVisible(false);
                 dispose();
             }

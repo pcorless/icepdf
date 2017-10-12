@@ -34,6 +34,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -111,7 +112,7 @@ public class DestinationsPanel extends JPanel
         addPropertyChangeListener(PropertyConstants.DESTINATION_UPDATED, controller);
     }
 
-    public void refreshNameTree() {
+    public void refreshNameTree(Object node) {
         Names names = document.getCatalog().getNames();
         if (names != null && names.getDestsNameTree() != null) {
             NameTree nameTree = names.getDestsNameTree();
@@ -119,6 +120,22 @@ public class DestinationsPanel extends JPanel
                 nameJTree.setModel(new DefaultTreeModel(new NameTreeNode(nameTree.getRoot(), messageBundle)));
                 nameJTree.setRootVisible(true);
                 nameJTree.setShowsRootHandles(true);
+                // try to expand back to the same path
+                if (node instanceof NameTreeNode) {
+                    NameTreeNode nameTreeNode = (NameTreeNode) node;
+                    // find and select a node with the same node.
+                    Enumeration e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
+                    while (e.hasMoreElements()) {
+                        NameTreeNode currentNode = (NameTreeNode) e.nextElement();
+                        if (currentNode.getName() != null &&
+                                currentNode.getName().toString().equals(
+                                        nameTreeNode.getName().toString())) {
+                            // expand the node
+                            nameJTree.setSelectionPath(new TreePath(currentNode.getPath()));
+                        }
+                    }
+
+                }
             }
         }
     }
@@ -126,7 +143,7 @@ public class DestinationsPanel extends JPanel
     @Override
     public void setDocument(Document document) {
         this.document = document;
-        refreshNameTree();
+        refreshNameTree(null);
     }
 
     @Override
@@ -136,14 +153,14 @@ public class DestinationsPanel extends JPanel
         if (selectedTreePath != null) {
             NameTreeNode nameTreeNode = (NameTreeNode) selectedTreePath.getLastPathComponent();
             if (source == editNameTreeNode) {
-                new NameTreeEditDialog(controller, nameTreeNode.getName().toString(), nameTreeNode.getReference())
-                        .setVisible(true);
-
+                NameTreeEditDialog nameTreeEditDialog = new NameTreeEditDialog(controller, nameTreeNode);
+                nameTreeEditDialog.setVisible(true);
             } else if (source == deleteNameTreeNode) {
                 Catalog catalog = controller.getDocument().getCatalog();
                 catalog.deleteNamedDestination(nameTreeNode.getName().toString());
                 controller.getDocumentViewController().firePropertyChange(PropertyConstants.DESTINATION_DELETED,
-                        null, null);
+                        nameTreeNode, null);
+                ((DefaultTreeModel) nameJTree.getModel()).removeNodeFromParent(nameTreeNode);
             }
         }
     }

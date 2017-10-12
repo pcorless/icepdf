@@ -64,7 +64,9 @@ public class NameNode extends Dictionary {
                 for (Object ref : kidsReferences) {
                     if (ref instanceof Reference) {
                         o = library.getObject((Reference) ref);
-                        kidsNodes.add(new NameNode(library, (HashMap) o));
+                        NameNode node = new NameNode(library, (HashMap) o);
+                        node.setPObjectReference((Reference) ref);
+                        kidsNodes.add(node);
                     }
                 }
 
@@ -100,6 +102,35 @@ public class NameNode extends Dictionary {
 
     public List getNamesAndValues() {
         return namesAndValues;
+    }
+
+    public void setNamesAndValues(List namesAndValues) {
+        entries.put(NAMES_KEY, namesAndValues);
+        this.namesAndValues = namesAndValues;
+        // update the limits
+        if (namesAndValues.size() > 2) {
+            if (!lowerLimit.equals(namesAndValues.get(0))) {
+                lowerLimit = (String) namesAndValues.get(0);
+            }
+            if (!upperLimit.equals(namesAndValues.get(namesAndValues.size() - 2))) {
+                upperLimit = (String) namesAndValues.get(namesAndValues.size() - 2);
+            }
+            List limits = new ArrayList();
+            limits.add(lowerLimit);
+            limits.add(upperLimit);
+            entries.put(LIMITS_KEY, limits);
+        } else if (namesAndValues.size() == 2) {
+            lowerLimit = upperLimit = (String) namesAndValues.get(0);
+            List limits = new ArrayList();
+            limits.add(lowerLimit);
+            limits.add(upperLimit);
+            entries.put(LIMITS_KEY, limits);
+        } else {
+            lowerLimit = upperLimit = null;
+            entries.put(LIMITS_KEY, new ArrayList<>());
+            this.namesAndValues = null;
+            entries.put(NAMES_KEY, new ArrayList<>());
+        }
     }
 
     public List getKidsReferences() {
@@ -154,7 +185,7 @@ public class NameNode extends Dictionary {
      * @param name name to search for
      * @return retrieved object if any otherwise, null.
      */
-    Object searchName(String name) {
+    public Object searchName(String name) {
         Object ret = search(name);
         if (ret == NOT_FOUND || ret == NOT_FOUND_IS_LESSER || ret == NOT_FOUND_IS_GREATER) {
             ret = null;
@@ -190,8 +221,11 @@ public class NameNode extends Dictionary {
                     ensureNamesDecrypted();
                     if (namesAndValues.get(0).equals(name)) {
                         Object ob = namesAndValues.get(1);
-                        if (ob instanceof Reference)
-                            ob = library.getObject((Reference) ob);
+                        if (ob instanceof Reference) {
+                            ob = new PObject(library.getObject((Reference) ob), this.getPObjectReference());
+                        } else if (ob instanceof List) {
+                            ob = new PObject(ob, this.getPObjectReference());
+                        }
                         return ob;
                     }
                 }
@@ -204,8 +238,12 @@ public class NameNode extends Dictionary {
                     ensureNamesDecrypted();
                     if (namesAndValues.get(numNamesAndValues - 2).equals(name)) {
                         Object ob = namesAndValues.get(numNamesAndValues - 1);
-                        if (ob instanceof Reference)
-                            ob = library.getObject((Reference) ob);
+                        if (ob instanceof Reference) {
+                            ob = new PObject(library.getObject((Reference) ob), (Reference) ob);
+                        } else if (ob instanceof List) {
+                            ob = new PObject(ob, this.getPObjectReference());
+                        }
+
                         return ob;
                     }
                 }
@@ -251,8 +289,11 @@ public class NameNode extends Dictionary {
         int cmp = namesAndValues.get(pivot).compareTo(name);
         if (cmp == 0) {
             Object ob = namesAndValues.get(pivot + 1);
-            if (ob instanceof Reference)
-                ob = library.getObject((Reference) ob);
+            if (ob instanceof Reference) {
+                ob = new PObject(library.getObject((Reference) ob), this.getPObjectReference());
+            } else if (ob instanceof List) {
+                ob = new PObject(ob, this.getPObjectReference());
+            }
             return ob;
         } else if (cmp > 0) {
             return binarySearchNames(firstIndex, pivot - 1, name);
@@ -268,6 +309,7 @@ public class NameNode extends Dictionary {
             Reference r = (Reference) kidsReferences.get(index);
             HashMap nh = (HashMap) library.getObject(r);
             n = new NameNode(library, nh);
+            n.setPObjectReference(r);
             kidsNodes.set(index, n);
         }
         return n;

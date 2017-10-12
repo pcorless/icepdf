@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.StringObject;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.text.MessageFormat;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -82,18 +83,6 @@ public class NameTreeNode extends DefaultMutableTreeNode {
         setUserObject(name);
     }
 
-
-    public void recursivelyClearOutlineItems() {
-        item = null;
-        if (loadedChildren) {
-            int count = getChildCount();
-            for (int i = 0; i < count; i++) {
-                NameTreeNode node = (NameTreeNode) getChildAt(i);
-                node.recursivelyClearOutlineItems();
-            }
-        }
-    }
-
     public StringObject getName() {
         return name;
     }
@@ -104,10 +93,6 @@ public class NameTreeNode extends DefaultMutableTreeNode {
 
     public boolean isRootNode() {
         return rootNode;
-    }
-
-    public boolean isIntermidiatNode() {
-        return intermidiatNode;
     }
 
     public boolean isLeaf() {
@@ -121,6 +106,12 @@ public class NameTreeNode extends DefaultMutableTreeNode {
     public int getChildCount() {
         ensureChildrenLoaded();
         return super.getChildCount();
+    }
+
+    @Override
+    public Enumeration children() {
+        ensureChildrenLoaded();
+        return super.children();
     }
 
     /**

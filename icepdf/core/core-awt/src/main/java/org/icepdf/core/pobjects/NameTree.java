@@ -98,7 +98,7 @@ public class NameTree extends Dictionary {
         }
         // intermediary node.
         else {
-            ArrayList<Object> namesAndValues = new ArrayList<Object> ();
+            ArrayList<Object> namesAndValues = new ArrayList<Object>();
             for (NameNode node : nameNode.getKidsNodes()) {
                 namesAndValues.addAll(getNamesAndValues(node));
             }
@@ -116,6 +116,49 @@ public class NameTree extends Dictionary {
      */
     public Object searchName(String key) {
         return root.searchName(key);
+    }
+
+    /**
+     * An attempt is made to remove the node with the given name.  If found the entries parent is updated appropriately
+     * and the modified object is added to the state manager so the change can be persisted.
+     *
+     * @param name name node name to remove from nameTree hierarchy.
+     * @return true if the name was found and removed, otherwise false.
+     */
+    public boolean deleteNode(String name) {
+        if (root != null) {
+            Object found = root.searchName(name);
+            // we found the item and its parent's reference
+            if (found != null && found instanceof PObject) {
+                Reference reference = ((PObject) found).getReference();
+                Object tmp = library.getObject(reference);
+                // we'll remove the name from the parent names tree and orphan the destination if indirect.
+                NameNode nameNode = null;
+                if (tmp instanceof HashMap) {
+                    nameNode = new NameNode(library, (HashMap) tmp);
+                } else if (tmp instanceof NameNode) {
+                    nameNode = (NameNode) tmp;
+                }
+                nameNode.setPObjectReference(reference);
+                List nameValues = nameNode.getNamesAndValues();
+                // find our name and remove it and the value.
+                for (int i = 0; i < nameValues.size(); i += 2) {
+                    Object value = nameValues.get(i);
+                    if (value instanceof String) {
+                        if (name.equals(value)) {
+                            nameValues.remove(i);
+                            nameValues.remove(i);
+                            break;
+                        }
+                    }
+                }
+                // makes sure we have some names to write back.
+                nameNode.setNamesAndValues(nameValues);
+                library.getStateManager().addChange(new PObject(nameNode, reference));
+                return true;
+            }
+        }
+        return false;
     }
 
     public NameNode getRoot() {
