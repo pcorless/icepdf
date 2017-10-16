@@ -87,7 +87,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
     }
 
     public void addNamedColor(Color color, String label) {
-        label = label.isEmpty() ? " " : label;
+        label = cleanLabel(label);
         model.addElement(new ColorLabel(color, label));
         // add the new name/value pair to the preferences
         String currentColorLabels = preferences.get(PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
@@ -102,6 +102,7 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
 
     public void updateNamedColor(Color color, String label) {
         int selectedIndex = getSelectedIndex();
+        label = cleanLabel(label);
         ColorLabel selectedColorLabel = new ColorLabel(color, label);
         model.set(selectedIndex, selectedColorLabel);
         // find and update the name/value pair
@@ -109,6 +110,15 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
         ArrayList<ColorLabel> colorLabels = retrieveColorLabels();
         colorLabels.set(selectedIndex, selectedColorLabel);
         storeColorLabels(colorLabels);
+    }
+
+    private String cleanLabel(String label) {
+        label = label.isEmpty() ? " " : label;
+        // make sure the label doesn't contain the delimiter.
+        if (label.contains(PropertiesManager.PROPERTY_TOKEN_SEPARATOR)) {
+            label = label.replace(PropertiesManager.PROPERTY_TOKEN_SEPARATOR, " ");
+        }
+        return label;
     }
 
     public void removeSelectedNamedColor() {
@@ -126,12 +136,17 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
     public static ArrayList<ColorLabel> retrieveColorLabels() {
         String currentColorLabels = PropertiesManager.getInstance().getPreferences().get(
                 PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
-        StringTokenizer toker = new StringTokenizer(currentColorLabels, PropertiesManager.PROPERTY_TOKEN_SEPARATOR);
-        ArrayList<ColorLabel> colorLabels = new ArrayList<>();
-        while (toker.hasMoreTokens()) {
-            int rgb = Integer.parseInt(toker.nextToken());
-            String label = toker.nextToken();
-            colorLabels.add(new ColorLabel(new Color(rgb), label));
+        ArrayList<ColorLabel> colorLabels = null;
+        try {
+            StringTokenizer toker = new StringTokenizer(currentColorLabels, PropertiesManager.PROPERTY_TOKEN_SEPARATOR);
+            colorLabels = new ArrayList<>();
+            while (toker.hasMoreTokens()) {
+                int rgb = Integer.parseInt(toker.nextToken());
+                String label = toker.nextToken();
+                colorLabels.add(new ColorLabel(new Color(rgb), label));
+            }
+        } catch (NumberFormatException e) {
+            PropertiesManager.getInstance().getPreferences().put(PROPERTY_ANNOTATION_RECENT_COLOR_LABEL, "");
         }
         return colorLabels;
     }

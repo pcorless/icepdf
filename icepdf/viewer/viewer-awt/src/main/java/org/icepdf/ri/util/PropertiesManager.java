@@ -41,7 +41,7 @@ public class PropertiesManager {
             Logger.getLogger(PropertiesManager.class.toString());
 
     // use ascii '27' or ESC as the delimiting character when storing multiple values in one property name.
-    public static final String PROPERTY_TOKEN_SEPARATOR = "\u001b";
+    public static final String PROPERTY_TOKEN_SEPARATOR = "|";
 
     //default file for all not specified properties
     public static String DEFAULT_PROP_FILE = "ICEpdfDefault.properties";

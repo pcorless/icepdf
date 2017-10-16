@@ -2007,16 +2007,21 @@ public class SwingController extends ComponentAdapter
             StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);
             String fileName;
             int count = 0;
-            while (toker.hasMoreTokens()) {
-                fileName = toker.nextToken();
-                final String filePath = toker.nextToken();
-                JMenuItem mi = SwingViewBuilder.makeMenuItem(
-                        fileName,
-                        SwingViewBuilder.buildKeyStroke(KeyEvent.VK_0 + count,
-                                KeyEventConstants.MODIFIER_OPEN_FILE));
-                mi.addActionListener(e -> openFileInSomeViewer(filePath));
-                recentFilesSubMenu.add(mi);
-                count++;
+            try {
+                while (toker.hasMoreTokens()) {
+                    fileName = toker.nextToken();
+                    final String filePath = toker.nextToken();
+                    JMenuItem mi = SwingViewBuilder.makeMenuItem(
+                            fileName,
+                            SwingViewBuilder.buildKeyStroke(KeyEvent.VK_0 + count,
+                                    KeyEventConstants.MODIFIER_OPEN_FILE));
+                    mi.addActionListener(e -> openFileInSomeViewer(filePath));
+                    recentFilesSubMenu.add(mi);
+                    count++;
+                }
+            } catch (Exception e) {
+                // clear the invalid previous values.
+                preferences.put(PROPERTY_RECENTLY_OPENED_FILES, "");
             }
         }
     }
@@ -3533,8 +3538,8 @@ public class SwingController extends ComponentAdapter
      * When the user selects an OutlineItem from the Outlines (Bookmarks) JTree,
      * this displays the relevant target portion of the PDF Document
      */
-    public void followOutlineItem(OutlineItem o) {
-        if (o == null)
+    public void followOutlineItem(OutlineItem outlineItem) {
+        if (outlineItem == null)
             return;
         int oldTool = getDocumentViewToolMode();
         try {
@@ -3545,9 +3550,9 @@ public class SwingController extends ComponentAdapter
 
             // capture the action if no destination is found and point to the
             // actions destination information
-            Destination dest = o.getDest();
-            if (o.getAction() != null) {
-                Action action = o.getAction();
+            Destination dest = outlineItem.getDest();
+            if (outlineItem.getAction() != null) {
+                Action action = outlineItem.getAction();
                 if (action instanceof GoToAction) {
                     dest = ((GoToAction) action).getDestination();
                 } else if (action instanceof URIAction) {

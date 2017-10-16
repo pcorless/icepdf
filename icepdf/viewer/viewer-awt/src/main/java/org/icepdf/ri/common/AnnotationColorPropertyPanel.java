@@ -141,8 +141,13 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         // if we have some colour parse out the colours
         if (rawRecents != null) {
             StringTokenizer toker = new StringTokenizer(rawRecents, PropertiesManager.PROPERTY_TOKEN_SEPARATOR);
-            while (toker.hasMoreTokens()) {
-                recentColors.add(0, new Color(Integer.parseInt(toker.nextToken())));
+            try {
+                while (toker.hasMoreTokens()) {
+                    recentColors.add(0, new Color(Integer.parseInt(toker.nextToken())));
+                }
+            } catch (NumberFormatException e) {
+                // rest as we've had some sort of decode issue.
+                preferences.put(PROPERTY_ANNOTATION_RECENT_COLORS, "");
             }
 
         }
