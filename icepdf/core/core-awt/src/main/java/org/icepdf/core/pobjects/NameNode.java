@@ -32,16 +32,15 @@ public class NameNode extends Dictionary {
     public static final Name NAMES_KEY = new Name("Names");
     public static final Name LIMITS_KEY = new Name("Limits");
 
-    private static Object NOT_FOUND = new Object();
-    private static Object NOT_FOUND_IS_LESSER = new Object();
-    private static Object NOT_FOUND_IS_GREATER = new Object();
+    public static Object NOT_FOUND = new Object();
+    public static Object NOT_FOUND_IS_LESSER = new Object();
+    public static Object NOT_FOUND_IS_GREATER = new Object();
 
     private boolean namesAreDecrypted;
     // flat tree, names and values only.
-    private List<String> namesAndValues;
+    private List<Object> namesAndValues;
     // kids type of tree, need to build out the structure
-    private List kidsReferences;
-    private List<NameNode> kidsNodes;
+    private List<Reference> kidsReferences;
     private String lowerLimit;
     private String upperLimit;
 
@@ -58,19 +57,6 @@ public class NameNode extends Dictionary {
             // we have a kids array which can be composed of an intermediary
             // /limits/kids and or the leaf /limits/names
             kidsReferences = (List) o;
-            int sz = kidsReferences.size();
-            if (sz > 0) {
-                kidsNodes = new ArrayList<NameNode>(sz);
-                for (Object ref : kidsReferences) {
-                    if (ref instanceof Reference) {
-                        o = library.getObject((Reference) ref);
-                        NameNode node = new NameNode(library, (HashMap) o);
-                        node.setPObjectReference((Reference) ref);
-                        kidsNodes.add(node);
-                    }
-                }
-
-            }
         }
         // if no kids[] then we must have a names array which is only one leaf.
         else if (o == null) {
@@ -93,7 +79,7 @@ public class NameNode extends Dictionary {
     }
 
     public boolean isEmpty() {
-        return kidsNodes.size() == 0;
+        return kidsReferences.size() == 0;
     }
 
     public boolean hasLimits() {
@@ -104,9 +90,62 @@ public class NameNode extends Dictionary {
         return namesAndValues;
     }
 
+    public void addNameAndValue(String newName, Reference destinationReference) {
+        // we know this is the node we want to add our new named destination.
+        // so we'll add it to the list in the correct ordered location
+        ensureNamesDecrypted();
+        boolean inserted = false;
+        for (int i = 0, max = namesAndValues.size() - 4; i <= max; i += 2) {
+            String name1 = (String) namesAndValues.get(i);
+            String name2 = (String) namesAndValues.get(i + 2);
+            int comp1 = newName.compareTo(name1);
+            int comp2 = newName.compareTo(name2);
+            if (comp1 > 0 && comp2 < 0) {
+                // add the new node, no need to update the limits as we should be between them.
+                namesAndValues.add(i + 2, destinationReference);
+                namesAndValues.add(i + 2, newName);
+                inserted = true;
+                break;
+            } else if (comp1 < 0 && comp2 < 0) {
+                namesAndValues.add(i, destinationReference);
+                namesAndValues.add(i, newName);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) {
+            if (namesAndValues.size() == 2) {
+                String name1 = (String) namesAndValues.get(0);
+                int comp1 = newName.compareTo(name1);
+                if (comp1 < 0) {
+                    namesAndValues.add(0, destinationReference);
+                    namesAndValues.add(0, newName);
+                } else {
+                    namesAndValues.add(newName);
+                    namesAndValues.add(destinationReference);
+                }
+            } else {//if (namesAndValues.size() == 0) {
+                namesAndValues.add(newName);
+                namesAndValues.add(destinationReference);
+            }
+        }
+        List limits = new ArrayList();
+        lowerLimit = (String) namesAndValues.get(0);
+        upperLimit = (String) namesAndValues.get(namesAndValues.size() - 2);
+        limits.add(lowerLimit);
+        limits.add(upperLimit);
+        entries.put(LIMITS_KEY, limits);
+    }
+
+    public void setKids(ArrayList kids) {
+        this.kidsReferences = kids;
+        entries.put(NameNode.KIDS_KEY, kids);
+    }
+
     public void setNamesAndValues(List namesAndValues) {
         entries.put(NAMES_KEY, namesAndValues);
         this.namesAndValues = namesAndValues;
+        ensureNamesDecrypted();
         // update the limits
         if (namesAndValues.size() > 2) {
             if (!lowerLimit.equals(namesAndValues.get(0))) {
@@ -120,15 +159,16 @@ public class NameNode extends Dictionary {
             limits.add(upperLimit);
             entries.put(LIMITS_KEY, limits);
         } else if (namesAndValues.size() == 2) {
-            lowerLimit = upperLimit = (String) namesAndValues.get(0);
+            lowerLimit = (String) namesAndValues.get(0);
+            upperLimit = (String) namesAndValues.get(0);
             List limits = new ArrayList();
             limits.add(lowerLimit);
             limits.add(upperLimit);
             entries.put(LIMITS_KEY, limits);
         } else {
-            lowerLimit = upperLimit = null;
+            lowerLimit = upperLimit = "";
             entries.put(LIMITS_KEY, new ArrayList<>());
-            this.namesAndValues = null;
+            this.namesAndValues = new ArrayList<>();
             entries.put(NAMES_KEY, new ArrayList<>());
         }
     }
@@ -138,6 +178,26 @@ public class NameNode extends Dictionary {
     }
 
     public List<NameNode> getKidsNodes() {
+
+        int sz = kidsReferences.size();
+        List<NameNode> kidsNodes = null;
+        if (sz > 0) {
+            kidsNodes = new ArrayList<>(sz);
+            for (Object ref : kidsReferences) {
+                if (ref instanceof Reference) {
+                    Object o = library.getObject((Reference) ref);
+                    if (o instanceof HashMap) {
+                        NameNode node = new NameNode(library, (HashMap) o);
+                        node.setPObjectReference((Reference) ref);
+                        kidsNodes.add(node);
+                    } else if (o instanceof NameNode) {
+                        kidsNodes.add((NameNode) o);
+                    }
+                }
+            }
+
+        }
+
         return kidsNodes;
     }
 
@@ -193,6 +253,63 @@ public class NameNode extends Dictionary {
         return ret;
     }
 
+    public Object searchForInsertionNode(String name) {
+        if (kidsReferences != null) {
+            if (lowerLimit != null && upperLimit != null) {
+                int cmpL = lowerLimit.compareTo(name);
+                int cmpU = upperLimit.compareTo(name);
+                if (cmpL >= 0 && cmpU <= 0)
+                    return this;
+                if (cmpL > 0) {
+                    return NOT_FOUND_IS_LESSER;
+                } else if (cmpU < 0) {
+                    return NOT_FOUND_IS_GREATER;
+                }
+            }
+            return binarySearchNodeKids(0, kidsReferences.size() - 1, name, null);
+        } else if (namesAndValues != null) {
+            int numNamesAndValues = namesAndValues.size();
+            int cmpL = lowerLimit.compareTo(name);
+            int cmpU = upperLimit.compareTo(name);
+            if (cmpL >= 1 || cmpU >= 1)
+                return this;
+            else if (cmpL > 0) {
+                return NOT_FOUND_IS_LESSER;
+            } else if (cmpU < 0) {
+                return NOT_FOUND_IS_GREATER;
+            }
+            Object ret = binarySearchNodeKids(0, numNamesAndValues - 1, name, null);
+            if (ret == NOT_FOUND || ret == NOT_FOUND_IS_LESSER || ret == NOT_FOUND_IS_GREATER)
+                ret = null;
+            return ret;
+        }
+        return null;
+    }
+
+    private Object binarySearchNodeKids(int firstIndex, int lastIndex, String name, Object lastResult) {
+        if (firstIndex > lastIndex) {
+            return lastResult != null ? lastResult : NOT_FOUND;
+        }
+        int pivot = firstIndex + ((lastIndex - firstIndex) / 2);
+        Object ret = getNode(pivot).searchForInsertionNode(name);
+        if (ret == NOT_FOUND_IS_LESSER) {
+            return binarySearchNodeKids(firstIndex, pivot - 1, name, NOT_FOUND_IS_LESSER);
+        } else if (ret == NOT_FOUND_IS_GREATER) {
+            return binarySearchNodeKids(pivot + 1, lastIndex, name, NOT_FOUND_IS_GREATER);
+        } else if (ret == NOT_FOUND) {
+            // This shouldn't happen, so is either a bug, or a miss coded PDF file
+            for (int i = firstIndex; i <= lastIndex; i++) {
+                if (i == pivot)
+                    continue;
+                Object r = getNode(i).searchForInsertionNode(name);
+                if (r != NOT_FOUND && r != NOT_FOUND_IS_LESSER && r != NOT_FOUND_IS_GREATER) {
+                    ret = r;
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
 
     private Object search(String name) {
         if (kidsReferences != null) {
@@ -239,7 +356,7 @@ public class NameNode extends Dictionary {
                     if (namesAndValues.get(numNamesAndValues - 2).equals(name)) {
                         Object ob = namesAndValues.get(numNamesAndValues - 1);
                         if (ob instanceof Reference) {
-                            ob = new PObject(library.getObject((Reference) ob), (Reference) ob);
+                            ob = new PObject(library.getObject((Reference) ob), this.getPObjectReference());
                         } else if (ob instanceof List) {
                             ob = new PObject(ob, this.getPObjectReference());
                         }
@@ -261,7 +378,8 @@ public class NameNode extends Dictionary {
         if (firstIndex > lastIndex)
             return NOT_FOUND;
         int pivot = firstIndex + ((lastIndex - firstIndex) / 2);
-        Object ret = getNode(pivot).search(name);
+        NameNode node = getNode(pivot);
+        Object ret = node.search(name);
         if (ret == NOT_FOUND_IS_LESSER) {
             return binarySearchKids(firstIndex, pivot - 1, name);
         } else if (ret == NOT_FOUND_IS_GREATER) {
@@ -286,11 +404,12 @@ public class NameNode extends Dictionary {
             return NOT_FOUND;
         int pivot = firstIndex + ((lastIndex - firstIndex) / 2);
         pivot &= 0xFFFFFFFE; // Clear LSB to ensure even index
-        int cmp = namesAndValues.get(pivot).compareTo(name);
+        int cmp = ((String) namesAndValues.get(pivot)).compareTo(name);
         if (cmp == 0) {
             Object ob = namesAndValues.get(pivot + 1);
             if (ob instanceof Reference) {
-                ob = new PObject(library.getObject((Reference) ob), this.getPObjectReference());
+                Object newObject = library.getObject((Reference) ob);
+                ob = new PObject(newObject, (Reference) ob);
             } else if (ob instanceof List) {
                 ob = new PObject(ob, this.getPObjectReference());
             }
@@ -304,14 +423,18 @@ public class NameNode extends Dictionary {
     }
 
     public NameNode getNode(int index) {
-        NameNode n = kidsNodes.get(index);
-        if (n == null) {
-            Reference r = (Reference) kidsReferences.get(index);
-            HashMap nh = (HashMap) library.getObject(r);
-            n = new NameNode(library, nh);
-            n.setPObjectReference(r);
-            kidsNodes.set(index, n);
+        Reference ref = kidsReferences.get(index);
+        NameNode node = null;
+        if (ref != null) {
+            Object obj = library.getObject(ref);
+            if (obj instanceof HashMap) {
+                node = new NameNode(library, (HashMap) obj);
+                node.setPObjectReference(ref);
+            } else if (obj instanceof NameNode) {
+                node = (NameNode) obj;
+                node.setPObjectReference(ref);
+            }
         }
-        return n;
+        return node;
     }
 }

@@ -181,6 +181,8 @@ public class GoToActionDialog extends AnnotationDialogAdapter
             // disposes this dialog
             dispose();
         } else if (e.getSource() == viewNamedDesButton) {
+            // select the named destination radio
+            namedDestination.setSelected(true);
             // test implementation of a NameJTree for destinations.
             NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
             if (nameTree != null) {

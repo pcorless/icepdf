@@ -55,7 +55,7 @@ import java.util.logging.Logger;
  * @see org.icepdf.core.pobjects.actions.Action
  * @since 1.0
  */
-public class Destination {
+public class Destination extends Dictionary {
 
     private static final Logger logger =
             Logger.getLogger(Destination.class.toString());
@@ -70,9 +70,6 @@ public class Destination {
     public static final Name TYPE_FITB = new Name("FitB");
     public static final Name TYPE_FITBH = new Name("FitBH");
     public static final Name TYPE_FITBV = new Name("FitBV");
-
-    // library of all PDF document objects
-    private Library library;
 
     // object containing all of the destinations parameters
     private Object object;
@@ -103,14 +100,13 @@ public class Destination {
      * @param h Destination dictionary entries.
      */
     public Destination(Library l, Object h) {
-        library = l;
+        super(l, null);
         object = h;
         init();
     }
 
     public Destination(Page page, int x, int y) {
-        library = page.getLibrary();
-
+        super(page.getLibrary(), null);
         ArrayList<Object> destination = new ArrayList<>();
         destination.add(page.getPObjectReference());
         destination.add(TYPE_XYZ);
@@ -124,7 +120,7 @@ public class Destination {
     /**
      * Initiate the Destination. Retrieve any needed attributes.
      */
-    private void init() {
+    public void init() {
 
         // check for initiation
         if (inited) {
@@ -139,6 +135,9 @@ public class Destination {
         // some name tree's use this format which is closer to an action format for defining a destination.
         if (object instanceof HashMap) {
             object = ((HashMap) object).get(GoToAction.DESTINATION_KEY);
+        }
+        if (object instanceof Destination) {
+            object = ((Destination) object).getEncodedDestination();
         }
 
         // if vector we have found /XYZ
@@ -157,12 +156,12 @@ public class Destination {
             } else {
                 s = object.toString();
             }
+            boolean found = false;
+            Catalog catalog = library.getCatalog();
 
             // store the name
             namedDestination = new Name(s);
 
-            boolean found = false;
-            Catalog catalog = library.getCatalog();
             if (catalog != null && catalog.getNames() != null) {
                 NameTree nameTree = catalog.getNames().getDestsNameTree();
                 if (nameTree != null) {
@@ -171,13 +170,20 @@ public class Destination {
                         if (o instanceof PObject) {
                             o = ((PObject) o).getObject();
                         }
+                        if (o instanceof Destination) {
+                            Destination dest = (Destination) o;
+                            entries.put(D_KEY, dest.getRawListDestination());
+                            parse(dest.getRawListDestination());
+                        }
                         if (o instanceof List) {
+                            entries.put(D_KEY, o);
                             parse((List) o);
                             found = true;
                         } else if (o instanceof HashMap) {
                             HashMap h = (HashMap) o;
                             Object o1 = h.get(D_KEY);
                             if (o1 instanceof List) {
+                                entries.put(D_KEY, o1);
                                 parse((List) o1);
                                 found = true;
                             }
@@ -345,6 +351,26 @@ public class Destination {
         // re-parse as object should point to a new destination.
         inited = false;
         init();
+    }
+
+    public HashMap getRawDestination() {
+        if (object instanceof List) {
+            HashMap map = new HashMap();
+            map.put(D_KEY, object);
+            return map;
+        } else if (object instanceof HashMap) {
+            return (HashMap) object;
+        }
+        return null;
+    }
+
+    public List getRawListDestination() {
+        if (object instanceof List) {
+            return (List) object;
+        } else if (object instanceof HashMap) {
+            return (List) ((HashMap) object).get(D_KEY);
+        }
+        return null;
     }
 
     /**
@@ -525,23 +551,23 @@ public class Destination {
                 v.add(type);
             }
             // left
-            if (left != Float.NaN) {
+            if (left != null && left != Float.NaN) {
                 v.add(left);
             }
             // bottom
-            if (bottom != Float.NaN) {
+            if (bottom != null && bottom != Float.NaN) {
                 v.add(bottom);
             }
             // right
-            if (right != Float.NaN) {
+            if (right != null && right != Float.NaN) {
                 v.add(right);
             }
             // top
-            if (top != Float.NaN) {
+            if (top != null && top != Float.NaN) {
                 v.add(top);
             }
             // zoom
-            if (zoom != Float.NaN) {
+            if (zoom != null && zoom != Float.NaN) {
                 v.add(zoom);
             }
             return v;

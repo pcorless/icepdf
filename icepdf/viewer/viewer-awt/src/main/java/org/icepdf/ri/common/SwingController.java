@@ -4993,7 +4993,8 @@ public class SwingController extends ComponentAdapter
                 annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
             }
         } else if (propertyName.equals(PropertyConstants.DESTINATION_ADDED) ||
-                propertyName.equals(PropertyConstants.DESTINATION_UPDATED)) {
+                propertyName.equals(PropertyConstants.DESTINATION_UPDATED) ||
+                propertyName.equals(PropertyConstants.DESTINATION_DELETED)) {
             annotationPanel.getDestinationsPanel().refreshNameTree(evt.getNewValue());
         }
     }

@@ -25,8 +25,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.util.ResourceBundle;
 
 /**
@@ -35,7 +35,7 @@ import java.util.ResourceBundle;
  *
  * @since 5.0
  */
-public class AnnotationSelectionHandler extends MouseAdapter
+public class AnnotationSelectionHandler extends CommonToolHandler
         implements ToolHandler, ActionListener {
 
     protected DocumentViewController documentViewController;
@@ -49,6 +49,7 @@ public class AnnotationSelectionHandler extends MouseAdapter
     public AnnotationSelectionHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent,
                                       DocumentViewModel documentViewModel) {
+        super(documentViewController, pageViewComponent, documentViewModel);
         this.documentViewController = documentViewController;
         this.documentViewModel = documentViewModel;
         this.pageViewComponent = pageViewComponent;
@@ -66,19 +67,27 @@ public class AnnotationSelectionHandler extends MouseAdapter
         if (pageViewComponent != null) {
             pageViewComponent.requestFocus();
         }
-        if (e.getButton() == MouseEvent.BUTTON3) {
+        if (pageViewComponent != null &&
+                e.getButton() == MouseEvent.BUTTON3) {
             x = e.getX();
             y = e.getY();
             contextMenu.show(e.getComponent(), x, y);
         }
     }
 
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == addMenuItem) {
             // create popup for adding a new destination.
+            AffineTransform pageTransform = getPageTransformInverse();
+            AffineTransform pageInverseTransform = getPageTransform();
+
+            // convert bbox and start and end line points.
+            Rectangle bBox = new Rectangle(x, y, 1, 1);
+            Rectangle tBbox = convertToPageSpace(bBox).getBounds();
             new NameTreeEditDialog((SwingController) documentViewController.getParentController(),
-                    pageViewComponent.getPage(), x, y).setVisible(true);
+                    pageViewComponent.getPage(), tBbox.x, tBbox.y).setVisible(true);
         }
     }
 
@@ -93,6 +102,32 @@ public class AnnotationSelectionHandler extends MouseAdapter
     public void mouseMoved(MouseEvent e) {
 
     }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    protected void checkAndApplyPreferences() {
+
+    }
+
 
     public void installTool() {
 

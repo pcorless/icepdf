@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -119,6 +120,124 @@ public class NameTree extends Dictionary {
     }
 
     /**
+     * The addition of a node to a name tree is relatively complex but because we are assuming this will only be used
+     * in limit capacity as name tree's best to be created a PDF encoder.
+     *
+     * @param newName
+     * @param destination
+     * @return
+     */
+    public boolean addNameNode(String newName, Destination destination) {
+        StateManager stateManager = library.getStateManager();
+        if (root.entries.size() == 0) {
+            // add the destination as it's own object.
+            destination.entries = destination.getRawDestination();
+            destination.setPObjectReference(stateManager.getNewReferencNumber());
+            stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
+
+            // create a name node to attach to the kids.
+            HashMap nameNodeEntries = new HashMap();
+            ArrayList limits = new ArrayList();
+            limits.add(newName);
+            limits.add(newName);
+            ArrayList names = new ArrayList();
+            names.add(newName);
+            names.add(destination.getPObjectReference());
+            nameNodeEntries.put(NameNode.LIMITS_KEY, limits);
+            nameNodeEntries.put(NameNode.NAMES_KEY, names);
+            NameNode nameNode = new NameNode(library, nameNodeEntries);
+            nameNode.setPObjectReference(stateManager.getNewReferencNumber());
+            stateManager.addChange(new PObject(nameNode, nameNode.getPObjectReference()));
+
+            // first insertion so we don't need to look for any other nodes. just setup kids reference and child
+            ArrayList kids = new ArrayList();
+            kids.add(nameNode.getPObjectReference());
+            root.setKids(kids);
+            return true;
+        } else {
+            Object found = root.searchName(newName);
+            // indicate that name node already exists.
+            if (found != null) return false;
+            // other wise we need to figure out which child to insert into.
+            Object tmp = root.searchForInsertionNode(newName);
+            if (tmp != null && tmp instanceof NameNode) {
+                // add the new node and update limits.
+                destination.setPObjectReference(stateManager.getNewReferencNumber());
+                stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
+                // assign the names destination.
+                NameNode nameNode = (NameNode) tmp;
+                nameNode.addNameAndValue(newName, destination.getPObjectReference());
+                // store the new object.
+                stateManager.addChange(new PObject(nameNode, nameNode.getPObjectReference()));
+                return true;
+            } else if (tmp != null) {
+                // add a new kid entry at the start or end of, with wide a-z limit
+                if (tmp.equals(NameNode.NOT_FOUND_IS_GREATER)) {
+                    // add the new node and update limits.
+                    destination.setPObjectReference(stateManager.getNewReferencNumber());
+                    stateManager.addChange(new PObject(destination, destination.getPObjectReference()));
+                    // going to cheat a bit here,  we are going to add the word to the last element of the last
+                    // kid and update the upper limit.
+                    NameNode lastNode = root.getKidsNodes().get(root.getKidsNodes().size() - 1);
+                    lastNode.addNameAndValue(newName, destination.getPObjectReference());
+                    // store the new object.
+                    stateManager.addChange(new PObject(lastNode, lastNode.getPObjectReference()));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    public boolean updateNameNode(String oldName, String newName, Destination destination) {
+        if (root != null) {
+            Object found = root.searchName(oldName);
+            if (found != null && found instanceof PObject) {
+                Reference reference = ((PObject) found).getReference();
+                Object tmp = library.getObject(reference);
+                NameNode nameNode = null;
+                if (tmp instanceof HashMap) {
+                    nameNode = new NameNode(library, (HashMap) tmp);
+                } else if (tmp instanceof NameNode) {
+                    nameNode = (NameNode) tmp;
+                }
+                nameNode.setPObjectReference(reference);
+                List nameValues = nameNode.getNamesAndValues();
+                // find our name and remove it and the value.
+                for (int i = 0; i < nameValues.size(); i += 2) {
+                    Object name = nameValues.get(i);
+                    if (name instanceof String) {
+                        if (oldName.equals(name)) {
+                            // update the name
+                            nameValues.set(i, newName);
+                            // update destination
+                            Object value = nameValues.get(i + 1);
+                            // we have an indirect reference so we need to update it as well with new destination data.
+                            // we assume that this is always an implicit destination and not a named destination
+                            if (value instanceof Reference) {
+                                HashMap destMap = destination.getRawDestination();
+                                library.getStateManager().addChange(new PObject(destMap, (Reference) value));
+                            } else if (value instanceof List) {
+                                List destList = destination.getRawListDestination();
+                                nameValues.set(i + 1, destList);
+                            }
+
+                            // makes sure we have some names to write back.
+                            nameNode.setNamesAndValues(nameValues);
+                            // reorder and update limits if needed
+                            checkOrderAndLimits(nameNode);
+                            library.getStateManager().addChange(new PObject(nameNode, reference));
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * An attempt is made to remove the node with the given name.  If found the entries parent is updated appropriately
      * and the modified object is added to the state manager so the change can be persisted.
      *
@@ -161,7 +280,56 @@ public class NameTree extends Dictionary {
         return false;
     }
 
+    private void checkOrderAndLimits(NameNode nameNode) {
+        List namesAndValues = nameNode.getNamesAndValues();
+        int size = namesAndValues.size();
+        // sor the list
+        if (size > 2) {
+            // a bit brutal but we pack the name value pairs.
+            Pair[] sortable = new Pair[size / 2];
+            for (int i = 0, j = 0; i < size; i += 2, j++) {
+                sortable[j] = new Pair((String) namesAndValues.get(i), namesAndValues.get(i + 1));
+            }
+            Arrays.sort(sortable);
+            // expand the name values for storage.
+            namesAndValues.clear();
+            for (Pair pair : sortable) {
+                namesAndValues.add(pair.getName());
+                namesAndValues.add(pair.getValue());
+            }
+        }
+        if (size > 0) {
+            // updates the pairs and resets the limits.
+            nameNode.setNamesAndValues(namesAndValues);
+        }
+
+    }
+
     public NameNode getRoot() {
         return root;
+    }
+
+    class Pair implements Comparable<Pair> {
+        String name;
+        Object value;
+
+        Pair(String name, Object value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        @Override
+        public int compareTo(Pair o) {
+            return name.compareTo(o.name);
+        }
+
     }
 }

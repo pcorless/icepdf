@@ -183,21 +183,41 @@ public class Catalog extends Dictionary {
      * @return true if the addition was successful.
      */
     public boolean addNamedDestination(String name, Destination destination) {
-        library.getStateManager();
-        System.out.println("adding " + name + " " + destination);
-        return true;
+        // make sure we have s structure to work with
+        StateManager stateManager = library.getStateManager();
+        if (names == null) {
+            names = new Names(library, new HashMap());
+            // add the object to the catalog
+            names.setPObjectReference(stateManager.getNewReferencNumber());
+            entries.put(NAMES_KEY, names.getPObjectReference());
+            // add the catalog and the new destination object.
+            stateManager.addChange(new PObject(this, getPObjectReference()));
+            stateManager.addChange(new PObject(names, names.getPObjectReference()));
+        }
+        if (names.getDestsNameTree() == null) {
+            // create a the name tree.
+            NameTree destsNameTree = new NameTree(library, new HashMap());
+            destsNameTree.init();
+            destsNameTree.setPObjectReference(stateManager.getNewReferencNumber());
+            names.setDestsNameTree(destsNameTree);
+            stateManager.addChange(new PObject(names, names.getPObjectReference()));
+            stateManager.addChange(new PObject(destsNameTree, destsNameTree.getPObjectReference()));
+        }
+        NameTree nameTree = getNames().getDestsNameTree();
+        return nameTree.addNameNode(name, destination);
     }
 
     /**
      * Updates an existing name in the name tree replacing the name title and destination.
      *
-     * @param name        new name of destination.
+     * @param oldName     old name before change
+     * @param newName     name of node
      * @param destination new destination value
      * @return true if the update was successful
      */
-    public boolean updateNamedDestination(String name, String newName, Destination destination) {
-        System.out.println("updating " + name + " " + destination);
-        return true;
+    public boolean updateNamedDestination(String oldName, String newName, Destination destination) {
+        NameTree nameTree = getNames().getDestsNameTree();
+        return nameTree.updateNameNode(oldName, newName, destination);
     }
 
     /**

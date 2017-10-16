@@ -27,6 +27,7 @@ import org.icepdf.ri.util.PropertiesManager;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
@@ -123,7 +124,7 @@ public class DestinationsPanel extends JPanel
                 // try to expand back to the same path
                 if (node instanceof NameTreeNode) {
                     NameTreeNode nameTreeNode = (NameTreeNode) node;
-                    // find and select a node with the same node.
+                    // find and select a node with the same node.)
                     Enumeration e = ((NameTreeNode) nameJTree.getModel().getRoot()).depthFirstEnumeration();
                     while (e.hasMoreElements()) {
                         NameTreeNode currentNode = (NameTreeNode) e.nextElement();
@@ -137,6 +138,11 @@ public class DestinationsPanel extends JPanel
 
                 }
             }
+        } else {
+            nameJTree.setModel(new DefaultTreeModel(new DefaultMutableTreeNode(messageBundle.getString(
+                    "viewer.utilityPane.action.dialog.goto.nameTree.root.label"))));
+            nameJTree.setRootVisible(true);
+            nameJTree.setShowsRootHandles(true);
         }
     }
 

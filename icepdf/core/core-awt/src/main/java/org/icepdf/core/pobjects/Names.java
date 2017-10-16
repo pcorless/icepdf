@@ -130,6 +130,11 @@ public class Names extends Dictionary {
         return destsNameTree;
     }
 
+    public void setDestsNameTree(NameTree destsNameTree) {
+        this.destsNameTree = destsNameTree;
+        entries.put(DEST_KEY, destsNameTree.getPObjectReference());
+    }
+
     public NameTree getAnnotationAppearanceNameTree() {
         return annotationAppearanceNameTree;
     }
