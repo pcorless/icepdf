@@ -4158,8 +4158,10 @@ public class SwingController extends ComponentAdapter
 
         try {
             if (source == openFileMenuItem || source == openFileButton) {
+                cancelSetFocus = true;
                 openFile();
             } else if (source == openURLMenuItem) {
+                cancelSetFocus = true;
                 openURL();
             } else if (source == closeMenuItem) {
                 boolean isCanceled = saveChangesDialog();
