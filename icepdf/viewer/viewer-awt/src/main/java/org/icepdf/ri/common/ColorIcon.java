@@ -23,7 +23,7 @@ import java.awt.*;
  */
 public class ColorIcon implements Icon {
 
-    private final static int size = 12;
+    private final static int size = 15;
     private Color color;
 
     public ColorIcon(Color color) {
@@ -34,6 +34,8 @@ public class ColorIcon implements Icon {
     public void paintIcon(Component c, Graphics g, int x, int y) {
         g.setColor(color);
         g.fillRect(x, y, size, size);
+        g.setColor(Color.LIGHT_GRAY);
+        g.drawRect(x, y, size, size);
     }
 
     public Color getColor() {
