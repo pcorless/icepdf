@@ -38,6 +38,9 @@ public class DropDownButton extends JButton
 
     protected JPopupMenu popupMenu;
 
+    protected String imageName;
+    protected String imageSize;
+
     public DropDownButton(SwingController swingController,
                           String title, String toolTip, String imageName,
                           final String imageSize, java.awt.Font font) {
@@ -47,6 +50,8 @@ public class DropDownButton extends JButton
         setFont(font);
         setToolTipText(toolTip);
         setRolloverEnabled(true);
+        this.imageName = imageName;
+        this.imageSize = imageSize;
 
         if (imageName != null) {
             try {
@@ -66,6 +71,16 @@ public class DropDownButton extends JButton
 
         addMouseListener(this);
 
+    }
+
+    @Override
+    public void setSelected(boolean b) {
+        super.setSelected(b);
+        if (b) {
+            setIcon(new ImageIcon(Images.get(imageName + "_selected_a" + imageSize + ".png")));
+        } else {
+            setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
+        }
     }
 
     public void add(JMenuItem menuItem) {

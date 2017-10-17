@@ -259,6 +259,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
 
         // minimize button
+        Dimension buttonSize = new Dimension(22, 22);
         minimizeButton = new JButton("  _  ");
         minimizeButton.addActionListener(this);
         minimizeButton.setToolTipText(messageBundle.getString(
@@ -267,7 +268,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         minimizeButton.setContentAreaFilled(false);
         minimizeButton.setBorder(BorderFactory.createLineBorder(borderColor));
         minimizeButton.setBorderPainted(true);
+        minimizeButton.setFocusPainted(false);
         minimizeButton.addActionListener(this);
+        minimizeButton.setPreferredSize(buttonSize);
 
         // lock button
         privateToggleButton = new JToggleButton();
@@ -276,6 +279,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         privateToggleButton.setToolTipText(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
         privateToggleButton.setSelected(isPrivate);
+        privateToggleButton.setFocusPainted(false);
+        privateToggleButton.setPreferredSize(buttonSize);
         privateToggleButton.addActionListener(this);
         privateToggleButton.setBackground(popupBackgroundColor);
         privateToggleButton.setContentAreaFilled(false);

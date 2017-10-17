@@ -19,6 +19,7 @@ import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.util.ResourceBundle;
@@ -64,7 +65,8 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
         PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
         paintButton.setColorBound(imageSize.equals(Images.SIZE_LARGE) ? textIconPathLarge : textIconPathSmall);
 
-        colorButton.addActionListener(this);
+        setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        setContentAreaFilled(true);
 
         // apply the settings colour
         Color color = null;

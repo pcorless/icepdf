@@ -76,6 +76,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     private JButton searchButton;
     private JButton clearSearchButton;
 
+    private DropDownButton filterDropDownButton;
     private JMenu colorFilterMenuItem;
 
     private ArrayList<Action> sortActions;
@@ -261,10 +262,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     protected void buildSortFilterToolBar() {
         JPanel filterSortToolPanel = new JPanel(new GridBagLayout());
 
-        DropDownButton sortDropDownButton = new DropDownButton(controller,
-                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.sort.sortButton.label"),
+        DropDownButton sortDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.sort.sortButton.tooltip"),
-                null, Images.SIZE_LARGE, SwingViewBuilder.buildButtonFont());
+                "sort", Images.SIZE_LARGE, SwingViewBuilder.buildButtonFont());
 
         String defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_SORT_COLUMN, SortColumn.PAGE.toString());
         ButtonGroup sortMenuGroup = new ButtonGroup();
@@ -282,10 +282,9 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         // todo consider adding descent/ascend sort separator and buttons.
 
         // build out the base filter
-        DropDownButton filterDropDownButton = new DropDownButton(controller,
-                messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.label"),
+        filterDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip"),
-                null, Images.SIZE_LARGE, SwingViewBuilder.buildButtonFont());
+                "filter", Images.SIZE_LARGE, SwingViewBuilder.buildButtonFont());
 
         JMenu authorFilterMenuItem = new JMenu(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.label"));
@@ -427,6 +426,14 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         FilterSubTypeColumn filterType = (FilterSubTypeColumn) filterTypeAction.getValue(COLUMN_PROPERTY);
         FilterAuthorColumn filterAuthor = (FilterAuthorColumn) filterAuthorAction.getValue(COLUMN_PROPERTY);
         Color filterColor = (Color) filterColorAction.getValue(COLUMN_PROPERTY);
+
+        if (!filterAuthor.equals(FilterAuthorColumn.ALL) ||
+                !filterType.equals(FilterSubTypeColumn.ALL) ||
+                filterColor != null) {
+            filterDropDownButton.setSelected(true);
+        } else {
+            filterDropDownButton.setSelected(false);
+        }
 
         // setup search pattern
         Pattern searchPattern = null;
