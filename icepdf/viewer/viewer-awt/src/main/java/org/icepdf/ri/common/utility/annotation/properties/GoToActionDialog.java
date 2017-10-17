@@ -16,7 +16,7 @@
 package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.Destination;
-import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.NameTree;
 import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
@@ -152,7 +152,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         }
         // otherwise a simple named destination
         else {
-            destination = new Destination(annotation.getLibrary(), new Name(destinationName.getText()));
+            destination = new Destination(annotation.getLibrary(), new LiteralStringObject(destinationName.getText()));
         }
         GoToAction action = (GoToAction) annotation.getAction();
         // if no previous action then we have a 'new' or old 'dest' that

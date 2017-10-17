@@ -193,7 +193,13 @@ public class NameTree extends Dictionary {
     public boolean updateNameNode(String oldName, String newName, Destination destination) {
         if (root != null) {
             Object found = root.searchName(oldName);
-            if (found != null && found instanceof PObject) {
+            Object foundNew = null;
+            // make sure we can update the destination if the name didn't change.
+            if (!oldName.equals(newName)) {
+                foundNew = root.searchName(newName);
+            }
+            // update if the new name isn't in play and we found the old node.
+            if (foundNew == null && found != null && found instanceof PObject) {
                 Reference reference = ((PObject) found).getReference();
                 Object tmp = library.getObject(reference);
                 NameNode nameNode = null;

@@ -409,7 +409,7 @@ public class NameNode extends Dictionary {
             Object ob = namesAndValues.get(pivot + 1);
             if (ob instanceof Reference) {
                 Object newObject = library.getObject((Reference) ob);
-                ob = new PObject(newObject, (Reference) ob);
+                ob = new PObject(newObject, this.getPObjectReference());
             } else if (ob instanceof List) {
                 ob = new PObject(ob, this.getPObjectReference());
             }

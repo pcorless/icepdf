@@ -81,7 +81,7 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
 
         if (e.getSource() == okButton) {
             Catalog catalog = controller.getDocument().getCatalog();
-            String oldName = name;
+            String oldName = nameTreeNode == null ? name : nameTreeNode.getName().toString();
             name = nameTextField.getText();
             destination = implicitDestinationPanel.getDestination(catalog.getLibrary());
             if (name == null) {

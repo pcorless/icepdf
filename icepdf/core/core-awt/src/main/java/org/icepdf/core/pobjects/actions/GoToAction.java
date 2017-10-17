@@ -33,9 +33,6 @@ public class GoToAction extends Action {
 
     public static final Name DESTINATION_KEY = new Name("D");
 
-    // Destination to jump to, name, sting or array.
-    private Destination destination;
-
     /**
      * Creates a new instance of a GoTo Action.
      *
@@ -44,8 +41,6 @@ public class GoToAction extends Action {
      */
     public GoToAction(Library l, HashMap h) {
         super(l, h);
-        // get the Destination for this action
-        destination = new Destination(library, getObject(DESTINATION_KEY));
     }
 
     /**
@@ -55,7 +50,6 @@ public class GoToAction extends Action {
      */
     public void setDestination(Destination destination) {
         entries.put(DESTINATION_KEY, destination.getObject());
-        this.destination = destination;
     }
 
     /**
@@ -64,7 +58,7 @@ public class GoToAction extends Action {
      * @return Destination object specified in the action.
      */
     public Destination getDestination() {
-        return destination;
+        return new Destination(library, getObject(DESTINATION_KEY));
     }
 
 }
