@@ -45,13 +45,13 @@ public class ColorChooserButton extends JButton {
         });
     }
 
-    public static void setButtonBackgroundColor(Color color, JButton button) {
+    public static void setButtonBackgroundColor(Color color, AbstractButton button) {
         if (color != null) {
             if (color.getAlpha() < 255) {
                 color = new Color(color.getRGB());
             }
             button.setBackground(color);
-            button.setBorder(BorderFactory.createLineBorder(Color.lightGray));
+            button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
             button.setContentAreaFilled(false);
             button.setOpaque(true);
         }

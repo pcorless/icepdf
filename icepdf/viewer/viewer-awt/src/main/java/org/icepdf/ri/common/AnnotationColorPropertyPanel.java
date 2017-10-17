@@ -195,19 +195,18 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
         constraints.fill = GridBagConstraints.BOTH;
         addGB(labeledColorPanel,
                 new JLabel(messageBundle.getString("viewer.popup.annotation.color.labels.label")),
-                0, 0, 2, 1);
+                0, 0, 1, 1);
         constraints.weightx = 1.0;
-        constraints.fill = GridBagConstraints.NONE;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
         // add the current color labels.
         int y = 1;
         Color color;
         for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
             color = colorLabel.getColor();
-            constraints.weightx = 0;
-            addGB(labeledColorPanel, new ColorButton(color.getRed(), color.getGreen(), color.getBlue()),
-                    0, y, 1, 1);
-            constraints.weightx = 1.0;
-            addGB(labeledColorPanel, new JLabel(colorLabel.getLabel()), 1, y, 1, 1);
+            constraints.weightx = 1;
+            addGB(labeledColorPanel,
+                    new ColorMenuItem(colorLabel.getLabel(), color.getRed(),
+                            color.getGreen(), color.getBlue()), 0, y, 1, 1);
             y++;
         }
     }
@@ -288,5 +287,34 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             });
         }
 
+    }
+
+    /**
+     * Helper JMenutItem to aid in usability when selecting a named color.
+     */
+    private class ColorMenuItem extends JMenuItem {
+
+        ColorMenuItem(String label, int r, int g, int b) {
+            Color color = new Color(r, g, b);
+            Action action = new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                }
+            };
+            action.putValue(Action.SMALL_ICON, new ColorIcon(color));
+            action.putValue(Action.NAME, label);
+            setAction(action);
+            addActionListener(e -> {
+                annotationColorButton.setColor(getColorRGB(), true);
+            });
+        }
+
+        Color getColorRGB() {
+            Object value = getAction().getValue(Action.SMALL_ICON);
+            if (value != null) {
+                return ((ColorIcon) value).getColor();
+            }
+            return null;
+        }
     }
 }

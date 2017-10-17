@@ -514,7 +514,8 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         }
     }
 
-    class FilterColorAction extends AbstractAction {
+    public class FilterColorAction extends AbstractAction {
+
         public FilterColorAction(String label, Color color) {
             this.putValue(Action.NAME, label);
             this.putValue(COLUMN_PROPERTY, color);
