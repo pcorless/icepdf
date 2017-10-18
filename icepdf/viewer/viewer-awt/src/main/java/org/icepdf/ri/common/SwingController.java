@@ -1961,7 +1961,7 @@ public class SwingController extends ComponentAdapter
      */
     protected void addRecentFileEntry(Path path) {
         // get reference to the backing store.
-        Preferences preferences = propertiesManager.getPreferences();
+        Preferences preferences = PropertiesManager.getInstance().getPreferences();
         int maxListSize = preferences.getInt(PROPERTY_RECENT_FILES_SIZE, 8);
         String recentFilesString = preferences.get(PROPERTY_RECENTLY_OPENED_FILES, "");
         StringTokenizer toker = new StringTokenizer(recentFilesString, PROPERTY_TOKEN_SEPARATOR);

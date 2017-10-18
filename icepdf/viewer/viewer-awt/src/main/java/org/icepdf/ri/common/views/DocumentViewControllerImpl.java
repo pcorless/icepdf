@@ -496,10 +496,11 @@ public class DocumentViewControllerImpl
         oldViewType = viewType;
         viewType = documentViewType;
         // build the new view;
-        if (documentView != null) {
-            documentView.uninstallCurrentTool();
+        if (oldViewType != viewType) {
+            setViewType();
+            firePropertyChange(PropertyConstants.DOCUMENT_VIEW_TYPE_CHANGE, oldViewType, viewType);
         }
-        setViewType();
+
     }
 
     /**
@@ -517,6 +518,8 @@ public class DocumentViewControllerImpl
 
         // check if there is current view, if so dispose it
         if (documentView != null) {
+            documentView.uninstallCurrentTool();
+            ((JComponent) documentView).removePropertyChangeListener(this);
             documentViewScrollPane.remove((JComponent) documentView);
             documentViewScrollPane.validate();
             documentView.dispose();
@@ -850,6 +853,8 @@ public class DocumentViewControllerImpl
         float oldRotation = documentViewModel.getViewRotation();
         boolean changed = documentViewModel.setViewRotation(viewRotation);
         if (changed) {
+            firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE,
+                    oldRotation, viewRotation);
             // send out the property change event.
             ((JComponent) documentView).invalidate();
             ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ROTATION_CHANGE, oldRotation, viewRotation);
@@ -1079,6 +1084,7 @@ public class DocumentViewControllerImpl
         boolean changed = documentViewModel.setViewZoom(zoom);
 
         if (changed) {
+            firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
             ((JComponent) documentView).invalidate();
             // send out the property change event.
             ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, oldZoom, zoom);
@@ -1143,6 +1149,7 @@ public class DocumentViewControllerImpl
         boolean changed = documentViewModel.setViewZoom(zoom);
         // send out the zoom property change events to the pages in the view.
         if (changed) {
+            firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
             ((JComponent) documentView).firePropertyChange(PropertyConstants.DOCUMENT_VIEW_ZOOM_CHANGE, previousZoom, zoom);
             documentViewScrollPane.invalidate();
             documentViewScrollPane.validate();
