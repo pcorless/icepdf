@@ -21,6 +21,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.Serializable;
+import java.util.logging.Logger;
 
 /**
  * RgbColorChooser is a custom color chooser that only allows users to select colors in the RGB color space.
@@ -28,6 +29,9 @@ import java.io.Serializable;
  * @since 6.3
  */
 public class RgbColorChooser {
+
+    private static final Logger logger =
+            Logger.getLogger(RgbColorChooser.class.toString());
 
     /**
      * Shows a modal color-chooser dialog and blocks until the
@@ -54,7 +58,7 @@ public class RgbColorChooser {
                 UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.warning("Could not set metal look and feel.");
         }
 
         JColorChooser colorChooser = new JColorChooser(initialColor != null ?
@@ -89,7 +93,7 @@ public class RgbColorChooser {
             String defaultLF = UIManager.getSystemLookAndFeelClassName();
             UIManager.setLookAndFeel(defaultLF);
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.warning("Could not set " + UIManager.getSystemLookAndFeelClassName());
         }
 
         return colorTracker.getColor();
