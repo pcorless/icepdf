@@ -1348,7 +1348,7 @@ public class SwingViewBuilder {
 
         JComboBox tmp = new JComboBox();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
-        tmp.setPreferredSize(new Dimension(75, tmp.getHeight()));
+        tmp.setPreferredSize(new Dimension(115, tmp.getPreferredSize().height));
         for (float zoomLevel : zoomLevels)
             tmp.addItem(NumberFormat.getPercentInstance().format(zoomLevel));
         tmp.setEditable(true);

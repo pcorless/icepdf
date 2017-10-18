@@ -156,9 +156,19 @@ public class WindowManager implements WindowManagementCallback {
      * @param frame parent window containers.
      */
     public static void newWindowLocation(Container frame) {
+        newWindowLocation(frame, PropertiesManager.getInstance().getPreferences());
+    }
+
+    /**
+     * Loads the last used windows location as well as other frame related settings and insures the frame is
+     * visible.
+     *
+     * @param frame parent window containers.
+     */
+    public static void newWindowLocation(Container frame, Preferences prefs) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
         Rectangle bounds = env.getMaximumWindowBounds();
-        Preferences prefs = PropertiesManager.getInstance().getPreferences();
+        prefs = PropertiesManager.getInstance().getPreferences();
 
         // get the last used window size.
         int width = prefs.getInt(APPLICATION_WIDTH, 800);

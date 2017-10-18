@@ -48,6 +48,15 @@ public class RgbColorChooser {
     public static Color showDialog(Component component, String title, Color initialColor)
             throws HeadlessException {
 
+        try {
+            String defaultLF = UIManager.getSystemLookAndFeelClassName();
+            if (defaultLF.contains("GTK")) {
+                UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
         JColorChooser colorChooser = new JColorChooser(initialColor != null ?
                 initialColor : Color.white);
         AbstractColorChooserPanel[] panels = colorChooser.getChooserPanels();
@@ -75,6 +84,13 @@ public class RgbColorChooser {
                 true, colorChooser, colorTracker, cancelActionListener);
 
         colorChooserDialog.setVisible(true);
+
+        try {
+            String defaultLF = UIManager.getSystemLookAndFeelClassName();
+            UIManager.setLookAndFeel(defaultLF);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
 
         return colorTracker.getColor();
     }
