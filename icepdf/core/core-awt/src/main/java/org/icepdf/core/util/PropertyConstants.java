@@ -26,6 +26,7 @@ public class PropertyConstants {
     DOCUMENT_VIEW_ROTATION_CHANGE = "documentViewRotationChange",
     DOCUMENT_VIEW_REFRESH_CHANGE = "documentViewRefreshChange",
     DOCUMENT_VIEW_DEMO_MODE_CHANGE = "documentViewDemoChange",
+            DOCUMENT_VIEW_TYPE_CHANGE = "documentViewTypeChange",
 
     DOCUMENT_TOOL_PAN = "documentToolRotation",
     DOCUMENT_TOOL_ZOOM_IN = "documentToolZoomIn",
