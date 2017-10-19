@@ -295,6 +295,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 annotation.getParent().getContents() : "";
         textArea = new JTextArea(contents != null ? contents : "");
         textArea.setFont(new JLabel().getFont());
+        textArea.setWrapStyleWord(true);
         textArea.setBorder(BorderFactory.createLineBorder(borderColor));
 
         textArea.setLineWrap(true);
