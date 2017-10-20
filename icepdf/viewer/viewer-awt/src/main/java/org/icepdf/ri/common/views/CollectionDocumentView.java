@@ -16,19 +16,12 @@
 
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.pobjects.FileSpecification;
-import org.icepdf.core.pobjects.NameTree;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
 import java.util.HashMap;
 import java.util.List;
 
@@ -65,27 +58,24 @@ public class CollectionDocumentView extends AbstractDocumentView {
         this.add(pagesPanel,
                 BorderLayout.CENTER);
 
-        documentScrollpane.getViewport().addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                JViewport tmp = (JViewport) e.getSource();
-                Dimension dim = layout.computeSize(tmp.getWidth(), pagesPanel);
-                pagesPanel.setPreferredSize(dim);
-            }
+        documentScrollpane.getViewport().addChangeListener(e -> {
+            JViewport tmp = (JViewport) e.getSource();
+            Dimension dim = layout.computeSize(tmp.getWidth(), pagesPanel);
+            pagesPanel.setPreferredSize(dim);
         });
 
         documentScrollpane.getVerticalScrollBar().addAdjustmentListener(
-                new AdjustmentListener() {
-                    public void adjustmentValueChanged(AdjustmentEvent e) {
-                        if (!e.getValueIsAdjusting()) {
-                            repaint();
-                        }
+                e -> {
+                    if (!e.getValueIsAdjusting()) {
+                        repaint();
                     }
                 });
 
         // load the page components into the layout
         DocumentViewComponent documentViewComponent;
-        Library library = currentDocument.getCatalog().getLibrary();
-        NameTree embeddedFilesNameTree = currentDocument.getCatalog().getEmbeddedFilesNameTree();
+        Document document = documentViewController.getDocument();
+        Library library = document.getCatalog().getLibrary();
+        NameTree embeddedFilesNameTree = document.getCatalog().getEmbeddedFilesNameTree();
         if (embeddedFilesNameTree != null) {
             List filePairs = embeddedFilesNameTree.getNamesAndValues();
 

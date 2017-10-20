@@ -89,9 +89,8 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
     protected static final Dimension ICON_SIZE = new Dimension(23, 23);
 
     public TextAnnotationHandler(DocumentViewController documentViewController,
-                                 AbstractPageViewComponent pageViewComponent,
-                                 DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                 AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         checkAndApplyPreferences();
     }
 
@@ -187,15 +186,13 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
 
         // text annotation are special as the annotation has fixed size.
         TextAnnotation markupAnnotation =
-                createTextAnnotationInstance(documentViewModel.getDocument().getPageTree().getLibrary(),
+                createTextAnnotationInstance(documentViewController.getDocument().getPageTree().getLibrary(),
                         tBbox, pageTransform);
 
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        markupAnnotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        markupAnnotation, documentViewController, pageViewComponent);
         // set the bounds and refresh the userSpace rectangle
         comp.setBounds(bBox);
         // resets user space rectangle to match bbox converted to page space

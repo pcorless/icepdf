@@ -51,17 +51,15 @@ public class Main {
         // Call the main method of the application's Main class
         // using Reflection so that related classes resolving happens
         // after splash window is shown up
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    Class.forName("org.icepdf.ri.viewer.Launcher")
-                            .getMethod("main", String[].class)
-                            .invoke(null, new Object[]{args});
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    System.err.flush();
-                    System.exit(10);
-                }
+        SwingUtilities.invokeLater(() -> {
+            try {
+                Class.forName("org.icepdf.ri.viewer.Launcher")
+                        .getMethod("main", String[].class)
+                        .invoke(null, new Object[]{args});
+            } catch (Throwable e) {
+                e.printStackTrace();
+                System.err.flush();
+                System.exit(10);
             }
         });
 

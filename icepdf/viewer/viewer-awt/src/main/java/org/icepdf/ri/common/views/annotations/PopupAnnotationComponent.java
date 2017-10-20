@@ -24,7 +24,10 @@ import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
-import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.ResizableBorder;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -99,8 +102,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     private String userName = System.getProperty("user.name");
 
     public PopupAnnotationComponent(PopupAnnotation annotation, DocumentViewController documentViewController,
-                                    AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+                                    AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
 
         isEditable = true;
         isRollover = false;
@@ -317,7 +320,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         commentPanel = new JPanel(layout);
         commentPanel.setBackground(popupBackgroundColor);
         this.setLayout(new GridBagLayout());
-        /**
+        /*
          * Build search GUI
          */
         constraints = new GridBagConstraints();
@@ -326,7 +329,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
         addGB(this, commentPanel, 0, 0, 1, 1);
-        /**
+        /*
          * Build search GUI
          */
         constraints.fill = GridBagConstraints.NONE;
@@ -422,8 +425,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public void buildContextMenu() {
         //Create the popup menu.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent) getAnnotationParentComponent();
-        contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController,
-                getPageViewComponent(), documentViewModel, false);
+        contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController.getParentController(),
+                getPageViewComponent(), false);
         // Add listener to components that can bring up popup menus.
         MouseListener popupListener = new PopupListener(contextMenu);
         commentPanel.addMouseListener(popupListener);
@@ -538,8 +541,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             if (annotationComponent instanceof PopupAnnotationComponent) {
                 PopupAnnotationComponent popupAnnotationComponent = (PopupAnnotationComponent) annotationComponent;
                 if (popupAnnotationComponent.getAnnotation() != null) {
-                    PopupAnnotation popupAnnotation = (PopupAnnotation)
-                            popupAnnotationComponent.getAnnotation();
+                    PopupAnnotation popupAnnotation = popupAnnotationComponent.getAnnotation();
                     if (popupAnnotation.getParent() != null &&
                             popupAnnotation.getParent().getInReplyToAnnotation() == null) {
                         popupAnnotationComponent.setVisible(visible);
@@ -555,7 +557,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // and setup the IRT references for display
         TextAnnotation markupAnnotation =
                 TextAnnotationHandler.createTextAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
+                        documentViewController.getDocument().getPageTree().getLibrary(),
                         selectedMarkupAnnotation.getUserSpaceRectangle().getBounds(),
                         getPageTransform());
         markupAnnotation.setTitleText(title);
@@ -746,8 +748,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 annotationComponent = annotationComponents.get(i);
                 if (annotationComponent instanceof MarkupAnnotationComponent) {
                     markupAnnotationComponent = (MarkupAnnotationComponent) annotationComponent;
-                    markupAnnotation = (MarkupAnnotation)
-                            markupAnnotationComponent.getAnnotation();
+                    markupAnnotation = markupAnnotationComponent.getAnnotation();
                     if (markupAnnotation.getInReplyToAnnotation() != null &&
                             markupAnnotation.getInReplyToAnnotation()
                                     .getPObjectReference().equals(reference)) {
@@ -785,9 +786,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        annotation, documentViewController, pageViewComponent);
         // set the bounds and refresh the userSpace rectangle
         comp.setBounds(bBox);
         // resets user space rectangle to match bbox converted to page space

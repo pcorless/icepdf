@@ -75,7 +75,7 @@ public class ScalablePasswordField extends JPasswordField implements ScalableFie
                 ScalablePasswordField.this.processMouseMotionEvent(newEvent);
             }
         };
-        new JXLayer<JComponent>(this, layerUI);
+        new JXLayer<>(this, layerUI);
     }
 
     @Override

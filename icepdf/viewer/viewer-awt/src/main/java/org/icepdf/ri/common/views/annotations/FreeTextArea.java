@@ -36,7 +36,7 @@ import java.awt.geom.AffineTransform;
 public class FreeTextArea extends JTextArea {
 
     public interface ZoomProvider {
-        public float getZoom();
+        float getZoom();
     }
 
     private ZoomProvider zoomProvider;
@@ -80,7 +80,7 @@ public class FreeTextArea extends JTextArea {
                 FreeTextArea.this.processMouseMotionEvent(newEvent);
             }
         };
-        new JXLayer<JComponent>(this, layerUI);
+        new JXLayer<>(this, layerUI);
     }
 
     @Override

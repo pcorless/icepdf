@@ -23,10 +23,10 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.DragDropColorList;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.common.utility.signatures.SigVerificationTask;
 import org.icepdf.ri.common.views.AnnotationSelector;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FindMarkupAnnotationTask extends AbstractTask {
+public class FindMarkupAnnotationTask extends AbstractTask<FindMarkupAnnotationTask> {
 
     private static final Logger logger =
             Logger.getLogger(SigVerificationTask.class.toString());
@@ -73,7 +73,7 @@ public class FindMarkupAnnotationTask extends AbstractTask {
      * @param messageBundle                message bundle used for dialog text.
      */
     public FindMarkupAnnotationTask(MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel,
-                                    SwingController controller,
+                                    Controller controller,
                                     ResourceBundle messageBundle) {
         super(controller, messageBundle, controller.getDocument().getNumberOfPages());
         this.controller = controller;
@@ -374,13 +374,7 @@ public class FindMarkupAnnotationTask extends AbstractTask {
                 if (color1 != null && color2 != null) {
                     int rgb1 = color1.getRGB();
                     int rgb2 = color2.getRGB();
-                    if (rgb1 < rgb2) {
-                        return 1;
-                    } else if (rgb1 > rgb2) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
+                    return Integer.compare(rgb2, rgb1);
                 } else {
                     return 0;
                 }

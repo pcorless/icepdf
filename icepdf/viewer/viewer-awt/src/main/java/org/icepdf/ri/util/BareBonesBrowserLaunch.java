@@ -59,8 +59,7 @@ public class BareBonesBrowserLaunch {
             if (isMac()) {
                 Class<?> fileMgr = Class.forName("com.apple.eio.FileManager");
                 Method openURL = fileMgr.getDeclaredMethod("openURL",
-                        new Class[]{
-                                String.class});
+                        String.class);
                 openURL.invoke(null, url);
             } else if (isWindows())
                 Runtime.getRuntime()

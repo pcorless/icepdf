@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.TextAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.util.logging.Logger;
@@ -42,8 +41,8 @@ public class TextAnnotationComponent extends MarkupAnnotationComponent {
             Logger.getLogger(TextAnnotationComponent.class.toString());
 
     public TextAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
-                                   AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+                                   AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
         isRollover = false;
         isMovable = true;
         isResizable = false;

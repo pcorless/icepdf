@@ -17,7 +17,6 @@ package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.ri.common.EscapeJDialog;
 
-import javax.swing.*;
 import java.awt.*;
 
 /**
@@ -28,7 +27,7 @@ import java.awt.*;
 public abstract class AnnotationDialogAdapter extends EscapeJDialog
         implements AnnotationProperties {
 
-    protected AnnotationDialogAdapter(JFrame owner, boolean modal)
+    protected AnnotationDialogAdapter(Frame owner, boolean modal)
             throws HeadlessException {
         super(owner, modal);
     }

@@ -31,11 +31,11 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
     /**
      * Indicates that a two column view will have odd-numbered pages on the left.
      */
-    public int LEFT_VIEW = 0;
+    int LEFT_VIEW = 0;
     /**
      * Indicates that a two column view will have odd-numbered pages on the right.
      */
-    public int RIGHT_VIEW = 1;
+    int RIGHT_VIEW = 1;
 
     /**
      * Get the next page index.  This will number will very depending on the
@@ -44,7 +44,7 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      *
      * @return number of pages to increment page count on a page increment command.
      */
-    public int getNextPageIncrement();
+    int getNextPageIncrement();
 
     /**
      * Get the previous page index.  This will number will very depending on the
@@ -53,7 +53,7 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      *
      * @return number of pages to increment page count on a page increment command.
      */
-    public int getPreviousPageIncrement();
+    int getPreviousPageIncrement();
 
     /**
      * Gets the total size of the document view.  This size will very depending
@@ -62,31 +62,31 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      *
      * @return size of document in pixels for all pages represented in the view.
      */
-    public Dimension getDocumentSize();
+    Dimension getDocumentSize();
 
     /**
      * Parent document view controller
      *
      * @return document view controller
      */
-    public DocumentViewController getParentViewController();
+    DocumentViewController getParentViewController();
 
     /**
      * Gets the view model associated with this document view.
      *
      * @return document view model used by this view.
      */
-    public DocumentViewModel getViewModel();
+    DocumentViewModel getViewModel();
 
     /**
      * Dispose all resources associated with this views.
      */
-    public void dispose();
+    void dispose();
 
     /**
      * Update the child components which make up this view.
      */
-    public void updateDocumentView();
+    void updateDocumentView();
 
     /**
      * Sets the tool type/mode that is to be enabled for the particular
@@ -96,24 +96,24 @@ public interface DocumentView extends AdjustmentListener, FocusListener {
      *
      * @param viewToolMode tool mode type.
      */
-    public void setToolMode(final int viewToolMode);
+    void setToolMode(final int viewToolMode);
 
     /**
      * Uninstalls the current tool Handler.
      *
-     * @return tool handler taht was removed.
+     * @return tool handler that was removed.
      */
-    public ToolHandler uninstallCurrentTool();
+    ToolHandler uninstallCurrentTool();
 
     /**
      * Installs the current tool handler.
      *
      * @param currentTool tool ot install.
      */
-    public void installCurrentTool(ToolHandler currentTool);
+    void installCurrentTool(ToolHandler currentTool);
 
     /**
      * Component repaint call.
      */
-    public void repaint();
+    void repaint();
 }

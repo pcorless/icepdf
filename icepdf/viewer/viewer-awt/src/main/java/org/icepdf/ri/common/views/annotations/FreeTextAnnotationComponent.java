@@ -75,9 +75,8 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     private FreeTextAnnotation freeTextAnnotation;
 
     public FreeTextAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
-                                       final AbstractPageViewComponent pageViewComponent,
-                                       final DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+                                       final AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
         isRollover = false;
         isShowInvisibleBorder = false;
 
@@ -103,7 +102,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
             ((FreeTextAnnotation) annotation).clearShapes();
         }
         // create the textArea to display the text.
-        freeTextPane = new ScalableTextArea(documentViewModel);
+        freeTextPane = new ScalableTextArea(documentViewController.getDocumentViewModel());
         // line wrap false to force users to add line breaks.
         freeTextPane.setLineWrap(false);
         freeTextPane.setBackground(new Color(0, 0, 0, 0));
@@ -152,8 +151,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     @Override
     public void validate() {
         if (freeTextPane != null) {
+            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
             freeTextPane.setFont(
-                    new Font(freeTextAnnotation.getFontName().toString(),
+                    new Font(freeTextAnnotation.getFontName(),
                             Font.PLAIN,
                             (int) (freeTextAnnotation.getFontSize() * documentViewModel.getViewZoom())));
         }
@@ -162,6 +162,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
 
     public void setAppearanceStream() {
         // copy over annotation properties from the free text annotation.
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         fontFile = FontManager.getInstance().initialize().getType1AWTFont(
                 freeTextAnnotation.getFontName(),
                 (int) (freeTextAnnotation.getFontSize() * documentViewModel.getViewZoom()));
@@ -253,6 +254,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     @Override
     public void paintComponent(Graphics g) {
         // show a light border when in edit mode so component is easier to see.
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         isShowInvisibleBorder = ((documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 documentViewModel.getViewToolMode() ==
@@ -313,7 +315,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         private BasicStroke stroke;
         private Color color;
 
-        public DashedBorder(BorderStyle borderStyle, Color color) {
+        DashedBorder(BorderStyle borderStyle, Color color) {
             int thickness = (int) borderStyle.getStrokeWidth();
             this.stroke = new BasicStroke(thickness,
                     BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER,

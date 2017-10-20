@@ -46,7 +46,7 @@ public class PreferencesDialog extends EscapeJDialog {
 
     private JTabbedPane propertiesTabbedPane;
 
-    public PreferencesDialog(JFrame frame, SwingController swingController,
+    public PreferencesDialog(JFrame frame, SwingController controller,
                              ResourceBundle messageBundle) {
         super(frame, true);
         setTitle(messageBundle.getString("viewer.dialog.viewerPreferences.title"));
@@ -71,35 +71,35 @@ public class PreferencesDialog extends EscapeJDialog {
                 PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.general.title"),
-                    new GeneralPreferencesPanel(swingController, propertiesManager, messageBundle));
+                    new GeneralPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the annotation preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.annotations.title"),
-                    new AnnotationPreferencesPanel(swingController, propertiesManager, messageBundle));
+                    new AnnotationPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the imaging preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_PREFERENCES_IMAGING)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.imaging.title"),
-                    new ImagingPreferencesPanel(swingController, propertiesManager, messageBundle));
+                    new ImagingPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the fonts preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_PREFERENCES_FONTS)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.fonts.title"),
-                    new FontsPreferencesPanel(swingController, propertiesManager, messageBundle));
+                    new FontsPreferencesPanel(controller, propertiesManager, messageBundle));
         }
         // build the advanced preferences tab
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED)) {
             propertiesTabbedPane.addTab(
                     messageBundle.getString("viewer.dialog.viewerPreferences.section.advanced.title"),
-                    new AdvancedPreferencesPanel(swingController, propertiesManager, messageBundle));
+                    new AdvancedPreferencesPanel(controller, propertiesManager, messageBundle));
         }
 
         JPanel layoutPanel = new JPanel(new GridBagLayout());
@@ -125,11 +125,9 @@ public class PreferencesDialog extends EscapeJDialog {
     /**
      * Allows for the selection of a specific preference panel on first view.
      *
-     * @param selectedPreference
+     * @param selectedPreference preference tab to show by default.
      */
     public void setSelectedPreference(final String selectedPreference) {
-
-        PropertiesManager propertiesManager = PropertiesManager.getInstance();
         if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_GENERAL.equals(selectedPreference)) {
             propertiesTabbedPane.setSelectedIndex(0);
         } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS.equals(selectedPreference)) {
@@ -140,6 +138,8 @@ public class PreferencesDialog extends EscapeJDialog {
             propertiesTabbedPane.setSelectedIndex(3);
         } else if (PropertiesManager.PROPERTY_SHOW_PREFERENCES_ADVANCED.equals(selectedPreference)) {
             propertiesTabbedPane.setSelectedIndex(4);
+        } else {
+            propertiesTabbedPane.setSelectedIndex(0);
         }
     }
 

@@ -15,9 +15,8 @@
  */
 package org.icepdf.ri.common.properties;
 
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.fonts.FontHandlerPanel;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.font.ClearFontCacheWorker;
 
 import javax.swing.*;
@@ -38,9 +37,6 @@ import java.util.ResourceBundle;
 public class FontPanel extends JPanel implements ActionListener, WindowListener {
 
 
-    // pointer to document which will be searched
-    private SwingController controller;
-
     // clear and rescan system for fonts and rewrite file.
     private JButton resetFontCacheButton;
     // panel that does the font lookup.
@@ -53,14 +49,13 @@ public class FontPanel extends JPanel implements ActionListener, WindowListener 
     // layouts constraint
     private GridBagConstraints constraints;
 
-    public FontPanel(Document doc, SwingController controller, ResourceBundle messageBundle, JDialog parenWindow) {
+    public FontPanel(Controller controller) {
 
         setFocusable(true);
-        this.controller = controller;
-        this.messageBundle = this.controller.getMessageBundle();
+        this.messageBundle = controller.getMessageBundle();
         fontHandlerPanel = new FontHandlerPanel(controller);
         // kicks off the swing worker to do the font lookup off the awt thread.
-        fontHandlerPanel.setDocument(controller.getDocument());
+        fontHandlerPanel.refreshDocumentInstance();
         setGui();
     }
 
@@ -69,10 +64,6 @@ public class FontPanel extends JPanel implements ActionListener, WindowListener 
      */
     private void setGui() {
 
-
-        /**
-         * Build search GUI
-         */
         // content Panel
         JPanel fontPropertiesPanel = new JPanel(new GridBagLayout());
         fontPropertiesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
@@ -128,7 +119,7 @@ public class FontPanel extends JPanel implements ActionListener, WindowListener 
 
     protected void closeWindowOperations() {
         // clean up the timer and worker thread.
-        fontHandlerPanel.dispose();
+        fontHandlerPanel.disposeDocument();
     }
 
 

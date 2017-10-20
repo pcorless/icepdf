@@ -41,7 +41,7 @@ public class NameTreeNode extends DefaultMutableTreeNode {
     private MessageFormat formatter;
 
     private boolean rootNode;
-    private boolean intermidiatNode;
+    private boolean intermediateNode;
     private boolean leaf;
 
     private boolean loadedChildren;
@@ -61,7 +61,7 @@ public class NameTreeNode extends DefaultMutableTreeNode {
             setUserObject(messageBundle.getString(
                     "viewer.utilityPane.action.dialog.goto.nameTree.root.label"));
         } else {
-            intermidiatNode = true;
+            intermediateNode = true;
             // setup a patterned message
             Object[] messageArguments = {
                     item.getLowerLimit(),
@@ -119,7 +119,7 @@ public class NameTreeNode extends DefaultMutableTreeNode {
      * OutlineItems that the user has not even browsed to
      */
     private void ensureChildrenLoaded() {
-        if (!loadedChildren && (intermidiatNode || rootNode)) {
+        if (!loadedChildren && (intermediateNode || rootNode)) {
             loadedChildren = true;
 
             // look for any kids.

@@ -86,7 +86,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * Validates the signatures represented by this tree node.  This method is called by a worker thread
      * and once validation is complete the notes states is updated with a call to {@link #refreshSignerNode()}
      *
-     * @throws SignatureIntegrityException
+     * @throws SignatureIntegrityException security exception if validation failed.
      */
     public void validateSignatureNode() throws SignatureIntegrityException {
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2006-2009, Alexander Potochkin
  * All rights reserved.
  *
@@ -28,7 +28,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.icepdf.ri.util.jxlayer;
 
 import org.icepdf.ri.util.jxlayer.plaf.LayerUI;
@@ -492,10 +491,7 @@ public final class JXLayer<V extends Component> extends JComponent
         if (getUI() != null) {
             return getUI().getScrollableTracksViewportHeight(this);
         }
-        if (getParent() instanceof JViewport) {
-            return ((getParent()).getHeight() > getPreferredSize().height);
-        }
-        return false;
+        return getParent() instanceof JViewport && ((getParent()).getHeight() > getPreferredSize().height);
     }
 
     /**
@@ -514,10 +510,7 @@ public final class JXLayer<V extends Component> extends JComponent
         if (getUI() != null) {
             return getUI().getScrollableTracksViewportWidth(this);
         }
-        if (getParent() instanceof JViewport) {
-            return ((getParent()).getWidth() > getPreferredSize().width);
-        }
-        return false;
+        return getParent() instanceof JViewport && ((getParent()).getWidth() > getPreferredSize().width);
     }
 
     /**
@@ -577,7 +570,7 @@ public final class JXLayer<V extends Component> extends JComponent
     @SuppressWarnings("serial")
     private static class LayerEventController implements AWTEventListener {
         private ArrayList<WeakReference<JXLayer>> layerList =
-                new ArrayList<WeakReference<JXLayer>>();
+                new ArrayList<>();
 
         private long currentEventMask;
 
@@ -612,7 +605,7 @@ public final class JXLayer<V extends Component> extends JComponent
 
         private void updateAWTEventListener(JXLayer layer) {
             if (!layerListContains(layer) && layer.getLayerEventMask() != 0) {
-                layerList.add(new WeakReference<JXLayer>(layer));
+                layerList.add(new WeakReference<>(layer));
             }
             long combinedMask = 0;
             Iterator<WeakReference<JXLayer>> it = layerList.iterator();
@@ -639,23 +632,19 @@ public final class JXLayer<V extends Component> extends JComponent
         }
 
         private void addAWTEventListener(final long eventMask) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    Toolkit.getDefaultToolkit().
-                            addAWTEventListener(LayerEventController.this, eventMask);
-                    return null;
-                }
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                Toolkit.getDefaultToolkit().
+                        addAWTEventListener(LayerEventController.this, eventMask);
+                return null;
             });
             currentEventMask = eventMask;
         }
 
         private void removeAWTEventListener() {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    Toolkit.getDefaultToolkit().
-                            removeAWTEventListener(LayerEventController.this);
-                    return null;
-                }
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                Toolkit.getDefaultToolkit().
+                        removeAWTEventListener(LayerEventController.this);
+                return null;
             });
             currentEventMask = 0;
         }
@@ -801,13 +790,10 @@ public final class JXLayer<V extends Component> extends JComponent
                     return true;
                 }
             }
-            if (getMouseListeners().length == 0
-                    && getMouseMotionListeners().length == 0
-                    && getMouseWheelListeners().length == 0
-                    && !isCursorSet()) {
-                return false;
-            }
-            return super.contains(x, y);
+            return (getMouseListeners().length != 0
+                    || getMouseMotionListeners().length != 0
+                    || getMouseWheelListeners().length != 0
+                    || isCursorSet()) && super.contains(x, y);
         }
     }
 }

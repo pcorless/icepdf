@@ -18,19 +18,14 @@ package org.icepdf.ri.common.utility.thumbs;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PageTree;
+import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.PageThumbnailComponent;
-import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.ModifiedFlowLayout;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
 
 /**
  * The ThumbnailsPanel class is responsible for showing a document preview
@@ -40,19 +35,16 @@ import java.awt.event.AdjustmentListener;
  * @since 4.3
  */
 @SuppressWarnings("serial")
-public class ThumbnailsPanel extends JPanel {
+public class ThumbnailsPanel extends JPanel implements MutableDocument {
 
-    protected DocumentViewController documentViewController;
-    protected Document currentDocument;
     protected PropertiesManager propertiesManager;
-    protected DocumentViewModel documentViewModel;
     protected float thumbNailZoom = 0.1f; // default zoom is 10%
 
     protected static final int MAX_PAGE_SIZE_READ_AHEAD = 10;
 
-    private SwingController controller;
+    private Controller controller;
 
-    public ThumbnailsPanel(SwingController controller,
+    public ThumbnailsPanel(Controller controller,
                            PropertiesManager propertiesManager) {
         this.controller = controller;
         this.propertiesManager = propertiesManager;
@@ -63,10 +55,9 @@ public class ThumbnailsPanel extends JPanel {
         }
     }
 
-    public void setDocument(Document document) {
-        this.currentDocument = document;
-        documentViewController = controller.getDocumentViewController();
-
+    @Override
+    public void refreshDocumentInstance() {
+        Document document = controller.getDocument();
         if (document != null) {
             buildUI();
         } else {
@@ -75,7 +66,8 @@ public class ThumbnailsPanel extends JPanel {
         }
     }
 
-    public void dispose() {
+    @Override
+    public void disposeDocument() {
         this.removeAll();
     }
 
@@ -92,27 +84,24 @@ public class ThumbnailsPanel extends JPanel {
         this.add(scrollPane,
                 BorderLayout.CENTER);
 
-        scrollPane.getViewport().addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                JViewport tmp = (JViewport) e.getSource();
-                Dimension dim = layout.computeSize(tmp.getWidth(), pageThumbsPanel);
-                pageThumbsPanel.setPreferredSize(dim);
-            }
+        scrollPane.getViewport().addChangeListener(e -> {
+            JViewport tmp = (JViewport) e.getSource();
+            Dimension dim = layout.computeSize(tmp.getWidth(), pageThumbsPanel);
+            pageThumbsPanel.setPreferredSize(dim);
         });
 
         scrollPane.getVerticalScrollBar().addAdjustmentListener(
-                new AdjustmentListener() {
-                    public void adjustmentValueChanged(AdjustmentEvent e) {
-                        if (!e.getValueIsAdjusting()) {
-                            repaint();
-                        }
+                e -> {
+                    if (!e.getValueIsAdjusting()) {
+                        repaint();
                     }
                 });
 
         // load the page components into the layout
         PageThumbnailComponent pageThumbnailComponent = null;
-        PageTree pageTree = currentDocument.getPageTree();
-        int numberOfPages = currentDocument.getNumberOfPages();
+        Document document = controller.getDocument();
+        PageTree pageTree = document.getPageTree();
+        int numberOfPages = document.getNumberOfPages();
         int avgPageWidth = 0;
         int avgPageHeight = 0;
 
@@ -131,7 +120,7 @@ public class ThumbnailsPanel extends JPanel {
                                 avgPageWidth, avgPageHeight, thumbNailZoom);
             }
             // calculate average page size
-            else if (i == MAX_PAGE_SIZE_READ_AHEAD) {
+            else {// if (i == MAX_PAGE_SIZE_READ_AHEAD) {
                 avgPageWidth /= (MAX_PAGE_SIZE_READ_AHEAD);
                 avgPageHeight /= (MAX_PAGE_SIZE_READ_AHEAD);
                 pageThumbnailComponent =

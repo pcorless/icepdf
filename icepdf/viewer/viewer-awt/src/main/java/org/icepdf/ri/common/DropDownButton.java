@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -34,18 +35,18 @@ public class DropDownButton extends JButton
     private static final Logger logger = Logger.getLogger(DropDownButton.class.toString());
 
 
-    protected SwingController swingController;
+    protected Controller controller;
 
     protected JPopupMenu popupMenu;
 
     protected String imageName;
     protected String imageSize;
 
-    public DropDownButton(SwingController swingController,
+    public DropDownButton(Controller controller,
                           String title, String toolTip, String imageName,
                           final String imageSize, java.awt.Font font) {
         super(title);
-        this.swingController = swingController;
+        this.controller = controller;
 
         setFont(font);
         setToolTipText(toolTip);

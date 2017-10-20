@@ -46,7 +46,6 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
     private static final int TIMER_REFRESH = 20;
 
     // pointer to document which will be searched
-    private Document document;
     private SwingController controller;
     private ResourceBundle messageBundle;
 
@@ -77,7 +76,7 @@ public class FontDialog extends EscapeJDialog implements ActionListener, WindowL
         setResizable(true);
         addWindowListener(this);
 
-        fontPropertiesPanel = new FontPanel(document, controller, messageBundle, this);
+        fontPropertiesPanel = new FontPanel(controller);
         okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
         okButton.addActionListener(this);
 

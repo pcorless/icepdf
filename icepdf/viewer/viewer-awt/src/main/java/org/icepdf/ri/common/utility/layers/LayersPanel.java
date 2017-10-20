@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.OptionalContent;
 import org.icepdf.core.pobjects.OptionalContentGroup;
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractDocumentView;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -40,16 +41,11 @@ import java.util.ResourceBundle;
  * catalog contains a OCProperties entry.
  */
 @SuppressWarnings("serial")
-public class LayersPanel extends JPanel {
-
-    protected DocumentViewController documentViewController;
-
-    protected Document currentDocument;
+public class LayersPanel extends JPanel implements MutableDocument {
 
     private SwingController controller;
 
     protected LayersTreeNode nodes;
-    protected DocumentViewModel documentViewModel;
     // message bundle for internationalization
     ResourceBundle messageBundle;
 
@@ -77,13 +73,11 @@ public class LayersPanel extends JPanel {
                 BorderLayout.CENTER);
     }
 
-    public void setDocument(Document document) {
-        this.currentDocument = document;
-        documentViewController = controller.getDocumentViewController();
-        documentViewModel = documentViewController.getDocumentViewModel();
-
-        if (this.currentDocument != null) {
-            OptionalContent optionalContent = currentDocument.getCatalog().getOptionalContent();
+    @Override
+    public void refreshDocumentInstance() {
+        Document document = controller.getDocument();
+        if (document != null) {
+            OptionalContent optionalContent = document.getCatalog().getOptionalContent();
             List<Object> layersOrder = optionalContent.getOrder();
             if (layersOrder != null) {
                 // check for radio buttons
@@ -99,6 +93,11 @@ public class LayersPanel extends JPanel {
             // tear down the old container.
             this.removeAll();
         }
+    }
+
+    @Override
+    public void disposeDocument() {
+        this.removeAll();
     }
 
     @SuppressWarnings("unchecked")
@@ -141,12 +140,6 @@ public class LayersPanel extends JPanel {
         }
     }
 
-
-    public void dispose() {
-        this.removeAll();
-    }
-
-
     class NodeSelectionListener extends MouseAdapter {
         JTree tree;
 
@@ -164,6 +157,8 @@ public class LayersPanel extends JPanel {
                 boolean isSelected = !(node.isSelected());
                 node.setSelected(isSelected);
                 // the current page and repaint
+                DocumentViewController documentViewController = controller.getDocumentViewController();
+                DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                 List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
                 AbstractPageViewComponent page = pages.get(documentViewModel.getViewCurrentPageIndex());
                 // resort page text as layer visibility will have changed.
@@ -173,7 +168,7 @@ public class LayersPanel extends JPanel {
                     // silent running for now.
                 }
                 // fire change  event.
-                ((AbstractDocumentView)documentViewController.getDocumentView()).firePropertyChange(
+                ((AbstractDocumentView) documentViewController.getDocumentView()).firePropertyChange(
                         PropertyConstants.DOCUMENT_VIEW_REFRESH_CHANGE, false, true);
                 // repaint the page.
                 page.repaint();

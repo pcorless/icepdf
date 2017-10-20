@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -52,9 +53,9 @@ public class TextAnnotationToggleButton extends AnnotationColorToggleButton {
         textIconPath.closePath();
     }
 
-    public TextAnnotationToggleButton(SwingController swingController, ResourceBundle messageBundle, String title,
+    public TextAnnotationToggleButton(Controller controller, ResourceBundle messageBundle, String title,
                                       String toolTip, String imageName, String imageSize, Font font) {
-        super(swingController, messageBundle, title, toolTip, imageName, imageSize, font);
+        super(controller, messageBundle, title, toolTip, imageName, imageSize, font);
 
         PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
         paintButton.setColorBound(textIconPath);

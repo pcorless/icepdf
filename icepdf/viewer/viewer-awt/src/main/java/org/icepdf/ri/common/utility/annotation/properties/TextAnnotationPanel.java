@@ -18,8 +18,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -51,13 +51,13 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private static ValueLabelItem[] TEXT_ICON_LIST;
 
     // link action appearance properties.
-    private JComboBox iconNameBox;
+    private JComboBox<ValueLabelItem> iconNameBox;
     private JButton colorButton;
     private JSlider transparencySlider;
 
     private TextAnnotation annotation;
 
-    public TextAnnotationPanel(SwingController controller) {
+    public TextAnnotationPanel(Controller controller) {
         super(controller);
         setLayout(new GridBagLayout());
 
@@ -198,7 +198,7 @@ public class TextAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // Line thickness
-        iconNameBox = new JComboBox(TEXT_ICON_LIST);
+        iconNameBox = new JComboBox<>(TEXT_ICON_LIST);
         iconNameBox.setSelectedIndex(DEFAULT_ICON_NAME);
         iconNameBox.addItemListener(this);
         JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.text.iconName"));

@@ -17,7 +17,6 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.ri.common.KeyListenerPageChanger;
 import org.icepdf.ri.common.MouseWheelListenerPageChanger;
-import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,17 +51,15 @@ public class OnePageView extends AbstractDocumentView {
         buildGUI();
 
         // add page changing key listeners
-        if (this.documentViewController.getParentController() instanceof SwingController) {
-            pageChangerListener =
-                    MouseWheelListenerPageChanger.install(
-                            (SwingController) this.documentViewController.getParentController(),
-                            this.documentScrollpane, this);
+        pageChangerListener =
+                MouseWheelListenerPageChanger.install(
+                        this.documentViewController.getParentController(),
+                        this.documentScrollpane, this);
 
-            keyListenerPageChanger =
-                    KeyListenerPageChanger.install(
-                            (SwingController) this.documentViewController.getParentController(),
-                            this.documentScrollpane, this);
-        }
+        keyListenerPageChanger =
+                KeyListenerPageChanger.install(
+                        this.documentViewController.getParentController(),
+                        this.documentScrollpane, this);
 
     }
 
@@ -93,6 +90,7 @@ public class OnePageView extends AbstractDocumentView {
 
     public void updateDocumentView() {
 
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         java.util.List<AbstractPageViewComponent> pageComponents =
                 documentViewModel.getPageComponents();
 
@@ -173,7 +171,7 @@ public class OnePageView extends AbstractDocumentView {
             }
         }
         // normalize the dimensions to a zoom level of zero. 
-        float currentZoom = documentViewModel.getViewZoom();
+        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 

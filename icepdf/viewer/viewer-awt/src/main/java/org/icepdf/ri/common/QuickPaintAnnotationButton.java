@@ -16,6 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -58,9 +59,9 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
         textIconPathLarge.closePath();
     }
 
-    public QuickPaintAnnotationButton(SwingController swingController, ResourceBundle messageBundle, String title,
+    public QuickPaintAnnotationButton(Controller controller, ResourceBundle messageBundle, String title,
                                       String toolTip, String imageName, String imageSize, Font font) {
-        super(swingController, messageBundle, title, toolTip, imageName, imageSize, font);
+        super(controller, messageBundle, title, toolTip, imageName, imageSize, font);
 
         PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
         paintButton.setColorBound(imageSize.equals(Images.SIZE_LARGE) ? textIconPathLarge : textIconPathSmall);
@@ -80,7 +81,7 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
             paintButton.setColor(color);
         }
 
-        addPropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, swingController);
+        addPropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
 
         setupLayout();
     }
@@ -92,7 +93,7 @@ public class QuickPaintAnnotationButton extends AnnotationColorButton {
         preferences.putInt(PropertiesManager.PROPERTY_ANNOTATION_QUICK_COLOR, newColor.getRGB());
 
         if (fireChangeEvent) {
-            swingController.getDocumentViewController().firePropertyChange(
+            controller.getDocumentViewController().firePropertyChange(
                     PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, null, newColor);
         }
     }

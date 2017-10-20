@@ -224,7 +224,7 @@ public class PrintHelper implements Printable {
      * method should only be used by advanced users.
      *
      * @param printService             print service to print document to.
-     * @param printRequestAttributeSet print jobt attribute set.
+     * @param printRequestAttributeSet print job attribute set.
      * @param shrinkToPrintableArea    true, to enable shrink to fit printable area;
      *                                 false, otherwise.
      */

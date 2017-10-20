@@ -19,7 +19,7 @@ import org.icepdf.core.pobjects.NameTree;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.NameJTree;
 import org.icepdf.ri.common.NameTreeNode;
-import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -31,7 +31,7 @@ import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 /**
- * Create a dialog containg a name tree for the open document.  If no name
+ * Create a dialog containing a name tree for the open document.  If no name
  * tree exists then no tree is shown.
  *
  * @since 4.0
@@ -40,7 +40,7 @@ import java.util.ResourceBundle;
 public class NameTreeDialog extends EscapeJDialog
         implements ActionListener, TreeSelectionListener {
 
-    private SwingController controller;
+    private Controller controller;
     private ResourceBundle messageBundle;
 
     private JTree nameJTree;
@@ -51,7 +51,7 @@ public class NameTreeDialog extends EscapeJDialog
 
     private GridBagConstraints constraints;
 
-    public NameTreeDialog(SwingController controller, boolean modal, NameTree nameTree)
+    public NameTreeDialog(Controller controller, boolean modal, NameTree nameTree)
             throws HeadlessException {
         super(controller.getViewerFrame(), modal);
         this.controller = controller;

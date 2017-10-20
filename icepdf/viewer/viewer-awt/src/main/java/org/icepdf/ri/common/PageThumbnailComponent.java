@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,15 +46,15 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
     private static final Logger logger =
             Logger.getLogger(PageThumbnailComponent.class.toString());
 
-    private SwingController controller;
+    private Controller controller;
 
-    public PageThumbnailComponent(SwingController controller,
+    public PageThumbnailComponent(Controller controller,
                                   JScrollPane parentScrollPane, PageTree pageTree,
                                   int pageNumber, float thumbNailZoom) {
         this(controller, parentScrollPane, pageTree, pageNumber, 0, 0, thumbNailZoom);
     }
 
-    public PageThumbnailComponent(SwingController controller,
+    public PageThumbnailComponent(Controller controller,
                                   JScrollPane parentScrollPane, PageTree pageTree,
                                   int pageNumber,
                                   int width, int height,
@@ -88,7 +89,7 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
         if (viewPort.intersects(pageLocation) && pageBufferStore.getImageReference() == null) {
             // start future task to paint back pageBufferPadding
             if (pageImageCaptureTask == null || pageImageCaptureTask.isDone() || pageImageCaptureTask.isCancelled()) {
-                pageImageCaptureTask = new FutureTask<Object>(
+                pageImageCaptureTask = new FutureTask<>(
                         new PageImageCaptureTask(this, pageSize, pageSize,
                                 pageZoom,
                                 pageRotation));
@@ -103,7 +104,7 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
 
     public void mouseClicked(MouseEvent e) {
         if (controller != null) {
-            controller.showPage(pageIndex);
+            controller.getDocumentViewController().setCurrentPageIndex(pageIndex);
         }
     }
 

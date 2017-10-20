@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.annotations.AbstractAnnotationComponent;
 
 import java.util.ArrayList;
@@ -37,13 +36,13 @@ public class AnnotationSelector {
      * @param widgetAnnotation annotation to do search for wrapping component.
      * @return true if component could be found, false otherwise.
      */
-    public static AnnotationComponent SelectAnnotationComponent(SwingController controller, Annotation widgetAnnotation) {
+    public static AnnotationComponent SelectAnnotationComponent(Controller controller, Annotation widgetAnnotation) {
         // turn out the parent is seldom used correctly and generally just points to page zero.
         // so we need to do a deep search for the annotation.
         Document document = controller.getDocument();
         java.util.List<AbstractPageViewComponent> pageViewComponentList =
                 controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
-        int pages = controller.getPageTree().getNumberOfPages();
+        int pages = controller.getDocument().getPageTree().getNumberOfPages();
         boolean found = false;
         int pageIndex;
         for (pageIndex = 0; pageIndex < pages; pageIndex++) {
@@ -56,7 +55,7 @@ public class AnnotationSelector {
                         widgetAnnotation.setPage(page);
                         // found, so navigate to page which will start the full page load off awt thread.
                         if (controller.getCurrentPageNumber() != pageIndex) {
-                            controller.showPage(pageIndex);
+                            controller.getDocumentViewController().setCurrentPageIndex(pageIndex);
                         }
                         found = true;
                         break;
@@ -82,11 +81,11 @@ public class AnnotationSelector {
         return null;
     }
 
-    public static int AssignAnnotationPage(SwingController controller, Annotation widgetAnnotation) {
+    public static int AssignAnnotationPage(Controller controller, Annotation widgetAnnotation) {
         Document document = controller.getDocument();
         java.util.List<AbstractPageViewComponent> pageViewComponentList =
                 controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
-        int pages = controller.getPageTree().getNumberOfPages();
+        int pages = controller.getDocument().getPageTree().getNumberOfPages();
         int pageIndex;
         for (pageIndex = 0; pageIndex < pages; pageIndex++) {
             // check is page's annotation array for a matching reference.

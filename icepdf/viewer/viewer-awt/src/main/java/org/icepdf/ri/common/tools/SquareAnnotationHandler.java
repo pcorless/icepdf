@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.tools;
 
 import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
@@ -34,7 +33,6 @@ import org.icepdf.ri.util.PropertiesManager;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -124,12 +122,11 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
-     * @param documentViewModel view model.
+     * @param documentViewController view controller.
      */
     public SquareAnnotationHandler(DocumentViewController documentViewController,
-                                   AbstractPageViewComponent pageViewComponent,
-                                   DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                   AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         borderStyle.setStrokeWidth(DEFAULT_STROKE_WIDTH);
 
         // make sure we are drawing the facade with the correct look and feel.
@@ -186,7 +183,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         // which is actually just link annotations
         SquareAnnotation annotation = (SquareAnnotation)
                 AnnotationFactory.buildAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
+                        documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_SQUARE,
                         tBbox);
 
@@ -216,9 +213,7 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        annotation, documentViewController, pageViewComponent);
         // set the bounds and refresh the userSpace rectangle
         Rectangle bbox = new Rectangle(rectToDraw.x, rectToDraw.y,
                 rectToDraw.width, rectToDraw.height);
@@ -286,33 +281,6 @@ public class SquareAnnotationHandler extends SelectionBoxHandler implements Tool
         updateSelectionSize(e.getX(), e.getY(), pageViewComponent);
         rectangle.setRect(rectToDraw);
         pageViewComponent.repaint();
-    }
-
-    /**
-     * Convert the shapes that make up the annotation to page space so that
-     * they will scale correctly at different zooms.
-     *
-     * @return transformed bBox.
-     */
-    protected Rectangle convertToPageSpace(Rectangle rect) {
-        Page currentPage = pageViewComponent.getPage();
-        AffineTransform at = currentPage.getPageTransform(
-                documentViewModel.getPageBoundary(),
-                documentViewModel.getViewRotation(),
-                documentViewModel.getViewZoom());
-        try {
-            at = at.createInverse();
-        } catch (NoninvertibleTransformException e) {
-            logger.log(Level.FINE, "Error converting to page space.", e);
-        }
-        // convert the two points as well as the bbox.
-        Rectangle tBbox = new Rectangle(rect.x, rect.y,
-                rect.width, rect.height);
-
-        tBbox = at.createTransformedShape(tBbox).getBounds();
-
-        return tBbox;
-
     }
 
     @Override

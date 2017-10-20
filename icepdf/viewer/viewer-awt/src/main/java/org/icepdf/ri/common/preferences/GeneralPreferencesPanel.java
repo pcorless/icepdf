@@ -51,7 +51,7 @@ public class GeneralPreferencesPanel extends JPanel implements PropertyChangeLis
     private ColorChooserButton paperBorderColorChooserButton;
     private ColorChooserButton viewBackgroundColorChooserButton;
 
-    public GeneralPreferencesPanel(SwingController swingController, PropertiesManager propertiesManager,
+    public GeneralPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {
         super(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);

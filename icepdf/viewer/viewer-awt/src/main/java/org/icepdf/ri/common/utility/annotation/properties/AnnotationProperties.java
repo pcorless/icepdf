@@ -22,6 +22,6 @@ import org.icepdf.ri.common.views.AnnotationComponent;
  */
 public interface AnnotationProperties {
 
-    public abstract void setAnnotationComponent(AnnotationComponent annotation);
+    void setAnnotationComponent(AnnotationComponent annotation);
 
 }

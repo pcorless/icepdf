@@ -105,7 +105,6 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     protected PageViewComponentImpl pageViewComponent;
     protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
 
     protected float currentZoom;
     protected float currentRotation;
@@ -142,10 +141,8 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     public AbstractAnnotationComponent(T annotation,
                                        DocumentViewController documentViewController,
-                                       AbstractPageViewComponent pageViewComponent,
-                                       DocumentViewModel documentViewModel) {
+                                       AbstractPageViewComponent pageViewComponent) {
         this.pageViewComponent = (PageViewComponentImpl) pageViewComponent;
-        this.documentViewModel = documentViewModel;
         this.documentViewController = documentViewController;
         this.annotation = annotation;
         messageBundle = documentViewController.getParentController().getMessageBundle();
@@ -170,6 +167,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             setBorder(resizableBorder);
 
             // set component location and original size.
+            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
             Page currentPage = pageViewComponent.getPage();
             AffineTransform at = currentPage.getPageTransform(
                     documentViewModel.getPageBoundary(),
@@ -189,15 +187,11 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     public abstract boolean isActive();
 
     public Document getDocument() {
-        return documentViewModel.getDocument();
+        return documentViewController.getDocument();
     }
 
     public int getPageIndex() {
         return pageViewComponent.getPageIndex();
-    }
-
-    public PageViewComponent getParentPageView() {
-        return pageViewComponent;
     }
 
     public AbstractPageViewComponent getPageViewComponent() {
@@ -248,6 +242,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      */
     public void refreshDirtyBounds() {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
@@ -264,6 +259,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      */
     public void refreshAnnotationRect() {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
@@ -302,6 +298,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
     }
 
     public void validate() {
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         if (currentZoom != documentViewModel.getViewZoom() ||
                 currentRotation != documentViewModel.getViewRotation()) {
             refreshDirtyBounds();
@@ -329,7 +326,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     public void mouseMoved(MouseEvent me) {
 
-        int toolMode = documentViewModel.getViewToolMode();
+        int toolMode = documentViewController.getDocumentViewModel().getViewToolMode();
 
         if (toolMode == DocumentViewModel.DISPLAY_TOOL_SELECTION &&
                 !(annotation.getFlagLocked() || annotation.getFlagReadOnly())) {
@@ -381,7 +378,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         }
 
         // set border highlight when mouse over.
-        isRollover = (documentViewModel.getViewToolMode() ==
+        isRollover = (documentViewController.getDocumentViewModel().getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 (this instanceof PopupAnnotationComponent));
 
@@ -397,11 +394,8 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         // setup visual effect when the mouse button is pressed or held down
         // inside the active area of the annotation.
         isMousePressed = true;
-        int x = 0, y = 0;
         Point point = new Point();
         if (e != null) {
-            x = e.getX();
-            y = e.getY();
             point = e.getPoint();
         }
         startOfMousePress = point;
@@ -418,7 +412,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
             annotation.setCurrentAppearance(Annotation.APPEARANCE_STREAM_DOWN_KEY);
         }
 
-        if (documentViewModel.getViewToolMode() ==
+        if (documentViewController.getDocumentViewModel().getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION &&
                 isInteractiveAnnotationsEnabled &&
                 !annotation.getFlagReadOnly()) {
@@ -431,7 +425,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     protected boolean additionalActionsHandler(Name additionalActionKey, MouseEvent e) {
         if (!(AbstractPageViewComponent.isAnnotationTool(
-                documentViewModel.getViewToolMode())) &&
+                documentViewController.getDocumentViewModel().getViewToolMode())) &&
                 isInteractiveAnnotationsEnabled) {
             if (documentViewController.getAnnotationCallback() != null) {
                 int x = -1, y = -1;
@@ -442,7 +436,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 // get the A and AA entries.
                 if (annotation instanceof AbstractWidgetAnnotation) {
                     AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;
-                    FieldDictionary fieldDictionary = (FieldDictionary) widgetAnnotation.getFieldDictionary();
+                    FieldDictionary fieldDictionary = widgetAnnotation.getFieldDictionary();
                     if (fieldDictionary != null) {
                         AdditionalActionsDictionary additionalActionsDictionary =
                                 fieldDictionary.getAdditionalActionsDictionary();
@@ -628,7 +622,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
             // fire the main action associated with the
             if (!actionFired && !(AbstractPageViewComponent.isAnnotationTool(
-                    documentViewModel.getViewToolMode())) &&
+                    documentViewController.getDocumentViewModel().getViewToolMode())) &&
                     isInteractiveAnnotationsEnabled) {
                 if (documentViewController.getAnnotationCallback() != null) {
                     // get the A and AA entries.
@@ -651,6 +645,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
      */
     protected Rectangle convertToPageSpace(Rectangle rect) {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
@@ -672,6 +667,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
 
     protected AffineTransform getPageTransform() {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),

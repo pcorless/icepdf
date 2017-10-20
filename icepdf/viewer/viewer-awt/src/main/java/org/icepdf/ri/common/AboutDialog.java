@@ -94,29 +94,20 @@ public class AboutDialog extends EscapeJDialog implements ActionListener, Window
         pane.setLayout(new BorderLayout());
         pane.add(panel1);
 
-        if (buttons > NO_BUTTONS) {
-            JPanel panel2 = new JPanel();
-            panel2.setLayout(new FlowLayout());
-            if ((buttons & OK) > 0) {
-                ok = new JButton(messageBundle.getString("viewer.button.ok.label"));
-                ok.addActionListener(this);
-                if (whichTimer > 0) {
-                    ok.setEnabled(false);
-                }
-                panel2.add(ok);
-            }
-            pane.add(panel2, BorderLayout.SOUTH);
+        JPanel panel2 = new JPanel();
+        panel2.setLayout(new FlowLayout());
+        if ((buttons & OK) > 0) {
+            ok = new JButton(messageBundle.getString("viewer.button.ok.label"));
+            ok.addActionListener(this);
+            panel2.add(ok);
         }
+        pane.add(panel2, BorderLayout.SOUTH);
 
         setContentPane(pane);
 
         pack();
         setLocationRelativeTo(frame);
 
-        if (whichTimer > 0) {
-            timer = new Timer(WAIT_TIME, this);
-            timer.start();
-        }
     }
 
     public void actionPerformed(ActionEvent ev) {

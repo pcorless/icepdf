@@ -18,7 +18,6 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -39,9 +38,8 @@ import java.awt.*;
 public class UnderLineAnnotationHandler extends HighLightAnnotationHandler {
 
     public UnderLineAnnotationHandler(DocumentViewController documentViewController,
-                                      AbstractPageViewComponent pageViewComponent,
-                                      DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                      AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         highLightType = TextMarkupAnnotation.SUBTYPE_UNDERLINE;
     }
 

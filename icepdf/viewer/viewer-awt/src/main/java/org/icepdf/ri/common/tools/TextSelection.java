@@ -90,9 +90,8 @@ public class TextSelection extends SelectionBoxHandler {
     // first page that was selected
     private boolean isFirst;
 
-    public TextSelection(DocumentViewController documentViewController, AbstractPageViewComponent pageViewComponent,
-                         DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+    public TextSelection(DocumentViewController documentViewController, AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
     }
 
     @Override
@@ -143,6 +142,7 @@ public class TextSelection extends SelectionBoxHandler {
                 // get page text
                 PageText pageText = currentPage.getViewText();
                 // get page transform, same for all calculations
+                DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                 AffineTransform pageTransform = currentPage.getPageTransform(
                         documentViewModel.getPageBoundary(),
                         documentViewModel.getViewRotation(),
@@ -185,7 +185,7 @@ public class TextSelection extends SelectionBoxHandler {
             if (selectedCount > 0) {
 
                 // add the page to the page as it is marked for selection
-                documentViewModel.addSelectedPageText(pageViewComponent);
+                documentViewController.getDocumentViewModel().addSelectedPageText(pageViewComponent);
                 documentViewController.firePropertyChange(
                         PropertyConstants.TEXT_SELECTED,
                         null, null);
@@ -217,7 +217,7 @@ public class TextSelection extends SelectionBoxHandler {
     }
 
     public void clearSelectionState() {
-        java.util.List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
+        java.util.List<AbstractPageViewComponent> pages = documentViewController.getDocumentViewModel().getPageComponents();
         for (AbstractPageViewComponent page : pages) {
             ((PageViewComponentImpl) page).getTextSelectionPageHandler().clearSelection();
         }
@@ -256,6 +256,7 @@ public class TextSelection extends SelectionBoxHandler {
                 if (pageText != null) {
 
                     // get page transform, same for all calculations
+                    DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                     AffineTransform pageTransform = currentPage.getPageTransform(
                             Page.BOUNDARY_CROPBOX,
                             documentViewModel.getViewRotation(),
@@ -398,6 +399,7 @@ public class TextSelection extends SelectionBoxHandler {
     protected void paintTextBounds(Graphics g) throws InterruptedException {
         Page currentPage = pageViewComponent.getPage();
         // get page transformation
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform pageTransform = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
@@ -447,7 +449,7 @@ public class TextSelection extends SelectionBoxHandler {
      * @param pageViewComponent page view that is being acted.
      * @param mouseLocation     current mouse location already normalized to page space. .
      * @param isDown            general selection trent is down, if false it's up.
-     * @param isMovingRight     general selection trent is right, if alse it's left.
+     * @param isMovingRight     general selection trent is right, if false it's left.
      */
     protected void multiLineSelectHandler(AbstractPageViewComponent pageViewComponent, Point mouseLocation,
                                           boolean isDown, boolean isLocalDown, boolean isMovingRight) throws InterruptedException {
@@ -463,6 +465,7 @@ public class TextSelection extends SelectionBoxHandler {
                 pageText.clearSelected();
 
                 // get page transform, same for all calculations
+                DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                 AffineTransform pageTransform = currentPage.getPageTransform(
                         documentViewModel.getPageBoundary(),
                         documentViewModel.getViewRotation(),
@@ -529,6 +532,7 @@ public class TextSelection extends SelectionBoxHandler {
                 pageText.clearSelected();
 
                 // get page transform, same for all calculations
+                DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                 AffineTransform pageTransform = currentPage.getPageTransform(
                         Page.BOUNDARY_CROPBOX,
                         documentViewModel.getViewRotation(),
@@ -580,6 +584,7 @@ public class TextSelection extends SelectionBoxHandler {
                 pageText.clearSelected();
 
                 // get page transform, same for all calculations
+                DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                 AffineTransform pageTransform = currentPage.getPageTransform(
                         Page.BOUNDARY_CROPBOX,
                         documentViewModel.getViewRotation(),
@@ -709,11 +714,9 @@ class GlyphLocation {
     }
 
     public static boolean isLineTextIncluded(LineText lineText, Shape topMarginExclusion, Shape bottomMarginExclusion) {
-        if (enableMarginExclusion) {
-            return !(topMarginExclusion.contains(lineText.getBounds()) ||
-                    bottomMarginExclusion.contains(lineText.getBounds()));
-        }
-        return true;
+        return !enableMarginExclusion ||
+                !(topMarginExclusion.contains(lineText.getBounds()) ||
+                        bottomMarginExclusion.contains(lineText.getBounds()));
     }
 
     public static GlyphLocation findGlyphLocation(ArrayList<LineText> pageLines, Point2D.Float cursorLocation,

@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -36,7 +37,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
     // layouts constraint
     private GridBagConstraints constraints;
 
-    private SwingController swingController;
+    private Controller controller;
     private ResourceBundle messageBundle;
 
     // optional/lazy loaded panels.
@@ -52,9 +53,9 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
 
     protected AbstractColorButton annotationColorButton;
 
-    public AnnotationColorPropertyPanel(SwingController swingController, ResourceBundle messageBundle) {
+    public AnnotationColorPropertyPanel(Controller controller, ResourceBundle messageBundle) {
         super(new GridBagLayout());
-        this.swingController = swingController;
+        this.controller = controller;
         this.messageBundle = messageBundle;
 
         setAlignmentY(JPanel.TOP_ALIGNMENT);
@@ -215,7 +216,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
         if (source.equals(preferencesButton)) {
-            swingController.showViewerPreferences(PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS);
+            controller.showViewerPreferences(PropertiesManager.PROPERTY_SHOW_PREFERENCES_ANNOTATIONS);
         } else if (source.equals(colourPickerButton)) {
             // add colour to recent colour list, only show rgb pallet and setup default colour
             Color newColor = RgbColorChooser.showDialog(
@@ -266,9 +267,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             ColorChooserButton.setButtonBackgroundColor(new Color(r, g, b), this);
             setPreferredSize(new Dimension(15, 15));
             setSize(15, 15);
-            addActionListener(e -> {
-                annotationColorButton.setColor(getBackground(), true);
-            });
+            addActionListener(e -> annotationColorButton.setColor(getBackground(), true));
         }
 
         /**
@@ -304,9 +303,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             action.putValue(Action.SMALL_ICON, new ColorIcon(color));
             action.putValue(Action.NAME, label);
             setAction(action);
-            addActionListener(e -> {
-                annotationColorButton.setColor(getColorRGB(), true);
-            });
+            addActionListener(e -> annotationColorButton.setColor(getColorRGB(), true));
         }
 
         Color getColorRGB() {

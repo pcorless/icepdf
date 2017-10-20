@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  * can be overridden for custom search implementations.
  * <br>
  * The DocumentSearchControllerImpl can be constructed to be used with the
- * Viewer RI source code via the constructor that takes a SwingController as
+ * Viewer RI source code via the constructor that takes a Controller as
  * a parameter.  The second variation is ended for a headless environment where
  * Swing is not needed, the constructor for this instance takes a Document
  * as a parameter.
@@ -268,7 +268,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         Collection<SearchTerm> terms = searchModel.getSearchTerms();
 
         // search hit list
-        ArrayList<LineText> searchHits = new ArrayList<LineText>();
+        ArrayList<LineText> searchHits = new ArrayList<>();
 
         // get our our page text reference
         PageText pageText = getPageText(pageIndex);
@@ -287,7 +287,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             // list of found words for highlighting, as hits can span
             // lines and pages
             ArrayList<WordText> searchPhraseHits =
-                    new ArrayList<WordText>(searchPhraseFoundCount);
+                    new ArrayList<>(searchPhraseFoundCount);
 
             // start iteration over words.
             ArrayList<LineText> pageLines = pageText.getPageLines();
@@ -681,7 +681,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         // trim white space, not really useful.
         phrase = phrase.trim();
         // found words. 
-        ArrayList<String> words = new ArrayList<String>();
+        ArrayList<String> words = new ArrayList<>();
         char c;
         char cPrev = 0;
         for (int start = 0, curs = 0, max = phrase.length(); curs < max; curs++) {

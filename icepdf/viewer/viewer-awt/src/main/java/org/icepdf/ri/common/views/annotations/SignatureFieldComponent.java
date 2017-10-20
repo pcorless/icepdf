@@ -22,10 +22,9 @@ import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
 
@@ -48,13 +47,13 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
 
     protected SignatureWidgetAnnotation signatureWidgetAnnotation;
     protected JPopupMenu contextMenu;
-    protected SwingController controller;
+    protected Controller controller;
 
     public SignatureFieldComponent(Annotation annotation, DocumentViewController documentViewController,
-                                   AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+                                   AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
 
-        controller = (SwingController) documentViewController.getParentController();
+        controller = documentViewController.getParentController();
 
         isShowInvisibleBorder = true;
         isResizable = false;
@@ -139,7 +138,7 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
     }
 
     /**
-     * Gets the associated widgit annotation.
+     * Gets the associated widget annotation.
      *
      * @return SignatureWidgetAnnotation for the instance annotation object.
      */

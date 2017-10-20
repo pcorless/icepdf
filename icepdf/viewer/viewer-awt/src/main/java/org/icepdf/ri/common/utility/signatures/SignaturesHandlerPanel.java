@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.utility.signatures;
 
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
@@ -23,8 +24,8 @@ import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrity
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationSelector;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationDialog;
@@ -52,7 +53,7 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     // task to complete in separate thread
     private AbstractTask<SigVerificationTask> sigVerificationTask;
 
-    public SignaturesHandlerPanel(SwingController controller) {
+    public SignaturesHandlerPanel(Controller controller) {
         super(controller);
         nodeSelectionListener = new NodeSelectionListener();
         rootNodeLabel = messageBundle.getString("viewer.utilityPane.signatures.tab.title");
@@ -171,9 +172,10 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
         // First have to stop any existing validation processes.
         stopWorkerTask();
 
-        if (this.currentDocument != null &&
-                currentDocument.getCatalog().getInteractiveForm() != null) {
-            InteractiveForm interactiveForm = currentDocument.getCatalog().getInteractiveForm();
+        Document document = controller.getDocument();
+        if (document != null &&
+                document.getCatalog().getInteractiveForm() != null) {
+            InteractiveForm interactiveForm = document.getCatalog().getInteractiveForm();
             final ArrayList<SignatureWidgetAnnotation> signatures = interactiveForm.getSignatureFields();
             // build out the tree
             if (signatures.size() > 0) {
@@ -196,8 +198,8 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     /**
      * Component clean on on document window tear down.
      */
-    public void dispose() {
-        super.dispose();
+    public void disposeDocument() {
+        super.disposeDocument();
         sigVerificationTask = null;
         timer = null;
     }

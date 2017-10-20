@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
@@ -31,11 +32,11 @@ public class AnnotationColorButton extends AbstractColorButton {
 
     private static final Logger logger = Logger.getLogger(AnnotationColorToggleButton.class.toString());
 
-    public AnnotationColorButton(SwingController swingController,
+    public AnnotationColorButton(Controller controller,
                                  ResourceBundle messageBundle,
                                  String title, String toolTip, String imageName,
                                  final String imageSize, java.awt.Font font) {
-        super(swingController, messageBundle);
+        super(controller, messageBundle);
 
         colorButton = new ColorButton();
         colorButton.setFont(font);

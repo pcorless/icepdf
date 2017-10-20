@@ -37,11 +37,11 @@ public class PropertiesDialog extends EscapeJDialog {
 
     private FontPanel fontPanel;
 
-    public PropertiesDialog(JFrame frame, SwingController swingController,
+    public PropertiesDialog(JFrame frame, SwingController controller,
                             ResourceBundle messageBundle) {
         super(frame, true);
 
-        Document document = swingController.getDocument();
+        Document document = controller.getDocument();
 
         setTitle(messageBundle.getString("viewer.dialog.documentProperties.tab.title"));
 
@@ -69,7 +69,7 @@ public class PropertiesDialog extends EscapeJDialog {
                 new PermissionsPanel(document, messageBundle));
 
         // build out the fonts tab.
-        fontPanel = new FontPanel(document, swingController, messageBundle, this);
+        fontPanel = new FontPanel(controller);
         addWindowListener(fontPanel);
         propertiesTabbedPane.addTab(
                 messageBundle.getString("viewer.dialog.documentProperties.tab.fonts"),

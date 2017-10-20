@@ -120,12 +120,11 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
-     * @param documentViewModel view model.
+     * @param documentViewController view controller.
      */
     public LineAnnotationHandler(DocumentViewController documentViewController,
-                                 AbstractPageViewComponent pageViewComponent,
-                                 DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                 AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         startLineEnding = LineAnnotation.LINE_END_NONE;
         endLineEnding = LineAnnotation.LINE_END_NONE;
 
@@ -176,7 +175,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         // create annotations types that  are rectangle based;
         LineAnnotation annotation = (LineAnnotation)
                 AnnotationFactory.buildAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
+                        documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_LINE,
                         tBbox);
         annotation.setStartArrow(startLineEnding);
@@ -206,9 +205,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        annotation, documentViewController, pageViewComponent);
         // set the bounds and refresh the userSpace rectangle
         Rectangle bbox = new Rectangle(rectToDraw.x, rectToDraw.y,
                 rectToDraw.width, rectToDraw.height);
@@ -260,6 +257,7 @@ public class LineAnnotationHandler extends SelectionBoxHandler implements ToolHa
      */
     protected Rectangle convertToPageSpace() {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),

@@ -108,7 +108,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
     public ArrayList<AbstractPageViewComponent> getSelectedPageText() {
         if (selectedPageText != null) {
             Set<Integer> keySet = selectedPageText.keySet();
-            ArrayList<AbstractPageViewComponent> selectedPages = new ArrayList<AbstractPageViewComponent>(keySet.size());
+            ArrayList<AbstractPageViewComponent> selectedPages = new ArrayList<>(keySet.size());
             for (Integer pageIndex : keySet) {
                 selectedPages.add(selectedPageText.get(pageIndex));
             }
@@ -148,7 +148,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      */
     public void addSelectedPageText(AbstractPageViewComponent pageComponent) {
         if (selectedPageText == null) {
-            selectedPageText = new HashMap<Integer, AbstractPageViewComponent>();
+            selectedPageText = new HashMap<>();
         }
         selectedPageText.put(pageComponent.getPageIndex(), pageComponent);
     }
@@ -162,7 +162,7 @@ public abstract class AbstractDocumentViewModel implements DocumentViewModel {
      */
     public void removeSelectedPageText(AbstractPageViewComponent pageComponent) {
         if (selectedPageText == null) {
-            selectedPageText = new HashMap<Integer, AbstractPageViewComponent>();
+            selectedPageText = new HashMap<>();
         }
         selectedPageText.remove(pageComponent.getPageIndex());
     }

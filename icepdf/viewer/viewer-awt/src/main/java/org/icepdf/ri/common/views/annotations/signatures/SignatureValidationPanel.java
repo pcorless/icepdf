@@ -69,15 +69,7 @@ public class SignatureValidationPanel extends JPanel {
 
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
+
     public void addGB(Component component,
                       int x, int y,
                       int rowSpan, int colSpan) {

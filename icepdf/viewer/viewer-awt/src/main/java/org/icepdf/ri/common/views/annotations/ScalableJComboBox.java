@@ -16,6 +16,7 @@
 
 package org.icepdf.ri.common.views.annotations;
 
+import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.util.jxlayer.JXLayer;
 import org.icepdf.ri.util.jxlayer.plaf.LayerUI;
@@ -30,13 +31,13 @@ import java.util.Vector;
  *
  * @since 5.1
  */
-public class ScalableJComboBox extends JComboBox implements ScalableField {
+public class ScalableJComboBox extends JComboBox<ChoiceFieldDictionary.ChoiceOption> implements ScalableField {
 
     private static final long serialVersionUID = -353525405737762626L;
     private DocumentViewModel documentViewModel;
     private boolean active;
 
-    public ScalableJComboBox(Vector items, final DocumentViewModel documentViewModel) {
+    public ScalableJComboBox(Vector<ChoiceFieldDictionary.ChoiceOption> items, final DocumentViewModel documentViewModel) {
         super(items);
         this.documentViewModel = documentViewModel;
         // enable more precise painting of glyphs.
@@ -75,7 +76,7 @@ public class ScalableJComboBox extends JComboBox implements ScalableField {
                 ScalableJComboBox.this.processMouseMotionEvent(newEvent);
             }
         };
-        new JXLayer<JComponent>(this, layerUI);
+        new JXLayer<>(this, layerUI);
     }
 
     @Override

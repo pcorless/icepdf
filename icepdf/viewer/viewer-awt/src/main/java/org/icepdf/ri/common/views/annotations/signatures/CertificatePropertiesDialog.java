@@ -24,17 +24,11 @@ import org.icepdf.ri.common.utility.signatures.SignatureUtilities;
 import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -82,11 +76,7 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
         buttonPanel.setLayout(new FlowLayout(FlowLayout.TRAILING));
         JButton closeButton = new JButton(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.closeButton.label"));
         closeButton.setMnemonic("viewer.utilityPane.signatures.cert.dialog.closeButton.mnemonic".charAt(0));
-        closeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                setVisible(false);
-            }
-        });
+        closeButton.addActionListener(e -> setVisible(false));
         buttonPanel.add(closeButton);
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
         setSize(new Dimension(760, 450));
@@ -101,43 +91,39 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
 
         if (certificateChain.length > 0) {
             final JTable certificateInfoTable = new JTable();
-            final JTextArea propteryValueTextAea = new JTextArea();
+            final JTextArea propertyValueTextAea = new JTextArea();
             // Build certificate chain into a tree hierarchy.
             final JTree certChainTree = buildCertChainTree(certificateChain);
-            certChainTree.addTreeSelectionListener(new TreeSelectionListener() {
-                public void valueChanged(TreeSelectionEvent e) {
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) certChainTree.getLastSelectedPathComponent();
-                    if (node != null) {
-                        CertificateInfo certInfo = (CertificateInfo) node.getUserObject();
-                        // Show certificate in the cert info panel
-                        showCertificateInfo(certInfo.getCertificate(), certificateInfoTable, propteryValueTextAea);
-                    }
+            certChainTree.addTreeSelectionListener(e -> {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) certChainTree.getLastSelectedPathComponent();
+                if (node != null) {
+                    CertificateInfo certInfo = (CertificateInfo) node.getUserObject();
+                    // Show certificate in the cert info panel
+                    showCertificateInfo(certInfo.getCertificate(), certificateInfoTable, propertyValueTextAea);
                 }
             });
             // Build certificate info table
-            showCertificateInfo((X509Certificate) certificateChain[0], certificateInfoTable, propteryValueTextAea);
+            showCertificateInfo((X509Certificate) certificateChain[0], certificateInfoTable, propertyValueTextAea);
             certificateInfoTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             ListSelectionModel selectionModel = certificateInfoTable.getSelectionModel();
-            selectionModel.addListSelectionListener(new ListSelectionListener() {
-                public void valueChanged(ListSelectionEvent e) {
-                    int row = certificateInfoTable.getSelectedRow();
-                    if (row >= 0) {
-                        String value = (String) certificateInfoTable.getValueAt(row, 1);
-                        // Update text area when selection changes
-                        propteryValueTextAea.setText(value);
-                        propteryValueTextAea.repaint();
-                    }
+            selectionModel.addListSelectionListener(e -> {
+                int row = certificateInfoTable.getSelectedRow();
+                if (row >= 0) {
+                    String value = (String) certificateInfoTable.getValueAt(row, 1);
+                    // Update text area when selection changes
+                    propertyValueTextAea.setText(value);
+                    propertyValueTextAea.repaint();
                 }
             });
 
             // main properties view.
-            propteryValueTextAea.setLineWrap(false);
-            propteryValueTextAea.setEditable(false);
-            propteryValueTextAea.setRows(10);
-            propteryValueTextAea.setColumns(40);
+            propertyValueTextAea.setLineWrap(false);
+            propertyValueTextAea.setEditable(false);
+            propertyValueTextAea.setRows(10);
+            propertyValueTextAea.setColumns(40);
             // Get font from ResourceManager, and create new font
             Font fixedWidthFont = new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12);
-            propteryValueTextAea.setFont(fixedWidthFont);
+            propertyValueTextAea.setFont(fixedWidthFont);
 
             // Select last row by default
             certificateInfoTable.setRowSelectionInterval(8, 8);
@@ -147,7 +133,7 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
             JSplitPane panelInfo = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
             panelInfo.setDividerLocation(175);
             panelInfo.setTopComponent(scrollPane);
-            panelInfo.setBottomComponent(new JScrollPane(propteryValueTextAea));
+            panelInfo.setBottomComponent(new JScrollPane(propertyValueTextAea));
 
             JSplitPane panel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
             panel.setBorder(BorderFactory.createCompoundBorder(
@@ -339,7 +325,7 @@ class CertificateInfo {
     }
 
     /**
-     * Extrace CN from DN in the certificate.
+     * Extract CN from DN in the certificate.
      *
      * @param cert X509 certificate
      * @return CN

@@ -164,7 +164,7 @@ public class FontPropertiesManager {
     /**
      * Gets the underlying fontManger instance which is also a singleton.
      *
-     * @return
+     * @return current font manager
      */
     public static FontManager getFontManager() {
         return fontManager;

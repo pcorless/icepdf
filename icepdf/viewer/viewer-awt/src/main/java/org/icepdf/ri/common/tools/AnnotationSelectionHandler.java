@@ -15,11 +15,9 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.destinations.NameTreeEditDialog;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,7 +37,7 @@ public class AnnotationSelectionHandler extends CommonToolHandler
         implements ToolHandler, ActionListener {
 
     protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
+
     protected AbstractPageViewComponent pageViewComponent;
 
     private JPopupMenu contextMenu;
@@ -47,11 +45,9 @@ public class AnnotationSelectionHandler extends CommonToolHandler
     private int x, y;
 
     public AnnotationSelectionHandler(DocumentViewController documentViewController,
-                                      AbstractPageViewComponent pageViewComponent,
-                                      DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                      AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         this.documentViewController = documentViewController;
-        this.documentViewModel = documentViewModel;
         this.pageViewComponent = pageViewComponent;
 
         ResourceBundle messageBundle = documentViewController.getParentController().getMessageBundle();
@@ -86,7 +82,7 @@ public class AnnotationSelectionHandler extends CommonToolHandler
             // convert bbox and start and end line points.
             Rectangle bBox = new Rectangle(x, y, 1, 1);
             Rectangle tBbox = convertToPageSpace(bBox).getBounds();
-            new NameTreeEditDialog((SwingController) documentViewController.getParentController(),
+            new NameTreeEditDialog(documentViewController.getParentController(),
                     pageViewComponent.getPage(), tBbox.x, tBbox.y).setVisible(true);
         }
     }

@@ -160,10 +160,10 @@ public class ResizableBorder extends AbstractBorder {
         if ((isSelected || isRollover) && isResizable) {
             for (int location : locations) {
                 Rectangle rect = getRectangle(x, y, w, h, location);
-//                g.setColor(Color.WHITE);
-                g2.fillRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
-//                g.setColor(Color.BLACK);
-                g2.drawRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
+                if (rect != null) {
+                    g2.fillRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
+                    g2.drawRect(rect.x, rect.y, rect.width - 1, rect.height - 1);
+                }
             }
         }
     }
@@ -215,7 +215,7 @@ public class ResizableBorder extends AbstractBorder {
         if (isResizable) {
             for (int i = 0; i < locations.length; i++) {
                 Rectangle rect = getRectangle(0, 0, w, h, locations[i]);
-                if (rect.contains(me.getPoint()))
+                if (rect != null && rect.contains(me.getPoint()))
                     return cursors[i];
             }
         }

@@ -21,10 +21,14 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.util.Library;
-import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.FloatTextFieldInputVerifier;
+import org.icepdf.ri.common.FloatTextFieldKeyListener;
+import org.icepdf.ri.common.PageNumberTextFieldInputVerifier;
+import org.icepdf.ri.common.PageNumberTextFieldKeyListener;
 import org.icepdf.ri.common.utility.annotation.properties.AnnotationProperties;
 import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,7 +46,7 @@ import java.util.ResourceBundle;
  */
 public class ImplicitDestinationPanel extends JPanel implements ItemListener, AnnotationProperties {
 
-    private SwingController controller;
+    private Controller controller;
     private ResourceBundle messageBundle;
     private AnnotationComponent currentAnnotation;
 
@@ -56,7 +60,7 @@ public class ImplicitDestinationPanel extends JPanel implements ItemListener, An
 
     private GridBagConstraints constraints;
 
-    public ImplicitDestinationPanel(SwingController controller) {
+    public ImplicitDestinationPanel(Controller controller) {
         super();
         this.controller = controller;
         this.messageBundle = this.controller.getMessageBundle();

@@ -39,7 +39,7 @@ public class ImagingPreferencesPanel extends JPanel {
     private Preferences preferences;
     private JComboBox<ImageReferenceItem> imageReferenceComboBox;
 
-    public ImagingPreferencesPanel(SwingController swingController, PropertiesManager propertiesManager,
+    public ImagingPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
                                    ResourceBundle messageBundle) {
 
         super(new GridBagLayout());

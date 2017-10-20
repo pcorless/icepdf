@@ -47,9 +47,8 @@ public class TextSelectionViewHandler extends TextSelection
     protected boolean isDragging;
 
     public TextSelectionViewHandler(DocumentViewController documentViewController,
-                                    DocumentViewModel documentViewModel,
                                     JComponent parentComponent) {
-        super(documentViewController, null, documentViewModel);
+        super(documentViewController, null);
         this.parentComponent = parentComponent;
     }
 
@@ -96,7 +95,7 @@ public class TextSelectionViewHandler extends TextSelection
 
         // deselect rectangles on other selected pages.
         ArrayList<AbstractPageViewComponent> selectedPages =
-                documentViewModel.getSelectedPageText();
+                documentViewController.getDocumentViewModel().getSelectedPageText();
 
         // check if we are over a page
         AbstractPageViewComponent pageComponent =
@@ -150,39 +149,38 @@ public class TextSelectionViewHandler extends TextSelection
             // update the currently parentComponent box
             updateSelectionSize(e.getX(), e.getY(), parentComponent);
 
+            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
             // clear previously selected pages
             documentViewModel.clearSelectedPageText();
 
             // add selection box to child pages
-            if (documentViewModel != null) {
-                java.util.List<AbstractPageViewComponent> pages =
-                        documentViewModel.getPageComponents();
-                for (AbstractPageViewComponent page : pages) {
-                    Rectangle tmp = SwingUtilities.convertRectangle(
-                            parentComponent, getRectToDraw(), page);
-                    if (page.getBounds().intersects(tmp)) {
-                        // add the page to the page as it is marked for selection
-                        documentViewModel.addSelectedPageText(page);
+            java.util.List<AbstractPageViewComponent> pages =
+                    documentViewModel.getPageComponents();
+            for (AbstractPageViewComponent page : pages) {
+                Rectangle tmp = SwingUtilities.convertRectangle(
+                        parentComponent, getRectToDraw(), page);
+                if (page.getBounds().intersects(tmp)) {
+                    // add the page to the page as it is marked for selection
+                    documentViewModel.addSelectedPageText(page);
 
-                        Point modEvent = SwingUtilities.convertPoint(parentComponent,
-                                e.getPoint(), page);
+                    Point modEvent = SwingUtilities.convertPoint(parentComponent,
+                            e.getPoint(), page);
 
-                        // set the selected region.
-                        page.setSelectionRectangle(modEvent, tmp);
-                        ((PageViewComponentImpl) page).getTextSelectionPageHandler().setRectToDraw(tmp);
+                    // set the selected region.
+                    page.setSelectionRectangle(modEvent, tmp);
+                    ((PageViewComponentImpl) page).getTextSelectionPageHandler().setRectToDraw(tmp);
 
-                        // pass the selection movement on to the page.
-                        boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
-                        boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
+                    // pass the selection movement on to the page.
+                    boolean isMovingDown = lastMousePressedLocation.y <= e.getPoint().y;
+                    boolean isMovingRight = lastMousePressedLocation.x <= e.getPoint().x;
 
-                        ((PageViewComponentImpl) page).getTextSelectionPageHandler()
-                                .selection(modEvent, page, isMovingDown, isMovingRight);
+                    ((PageViewComponentImpl) page).getTextSelectionPageHandler()
+                            .selection(modEvent, page, isMovingDown, isMovingRight);
 
-                    } else {
-                        documentViewModel.removeSelectedPageText(page);
-                        page.clearSelectedText();
-                        page.repaint();
-                    }
+                } else {
+                    documentViewModel.removeSelectedPageText(page);
+                    page.clearSelectedText();
+                    page.repaint();
                 }
             }
         }

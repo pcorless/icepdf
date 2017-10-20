@@ -18,6 +18,7 @@ package org.icepdf.ri.viewer;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.*;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.util.PropertiesManager;
@@ -51,7 +52,7 @@ public class WindowManager implements WindowManagementCallback {
 
     private PropertiesManager properties;
 
-    private ArrayList<SwingController> controllers;
+    private ArrayList<Controller> controllers;
 
     private static int newWindowInvocationCounter = 0;
 
@@ -69,7 +70,7 @@ public class WindowManager implements WindowManagementCallback {
 
         windowManager = new WindowManager();
         windowManager.properties = properties;
-        windowManager.controllers = new ArrayList<SwingController>();
+        windowManager.controllers = new ArrayList<>();
 
         if (messageBundle != null) {
             windowManager.messageBundle = messageBundle;
@@ -78,7 +79,7 @@ public class WindowManager implements WindowManagementCallback {
                     PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
 
-        // Anounce ourselves...
+        // Announce ourselves...
         if (Defs.booleanProperty("org.icepdf.core.verbose", true)) {
             System.out.println("\nICEsoft ICEpdf Viewer " + Document.getLibraryVersion());
             System.out.println("Copyright ICEsoft Technologies, Inc.\n");
@@ -96,26 +97,23 @@ public class WindowManager implements WindowManagementCallback {
 
 
     public void newWindow(final String location) {
-        SwingController controller = commonWindowCreation();
+        Controller controller = commonWindowCreation();
         controller.openDocument(location);
     }
 
     public void newWindow(final Document document, final String fileName) {
-        SwingController controller = commonWindowCreation();
+        Controller controller = commonWindowCreation();
         controller.openDocument(document, fileName);
     }
 
     public void newWindow(URL location) {
-        SwingController controller = commonWindowCreation();
+        Controller controller = commonWindowCreation();
         controller.openDocument(location);
     }
 
-    protected SwingController commonWindowCreation() {
-        SwingController controller = new SwingController(messageBundle);
+    protected Controller commonWindowCreation() {
+        Controller controller = new SwingController(messageBundle);
         controller.setWindowManagementCallback(this);
-
-        // assign properties manager.
-        controller.setPropertiesManager(properties);
 
         // add interactive mouse link annotation support
         controller.getDocumentViewController().setAnnotationCallback(
@@ -138,7 +136,7 @@ public class WindowManager implements WindowManagementCallback {
         }
 
         SwingViewBuilder factory =
-                new SwingViewBuilder(controller, viewType, pageFit, pageRotation);
+                new SwingViewBuilder((SwingController) controller, viewType, pageFit, pageRotation);
 
         JFrame frame = factory.buildViewerFrame();
         if (frame != null) {
@@ -230,7 +228,7 @@ public class WindowManager implements WindowManagementCallback {
         }
     }
 
-    public void disposeWindow(SwingController controller, JFrame viewer,
+    public void disposeWindow(Controller controller, JFrame viewer,
                               Preferences preferences) {
         if (controllers.size() <= 1) {
             quit(controller, viewer, preferences);
@@ -249,12 +247,12 @@ public class WindowManager implements WindowManagementCallback {
         }
     }
 
-    public void quit(SwingController controller, JFrame viewer,
+    public void quit(Controller controller, JFrame viewer,
                      Preferences preferences) {
         saveViewerState(viewer);
 
         // make sure all the controllers have been disposed.
-        for (SwingController c : controllers) {
+        for (Controller c : controllers) {
             if (c == null)
                 continue;
             c.dispose();
@@ -264,17 +262,17 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     public void minimiseAllWindows() {
-        for (SwingController controller : controllers) {
-            JFrame frame = controller.getViewerFrame();
+        for (Controller controller : controllers) {
+            Frame frame = controller.getViewerFrame();
             if (frame != null)
                 frame.setState(Frame.ICONIFIED);
         }
     }
 
-    public void bringAllWindowsToFront(SwingController frontMost) {
-        JFrame frontMostFrame = null;
-        for (SwingController controller : controllers) {
-            JFrame frame = controller.getViewerFrame();
+    public void bringAllWindowsToFront(Controller frontMost) {
+        Frame frontMostFrame = null;
+        for (Controller controller : controllers) {
+            Frame frame = controller.getViewerFrame();
             if (frame != null) {
                 if (frontMost == controller) {
                     frontMostFrame = frame;
@@ -292,8 +290,8 @@ public class WindowManager implements WindowManagementCallback {
 
     public void bringWindowToFront(int index) {
         if (index >= 0 && index < controllers.size()) {
-            SwingController controller = controllers.get(index);
-            JFrame frame = controller.getViewerFrame();
+            Controller controller = controllers.get(index);
+            Frame frame = controller.getViewerFrame();
             if (frame != null) {
                 frame.setState(Frame.NORMAL);
                 frame.toFront();
@@ -302,20 +300,20 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     /**
-     * As long as no windows have openned or closed, then the indexes in the
+     * As long as no windows have opened or closed, then the indexes in the
      * returned list should still be valid for doing operations on
      * the respective Controller objects
      *
      * @param giveIndex Give this SwingControllers index in the list as an Integer appended to the List
      * @return List of String objects, each representing an open Document's origin. The last element may be an Integer
      */
-    public List getWindowDocumentOriginList(SwingController giveIndex) {
+    public List getWindowDocumentOriginList(Controller giveIndex) {
         Integer foundIndex = null;
         int count = controllers.size();
         List<Object> list = new ArrayList<>(count + 1);
         for (int i = 0; i < count; i++) {
             Object toAdd = null;
-            SwingController controller = controllers.get(i);
+            Controller controller = controllers.get(i);
             if (giveIndex == controller)
                 foundIndex = i;
             Document document = controller.getDocument();
@@ -329,8 +327,8 @@ public class WindowManager implements WindowManagementCallback {
     }
 
     void updateUI() {
-        for (SwingController controller : controllers) {
-            JFrame frame = controller.getViewerFrame();
+        for (Controller controller : controllers) {
+            Frame frame = controller.getViewerFrame();
             if (frame != null)
                 SwingUtilities.updateComponentTreeUI(frame);
         }

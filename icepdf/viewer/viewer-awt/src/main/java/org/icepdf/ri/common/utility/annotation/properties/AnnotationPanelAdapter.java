@@ -17,8 +17,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -44,7 +44,7 @@ public abstract class AnnotationPanelAdapter extends JPanel
     protected AnnotationComponent currentAnnotationComponent;
     protected DocumentViewController documentViewController;
 
-    protected SwingController controller;
+    protected Controller controller;
     protected ResourceBundle messageBundle;
 
     // border styles types.
@@ -59,8 +59,7 @@ public abstract class AnnotationPanelAdapter extends JPanel
 
     protected Preferences preferences;
 
-    protected AnnotationPanelAdapter(
-            SwingController controller) {
+    protected AnnotationPanelAdapter(Controller controller) {
         setDoubleBuffered(true);
         this.controller = controller;
         this.documentViewController = controller.getDocumentViewController();
@@ -162,15 +161,6 @@ public abstract class AnnotationPanelAdapter extends JPanel
         }
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
     protected void addGB(JPanel layout, Component component,
                        int x, int y,
                        int rowSpan, int colSpan) {

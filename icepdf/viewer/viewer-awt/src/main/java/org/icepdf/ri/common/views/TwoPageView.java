@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views;
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageChanger;
 import org.icepdf.ri.common.MouseWheelListenerPageChanger;
-import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -60,16 +59,14 @@ public class TwoPageView extends AbstractDocumentView {
         buildGUI();
 
         // add page changing key listeners
-        if (this.documentViewController.getParentController() instanceof SwingController) {
-            pageChangerListener =
-                    MouseWheelListenerPageChanger.install(
-                            (SwingController) this.documentViewController.getParentController(),
-                            this.documentScrollpane, this);
+        pageChangerListener =
+                MouseWheelListenerPageChanger.install(
+                        this.documentViewController.getParentController(),
+                        this.documentScrollpane, this);
 
-            keyListenerPageChanger =
-                    KeyListenerPageChanger.install((SwingController) this.documentViewController.getParentController(),
-                            this.documentScrollpane, this);
-        }
+        keyListenerPageChanger =
+                KeyListenerPageChanger.install(this.documentViewController.getParentController(),
+                        this.documentScrollpane, this);
 
         // add the first of many tools need for this views and others like it.
         currentPageChanger =
@@ -105,8 +102,8 @@ public class TwoPageView extends AbstractDocumentView {
 
     public void updateDocumentView() {
 
-        java.util.List<AbstractPageViewComponent> pageComponents =
-                documentViewModel.getPageComponents();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
 
         if (pageComponents != null) {
             // remove old component
@@ -203,7 +200,7 @@ public class TwoPageView extends AbstractDocumentView {
             }
         }
         // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewModel.getViewZoom();
+        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 

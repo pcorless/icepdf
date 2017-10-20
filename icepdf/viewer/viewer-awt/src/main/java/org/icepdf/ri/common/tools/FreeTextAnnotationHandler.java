@@ -56,12 +56,11 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
-     * @param documentViewModel view model.
+     * @param documentViewController view controller.
      */
     public FreeTextAnnotationHandler(DocumentViewController documentViewController,
-                                     AbstractPageViewComponent pageViewComponent,
-                                     DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                     AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
     }
 
     @Override
@@ -99,7 +98,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         // which is actually just link annotations
         annotation = (FreeTextAnnotation)
                 AnnotationFactory.buildAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
+                        documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_FREE_TEXT,
                         tBbox);
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
@@ -112,9 +111,7 @@ public class FreeTextAnnotationHandler extends SelectionBoxHandler
         // create the annotation object.
         AbstractAnnotationComponent comp =
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        annotation, documentViewController, pageViewComponent);
         // set the bounds and refresh the userSpace rectangle
         comp.setBounds(rectToDraw);
         // resets user space rectangle to match bbox converted to page space

@@ -3,6 +3,7 @@ package org.icepdf.ri.common.utility.attachment;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
+import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.ViewModel;
 import org.icepdf.ri.images.Images;
@@ -33,15 +34,14 @@ import static org.icepdf.ri.common.utility.attachment.FileTableModel.*;
  * @since 6.2
  */
 @SuppressWarnings("serial")
-public class AttachmentPanel extends JPanel implements MouseListener, ActionListener {
+public class AttachmentPanel extends JPanel implements MouseListener, ActionListener, MutableDocument {
 
     private static final Logger logger =
             Logger.getLogger(AttachmentPanel.class.toString());
 
-    public static final String PDF_EXTENSION = ".pdf";
+    private static final String PDF_EXTENSION = ".pdf";
 
-    private SwingController controller;
-    private Document currentDocument;
+    private org.icepdf.ri.common.views.Controller controller;
 
     private JTable fileTable;
     private FileTableModel fileTableModel;
@@ -63,7 +63,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         fileTable = new JTable(fileTableModel) {
             // Implement table cell tool tips.
             public String getToolTipText(MouseEvent e) {
-                String tip = null;
+                String tip;
                 java.awt.Point p = e.getPoint();
                 int rowIndex = rowAtPoint(p);
                 int colIndex = columnAtPoint(p);
@@ -116,21 +116,14 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         this.add(scrollPane, BorderLayout.CENTER);
     }
 
-    public void dispose() {
-        this.removeAll();
-    }
-
     /**
      * Sets the given document as the current and builds the embedded file table is possible.
-     *
-     * @param document document to look for attached files and build table based UI from.
      */
-    public void setDocument(Document document) {
-        this.currentDocument = document;
-        this.removeAll();
-        files = null;
-        fileTableModel = null;
-        if (this.currentDocument != null) {
+    @Override
+    public void refreshDocumentInstance() {
+        disposeDocument();
+        Document document = controller.getDocument();
+        if (document != null) {
             Catalog catalog = document.getCatalog();
             // grab each file pair and build out the FileSpecification objects.
             if (catalog.getEmbeddedFilesNameTree() != null) {
@@ -140,7 +133,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                     Library library = catalog.getLibrary();
                     // check to see if at least one file is a PDF.
                     int max = filePairs.size();
-                    files = new HashMap<String, FileSpecification>(max / 2);
+                    files = new HashMap<>(max / 2);
                     for (int i = 0; i < max; i += 2) {
                         // get the name and document for
                         // file name and file specification pairs.
@@ -158,6 +151,13 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
         }
     }
 
+    @Override
+    public void disposeDocument() {
+        this.removeAll();
+        files = null;
+        fileTableModel = null;
+    }
+
     public void actionPerformed(ActionEvent e) {
         // show save as dialog and try to save the file stream.
         if (e.getSource().equals(saveAsMenuItem)) {
@@ -168,11 +168,7 @@ public class AttachmentPanel extends JPanel implements MouseListener, ActionList
                 final EmbeddedFileStream embeddedFileStream = fileSpecification.getEmbeddedFileStream();
                 final String fileName = (String) fileTableModel.getValueAt(selectedRow, NAME_COLUMN);
                 // already on awt thread but still nice to play by the rules.
-                Runnable doSwingWork = new Runnable() {
-                    public void run() {
-                        saveFile(fileName, embeddedFileStream);
-                    }
-                };
+                Runnable doSwingWork = () -> saveFile(fileName, embeddedFileStream);
                 SwingUtilities.invokeLater(doSwingWork);
             }
         }

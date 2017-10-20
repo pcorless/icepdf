@@ -18,6 +18,7 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -31,13 +32,13 @@ public class AnnotationPropertiesDialog extends EscapeJDialog implements Annotat
     private GridBagConstraints constraints;
 
     private JTabbedPane propertiesTabbedPane;
-    private SwingController controller;
+    private Controller controller;
     private ResourceBundle messageBundle;
 
-    public AnnotationPropertiesDialog(JFrame frame, SwingController swingController,
+    public AnnotationPropertiesDialog(JFrame frame, SwingController controller,
                                       ResourceBundle messageBundle) {
         super(frame, true);
-        this.controller = swingController;
+        this.controller = controller;
         this.messageBundle = messageBundle;
 
         setTitle(messageBundle.getString("viewer.dialog.annotationProperties.tab.title"));

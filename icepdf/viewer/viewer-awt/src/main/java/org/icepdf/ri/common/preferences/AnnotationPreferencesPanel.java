@@ -58,10 +58,10 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
     private SwingController swingController;
     private Preferences preferences;
 
-    public AnnotationPreferencesPanel(SwingController swingController, PropertiesManager propertiesManager,
+    public AnnotationPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
                                       ResourceBundle messageBundle) {
 
-        this.swingController = swingController;
+        this.swingController = controller;
         preferences = propertiesManager.getPreferences();
 
         setLayout(new GridBagLayout());
@@ -81,7 +81,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
                 TitledBorder.DEFAULT_POSITION));
         buildNamedColors(namedColorsPanel, messageBundle);
 
-        addPropertyChangeListener(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, swingController);
+        addPropertyChangeListener(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, controller);
 
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
@@ -200,8 +200,7 @@ public class AnnotationPreferencesPanel extends JPanel implements ListSelectionL
             colorButton.setEnabled(true);
 
             int selectedIndex = colorList.getSelectedIndex();
-            DragDropColorList.ColorLabel colorLabel = (DragDropColorList.ColorLabel)
-                    colorList.getModel().getElementAt(selectedIndex);
+            DragDropColorList.ColorLabel colorLabel = colorList.getModel().getElementAt(selectedIndex);
 
             colorLabelTextField.setText(colorLabel.getLabel());
             ColorChooserButton.setButtonBackgroundColor(colorLabel.getColor(), colorButton);

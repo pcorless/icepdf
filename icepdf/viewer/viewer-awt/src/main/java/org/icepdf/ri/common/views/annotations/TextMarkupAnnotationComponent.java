@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.util.logging.Logger;
@@ -34,9 +33,8 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
             Logger.getLogger(TextMarkupAnnotationComponent.class.toString());
 
     public TextMarkupAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
-                                         AbstractPageViewComponent pageViewComponent,
-                                         DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+                                         AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
         isMovable = false;
         isResizable = false;
         isShowInvisibleBorder = false;
@@ -51,7 +49,7 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
 
     public void paintComponent(Graphics g) {
 
-        /**
+        /*
          * Initial try at getting each component to paint he annotation content.
          * Not quite working but though it should be kept for future work.
          */

@@ -19,7 +19,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.annotations.Annotation;
 
 /**
- * AnnotationComponent interfaces.  Oulines two main methods needed for
+ * AnnotationComponent interfaces.  Outlines two main methods needed for
  * management and state saving but avoids having to load the Swing/awt libraries
  * unless necessary.
  *
@@ -32,76 +32,108 @@ public interface AnnotationComponent {
      *
      * @return annotation that this component wraps.
      */
-    public Annotation getAnnotation();
+    Annotation getAnnotation();
 
     /**
-     * Refreshs the annotations bounds rectangle.  This method insures that
+     * Refresh the annotations bounds rectangle.  This method insures that
      * the bounds have been correctly adjusted for the current page transformation
      * In a none visual representation this method may not have to do anything.
      */
-    public void refreshDirtyBounds();
+    void refreshDirtyBounds();
 
     /**
      * Refreshed the annotation rectangle by inverting the components current
      * bounds with the current page transformation.
      */
-    public void refreshAnnotationRect();
+    void refreshAnnotationRect();
 
     /**
      * Component has focus.
      *
      * @return true if has focus, false otherwise.
      */
-    public boolean hasFocus();
+    boolean hasFocus();
 
     /**
      * Component is editable, contents can be updated in ui
      */
-    public boolean isEditable();
+    boolean isEditable();
 
     /**
      * Component is editable, contents can be updated in ui
      */
-    public boolean isShowInvisibleBorder();
+    boolean isShowInvisibleBorder();
 
     /**
      * Component highlight/select border is draw on mouse over.
      */
-    public boolean isRollover();
+    boolean isRollover();
 
     /**
      * Component is movable.
      */
-    public boolean isMovable();
+    boolean isMovable();
 
     /**
      * Component is resizable.
      */
-    public boolean isResizable();
+    boolean isResizable();
 
     /**
      * border has defined style.
      *
+     * @return true annotation has a border style.
+     */
+    boolean isBorderStyle();
+
+    /**
+     * Annotation is in a selected state. Used for drawing a highlighted state.
+     *
      * @return
      */
-    public boolean isBorderStyle();
+    boolean isSelected();
 
-    public boolean isSelected();
+    /**
+     * Document that annotation belows too.
+     *
+     * @return document parent.
+     */
+    Document getDocument();
 
-    public Document getDocument();
+    /**
+     * Page index that annotation component resides on.
+     *
+     * @return page index of parent page
+     */
+    int getPageIndex();
 
-    public int getPageIndex();
+    /**
+     * Sets the selected state
+     *
+     * @param selected selected state.
+     */
+    void setSelected(boolean selected);
 
-    public PageViewComponent getParentPageView();
+    /**
+     * Repaints this component
+     */
+    void repaint();
 
-    public void setSelected(boolean selected);
+    /**
+     * Rest the annotation appearance stream.
+     */
+    void resetAppearanceShapes();
 
-    public void repaint();
+    /**
+     * Gets the parent page view that displays this component.
+     *
+     * @return parent component.
+     */
+    PageViewComponent getPageViewComponent();
 
-    public void resetAppearanceShapes();
-
-    public PageViewComponent getPageViewComponent();
-
-    public void dispose();
+    /**
+     * Dispose this component resources.
+     */
+    void dispose();
 
 }

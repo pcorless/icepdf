@@ -79,7 +79,7 @@ public class ScalableTextArea extends JTextArea implements ScalableField {
                 ScalableTextArea.this.processMouseMotionEvent(newEvent);
             }
         };
-        new JXLayer<JComponent>(this, layerUI);
+        new JXLayer<>(this, layerUI);
     }
 
     @Override

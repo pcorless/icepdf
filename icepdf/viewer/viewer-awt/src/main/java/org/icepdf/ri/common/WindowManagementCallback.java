@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -32,23 +33,22 @@ import java.util.prefs.Preferences;
  * @since 2.0
  */
 public interface WindowManagementCallback {
-    public void newWindow(String path);
+    void newWindow(String path);
 
-    public void newWindow(URL url);
+    void newWindow(URL url);
 
-    public void disposeWindow(SwingController controller, JFrame viewer,
-                              Preferences preferences);
+    void disposeWindow(Controller controller, JFrame viewer, Preferences preferences);
 
-    public void minimiseAllWindows();
+    void minimiseAllWindows();
 
-    public void bringAllWindowsToFront(SwingController frontMost);
+    void bringAllWindowsToFront(Controller frontMost);
 
-    public void bringWindowToFront(int index);
+    void bringWindowToFront(int index);
 
-    public List getWindowDocumentOriginList(SwingController giveIndex);
+    List getWindowDocumentOriginList(Controller giveIndex);
 
-    public void quit(SwingController controller, JFrame viewer,
-                     Preferences preferences);
+    void quit(Controller controller, JFrame viewer,
+              Preferences preferences);
 
-    public PropertiesManager getProperties();
+    PropertiesManager getProperties();
 }

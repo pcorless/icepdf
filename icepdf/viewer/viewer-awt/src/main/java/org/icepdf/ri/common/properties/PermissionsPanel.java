@@ -200,15 +200,6 @@ public class PermissionsPanel extends JPanel {
 
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
     protected void addGB(JPanel layout, Component component,
                          int x, int y,
                          int rowSpan, int colSpan) {

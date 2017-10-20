@@ -18,7 +18,6 @@ package org.icepdf.ri.common.tools;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.util.logging.Logger;
@@ -42,9 +41,8 @@ public class LineArrowAnnotationHandler extends LineAnnotationHandler {
 
 
     public LineArrowAnnotationHandler(DocumentViewController documentViewController,
-                                      AbstractPageViewComponent pageViewComponent,
-                                      DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                      AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
 
         startLineEnding = LineAnnotation.LINE_END_OPEN_ARROW;
         endLineEnding = LineAnnotation.LINE_END_NONE;

@@ -18,8 +18,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -49,14 +49,14 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
     private static final Color DEFAULT_BORDER_COLOR = Color.RED;
 
     // link action appearance properties.
-    private JComboBox lineThicknessBox;
-    private JComboBox lineStyleBox;
+    private JComboBox<ValueLabelItem> lineThicknessBox;
+    private JComboBox<ValueLabelItem> lineStyleBox;
     private JButton colorBorderButton;
     private JSlider transparencySlider;
 
     private InkAnnotation annotation;
 
-    public InkAnnotationPanel(SwingController controller) {
+    public InkAnnotationPanel(Controller controller) {
         super(controller);
         setLayout(new GridBagLayout());
 
@@ -168,14 +168,14 @@ public class InkAnnotationPanel extends AnnotationPanelAdapter implements ItemLi
         constraints.insets = new Insets(1, 2, 1, 2);
 
         // Line thickness
-        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox<>(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.lineThickness"));
         addGB(this, label, 0, 0, 1, 1);
         addGB(this, lineThicknessBox, 1, 0, 1, 1);
         // Line style
-        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox<>(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.ink.lineStyle"));

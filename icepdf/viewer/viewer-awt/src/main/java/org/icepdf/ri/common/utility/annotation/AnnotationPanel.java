@@ -15,7 +15,7 @@
  */
 package org.icepdf.ri.common.utility.annotation;
 
-import org.icepdf.core.pobjects.Document;
+import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.destinations.DestinationsPanel;
 import org.icepdf.ri.common.utility.annotation.markup.MarkupAnnotationPanel;
@@ -23,9 +23,8 @@ import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ResourceBundle;
 
-public class AnnotationPanel extends JPanel {
+public class AnnotationPanel extends JPanel implements MutableDocument {
 
     // layouts constraint
     private GridBagConstraints constraints;
@@ -35,8 +34,7 @@ public class AnnotationPanel extends JPanel {
     private MarkupAnnotationPanel markupAnnotationPanel;
     private DestinationsPanel destinationsPanel;
 
-    public AnnotationPanel(SwingController swingController,
-                           ResourceBundle messageBundle) {
+    public AnnotationPanel(SwingController controller) {
 
         annotationTabbedPane = new JTabbedPane(SwingConstants.TOP);
         annotationTabbedPane.setAlignmentY(JPanel.TOP_ALIGNMENT);
@@ -60,19 +58,30 @@ public class AnnotationPanel extends JPanel {
         annotationTabbedPane.add(destinationsPanel, title);
     }
 
-    public void setDocument(Document document) {
+    @Override
+    public void refreshDocumentInstance() {
         if (markupAnnotationPanel != null) {
-            markupAnnotationPanel.setDocument(document);
+            markupAnnotationPanel.refreshDocumentInstance();
         }
         if (destinationsPanel != null) {
-            destinationsPanel.setDocument(document);
+            destinationsPanel.refreshDocumentInstance();
+        }
+    }
+
+    @Override
+    public void disposeDocument() {
+        if (markupAnnotationPanel != null) {
+            markupAnnotationPanel.disposeDocument();
+        }
+        if (destinationsPanel != null) {
+            destinationsPanel.disposeDocument();
         }
     }
 
     /**
      * Allows for the selection of a specific preference panel on first view.
      *
-     * @param selectedAnnotationPanel
+     * @param selectedAnnotationPanel selects the give annotation panel tab.
      */
     public void setSelectedTab(final String selectedAnnotationPanel) {
         PropertiesManager propertiesManager = PropertiesManager.getInstance();
@@ -80,6 +89,8 @@ public class AnnotationPanel extends JPanel {
             annotationTabbedPane.setSelectedIndex(0);
         } else if (PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_DESTINATIONS.equals(selectedAnnotationPanel)) {
             annotationTabbedPane.setSelectedIndex(1);
+        } else {
+            annotationTabbedPane.setSelectedIndex(0);
         }
     }
 
@@ -91,14 +102,8 @@ public class AnnotationPanel extends JPanel {
         return destinationsPanel;
     }
 
-    public void dispose() {
-        markupAnnotationPanel.dispose();
-//        removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
-    }
-
     private void addGB(JPanel layout, Component component,
-                       int x, int y,
-                       int rowSpan, int colSpan) {
+                       int x, int y, int rowSpan, int colSpan) {
         constraints.gridx = x;
         constraints.gridy = y;
         constraints.gridwidth = rowSpan;

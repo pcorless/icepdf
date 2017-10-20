@@ -41,7 +41,6 @@ public abstract class CommonToolHandler {
     // parent page component
     protected AbstractPageViewComponent pageViewComponent;
     protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
 
     protected Preferences preferences;
 
@@ -51,14 +50,11 @@ public abstract class CommonToolHandler {
      *
      * @param documentViewController parent view controller
      * @param pageViewComponent      page view component tool acts on, can be null for view tool handlers.
-     * @param documentViewModel      parent document model
      */
     public CommonToolHandler(DocumentViewController documentViewController,
-                             AbstractPageViewComponent pageViewComponent,
-                             DocumentViewModel documentViewModel) {
+                             AbstractPageViewComponent pageViewComponent) {
         this.pageViewComponent = pageViewComponent;
         this.documentViewController = documentViewController;
-        this.documentViewModel = documentViewModel;
 
         PropertiesManager propertiesManager = PropertiesManager.getInstance();
         preferences = propertiesManager.getPreferences();
@@ -72,6 +68,7 @@ public abstract class CommonToolHandler {
 
     protected AffineTransform getPageTransformInverse(AbstractPageViewComponent pageViewComponent) {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
@@ -90,6 +87,7 @@ public abstract class CommonToolHandler {
 
     protected AffineTransform getPageTransform(AbstractPageViewComponent pageViewComponent) {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
@@ -97,6 +95,33 @@ public abstract class CommonToolHandler {
         return at;
     }
 
+    /**
+     * Convert the shapes that make up the annotation to page space so that
+     * they will scale correctly at different zooms.
+     *
+     * @return transformed bBox.
+     */
+    protected Rectangle convertToPageSpace(Rectangle rect) {
+        Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
+        AffineTransform at = currentPage.getPageTransform(
+                documentViewModel.getPageBoundary(),
+                documentViewModel.getViewRotation(),
+                documentViewModel.getViewZoom());
+        try {
+            at = at.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            logger.log(Level.FINE, "Error converting to page space.", e);
+        }
+        // convert the two points as well as the bbox.
+        Rectangle tBbox = new Rectangle(rect.x, rect.y,
+                rect.width, rect.height);
+
+        tBbox = at.createTransformedShape(tBbox).getBounds();
+
+        return tBbox;
+
+    }
 
     /**
      * Convert the shapes that make up the annotation to page space so that
@@ -110,6 +135,7 @@ public abstract class CommonToolHandler {
 
     protected Shape convertToPageSpace(AbstractPageViewComponent pageViewComponent, Shape shape) {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),
@@ -126,6 +152,7 @@ public abstract class CommonToolHandler {
 
     protected Point2D[] convertToPageSpace(Point2D start, Point2D end) {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),

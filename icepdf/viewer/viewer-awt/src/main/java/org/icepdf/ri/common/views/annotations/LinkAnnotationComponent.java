@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.LinkAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -42,16 +41,16 @@ import java.awt.geom.Rectangle2D;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public class LinkAnnotationComponent extends AbstractAnnotationComponent {
+public class LinkAnnotationComponent extends AbstractAnnotationComponent<LinkAnnotation> {
 
-    public LinkAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
-                                   AbstractPageViewComponent pageViewComponent,
-                                   DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+    public LinkAnnotationComponent(LinkAnnotation annotation, DocumentViewController documentViewController,
+                                   AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
         isShowInvisibleBorder = true;
 
-        AnnotationPopup annotationPopup = new AnnotationPopup(this, documentViewController,
-                getPageViewComponent(), documentViewModel);
+        AnnotationPopup annotationPopup = new AnnotationPopup(this,
+                documentViewController.getParentController(),
+                getPageViewComponent());
         annotationPopup.buildGui();
 
         contextMenu = annotationPopup;
@@ -61,6 +60,7 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent {
     }
 
     private boolean isAnnotationEditable() {
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         return ((documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 documentViewModel.getViewToolMode() ==
@@ -74,14 +74,14 @@ public class LinkAnnotationComponent extends AbstractAnnotationComponent {
         isEditable = isAnnotationEditable();
 
         // paint rollover effects.
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         if (isMousePressed && !(documentViewModel.getViewToolMode() ==
                 DocumentViewModel.DISPLAY_TOOL_SELECTION ||
                 documentViewModel.getViewToolMode() ==
                         DocumentViewModel.DISPLAY_TOOL_LINK_ANNOTATION)) {
             Graphics2D gg2 = (Graphics2D) g;
 
-            LinkAnnotation linkAnnotation = (LinkAnnotation) annotation;
-            Name highlightMode = linkAnnotation.getHighlightMode();
+            Name highlightMode = annotation.getHighlightMode();
             Rectangle2D rect = new Rectangle(0, 0, getWidth(), getHeight());
             if (LinkAnnotation.HIGHLIGHT_INVERT.equals(highlightMode)) {
                 gg2.setColor(annotationHighlightColor);

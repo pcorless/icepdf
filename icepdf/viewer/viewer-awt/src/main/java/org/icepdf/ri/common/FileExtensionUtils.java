@@ -70,13 +70,7 @@ public class FileExtensionUtils {
                 return true;
 
             String ext = FileExtensionUtils.getExtension(f);
-            if (ext != null) {
-                if (ext.equals(extension))
-                    return true;
-                else
-                    return false;
-            }
-            return false;
+            return ext != null && ext.equals(extension);
         }
 
         //The description of this filter

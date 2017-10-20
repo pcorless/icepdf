@@ -21,8 +21,6 @@ import org.icepdf.ri.common.EscapeJDialog;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -95,22 +93,16 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
         final JButton closeButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.validation.dialog.close.button.label"));
         closeButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
-        closeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                setVisible(false);
-                dispose();
-            }
+        closeButton.addActionListener(e -> {
+            setVisible(false);
+            dispose();
         });
         final JButton certPropertiesButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.properties.dialog.showCertificates.label"));
         final JDialog parent = this;
-        certPropertiesButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                new CertificatePropertiesDialog(parent, messageBundle,
-                        signatureValidator.getCertificateChain())
-                        .setVisible(true);
-            }
-        });
+        certPropertiesButton.addActionListener(e -> new CertificatePropertiesDialog(parent, messageBundle,
+                signatureValidator.getCertificateChain())
+                .setVisible(true));
 
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.NONE;

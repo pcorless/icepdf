@@ -115,9 +115,8 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
     }
 
     public CircleAnnotationHandler(DocumentViewController documentViewController,
-                                   AbstractPageViewComponent pageViewComponent,
-                                   DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                   AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
 
         checkAndApplyPreferences();
     }
@@ -178,7 +177,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         // which is actually just link annotations
         annotation = (CircleAnnotation)
                 AnnotationFactory.buildAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
+                        documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_CIRCLE,
                         tBbox);
 
@@ -206,9 +205,7 @@ public class CircleAnnotationHandler extends SquareAnnotationHandler {
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        annotation, documentViewController, pageViewComponent);
         // set the bounds and refresh the userSpace rectangle
         Rectangle bbox = new Rectangle(rectToDraw.x, rectToDraw.y,
                 rectToDraw.width, rectToDraw.height);

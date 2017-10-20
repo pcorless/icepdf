@@ -20,8 +20,6 @@ import org.icepdf.ri.common.EscapeJDialog;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 
 /**
@@ -47,14 +45,12 @@ public class InformationDialog extends EscapeJDialog {
         // Create GUI elements
         final JButton okButton = new JButton(messageBundle.getString("viewer.button.ok.label"));
         okButton.setMnemonic(messageBundle.getString("viewer.button.ok.mnemonic").charAt(0));
-        okButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getSource() == okButton) {
-                    setVisible(false);
-                    dispose();
-                }
-
+        okButton.addActionListener(e -> {
+            if (e.getSource() == okButton) {
+                setVisible(false);
+                dispose();
             }
+
         });
 
         JPanel layoutPanel = new JPanel(new GridBagLayout());

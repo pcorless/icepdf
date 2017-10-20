@@ -142,7 +142,7 @@ public class PanningHandler implements ToolHandler {
     }
 
     public void paintTool(Graphics g) {
-        // nothing to paint for paning.
+        // nothing to paint for panning.
     }
 
     public void installTool() {

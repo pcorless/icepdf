@@ -17,7 +17,6 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
-import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -53,7 +52,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
         // used to redirect mouse events
         this.documentScrollpane = documentScrollpane;
 
-        // assign view allignemnt
+        // assign view alignment
         this.viewAlignment = viewAlignment;
 
         // put all the gui elements together
@@ -65,12 +64,10 @@ public class TwoColumnPageView extends AbstractDocumentView {
                         documentViewModel.getPageComponents());
 
         // add page changing key listeners
-        if (this.documentViewController.getParentController() instanceof SwingController) {
-            keyListenerPageChanger =
-                    KeyListenerPageColumnChanger.install(
-                            (SwingController) this.documentViewController.getParentController(),
-                            this.documentScrollpane, this, currentPageChanger);
-        }
+        keyListenerPageChanger =
+                KeyListenerPageColumnChanger.install(
+                        this.documentViewController.getParentController(),
+                        this.documentScrollpane, this, currentPageChanger);
     }
 
     private void buildGUI() {
@@ -95,7 +92,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
         // finally add all the components
         // add components for every page in the document
         java.util.List<AbstractPageViewComponent> pageComponents =
-                documentViewModel.getPageComponents();
+                documentViewController.getDocumentViewModel().getPageComponents();
 
         if (pageComponents != null) {
             PageViewComponent pageViewComponent;
@@ -211,7 +208,7 @@ public class TwoColumnPageView extends AbstractDocumentView {
         }
 
         // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewModel.getViewZoom();
+        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 

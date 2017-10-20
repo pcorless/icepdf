@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 /**
  * <p>The DocumentViewControllerImpl is responsible for controlling the four
  * default view models specified by the PDF specification.  This class is used
- * associated with the SwingController, but all view specific control is passed
+ * associated with the Controller, but all view specific control is passed
  * to this class. </p>
  *
  * @since 2.5
@@ -381,7 +381,10 @@ public class DocumentViewControllerImpl
         }
 
         // get the page number associated with the destination
-        int pageNumber = getPageTree().getPageNumber(destination.getPageReference());
+        int pageNumber = -1;
+        if (getPageTree() != null) {
+            pageNumber = getPageTree().getPageNumber(destination.getPageReference());
+        }
         if (pageNumber < 0) {
             return;
         }
@@ -478,7 +481,7 @@ public class DocumentViewControllerImpl
         return documentViewScrollPane;
     }
 
-    public Controller getParentController() {
+    public org.icepdf.ri.common.views.Controller getParentController() {
         return viewerController;
     }
 
@@ -705,24 +708,24 @@ public class DocumentViewControllerImpl
         }
 
         // get location of page in view port
-        Rectangle preferedPageOffset = documentViewModel.getPageBounds(getCurrentPageIndex());
-        if (preferedPageOffset != null) {
+        Rectangle preferredPageOffset = documentViewModel.getPageBounds(getCurrentPageIndex());
+        if (preferredPageOffset != null) {
             // scroll the view port to the correct location
             Rectangle currentViewSize = ((JComponent) documentView).getBounds();
 
             // check to see of the preferedPageOffset will actually be possible.  If the
             // pages is smaller then the view port we need to correct x,y coordinates.
-            if (preferedPageOffset.x + preferedPageOffset.width >
+            if (preferredPageOffset.x + preferredPageOffset.width >
                     currentViewSize.width) {
-                preferedPageOffset.x = currentViewSize.width - preferedPageOffset.width;
+                preferredPageOffset.x = currentViewSize.width - preferredPageOffset.width;
             }
 
-            if (preferedPageOffset.y + preferedPageOffset.height >
+            if (preferredPageOffset.y + preferredPageOffset.height >
                     currentViewSize.height) {
-                preferedPageOffset.y = currentViewSize.height - preferedPageOffset.height;
+                preferredPageOffset.y = currentViewSize.height - preferredPageOffset.height;
             }
 
-            documentViewScrollPane.getViewport().setViewPosition(preferedPageOffset.getLocation());
+            documentViewScrollPane.getViewport().setViewPosition(preferredPageOffset.getLocation());
             documentViewScrollPane.revalidate();
         }
         firePropertyChange(PropertyConstants.DOCUMENT_CURRENT_PAGE,
@@ -912,31 +915,31 @@ public class DocumentViewControllerImpl
         return cursorType;
     }
 
-    public Cursor getViewCursor(final int currsorType) {
+    public Cursor getViewCursor(final int cursorType) {
         Cursor c;
         String imageName;
 
-        if (currsorType == CURSOR_DEFAULT) {
+        if (cursorType == CURSOR_DEFAULT) {
             return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
-        } else if (currsorType == CURSOR_WAIT) {
+        } else if (cursorType == CURSOR_WAIT) {
             return Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR);
-        } else if (currsorType == CURSOR_SELECT) {
+        } else if (cursorType == CURSOR_SELECT) {
             return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
-        } else if (currsorType == CURSOR_HAND_OPEN) {
+        } else if (cursorType == CURSOR_HAND_OPEN) {
             imageName = "hand_open.gif";
-        } else if (currsorType == CURSOR_HAND_CLOSE) {
+        } else if (cursorType == CURSOR_HAND_CLOSE) {
             imageName = "hand_closed.gif";
-        } else if (currsorType == CURSOR_ZOOM_IN) {
+        } else if (cursorType == CURSOR_ZOOM_IN) {
             imageName = "zoom_in.gif";
-        } else if (currsorType == CURSOR_ZOOM_OUT) {
+        } else if (cursorType == CURSOR_ZOOM_OUT) {
             imageName = "zoom_out.gif";
-        } else if (currsorType == CURSOR_MAGNIFY) {
+        } else if (cursorType == CURSOR_MAGNIFY) {
             imageName = "zoom.gif";
-        } else if (currsorType == CURSOR_HAND_ANNOTATION) {
+        } else if (cursorType == CURSOR_HAND_ANNOTATION) {
             return Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-        } else if (currsorType == CURSOR_TEXT_SELECTION) {
+        } else if (cursorType == CURSOR_TEXT_SELECTION) {
             return Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
-        } else if (currsorType == CURSOR_CROSSHAIR) {
+        } else if (cursorType == CURSOR_CROSSHAIR) {
             return Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
         } else {
             return Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
@@ -993,6 +996,8 @@ public class DocumentViewControllerImpl
      * Utility function for centering the view Port around the given point.
      *
      * @param centeringPoint which the view is to be centered on.
+     * @param previousZoom   previous zoom value if any
+     * @param zoom           level to apply
      */
     private void zoomCenter(Point centeringPoint, float previousZoom, float zoom) {
         // make sure the point is not null
@@ -1201,7 +1206,7 @@ public class DocumentViewControllerImpl
     }
 
     /**
-     * Gives access to the currently openned Document's Catalog's PageTree
+     * Gives access to the currently opened Document's Catalog's PageTree
      *
      * @return PageTree
      */
@@ -1220,21 +1225,21 @@ public class DocumentViewControllerImpl
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void componentHidden(ComponentEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void componentMoved(ComponentEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void componentResized(ComponentEvent e) {
@@ -1249,7 +1254,7 @@ public class DocumentViewControllerImpl
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void componentShown(ComponentEvent e) {

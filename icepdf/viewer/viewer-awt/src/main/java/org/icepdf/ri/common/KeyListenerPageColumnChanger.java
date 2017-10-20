@@ -16,16 +16,17 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.AbstractDocumentView;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
 
 /**
  * This intercepts KeyEvents for a JScrollPane, and determines if
- * they qualify to initiate a page change request for the SwingController.
+ * they qualify to initiate a page change request for the Controller.
  */
 public class KeyListenerPageColumnChanger extends KeyAdapter {
-    private SwingController controller;
+    private org.icepdf.ri.common.views.Controller controller;
     private JScrollPane scroll;
     private AbstractDocumentView documentView;
     private CurrentPageChanger currentPageChanger;
@@ -41,10 +42,10 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
     /**
      * Install a KeyListenerPageChanger as a KeyListener
      *
-     * @param c SwingController that can change pages
+     * @param c Controller that can change pages
      * @param s JScrollPane that has a vertical JScrollBar, and where events come from
      */
-    public static KeyListenerPageColumnChanger install(SwingController c, JScrollPane s,
+    public static KeyListenerPageColumnChanger install(Controller c, JScrollPane s,
                                                        AbstractDocumentView documentView,
                                                        CurrentPageChanger currentPageChanger) {
         KeyListenerPageColumnChanger listener = null;
@@ -61,7 +62,7 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
         }
     }
 
-    protected KeyListenerPageColumnChanger(SwingController c, JScrollPane s,
+    protected KeyListenerPageColumnChanger(Controller c, JScrollPane s,
                                            AbstractDocumentView documentView,
                                            CurrentPageChanger currentPageChanger) {
         controller = c;
@@ -103,12 +104,9 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
         }
         changingPage = true;
         final int dp = deltaPage;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                changingPage = false;
-                controller.goToDeltaPage(dp);
-
-            }
+        SwingUtilities.invokeLater(() -> {
+            changingPage = false;
+            controller.goToDeltaPage(dp);
         });
     }
 
@@ -116,11 +114,7 @@ public class KeyListenerPageColumnChanger extends KeyAdapter {
         int keyCode = e.getKeyCode();
         if (keyCode == java.awt.event.KeyEvent.VK_UP ||
                 keyCode == java.awt.event.KeyEvent.VK_DOWN) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    currentPageChanger.calculateCurrentPage();
-                }
-            });
+            SwingUtilities.invokeLater(() -> currentPageChanger.calculateCurrentPage());
         }
     }
 }

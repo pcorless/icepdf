@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.views;
 
-import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.PropertyConstants;
@@ -87,10 +86,6 @@ public abstract class AbstractDocumentView
     protected JPanel pagesPanel;
     protected boolean disposing;
 
-    protected Document currentDocument;
-
-    protected DocumentViewModel documentViewModel;
-
     // current page view tool.
     protected ToolHandler currentTool;
 
@@ -110,9 +105,6 @@ public abstract class AbstractDocumentView
                                 DocumentViewModel documentViewModel) {
         this.documentViewController = documentViewController;
         this.documentScrollpane = documentScrollpane;
-        this.documentViewModel = documentViewModel;
-
-        currentDocument = this.documentViewModel.getDocument();
 
         setFocusable(true);
         // add focus listener
@@ -178,7 +170,7 @@ public abstract class AbstractDocumentView
     }
 
     public DocumentViewModel getViewModel() {
-        return documentViewModel;
+        return documentViewController.getDocumentViewModel();
     }
 
     public void invalidate() {
@@ -187,9 +179,6 @@ public abstract class AbstractDocumentView
     }
 
     public void dispose() {
-
-        currentDocument = null;
-
         // clean up scroll listeners
         documentViewController.getHorizontalScrollBar().removeAdjustmentListener(this);
         documentViewController.getVerticalScrollBar().removeAdjustmentListener(this);
@@ -248,29 +237,27 @@ public abstract class AbstractDocumentView
     public void setToolMode(final int viewToolMode) {
         uninstallCurrentTool();
         // assign the correct tool handler
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         switch (viewToolMode) {
             case DocumentViewModel.DISPLAY_TOOL_PAN:
                 currentTool = new PanningHandler(documentViewController,
                         documentViewModel, this);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_ZOOM_IN:
-                currentTool = new ZoomInViewHandler(documentViewController,
-                        documentViewModel, this);
+                currentTool = new ZoomInViewHandler(documentViewController, this);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_ZOOM_DYNAMIC:
                 currentTool = new DynamicZoomHandler(documentViewController,
                         documentScrollpane);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_TEXT_SELECTION:
-                currentTool = new TextSelectionViewHandler(documentViewController,
-                        documentViewModel, this);
+                currentTool = new TextSelectionViewHandler(documentViewController, this);
                 documentScrollpane.addMouseWheelListener((TextSelectionViewHandler) currentTool);
                 break;
             case DocumentViewModel.DISPLAY_TOOL_SELECTION:
                 currentTool = new AnnotationSelectionHandler(
                         documentViewController,
-                        null,
-                        documentViewModel);
+                        null);
                 break;
             default:
                 currentTool = null;

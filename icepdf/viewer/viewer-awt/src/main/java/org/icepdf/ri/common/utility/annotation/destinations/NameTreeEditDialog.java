@@ -22,7 +22,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.NameTreeNode;
-import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -38,7 +38,7 @@ import java.util.ResourceBundle;
  */
 public class NameTreeEditDialog extends EscapeJDialog implements ActionListener {
 
-    private SwingController controller;
+    private org.icepdf.ri.common.views.Controller controller;
     private ResourceBundle messageBundle;
 
     private NameTreeNode nameTreeNode;
@@ -53,7 +53,7 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
 
     private GridBagConstraints constraints;
 
-    public NameTreeEditDialog(SwingController controller, Page page, int x, int y) {
+    public NameTreeEditDialog(Controller controller, Page page, int x, int y) {
         super(controller.getViewerFrame(), true);
         this.controller = controller;
         messageBundle = controller.getMessageBundle();
@@ -61,7 +61,7 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
         setGui();
     }
 
-    public NameTreeEditDialog(SwingController controller, NameTreeNode treeNode) {
+    public NameTreeEditDialog(org.icepdf.ri.common.views.Controller controller, NameTreeNode treeNode) {
         super(controller.getViewerFrame(), true);
         this.controller = controller;
         nameTreeNode = treeNode;
@@ -101,7 +101,6 @@ public class NameTreeEditDialog extends EscapeJDialog implements ActionListener 
             if (!updated) {
                 errorLabel.setText(messageBundle.getString(
                         "viewer.utilityPane.destinations.dialog.error.existingName.label"));
-                return;
             } else {
                 // fire property change event to rebuild name tree.
                 if (nameTreeNode != null) {

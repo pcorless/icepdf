@@ -18,7 +18,7 @@ package org.icepdf.ri.common.preferences;
 import org.icepdf.core.pobjects.graphics.ImageReference;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.PageNumberTextFieldInputVerifier;
-import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -45,7 +45,7 @@ public class AdvancedPreferencesPanel extends JPanel {
 
     private JTextField commonThreadCountField;
 
-    public AdvancedPreferencesPanel(SwingController swingController, PropertiesManager propertiesManager,
+    public AdvancedPreferencesPanel(Controller controller, PropertiesManager propertiesManager,
                                     ResourceBundle messageBundle) {
         super(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);

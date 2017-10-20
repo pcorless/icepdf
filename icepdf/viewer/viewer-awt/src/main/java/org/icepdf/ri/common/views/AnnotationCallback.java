@@ -45,7 +45,7 @@ public interface AnnotationCallback {
      * @param x          x-coordinate of input device click that initiated the annotation action.
      * @param y          y-coordinate of input device click that initiated the annotation action.
      */
-    public void processAnnotationAction(Annotation annotation, Action action, int x, int y);
+    void processAnnotationAction(Annotation annotation, Action action, int x, int y);
 
     /**
      * <p>Implemented Annotation Callback method.  This method is called when a
@@ -55,7 +55,7 @@ public interface AnnotationCallback {
      * @param page page that has been initialized.  The pages annotations are
      *             available via an accessor method.
      */
-    public void pageAnnotationsInitialized(Page page);
+    void pageAnnotationsInitialized(Page page);
 
 
     /**
@@ -64,15 +64,15 @@ public interface AnnotationCallback {
      * @param page                page that annotation was added to.
      * @param annotationComponent annotation component to be added to page.
      */
-    public void newAnnotation(PageViewComponent page,
-                              AnnotationComponent annotationComponent);
+    void newAnnotation(PageViewComponent page,
+                       AnnotationComponent annotationComponent);
 
     /**
      * Update the annotation and ready state for save.
      *
      * @param annotationComponent annotation component to be added to page.
      */
-    public void updateAnnotation(AnnotationComponent annotationComponent);
+    void updateAnnotation(AnnotationComponent annotationComponent);
 
     /**
      * Remove the annotation and ready state for save.
@@ -80,7 +80,7 @@ public interface AnnotationCallback {
      * @param pageComponent       page that annotation should be removed.
      * @param annotationComponent annotation component to be added to page.
      */
-    public void removeAnnotation(PageViewComponent pageComponent,
-                                 AnnotationComponent annotationComponent);
+    void removeAnnotation(PageViewComponent pageComponent,
+                          AnnotationComponent annotationComponent);
 
 }

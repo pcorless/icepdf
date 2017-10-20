@@ -33,8 +33,8 @@ public class URLAccess {
      * If it is valid, then urlAccess.url will be a valid URL object,
      * and urlAccess.inputStream will be opened to access the data from the URL.
      *
-     * @param urlLocation
-     * @return URLAccess urlAccess
+     * @param urlLocation url to check
+     * @return URLAccess urlAccess access result
      */
     public static URLAccess doURLAccess(String urlLocation) {
         URLAccess res = new URLAccess();

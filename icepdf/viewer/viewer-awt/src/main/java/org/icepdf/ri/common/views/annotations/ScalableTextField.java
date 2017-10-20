@@ -76,7 +76,7 @@ public class ScalableTextField extends JTextField implements ScalableField {
                 ScalableTextField.this.processMouseMotionEvent(newEvent);
             }
         };
-        new JXLayer<JComponent>(this, layerUI);
+        new JXLayer<>(this, layerUI);
     }
 
     @Override

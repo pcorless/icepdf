@@ -60,7 +60,7 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
         this.documentView = documentView;
         documentViewModel = documentView.getViewModel();
 
-        // listen for scroll bar manaipulators
+        // listen for scroll bar manipulators
         this.documentView.addMouseListener(this);
         this.scrollpane.getHorizontalScrollBar().addAdjustmentListener(this);
         this.scrollpane.getHorizontalScrollBar().addMouseListener(this);
@@ -102,7 +102,7 @@ public class CurrentPageChanger extends MouseAdapter implements AdjustmentListen
             Rectangle viewport = scrollpane.getViewport().getViewRect();
             // find visible pages
             ArrayList<PageViewComponent> visiblePages =
-                    new ArrayList<PageViewComponent>(10);
+                    new ArrayList<>(10);
             Rectangle pageBounds;
             int pageCount = 0;
             for (AbstractPageViewComponent pageComponent : pageComponents) {

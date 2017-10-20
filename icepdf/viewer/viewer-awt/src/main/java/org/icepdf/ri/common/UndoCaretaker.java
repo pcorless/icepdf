@@ -43,7 +43,7 @@ public class UndoCaretaker {
     private int cursor;
 
     public UndoCaretaker() {
-        mementoStateHistory = new ArrayList<Memento>(maxHistorySize);
+        mementoStateHistory = new ArrayList<>(maxHistorySize);
         cursor = 0;
     }
 

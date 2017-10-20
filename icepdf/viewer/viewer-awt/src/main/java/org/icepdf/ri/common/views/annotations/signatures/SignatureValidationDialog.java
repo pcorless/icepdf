@@ -23,8 +23,6 @@ import org.icepdf.ri.common.EscapeJDialog;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
@@ -44,7 +42,7 @@ public class SignatureValidationDialog extends EscapeJDialog {
     public SignatureValidationDialog(Frame parent, ResourceBundle messageBundle,
                                      SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
         super(parent, true);
-        this.messageBundle = messageBundle;
+        SignatureValidationDialog.messageBundle = messageBundle;
         this.signatureValidator = signatureValidator;
         this.signatureWidgetAnnotation = signatureWidgetAnnotation;
         buildUI();
@@ -59,27 +57,23 @@ public class SignatureValidationDialog extends EscapeJDialog {
         final JButton closeButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.validation.dialog.close.button.label"));
         closeButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
-        closeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                setVisible(false);
-                dispose();
-            }
+        closeButton.addActionListener(e -> {
+            setVisible(false);
+            dispose();
         });
 
         // launch properties dialog showing all signature info.
         final JButton propertiesButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.validation.dialog.signerProperties.button.label"));
         final Dialog parent = this;
-        propertiesButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
-                if (fieldDictionary != null) {
-                    SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-                    SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
-                    if (signatureValidator != null) {
-                        new SignaturePropertiesDialog(parent, messageBundle, signatureWidgetAnnotation)
-                                .setVisible(true);
-                    }
+        propertiesButton.addActionListener(e -> {
+            SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
+            if (fieldDictionary != null) {
+                SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
+                SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
+                if (signatureValidator != null) {
+                    new SignaturePropertiesDialog(parent, messageBundle, signatureWidgetAnnotation)
+                            .setVisible(true);
                 }
             }
         });

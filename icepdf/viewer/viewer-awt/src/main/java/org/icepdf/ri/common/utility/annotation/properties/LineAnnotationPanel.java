@@ -18,8 +18,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -55,17 +55,17 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private static ValueLabelItem[] END_TYPE_LIST;
 
     // link action appearance properties.
-    private JComboBox startEndTypeBox;
-    private JComboBox endEndTypeBox;
-    private JComboBox lineThicknessBox;
-    private JComboBox lineStyleBox;
+    private JComboBox<ValueLabelItem> startEndTypeBox;
+    private JComboBox<ValueLabelItem> endEndTypeBox;
+    private JComboBox<ValueLabelItem> lineThicknessBox;
+    private JComboBox<ValueLabelItem> lineStyleBox;
     private JButton colorButton;
     private JButton internalColorButton;
     private JSlider transparencySlider;
 
     private LineAnnotation annotation;
 
-    public LineAnnotationPanel(SwingController controller) {
+    public LineAnnotationPanel(Controller controller) {
         super(controller);
 
         setLayout(new GridBagLayout());
@@ -222,28 +222,28 @@ public class LineAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         constraints.insets = new Insets(1, 2, 1, 2);
 
         // Line start type
-        startEndTypeBox = new JComboBox(END_TYPE_LIST);
+        startEndTypeBox = new JComboBox<>(END_TYPE_LIST);
         startEndTypeBox.setSelectedIndex(DEFAULT_START_END_TYPE);
         startEndTypeBox.addItemListener(this);
         JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.startStyle"));
         addGB(this, label, 0, 0, 1, 1);
         addGB(this, startEndTypeBox, 1, 0, 1, 1);
         // Line end type
-        endEndTypeBox = new JComboBox(END_TYPE_LIST);
+        endEndTypeBox = new JComboBox<>(END_TYPE_LIST);
         endEndTypeBox.setSelectedIndex(DEFAULT_END_END_TYPE);
         endEndTypeBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.endStyle"));
         addGB(this, label, 0, 1, 1, 1);
         addGB(this, endEndTypeBox, 1, 1, 1, 1);
         // Line thickness
-        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox<>(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineThickness"));
         addGB(this, label, 0, 2, 1, 1);
         addGB(this, lineThicknessBox, 1, 2, 1, 1);
         // Line style
-        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox<>(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.line.lineStyle"));

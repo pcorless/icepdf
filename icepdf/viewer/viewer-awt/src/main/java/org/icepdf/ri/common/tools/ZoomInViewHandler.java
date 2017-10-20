@@ -42,9 +42,8 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
     private AbstractDocumentView parentComponent;
 
     public ZoomInViewHandler(DocumentViewController documentViewController,
-                             DocumentViewModel documentViewModel,
                              AbstractDocumentView parentComponent) {
-        super(documentViewController, null, documentViewModel);
+        super(documentViewController, null);
         this.parentComponent = parentComponent;
     }
 
@@ -60,6 +59,7 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
             updateSelectionSize(e.getX(),e.getY(), parentComponent);
 
             // add selection box to child pages
+            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
             if (documentViewModel != null) {
                 java.util.List<AbstractPageViewComponent> pages =
                         documentViewModel.getPageComponents();
@@ -113,7 +113,7 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
                     rectToDraw.getHeight() > 0) {
                 // zoom in on rectangle bounds.
                 float zoom = ZoomInPageHandler.calculateZoom(
-                        documentViewController, rectToDraw, documentViewModel);
+                        documentViewController, rectToDraw, documentViewController.getDocumentViewModel());
 
                 // scale the zoom box center to the new location
                 Point center = new Point((int) rectToDraw.getCenterX(),
@@ -129,7 +129,7 @@ public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandle
             // deselect rectangles on other selected pages.
             // consider only repainting visible pages.
             List<AbstractPageViewComponent> selectedPages =
-                    documentViewModel.getPageComponents();
+                    documentViewController.getDocumentViewModel().getPageComponents();
             if (selectedPages != null &&
                     selectedPages.size() > 0) {
                 for (AbstractPageViewComponent pageComp : selectedPages) {

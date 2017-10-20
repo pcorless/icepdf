@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
+
 import java.util.ResourceBundle;
 
 /**
@@ -33,14 +35,14 @@ public abstract class AbstractTask<T extends AbstractTask> {
     protected boolean done = false;
     protected boolean canceled = false;
     // parent swing controller
-    protected SwingController controller;
+    protected Controller controller;
     // message bundle for internationalization
     protected ResourceBundle messageBundle;
 
     protected boolean taskRunning;
 
     public AbstractTask(
-            SwingController controller,
+            Controller controller,
             ResourceBundle messageBundle,
             int lengthOfTask) {
         this.controller = controller;

@@ -75,9 +75,8 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
     protected TextMarkupAnnotation annotation;
 
     public HighLightAnnotationHandler(DocumentViewController documentViewController,
-                                      AbstractPageViewComponent pageViewComponent,
-                                      DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                      AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         // default type
         highLightType = Annotation.SUBTYPE_HIGHLIGHT;
     }
@@ -119,6 +118,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
     public void createTextMarkupAnnotation(ArrayList<Shape> highlightBounds) {
         // mke sure we don't create a highlight annotation for every word in the
         // document when first selecting the tool for highlighted next. .
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         if (documentViewModel.isSelectAll()) {
             documentViewController.clearSelectedText();
         }
@@ -170,9 +170,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
             // create new annotation given the general path
             MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                     AnnotationComponentFactory.buildAnnotationComponent(
-                            annotation,
-                            documentViewController,
-                            pageViewComponent, documentViewModel);
+                            annotation, documentViewController, pageViewComponent);
 
             // add the main highlight annotation
             documentViewController.addNewAnnotation(comp);
@@ -231,6 +229,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                 PageText pageText = currentPage.getViewText();
                 if (pageText != null) {
                     // get page transformation
+                    DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                     AffineTransform pageTransform = currentPage.getPageTransform(
                             documentViewModel.getPageBoundary(),
                             documentViewModel.getViewRotation(),
@@ -250,7 +249,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                                         // paint highlight over any selected
                                         if (wordText.isSelected()) {
                                             if (highlightBounds == null) {
-                                                highlightBounds = new ArrayList<Shape>();
+                                                highlightBounds = new ArrayList<>();
                                             }
                                             highlightBounds.add(textPath.getBounds2D());
                                         }
@@ -262,7 +261,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                                                 textPath = new GeneralPath(glyph.getBounds());
                                                 textPath.transform(pageTransform);
                                                 if (highlightBounds == null) {
-                                                    highlightBounds = new ArrayList<Shape>();
+                                                    highlightBounds = new ArrayList<>();
                                                 }
                                                 highlightBounds.add(textPath.getBounds2D());
                                             }

@@ -71,9 +71,8 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
 
     public MarkupAnnotationComponent(MarkupAnnotation annotation,
                                      DocumentViewController documentViewController,
-                                     AbstractPageViewComponent pageViewComponent,
-                                     DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+                                     AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
 
         // command test
         buildContextMenu();
@@ -81,8 +80,9 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
 
     public void buildContextMenu() {
         //Create the popup menu.
-        contextMenu = new MarkupAnnotationPopupMenu(this, documentViewController,
-                getPageViewComponent(), documentViewModel, true);
+        contextMenu = new MarkupAnnotationPopupMenu(this,
+                documentViewController.getParentController(),
+                getPageViewComponent(), true);
         // Add listener to components that can bring up popup menus.
         MouseListener popupListener = new PopupListener(contextMenu);
         addMouseListener(popupListener);
@@ -126,27 +126,20 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                 return popupAnnotationComponent;
             }
 
-            if (popup != null) {
-                // find the popup component
-                ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
-                Reference compReference;
-                Reference popupReference = popup.getPObjectReference();
-                for (AnnotationComponent annotationComponent : annotationComponents) {
-                    compReference = annotationComponent.getAnnotation().getPObjectReference();
-                    // find the component and toggle it's visibility, null check just encase compRef is direct.
-                    if (compReference != null && compReference.equals(popupReference)) {
-                        if (annotationComponent instanceof PopupAnnotationComponent) {
-                            PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComponent);
-                            return popupComponent;
-                        }
-                        break;
+            // find the popup component
+            ArrayList<AbstractAnnotationComponent> annotationComponents = pageViewComponent.getAnnotationComponents();
+            Reference compReference;
+            Reference popupReference = popup.getPObjectReference();
+            for (AnnotationComponent annotationComponent : annotationComponents) {
+                compReference = annotationComponent.getAnnotation().getPObjectReference();
+                // find the component and toggle it's visibility, null check just encase compRef is direct.
+                if (compReference != null && compReference.equals(popupReference)) {
+                    if (annotationComponent instanceof PopupAnnotationComponent) {
+                        PopupAnnotationComponent popupComponent = ((PopupAnnotationComponent) annotationComponent);
+                        return popupComponent;
                     }
+                    break;
                 }
-//                // we didn't fin a component so we'll create one.
-//                PopupAnnotationComponent popupAnnotationComponent = createPopupAnnotationComponent(true);
-//                annotation.setPopupAnnotation(popup);
-//                annotationComponents.add(popupAnnotationComponent);
-//                return popupAnnotationComponent;
             }
         }
         return null;
@@ -172,32 +165,33 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                 annotation.setContents("");
             }
         }
-        PopupAnnotation popupAnnotation;
-        if (annotation.getPopupAnnotation() == null) {
+        PopupAnnotation popupAnnotation = null;
+        if (annotation != null && annotation.getPopupAnnotation() == null) {
             popupAnnotation = TextAnnotationHandler.createPopupAnnotation(
-                    documentViewModel.getDocument().getPageTree().getLibrary(),
+                    documentViewController.getDocument().getPageTree().getLibrary(),
                     tBbox, annotation, getPageTransform());
             annotation.setPopupAnnotation(popupAnnotation);
-        } else {
+        } else if (annotation != null) {
             popupAnnotation = annotation.getPopupAnnotation();
         }
 
+        if (popupAnnotation != null) {
+            // create the annotation object.
+            PopupAnnotationComponent comp = (PopupAnnotationComponent)
+                    AnnotationComponentFactory.buildAnnotationComponent(
+                            popupAnnotation, documentViewController, pageViewComponent);
+            // set the bounds and refresh the userSpace rectangle
+            comp.setBounds(bBox);
+            // resets user space rectangle to match bbox converted to page space
+            comp.refreshAnnotationRect();
 
-        // create the annotation object.
-        PopupAnnotationComponent comp = (PopupAnnotationComponent)
-                AnnotationComponentFactory.buildAnnotationComponent(
-                        popupAnnotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
-        // set the bounds and refresh the userSpace rectangle
-        comp.setBounds(bBox);
-        // resets user space rectangle to match bbox converted to page space
-        comp.refreshAnnotationRect();
-
-        // add them to the container, using absolute positioning.
-        documentViewController.addNewAnnotation(comp);
-        pageViewComponent.revalidate();
-        return comp;
+            // add them to the container, using absolute positioning.
+            documentViewController.addNewAnnotation(comp);
+            pageViewComponent.revalidate();
+            return comp;
+        } else {
+            return null;
+        }
     }
 
 
@@ -253,6 +247,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
      */
     protected Shape convertToPageSpace(Shape shape) {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),

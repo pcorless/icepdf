@@ -81,7 +81,7 @@ final class Parse {
     /**
      * Parse a string into a double number.  Error is added to errorShower.
      *
-     * @param s string to be coverted to double if possible
+     * @param s string to be converted to double if possible
      * @return a null if the string could not be converted to double, otherwise
      *         return the Double value of the string.
      */

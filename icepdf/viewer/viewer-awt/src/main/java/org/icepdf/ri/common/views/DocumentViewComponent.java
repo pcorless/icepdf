@@ -52,7 +52,7 @@ public class DocumentViewComponent extends JComponent implements MouseListener, 
 
     private Dimension pageSize = new Dimension(minimumThumbWidth, minimumThumbHeight);
     private SoftReference<BufferedImage> documentThumbNail =
-            new SoftReference<BufferedImage>(null);
+            new SoftReference<>(null);
 
     public DocumentViewComponent(Library parentLibrary, String fileName, Reference fileReference) {
         this.parentLibrary = parentLibrary;
@@ -100,14 +100,12 @@ public class DocumentViewComponent extends JComponent implements MouseListener, 
                     Page.BOUNDARY_CROPBOX, 0, scale);
             g.dispose();
 
-            documentThumbNail = new SoftReference<BufferedImage>(image);
+            documentThumbNail = new SoftReference<>(image);
 
             // que the repaint.
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    revalidate();
-                    repaint();
-                }
+            SwingUtilities.invokeLater(() -> {
+                revalidate();
+                repaint();
             });
 
             // close the document.

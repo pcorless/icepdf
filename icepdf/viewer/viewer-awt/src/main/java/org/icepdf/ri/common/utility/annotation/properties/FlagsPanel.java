@@ -17,8 +17,8 @@
 package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -29,7 +29,7 @@ import java.awt.event.ItemListener;
 
 /**
  * The flags panel allows a user to set common properties of an annotation like
- * readonly, no roate, no zoom and printable.  This panel can be removed from
+ * readonly, no rotate, no zoom and printable.  This panel can be removed from
  * the viewer ri with the
  * PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_FLAGS=false.
  *
@@ -38,12 +38,12 @@ import java.awt.event.ItemListener;
 @SuppressWarnings("serial")
 public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
 
-    private JComboBox readOnlyComboBox;
-    private JComboBox noRotateComboBox;
-    private JComboBox noZoomComboBox;
-    private JComboBox printableComboBox;
+    private JComboBox<ValueLabelItem> readOnlyComboBox;
+    private JComboBox<ValueLabelItem> noRotateComboBox;
+    private JComboBox<ValueLabelItem> noZoomComboBox;
+    private JComboBox<ValueLabelItem> printableComboBox;
 
-    public FlagsPanel(SwingController controller) {
+    public FlagsPanel(Controller controller) {
         super(controller);
         setLayout(new GridBagLayout());
 
@@ -131,25 +131,25 @@ public class FlagsPanel extends AnnotationPanelAdapter implements ItemListener {
                         messageBundle.getString("viewer.utilityPane.annotation.flags.disabled"))};
 
         // no rotate
-        noRotateComboBox = new JComboBox(flagList);
+        noRotateComboBox = new JComboBox<>(flagList);
         noRotateComboBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.noRotate")),
                 0, 0, 1, 1);
         addGB(this, noRotateComboBox, 1, 0, 1, 1);
         // no zoom
-        noZoomComboBox = new JComboBox(flagList);
+        noZoomComboBox = new JComboBox<>(flagList);
         noZoomComboBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.noZoom")),
                 0, 1, 1, 1);
         addGB(this, noZoomComboBox, 1, 1, 1, 1);
         // read only
-        readOnlyComboBox = new JComboBox(flagList);
+        readOnlyComboBox = new JComboBox<>(flagList);
         readOnlyComboBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.readOnly")),
                 0, 2, 1, 1);
         addGB(this, readOnlyComboBox, 1, 2, 1, 1);
         // read only
-        printableComboBox = new JComboBox(flagList);
+        printableComboBox = new JComboBox<>(flagList);
         printableComboBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.flags.printable")),
                 0, 3, 1, 1);

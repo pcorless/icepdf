@@ -15,8 +15,10 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.*;
+import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.PageViewComponentImpl;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -37,17 +39,15 @@ public class AnnotationPopup extends JPopupMenu implements ActionListener {
     protected AnnotationComponent annotationComponent;
 
     protected PageViewComponentImpl pageViewComponent;
-    protected DocumentViewController documentViewController;
-    protected DocumentViewModel documentViewModel;
+    protected Controller controller;
     protected ResourceBundle messageBundle;
 
-    public AnnotationPopup(AnnotationComponent annotationComponent, DocumentViewController documentViewController,
-                           AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
+    public AnnotationPopup(AnnotationComponent annotationComponent, Controller controller,
+                           AbstractPageViewComponent pageViewComponent) {
         this.annotationComponent = annotationComponent;
         this.pageViewComponent = (PageViewComponentImpl) pageViewComponent;
-        this.documentViewModel = documentViewModel;
-        this.documentViewController = documentViewController;
-        this.messageBundle = documentViewController.getParentController().getMessageBundle();
+        this.controller = controller;
+        this.messageBundle = controller.getMessageBundle();
 
         propertiesMenuItem = new JMenuItem(
                 messageBundle.getString("viewer.annotation.popup.properties.label"));
@@ -72,11 +72,10 @@ public class AnnotationPopup extends JPopupMenu implements ActionListener {
         if (source == null) return;
 
         if (source == propertiesMenuItem) {
-            SwingController swingController = (SwingController) documentViewController.getParentController();
-            swingController.showAnnotationProperties(annotationComponent);
+            controller.showAnnotationProperties(annotationComponent);
         }
         if (source == deleteMenuItem) {
-            documentViewController.deleteAnnotation(annotationComponent);
+            controller.getDocumentViewController().deleteAnnotation(annotationComponent);
         }
     }
 }

@@ -18,9 +18,9 @@ package org.icepdf.ri.util;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DocumentSearchController;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
 import org.icepdf.ri.common.utility.search.SearchPanel;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
@@ -62,7 +62,7 @@ public class SearchTextTask {
     private boolean r2L;
 
     // parent swing controller
-    SwingController controller;
+    Controller controller;
 
     // append nodes for found text.
     private SearchPanel searchPanel;
@@ -80,13 +80,13 @@ public class SearchTextTask {
      * @param searchPanel   parent search panel that start this task via an action
      * @param controller    root controller object
      * @param pattern       pattern to search for
-     * @param wholeWord     ture inticates whole word search
+     * @param wholeWord     ture indicates whole word search
      * @param caseSensitive case sensitive indicates cases sensitive search
      * @param r2L           right left earch, not currently implemented.
      * @param messageBundle message bundle used for dialog text.
      */
     public SearchTextTask(SearchPanel searchPanel,
-                          SwingController controller,
+                          Controller controller,
                           String pattern,
                           boolean wholeWord,
                           boolean caseSensitive,
@@ -241,17 +241,15 @@ public class SearchTextTask {
                         final int currentPage = i;
                         // add the node to the search panel tree but on the
                         // awt thread.
-                        SwingUtilities.invokeLater(new Runnable() {
-                            public void run() {
-                                // add the node
-                                searchPanel.addFoundEntry(
-                                        nodeText,
-                                        currentPage,
-                                        lineItems,
-                                        showPages);
-                                // try repainting the container
-                                viewContainer.repaint();
-                            }
+                        SwingUtilities.invokeLater(() -> {
+                            // add the node
+                            searchPanel.addFoundEntry(
+                                    nodeText,
+                                    currentPage,
+                                    lineItems,
+                                    showPages);
+                            // try repainting the container
+                            viewContainer.repaint();
                         });
                     }
                     Thread.yield();
@@ -265,18 +263,14 @@ public class SearchTextTask {
             }
 
             // repaint the view container
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    viewContainer.validate();
-                }
-            });
+            SwingUtilities.invokeLater(() -> viewContainer.validate());
         }
     }
 
     /**
      * Gets the message that should be displayed when the task has completed.
      *
-     * @return search completed or stoped final message.
+     * @return search completed or stopped final message.
      */
     public String getFinalMessage() {
         setDialogMessage();

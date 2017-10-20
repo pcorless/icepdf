@@ -22,8 +22,8 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.AbstractTask;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,7 +40,7 @@ import java.util.Set;
  *
  * @since 6.1.3
  */
-public class FindFontsTask extends AbstractTask {
+public class FindFontsTask extends AbstractTask<FindFontsTask> {
 
     // canned internationalized messages.
     private MessageFormat searchingMessageForm;
@@ -57,10 +57,10 @@ public class FindFontsTask extends AbstractTask {
      * @param messageBundle message bundle used for dialog text.
      */
     public FindFontsTask(FontHandlerPanel fontHandlerPanel,
-                         SwingController controller,
+                         Controller controller,
                          ResourceBundle messageBundle) {
         super(controller, messageBundle, controller.getDocument().getNumberOfPages());
-        this.controller = controller;
+        controller = controller;
         this.fontHandlerPanel = fontHandlerPanel;
         lengthOfTask = controller.getDocument().getNumberOfPages();
         this.viewContainer = controller.getDocumentViewController().getViewContainer();
@@ -164,11 +164,7 @@ public class FindFontsTask extends AbstractTask {
             }
 
             // repaint the view container
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    viewContainer.validate();
-                }
-            });
+            SwingUtilities.invokeLater(() -> viewContainer.validate());
         }
     }
 }

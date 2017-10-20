@@ -314,7 +314,7 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with all of the default settings
      *
-     * @param c SwingController that will interact with the GUI
+     * @param c Controller that will interact with the GUI
      */
     public SwingViewBuilder(SwingController c) {
         // Use all the defaults
@@ -327,7 +327,7 @@ public class SwingViewBuilder {
      * Constructor that accepts a different PropertiesManager and otherwise
      * defaults the remaining settings
      *
-     * @param c          SwingController that will interact with the GUI
+     * @param c          Controller that will interact with the GUI
      * @param properties PropertiesManager that can customize the UI
      */
     public SwingViewBuilder(SwingController c, PropertiesManager properties) {
@@ -339,7 +339,7 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with all of the default settings
      *
-     * @param c                   SwingController that will interact with the GUI
+     * @param c                   Controller that will interact with the GUI
      * @param documentViewType    view type to build , single page, single column etc.
      * @param documentPageFitMode fit mode to initially load document with.
      */
@@ -353,7 +353,7 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with all of the default settings
      *
-     * @param c                   SwingController that will interact with the GUI
+     * @param c                   Controller that will interact with the GUI
      * @param documentViewType    view type to build , single page, single column etc.
      * @param documentPageFitMode fit mode to initially load document with.
      * @param rotation            default page rotation.
@@ -368,7 +368,7 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
      *
-     * @param c SwingController that will interact with the GUI
+     * @param c Controller that will interact with the GUI
      */
     public SwingViewBuilder(SwingController c, Font bf, boolean bt, int ts,
                             float[] zl, final int documentViewType,
@@ -379,7 +379,7 @@ public class SwingViewBuilder {
     /**
      * Construct a SwingVewBuilder with whichever settings you desire
      *
-     * @param c SwingController that will interact with the GUI
+     * @param c Controller that will interact with the GUI
      */
     public SwingViewBuilder(SwingController c, PropertiesManager properties,
                             Font bf, boolean bt, int ts,
@@ -779,7 +779,7 @@ public class SwingViewBuilder {
                 null, null, buildKeyStroke(KeyEventConstants.KEY_CODE_DESELECT_ALL,
                         KeyEventConstants.MODIFIER_DESELECT_ALL));
         if (viewerController != null && mi != null)
-            viewerController.setDselectAllMenuItem(mi);
+            viewerController.setDeselectAllMenuItem(mi);
         return mi;
     }
 
@@ -1046,7 +1046,7 @@ public class SwingViewBuilder {
             shortenDocumentOrigins(windowDocOriginList);
 
             List<JMenuItem> windowListMenuItems =
-                    new ArrayList<JMenuItem>(Math.max(count, 1));
+                    new ArrayList<>(Math.max(count, 1));
             for (int i = 0; i < count; i++) {
                 String number = Integer.toString(i + 1);
                 String label = null;
@@ -1088,9 +1088,9 @@ public class SwingViewBuilder {
             if (identifier == null)
                 continue;
             int separatorIndex = identifier.lastIndexOf(java.io.File.separator);
-            int forewardSlashIndex = identifier.lastIndexOf("/");
+            int forwardSlashIndex = identifier.lastIndexOf("/");
             int backwardSlashIndex = identifier.lastIndexOf("\\");
-            int cutIndex = Math.max(separatorIndex, Math.max(forewardSlashIndex, backwardSlashIndex));
+            int cutIndex = Math.max(separatorIndex, Math.max(forwardSlashIndex, backwardSlashIndex));
             if (cutIndex >= 0) {
                 identifier = identifier.substring(cutIndex);
                 windowDocOriginList.set(i, identifier);
@@ -1299,7 +1299,7 @@ public class SwingViewBuilder {
         pageNumberTextField.setToolTipText(messageBundle.getString("viewer.toolbar.navigation.current.tooltip"));
         pageNumberTextField.setInputVerifier(new PageNumberTextFieldInputVerifier());
 
-        /**
+        /*
          * Add a key listener and check to make sure the character intered
          * is a digit, period, the back_space or delete keys. If not the
          * invalid character is ignored and a system beep is triggered.
@@ -1346,7 +1346,7 @@ public class SwingViewBuilder {
                 PropertiesManager.PROPERTY_ZOOM_RANGES,
                 zoomLevels);
 
-        JComboBox tmp = new JComboBox();
+        JComboBox<String> tmp = new JComboBox<>();
         tmp.setToolTipText(messageBundle.getString("viewer.toolbar.zoom.tooltip"));
         tmp.setPreferredSize(new Dimension(115, tmp.getPreferredSize().height));
         for (float zoomLevel : zoomLevels)
@@ -2010,7 +2010,7 @@ public class SwingViewBuilder {
     }
 
     public AnnotationPanel buildAnnotationPanel() {
-        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController, messageBundle);
+        AnnotationPanel annotationPanel = new AnnotationPanel(viewerController);
         // build the comments panel
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_UTILITYPANE_ANNOTATION_MARKUP)) {
@@ -2032,7 +2032,7 @@ public class SwingViewBuilder {
     }
 
     public MarkupAnnotationPanel buildMarkupAnnotationPanel() {
-        MarkupAnnotationPanel annotationPanel = new MarkupAnnotationPanel(viewerController, propertiesManager);
+        MarkupAnnotationPanel annotationPanel = new MarkupAnnotationPanel(viewerController);
         annotationPanel.setAnnotationUtilityToolbar(buildAnnotationPropertiesToolBar());
         return annotationPanel;
     }

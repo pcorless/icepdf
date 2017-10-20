@@ -17,7 +17,6 @@ package org.icepdf.ri.common.views;
 
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
-import org.icepdf.ri.common.SwingController;
 
 import javax.swing.*;
 import java.awt.*;
@@ -59,11 +58,9 @@ public class OneColumnPageView extends AbstractDocumentView {
                         documentViewModel.getPageComponents());
 
         // add page changing key listeners
-        if (this.documentViewController.getParentController() instanceof SwingController) {
-            keyListenerPageChanger =
-                    KeyListenerPageColumnChanger.install((SwingController) this.documentViewController.getParentController(),
-                            this.documentScrollpane, this, currentPageChanger);
-        }
+        keyListenerPageChanger =
+                KeyListenerPageColumnChanger.install(this.documentViewController.getParentController(),
+                        this.documentScrollpane, this, currentPageChanger);
     }
 
     private void buildGUI() {
@@ -88,7 +85,7 @@ public class OneColumnPageView extends AbstractDocumentView {
         // finally add all the components
         // add components for every page in the document
         List<AbstractPageViewComponent> pageComponents =
-                documentViewModel.getPageComponents();
+                documentViewController.getDocumentViewModel().getPageComponents();
 
         if (pageComponents != null) {
             for (PageViewComponent pageViewComponent : pageComponents) {
@@ -156,7 +153,7 @@ public class OneColumnPageView extends AbstractDocumentView {
             }
         }
         // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewModel.getViewZoom();
+        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);
         pageViewHeight = Math.abs(pageViewHeight / currentZoom);
 

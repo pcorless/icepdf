@@ -147,11 +147,11 @@ public class MyAnnotationCallback implements AnnotationCallback {
                         documentViewController.setCurrentPageIndex(currentPageNumber - 1);
                     } // print the current document.
                     else if (NamedAction.PRINT_KEY.equals(actionName)) {
-                        SwingController controller = (SwingController) documentViewController.getParentController();
+                        Controller controller = documentViewController.getParentController();
                         controller.print(true);
                     } // show save as dialog.
                     else if (NamedAction.SAVE_AS_KEY.equals(actionName)) {
-                        SwingController controller = (SwingController) documentViewController.getParentController();
+                        Controller controller = documentViewController.getParentController();
                         controller.saveFile();
                     }
                 }

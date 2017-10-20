@@ -43,9 +43,8 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
             Logger.getLogger(LinkAnnotationHandler.class.toString());
 
     public LinkAnnotationHandler(DocumentViewController documentViewController,
-                                 AbstractPageViewComponent pageViewComponent,
-                                 DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                 AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         selectionBoxColour = Color.GRAY;
     }
 
@@ -79,16 +78,14 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
         // create annotations types that that are rectangle based;
         // which is actually just link annotations
         Annotation annotation = AnnotationFactory.buildAnnotation(
-                documentViewModel.getDocument().getPageTree().getLibrary(),
+                documentViewController.getDocument().getPageTree().getLibrary(),
                 Annotation.SUBTYPE_LINK,
                 tBbox);
 
         // create the annotation object.
         AbstractAnnotationComponent comp =
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        annotation, documentViewController, pageViewComponent);
         comp.setBounds(rectToDraw);
         comp.refreshAnnotationRect();
 

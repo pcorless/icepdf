@@ -20,8 +20,8 @@ import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.LaunchAction;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 /**
  * Actions panel manages an annotations actions as annotation can have zero
- * or more annotations.  The pannel allows a user  add, edit and remove
+ * or more annotations.  The panel allows a user  add, edit and remove
  * actions for the selected annotation.
  *
  * @since 4.0
@@ -48,8 +48,8 @@ public class ActionsPanel extends AnnotationPanelAdapter
             Logger.getLogger(ActionsPanel.class.toString());
 
     // actionList of action actions
-    private DefaultListModel actionListModel;
-    private JList actionList;
+    private DefaultListModel<ActionEntry> actionListModel;
+    private JList<ActionEntry> actionList;
 
     // add, edit, remove buttons.
     private JButton addAction;
@@ -65,7 +65,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
     // Goto action dialog
     private GoToActionDialog goToActionDialog;
 
-    public ActionsPanel(SwingController controller) {
+    public ActionsPanel(Controller controller) {
         super(controller);
         setLayout(new GridLayout(2, 1, 5, 5));
 
@@ -224,13 +224,15 @@ public class ActionsPanel extends AnnotationPanelAdapter
                                 currentAnnotationComponent.getAnnotation().getLibrary(),
                                 ActionFactory.URI_ACTION);
                 // get action and add the new action
-                uriAction.setURI(uriString);
-                currentAnnotationComponent.getAnnotation().addAction(uriAction);
-                // add the new action to the list.
-                actionListModel.addElement(new ActionEntry(
-                        messageBundle.getString(
-                                "viewer.utilityPane.action.type.uriAction.label"),
-                        uriAction));
+                if (uriAction != null) {
+                    uriAction.setURI(uriString);
+                    currentAnnotationComponent.getAnnotation().addAction(uriAction);
+                    // add the new action to the list.
+                    actionListModel.addElement(new ActionEntry(
+                            messageBundle.getString(
+                                    "viewer.utilityPane.action.type.uriAction.label"),
+                            uriAction));
+                }
             }
         }
         // create and show a new launch action
@@ -262,8 +264,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
      * Shows the appropriate action type edit dialog.
      */
     private void editAction() {
-        ActionEntry actionEntry = (ActionEntry) actionListModel.getElementAt(
-                actionList.getSelectedIndex());
+        ActionEntry actionEntry = actionListModel.getElementAt(actionList.getSelectedIndex());
         org.icepdf.core.pobjects.actions.Action action =
                 actionEntry.getAction();
         // show URI edit pane
@@ -304,8 +305,7 @@ public class ActionsPanel extends AnnotationPanelAdapter
      * from the current annotation.
      */
     private void removeAction() {
-        ActionEntry actionEntry = (ActionEntry) actionListModel.getElementAt(
-                actionList.getSelectedIndex());
+        ActionEntry actionEntry = actionListModel.getElementAt(actionList.getSelectedIndex());
         org.icepdf.core.pobjects.actions.Action action =
                 actionEntry.getAction();
         if (action != null) {
@@ -413,8 +413,8 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 TitledBorder.DEFAULT_POSITION));
 
         // create the new list
-        actionListModel = new DefaultListModel();
-        actionList = new JList(actionListModel);
+        actionListModel = new DefaultListModel<>();
+        actionList = new JList<>(actionListModel);
         actionList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         actionList.setVisibleRowCount(-1);
         actionList.addListSelectionListener(this);

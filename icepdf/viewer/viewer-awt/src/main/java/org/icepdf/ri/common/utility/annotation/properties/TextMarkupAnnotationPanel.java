@@ -18,8 +18,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -51,13 +51,13 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
     private static ValueLabelItem[] TEXT_MARKUP_TYPE_LIST;
 
     // text markup appearance properties.
-    private JComboBox textMarkupTypes;
+    private JComboBox<ValueLabelItem> textMarkupTypes;
     private JButton colorButton;
     private JSlider transparencySlider;
 
     private TextMarkupAnnotation annotation;
 
-    public TextMarkupAnnotationPanel(SwingController controller) {
+    public TextMarkupAnnotationPanel(Controller controller) {
         super(controller);
         setLayout(new GridBagLayout());
 
@@ -197,7 +197,7 @@ public class TextMarkupAnnotationPanel extends AnnotationPanelAdapter implements
                 TitledBorder.LEFT,
                 TitledBorder.DEFAULT_POSITION));
         // Text markup type
-        textMarkupTypes = new JComboBox(TEXT_MARKUP_TYPE_LIST);
+        textMarkupTypes = new JComboBox<>(TEXT_MARKUP_TYPE_LIST);
         textMarkupTypes.setSelectedIndex(DEFAULT_TEXT_MARKUP_TYPE);
         textMarkupTypes.addItemListener(this);
         JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.textMarkup.highlightType"));

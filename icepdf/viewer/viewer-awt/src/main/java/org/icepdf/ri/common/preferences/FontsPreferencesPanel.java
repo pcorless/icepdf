@@ -40,7 +40,7 @@ public class FontsPreferencesPanel extends JPanel implements ActionListener {
     // clear and rescan system for fonts and rewrite file.
     private JButton resetFontCacheButton;
 
-    public FontsPreferencesPanel(SwingController swingController, PropertiesManager propertiesManager,
+    public FontsPreferencesPanel(SwingController controller, PropertiesManager propertiesManager,
                                  ResourceBundle messageBundle) {
         super(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);

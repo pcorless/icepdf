@@ -18,8 +18,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.FreeTextAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -65,24 +65,24 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
     private FreeTextAnnotation freeTextAnnotation;
 
     // font configuration
-    private JComboBox fontNameBox;
-    private JComboBox fontSizeBox;
+    private JComboBox<ValueLabelItem> fontNameBox;
+    private JComboBox<ValueLabelItem> fontSizeBox;
     private JButton fontColorButton;
 
     // fill configuration
-    private JComboBox fillTypeBox;
+    private JComboBox<ValueLabelItem> fillTypeBox;
     private JButton fillColorButton;
 
     // border configuration
-    private JComboBox strokeTypeBox;
-    private JComboBox strokeThicknessBox;
-    private JComboBox strokeStyleBox;
+    private JComboBox<ValueLabelItem> strokeTypeBox;
+    private JComboBox<ValueLabelItem> strokeThicknessBox;
+    private JComboBox<ValueLabelItem> strokeStyleBox;
     private JButton strokeColorButton;
 
     // annotation transparency/opacity
     private JSlider transparencySlider;
 
-    public FreeTextAnnotationPanel(SwingController controller) {
+    public FreeTextAnnotationPanel(Controller controller) {
         super(controller);
 
         setLayout(new GridBagLayout());
@@ -259,7 +259,6 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
     public void stateChanged(ChangeEvent e) {
         alphaSliderChange(e, freeTextAnnotation, PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY);
-        ;
     }
 
     /**
@@ -328,7 +327,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         constraints.insets = new Insets(1, 2, 1, 2);
 
         // Font name
-        fontNameBox = new JComboBox(FONT_NAMES_LIST);
+        fontNameBox = new JComboBox<>(FONT_NAMES_LIST);
         fontNameBox.setSelectedIndex(DEFAULT_FONT_FAMILY);
         fontNameBox.addItemListener(this);
         JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name"));
@@ -336,7 +335,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         addGB(this, fontNameBox, 1, 0, 1, 1);
 
         // border style
-        fontSizeBox = new JComboBox(FONT_SIZES_LIST);
+        fontSizeBox = new JComboBox<>(FONT_SIZES_LIST);
         fontSizeBox.setSelectedIndex(DEFAULT_FONT_SIZE);
         fontSizeBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.font.size"));
@@ -353,7 +352,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         addGB(this, fontColorButton, 1, 2, 1, 1);
 
         // stroke type
-        strokeTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
+        strokeTypeBox = new JComboBox<>(VISIBLE_TYPE_LIST);
         strokeTypeBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeTypeBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.type"));
@@ -361,7 +360,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         addGB(this, strokeTypeBox, 1, 3, 1, 1);
 
         // border thickness
-        strokeThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
+        strokeThicknessBox = new JComboBox<>(LINE_THICKNESS_LIST);
         strokeThicknessBox.setSelectedIndex(DEFAULT_STROKE_THICKNESS_STYLE);
         strokeThicknessBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.thickness"));
@@ -369,7 +368,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         addGB(this, strokeThicknessBox, 1, 4, 1, 1);
 
         // border style
-        strokeStyleBox = new JComboBox(LINE_STYLE_LIST);
+        strokeStyleBox = new JComboBox<>(LINE_STYLE_LIST);
         strokeStyleBox.setSelectedIndex(DEFAULT_STROKE_STYLE);
         strokeStyleBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.border.style"));
@@ -386,7 +385,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         addGB(this, strokeColorButton, 1, 6, 1, 1);
 
         // fill type
-        fillTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
+        fillTypeBox = new JComboBox<>(VISIBLE_TYPE_LIST);
         fillTypeBox.setSelectedIndex(DEFAULT_FILL_STYLE);
         fillTypeBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.freeText.fill.type"));

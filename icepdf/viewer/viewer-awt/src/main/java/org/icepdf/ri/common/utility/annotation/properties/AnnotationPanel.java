@@ -16,8 +16,8 @@
 package org.icepdf.ri.common.utility.annotation.properties;
 
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 import org.icepdf.ri.util.PropertiesManager;
 
@@ -43,11 +43,11 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
     private BorderPanel borderPanel;
     private FlagsPanel flagsPanel;
 
-    public AnnotationPanel(SwingController controller) {
+    public AnnotationPanel(Controller controller) {
         this(controller, null);
     }
 
-    public AnnotationPanel(SwingController controller, PropertiesManager propertiesManager) {
+    public AnnotationPanel(Controller controller, PropertiesManager propertiesManager) {
         super(controller);
         setLayout(new BorderLayout());
         this.propertiesManager = propertiesManager;
@@ -67,7 +67,7 @@ public class AnnotationPanel extends AnnotationPanelAdapter {
     }
 
     public static AnnotationPanelAdapter buildAnnotationPropertyPanel(AnnotationComponent annotationComp,
-                                                                      SwingController controller) {
+                                                                      Controller controller) {
         if (annotationComp != null) {
             // check action type
             Annotation annotation = annotationComp.getAnnotation();

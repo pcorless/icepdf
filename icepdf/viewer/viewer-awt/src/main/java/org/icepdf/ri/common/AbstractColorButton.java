@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
+
 import javax.swing.*;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
@@ -40,12 +42,12 @@ public abstract class AbstractColorButton extends AbstractButton
     protected JButton dropDownArrowButton;
     protected JWindow popup;
 
-    protected SwingController swingController;
+    protected Controller controller;
 
-    public AbstractColorButton(SwingController swingController,
+    public AbstractColorButton(Controller controller,
                                ResourceBundle messageBundle) {
         super();
-        this.swingController = swingController;
+        this.controller = controller;
 
         dropDownArrowButton = new JButton(new MetalComboBoxIcon());
         dropDownArrowButton.setBorder(BorderFactory.createEmptyBorder());
@@ -55,7 +57,7 @@ public abstract class AbstractColorButton extends AbstractButton
 
         // assign the drop down window and setup a properties change event.
         this.annotationColorPropertyPanel =
-                new AnnotationColorPropertyPanel(swingController, messageBundle);
+                new AnnotationColorPropertyPanel(controller, messageBundle);
         this.annotationColorPropertyPanel.setCallback(this);
 
         Insets insets = dropDownArrowButton.getMargin();

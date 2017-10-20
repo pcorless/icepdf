@@ -18,8 +18,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -42,14 +42,14 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
     private static final int DEFAULT_HIGHLIGHT_STYLE = 1;
 
     // link action appearance properties.
-    private JComboBox highlightStyleBox;
+    private JComboBox<ValueLabelItem> highlightStyleBox;
 
     // appearance properties to take care of.
     private Name highlightStyle;
 
     private LinkAnnotation linkAnnotation;
 
-    public LinkAnnotationPanel(SwingController controller) {
+    public LinkAnnotationPanel(Controller controller) {
         super(controller);
         setLayout(new GridBagLayout());
 
@@ -139,7 +139,7 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
                 TitledBorder.DEFAULT_POSITION));
 
         // highlight style box.
-        highlightStyleBox = new JComboBox(highlightStyleList);
+        highlightStyleBox = new JComboBox<>(highlightStyleList);
         highlightStyleBox.setSelectedIndex(DEFAULT_HIGHLIGHT_STYLE);
         highlightStyleBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.link.highlightType")),

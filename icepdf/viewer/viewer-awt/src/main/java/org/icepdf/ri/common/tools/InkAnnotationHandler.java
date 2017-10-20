@@ -96,11 +96,10 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
-     * @param documentViewModel view model.
      */
     public InkAnnotationHandler(DocumentViewController documentViewController,
-                                AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
         checkAndApplyPreferences();
     }
 
@@ -156,7 +155,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         // which is actually just link annotations
         InkAnnotation annotation = (InkAnnotation)
                 AnnotationFactory.buildAnnotation(
-                        documentViewModel.getDocument().getPageTree().getLibrary(),
+                        documentViewController.getDocument().getPageTree().getLibrary(),
                         Annotation.SUBTYPE_INK,
                         tBbox);
 
@@ -177,9 +176,7 @@ public class InkAnnotationHandler extends CommonToolHandler implements ToolHandl
         // create the annotation object.
         MarkupAnnotationComponent comp = (MarkupAnnotationComponent)
                 AnnotationComponentFactory.buildAnnotationComponent(
-                        annotation,
-                        documentViewController,
-                        pageViewComponent, documentViewModel);
+                        annotation, documentViewController, pageViewComponent);
         // set the bounds and refresh the userSpace rectangle
         comp.setBounds(bBox);
 

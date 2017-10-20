@@ -15,7 +15,6 @@
  */
 package org.icepdf.ri.common.utility.annotation.acroform;
 
-import org.icepdf.core.pobjects.Document;
 import org.icepdf.ri.common.MutableDocument;
 
 import javax.swing.*;
@@ -26,7 +25,12 @@ import javax.swing.*;
 public class AcroFormAnnotationPanel extends JPanel implements MutableDocument {
 
     @Override
-    public void setDocument(Document document) {
+    public void refreshDocumentInstance() {
+
+    }
+
+    @Override
+    public void disposeDocument() {
 
     }
 }

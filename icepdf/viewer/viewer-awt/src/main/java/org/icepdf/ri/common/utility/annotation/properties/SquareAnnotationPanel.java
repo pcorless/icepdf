@@ -18,8 +18,8 @@ package org.icepdf.ri.common.utility.annotation.properties;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
 import org.icepdf.ri.common.RgbColorChooser;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -57,16 +57,16 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
             new ValueLabelItem(Boolean.FALSE, "Invisible")};
 
     // link action appearance properties.
-    private JComboBox lineThicknessBox;
-    private JComboBox lineStyleBox;
-    private JComboBox fillTypeBox;
+    private JComboBox<ValueLabelItem> lineThicknessBox;
+    private JComboBox<ValueLabelItem> lineStyleBox;
+    private JComboBox<ValueLabelItem> fillTypeBox;
     private JButton colorFillButton;
     private JButton colorBorderButton;
     private JSlider transparencySlider;
 
     private SquareAnnotation annotation;
 
-    public SquareAnnotationPanel(SwingController controller) {
+    public SquareAnnotationPanel(Controller controller) {
         super(controller);
 
         setLayout(new GridBagLayout());
@@ -210,14 +210,14 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
         constraints.insets = new Insets(1, 2, 1, 2);
 
         // Line thickness
-        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox<>(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         JLabel label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.square.lineThickness"));
         addGB(this, label, 0, 0, 1, 1);
         addGB(this, lineThicknessBox, 1, 0, 1, 1);
         // Line style
-        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox<>(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.square.lineStyle"));
@@ -234,7 +234,7 @@ public class SquareAnnotationPanel extends AnnotationPanelAdapter implements Ite
         addGB(this, colorBorderButton, 1, 2, 1, 1);
 
         // fill type options
-        fillTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
+        fillTypeBox = new JComboBox<>(VISIBLE_TYPE_LIST);
         fillTypeBox.setSelectedIndex(DEFAULT_FILL_TYPE);
         fillTypeBox.addItemListener(this);
         label = new JLabel(messageBundle.getString("viewer.utilityPane.annotation.square.fillTypeLabel"));

@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views.annotations;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 
@@ -35,8 +34,8 @@ public class PolygonAnnotationComponent extends MarkupAnnotationComponent {
 
 
     public PolygonAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
-                                      AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel) {
-        super(annotation, documentViewController, pageViewComponent, documentViewModel);
+                                      AbstractPageViewComponent pageViewComponent) {
+        super(annotation, documentViewController, pageViewComponent);
         isShowInvisibleBorder = true;
     }
 

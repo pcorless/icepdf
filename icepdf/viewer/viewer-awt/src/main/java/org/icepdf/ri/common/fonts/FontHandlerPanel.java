@@ -19,7 +19,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
-import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
@@ -39,7 +39,7 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
     // task to complete in separate thread
     private AbstractTask<FindFontsTask> findFontTask;
 
-    public FontHandlerPanel(SwingController controller) {
+    public FontHandlerPanel(Controller controller) {
         super(controller);
         typeMessageForm =
                 new MessageFormat(messageBundle.getString("viewer.dialog.fonts.info.type.label"));
@@ -58,9 +58,8 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
     }
 
     @Override
-    public void setDocument(Document document) {
-        super.setDocument(document);
-
+    public void refreshDocumentInstance() {
+        super.refreshDocumentInstance();
         // update root node's title with document's title.
         rootNodeLabel = getDocumentTitle();
         cellRenderer = new FontCellRender();
@@ -86,6 +85,13 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
     }
 
     @Override
+    public void disposeDocument() {
+        super.disposeDocument();
+        if (findFontTask != null && findFontTask.isCurrentlyRunning()) findFontTask.stop();
+    }
+
+
+    @Override
     public void selectTreeNodeUserObject(Object userObject) {
 
     }
@@ -95,11 +101,6 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
 
     }
 
-    @Override
-    public void dispose() {
-        super.dispose();
-        if (findFontTask != null && findFontTask.isCurrentlyRunning()) findFontTask.stop();
-    }
 
     /**
      * Adds a new node item to the treeModel.
@@ -163,8 +164,9 @@ public class FontHandlerPanel extends AbstractWorkerPanel {
      */
     private String getDocumentTitle() {
         String documentTitle = null;
-        if (currentDocument != null && currentDocument.getInfo() != null) {
-            documentTitle = currentDocument.getInfo().getTitle();
+        Document document = controller.getDocument();
+        if (document != null && document.getInfo() != null) {
+            documentTitle = document.getInfo().getTitle();
         }
         if ((documentTitle == null) || (documentTitle.trim().length() == 0)) {
             return null;

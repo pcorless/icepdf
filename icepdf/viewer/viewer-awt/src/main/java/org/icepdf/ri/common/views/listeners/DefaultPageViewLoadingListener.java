@@ -30,32 +30,26 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     }
 
     public void pageLoadingStarted(PageLoadingEvent event) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (documentViewController != null)
-                    pageComponent.setCursor(documentViewController.getViewCursor(
-                            DocumentViewController.CURSOR_WAIT));
-            }
+        SwingUtilities.invokeLater(() -> {
+            if (documentViewController != null)
+                pageComponent.setCursor(documentViewController.getViewCursor(
+                        DocumentViewController.CURSOR_WAIT));
         });
     }
 
     public void pageInitializationStarted(PageInitializingEvent event) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (documentViewController != null)
-                    pageComponent.setCursor(documentViewController.getViewCursor(
-                            DocumentViewController.CURSOR_WAIT));
-            }
+        SwingUtilities.invokeLater(() -> {
+            if (documentViewController != null)
+                pageComponent.setCursor(documentViewController.getViewCursor(
+                        DocumentViewController.CURSOR_WAIT));
         });
     }
 
     public void pagePaintingStarted(PagePaintingEvent event) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (documentViewController != null)
-                    pageComponent.setCursor(documentViewController.getViewCursor(
-                            DocumentViewController.CURSOR_WAIT));
-            }
+        SwingUtilities.invokeLater(() -> {
+            if (documentViewController != null)
+                pageComponent.setCursor(documentViewController.getViewCursor(
+                        DocumentViewController.CURSOR_WAIT));
         });
     }
 
@@ -63,11 +57,7 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     public void pageInitializationEnded(PageInitializingEvent event) {
         // null will make the parent view icon be the default.
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                pageComponent.setCursor(null);
-            }
-        });
+        SwingUtilities.invokeLater(() -> pageComponent.setCursor(null));
     }
 
     @Override
@@ -78,19 +68,11 @@ public class DefaultPageViewLoadingListener extends PageViewLoadingListener {
     @Override
     public void pagePaintingEnded(PagePaintingEvent event) {
         // null will make the parent view icon be the default.
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                pageComponent.setCursor(null);
-            }
-        });
+        SwingUtilities.invokeLater(() -> pageComponent.setCursor(null));
     }
 
     public void pageLoadingEnded(PageLoadingEvent event) {
         // null will make the parent view icon be the default.
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                pageComponent.setCursor(null);
-            }
-        });
+        SwingUtilities.invokeLater(() -> pageComponent.setCursor(null));
     }
 }

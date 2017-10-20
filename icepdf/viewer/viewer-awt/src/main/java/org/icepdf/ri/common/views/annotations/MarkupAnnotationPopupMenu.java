@@ -16,10 +16,8 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
-import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -55,10 +53,9 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup {
     // delete root annotation and all child popup annotations.
     protected boolean deleteRoot;
 
-    public MarkupAnnotationPopupMenu(MarkupAnnotationComponent markupAnnotationComponent, DocumentViewController documentViewController,
-                                     AbstractPageViewComponent pageViewComponent, DocumentViewModel documentViewModel, boolean deleteRoot) {
-        super(markupAnnotationComponent, documentViewController, pageViewComponent, documentViewModel);
-        this.markupAnnotationComponent = markupAnnotationComponent;
+    public MarkupAnnotationPopupMenu(MarkupAnnotationComponent markupAnnotationComponent, Controller controller,
+                                     AbstractPageViewComponent pageViewComponent, boolean deleteRoot) {
+        super(markupAnnotationComponent, controller, pageViewComponent);
         this.deleteRoot = deleteRoot;
 
         buildGui();
@@ -182,10 +179,9 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup {
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
             if (popupAnnotationComponent != null) popupAnnotationComponent.showHidePopupAnnotations(false);
         } else if (source == propertiesMenuItem) {
-            SwingController swingController = (SwingController) documentViewController.getParentController();
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
             if (popupAnnotationComponent != null)
-                swingController.showAnnotationProperties(popupAnnotationComponent.getAnnotationParentComponent());
+                controller.showAnnotationProperties(popupAnnotationComponent.getAnnotationParentComponent());
         }
     }
 }

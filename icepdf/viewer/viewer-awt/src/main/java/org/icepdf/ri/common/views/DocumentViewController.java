@@ -25,7 +25,7 @@ import java.awt.event.KeyListener;
 
 
 /**
- * <p>The DocumentViewControllerImpl is the controler in the MVC for multipage view
+ * <p>The DocumentViewControllerImpl is the controller in the MVC for multipage view
  * management.  This controller is used to manipulate the one column, one page,
  * two column and two page views.</p>
  * <br>
@@ -43,167 +43,179 @@ public interface DocumentViewController {
     /**
      * Set the view to show the page at the specified zoom level.
      */
-    public static final int PAGE_FIT_NONE = 1;
+    int PAGE_FIT_NONE = 1;
 
     /**
      * Set the view to show the page at actual size
      */
-    public static final int PAGE_FIT_ACTUAL_SIZE = 2;
+    int PAGE_FIT_ACTUAL_SIZE = 2;
 
     /**
      * Set the view to show the page at actual size
      */
-    public static final int PAGE_FIT_WINDOW_HEIGHT = 3;
+    int PAGE_FIT_WINDOW_HEIGHT = 3;
 
     /**
      * Set the view to show the page at actual size
      */
-    public static final int PAGE_FIT_WINDOW_WIDTH = 4;
+    int PAGE_FIT_WINDOW_WIDTH = 4;
 
 
-    public static final int CURSOR_HAND_OPEN = 1;
+    int CURSOR_HAND_OPEN = 1;
 
-    public static final int CURSOR_HAND_CLOSE = 2;
+    int CURSOR_HAND_CLOSE = 2;
 
-    public static final int CURSOR_ZOOM_IN = 3;
+    int CURSOR_ZOOM_IN = 3;
 
-    public static final int CURSOR_ZOOM_OUT = 4;
+    int CURSOR_ZOOM_OUT = 4;
 
-    public static final int CURSOR_WAIT = 6;
+    int CURSOR_WAIT = 6;
 
-    public static final int CURSOR_SELECT = 7;
+    int CURSOR_SELECT = 7;
 
-    public static final int CURSOR_DEFAULT = 8;
+    int CURSOR_DEFAULT = 8;
 
-    public static final int CURSOR_HAND_ANNOTATION = 9;
+    int CURSOR_HAND_ANNOTATION = 9;
 
-    public static final int CURSOR_TEXT_SELECTION = 10;
+    int CURSOR_TEXT_SELECTION = 10;
 
-    public static final int CURSOR_CROSSHAIR = 11;
+    int CURSOR_CROSSHAIR = 11;
 
-    public static final int CURSOR_MAGNIFY = 12;
+    int CURSOR_MAGNIFY = 12;
 
-    public void setDocument(Document document);
+    void setDocument(Document document);
 
-    public Document getDocument();
+    Document getDocument();
 
-    public void closeDocument();
+    void closeDocument();
 
-    public void dispose();
+    void dispose();
 
-    public Container getViewContainer();
+    Container getViewContainer();
 
-    public Controller getParentController();
+    Controller getParentController();
 
-    public void setViewType(final int documentView);
+    void setViewType(final int documentView);
 
-    public int getViewMode();
+    int getViewMode();
 
-    public boolean setFitMode(final int fitMode);
+    boolean setFitMode(final int fitMode);
 
-    public int getFitMode();
+    int getFitMode();
 
-    public void setDocumentViewType(final int documentView, final int fitMode);
+    void setDocumentViewType(final int documentView, final int fitMode);
 
-    public boolean setCurrentPageIndex(int pageNumber);
+    boolean setCurrentPageIndex(int pageNumber);
 
-    public int setCurrentPageNext();
+    int setCurrentPageNext();
 
-    public int setCurrentPagePrevious();
+    int setCurrentPagePrevious();
 
-    public void setDestinationTarget(Destination destination);
+    void setDestinationTarget(Destination destination);
 
-    public int getCurrentPageIndex();
+    int getCurrentPageIndex();
 
-    public int getCurrentPageDisplayValue();
+    int getCurrentPageDisplayValue();
 
-    public void setZoomLevels(float[] zoomLevels);
+    void setZoomLevels(float[] zoomLevels);
 
-    public float[] getZoomLevels();
+    float[] getZoomLevels();
 
-    public boolean setZoom(float userZoom);
+    boolean setZoom(float userZoom);
 
-    public boolean setZoomIn();
+    boolean setZoomIn();
 
-    public boolean setZoomIn(Point point);
+    boolean setZoomIn(Point point);
 
     boolean setZoomCentered(float zoom, Point centeringPoint, boolean becauseOfValidFitMode);
 
     boolean setZoomToViewPort(float zoom, Point viewPortPosition, int pageIndex, boolean becauseOfValidFitMode);
 
-    public boolean setZoomOut();
+    boolean setZoomOut();
 
-    public boolean setZoomOut(Point point);
+    boolean setZoomOut(Point point);
 
-    public float getZoom();
+    /**
+     * The Page being shown may be zoomed in or out, to show more detail,
+     * or provide an overview.
+     *
+     * @return The user's requested zoom
+     */
+    float getZoom();
 
-    public boolean setRotation(float userRotation);
+    boolean setRotation(float userRotation);
 
-    public float getRotation();
+    /**
+     * Each Page may have its own rotation, but on top of that, the user
+     * may select to have the Page further rotated by 90, 180 or 270 degrees.
+     *
+     * @return The user's requested rotation
+     */
+    float getRotation();
 
-    public float setRotateRight();
+    float setRotateRight();
 
-    public float setRotateLeft();
+    float setRotateLeft();
 
-    public boolean setToolMode(final int viewToolMode);
+    boolean setToolMode(final int viewToolMode);
 
-    public int getToolMode();
+    int getToolMode();
 
-    public boolean isToolModeSelected(final int viewToolMode);
+    boolean isToolModeSelected(final int viewToolMode);
 
-    public void requestViewFocusInWindow();
+    void requestViewFocusInWindow();
 
-    public void setViewCursor(final int cursorType);
+    void setViewCursor(final int cursorType);
 
-    public Cursor getViewCursor(final int cursorType);
+    Cursor getViewCursor(final int cursorType);
 
-    public int getViewCursor();
+    int getViewCursor();
 
-    public void setViewKeyListener(KeyListener l);
+    void setViewKeyListener(KeyListener l);
 
-    public Adjustable getHorizontalScrollBar();
+    Adjustable getHorizontalScrollBar();
 
-    public Adjustable getVerticalScrollBar();
+    Adjustable getVerticalScrollBar();
 
-    public JViewport getViewPort();
+    JViewport getViewPort();
 
-    public void setAnnotationCallback(AnnotationCallback annotationCallback);
+    void setAnnotationCallback(AnnotationCallback annotationCallback);
 
-    public void setSecurityCallback(SecurityCallback securityCallback);
+    void setSecurityCallback(SecurityCallback securityCallback);
 
-    public void addNewAnnotation(AnnotationComponent annotationComponent);
+    void addNewAnnotation(AnnotationComponent annotationComponent);
 
-    public void updateAnnotation(AnnotationComponent annotationComponent);
+    void updateAnnotation(AnnotationComponent annotationComponent);
 
-    public void deleteCurrentAnnotation();
+    void deleteCurrentAnnotation();
 
-    public void deleteAnnotation(AnnotationComponent annotationComponent);
+    void deleteAnnotation(AnnotationComponent annotationComponent);
 
-    public void undo();
+    void undo();
 
-    public void redo();
+    void redo();
 
-    public AnnotationCallback getAnnotationCallback();
+    AnnotationCallback getAnnotationCallback();
 
-    public SecurityCallback getSecurityCallback();
+    SecurityCallback getSecurityCallback();
 
-    public DocumentViewModel getDocumentViewModel();
+    DocumentViewModel getDocumentViewModel();
 
-    public DocumentView getDocumentView();
+    DocumentView getDocumentView();
 
-    public void clearSelectedText();
+    void clearSelectedText();
 
-    public void clearHighlightedText();
+    void clearHighlightedText();
 
-    public void clearSelectedAnnotations();
+    void clearSelectedAnnotations();
 
-    public void assignSelectedAnnotation(AnnotationComponent annotationComponent);
+    void assignSelectedAnnotation(AnnotationComponent annotationComponent);
 
-    public void selectAllText();
+    void selectAllText();
 
-    public String getSelectedText();
+    String getSelectedText();
 
-    public void firePropertyChange(String event, int oldValue, int newValue);
+    void firePropertyChange(String event, int oldValue, int newValue);
 
-    public void firePropertyChange(String event, Object oldValue, Object newValue);
+    void firePropertyChange(String event, Object oldValue, Object newValue);
 }

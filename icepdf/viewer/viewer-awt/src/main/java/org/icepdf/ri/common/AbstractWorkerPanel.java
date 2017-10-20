@@ -16,9 +16,7 @@
 package org.icepdf.ri.common;
 
 
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -40,11 +38,8 @@ import java.util.ResourceBundle;
  */
 public abstract class AbstractWorkerPanel extends JPanel implements MutableDocument {
 
-    protected DocumentViewController documentViewController;
-    protected Document currentDocument;
-    protected SwingController controller;
+    protected Controller controller;
     protected ResourceBundle messageBundle;
-    protected DocumentViewModel documentViewModel;
 
     // main tree of annotation hierarchy
     protected JTree tree;
@@ -68,7 +63,7 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
     // tree node selection listener,
     protected NodeSelectionListener nodeSelectionListener;
 
-    public AbstractWorkerPanel(SwingController controller) {
+    public AbstractWorkerPanel(Controller controller) {
         super(true);
         setFocusable(true);
         this.controller = controller;
@@ -79,14 +74,9 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
      * Set the current document instance.  The method executed is the abstract {@link #buildWorkerTaskUI()} method which
      * kicks off the tree creation process.  Check {@link #buildWorkerTaskUI()} documentation for the implementing
      * class to see what thread this work is done on.
-     *
-     * @param document current document, can be null.
      */
-    public void setDocument(Document document) {
-        this.currentDocument = document;
-        documentViewController = controller.getDocumentViewController();
-        documentViewModel = documentViewController.getDocumentViewModel();
-
+    @Override
+    public void refreshDocumentInstance() {
         // clear the previously loaded annotation tree.
         if (rootTreeNode != null) {
             resetTree();
@@ -94,8 +84,14 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
             rootTreeNode.setAllowsChildren(true);
             tree.setRootVisible(true);
         }
-
         buildWorkerTaskUI();
+    }
+
+    @Override
+    public void disposeDocument() {
+        this.removeAll();
+        // clean up the timer.
+        if (timer != null && timer.isRunning()) timer.stop();
     }
 
     /**
@@ -236,18 +232,6 @@ public abstract class AbstractWorkerPanel extends JPanel implements MutableDocum
             i += 1;
             rowCount = tree.getRowCount();
         }
-    }
-
-    /**
-     * Component clean on on document window tear down.
-     */
-    public void dispose() {
-        this.removeAll();
-        controller = null;
-        documentViewModel = null;
-        currentDocument = null;
-        // clean up the timer.
-        if (timer != null && timer.isRunning()) timer.stop();
     }
 
     /**

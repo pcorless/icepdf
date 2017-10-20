@@ -62,10 +62,9 @@ public class DestinationsPanel extends JPanel
 
     private PropertiesManager propertiesManager;
     private Preferences preferences;
-    private SwingController controller;
+    private org.icepdf.ri.common.views.Controller controller;
     private ResourceBundle messageBundle;
 
-    private Document document;
     private NameJTree nameJTree;
 
     private JPopupMenu contextMenu;
@@ -114,7 +113,7 @@ public class DestinationsPanel extends JPanel
     }
 
     public void refreshNameTree(Object node) {
-        Names names = document.getCatalog().getNames();
+        Names names = controller.getDocument().getCatalog().getNames();
         if (names != null && names.getDestsNameTree() != null) {
             NameTree nameTree = names.getDestsNameTree();
             if (nameTree != null) {
@@ -147,10 +146,15 @@ public class DestinationsPanel extends JPanel
     }
 
     @Override
-    public void setDocument(Document document) {
-        this.document = document;
+    public void refreshDocumentInstance() {
         refreshNameTree(null);
     }
+
+    @Override
+    public void disposeDocument() {
+
+    }
+
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -228,15 +232,6 @@ public class DestinationsPanel extends JPanel
 
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
     protected void addGB(JPanel layout, Component component,
                          int x, int y,
                          int rowSpan, int colSpan) {

@@ -34,7 +34,7 @@ public class ViewModel {
     // Store current URL path
     private static String defaultURL = null;
 
-    // store for shrink to fit setting for SwingController prints.
+    // store for shrink to fit setting for Controller prints.
     private boolean isShrinkToPrintableArea = true;
 
     // number of copies to print
@@ -96,7 +96,7 @@ public class ViewModel {
     }
 
     /**
-     * Can be set before a SwingController.print() is called to enable/disable
+     * Can be set before a Controller.print() is called to enable/disable
      * shrink to fit printable area.
      *
      * @param shrinkToPrintableArea true, to enable shrink to fit printable area;

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2006-2008, Alexander Potochkin
  * All rights reserved.
  *
@@ -318,10 +318,7 @@ public abstract class LayerUI<V extends Component>
         if (l.getView() instanceof Scrollable) {
             return ((Scrollable) l.getView()).getScrollableTracksViewportWidth();
         }
-        if (l.getParent() instanceof JViewport) {
-            return (((JViewport) l.getParent()).getWidth() > l.getPreferredSize().width);
-        }
-        return false;
+        return l.getParent() instanceof JViewport && ((l.getParent()).getWidth() > l.getPreferredSize().width);
     }
 
     /**

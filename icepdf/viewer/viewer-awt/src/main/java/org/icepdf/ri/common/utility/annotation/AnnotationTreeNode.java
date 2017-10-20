@@ -53,7 +53,6 @@ public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
      * Utility for setting the label via a message bundle resource.
      *
      * @param messageBundle ri message bundle
-     * @return name of annotation, if null then an internationalized subtype name is returned.
      */
     public void applyMessage(Annotation markupAnnotation, ResourceBundle messageBundle) {
         String text = markupAnnotation.getContents();

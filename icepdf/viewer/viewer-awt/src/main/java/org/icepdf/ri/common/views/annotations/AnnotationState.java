@@ -27,7 +27,7 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 
 /**
- * Stores state paramaters for annotation objects to be used in conjuction
+ * Stores state parameters for annotation objects to be used in conjunction
  * with a care taker as part of the memento pattern.
  *
  * @since 4.0

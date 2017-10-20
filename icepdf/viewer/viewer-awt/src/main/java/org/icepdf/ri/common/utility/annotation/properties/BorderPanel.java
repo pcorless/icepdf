@@ -19,8 +19,8 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.ri.common.RgbColorChooser;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -50,12 +50,12 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
     private static ValueLabelItem[] LINE_STYLE_LIST;
 
     // link action appearance properties.
-    private JComboBox linkTypeBox;
-    private JComboBox lineThicknessBox;
-    private JComboBox lineStyleBox;
+    private JComboBox<ValueLabelItem> linkTypeBox;
+    private JComboBox<ValueLabelItem> lineThicknessBox;
+    private JComboBox<ValueLabelItem> lineStyleBox;
     private JButton colorButton;
 
-    public BorderPanel(SwingController controller) {
+    public BorderPanel(Controller controller) {
         super(controller);
         setLayout(new GridBagLayout());
 
@@ -194,21 +194,21 @@ public class BorderPanel extends AnnotationPanelAdapter implements ItemListener,
         constraints.insets = new Insets(1, 2, 1, 2);
 
         // border type box
-        linkTypeBox = new JComboBox(VISIBLE_TYPE_LIST);
+        linkTypeBox = new JComboBox<>(VISIBLE_TYPE_LIST);
         linkTypeBox.setSelectedIndex(DEFAULT_LINK_TYPE);
         linkTypeBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.linkType")),
                 0, 0, 1, 1);
         addGB(this, linkTypeBox, 1, 0, 1, 1);
         // border thickness
-        lineThicknessBox = new JComboBox(LINE_THICKNESS_LIST);
+        lineThicknessBox = new JComboBox<>(LINE_THICKNESS_LIST);
         lineThicknessBox.setSelectedIndex(DEFAULT_LINE_THICKNESS);
         lineThicknessBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.lineThickness")),
                 0, 1, 1, 1);
         addGB(this, lineThicknessBox, 1, 1, 1, 1);
         // border style
-        lineStyleBox = new JComboBox(LINE_STYLE_LIST);
+        lineStyleBox = new JComboBox<>(LINE_STYLE_LIST);
         lineStyleBox.setSelectedIndex(DEFAULT_LINE_STYLE);
         lineStyleBox.addItemListener(this);
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.border.lineStyle")),

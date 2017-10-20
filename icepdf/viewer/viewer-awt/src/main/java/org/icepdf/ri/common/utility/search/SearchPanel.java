@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.images.Images;
@@ -31,7 +32,6 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.Rectangle2D;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
@@ -54,7 +54,7 @@ import static org.icepdf.ri.util.PropertiesManager.*;
  * @since 1.1
  */
 @SuppressWarnings("serial")
-public class SearchPanel extends JPanel implements ActionListener,
+public class SearchPanel extends JPanel implements ActionListener, MutableDocument,
         TreeSelectionListener {
 
     private static final Logger logger =
@@ -71,8 +71,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     // input for a search pattern
     private JTextField searchTextField;
     // pointer to document which will be searched
-    private Document document;
-    private SwingController controller;
+    private org.icepdf.ri.common.views.Controller controller;
     private Preferences preferences;
 
     // tree view of the groups and panels
@@ -120,7 +119,7 @@ public class SearchPanel extends JPanel implements ActionListener,
     /**
      * Create a new instance of SearchPanel.
      *
-     * @param controller root SwingController
+     * @param controller root Controller
      */
     public SearchPanel(SwingController controller) {
         super(true);
@@ -129,10 +128,11 @@ public class SearchPanel extends JPanel implements ActionListener,
         this.messageBundle = this.controller.getMessageBundle();
         searchResultMessageForm = setupSearchResultMessageForm();
         setGui();
-        setDocument(controller.getDocument());
     }
 
-    public void setDocument(Document doc) {
+
+    @Override
+    public void refreshDocumentInstance() {
         // First have to stop any existing search
         if (timer != null)
             timer.stop();
@@ -146,8 +146,8 @@ public class SearchPanel extends JPanel implements ActionListener,
                 }
             }
         }
-
-        document = doc;
+        // get the document from the controller.
+        Document document = controller.getDocument();
         if (document != null && progressBar != null) {
             progressBar.setMaximum(document.getNumberOfPages());
         }
@@ -176,14 +176,16 @@ public class SearchPanel extends JPanel implements ActionListener,
         isSearching = false;
     }
 
+    @Override
+    public void disposeDocument() {
+        searchTextTask = null;
+        timer = null;
+    }
+
     /**
      * Construct the GUI layout.
      */
     private void setGui() {
-
-        /**
-         * Setup GUI objects
-         */
 
         // build the supporting tree objects
         rootTreeNode = new DefaultMutableTreeNode();
@@ -264,10 +266,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                 "viewer.utilityPane.search.showPagesCheckbox.label"), isShowPages);
         showPagesCheckbox.addActionListener(this);
 
-        /**
-         * Build search GUI
-         */
-
+        // Build search GUI
         GridBagLayout layout = new GridBagLayout();
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.NONE;
@@ -366,13 +365,6 @@ public class SearchPanel extends JPanel implements ActionListener,
         searchTextField.requestFocus();
     }
 
-    public void dispose() {
-        document = null;
-        controller = null;
-        searchTextTask = null;
-        timer = null;
-    }
-
     // Listen for selected tree items
     public void valueChanged(TreeSelectionEvent e) {
         // jump to the page stored in the JTree
@@ -383,12 +375,11 @@ public class SearchPanel extends JPanel implements ActionListener,
                 // get the find entry and navigate to the page.
                 FindEntry tmp = (FindEntry) selectedNode.getUserObject();
                 if (controller != null) {
-                    int oldTool = controller.getDocumentViewToolMode();
+                    int oldTool = controller.getDocumentViewController().getToolMode();
                     try {
                         int pageIndex = tmp.getPageNumber();
                         WordText wordText = tmp.getWordText();
-                        Rectangle2D.Float bounds = wordText.getBounds();
-                        controller.setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
+                        controller.getDocumentViewController().setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
                         // navigate to the word.
                         controller.getDocumentSearchController().showWord(pageIndex, wordText);
                         // clear the current cursor and set it to this word
@@ -405,7 +396,7 @@ public class SearchPanel extends JPanel implements ActionListener,
                     } catch (InterruptedException e1) {
                         logger.finer("Page text retrieval interrupted.");
                     } finally {
-                        controller.setDisplayTool(oldTool);
+                        controller.getDocumentViewController().setToolMode(oldTool);
                     }
                 }
             }
@@ -518,6 +509,7 @@ public class SearchPanel extends JPanel implements ActionListener,
      */
     private String getDocumentTitle() {
         String documentTitle = null;
+        Document document = controller.getDocument();
         if (document != null && document.getInfo() != null) {
             documentTitle = document.getInfo().getTitle();
         }

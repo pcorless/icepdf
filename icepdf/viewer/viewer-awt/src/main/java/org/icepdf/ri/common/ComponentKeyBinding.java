@@ -16,12 +16,14 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
 /**
@@ -38,10 +40,10 @@ public class ComponentKeyBinding {
     /**
      * Installs the component key binding on the specified JComponent.
      *
-     * @param controller      SwingController used by various keyboard commands
+     * @param controller      Controller used by various keyboard commands
      * @param viewerContainer view container to add keyboard mappings too
      */
-    public static void install(final SwingController controller, final JComponent viewerContainer) {
+    public static void install(final Controller controller, final JComponent viewerContainer) {
         Action copyText = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 Document document = controller.getDocument();
@@ -57,17 +59,13 @@ public class ComponentKeyBinding {
                     Toolkit.getDefaultToolkit().getSystemClipboard().
                             setContents(stringSelection, null);
                 } else {
-                    Runnable doSwingWork = new Runnable() {
-                        public void run() {
-                            org.icepdf.ri.util.Resources.showMessageDialog(
-                                    viewerContainer,
-                                    JOptionPane.INFORMATION_MESSAGE,
-                                    controller.getMessageBundle(),
-                                    "viewer.dialog.information.copyAll.title",
-                                    "viewer.dialog.information.copyAll.msg",
-                                    250);
-                        }
-                    };
+                    Runnable doSwingWork = () -> org.icepdf.ri.util.Resources.showMessageDialog(
+                            viewerContainer,
+                            JOptionPane.INFORMATION_MESSAGE,
+                            controller.getMessageBundle(),
+                            "viewer.dialog.information.copyAll.title",
+                            "viewer.dialog.information.copyAll.msg",
+                            250);
                     SwingUtilities.invokeLater(doSwingWork);
                 }
             }
@@ -76,7 +74,7 @@ public class ComponentKeyBinding {
         // add copy text command to input map
         InputMap inputMap = viewerContainer.getInputMap(
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Event.CTRL_MASK),
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK),
                 "copyText");
         viewerContainer.getActionMap().put("copyText",
                 copyText);

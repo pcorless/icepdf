@@ -50,12 +50,11 @@ public class TextSelectionPageHandler extends TextSelection
      * this mouse and text listeners.
      *
      * @param pageViewComponent page component that this handler is bound to.
-     * @param documentViewModel view model.
+     * @param documentViewController view model.
      */
     public TextSelectionPageHandler(DocumentViewController documentViewController,
-                                    AbstractPageViewComponent pageViewComponent,
-                                    DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                    AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
     }
 
     public void setDocumentViewController(DocumentViewController documentViewController) {
@@ -151,7 +150,7 @@ public class TextSelectionPageHandler extends TextSelection
 
     public void paintTool(Graphics g) {
         if (enableMarginExclusionBorder && topMarginExclusion != null && bottomMarginExclusion != null) {
-
+            DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
             Page currentPage = pageViewComponent.getPage();
             AffineTransform at = currentPage.getPageTransform(
                     documentViewModel.getPageBoundary(),
@@ -175,6 +174,7 @@ public class TextSelectionPageHandler extends TextSelection
     protected Rectangle convertToPageSpace(ArrayList<Shape> bounds,
                                            GeneralPath path) {
         Page currentPage = pageViewComponent.getPage();
+        DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         AffineTransform at = currentPage.getPageTransform(
                 documentViewModel.getPageBoundary(),
                 documentViewModel.getViewRotation(),

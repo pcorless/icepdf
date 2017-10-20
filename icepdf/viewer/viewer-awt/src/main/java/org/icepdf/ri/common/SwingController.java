@@ -89,10 +89,10 @@ import java.util.prefs.Preferences;
 import static org.icepdf.ri.util.PropertiesManager.*;
 
 /**
- * SwingController is the meat of a PDF viewing application. It is the Controller
+ * Controller is the meat of a PDF viewing application. It is the Controller
  * aspect of the Model-View-Controller (MVC) framework.<br>
  * <br>
- * SwingController acts as a bridge between a Swing user interface, as built by
+ * Controller acts as a bridge between a Swing user interface, as built by
  * SwingViewerBuilder; the Document class, which is the root accessor to the PDF content;
  * and the ViewerModel, which maintains the state of the user's perspective of said Document.
  *
@@ -103,7 +103,7 @@ import static org.icepdf.ri.util.PropertiesManager.*;
  * @since 2.0
  */
 public class SwingController extends ComponentAdapter
-        implements Controller, ActionListener, FocusListener, ItemListener,
+        implements org.icepdf.ri.common.views.Controller, ActionListener, FocusListener, ItemListener,
         TreeSelectionListener, WindowListener, DropTargetListener,
         KeyListener, PropertyChangeListener {
 
@@ -253,7 +253,7 @@ public class SwingController extends ComponentAdapter
     protected PropertiesManager propertiesManager;
 
     /**
-     * Create a SwingController object, and its associated ViewerModel
+     * Create a Controller object, and its associated ViewerModel
      *
      * @see ViewModel
      */
@@ -261,7 +261,7 @@ public class SwingController extends ComponentAdapter
         this(null);
     }
 
-    public SwingController(ResourceBundle messageBundle) {
+    public SwingController(ResourceBundle currentMessageBundle) {
         viewModel = new ViewModel();
         // page view controller
         documentViewController = new DocumentViewControllerImpl(this);
@@ -272,10 +272,10 @@ public class SwingController extends ComponentAdapter
         documentViewController.addPropertyChangeListener(this);
 
         // load the resource bundle using the default local
-        if (messageBundle != null) {
-            this.messageBundle = messageBundle;
+        if (currentMessageBundle != null) {
+            SwingController.messageBundle = currentMessageBundle;
         } else {
-            this.messageBundle = ResourceBundle.getBundle(
+            SwingController.messageBundle = ResourceBundle.getBundle(
                     PropertiesManager.DEFAULT_MESSAGE_BUNDLE);
         }
     }
@@ -346,7 +346,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController has access to all properties
+     * Called by SwingViewerBuilder, so that Controller has access to all properties
      */
     public void setPropertiesManager(PropertiesManager propertiesManager) {
         this.propertiesManager = propertiesManager;
@@ -360,7 +360,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setOpenFileMenuItem(JMenuItem mi) {
         openFileMenuItem = mi;
@@ -368,14 +368,14 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setRecentFilesSubMenu(JMenu mi) {
         recentFilesSubMenu = mi;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setOpenURLMenuItem(JMenuItem mi) {
         openURLMenuItem = mi;
@@ -383,7 +383,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setCloseMenuItem(JMenuItem mi) {
         closeMenuItem = mi;
@@ -391,7 +391,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSaveAsFileMenuItem(JMenuItem mi) {
         saveAsFileMenuItem = mi;
@@ -399,7 +399,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setExportTextMenuItem(JMenuItem mi) {
         exportTextMenuItem = mi;
@@ -407,7 +407,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPermissionsMenuItem(JMenuItem mi) {
         permissionsMenuItem = mi;
@@ -415,7 +415,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPropertiesMenuItem(JMenuItem mi) {
         propertiesMenuItem = mi;
@@ -423,7 +423,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setInformationMenuItem(JMenuItem mi) {
         informationMenuItem = mi;
@@ -431,7 +431,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFontInformationMenuItem(JMenuItem mi) {
         fontInformationMenuItem = mi;
@@ -439,7 +439,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPrintSetupMenuItem(JMenuItem mi) {
         printSetupMenuItem = mi;
@@ -447,7 +447,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPrintMenuItem(JMenuItem mi) {
         printMenuItem = mi;
@@ -455,7 +455,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setExitMenuItem(JMenuItem mi) {
         exitMenuItem = mi;
@@ -463,7 +463,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setUndoMenuItem(JMenuItem mi) {
         undoMenuItem = mi;
@@ -471,7 +471,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setReduMenuItem(JMenuItem mi) {
         redoMenuItem = mi;
@@ -479,7 +479,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setCopyMenuItem(JMenuItem mi) {
         copyMenuItem = mi;
@@ -487,7 +487,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setDeleteMenuItem(JMenuItem mi) {
         deleteMenuItem = mi;
@@ -495,7 +495,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSelectAllMenuItem(JMenuItem mi) {
         selectAllMenuItem = mi;
@@ -503,15 +503,15 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
-    public void setDselectAllMenuItem(JMenuItem mi) {
+    public void setDeselectAllMenuItem(JMenuItem mi) {
         deselectAllMenuItem = mi;
         mi.addActionListener(this);
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPreferencesMenuItem(JMenuItem mi) {
         preferencesMenuItem = mi;
@@ -519,7 +519,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFitActualSizeMenuItem(JMenuItem mi) {
         fitActualSizeMenuItem = mi;
@@ -527,7 +527,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFitPageMenuItem(JMenuItem mi) {
         fitPageMenuItem = mi;
@@ -535,7 +535,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFitWidthMenuItem(JMenuItem mi) {
         fitWidthMenuItem = mi;
@@ -543,7 +543,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setZoomInMenuItem(JMenuItem mi) {
         zoomInMenuItem = mi;
@@ -551,7 +551,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setZoomOutMenuItem(JMenuItem mi) {
         zoomOutMenuItem = mi;
@@ -559,7 +559,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setRotateLeftMenuItem(JMenuItem mi) {
         rotateLeftMenuItem = mi;
@@ -567,7 +567,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setRotateRightMenuItem(JMenuItem mi) {
         rotateRightMenuItem = mi;
@@ -575,7 +575,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setShowHideToolBarMenuItem(JMenuItem mi) {
         showHideToolBarMenuItem = mi;
@@ -583,7 +583,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setShowHideUtilityPaneMenuItem(JMenuItem mi) {
         showHideUtilityPaneMenuItem = mi;
@@ -591,7 +591,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFirstPageMenuItem(JMenuItem mi) {
         firstPageMenuItem = mi;
@@ -599,7 +599,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPreviousPageMenuItem(JMenuItem mi) {
         previousPageMenuItem = mi;
@@ -607,7 +607,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setNextPageMenuItem(JMenuItem mi) {
         nextPageMenuItem = mi;
@@ -615,7 +615,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLastPageMenuItem(JMenuItem mi) {
         lastPageMenuItem = mi;
@@ -623,7 +623,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSearchMenuItem(JMenuItem mi) {
         searchMenuItem = mi;
@@ -631,7 +631,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSearchNextMenuItem(JMenuItem mi) {
         searchNextMenuItem = mi;
@@ -639,7 +639,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSearchPreviousMenuItem(JMenuItem mi) {
         searchPreviousMenuItem = mi;
@@ -647,7 +647,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setGoToPageMenuItem(JMenuItem mi) {
         goToPageMenuItem = mi;
@@ -655,7 +655,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setMinimiseAllMenuItem(JMenuItem mi) {
         minimiseAllMenuItem = mi;
@@ -663,7 +663,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setBringAllToFrontMenuItem(JMenuItem mi) {
         bringAllToFrontMenuItem = mi;
@@ -671,7 +671,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setWindowListMenuItems(List menuItems) {
         windowListMenuItems = menuItems;
@@ -683,7 +683,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setAboutMenuItem(JMenuItem mi) {
         aboutMenuItem = mi;
@@ -691,7 +691,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setOpenFileButton(JButton btn) {
         openFileButton = btn;
@@ -699,7 +699,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSaveAsFileButton(JButton btn) {
         saveAsFileButton = btn;
@@ -707,7 +707,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPrintButton(JButton btn) {
         printButton = btn;
@@ -715,7 +715,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSearchButton(JButton btn) {
         searchButton = btn;
@@ -723,7 +723,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setShowHideUtilityPaneButton(JToggleButton btn) {
         showHideUtilityPaneButton = btn;
@@ -731,7 +731,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFirstPageButton(JButton btn) {
         firstPageButton = btn;
@@ -739,7 +739,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPreviousPageButton(JButton btn) {
         previousPageButton = btn;
@@ -747,7 +747,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setNextPageButton(JButton btn) {
         nextPageButton = btn;
@@ -755,7 +755,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLastPageButton(JButton btn) {
         lastPageButton = btn;
@@ -763,7 +763,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setCurrentPageNumberTextField(JTextField textField) {
         currentPageNumberTextField = textField;
@@ -773,14 +773,14 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setNumberOfPagesLabel(JLabel lbl) {
         numberOfPagesLabel = lbl;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setZoomOutButton(JButton btn) {
         zoomOutButton = btn;
@@ -788,7 +788,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setZoomComboBox(JComboBox zcb, float[] zl) {
         zoomComboBox = zcb;
@@ -798,7 +798,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setZoomInButton(JButton btn) {
         zoomInButton = btn;
@@ -806,7 +806,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFitActualSizeButton(JToggleButton btn) {
         fitActualSizeButton = btn;
@@ -814,7 +814,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFitHeightButton(JToggleButton btn) {
         fitHeightButton = btn;
@@ -822,7 +822,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewBuilder, so that SwingController can setup event handling
+     * Called by SwingViewBuilder, so that Controller can setup event handling
      */
     public void setFontEngineButton(JToggleButton btn) {
         fontEngineButton = btn;
@@ -830,7 +830,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFitWidthButton(JToggleButton btn) {
         fitWidthButton = btn;
@@ -838,7 +838,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setRotateLeftButton(JButton btn) {
         rotateLeftButton = btn;
@@ -846,7 +846,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setRotateRightButton(JButton btn) {
         rotateRightButton = btn;
@@ -854,7 +854,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setPanToolButton(JToggleButton btn) {
         panToolButton = btn;
@@ -862,7 +862,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setZoomInToolButton(JToggleButton btn) {
         zoomInToolButton = btn;
@@ -870,7 +870,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setTextSelectToolButton(JToggleButton btn) {
         textSelectToolButton = btn;
@@ -878,7 +878,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSelectToolButton(JToggleButton btn) {
         selectToolButton = btn;
@@ -886,7 +886,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLinkAnnotationToolButton(JToggleButton btn) {
         this.linkAnnotationToolButton = btn;
@@ -894,7 +894,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setStrikeOutAnnotationToolButton(JToggleButton btn) {
         this.strikeOutAnnotationToolButton = btn;
@@ -902,7 +902,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setUnderlineAnnotationToolButton(JToggleButton btn) {
         this.underlineAnnotationToolButton = btn;
@@ -910,7 +910,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLineAnnotationToolButton(JToggleButton btn) {
         this.lineAnnotationToolButton = btn;
@@ -918,7 +918,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLineArrowAnnotationToolButton(JToggleButton btn) {
         this.lineArrowAnnotationToolButton = btn;
@@ -926,7 +926,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSquareAnnotationToolButton(JToggleButton btn) {
         this.squareAnnotationToolButton = btn;
@@ -934,7 +934,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setCircleAnnotationToolButton(JToggleButton btn) {
         this.circleAnnotationToolButton = btn;
@@ -942,7 +942,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setInkAnnotationToolButton(JToggleButton btn) {
         this.inkAnnotationToolButton = btn;
@@ -950,7 +950,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFreeTextAnnotationToolButton(JToggleButton btn) {
         this.freeTextAnnotationToolButton = btn;
@@ -958,7 +958,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLinkAnnotationPropertiesToolButton(JToggleButton btn) {
         linkAnnotationPropertiesToolButton = btn;
@@ -966,7 +966,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setHighlightAnnotationToolButton(AnnotationColorToggleButton btn) {
         highlightAnnotationToolButton = btn;
@@ -974,7 +974,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setHighlightAnnotationPropertiesToolButton(JToggleButton btn) {
         highlightAnnotationPropertiesToolButton = btn;
@@ -982,7 +982,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setStrikeOutAnnotationPropertiesToolButton(JToggleButton btn) {
         strikeOutAnnotationPropertiesToolButton = btn;
@@ -990,7 +990,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setUnderlineAnnotationPropertiesToolButton(JToggleButton btn) {
         underlineAnnotationPropertiesToolButton = btn;
@@ -998,7 +998,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLineAnnotationPropertiesToolButton(JToggleButton btn) {
         lineAnnotationPropertiesToolButton = btn;
@@ -1006,7 +1006,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLineArrowAnnotationPropertiesToolButton(JToggleButton btn) {
         lineArrowAnnotationPropertiesToolButton = btn;
@@ -1014,7 +1014,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSquareAnnotationPropertiesToolButton(JToggleButton btn) {
         squareAnnotationPropertiesToolButton = btn;
@@ -1022,7 +1022,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setCircleAnnotationPropertiesToolButton(JToggleButton btn) {
         circleAnnotationPropertiesToolButton = btn;
@@ -1030,7 +1030,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setInkAnnotationPropertiesToolButton(JToggleButton btn) {
         inkAnnotationPropertiesToolButton = btn;
@@ -1038,7 +1038,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setFreeTextAnnotationPropertiesToolButton(JToggleButton btn) {
         freeTextAnnotationPropertiesToolButton = btn;
@@ -1046,7 +1046,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setTextAnnotationToolButton(AnnotationColorToggleButton btn) {
         textAnnotationToolButton = btn;
@@ -1054,7 +1054,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      * for the form highlight button.
      */
     public void setFormHighlightButton(JToggleButton btn) {
@@ -1063,7 +1063,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setTextAnnotationPropertiesToolButton(JToggleButton btn) {
         textAnnotationPropertiesToolButton = btn;
@@ -1071,7 +1071,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setZoomDynamicToolButton(JToggleButton btn) {
         zoomDynamicToolButton = btn;
@@ -1079,14 +1079,14 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setCompleteToolBar(JToolBar toolbar) {
         completeToolBar = toolbar;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setOutlineComponents(JTree tree, JScrollPane scroll) {
         outlinesTree = tree;
@@ -1095,28 +1095,28 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setSearchPanel(SearchPanel sp) {
         searchPanel = sp;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setAttachmentPanel(AttachmentPanel sp) {
         attachmentPanel = sp;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setThumbnailsPanel(ThumbnailsPanel tn) {
         thumbnailsPanel = tn;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setLayersPanel(LayersPanel tn) {
         layersPanel = tn;
@@ -1132,14 +1132,14 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setUtilityTabbedPane(JTabbedPane util) {
         utilityTabbedPane = util;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setIsEmbeddedComponent(boolean embeddableComponent) {
         if (embeddableComponent) {
@@ -1149,7 +1149,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setUtilityAndDocumentSplitPane(JSplitPane splitPane) {
 
@@ -1161,14 +1161,14 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setStatusLabel(JLabel lbl) {
         statusLabel = lbl;
     }
 
     /**
-     * Called by SwingViewerBuilder, so that SwingController can setup event handling
+     * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
     public void setViewerFrame(JFrame v) {
         viewer = v;
@@ -1186,10 +1186,10 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Not all uses of SwingController would result in there existing a Viewer Frame,
+     * Not all uses of Controller would result in there existing a Viewer Frame,
      * so this may well return null.
      */
-    public JFrame getViewerFrame() {
+    public Frame getViewerFrame() {
         return viewer;
     }
 
@@ -1372,12 +1372,10 @@ public class SwingController extends ComponentAdapter
     }
 
     private boolean hasForms() {
-        if (document == null) {
-            return false;
-        }
-        return !(document.getCatalog().getInteractiveForm() == null ||
-                document.getCatalog().getInteractiveForm().getFields() == null ||
-                document.getCatalog().getInteractiveForm().getFields().size() == 0);
+        return document != null &&
+                !(document.getCatalog().getInteractiveForm() == null ||
+                        document.getCatalog().getInteractiveForm().getFields() == null ||
+                        document.getCatalog().getInteractiveForm().getFields().size() == 0);
     }
 
     private void reflectPageChangeInComponents() {
@@ -1525,7 +1523,7 @@ public class SwingController extends ComponentAdapter
                     zoomComboBox.setSelectedItem(NumberFormat.getPercentInstance().format(zoom));
                 }
             }
-            // upatdate the page fit values if they are in the correct zoom range
+            // update the page fit values if they are in the correct zoom range
 //            if( viewModel.fitPageFlag == .PAGE_FIT_NONE ) {
 //                float fitActualZoom = calcZoomForFitActualSize();
 //                if( fitActualZoom >= belowZoom && fitActualZoom <= aboveZoom )
@@ -1556,7 +1554,7 @@ public class SwingController extends ComponentAdapter
      * display panel.
      * @see #setDisplayTool
      */
-    public int getDocumentViewToolMode() {
+    private int getDocumentViewToolMode() {
         return documentViewController.getToolMode();
     }
 
@@ -1950,7 +1948,7 @@ public class SwingController extends ComponentAdapter
             File pdfFile = new File(filename);
             openFileInSomeViewer(pdfFile);
         } catch (Exception e) {
-
+            logger.warning("Error loading " + filename);
         }
     }
 
@@ -2030,7 +2028,7 @@ public class SwingController extends ComponentAdapter
      * Setup the security handle if specified, if not then creates and uses the default implementation.
      *
      * @param document         document to set securityCallback on .
-     * @param securityCallback
+     * @param securityCallback security callback for prompting users or owner passwords.
      */
     protected void setupSecurityHandler(Document document, SecurityCallback securityCallback) throws
             PDFException, PDFSecurityException {
@@ -2158,7 +2156,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Open a URL specifed by the location variable.
+     * Open a URL specified by the location variable.
      *
      * @param location location of a valid PDF document
      */
@@ -2429,13 +2427,6 @@ public class SwingController extends ComponentAdapter
     }
 
     public void commonNewDocumentHandling(String fileDescription) {
-        // setup custom search utility tool
-        if (searchPanel != null)
-            searchPanel.setDocument(document);
-
-        if (thumbnailsPanel != null) {
-            thumbnailsPanel.setDocument(document);
-        }
 
         // utility pane visibility
         boolean showUtilityPane = false;
@@ -2446,7 +2437,7 @@ public class SwingController extends ComponentAdapter
 
         // Page layout, the default value is singlePage, but we currently
         // remember the users last view mode via the properties manager.  Possible
-        // values are SinglePage, OnceColumn, TwoColumnLeft, TwoColumRight,
+        // values are SinglePage, OnceColumn, TwoColumnLeft, TwoColumnRight,
         // TwoPageLeft, TwoPageRight.
         Object tmp = catalog.getObject(Catalog.PAGELAYOUT_KEY);
         if (tmp != null && tmp instanceof Name) {
@@ -2478,7 +2469,7 @@ public class SwingController extends ComponentAdapter
 
         if (utilityTabbedPane != null) {
             // Page mode by default is UseNone, where other options are, UseOutlines,
-            // UseThumbs, FullScreen (ignore), UseOC(ignore), Use Attachements(ignore);
+            // UseThumbs, FullScreen (ignore), UseOC(ignore), Use Attachments(ignore);
             Name pageMode = catalog.getPageMode();
             showUtilityPane = pageMode.equals(Catalog.PAGE_MODE_USE_OUTLINES_VALUE) ||
                     pageMode.equals(Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE) ||
@@ -2510,26 +2501,34 @@ public class SwingController extends ComponentAdapter
         // initiates the view layout model, page coordinates and preferred size
         documentViewController.setDocument(document);
 
+        // setup custom search utility tool
+        if (searchPanel != null)
+            searchPanel.refreshDocumentInstance();
+
+        if (thumbnailsPanel != null) {
+            thumbnailsPanel.refreshDocumentInstance();
+        }
+
         if (layersPanel != null) {
-            layersPanel.setDocument(document);
+            layersPanel.refreshDocumentInstance();
         }
 
         if (signaturesPanel != null) {
-            signaturesPanel.setDocument(document);
+            signaturesPanel.refreshDocumentInstance();
         }
 
         if (annotationPanel != null) {
-            annotationPanel.setDocument(document);
+            annotationPanel.refreshDocumentInstance();
         }
 
         if (attachmentPanel != null) {
-            attachmentPanel.setDocument(document);
+            attachmentPanel.refreshDocumentInstance();
         }
 
         // Refresh the properties manager object if we don't already have one
         // This would be not null if the UI was constructed manually
         if (propertiesManager == null) {
-            propertiesManager = propertiesManager.getInstance();
+            propertiesManager = PropertiesManager.getInstance();
         }
 
         // Set the default zoom level from the backing store
@@ -2669,32 +2668,34 @@ public class SwingController extends ComponentAdapter
      * are also changed to their default values and made inactive.<br>
      * <br>
      * Note: If you create several SwingControllers to manipulate a single
-     * Document, and each SwingController would be disposed of at a different
+     * Document, and each Controller would be disposed of at a different
      * time, while the others continue to use that same shared Document, then
      * you should not call Document.dispose() inside of here, or alternatively
-     * implement reference counting, so that only the last SwingController would
+     * implement reference counting, so that only the last Controller would
      * call Document.dispose()
      *
      * @see Document
      */
     public void closeDocument() {
         // Clear the SearchPane, but also stop any search in progress
-        if (searchPanel != null)
-            searchPanel.setDocument(null);
+        if (searchPanel != null) {
+            searchPanel.disposeDocument();
+        }
 
-        if (thumbnailsPanel != null)
-            thumbnailsPanel.setDocument(null);
+        if (thumbnailsPanel != null) {
+            thumbnailsPanel.disposeDocument();
+        }
 
         if (layersPanel != null) {
-            layersPanel.setDocument(null);
+            layersPanel.disposeDocument();
         }
 
         if (attachmentPanel != null) {
-            attachmentPanel.setDocument(null);
+            attachmentPanel.disposeDocument();
         }
 
         if (signaturesPanel != null) {
-            signaturesPanel.setDocument(null);
+            signaturesPanel.disposeDocument();
         }
 
         // set the default cursor.  
@@ -2750,10 +2751,10 @@ public class SwingController extends ComponentAdapter
      * Way to dispose of all memory references, and clean up the Document resources<br>
      * <br>
      * Note: If you create several SwingControllers to manipulate a single
-     * Document, and each SwingController would be disposed of at a different
+     * Document, and each Controller would be disposed of at a different
      * time, while the others continue to use that same shared Document, then
      * you should not call Document.dispose() inside of here. Alternatively,
-     * implement reference counting, so that only the last SwingController would
+     * implement reference counting, so that only the last Controller would
      * call Document.dispose()
      */
     public void dispose() {
@@ -2873,24 +2874,24 @@ public class SwingController extends ComponentAdapter
             outlinesScrollPane = null;
         }
         if (searchPanel != null) {
-            searchPanel.dispose();
+            searchPanel.disposeDocument();
             searchPanel = null;
         }
         if (thumbnailsPanel != null) {
-            thumbnailsPanel.dispose();
+            thumbnailsPanel.disposeDocument();
             thumbnailsPanel = null;
         }
         if (layersPanel != null) {
-            layersPanel.dispose();
+            layersPanel.disposeDocument();
         }
         if (attachmentPanel != null) {
-            attachmentPanel.dispose();
+            attachmentPanel.disposeDocument();
         }
         if (signaturesPanel != null) {
-            signaturesPanel.dispose();
+            signaturesPanel.disposeDocument();
         }
         if (annotationPanel != null) {
-            annotationPanel.dispose();
+            annotationPanel.disposeDocument();
         }
         if (utilityTabbedPane != null) {
             utilityTabbedPane.removeAll();
@@ -3051,9 +3052,9 @@ public class SwingController extends ComponentAdapter
 
     /**
      * Generates a file name based on the original file name but appends "-new".
-     * If new file extsion exists a ".pdf" is automatically added.
+     * If new file extension exists a ".pdf" is automatically added.
      *
-     * @param fileName file name that new file name is dirived from.
+     * @param fileName file name that new file name is derived from.
      * @return original file name with the "-new" appended to it.
      */
     protected String generateNewSaveName(String fileName) {
@@ -3190,12 +3191,10 @@ public class SwingController extends ComponentAdapter
     public void showAboutDialog() {
         // Added to swing thread to ensure it shows up on top of main
         // browser window
-        Runnable doSwingWork = new Runnable() {
-            public void run() {
-                AboutDialog ad = new AboutDialog(viewer, messageBundle, true,
-                        AboutDialog.OK, AboutDialog.NO_TIMER);
-                ad.setVisible(true);
-            }
+        Runnable doSwingWork = () -> {
+            AboutDialog ad = new AboutDialog(viewer, messageBundle, true,
+                    AboutDialog.OK, AboutDialog.NO_TIMER);
+            ad.setVisible(true);
         };
         SwingUtilities.invokeLater(doSwingWork);
     }
@@ -3322,11 +3321,7 @@ public class SwingController extends ComponentAdapter
             printButton.setEnabled(false);
         }
 
-        Runnable runner = new Runnable() {
-            public void run() {
-                initialisePrinting(withDialog);
-            }
-        };
+        Runnable runner = () -> initialisePrinting(withDialog);
         Thread t = new Thread(runner);
         t.setPriority(Thread.MIN_PRIORITY);
         t.start();
@@ -3345,7 +3340,7 @@ public class SwingController extends ComponentAdapter
     private void initialisePrinting(final boolean withDialog) {
         boolean canPrint = havePermissionToPrint();
         if (!canPrint) {
-            reenablePrintUI();
+            renablePrintUI();
             return;
         }
         // create a new print helper, one-to-one with document, make sure that
@@ -3372,14 +3367,14 @@ public class SwingController extends ComponentAdapter
                 document.getNumberOfPages() - 1,
                 viewModel.getPrintCopies(),           // default number of copies.
                 viewModel.isShrinkToPrintableArea(),        // shrink to printable area
-                withDialog  // show print dialogl
+                withDialog  // show print dialog
         );
         // save new printer attributes to properties
         savePrinterProperties(printHelper);
         // if user cancelled the print job from the dialog, don't start printing
         // in the background.
         if (!canPrint) {
-            reenablePrintUI();
+            renablePrintUI();
             return;
         }
         startBackgroundPrinting(printHelper);
@@ -3408,7 +3403,7 @@ public class SwingController extends ComponentAdapter
     /**
      * Utility that tries to save the state of the currently set MediaSize.
      * The width height and unit values are written to the the propertiesManager.
-     * When the Viewer RI is exited the properites file is wrtten to disk.
+     * When the Viewer RI is exited the properties file is written to disk.
      *
      * @param printHelper instance of the open documents print helper.
      */
@@ -3439,16 +3434,14 @@ public class SwingController extends ComponentAdapter
         }
     }
 
-    private void reenablePrintUI() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                // enable print UI controls.
-                if (printMenuItem != null) {
-                    printMenuItem.setEnabled(true);
-                }
-                if (printButton != null) {
-                    printButton.setEnabled(true);
-                }
+    private void renablePrintUI() {
+        SwingUtilities.invokeLater(() -> {
+            // enable print UI controls.
+            if (printMenuItem != null) {
+                printMenuItem.setEnabled(true);
+            }
+            if (printButton != null) {
+                printButton.setEnabled(true);
             }
         });
     }
@@ -3461,13 +3454,11 @@ public class SwingController extends ComponentAdapter
      */
     private void startBackgroundPrinting(final PrintHelper printHelper) {
         // Create the ProgressMonitor in the Swing thread
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                // launch progress dialog
-                printProgressMonitor = new ProgressMonitor(viewer,
-                        messageBundle.getString("viewer.dialog.printing.status.start.msg"),
-                        "", 0, printHelper.getNumberOfPages());
-            }
+        SwingUtilities.invokeLater(() -> {
+            // launch progress dialog
+            printProgressMonitor = new ProgressMonitor(viewer,
+                    messageBundle.getString("viewer.dialog.printing.status.start.msg"),
+                    "", 0, printHelper.getNumberOfPages());
         });
 
         final Thread printingThread = Thread.currentThread();
@@ -3476,37 +3467,35 @@ public class SwingController extends ComponentAdapter
         final PrinterTask printerTask = new PrinterTask(printHelper);
         // create activity monitor
         printActivityMonitor = new Timer(500,
-                new ActionListener() {
-                    public void actionPerformed(ActionEvent event) {
+                event -> {
 
-                        int limit = printHelper.getNumberOfPages();
-                        int current = printHelper.getCurrentPage();
-                        // update progress and label
-                        printProgressMonitor.setProgress(current);
+                    int limit = printHelper.getNumberOfPages();
+                    int current = printHelper.getCurrentPage();
+                    // update progress and label
+                    printProgressMonitor.setProgress(current);
 
-                        // progress bar for printing
-                        Object[] messageArguments = new Object[]{
-                                String.valueOf(current),
-                                String.valueOf(limit)
-                        };
-                        MessageFormat formatter =
-                                new MessageFormat(
-                                        messageBundle.getString("viewer.dialog.printing.status.progress.msg"));
-                        printProgressMonitor.setNote(formatter.format(messageArguments));
+                    // progress bar for printing
+                    Object[] messageArguments = new Object[]{
+                            String.valueOf(current),
+                            String.valueOf(limit)
+                    };
+                    MessageFormat formatter =
+                            new MessageFormat(
+                                    messageBundle.getString("viewer.dialog.printing.status.progress.msg"));
+                    printProgressMonitor.setNote(formatter.format(messageArguments));
 
-                        // check for job completed or cancelled.
-                        if (!printingThread.isAlive() || printProgressMonitor.isCanceled()) {
-                            // stop the timers, monitors and thread.
-                            printProgressMonitor.close();
-                            printActivityMonitor.stop();
-                            printerTask.cancel();
-                            // enable print UI controls.
-                            if (printMenuItem != null) {
-                                printMenuItem.setEnabled(true);
-                            }
-                            if (printButton != null) {
-                                printButton.setEnabled(true);
-                            }
+                    // check for job completed or cancelled.
+                    if (!printingThread.isAlive() || printProgressMonitor.isCanceled()) {
+                        // stop the timers, monitors and thread.
+                        printProgressMonitor.close();
+                        printActivityMonitor.stop();
+                        printerTask.cancel();
+                        // enable print UI controls.
+                        if (printMenuItem != null) {
+                            printMenuItem.setEnabled(true);
+                        }
+                        if (printButton != null) {
+                            printButton.setEnabled(true);
                         }
                     }
                 });
@@ -3646,7 +3635,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Gives access to the currently openned Document's Catalog's PageTree
+     * Gives access to the currently opened Document's Catalog's PageTree
      *
      * @return PageTree
      */
@@ -3835,7 +3824,7 @@ public class SwingController extends ComponentAdapter
     /**
      * If the utility pane is currently visible
      *
-     * @return true if pane is visilbe false otherwise.
+     * @return true if pane is visible false otherwise.
      */
     public boolean isUtilityPaneVisible() {
         return (utilityTabbedPane != null) && utilityTabbedPane.isVisible();
@@ -4083,9 +4072,9 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * Gives access to this SwingController's ViewerModel
+     * Gives access to this Controller's ViewerModel
      *
-     * @return The SwingController's ViewerModel
+     * @return The Controller's ViewerModel
      * @see ViewModel
      */
     public ViewModel getViewModel() {
@@ -4120,33 +4109,12 @@ public class SwingController extends ComponentAdapter
         return documentViewController.getCurrentPageIndex();
     }
 
-    /**
-     * Each Page may have its own rotation, but on top of that, the user
-     * may select to have the Page further rotated, by 0, 90, 180, 270 degrees
-     *
-     * @return The user's requested rotation
-     */
-    public float getUserRotation() {
-        return documentViewController.getRotation();
-    }
-
-    /**
-     * The Page being shown may be zoomed in or out, to show more detail,
-     * or provide an overview.
-     *
-     * @return The user's requested zoom
-     */
-    public float getUserZoom() {
-        return documentViewController.getZoom();
-    }
-
-
     //
     // ActionListener interface
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void actionPerformed(ActionEvent event) {
@@ -4330,14 +4298,14 @@ public class SwingController extends ComponentAdapter
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void focusGained(FocusEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void focusLost(FocusEvent e) {
@@ -4357,7 +4325,7 @@ public class SwingController extends ComponentAdapter
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void itemStateChanged(ItemEvent e) {
@@ -4550,7 +4518,7 @@ public class SwingController extends ComponentAdapter
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void valueChanged(TreeSelectionEvent e) {
@@ -4574,21 +4542,21 @@ public class SwingController extends ComponentAdapter
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void windowActivated(WindowEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void windowClosed(WindowEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void windowClosing(WindowEvent e) {
@@ -4627,28 +4595,28 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void windowDeactivated(WindowEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void windowDeiconified(WindowEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void windowIconified(WindowEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void windowOpened(WindowEvent e) {
@@ -4677,7 +4645,7 @@ public class SwingController extends ComponentAdapter
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void dragEnter(DropTargetDragEvent event) {
@@ -4687,14 +4655,14 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void dragOver(DropTargetDragEvent event) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void dropActionChanged(DropTargetDragEvent event) {
@@ -4758,7 +4726,7 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void dragExit(DropTargetEvent event) {
@@ -4770,7 +4738,7 @@ public class SwingController extends ComponentAdapter
     //
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void keyPressed(KeyEvent e) {
@@ -4859,14 +4827,14 @@ public class SwingController extends ComponentAdapter
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void keyReleased(KeyEvent e) {
     }
 
     /**
-     * SwingController takes AWT/Swing events, and maps them to its own events
+     * Controller takes AWT/Swing events, and maps them to its own events
      * related to PDF Document manipulation
      */
     public void keyTyped(KeyEvent e) {
@@ -4893,111 +4861,118 @@ public class SwingController extends ComponentAdapter
         Object newValue = evt.getNewValue();
         Object oldValue = evt.getOldValue();
         String propertyName = evt.getPropertyName();
-        if (propertyName.equals(PropertyConstants.DOCUMENT_CURRENT_PAGE)) {
-            if (currentPageNumberTextField != null && newValue instanceof Integer) {
-                updateDocumentView();
+        switch (propertyName) {
+            case PropertyConstants.DOCUMENT_CURRENT_PAGE:
+                if (currentPageNumberTextField != null && newValue instanceof Integer) {
+                    updateDocumentView();
+                }
+                break;
+            // text selected,
+            case PropertyConstants.TEXT_SELECTED: {
+                // enable the copy menu
+                boolean canExtract = havePermissionToExtractContent();
+                setEnabled(copyMenuItem, canExtract);
+                setEnabled(deselectAllMenuItem, canExtract);
+                break;
             }
-        }
-        // text selected,
-        else if (propertyName.equals(PropertyConstants.TEXT_SELECTED)) {
-            // enable the copy menu
-            boolean canExtract = havePermissionToExtractContent();
-            setEnabled(copyMenuItem, canExtract);
-            setEnabled(deselectAllMenuItem, canExtract);
-        }
-        // text deselected
-        else if (propertyName.equals(PropertyConstants.TEXT_DESELECTED)) {
-            // disable the copy menu
-            boolean canExtract = havePermissionToExtractContent();
-            setEnabled(copyMenuItem, false);
-            setEnabled(deselectAllMenuItem, false);
-            setEnabled(selectAllMenuItem, canExtract);
-        }
-        // select all
-        else if (propertyName.equals(PropertyConstants.TEXT_SELECT_ALL)) {
-            boolean canExtract = havePermissionToExtractContent();
-            setEnabled(selectAllMenuItem, false);
-            setEnabled(deselectAllMenuItem, canExtract);
-            setEnabled(copyMenuItem, canExtract);
-        }
-        // annotation is selected or has focus
-        else if (propertyName.equals(PropertyConstants.ANNOTATION_SELECTED) ||
-                propertyName.equals(PropertyConstants.ANNOTATION_FOCUS_GAINED)) {
-            // enable the delete menu
-            setEnabled(deleteMenuItem, true);
-            // get the current selected tool, we only care about the select tool or
-            // link annotation tool.
-            if (documentViewController.getToolMode() ==
-                    DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-                AnnotationComponent annotationComponent =
-                        (AnnotationComponent) newValue;
-                if (annotationComponent != null &&
-                        annotationComponent.getAnnotation() != null) {
-                    // set the annotationPane with the new annotation component
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine("selected annotation " + annotationComponent);
+            // text deselected
+            case PropertyConstants.TEXT_DESELECTED: {
+                // disable the copy menu
+                boolean canExtract = havePermissionToExtractContent();
+                setEnabled(copyMenuItem, false);
+                setEnabled(deselectAllMenuItem, false);
+                setEnabled(selectAllMenuItem, canExtract);
+                break;
+            }
+            // select all
+            case PropertyConstants.TEXT_SELECT_ALL: {
+                boolean canExtract = havePermissionToExtractContent();
+                setEnabled(selectAllMenuItem, false);
+                setEnabled(deselectAllMenuItem, canExtract);
+                setEnabled(copyMenuItem, canExtract);
+                break;
+            }
+            // annotation is selected or has focus
+            case PropertyConstants.ANNOTATION_SELECTED:
+            case PropertyConstants.ANNOTATION_FOCUS_GAINED:
+                // enable the delete menu
+                setEnabled(deleteMenuItem, true);
+                // get the current selected tool, we only care about the select tool or
+                // link annotation tool.
+                if (documentViewController.getToolMode() ==
+                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
+                    AnnotationComponent annotationComponent =
+                            (AnnotationComponent) newValue;
+                    if (annotationComponent != null &&
+                            annotationComponent.getAnnotation() != null) {
+                        // set the annotationPane with the new annotation component
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine("selected annotation " + annotationComponent);
+                        }
+                        showAnnotationPanel(annotationComponent);
                     }
-                    showAnnotationPanel(annotationComponent);
                 }
-            }
-        }
-        // annotation is deselected
-        else if (propertyName.equals(PropertyConstants.ANNOTATION_DESELECTED)) {
-            if (documentViewController.getToolMode() ==
-                    DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-                if (logger.isLoggable(Level.FINE)) {
-                    logger.fine("Deselected current annotation");
+                break;
+            // annotation is deselected
+            case PropertyConstants.ANNOTATION_DESELECTED:
+                if (documentViewController.getToolMode() ==
+                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("Deselected current annotation");
+                    }
+                    // disable the delete menu
+                    setEnabled(deleteMenuItem, false);
                 }
-                // disable the delete menu
-                setEnabled(deleteMenuItem, false);
-            }
-        }
-        // annotation bounds have changed.
-        else if (propertyName.equals(PropertyConstants.ANNOTATION_BOUNDS)) {
-            if (documentViewController.getToolMode() ==
-                    DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
-                AnnotationState oldAnnotationState = (AnnotationState) oldValue;
-                AnnotationState newAnnotationState = (AnnotationState) newValue;
+                break;
+            // annotation bounds have changed.
+            case PropertyConstants.ANNOTATION_BOUNDS:
+                if (documentViewController.getToolMode() ==
+                        DocumentViewModelImpl.DISPLAY_TOOL_SELECTION) {
+                    AnnotationState oldAnnotationState = (AnnotationState) oldValue;
+                    AnnotationState newAnnotationState = (AnnotationState) newValue;
 
-                // saves the state changes back to the document structure.
-                newAnnotationState.apply(newAnnotationState);
-                newAnnotationState.restore();
+                    // saves the state changes back to the document structure.
+                    newAnnotationState.apply(newAnnotationState);
+                    newAnnotationState.restore();
 
-                // add new states to care taker implementation.
-                documentViewController.getDocumentViewModel()
-                        .addMemento(oldAnnotationState,
-                                newAnnotationState);
-            }
-            // check to see if undo/redo can be enabled/disabled.
-            reflectUndoCommands();
-        }
-        // divider has been moved, save the location as it changes.
-        else if (propertyName.equals(JSplitPane.LAST_DIVIDER_LOCATION_PROPERTY)) {
-            JSplitPane sourceSplitPane = (JSplitPane) evt.getSource();
-            int dividerLocation = (Integer) evt.getNewValue();
-            if (sourceSplitPane.getDividerLocation() != dividerLocation) {
-                if (propertiesManager != null && dividerLocation > 5) {
-                    utilityAndDocumentSplitPaneLastDividerLocation = dividerLocation;
-                    propertiesManager.getPreferences().putInt(
-                            PropertiesManager.PROPERTY_DIVIDER_LOCATION,
-                            utilityAndDocumentSplitPaneLastDividerLocation);
+                    // add new states to care taker implementation.
+                    documentViewController.getDocumentViewModel()
+                            .addMemento(oldAnnotationState,
+                                    newAnnotationState);
                 }
-            }
-        } else if (propertyName.equals(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE)) {
-            if (highlightAnnotationToolButton != null) {
-                highlightAnnotationToolButton.refreshColorPanel();
-            }
-            if (textAnnotationToolButton != null) {
-                textAnnotationToolButton.refreshColorPanel();
-            }
-            if (annotationPanel != null &&
-                    annotationPanel.getMarkupAnnotationPanel() != null) {
-                annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
-            }
-        } else if (propertyName.equals(PropertyConstants.DESTINATION_ADDED) ||
-                propertyName.equals(PropertyConstants.DESTINATION_UPDATED) ||
-                propertyName.equals(PropertyConstants.DESTINATION_DELETED)) {
-            annotationPanel.getDestinationsPanel().refreshNameTree(evt.getNewValue());
+                // check to see if undo/redo can be enabled/disabled.
+                reflectUndoCommands();
+                break;
+            // divider has been moved, save the location as it changes.
+            case JSplitPane.LAST_DIVIDER_LOCATION_PROPERTY:
+                JSplitPane sourceSplitPane = (JSplitPane) evt.getSource();
+                int dividerLocation = (Integer) evt.getNewValue();
+                if (sourceSplitPane.getDividerLocation() != dividerLocation) {
+                    if (propertiesManager != null && dividerLocation > 5) {
+                        utilityAndDocumentSplitPaneLastDividerLocation = dividerLocation;
+                        propertiesManager.getPreferences().putInt(
+                                PropertiesManager.PROPERTY_DIVIDER_LOCATION,
+                                utilityAndDocumentSplitPaneLastDividerLocation);
+                    }
+                }
+                break;
+            case PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE:
+                if (highlightAnnotationToolButton != null) {
+                    highlightAnnotationToolButton.refreshColorPanel();
+                }
+                if (textAnnotationToolButton != null) {
+                    textAnnotationToolButton.refreshColorPanel();
+                }
+                if (annotationPanel != null &&
+                        annotationPanel.getMarkupAnnotationPanel() != null) {
+                    annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
+                }
+                break;
+            case PropertyConstants.DESTINATION_ADDED:
+            case PropertyConstants.DESTINATION_UPDATED:
+            case PropertyConstants.DESTINATION_DELETED:
+                annotationPanel.getDestinationsPanel().refreshNameTree(evt.getNewValue());
+                break;
         }
     }
 }

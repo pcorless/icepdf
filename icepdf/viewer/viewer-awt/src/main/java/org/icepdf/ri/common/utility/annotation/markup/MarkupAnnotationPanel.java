@@ -15,12 +15,12 @@
  */
 package org.icepdf.ri.common.utility.annotation.markup;
 
-import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.*;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
@@ -65,9 +65,8 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     // layouts constraint
     protected GridBagConstraints constraints;
 
-    private PropertiesManager propertiesManager;
     private Preferences preferences;
-    private SwingController controller;
+    private Controller controller;
     protected ResourceBundle messageBundle;
 
     private JPanel markupAnnotationPanel;
@@ -91,15 +90,12 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
     private MarkupAnnotationHandlerPanel markupAnnotationHandlerPanel;
 
-    public MarkupAnnotationPanel(SwingController controller, PropertiesManager propertiesManager) {
+    public MarkupAnnotationPanel(SwingController controller) {
         this.messageBundle = controller.getMessageBundle();
-        preferences = propertiesManager.getPreferences();
+        preferences = PropertiesManager.getInstance().getPreferences();
+        this.controller = controller;
         setLayout(new GridBagLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
-
-        this.controller = controller;
-        this.propertiesManager = propertiesManager;
-
         setFocusable(true);
 
         ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
@@ -345,11 +341,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
 
     }
 
-    public void dispose() {
-        markupAnnotationHandlerPanel.dispose();
-        removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
-    }
-
     public void refreshColorPanel() {
         // update the quick color drop down.
         if (quickPaintAnnotationButton != null) {
@@ -415,9 +406,15 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         addGB(markupAnnotationPanel, markupAnnotationHandlerPanel, 0, 2, 1, 1);
     }
 
+    @Override
+    public void refreshDocumentInstance() {
+        markupAnnotationHandlerPanel.refreshDocumentInstance();
+    }
 
-    public void setDocument(Document document) {
-        markupAnnotationHandlerPanel.setDocument(document);
+    @Override
+    public void disposeDocument() {
+        markupAnnotationHandlerPanel.disposeDocument();
+        removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
     }
 
     protected void sortAndFilterAnnotationData() {
@@ -462,15 +459,6 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         }
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
     protected void addGB(JPanel layout, Component component,
                          int x, int y,
                          int rowSpan, int colSpan) {

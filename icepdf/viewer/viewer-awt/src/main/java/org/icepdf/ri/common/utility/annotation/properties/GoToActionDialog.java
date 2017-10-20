@@ -22,9 +22,9 @@ import org.icepdf.core.pobjects.actions.ActionFactory;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.destinations.ImplicitDestinationPanel;
 import org.icepdf.ri.common.views.AnnotationComponent;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -48,7 +48,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
 
     public static final String EMPTY_DESTINATION = "      ";
 
-    private SwingController controller;
+    private org.icepdf.ri.common.views.Controller controller;
     private ResourceBundle messageBundle;
     private AnnotationComponent currentAnnotation;
     private ActionsPanel actionsPanel;
@@ -68,7 +68,7 @@ public class GoToActionDialog extends AnnotationDialogAdapter
     // implicit destinations panel
     private ImplicitDestinationPanel implicitDestinationPanel;
 
-    public GoToActionDialog(SwingController controller,
+    public GoToActionDialog(Controller controller,
                             ActionsPanel actionsPanel) {
         super(controller.getViewerFrame(), true);
         this.controller = controller;
@@ -160,10 +160,12 @@ public class GoToActionDialog extends AnnotationDialogAdapter
         // similar GoToActions under the current implementation.
         if (action == null) {
             action = (GoToAction) ActionFactory.buildAction(annotation.getLibrary(), ActionFactory.GOTO_ACTION);
-            action.setDestination(destination);
-            annotation.addAction(action);
-            actionsPanel.clearActionList();
-            actionsPanel.addActionToList(action);
+            if (action != null) {
+                action.setDestination(destination);
+                annotation.addAction(action);
+                actionsPanel.clearActionList();
+                actionsPanel.addActionToList(action);
+            }
         } else {
             // set new destination value and merge the change back into the
             // annotation.

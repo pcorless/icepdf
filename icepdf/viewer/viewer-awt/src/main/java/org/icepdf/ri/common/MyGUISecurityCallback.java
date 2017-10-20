@@ -20,8 +20,6 @@ import org.icepdf.core.pobjects.Document;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
 import java.util.ResourceBundle;
 
@@ -91,46 +89,36 @@ public class MyGUISecurityCallback implements SecurityCallback {
             // ok button
             final JButton okButton = new JButton(messageBundle.getString("viewer.dialog.security.okButton.label"));
             okButton.setMnemonic(messageBundle.getString("viewer.dialog.security.okButton.mnemonic").charAt(0));
-            okButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getSource() == okButton) {
-                        setVisible(false);
-                        dispose();
-                    }
-
+            okButton.addActionListener(e -> {
+                if (e.getSource() == okButton) {
+                    setVisible(false);
+                    dispose();
                 }
+
             });
 
             // cancel button
             final JButton cancelButton = new JButton(messageBundle.getString("viewer.dialog.security.cancelButton.label"));
             cancelButton.setMnemonic(messageBundle.getString("viewer.dialog.security.cancelButton.mnemonic").charAt(0));
-            cancelButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getSource() == cancelButton) {
-                        setVisible(false);
-                        isCanceled = true;
-                        dispose();
-                    }
-
+            cancelButton.addActionListener(e -> {
+                if (e.getSource() == cancelButton) {
+                    setVisible(false);
+                    isCanceled = true;
+                    dispose();
                 }
+
             });
             // setup password field
             passwordField = new JPasswordField(30);
-            passwordField.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getSource() == passwordField) {
-                        setVisible(false);
-                        dispose();
-                    }
-
+            passwordField.addActionListener(e -> {
+                if (e.getSource() == passwordField) {
+                    setVisible(false);
+                    dispose();
                 }
+
             });
             JLabel msg1 = new JLabel(messageBundle.getString("viewer.dialog.security.msg"));
             JLabel msg2 = new JLabel(messageBundle.getString("viewer.dialog.security.password.label"));
-
-            /**
-             * Place GUI elements on dialog
-             */
 
             JPanel passwordPanel = new JPanel();
 
@@ -189,15 +177,6 @@ public class MyGUISecurityCallback implements SecurityCallback {
         }
 
 
-        /**
-         * Gridbag constructor helper
-         *
-         * @param component component to add to grid
-         * @param x         row
-         * @param y         col
-         * @param rowSpan
-         * @param colSpan
-         */
         private void addGB(JPanel layout, Component component,
                            int x, int y,
                            int colSpan, int rowSpan) {

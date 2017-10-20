@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common;
 
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -29,9 +30,9 @@ import java.util.prefs.Preferences;
  */
 public class HighlightAnnotationToggleButton extends AnnotationColorToggleButton {
 
-    public HighlightAnnotationToggleButton(SwingController swingController, ResourceBundle messageBundle, String title,
+    public HighlightAnnotationToggleButton(Controller controller, ResourceBundle messageBundle, String title,
                                            String toolTip, String imageName, String imageSize, Font font) {
-        super(swingController, messageBundle, title, toolTip, imageName, imageSize, font);
+        super(controller, messageBundle, title, toolTip, imageName, imageSize, font);
 
         // define the bounded shape used to colourize the icon with the current colour
         PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;

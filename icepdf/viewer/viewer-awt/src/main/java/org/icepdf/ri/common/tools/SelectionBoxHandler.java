@@ -17,7 +17,6 @@ package org.icepdf.ri.common.tools;
 
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
-import org.icepdf.ri.common.views.DocumentViewModel;
 import org.icepdf.ri.common.views.PageViewComponentImpl;
 import org.icepdf.ri.common.views.annotations.MarkupGlueComponent;
 
@@ -47,9 +46,8 @@ public abstract class SelectionBoxHandler extends CommonToolHandler {
     protected static Color selectionBoxColour = Color.lightGray;
 
     protected SelectionBoxHandler(DocumentViewController documentViewController,
-                                  AbstractPageViewComponent pageViewComponent,
-                                  DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                                  AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
     }
 
     public abstract void setSelectionRectangle(Point cursorLocation, Rectangle selection);

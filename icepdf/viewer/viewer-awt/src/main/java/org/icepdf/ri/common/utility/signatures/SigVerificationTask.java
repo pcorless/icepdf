@@ -21,8 +21,8 @@ import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.AbstractTask;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingWorker;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.text.MessageFormat;
@@ -52,7 +52,7 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
      * @param messageBundle          message bundle used for dialog text.
      */
     public SigVerificationTask(SignaturesHandlerPanel signaturesHandlerPanel,
-                               SwingController controller,
+                               Controller controller,
                                ResourceBundle messageBundle) {
         super(controller, messageBundle,
                 controller.getDocument().getCatalog().getInteractiveForm().getSignatureFields().size());
@@ -151,13 +151,11 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                                 }
                                 // add the node to the signature panel tree but on the
                                 // awt thread.
-                                SwingUtilities.invokeLater(new Runnable() {
-                                    public void run() {
-                                        // add the node
-                                        signaturesHandlerPanel.addSignature(signatureWidgetAnnotation);
-                                        // try repainting the container
-                                        signaturesHandlerPanel.repaint();
-                                    }
+                                SwingUtilities.invokeLater(() -> {
+                                    // add the node
+                                    signaturesHandlerPanel.addSignature(signatureWidgetAnnotation);
+                                    // try repainting the container
+                                    signaturesHandlerPanel.repaint();
                                 });
                             } else {
                                 // found some unsigned fields.
@@ -167,11 +165,9 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                         }
                         // build out unsigned fields
                         if (unsignedFields) {
-                            SwingUtilities.invokeLater(new Runnable() {
-                                public void run() {
-                                    signaturesHandlerPanel.addUnsignedSignatures(signatures);
-                                    signaturesHandlerPanel.repaint();
-                                }
+                            SwingUtilities.invokeLater(() -> {
+                                signaturesHandlerPanel.addUnsignedSignatures(signatures);
+                                signaturesHandlerPanel.repaint();
                             });
                         }
                     }
@@ -185,11 +181,7 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                 taskRunning = false;
             }
             // repaint the view container
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    signaturesHandlerPanel.validate();
-                }
-            });
+            SwingUtilities.invokeLater(() -> signaturesHandlerPanel.validate());
         }
     }
 
@@ -229,11 +221,7 @@ public class SigVerificationTask extends AbstractTask<SigVerificationTask> {
                 taskRunning = false;
             }
             // repaint the view container
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    signaturesHandlerPanel.validate();
-                }
-            });
+            SwingUtilities.invokeLater(() -> signaturesHandlerPanel.validate());
         }
     }
 }

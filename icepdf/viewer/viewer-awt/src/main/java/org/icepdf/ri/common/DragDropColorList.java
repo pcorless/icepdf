@@ -16,6 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.core.util.PropertyConstants;
+import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
@@ -39,11 +40,11 @@ public class DragDropColorList extends JList<DragDropColorList.ColorLabel> {
 
     private Preferences preferences;
 
-    public DragDropColorList(SwingController swingController, Preferences preferences) {
+    public DragDropColorList(Controller controller, Preferences preferences) {
         super(new DefaultListModel<>());
         this.preferences = preferences;
         model = (DefaultListModel<ColorLabel>) getModel();
-        addPropertyChangeListener(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, swingController);
+        addPropertyChangeListener(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, controller);
 
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setDragEnabled(true);

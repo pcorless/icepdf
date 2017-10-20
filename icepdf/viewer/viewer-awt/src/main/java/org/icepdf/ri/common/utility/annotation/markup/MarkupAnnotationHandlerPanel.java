@@ -25,12 +25,9 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
-import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.utility.annotation.AnnotationCellRender;
 import org.icepdf.ri.common.utility.annotation.AnnotationTreeNode;
-import org.icepdf.ri.common.views.AnnotationComponent;
-import org.icepdf.ri.common.views.AnnotationSelector;
-import org.icepdf.ri.common.views.DocumentViewControllerImpl;
+import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationPopupMenu;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
@@ -66,7 +63,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
     private MarkupAnnotationPanel.FilterAuthorColumn filterAuthor;
     private Color filterColor;
 
-    public MarkupAnnotationHandlerPanel(SwingController controller, MarkupAnnotationPanel parentMarkupAnnotationPanel) {
+    public MarkupAnnotationHandlerPanel(Controller controller, MarkupAnnotationPanel parentMarkupAnnotationPanel) {
         super(controller);
         this.parentMarkupAnnotationPanel = parentMarkupAnnotationPanel;
 
@@ -200,10 +197,6 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
         buildWorkerTaskUI();
     }
 
-    public void setDocument(Document document) {
-        super.setDocument(document);
-    }
-
     public void buildUI() {
         super.buildUI();
         // setup validation progress bar and status label
@@ -223,11 +216,11 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
 
     @Override
     protected void buildWorkerTaskUI() {
-// First have to stop any existing validation processes.
+        // First have to stop any existing validation processes.
         stopWorkerTask();
-
-        if (currentDocument != null) {
-            PageTree pageTree = currentDocument.getCatalog().getPageTree();
+        Document document = controller.getDocument();
+        if (document != null) {
+            PageTree pageTree = document.getCatalog().getPageTree();
             // build out the tree
             if (pageTree.getNumberOfPages() > 0) {
                 if (!timer.isRunning()) {
@@ -305,6 +298,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                     AnnotationComponent comp = AnnotationSelector.SelectAnnotationComponent(controller, annotation);
                     if (comp instanceof MarkupAnnotationComponent) {
                         if (e.getButton() == MouseEvent.BUTTON1) {
+                            DocumentViewController documentViewController = controller.getDocumentViewController();
                             // toggle the popup annotations visibility on double click
                             MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) comp;
                             if (e.getClickCount() == 1) {
@@ -317,8 +311,9 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
                             }
                         }
                         if ((e.getButton() == MouseEvent.BUTTON3 || e.getButton() == MouseEvent.BUTTON2)) {
-                            contextMenu = new MarkupAnnotationPopupMenu((MarkupAnnotationComponent) comp, documentViewController,
-                                    null, documentViewModel, true);
+                            DocumentViewController documentViewController = controller.getDocumentViewController();
+                            contextMenu = new MarkupAnnotationPopupMenu((MarkupAnnotationComponent) comp,
+                                    controller, null, true);
                             contextMenu.show(e.getComponent(), e.getX(), e.getY());
                         }
                         parentMarkupAnnotationPanel.getQuickPaintAnnotationButton().setEnabled(true);

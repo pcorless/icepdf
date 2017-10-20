@@ -39,9 +39,8 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
     private Point initialPoint = new Point();
 
     public ZoomInPageHandler(DocumentViewController documentViewController,
-                             AbstractPageViewComponent pageViewComponent,
-                             DocumentViewModel documentViewModel) {
-        super(documentViewController, pageViewComponent, documentViewModel);
+                             AbstractPageViewComponent pageViewComponent) {
+        super(documentViewController, pageViewComponent);
 
         selectionBoxColour = Color.DARK_GRAY;
     }
@@ -63,7 +62,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
         if ((e.getModifiers() & MouseEvent.MOUSE_PRESSED) != 0) {
             if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) {
                 // zoom in
-                Point pageOffset = documentViewModel.getPageBounds(
+                Point pageOffset = documentViewController.getDocumentViewModel().getPageBounds(
                         pageViewComponent.getPageIndex()).getLocation();
                 Point mouse = e.getPoint();
                 mouse.setLocation(pageOffset.x + mouse.x,
@@ -93,7 +92,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
             // view position of the rectangle as the mouseEven position is
             // is relative to the page and not the view.
             int pageIndex = pageViewComponent.getPageIndex();
-            Rectangle pageOffset = documentViewModel.getPageBounds(pageIndex);
+            Rectangle pageOffset = documentViewController.getDocumentViewModel().getPageBounds(pageIndex);
             Rectangle absoluteRectToDraw = new Rectangle(
                     pageOffset.x + rectToDraw.x,
                     pageOffset.y + rectToDraw.y,
@@ -104,7 +103,7 @@ public class ZoomInPageHandler extends SelectionBoxHandler implements ToolHandle
                     absoluteRectToDraw.getHeight() > 0) {
                 // zoom in on rectangle bounds.
                 float zoom = ZoomInPageHandler.calculateZoom(documentViewController,
-                        absoluteRectToDraw, documentViewModel);
+                        absoluteRectToDraw, documentViewController.getDocumentViewModel());
 
                 // calculate the delta relative to current page position
                 Point delta = new Point(

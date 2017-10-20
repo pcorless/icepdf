@@ -253,7 +253,7 @@ public abstract class AbstractPageViewComponent
 
     @Override
     protected void paintComponent(Graphics g) {
-        // create a copy so we can set our own state with out affecting the parent graphics conttent.
+        // create a copy so we can set our own state with out affecting the parent graphics content.
         Graphics2D g2d = (Graphics2D) g.create(0, 0, pageSize.width, pageSize.height);
         GraphicsRenderingHints grh = GraphicsRenderingHints.getDefault();
         g2d.setRenderingHints(grh.getRenderingHints(GraphicsRenderingHints.SCREEN));
@@ -328,7 +328,7 @@ public abstract class AbstractPageViewComponent
         if (pageBufferStore.isDirty() || pageBufferStore.getImageReference() == null) {
             // start future task to paint back pageBufferPadding
             if (pageImageCaptureTask == null || pageImageCaptureTask.isDone() || pageImageCaptureTask.isCancelled()) {
-                pageImageCaptureTask = new FutureTask<Object>(
+                pageImageCaptureTask = new FutureTask<>(
                         new PageImageCaptureTask(this, imageLocation, imageClipLocation,
                                 pageZoom,
                                 pageRotation));
@@ -352,7 +352,7 @@ public abstract class AbstractPageViewComponent
         }
         // get the page size of the currently painted image we are trying to scale or rotate.
         if (pageRotation != pageBufferStore.getPageRotation()) {
-            double rotation = 0;
+            double rotation;
             rotation = pageBufferStore.getPageRotation() - pageRotation;
             if (rotation < 0) {
                 rotation += 360;
@@ -445,22 +445,14 @@ public abstract class AbstractPageViewComponent
                 page.removePageProcessingListener(pageLoadingListener);
             }
             // queue a repaint, regardless of outcome
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    repaint();
-                }
-            });
+            SwingUtilities.invokeLater(AbstractPageViewComponent.this::repaint);
 
             notifyAll();
             return null;
         }
 
         public void paintPage(PaintPageEvent event) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    repaint();
-                }
-            });
+            SwingUtilities.invokeLater(AbstractPageViewComponent.this::repaint);
         }
     }
 
@@ -484,13 +476,13 @@ public abstract class AbstractPageViewComponent
         private final Object objectLock = new Object();
 
         PageBufferStore() {
-            imageReference = new SoftReference<BufferedImage>(null);
+            imageReference = new SoftReference<>(null);
         }
 
         void setState(BufferedImage pageBufferImage, Rectangle imageLocation, Rectangle imageClipLocation,
                       Rectangle pageSize, float pageZoom, float pageRotation, boolean isDirty) {
             synchronized (objectLock) {
-                this.imageReference = new SoftReference<BufferedImage>(pageBufferImage);
+                this.imageReference = new SoftReference<>(pageBufferImage);
                 this.imageLocation = imageLocation;
                 this.imageClipLocation = imageClipLocation;
                 this.pageSize = pageSize;
@@ -502,7 +494,7 @@ public abstract class AbstractPageViewComponent
 
         void setImageReference(BufferedImage bufferedImage) {
             synchronized (objectLock) {
-                this.imageReference = new SoftReference<BufferedImage>(bufferedImage);
+                this.imageReference = new SoftReference<>(bufferedImage);
             }
         }
 

@@ -17,6 +17,7 @@ package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.tools.DynamicZoomHandler;
 import org.icepdf.ri.common.views.AbstractDocumentView;
+import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.event.InputEvent;
@@ -25,13 +26,13 @@ import java.awt.event.MouseWheelListener;
 
 /**
  * This intercepts MouseWheelEvent for a JScrollPane, and determines if
- * they qualify to initiate a page change request for the SwingController.
+ * they qualify to initiate a page change request for the Controller.
  *
  * @author Mark Collette
  * @since 2.0
  */
 public class MouseWheelListenerPageChanger implements MouseWheelListener {
-    private SwingController controller;
+    private org.icepdf.ri.common.views.Controller controller;
     private JScrollPane scrollpane;
     private AbstractDocumentView documentView;
 
@@ -46,10 +47,10 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
     /**
      * Install a MouseWheelListenerPageChanger as a MouseWheelListener
      *
-     * @param c SwingController that can change pages
+     * @param c Controller that can change pages
      * @param s JScrollPane that has a vertical JScrollBar, and where events come from
      */
-    public static Object install(SwingController c, JScrollPane s,
+    public static Object install(Controller c, JScrollPane s,
                                  AbstractDocumentView documentView) {
         MouseWheelListenerPageChanger listener = null;
         if (c != null && s != null) {
@@ -59,7 +60,7 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
         return listener;
     }
 
-    protected MouseWheelListenerPageChanger(SwingController c, JScrollPane s,
+    protected MouseWheelListenerPageChanger(Controller c, JScrollPane s,
                                             AbstractDocumentView documentView) {
         controller = c;
         scrollpane = s;
@@ -134,11 +135,9 @@ public class MouseWheelListenerPageChanger implements MouseWheelListener {
 
         changingPage = true;
         final int dp = deltaPage;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                changingPage = false;
-                controller.goToDeltaPage(dp);
-            }
+        SwingUtilities.invokeLater(() -> {
+            changingPage = false;
+            controller.goToDeltaPage(dp);
         });
     }
 }

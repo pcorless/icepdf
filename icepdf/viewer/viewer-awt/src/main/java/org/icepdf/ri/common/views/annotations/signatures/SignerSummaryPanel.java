@@ -69,19 +69,9 @@ public class SignerSummaryPanel extends JPanel {
         addGB(new JLabel(signingDate), 1, 1, 1, 1);
         addGB(new JLabel(reason), 1, 2, 1, 1);
         addGB(new JLabel(location), 1, 3, 1, 1);
-        ;
 
     }
 
-    /**
-     * Gridbag constructor helper
-     *
-     * @param component component to add to grid
-     * @param x         row
-     * @param y         col
-     * @param rowSpan
-     * @param colSpan
-     */
     public void addGB(Component component,
                       int x, int y,
                       int rowSpan, int colSpan) {
