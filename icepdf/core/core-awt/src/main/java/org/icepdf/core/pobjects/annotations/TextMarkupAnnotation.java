@@ -158,11 +158,11 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             }
         }
         if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
-            color = highlightColor;
+            color = getColor() == null ? highlightColor : getColor();
         } else if (SUBTYPE_STRIKE_OUT.equals(subtype)) {
-            color = strikeOutColor;
+            color = getColor() == null ? strikeOutColor : getColor();
         } else if (SUBTYPE_UNDERLINE.equals(subtype)) {
-            color = underlineColor;
+            color = getColor() == null ? underlineColor : getColor();
         } else if (SUBTYPE_SQUIGGLY.equals(subtype)) {
             // not implemented
         }

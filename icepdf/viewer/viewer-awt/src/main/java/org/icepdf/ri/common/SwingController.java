@@ -45,6 +45,7 @@ import org.icepdf.ri.common.utility.signatures.SignaturesHandlerPanel;
 import org.icepdf.ri.common.utility.thumbs.ThumbnailsPanel;
 import org.icepdf.ri.common.views.*;
 import org.icepdf.ri.common.views.annotations.AnnotationState;
+import org.icepdf.ri.common.views.annotations.summary.AnnotationSummaryFrame;
 import org.icepdf.ri.util.BareBonesBrowserLaunch;
 import org.icepdf.ri.util.PropertiesManager;
 import org.icepdf.ri.util.TextExtractionTask;
@@ -159,6 +160,7 @@ public class SwingController extends ComponentAdapter
     private JMenuItem goToPageMenuItem;
     private JMenuItem minimiseAllMenuItem;
     private JMenuItem bringAllToFrontMenuItem;
+    private JMenuItem annotationPreviewMenuItem;
     private List windowListMenuItems;
     private JMenuItem aboutMenuItem;
     private JButton openFileButton;
@@ -202,6 +204,7 @@ public class SwingController extends ComponentAdapter
     private JToggleButton inkAnnotationToolButton;
     private JToggleButton freeTextAnnotationToolButton;
     private AnnotationColorToggleButton textAnnotationToolButton;
+    private JButton annotationSummaryButton;
     private JToggleButton formHighlightButton;
     // annotation properties toolbar.
     private JToggleButton linkAnnotationPropertiesToolButton;
@@ -216,6 +219,8 @@ public class SwingController extends ComponentAdapter
     private JToggleButton freeTextAnnotationPropertiesToolButton;
     private JToggleButton textAnnotationPropertiesToolButton;
     private JToolBar completeToolBar;
+    // annotation summary view.
+    private AnnotationSummaryFrame annotationSummaryFrame;
     // Printing in background thread monitors
     private ProgressMonitor printProgressMonitor;
     private Timer printActivityMonitor;
@@ -670,6 +675,11 @@ public class SwingController extends ComponentAdapter
         mi.addActionListener(this);
     }
 
+    public void setAnnotationPreviewMenuItem(JMenuItem mi) {
+        annotationPreviewMenuItem = mi;
+        mi.addActionListener(this);
+    }
+
     /**
      * Called by SwingViewerBuilder, so that Controller can setup event handling
      */
@@ -955,6 +965,11 @@ public class SwingController extends ComponentAdapter
     public void setFreeTextAnnotationToolButton(JToggleButton btn) {
         this.freeTextAnnotationToolButton = btn;
         btn.addItemListener(this);
+    }
+
+    public void setAnnotationSummaryButton(JButton btn) {
+        this.annotationSummaryButton = btn;
+        btn.addActionListener(this);
     }
 
     /**
@@ -1344,6 +1359,8 @@ public class SwingController extends ComponentAdapter
         setEnabled(inkAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(freeTextAnnotationToolButton, opened && canModify && !pdfCollection);
         setEnabled(textAnnotationToolButton, opened && canModify && !pdfCollection);
+        setEnabled(annotationSummaryButton, opened && canModify && !pdfCollection);
+        setEnabled(annotationPreviewMenuItem, opened && canModify && !pdfCollection);
         setEnabled(linkAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(highlightAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
         setEnabled(strikeOutAnnotationPropertiesToolButton, opened && canModify && !pdfCollection);
@@ -2525,6 +2542,10 @@ public class SwingController extends ComponentAdapter
             attachmentPanel.refreshDocumentInstance();
         }
 
+        if (annotationSummaryFrame != null) {
+            annotationSummaryFrame.refreshDocumentInstance();
+        }
+
         // Refresh the properties manager object if we don't already have one
         // This would be not null if the UI was constructed manually
         if (propertiesManager == null) {
@@ -2696,6 +2717,10 @@ public class SwingController extends ComponentAdapter
 
         if (signaturesPanel != null) {
             signaturesPanel.disposeDocument();
+        }
+
+        if (annotationSummaryFrame != null) {
+            annotationSummaryFrame.disposeDocument();
         }
 
         // set the default cursor.  
@@ -3645,6 +3670,21 @@ public class SwingController extends ComponentAdapter
         return document.getPageTree();
     }
 
+    public void showAnnotationPreviewWindow() {
+
+        if (annotationSummaryFrame == null) {
+            annotationSummaryFrame = new AnnotationSummaryFrame(this);
+            annotationSummaryFrame.refreshDocumentInstance();
+            WindowManager.newWindowLocation(annotationSummaryFrame);
+            annotationSummaryFrame.setVisible(true);
+        }
+
+        // bring the window to the front.
+        annotationSummaryFrame.setVisible(true);
+        annotationSummaryFrame.setState(Frame.NORMAL);
+        annotationSummaryFrame.toFront();
+    }
+
     /**
      * Sets the ViewerModel's current page index, and updates the display
      * to show the newly selected page
@@ -4266,6 +4306,9 @@ public class SwingController extends ComponentAdapter
                         showPageSelectionDialog();
                     } else if (source == currentPageNumberTextField) {
                         showPageFromTextField();
+                    } else if (source == annotationSummaryButton ||
+                            source == annotationPreviewMenuItem) {
+                        showAnnotationPreviewWindow();
                     } else {
                         logger.log(Level.FINE, "Unknown action event: " + source.toString());
                     }

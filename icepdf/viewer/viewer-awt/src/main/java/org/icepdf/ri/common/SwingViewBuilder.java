@@ -993,6 +993,8 @@ public class SwingViewBuilder {
         addToMenu(windowMenu, buildMinimiseAllMenuItem());
         addToMenu(windowMenu, buildBringAllToFrontMenuItem());
         windowMenu.addSeparator();
+        addToMenu(windowMenu, buildShowAnnotationPreviewMenuItem());
+        windowMenu.addSeparator();
         final int allowedCount = windowMenu.getItemCount();
         windowMenu.addMenuListener(new javax.swing.event.MenuListener() {
             public void menuCanceled(javax.swing.event.MenuEvent e) {
@@ -1026,6 +1028,14 @@ public class SwingViewBuilder {
         mi.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.window.frontAll.mnemonic").charAt(0)));
         if (viewerController != null)
             viewerController.setBringAllToFrontMenuItem(mi);
+        return mi;
+    }
+
+    public JMenuItem buildShowAnnotationPreviewMenuItem() {
+        JMenuItem mi = makeMenuItem(messageBundle.getString("viewer.menu.window.annotationPreview.label"), null);
+        mi.setMnemonic(buildMnemonic(messageBundle.getString("viewer.menu.window.annotationPreview.mnemonic").charAt(0)));
+        if (viewerController != null)
+            viewerController.setAnnotationPreviewMenuItem(mi);
         return mi;
     }
 
@@ -1229,6 +1239,16 @@ public class SwingViewBuilder {
                 "search", Images.SIZE_LARGE, buttonFont);
         if (viewerController != null && btn != null)
             viewerController.setSearchButton(btn);
+        return btn;
+    }
+
+    public JButton buildAnnotationPreviewButton(final String imageSize) {
+        JButton btn = makeToolbarButton(
+                messageBundle.getString("viewer.toolbar.tool.annotationPreview.label"),
+                messageBundle.getString("viewer.toolbar.tool.annotationPreview.tooltip"),
+                "annot_preview", imageSize, buttonFont);
+        if (viewerController != null && btn != null)
+            viewerController.setAnnotationSummaryButton(btn);
         return btn;
     }
 
@@ -1504,6 +1524,10 @@ public class SwingViewBuilder {
         if (propertiesManager.checkAndStoreBooleanProperty(
                 PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {
             addToToolBar(toolbar, buildTextAnnotationToolButton(Images.SIZE_LARGE));
+        }
+        if (propertiesManager.checkAndStoreBooleanProperty(
+                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_PREVIEW)) {
+            addToToolBar(toolbar, buildAnnotationPreviewButton(Images.SIZE_LARGE));
         }
 //        if (propertiesManager.checkAndStoreBooleanProperty(
 //                PropertiesManager.PROPERTY_SHOW_TOOLBAR_ANNOTATION_TEXT)) {

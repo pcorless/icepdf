@@ -90,6 +90,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
     protected Color popupBackgroundColor;
 
+    protected MouseListener popupListener;
+
     protected JPanel commentPanel;
     protected JTextArea textArea;
     protected JLabel creationLabel;
@@ -299,7 +301,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         textArea = new JTextArea(contents != null ? contents : "");
         textArea.setFont(new JLabel().getFont());
         textArea.setWrapStyleWord(true);
-        textArea.setBorder(BorderFactory.createLineBorder(borderColor));
+        textArea.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)));
 
         textArea.setLineWrap(true);
         textArea.getDocument().addDocumentListener(this);
@@ -428,7 +431,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         contextMenu = new MarkupAnnotationPopupMenu(comp, documentViewController.getParentController(),
                 getPageViewComponent(), false);
         // Add listener to components that can bring up popup menus.
-        MouseListener popupListener = new PopupListener(contextMenu);
+        popupListener = new PopupListener(contextMenu);
         commentPanel.addMouseListener(popupListener);
     }
 

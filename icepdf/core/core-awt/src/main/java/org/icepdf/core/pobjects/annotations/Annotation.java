@@ -1578,8 +1578,8 @@ public abstract class Annotation extends Dictionary {
     /**
      * Gest the RGB colour of the annotation used for the following purposes:
      * <ul>
-     * <li>the background of the annotaiton's icon when closed</li>
-     * <li>the title bar of the anntoation's pop-up window</li>
+     * <li>the background of the annotation's icon when closed</li>
+     * <li>the title bar of the annotation's pop-up window</li>
      * <li>the border of a link annotation</li>
      * </ul>
      *

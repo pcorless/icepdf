@@ -57,6 +57,7 @@ public class MarkupAnnotationPopupMenu extends AnnotationPopup {
                                      AbstractPageViewComponent pageViewComponent, boolean deleteRoot) {
         super(markupAnnotationComponent, controller, pageViewComponent);
         this.deleteRoot = deleteRoot;
+        this.markupAnnotationComponent = markupAnnotationComponent;
 
         buildGui();
     }
