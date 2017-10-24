@@ -257,9 +257,11 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     protected void buildSortFilterToolBar() {
         JPanel filterSortToolPanel = new JPanel(new GridBagLayout());
 
+        String iconSize = preferences.get(PropertiesManager.PROPERTY_ICON_DEFAULT_SIZE, Images.SIZE_LARGE);
+
         DropDownButton sortDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.sort.sortButton.tooltip"),
-                "sort", Images.SIZE_LARGE, SwingViewBuilder.buildButtonFont());
+                "sort", iconSize, SwingViewBuilder.buildButtonFont());
 
         String defaultColumn = preferences.get(PropertiesManager.PROPERTY_ANNOTATION_SORT_COLUMN, SortColumn.PAGE.toString());
         ButtonGroup sortMenuGroup = new ButtonGroup();
@@ -279,7 +281,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         // build out the base filter
         filterDropDownButton = new DropDownButton(controller, "",
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.filter.filterButton.tooltip"),
-                "filter", Images.SIZE_LARGE, SwingViewBuilder.buildButtonFont());
+                "filter", iconSize, SwingViewBuilder.buildButtonFont());
 
         JMenu authorFilterMenuItem = new JMenu(messageBundle.getString(
                 "viewer.utilityPane.markupAnnotation.toolbar.filter.option.byAuthor.label"));
@@ -309,7 +311,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.quickColorButton.label"),
                 messageBundle.getString("viewer.utilityPane.markupAnnotation.toolbar.quickColorButton.tooltip"),
                 "paint_bucket",
-                Images.SIZE_LARGE,
+                iconSize,
                 SwingViewBuilder.buildButtonFont());
         quickPaintAnnotationButton.setEnabled(false);
 

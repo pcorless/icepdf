@@ -53,6 +53,8 @@ public class PropertiesManager {
 
     public static final String PROPERTY_RECENT_FILES_SIZE = "application.menu.recent.file.size";
 
+    public static final String PROPERTY_ICON_DEFAULT_SIZE = "application.icon.default.size";
+
     // window properties
     public static final String PROPERTY_DIVIDER_LOCATION = "application.divider.location";
     // default page fit mode
@@ -264,6 +266,25 @@ public class PropertiesManager {
         return preferences;
     }
 
+
+    /**
+     * Method to check the value of a string property
+     * This is meant to be used for configuration via the properties file
+     * After the property has been checked, it will be stored back into the Properties
+     * object (using a default value if none was found)
+     *
+     * @param propertyName to check for
+     * @param defaultVal   to default to if no value is found on a property
+     * @return String value for the propertyName or defaultVal if none exists.
+     */
+    public String checkAndStoreStringProperty(String propertyName, String defaultVal) {
+        // Get the desired property, defaulting to the defaultVal parameter
+        String returnValue = preferences.get(propertyName, defaultVal);
+        // Set the property back into the manager
+        // This is necessary in the cases where a property didn't exist, but needs to be added to the file
+        preferences.put(propertyName, returnValue);
+        return returnValue;
+    }
 
     public boolean checkAndStoreBooleanProperty(String propertyName) {
         return checkAndStoreBooleanProperty(propertyName, true);

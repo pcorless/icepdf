@@ -31,8 +31,7 @@ import java.net.URL;
 public class Images {
 
     public static final String SIZE_LARGE = "_32";
-    public static final String SIZE_MEDIUM = "_24";
-    public static final String SIZE_SMALL = "_16";
+    public static final String SIZE_SMALL = "_24";
 
     public static URL get(String name) {
         return Images.class.getResource(name);

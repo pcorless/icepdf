@@ -41,7 +41,11 @@ public class AnnotationColorButton extends AbstractColorButton {
         colorButton = new ColorButton();
         colorButton.setFont(font);
         colorButton.setToolTipText(toolTip);
-        colorButton.setPreferredSize(new Dimension(32, 32));
+        if (imageSize.equals(Images.SIZE_LARGE)) {
+            colorButton.setPreferredSize(new Dimension(32, 32));
+        } else if (imageSize.equals(Images.SIZE_SMALL)) {
+            colorButton.setPreferredSize(new Dimension(24, 24));
+        }
         colorButton.setRolloverEnabled(true);
 
         try {

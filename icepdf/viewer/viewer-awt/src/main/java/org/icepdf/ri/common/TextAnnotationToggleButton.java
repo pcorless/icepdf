@@ -16,6 +16,7 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
@@ -33,24 +34,28 @@ import java.util.prefs.Preferences;
 public class TextAnnotationToggleButton extends AnnotationColorToggleButton {
 
     // define the bounded shape used to colourize the icon with the current colour
-    private static GeneralPath textIconPath;
+    private static GeneralPath textIconPathLarge;
+    private static Shape textIconPathSmall;
 
     static {
-        textIconPath = new GeneralPath();
-        textIconPath.moveTo(0, 0);
-        textIconPath.curveTo(1.407, -0.402, 2.422, -0.484, 4.03, -0.484);
-        textIconPath.curveTo(10.786, -0.484, 16.262, 3.419, 16.262, 8.232);
-        textIconPath.curveTo(16.262, 13.046, 10.786, 16.948, 4.03, 16.948);
-        textIconPath.curveTo(-2.727, 16.948, -8.204, 13.046, -8.204, 8.2329);
-        textIconPath.curveTo(-8.204, 5.809, -6.815, 3.616, -4.576, 2.037);
-        textIconPath.curveTo((float) textIconPath.getCurrentPoint().getX(), (float) textIconPath.getCurrentPoint().getY(),
+        textIconPathLarge = new GeneralPath();
+        textIconPathLarge.moveTo(0, 0);
+        textIconPathLarge.curveTo(1.407, -0.402, 2.422, -0.484, 4.03, -0.484);
+        textIconPathLarge.curveTo(10.786, -0.484, 16.262, 3.419, 16.262, 8.232);
+        textIconPathLarge.curveTo(16.262, 13.046, 10.786, 16.948, 4.03, 16.948);
+        textIconPathLarge.curveTo(-2.727, 16.948, -8.204, 13.046, -8.204, 8.2329);
+        textIconPathLarge.curveTo(-8.204, 5.809, -6.815, 3.616, -4.576, 2.037);
+        textIconPathLarge.curveTo((float) textIconPathLarge.getCurrentPoint().getX(), (float) textIconPathLarge.getCurrentPoint().getY(),
                 -4.472, 0.82, -4.91, -0.484);
-        textIconPath.curveTo(-5.482, -2.184, -5.994, -2.679, -5.994, -2.679);
-        textIconPath.curveTo((float) textIconPath.getCurrentPoint().getX(), (float) textIconPath.getCurrentPoint().getY(),
+        textIconPathLarge.curveTo(-5.482, -2.184, -5.994, -2.679, -5.994, -2.679);
+        textIconPathLarge.curveTo((float) textIconPathLarge.getCurrentPoint().getX(), (float) textIconPathLarge.getCurrentPoint().getY(),
                 -4.555, -2.679, -2.525, -1.866);
-        textIconPath.curveTo(-0.685, -1.127, 0, 0, 0, 0);
-        textIconPath.transform(new AffineTransform(1, 0, 0, -1, 11.8502, 23.1348));
-        textIconPath.closePath();
+        textIconPathLarge.curveTo(-0.685, -1.127, 0, 0, 0, 0);
+        textIconPathLarge.transform(new AffineTransform(1, 0, 0, -1, 11.8502, 23.1348));
+        textIconPathLarge.closePath();
+
+        textIconPathSmall =
+                textIconPathLarge.createTransformedShape(new AffineTransform(0.75, 0, 0, 0.75, 0, 0));
     }
 
     public TextAnnotationToggleButton(Controller controller, ResourceBundle messageBundle, String title,
@@ -58,7 +63,11 @@ public class TextAnnotationToggleButton extends AnnotationColorToggleButton {
         super(controller, messageBundle, title, toolTip, imageName, imageSize, font);
 
         PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
-        paintButton.setColorBound(textIconPath);
+        if (imageSize.equals(Images.SIZE_LARGE)) {
+            paintButton.setColorBound(textIconPathLarge);
+        } else if (imageSize.equals(Images.SIZE_SMALL)) {
+            paintButton.setColorBound(textIconPathSmall);
+        }
 
         // apply the settings colour
         Color color = null;

@@ -34,6 +34,13 @@ public class AnnotationColumnPanel extends JPanel {
         addMouseMotionListener(mouseHandler);
     }
 
+    public AnnotationColumnPanel(int vgap) {
+        setLayout(new FlowLayout(vgap));
+        MouseHandler mouseHandler = new MouseHandler();
+        addMouseListener(mouseHandler);
+        addMouseMotionListener(mouseHandler);
+    }
+
 
     public AnnotationColumnPanel() {
         this(FlowLayout.CENTER, DEFAULT_GAP, DEFAULT_GAP);

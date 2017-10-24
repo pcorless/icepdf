@@ -77,10 +77,14 @@ public class DropDownButton extends JButton
     @Override
     public void setSelected(boolean b) {
         super.setSelected(b);
-        if (b) {
-            setIcon(new ImageIcon(Images.get(imageName + "_selected_a" + imageSize + ".png")));
-        } else {
-            setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
+        try {
+            if (b) {
+                setIcon(new ImageIcon(Images.get(imageName + "_selected_a" + imageSize + ".png")));
+            } else {
+                setIcon(new ImageIcon(Images.get(imageName + "_a" + imageSize + ".png")));
+            }
+        } catch (Exception e) {
+            logger.warning("Could not load icon" + imageName + "_a" + imageSize + ".png");
         }
     }
 

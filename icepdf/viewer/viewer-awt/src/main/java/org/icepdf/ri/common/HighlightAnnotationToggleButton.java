@@ -16,9 +16,12 @@
 package org.icepdf.ri.common;
 
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.PropertiesManager;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
@@ -30,13 +33,32 @@ import java.util.prefs.Preferences;
  */
 public class HighlightAnnotationToggleButton extends AnnotationColorToggleButton {
 
+    private static GeneralPath textIconPathLarge;
+    private static Shape textIconPathSmall;
+
+    static {
+        textIconPathLarge = new GeneralPath();
+        textIconPathLarge.moveTo(5, 9);
+        textIconPathLarge.lineTo(17, 9);
+        textIconPathLarge.lineTo(17, 22);
+        textIconPathLarge.lineTo(5, 22);
+        textIconPathLarge.closePath();
+
+        textIconPathSmall =
+                textIconPathLarge.createTransformedShape(new AffineTransform(0.75, 0, 0, 0.75, 0, 0));
+    }
+
     public HighlightAnnotationToggleButton(Controller controller, ResourceBundle messageBundle, String title,
                                            String toolTip, String imageName, String imageSize, Font font) {
         super(controller, messageBundle, title, toolTip, imageName, imageSize, font);
 
         // define the bounded shape used to colourize the icon with the current colour
         PaintButtonInterface paintButton = (PaintButtonInterface) colorButton;
-        paintButton.setColorBound(new Rectangle(5, 9, 12, 13));
+        if (imageSize.equals(Images.SIZE_LARGE)) {
+            paintButton.setColorBound(textIconPathLarge);
+        } else if (imageSize.equals(Images.SIZE_SMALL)) {
+            paintButton.setColorBound(textIconPathSmall);
+        }
 
         // apply the settings colour
         Color color = null;

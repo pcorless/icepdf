@@ -120,7 +120,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                 constraints.insets = new Insets(2, 2, 2, 2);
                 constraints.fill = GridBagConstraints.BOTH;
                 // other wise just one big panel with all the named colors.
-                AnnotationColumnPanel annotationColumnPanel = new AnnotationColumnPanel();
+                AnnotationColumnPanel annotationColumnPanel = new AnnotationColumnPanel(10);
                 annotationNamedColorPanels = new ArrayList<>(1);
                 annotationNamedColorPanels.add(annotationColumnPanel);
                 addGB(this, annotationColumnPanel, 0, 0, 1, 1);
