@@ -21,12 +21,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-public class AnnotationColumnPanel extends JPanel {
+public class DraggableAnnotationPanel extends JPanel {
 
     private static final int DEFAULT_GAP = 10;
 
 
-    public AnnotationColumnPanel(int layout, int hGap, int vHap) {
+    public DraggableAnnotationPanel(int layout, int hGap, int vHap) {
         setLayout(new ColumnLayoutManager(vHap));
 
         MouseHandler mouseHandler = new MouseHandler();
@@ -34,7 +34,7 @@ public class AnnotationColumnPanel extends JPanel {
         addMouseMotionListener(mouseHandler);
     }
 
-    public AnnotationColumnPanel(int vgap) {
+    public DraggableAnnotationPanel(int vgap) {
         setLayout(new FlowLayout(vgap));
         MouseHandler mouseHandler = new MouseHandler();
         addMouseListener(mouseHandler);
@@ -42,7 +42,7 @@ public class AnnotationColumnPanel extends JPanel {
     }
 
 
-    public AnnotationColumnPanel() {
+    public DraggableAnnotationPanel() {
         this(FlowLayout.CENTER, DEFAULT_GAP, DEFAULT_GAP);
     }
 

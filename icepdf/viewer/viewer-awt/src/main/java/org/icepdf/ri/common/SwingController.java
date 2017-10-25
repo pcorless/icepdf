@@ -87,6 +87,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import static org.icepdf.core.util.PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE;
 import static org.icepdf.ri.util.PropertiesManager.*;
 
 /**
@@ -4999,7 +5000,7 @@ public class SwingController extends ComponentAdapter
                     }
                 }
                 break;
-            case PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE:
+            case ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE:
                 if (highlightAnnotationToolButton != null) {
                     highlightAnnotationToolButton.refreshColorPanel();
                 }
@@ -5009,6 +5010,10 @@ public class SwingController extends ComponentAdapter
                 if (annotationPanel != null &&
                         annotationPanel.getMarkupAnnotationPanel() != null) {
                     annotationPanel.getMarkupAnnotationPanel().refreshColorPanel();
+                }
+                if (annotationSummaryFrame != null &&
+                        annotationSummaryFrame.getAnnotationSummaryPanel() != null) {
+                    annotationSummaryFrame.getAnnotationSummaryPanel().refreshDocumentInstance();
                 }
                 break;
             case PropertyConstants.DESTINATION_ADDED:

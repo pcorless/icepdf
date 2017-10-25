@@ -27,6 +27,7 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
 
     protected Controller controller;
     protected ResourceBundle messageBundle;
+    protected AnnotationSummaryPanel annotationSummaryPanel;
 
     public AnnotationSummaryFrame(Controller controller) {
         this.controller = controller;
@@ -45,10 +46,14 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
                     messageBundle.getString("viewer.window.annotationSummary.title.open.default"));
             setTitle(formatter.format(messageArguments));
 
-            AnnotationSummaryPanel annotationSummaryPanel = new AnnotationSummaryPanel(controller);
+            annotationSummaryPanel = new AnnotationSummaryPanel(controller);
             getContentPane().add(annotationSummaryPanel);
             annotationSummaryPanel.refreshDocumentInstance();
         }
+    }
+
+    public AnnotationSummaryPanel getAnnotationSummaryPanel() {
+        return annotationSummaryPanel;
     }
 
     @Override

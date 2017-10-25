@@ -99,7 +99,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         setFocusable(true);
 
         ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
-        addPropertyChangeListener(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, controller);
+        addPropertyChangeListener(PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE, this);
 
         // assemble sort actions
         sortActions = new ArrayList<>(5);
@@ -415,7 +415,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
     @Override
     public void disposeDocument() {
         markupAnnotationHandlerPanel.disposeDocument();
-        removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
+        quickPaintAnnotationButton.removePropertyChangeListener(PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE, controller);
     }
 
     protected void sortAndFilterAnnotationData() {

@@ -18,11 +18,9 @@ package org.icepdf.ri.common.views.annotations.summary;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.MutableDocument;
-import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
@@ -41,9 +39,11 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
     protected Controller controller;
     protected ResourceBundle messageBundle;
 
+    protected MarkupAnnotation lastSelectedMarkupAnnotation;
+
     protected GridBagConstraints constraints;
 
-    protected ArrayList<AnnotationColumnPanel> annotationNamedColorPanels;
+    protected ArrayList<ColorLabelPanel> annotationNamedColorPanels;
 
     public AnnotationSummaryPanel(Controller controller) {
         this.controller = controller;
@@ -60,7 +60,6 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
 
     @Override
     public void refreshDocumentInstance() {
-        removeAll();
         if (controller.getDocument() != null) {
             // get the named colour and build out the draggable panels.
             Document document = controller.getDocument();
@@ -68,83 +67,58 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             int numberOfPanels = colorLabels != null ? colorLabels.size() : 1;
             if (annotationNamedColorPanels != null) annotationNamedColorPanels.clear();
             annotationNamedColorPanels = new ArrayList<>(numberOfPanels);
-            constraints.weightx = 1.0 / (float) numberOfPanels;
-            constraints.weighty = 1.0f;
-            constraints.insets = new Insets(2, 2, 2, 2);
-            constraints.fill = GridBagConstraints.BOTH;
 
             if (colorLabels != null && colorLabels.size() > 0) {
-                if (annotationNamedColorPanels != null) annotationNamedColorPanels.clear();
-                annotationNamedColorPanels = new ArrayList<>(colorLabels.size());
-                constraints.weightx = 1.0 / (float) colorLabels.size();
-                constraints.weighty = 1.0f;
-                constraints.insets = new Insets(2, 2, 2, 2);
-                constraints.fill = GridBagConstraints.BOTH;
                 // build a panel for each color
-                int k = 0;
                 for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
-                    AnnotationColumnPanel annotationColumnPanel = new AnnotationColumnPanel();
+                    ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(controller, colorLabel);
                     annotationNamedColorPanels.add(annotationColumnPanel);
-                    constraints.weighty = 0.001;
-                    addGB(this, new JLabel(
-                            "<html><h3>" + colorLabel.getLabel() + "</h3></html>", JLabel.CENTER), k, 0, 1, 1);
-                    constraints.weighty = 1.5f;
-                    addGB(this, new JScrollPane(annotationColumnPanel), k, 1, 1, 1);
                     for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
-                        List<AbstractPageViewComponent> pageComponents =
-                                controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
                         List<Annotation> annotations = document.getPageTree().getPage(i).getAnnotations();
                         if (annotations != null) {
                             for (Annotation annotation : annotations) {
                                 if (annotation instanceof MarkupAnnotation
                                         && colorLabel.getColor().equals(annotation.getColor())) {
-                                    MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;
-                                    PopupAnnotation popupAnnotation = markupAnnotation.getPopupAnnotation();
-                                    if (popupAnnotation != null) {
-                                        AnnotationSummaryBox popupAnnotationComponent =
-                                                new AnnotationSummaryBox(popupAnnotation,
-                                                        controller.getDocumentViewController(), pageComponents.get(i));
-                                        popupAnnotationComponent.setVisible(true);
-                                        popupAnnotationComponent.removeMouseListeners();
-                                        annotationColumnPanel.add(popupAnnotationComponent);
-                                    }
+                                    annotationColumnPanel.addAnnotation((MarkupAnnotation) annotation);
                                 }
                             }
                         }
                     }
-                    k++;
+
                 }
+                // check to make sure a label has
             } else {
-                constraints.weightx = 1.0f;
-                constraints.weighty = 1.0f;
-                constraints.insets = new Insets(2, 2, 2, 2);
-                constraints.fill = GridBagConstraints.BOTH;
                 // other wise just one big panel with all the named colors.
-                AnnotationColumnPanel annotationColumnPanel = new AnnotationColumnPanel(10);
-                annotationNamedColorPanels = new ArrayList<>(1);
+                ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(controller, null);
                 annotationNamedColorPanels.add(annotationColumnPanel);
-                addGB(this, annotationColumnPanel, 0, 0, 1, 1);
                 for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
-                    List<AbstractPageViewComponent> pageComponents =
-                            controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
                     List<Annotation> annotations = document.getPageTree().getPage(i).getAnnotations();
                     if (annotations != null) {
                         for (Annotation annotation : annotations) {
                             if (annotation instanceof MarkupAnnotation) {
-                                MarkupAnnotation markupAnnotation = (MarkupAnnotation) annotation;
-                                PopupAnnotation popupAnnotation = markupAnnotation.getPopupAnnotation();
-                                if (popupAnnotation != null) {
-                                    AnnotationSummaryBox popupAnnotationComponent =
-                                            new AnnotationSummaryBox(popupAnnotation,
-                                                    controller.getDocumentViewController(), pageComponents.get(i));
-                                    popupAnnotationComponent.setVisible(true);
-                                    popupAnnotationComponent.removeMouseListeners();
-                                    annotationColumnPanel.add(popupAnnotationComponent);
-                                }
+                                annotationColumnPanel.addAnnotation((MarkupAnnotation) annotation);
                             }
                         }
                     }
                 }
+            }
+        }
+        refreshPanelLayout();
+
+    }
+
+    public void refreshPanelLayout() {
+        removeAll();
+        ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+        int numberOfPanels = colorLabels != null && colorLabels.size() > 0 ? colorLabels.size() : 1;
+        constraints.weightx = 1.0 / (float) numberOfPanels;
+        constraints.weighty = 1.0f;
+        constraints.insets = new Insets(2, 2, 2, 2);
+        constraints.fill = GridBagConstraints.BOTH;
+        int k = 0;
+        for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
+            if (annotationColumnPanel.getNumberOfComponents() > 0) {
+                addGB(this, new JScrollPane(annotationColumnPanel), ++k, 0, 1, 1);
             }
         }
         invalidate();
@@ -154,61 +128,137 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (PropertyConstants.ANNOTATION_DELETED.equals(evt.getPropertyName())) {
-            if (evt.getOldValue() instanceof MarkupAnnotationComponent) {
-                // find an remove the markup annotation node.
-                MarkupAnnotationComponent comp = (MarkupAnnotationComponent) evt.getOldValue();
-                MarkupAnnotation markupAnnotation = comp.getAnnotation();
-                if (annotationNamedColorPanels != null) {
-                    for (AnnotationColumnPanel annotationColumnPanel : annotationNamedColorPanels) {
-                        for (Component component : annotationColumnPanel.getComponents()) {
-                            if (component instanceof AnnotationSummaryBox) {
-                                AnnotationSummaryBox annotationSummaryBox = (AnnotationSummaryBox) component;
-                                MarkupAnnotation currentMarkupAnnotation = annotationSummaryBox.getAnnotation().getParent();
-                                if (markupAnnotation.getPObjectReference().equals(currentMarkupAnnotation.getPObjectReference())) {
-                                    annotationColumnPanel.remove(component);
-                                    annotationColumnPanel.revalidate();
-                                    annotationColumnPanel.repaint();
+
+        Object newValue = evt.getNewValue();
+        Object oldValue = evt.getOldValue();
+        String propertyName = evt.getPropertyName();
+        switch (propertyName) {
+            case PropertyConstants.ANNOTATION_DELETED:
+                if (oldValue instanceof MarkupAnnotationComponent) {
+                    // find an remove the markup annotation node.
+                    MarkupAnnotationComponent comp = (MarkupAnnotationComponent) oldValue;
+                    MarkupAnnotation markupAnnotation = comp.getAnnotation();
+                    if (annotationNamedColorPanels != null) {
+                        ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+                        if (colorLabels != null) {
+                            for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
+                                if (annotationColumnPanel.getColorLabel() != null &&
+                                        annotationColumnPanel.getColorLabel().getColor().equals(markupAnnotation.getColor())) {
+                                    annotationColumnPanel.removeAnnotation(markupAnnotation);
+                                    refreshPanelLayout();
                                     break;
                                 }
+                            }
+                        } else {
+                            // just add the component to the single column
+                            ColorLabelPanel annotationColumnPanel = annotationNamedColorPanels.get(0);
+                            annotationColumnPanel.removeAnnotation(markupAnnotation);
+                            refreshPanelLayout();
+                            break;
+                        }
+
+                    }
+                }
+                break;
+            case PropertyConstants.ANNOTATION_UPDATED:
+                if (newValue instanceof PopupAnnotationComponent) {
+                    // find an remove the markup annotation node.
+                    if (annotationNamedColorPanels != null) {
+                        PopupAnnotationComponent comp = (PopupAnnotationComponent) newValue;
+                        MarkupAnnotation markupAnnotation = comp.getAnnotation().getParent();
+                        if (markupAnnotation != null) {
+                            ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+                            if (colorLabels != null) {
+                                for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
+                                    if (annotationColumnPanel.getColorLabel() != null &&
+                                            annotationColumnPanel.getColorLabel().getColor().equals(markupAnnotation.getColor())) {
+                                        annotationColumnPanel.updateAnnotation(markupAnnotation);
+                                        refreshPanelLayout();
+                                        break;
+                                    }
+                                }
+                            } else {
+                                // just add the component to the single column
+                                ColorLabelPanel annotationColumnPanel = annotationNamedColorPanels.get(0);
+                                annotationColumnPanel.updateAnnotation(markupAnnotation);
+                                refreshPanelLayout();
+                                break;
                             }
                         }
                     }
                 }
-            }
-        } else if (PropertyConstants.ANNOTATION_UPDATED.equals(evt.getPropertyName())) {
-            if (evt.getNewValue() instanceof PopupAnnotationComponent) {
-                // find the markup annotation
-                PopupAnnotationComponent comp = (PopupAnnotationComponent) evt.getNewValue();
-                PopupAnnotation popupAnnotation = comp.getAnnotation();
-                if (popupAnnotation.getParent() != null) {
-                    MarkupAnnotation markupAnnotation = popupAnnotation.getParent();
-                    // only update root pop annotation comment
-//                    if (!markupAnnotation.isInReplyTo()) {
-//                        for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
-//                            AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
-//                            if (node != null) {
-//                                node.applyMessage(markupAnnotation, messageBundle);
-//                                ((DefaultTreeModel) tree.getModel()).nodeChanged(node);
-//                                break;
-//                            }
-//                        }
-//                    }
+                break;
+            case PropertyConstants.ANNOTATION_ADDED:
+                // rebuild the tree so we get a good sort etc and do  worker thread setup.
+                if (newValue instanceof PopupAnnotationComponent) {
+                    // find an remove the markup annotation node.
+                    if (annotationNamedColorPanels != null) {
+                        PopupAnnotationComponent comp = (PopupAnnotationComponent) newValue;
+                        MarkupAnnotation markupAnnotation = comp.getAnnotation().getParent();
+                        if (markupAnnotation != null) {
+                            ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+                            if (colorLabels != null) {
+                                for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
+                                    if (annotationColumnPanel.getColorLabel() != null &&
+                                            annotationColumnPanel.getColorLabel().getColor().equals(markupAnnotation.getColor())) {
+                                        annotationColumnPanel.addAnnotation(markupAnnotation);
+                                        refreshPanelLayout();
+                                        break;
+                                    }
+                                }
+                            } else {
+                                ColorLabelPanel annotationColumnPanel = annotationNamedColorPanels.get(0);
+                                annotationColumnPanel.addAnnotation(markupAnnotation);
+                                refreshPanelLayout();
+                            }
+                        }
+                    }
                 }
-                System.out.println("updated");
-            }
-        } else if (PropertyConstants.ANNOTATION_ADDED.equals(evt.getPropertyName())) {
-            // rebuild the tree so we get a good sort etc and do  worker thread setup.
-//            if (evt.getNewValue() instanceof MarkupAnnotationComponent) {
-//                refreshMarkupTree();
-//            }
-            System.out.println("added");
+                break;
+            case PropertyConstants.ANNOTATION_QUICK_COLOR_CHANGE:
+                if (lastSelectedMarkupAnnotation != null) {
+                    // find and remove,
+                    if (annotationNamedColorPanels != null) {
+                        for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
+                            annotationColumnPanel.removeAnnotation(lastSelectedMarkupAnnotation);
+                            refreshPanelLayout();
+                        }
+                        // and then add back in.
+                        ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
+                        if (colorLabels != null) {
+                            for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
+                                if (annotationColumnPanel.getColorLabel().getColor().equals(lastSelectedMarkupAnnotation.getColor())) {
+                                    annotationColumnPanel.addAnnotation(lastSelectedMarkupAnnotation);
+                                    refreshPanelLayout();
+                                    break;
+                                }
+                            }
+                        } else {
+                            ColorLabelPanel annotationColumnPanel = annotationNamedColorPanels.get(0);
+                            annotationColumnPanel.addAnnotation(lastSelectedMarkupAnnotation);
+                            refreshPanelLayout();
+                        }
+                    }
+
+                }
+                break;
+            case PropertyConstants.ANNOTATION_COLOR_PROPERTY_PANEL_CHANGE:
+                // no choice but to do a full refresh, order will be lost.
+                refreshDocumentInstance();
+                break;
+            case PropertyConstants.ANNOTATION_SELECTED:
+            case PropertyConstants.ANNOTATION_FOCUS_GAINED:
+                if (newValue instanceof MarkupAnnotationComponent) {
+                    lastSelectedMarkupAnnotation = ((MarkupAnnotationComponent) newValue).getAnnotation();
+                }
+                break;
+
         }
     }
 
     @Override
     public void disposeDocument() {
-
+        annotationNamedColorPanels.clear();
     }
 
     private void addGB(JPanel layout, Component component,

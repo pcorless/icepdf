@@ -651,6 +651,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
     }
 
+    public void refreshPopupText() {
+        if (textArea != null) {
+            textArea.getDocument().removeDocumentListener(this);
+            textArea.setText(selectedMarkupAnnotation.getContents());
+            textArea.getDocument().addDocumentListener(this);
+        }
+    }
+
     public boolean isActive() {
         return false;
     }
