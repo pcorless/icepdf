@@ -58,12 +58,15 @@ public class ColorLabelPanel extends JPanel {
         if (popupAnnotation != null) {
             List<AbstractPageViewComponent> pageComponents =
                     controller.getDocumentViewController().getDocumentViewModel().getPageComponents();
-            AnnotationSummaryBox popupAnnotationComponent =
-                    new AnnotationSummaryBox(popupAnnotation,
-                            controller.getDocumentViewController(), pageComponents.get(markupAnnotation.getPageIndex()));
-            popupAnnotationComponent.setVisible(true);
-            popupAnnotationComponent.removeMouseListeners();
-            draggableAnnotationPanel.add(popupAnnotationComponent);
+            int pageIndex = markupAnnotation.getPageIndex();
+            if (pageIndex >= 0) {
+                AnnotationSummaryBox popupAnnotationComponent =
+                        new AnnotationSummaryBox(popupAnnotation,
+                                controller.getDocumentViewController(), pageComponents.get(pageIndex));
+                popupAnnotationComponent.setVisible(true);
+                popupAnnotationComponent.removeMouseListeners();
+                draggableAnnotationPanel.add(popupAnnotationComponent);
+            }
         }
     }
 
