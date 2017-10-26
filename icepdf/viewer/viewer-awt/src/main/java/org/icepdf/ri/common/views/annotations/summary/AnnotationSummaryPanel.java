@@ -28,13 +28,18 @@ import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class AnnotationSummaryPanel extends JPanel implements MutableDocument, PropertyChangeListener {
+public class AnnotationSummaryPanel extends JPanel implements MutableDocument, PropertyChangeListener,
+        MouseListener, ComponentListener {
 
     protected Controller controller;
     protected ResourceBundle messageBundle;
@@ -56,6 +61,8 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
 
         // listen for annotations changes.
         ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
+
+        addComponentListener(this);
     }
 
     @Override
@@ -73,6 +80,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                 for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
                     ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(controller, colorLabel);
                     annotationNamedColorPanels.add(annotationColumnPanel);
+                    annotationColumnPanel.addMouseListener(this);
                     for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
                         List<Annotation> annotations = document.getPageTree().getPage(i).getAnnotations();
                         if (annotations != null) {
@@ -104,7 +112,6 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             }
         }
         refreshPanelLayout();
-
     }
 
     public void refreshPanelLayout() {
@@ -113,12 +120,12 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         int numberOfPanels = colorLabels != null && colorLabels.size() > 0 ? colorLabels.size() : 1;
         constraints.weightx = 1.0 / (float) numberOfPanels;
         constraints.weighty = 1.0f;
-        constraints.insets = new Insets(2, 2, 2, 2);
+        constraints.insets = new Insets(0, 5, 0, 0);
         constraints.fill = GridBagConstraints.BOTH;
         int k = 0;
         for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
             if (annotationColumnPanel.getNumberOfComponents() > 0) {
-                addGB(this, new JScrollPane(annotationColumnPanel), ++k, 0, 1, 1);
+                addGB(this, annotationColumnPanel, ++k, 0, 1, 1);
             }
         }
         invalidate();
@@ -156,7 +163,6 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                             refreshPanelLayout();
                             break;
                         }
-
                     }
                 }
                 break;
@@ -269,5 +275,75 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         constraints.gridwidth = rowSpan;
         constraints.gridheight = colSpan;
         layout.add(component, constraints);
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2) {
+            Component comp = (Component) e.getSource();
+            if (annotationNamedColorPanels != null) {
+                double weightX = 1.0 / (float) annotationNamedColorPanels.size();
+                GridBagLayout gridBagLayout = (GridBagLayout) this.getLayout();
+                for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
+                    GridBagConstraints constraints = gridBagLayout.getConstraints(colorLabelPanel);
+                    if (colorLabelPanel.equals(comp)) {
+                        constraints.weightx = 1;
+                    } else {
+                        constraints.weightx = weightX;
+                    }
+                    gridBagLayout.setConstraints(colorLabelPanel, constraints);
+                }
+                invalidate();
+                revalidate();
+            }
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void componentResized(ComponentEvent e) {
+        // reset the constraint back to an even division of
+        if (annotationNamedColorPanels != null) {
+            double weightX = 1.0 / (float) annotationNamedColorPanels.size();
+            GridBagLayout gridBagLayout = (GridBagLayout) this.getLayout();
+            for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
+                GridBagConstraints constraints = gridBagLayout.getConstraints(colorLabelPanel);
+                constraints.weightx = weightX;
+                gridBagLayout.setConstraints(colorLabelPanel, constraints);
+            }
+            invalidate();
+            revalidate();
+        }
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent e) {
+
+    }
+
+    @Override
+    public void componentShown(ComponentEvent e) {
+
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
     }
 }

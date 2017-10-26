@@ -15,6 +15,8 @@
  */
 package org.icepdf.ri.common.views.annotations.summary;
 
+import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -23,7 +25,7 @@ import java.util.ArrayList;
 
 public class DraggableAnnotationPanel extends JPanel {
 
-    private static final int DEFAULT_GAP = 10;
+    private static final int DEFAULT_GAP = 8;
 
 
     public DraggableAnnotationPanel(int layout, int hGap, int vHap) {
@@ -81,7 +83,8 @@ public class DraggableAnnotationPanel extends JPanel {
                 for (int i = 0; i < getComponentCount(); i++) {
                     comp = comps[i];
                     if (!comp.equals(dragComponent) && !comp.equals(this) &&
-                            comp.getBounds().contains(e.getPoint())) {
+                            comp.getBounds().contains(e.getPoint()) &&
+                            dragComponent.getLocation().y < comp.getLocation().y + dragComponent.getHeight()) {
                         // shift comps left or right,  depends on the drag
                         if (i < lastMovedCompIndex) {
                             // shift all the components to the right.
@@ -182,12 +185,16 @@ public class DraggableAnnotationPanel extends JPanel {
         @Override
         public Dimension preferredLayoutSize(Container parent) {
             int height = padding;
-            int width = padding * 2;
+            int doublePadding = padding * 2;
+            int width = 0;
             for (Component comp : children) {
                 height += comp.getHeight() + padding;
                 width = Math.max(width, comp.getWidth());
             }
             height += padding;
+            if (width < PopupAnnotationComponent.DEFAULT_WIDTH + doublePadding) {
+                width = PopupAnnotationComponent.DEFAULT_WIDTH + doublePadding;
+            }
             return new Dimension(width, height);
         }
 
@@ -203,13 +210,20 @@ public class DraggableAnnotationPanel extends JPanel {
 
         @Override
         public void layoutContainer(Container parent) {
-//            Point offset = ((Chess.Board) parent).getBoardOffset();
             Point previousPoint = new Point();
+            int doublePadding = padding * 2;
+            Dimension preferredSize;
             for (Component comp : parent.getComponents()) {
                 int x = previousPoint.x + padding;
                 int y = previousPoint.y + padding;
-                comp.setBounds(x, y, comp.getWidth(), comp.getHeight());
-                previousPoint.y = y + comp.getHeight();
+                preferredSize = comp.getPreferredSize();
+                if (preferredSize.width > parent.getWidth()) {
+                    comp.setBounds(x, y, comp.getWidth(), comp.getHeight());
+                } else {
+                    // stretch to fill
+                    comp.setBounds(x, y, parent.getWidth() - doublePadding, preferredSize.height);
+                }
+                previousPoint.y = y + preferredSize.height;
             }
         }
     }

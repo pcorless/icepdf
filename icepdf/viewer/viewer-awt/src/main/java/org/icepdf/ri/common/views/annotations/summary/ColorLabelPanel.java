@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
-import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,7 +45,7 @@ public class ColorLabelPanel extends JPanel {
             add(new JLabel("<html><h3>" + colorLabel.getLabel() + "</h3></html>", JLabel.CENTER), BorderLayout.NORTH);
         }
         draggableAnnotationPanel = new DraggableAnnotationPanel();
-        add(draggableAnnotationPanel, BorderLayout.CENTER);
+        add(new JScrollPane(draggableAnnotationPanel), BorderLayout.CENTER);
     }
 
     public int getNumberOfComponents() {
@@ -68,10 +67,6 @@ public class ColorLabelPanel extends JPanel {
                 draggableAnnotationPanel.add(popupAnnotationComponent);
             }
         }
-    }
-
-    public void addAnnotation(PopupAnnotationComponent popupAnnotationComponent) {
-        addAnnotation(popupAnnotationComponent.getAnnotation().getParent());
     }
 
     public void updateAnnotation(MarkupAnnotation markupAnnotation) {
