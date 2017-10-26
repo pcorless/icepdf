@@ -201,7 +201,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     public void disposeDocument() {
         super.disposeDocument();
         sigVerificationTask = null;
-        timer = null;
     }
 
     /**

@@ -179,7 +179,6 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
     @Override
     public void disposeDocument() {
         searchTextTask = null;
-        timer = null;
     }
 
     /**
