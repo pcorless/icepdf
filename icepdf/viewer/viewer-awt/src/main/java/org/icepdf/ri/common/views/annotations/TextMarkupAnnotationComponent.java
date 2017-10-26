@@ -15,24 +15,26 @@
  */
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
  */
 @SuppressWarnings("serial")
-public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
+public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<TextMarkupAnnotation> {
 
     private static final Logger logger =
             Logger.getLogger(TextMarkupAnnotationComponent.class.toString());
 
-    public TextMarkupAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
+    public TextMarkupAnnotationComponent(TextMarkupAnnotation annotation, DocumentViewController documentViewController,
                                          AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
         isMovable = false;
@@ -43,9 +45,31 @@ public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent {
     @Override
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
-        TextMarkupAnnotation textMarkupAnnotation = (TextMarkupAnnotation) annotation;
-        textMarkupAnnotation.resetAppearanceStream(getPageTransform());
+        annotation.resetAppearanceStream(getPageTransform());
     }
+
+    @Override
+    public boolean contains(int x, int y) {
+        if (super.contains(x, y) &&
+                annotation != null && annotation.getMarkupPath() != null) {
+            // convert the mouse coords to component space.
+            try {
+                AffineTransform pageTransform = getPageTransform();
+                Rectangle compBounds = getBounds();
+                shape = annotation.getMarkupPath().createTransformedShape(pageTransform.createInverse());
+                AffineTransform af = new AffineTransform(1, 0, 0, 1,
+                        -compBounds.x, -compBounds.y);
+                shape = af.createTransformedShape(shape);
+                // we do the contains test on the annotations shape.
+                return shape.contains(x, y);
+            } catch (NoninvertibleTransformException e) {
+                logger.log(Level.SEVERE, "Error converting mouse point to page space.", e);
+            }
+        }
+        return super.contains(x, y);
+    }
+
+    Shape shape;
 
     public void paintComponent(Graphics g) {
 

@@ -137,7 +137,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                 if (oldValue instanceof MarkupAnnotationComponent) {
                     // find an remove the markup annotation node.
                     MarkupAnnotationComponent comp = (MarkupAnnotationComponent) oldValue;
-                    MarkupAnnotation markupAnnotation = comp.getAnnotation();
+                    MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
                     if (annotationNamedColorPanels != null) {
                         ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
                         if (colorLabels != null) {
@@ -249,7 +249,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             case PropertyConstants.ANNOTATION_SELECTED:
             case PropertyConstants.ANNOTATION_FOCUS_GAINED:
                 if (newValue instanceof MarkupAnnotationComponent) {
-                    lastSelectedMarkupAnnotation = ((MarkupAnnotationComponent) newValue).getAnnotation();
+                    lastSelectedMarkupAnnotation = (MarkupAnnotation) ((MarkupAnnotationComponent) newValue).getAnnotation();
                 }
                 break;
 

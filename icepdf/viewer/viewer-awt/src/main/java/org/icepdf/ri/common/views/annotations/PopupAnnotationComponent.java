@@ -759,7 +759,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 annotationComponent = annotationComponents.get(i);
                 if (annotationComponent instanceof MarkupAnnotationComponent) {
                     markupAnnotationComponent = (MarkupAnnotationComponent) annotationComponent;
-                    markupAnnotation = markupAnnotationComponent.getAnnotation();
+                    markupAnnotation = (MarkupAnnotation) markupAnnotationComponent.getAnnotation();
                     if (markupAnnotation.getInReplyToAnnotation() != null &&
                             markupAnnotation.getInReplyToAnnotation()
                                     .getPObjectReference().equals(reference)) {

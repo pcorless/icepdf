@@ -133,7 +133,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
         // clear the selected text
         documentViewController.clearSelectedText();
 
-        if (highlightBounds != null) {
+        if (highlightBounds != null && highlightBounds.size() > 0) {
 
             // bound of the selected text
             GeneralPath highlightPath = new GeneralPath();
@@ -240,6 +240,10 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                     if (pageLines != null) {
                         for (LineText lineText : pageLines) {
                             java.util.List<WordText> words = lineText.getWords();
+                            Rectangle2D line = null;
+                            if (highlightBounds == null) {
+                                highlightBounds = new ArrayList<>();
+                            }
                             if (words != null) {
                                 for (WordText wordText : words) {
                                     // paint whole word
@@ -248,10 +252,11 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                                         textPath.transform(pageTransform);
                                         // paint highlight over any selected
                                         if (wordText.isSelected()) {
-                                            if (highlightBounds == null) {
-                                                highlightBounds = new ArrayList<>();
+                                            if (line == null) {
+                                                line = textPath.getBounds2D();
+                                            } else {
+                                                line.add(textPath.getBounds2D());
                                             }
-                                            highlightBounds.add(textPath.getBounds2D());
                                         }
                                     }
                                     // check children
@@ -260,13 +265,17 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                                             if (glyph.isSelected()) {
                                                 textPath = new GeneralPath(glyph.getBounds());
                                                 textPath.transform(pageTransform);
-                                                if (highlightBounds == null) {
-                                                    highlightBounds = new ArrayList<>();
+                                                if (line == null) {
+                                                    line = textPath.getBounds2D();
+                                                } else {
+                                                    line.add(textPath.getBounds2D());
                                                 }
-                                                highlightBounds.add(textPath.getBounds2D());
                                             }
                                         }
                                     }
+                                }
+                                if (line != null) {
+                                    highlightBounds.add(line.getBounds2D());
                                 }
                             }
                         }

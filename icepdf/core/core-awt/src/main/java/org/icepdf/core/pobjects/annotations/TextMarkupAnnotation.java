@@ -271,8 +271,6 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
             shapes.add(new ShapeDrawCmd(markupPath));
             shapes.add(new ColorDrawCmd(color));
             shapes.add(new FillDrawCmd());
-            shapes.add(new AlphaDrawCmd(
-                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
         } else if (SUBTYPE_STRIKE_OUT.equals(subtype)) {
             for (Shape shape : markupBounds) {
                 // calculate the line that will stroke the bounds

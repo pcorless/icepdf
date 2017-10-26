@@ -85,7 +85,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
             if (evt.getOldValue() instanceof MarkupAnnotationComponent) {
                 // find an remove the markup annotation node.
                 MarkupAnnotationComponent comp = (MarkupAnnotationComponent) evt.getOldValue();
-                MarkupAnnotation markupAnnotation = comp.getAnnotation();
+                MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
                 for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
                     AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
                     if (node != null) {
@@ -132,7 +132,7 @@ public class MarkupAnnotationHandlerPanel extends AbstractWorkerPanel implements
             if (evt.getNewValue() instanceof MarkupAnnotationComponent) {
                 // try and find the node in the tree.
                 MarkupAnnotationComponent comp = (MarkupAnnotationComponent) evt.getNewValue();
-                MarkupAnnotation markupAnnotation = comp.getAnnotation();
+                MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
                 for (int i = 0; i < rootTreeNode.getChildCount(); i++) {
                     AnnotationTreeNode node = findAnnotationTreeNode(rootTreeNode.getChildAt(i), markupAnnotation);
                     if (node != null) {

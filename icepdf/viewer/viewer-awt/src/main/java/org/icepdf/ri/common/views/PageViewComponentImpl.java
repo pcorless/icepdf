@@ -344,8 +344,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             MarkupAnnotationComponent markupAnnotationComponent = (MarkupAnnotationComponent) annotation;
             PopupAnnotationComponent popupAnnotationComponent = markupAnnotationComponent.getPopupAnnotationComponent();
             this.add(new MarkupGlueComponent(markupAnnotationComponent, popupAnnotationComponent),
-                    JLayeredPane.PALETTE_LAYER);
-            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.DEFAULT_LAYER);
+                    JLayeredPane.DEFAULT_LAYER);
+            this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
         } else {
             this.add((AbstractAnnotationComponent) annotation, JLayeredPane.PALETTE_LAYER);
         }

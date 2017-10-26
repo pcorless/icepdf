@@ -72,13 +72,13 @@ public class AnnotationComponentFactory {
             if (Annotation.SUBTYPE_LINK.equals(subtype)) {
                 return new LinkAnnotationComponent((LinkAnnotation) annotation, documentViewController, pageViewComponent);
             } else if (TextMarkupAnnotation.isTextMarkupAnnotation(subtype)) {
-                return new TextMarkupAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+                return new TextMarkupAnnotationComponent((TextMarkupAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_LINE.equals(subtype)) {
-                return new LineAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+                return new LineAnnotationComponent((LineAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_CIRCLE.equals(subtype)) {
-                return new CircleAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+                return new CircleAnnotationComponent((CircleAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_POLYGON.equals(subtype)) {
                 return new PolygonAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
@@ -87,19 +87,19 @@ public class AnnotationComponentFactory {
                 return new PolyLineAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_SQUARE.equals(subtype)) {
-                return new SquareAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+                return new SquareAnnotationComponent((SquareAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_POPUP.equals(subtype)) {
                 return new PopupAnnotationComponent((PopupAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_TEXT.equals(subtype)) {
-                return new TextAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+                return new TextAnnotationComponent((TextAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_INK.equals(subtype)) {
-                return new InkAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+                return new InkAnnotationComponent((InkAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_FREE_TEXT.equals(subtype)) {
-                return new FreeTextAnnotationComponent((MarkupAnnotation) annotation, documentViewController,
+                return new FreeTextAnnotationComponent((FreeTextAnnotation) annotation, documentViewController,
                         pageViewComponent);
             } else if (Annotation.SUBTYPE_WIDGET.equals(subtype)) {
                 AbstractWidgetAnnotation widgetAnnotation = (AbstractWidgetAnnotation) annotation;

@@ -56,7 +56,7 @@ import java.util.logging.Logger;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public abstract class MarkupAnnotationComponent extends AbstractAnnotationComponent<MarkupAnnotation> {
+public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> extends AbstractAnnotationComponent<T> {
 
     protected static final Logger logger =
             Logger.getLogger(MarkupAnnotationComponent.class.toString());
@@ -69,7 +69,7 @@ public abstract class MarkupAnnotationComponent extends AbstractAnnotationCompon
                         "org.icepdf.core.annotations.interactive.popup.enabled", true);
     }
 
-    public MarkupAnnotationComponent(MarkupAnnotation annotation,
+    public MarkupAnnotationComponent(T annotation,
                                      DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);

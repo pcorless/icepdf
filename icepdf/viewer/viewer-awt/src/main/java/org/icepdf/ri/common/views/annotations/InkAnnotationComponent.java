@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.InkAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -36,10 +35,10 @@ import java.awt.event.MouseEvent;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public class InkAnnotationComponent extends MarkupAnnotationComponent {
+public class InkAnnotationComponent extends MarkupAnnotationComponent<InkAnnotation> {
 
 
-    public InkAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
+    public InkAnnotationComponent(InkAnnotation annotation, DocumentViewController documentViewController,
                                   AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
         isShowInvisibleBorder = false;
@@ -50,8 +49,7 @@ public class InkAnnotationComponent extends MarkupAnnotationComponent {
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
         refreshAnnotationRect();
-        InkAnnotation inkAnnotation = (InkAnnotation) annotation;
-        inkAnnotation.resetAppearanceStream(dx, dy, getPageTransform());
+        annotation.resetAppearanceStream(dx, dy, getPageTransform());
     }
 
     @Override

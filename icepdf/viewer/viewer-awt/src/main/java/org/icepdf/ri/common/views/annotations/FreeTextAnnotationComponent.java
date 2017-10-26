@@ -17,7 +17,6 @@ package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.BorderStyle;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.TextSprite;
@@ -63,7 +62,7 @@ import java.util.logging.Logger;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
+public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeTextAnnotation>
         implements PropertyChangeListener {
 
     private static final Logger logger =
@@ -72,15 +71,12 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
     protected Font fontFile;
     private ScalableTextArea freeTextPane;
     private boolean contentTextChange;
-    private FreeTextAnnotation freeTextAnnotation;
 
-    public FreeTextAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
+    public FreeTextAnnotationComponent(FreeTextAnnotation annotation, DocumentViewController documentViewController,
                                        final AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
         isRollover = false;
         isShowInvisibleBorder = false;
-
-        freeTextAnnotation = (FreeTextAnnotation) annotation;
 
         // update the shapes array pruning any text glyphs as well as
         // extra any useful font information for the editing of this annotation.
@@ -93,8 +89,8 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
                     // grab the font reference
                     TextSprite tmp = ((TextSpriteDrawCmd) cmd).getTextSprite();
                     FontFile font = tmp.getFont();
-                    freeTextAnnotation.setFontSize((int) font.getSize());
-                    freeTextAnnotation.setFontColor(tmp.getStrokeColor());
+                    annotation.setFontSize((int) font.getSize());
+                    annotation.setFontColor(tmp.getStrokeColor());
                     // remove all text.
                     shapes.remove(i);
                 }
@@ -110,7 +106,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         // lock the field until the correct tool selects it.
         freeTextPane.setEditable(false);
         // clean up the contents make sure we have \n instead of \r
-        String contents = freeTextAnnotation.getContents();
+        String contents = annotation.getContents();
         if (contents != null) {
             contents = contents.replace('\r', '\n');
             freeTextPane.setText(contents);
@@ -153,9 +149,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         if (freeTextPane != null) {
             DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
             freeTextPane.setFont(
-                    new Font(freeTextAnnotation.getFontName(),
+                    new Font(annotation.getFontName(),
                             Font.PLAIN,
-                            (int) (freeTextAnnotation.getFontSize() * documentViewModel.getViewZoom())));
+                            (int) (annotation.getFontSize() * documentViewModel.getViewZoom())));
         }
         super.validate();
     }
@@ -164,27 +160,27 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         // copy over annotation properties from the free text annotation.
         DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
         fontFile = FontManager.getInstance().initialize().getType1AWTFont(
-                freeTextAnnotation.getFontName(),
-                (int) (freeTextAnnotation.getFontSize() * documentViewModel.getViewZoom()));
+                annotation.getFontName(),
+                (int) (annotation.getFontSize() * documentViewModel.getViewZoom()));
 
         freeTextPane.setFont(fontFile);
-        freeTextPane.setForeground(freeTextAnnotation.getFontColor());
+        freeTextPane.setForeground(annotation.getFontColor());
 
-        if (freeTextAnnotation.isFillType()) {
+        if (annotation.isFillType()) {
             freeTextPane.setOpaque(true);
-            freeTextPane.setBackground(freeTextAnnotation.getFillColor());
+            freeTextPane.setBackground(annotation.getFillColor());
         } else {
             freeTextPane.setOpaque(false);
         }
-        if (freeTextAnnotation.isStrokeType()) {
-            if (freeTextAnnotation.getBorderStyle().isStyleSolid()) {
+        if (annotation.isStrokeType()) {
+            if (annotation.getBorderStyle().isStyleSolid()) {
                 freeTextPane.setBorder(BorderFactory.createLineBorder(
-                        freeTextAnnotation.getColor(),
-                        (int) freeTextAnnotation.getBorderStyle().getStrokeWidth()));
-            } else if (freeTextAnnotation.getBorderStyle().isStyleDashed()) {
+                        annotation.getColor(),
+                        (int) annotation.getBorderStyle().getStrokeWidth()));
+            } else if (annotation.getBorderStyle().isStyleDashed()) {
                 freeTextPane.setBorder(
-                        new DashedBorder(freeTextAnnotation.getBorderStyle(),
-                                freeTextAnnotation.getColor()));
+                        new DashedBorder(annotation.getBorderStyle(),
+                                annotation.getColor()));
             }
         } else {
             freeTextPane.setBorder(BorderFactory.createEmptyBorder());
@@ -200,9 +196,9 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
         Rectangle tBbox = convertToPageSpace(getBounds());
 
         // generate the shapes
-        freeTextAnnotation.setBBox(tBbox);
-        freeTextAnnotation.setContents(content);
-        freeTextAnnotation.setRichText(freeTextPane.getText());
+        annotation.setBBox(tBbox);
+        annotation.setContents(content);
+        annotation.setRichText(freeTextPane.getText());
         freeTextPane.revalidate();
     }
 
@@ -320,7 +316,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent
             this.stroke = new BasicStroke(thickness,
                     BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER,
                     thickness * 2.0f,
-                    freeTextAnnotation.getBorderStyle().getDashArray(),
+                    annotation.getBorderStyle().getDashArray(),
                     0.0f);
             this.color = color;
         }

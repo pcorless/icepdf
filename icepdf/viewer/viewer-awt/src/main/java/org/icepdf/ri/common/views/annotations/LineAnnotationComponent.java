@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.views.annotations;
 
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.ri.common.utility.annotation.properties.LineAnnotationPanel;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -37,10 +36,10 @@ import java.awt.event.MouseEvent;
  * @since 5.0
  */
 @SuppressWarnings("serial")
-public class LineAnnotationComponent extends MarkupAnnotationComponent {
+public class LineAnnotationComponent extends MarkupAnnotationComponent<LineAnnotation> {
 
 
-    public LineAnnotationComponent(MarkupAnnotation annotation, DocumentViewController documentViewController,
+    public LineAnnotationComponent(LineAnnotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
         isRollover = false;
@@ -63,8 +62,7 @@ public class LineAnnotationComponent extends MarkupAnnotationComponent {
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
         refreshAnnotationRect();
-        LineAnnotation textMarkupAnnotation = (LineAnnotation) annotation;
-        textMarkupAnnotation.resetAppearanceStream(dx, dy, getPageTransform());
+        annotation.resetAppearanceStream(dx, dy, getPageTransform());
     }
 
     @Override
