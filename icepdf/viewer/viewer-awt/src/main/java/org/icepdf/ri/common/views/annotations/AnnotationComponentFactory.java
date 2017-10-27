@@ -126,7 +126,7 @@ public class AnnotationComponentFactory {
                         return generatedWidgetField(SIGNATURE_FIELD_CLASS, annotation,
                                 documentViewController, pageViewComponent);
                     } else {
-                        return new WidgetAnnotationComponent(annotation, documentViewController, pageViewComponent);
+                        return new WidgetAnnotationComponent((AbstractWidgetAnnotation) annotation, documentViewController, pageViewComponent);
                     }
                 }
             } else {
@@ -158,12 +158,9 @@ public class AnnotationComponentFactory {
             AbstractPageViewComponent pageViewComponent) {
         try {
             Class<?> widgetFieldClass = Class.forName(widgetFieldClassName);
-            Class[] widgetArgs = {Annotation.class, DocumentViewController.class,
-                    AbstractPageViewComponent.class};
-            Constructor widgetFieldClassConstructor =
-                    widgetFieldClass.getDeclaredConstructor(widgetArgs);
-            Object[] widgetParams = {annotation, documentViewController,
-                    pageViewComponent};
+            Class[] widgetArgs = {Annotation.class, DocumentViewController.class, AbstractPageViewComponent.class};
+            Constructor widgetFieldClassConstructor = widgetFieldClass.getDeclaredConstructor(widgetArgs);
+            Object[] widgetParams = {annotation, documentViewController, pageViewComponent};
             return (AbstractAnnotationComponent) widgetFieldClassConstructor.newInstance(widgetParams);
         } catch (Throwable e) {
             logger.log(Level.WARNING, "Error generating widget field", e);

@@ -101,10 +101,17 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected JScrollPane commentTreeScrollPane;
     protected MarkupAnnotation selectedMarkupAnnotation;
 
+    protected boolean disableSpellCheck;
+
     private String userName = System.getProperty("user.name");
 
     public PopupAnnotationComponent(PopupAnnotation annotation, DocumentViewController documentViewController,
                                     AbstractPageViewComponent pageViewComponent) {
+        this(annotation, documentViewController, pageViewComponent, false);
+    }
+
+    public PopupAnnotationComponent(PopupAnnotation annotation, DocumentViewController documentViewController,
+                                    AbstractPageViewComponent pageViewComponent, boolean disableSpellCheck) {
         super(annotation, documentViewController, pageViewComponent);
 
         isEditable = true;
@@ -112,6 +119,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         isMovable = true;
         isResizable = true;
         isShowInvisibleBorder = false;
+        this.disableSpellCheck = disableSpellCheck;
 
         try {
             annotation.init();
@@ -306,6 +314,9 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
 
         textArea.setLineWrap(true);
         textArea.getDocument().addDocumentListener(this);
+        if (!disableSpellCheck) {
+            SpellCheckLoader.addSpellChecker(textArea);
+        }
 
         // creation date
         creationLabel = new JLabel();

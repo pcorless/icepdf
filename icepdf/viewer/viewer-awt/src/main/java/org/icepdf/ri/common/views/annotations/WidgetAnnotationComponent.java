@@ -16,7 +16,7 @@
 
 package org.icepdf.ri.common.views.annotations;
 
-import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 
@@ -28,10 +28,10 @@ import java.beans.PropertyChangeListener;
  *
  */
 @SuppressWarnings("serial")
-public class WidgetAnnotationComponent extends AbstractAnnotationComponent implements PropertyChangeListener {
+public class WidgetAnnotationComponent extends AbstractAnnotationComponent<AbstractWidgetAnnotation> implements PropertyChangeListener {
 
 
-    public WidgetAnnotationComponent(Annotation annotation, DocumentViewController documentViewController,
+    public WidgetAnnotationComponent(AbstractWidgetAnnotation annotation, DocumentViewController documentViewController,
                                      AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
         if (annotation.allowScreenOrPrintRenderingOrInteraction()) {

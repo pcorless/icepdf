@@ -27,8 +27,7 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent {
 
     public AnnotationSummaryBox(PopupAnnotation annotation, DocumentViewController documentViewController,
                                 AbstractPageViewComponent pageViewComponent) {
-        super(annotation, documentViewController, pageViewComponent);
-
+        super(annotation, documentViewController, pageViewComponent, true);
 
         commentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
         // hides a bunch of the controls.

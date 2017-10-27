@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
-import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
@@ -29,6 +28,7 @@ import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDi
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -40,16 +40,15 @@ import java.util.logging.Logger;
  *
  * @since 6.1
  */
-public class SignatureFieldComponent extends WidgetAnnotationComponent {
+public class SignatureFieldComponent extends AbstractAnnotationComponent<SignatureWidgetAnnotation> {
 
     private static final Logger logger =
             Logger.getLogger(SignatureFieldComponent.class.toString());
 
-    protected SignatureWidgetAnnotation signatureWidgetAnnotation;
     protected JPopupMenu contextMenu;
     protected Controller controller;
 
-    public SignatureFieldComponent(Annotation annotation, DocumentViewController documentViewController,
+    public SignatureFieldComponent(SignatureWidgetAnnotation annotation, DocumentViewController documentViewController,
                                    AbstractPageViewComponent pageViewComponent) {
         super(annotation, documentViewController, pageViewComponent);
 
@@ -58,7 +57,15 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
         isShowInvisibleBorder = true;
         isResizable = false;
         isMovable = false;
-        signatureWidgetAnnotation = getSignatureWidgetAnnotation();
+
+        if (!annotation.allowScreenOrPrintRenderingOrInteraction()) {
+            // border state flags.
+            isEditable = false;
+            isRollover = false;
+            isMovable = false;
+            isResizable = false;
+            isShowInvisibleBorder = false;
+        }
 
         // add context menu for quick access to validating and signature properties.
         contextMenu = new JPopupMenu();
@@ -73,20 +80,34 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
         contextMenu.add(signaturePropertiesMenu);
     }
 
+    public boolean isActive() {
+        return false;
+    }
+
+    @Override
+    public void resetAppearanceShapes() {
+
+    }
+
+    @Override
+    public void paintComponent(Graphics g) {
+
+    }
+
     /**
      * Utility for showing SignaturePropertiesDialog via a double click or the context menu.
      */
     protected void showSignatureWidgetPropertiesDialog() {
-        SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
+        SignatureFieldDictionary fieldDictionary = annotation.getFieldDictionary();
         if (fieldDictionary != null) {
-            SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
+            SignatureValidator signatureValidator = annotation.getSignatureValidator();
             if (signatureValidator != null) {
                 try {
                     signatureValidator.validate();
                     new SignaturePropertiesDialog(controller.getViewerFrame(),
-                            messageBundle, signatureWidgetAnnotation).setVisible(true);
+                            messageBundle, annotation).setVisible(true);
                 } catch (SignatureIntegrityException e1) {
-                    logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
+                    logger.fine("Error validating annotation " + annotation.toString());
                 }
             }
         }
@@ -98,7 +119,7 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
     class CertificatePropertiesActionListener implements ActionListener {
         public void actionPerformed(ActionEvent actionEvent) {
             // validate the signature and show the summary dialog.
-            SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
+            SignatureFieldDictionary fieldDictionary = annotation.getFieldDictionary();
             if (fieldDictionary != null) {
                 SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
                 SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
@@ -108,7 +129,7 @@ public class SignatureFieldComponent extends WidgetAnnotationComponent {
                         new CertificatePropertiesDialog(controller.getViewerFrame(),
                                 messageBundle, signatureValidator.getCertificateChain()).setVisible(true);
                     } catch (SignatureIntegrityException e1) {
-                        logger.fine("Error validating annotation " + signatureWidgetAnnotation.toString());
+                        logger.fine("Error validating annotation " + annotation.toString());
                     }
                 }
             }
