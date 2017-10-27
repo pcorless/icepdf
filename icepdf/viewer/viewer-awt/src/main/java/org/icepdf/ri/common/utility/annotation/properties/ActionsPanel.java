@@ -108,16 +108,6 @@ public class ActionsPanel extends AnnotationPanelAdapter
                 actionList.setSelectedIndex(0);
             }
         }
-        // check to see if the link annotation "dest" key is present. as
-        // we'll edit this field with the goToAction dialog
-        else if (annotation.getAnnotation() != null &&
-                annotation.getAnnotation() instanceof LinkAnnotation) {
-            LinkAnnotation linkAnnotaiton = (LinkAnnotation)
-                    annotation.getAnnotation();
-            if (linkAnnotaiton.getDestination() != null) {
-                actionListModel.addElement(new ActionEntry(destinationLabel, null));
-            }
-        }
         // refresh add/edit/remove buttons.
         refreshActionCrud();
     }

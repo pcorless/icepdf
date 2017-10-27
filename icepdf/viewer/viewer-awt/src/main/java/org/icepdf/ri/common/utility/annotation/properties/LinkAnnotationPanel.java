@@ -15,7 +15,9 @@
  */
 package org.icepdf.ri.common.utility.annotation.properties;
 
+import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.NameTree;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.ri.common.views.AnnotationComponent;
@@ -25,8 +27,12 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+
+import static org.icepdf.ri.common.utility.annotation.properties.GoToActionDialog.EMPTY_DESTINATION;
 
 /**
  * Link Annotation panel intended use is for the manipulation of LinkAnnotation
@@ -36,13 +42,18 @@ import java.awt.event.ItemListener;
  * @since 4.0
  */
 @SuppressWarnings("serial")
-public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemListener {
+public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemListener, ActionListener {
 
     // default list values.
     private static final int DEFAULT_HIGHLIGHT_STYLE = 1;
 
     // link action appearance properties.
     private JComboBox<ValueLabelItem> highlightStyleBox;
+
+    // named destination fields.
+    private JLabel destinationName;
+    private JButton viewNamedDesButton;
+    private NameTreeDialog nameTreeDialog;
 
     // appearance properties to take care of.
     private Name highlightStyle;
@@ -92,6 +103,13 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         highlightStyle = linkAnnotation.getHighlightMode();
         applySelectedValue(highlightStyleBox, highlightStyle);
 
+        // check for  destination key
+        Object dest = linkAnnotation.getEntries().get(LinkAnnotation.DESTINATION_KEY);
+        if (dest != null && dest instanceof LiteralStringObject) {
+            destinationName.setText(((LiteralStringObject) dest).getDecryptedLiteralString(
+                    controller.getDocument().getSecurityManager()));
+        }
+
         // disable appearance input if we have a invisible rectangle
         enableAppearanceInputComponents(linkAnnotation.getBorderType());
     }
@@ -106,6 +124,27 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
             // save the action state back to the document structure.
             updateCurrentAnnotation();
             currentAnnotationComponent.repaint();
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == viewNamedDesButton) {
+            // test implementation of a NameJTree for destinations.
+            NameTree nameTree = controller.getDocument().getCatalog().getNames().getDestsNameTree();
+            if (nameTree != null) {
+                // create new dialog instance.
+                nameTreeDialog = new NameTreeDialog(
+                        controller,
+                        true, nameTree);
+                nameTreeDialog.setDestinationName(destinationName);
+                // add the nameTree instance.
+                nameTreeDialog.setVisible(true);
+                nameTreeDialog.dispose();
+                // apply the new names
+                linkAnnotation.setNamedDestination(destinationName.getText());
+                updateCurrentAnnotation();
+            }
         }
     }
 
@@ -145,7 +184,16 @@ public class LinkAnnotationPanel extends AnnotationPanelAdapter implements ItemL
         addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.link.highlightType")),
                 0, 0, 1, 1);
         addGB(this, highlightStyleBox,
-                1, 0, 1, 1);
+                1, 0, 2, 1);
+        // destination link
+        addGB(this, new JLabel(messageBundle.getString("viewer.utilityPane.annotation.link.destination")),
+                0, 1, 1, 1);
+        destinationName = new JLabel(EMPTY_DESTINATION);
+        addGB(this, destinationName, 1, 1, 1, 1);
+        // browse button to show named destination tree.
+        viewNamedDesButton = new JButton(messageBundle.getString("viewer.utilityPane.action.dialog.goto.browse"));
+        viewNamedDesButton.addActionListener(this);
+        addGB(this, viewNamedDesButton, 2, 1, 1, 1);
 
         // little spacer
         constraints.weighty = 1.0;
