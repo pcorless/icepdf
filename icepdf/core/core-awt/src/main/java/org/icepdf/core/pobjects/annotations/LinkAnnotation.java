@@ -189,6 +189,10 @@ public class LinkAnnotation extends Annotation {
         entries.put(HIGHLIGHT_MODE_KEY, mode);
     }
 
+    public void setNamedDestination(String name) {
+        entries.put(DESTINATION_KEY, new LiteralStringObject(name));
+    }
+
 
     /**
      * A destination to be displayed when the annotation is ativated.  Only
