@@ -19,9 +19,9 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.ri.common.MutableDocument;
 import org.icepdf.ri.common.SwingController;
-import org.icepdf.ri.common.views.DocumentViewModelImpl;
 import org.icepdf.ri.images.Images;
 import org.icepdf.ri.util.SearchTextTask;
 
@@ -374,11 +374,9 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                 // get the find entry and navigate to the page.
                 FindEntry tmp = (FindEntry) selectedNode.getUserObject();
                 if (controller != null) {
-                    int oldTool = controller.getDocumentViewController().getToolMode();
                     try {
                         int pageIndex = tmp.getPageNumber();
                         WordText wordText = tmp.getWordText();
-                        controller.getDocumentViewController().setToolMode(DocumentViewModelImpl.DISPLAY_TOOL_WAIT);
                         // navigate to the word.
                         controller.getDocumentSearchController().showWord(pageIndex, wordText);
                         // clear the current cursor and set it to this word
@@ -391,11 +389,13 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
                         if (wordText != null) {
                             wordText.setHasHighlightCursor(true);
                             wordText.setHighlightCursor(true);
+                            // update the selection model.
+                            DocumentSearchController searchController =
+                                    controller.getDocumentSearchController();
+                            searchController.setCurrentSearchHit(pageIndex, wordText);
                         }
-                    } catch (InterruptedException e1) {
+                    } catch (Throwable e1) {
                         logger.finer("Page text retrieval interrupted.");
-                    } finally {
-                        controller.getDocumentViewController().setToolMode(oldTool);
                     }
                 }
             }
@@ -478,9 +478,11 @@ public class SearchPanel extends JPanel implements ActionListener, MutableDocume
         StringBuilder toReturn = new StringBuilder(HTML_TAG_START);
         for (WordText currentText : allText) {
             if (currentText.isHighlighted()) {
+                toReturn.append(" ");
                 toReturn.append(BOLD_TAG_START);
                 toReturn.append(currentText.getText());
                 toReturn.append(BOLD_TAG_END);
+                toReturn.append(" ");
             } else {
                 toReturn.append(currentText.getText());
             }

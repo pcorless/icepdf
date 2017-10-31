@@ -256,9 +256,9 @@ public class PropertiesManager {
     public static PropertiesManager getInstance() {
         if (propertiesManager == null) {
             propertiesManager = new PropertiesManager();
+            // load default properties from viewer jar and assigned to defaultProps.
+            setupDefaultProperties();
         }
-        // load default properties from viewer jar and assigned to defaultProps.
-        setupDefaultProperties();
         return propertiesManager;
     }
 

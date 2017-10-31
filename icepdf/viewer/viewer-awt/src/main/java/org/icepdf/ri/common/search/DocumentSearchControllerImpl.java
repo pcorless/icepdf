@@ -164,6 +164,16 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         // apply case sensitivity rule.
                         wordString = term.isCaseSensitive() ? word.toString() :
                                 word.toString().toLowerCase();
+
+                        // skip if it's white space, so we don't worry about it in the search
+                        if (wordString.length() == 1) {
+                            char c = wordString.charAt(0);
+                            if (WordText.isWhiteSpace(c)) {
+//                                searchPhraseHits.add(word);
+                                continue;
+                            }
+                        }
+
                         // word matches, we have to match full word hits
                         if (term.isWholeWord()) {
                             if (wordString.equals(
@@ -172,11 +182,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 searchPhraseHits.add(word);
                                 searchPhraseHitCount++;
                             }
-                            //                                else if (wordString.length() == 1 &&
-                            //                                        WordText.isPunctuation(wordString.charAt(0))){
-                            //                                    // ignore punctuation
-                            //                                    searchPhraseHitCount++;
-                            //                                }
                             // reset the counters.
                             else {
                                 searchPhraseHits.clear();
@@ -200,11 +205,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 searchPhraseHits.add(word);
                                 searchPhraseHitCount++;
                             }
-                            //                                else if (wordString.length() == 1 &&
-                            //                                        WordText.isPunctuation(wordString.charAt(0))){
-                            //                                    // ignore punctuation
-                            //                                    searchPhraseHitCount++;
-                            //                                }
                             // reset the counters.
                             else {
                                 searchPhraseHits.clear();
@@ -303,6 +303,16 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         // apply case sensitivity rule.
                         wordString = term.isCaseSensitive() ? word.toString() :
                                 word.toString().toLowerCase();
+
+                        // skip if it's white space, so we don't worry about it in the search
+                        if (wordString.length() == 1) {
+                            char c = wordString.charAt(0);
+                            if (WordText.isWhiteSpace(c)) {
+//                                searchPhraseHits.add(word);
+                                continue;
+                            }
+                        }
+
                         // word matches, we have to match full word hits
                         if (term.isWholeWord()) {
                             if (wordString.equals(
@@ -339,7 +349,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 searchPhraseHits.clear();
                                 searchPhraseHitCount = 0;
                             }
-
                         }
                         // check if we have found what we're looking for
                         if (searchPhraseHitCount == searchPhraseFoundCount) {
@@ -348,9 +357,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                             int lineWordsSize = lineWords.size();
                             java.util.List<WordText> hitWords = lineText.getWords();
                             // add pre padding
-                            int start = i - searchPhraseHitCount - wordPadding + 1;
+                            int spaces = searchPhraseHitCount - 1;
+                            spaces = spaces < 0 ? 0 : spaces;
+                            int start = i - searchPhraseHitCount - spaces - wordPadding + 1;
                             start = start < 0 ? 0 : start;
-                            int end = i - searchPhraseHitCount + 1;
+                            int end = i - searchPhraseHitCount - spaces + 1;
                             end = end < 0 ? 0 : end;
                             for (int p = start; p < end; p++) {
                                 hitWords.add(lineWords.get(p));
@@ -428,6 +439,29 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             }
         }
         return null;
+    }
+
+    @Override
+    public void setCurrentSearchHit(int pageIndex, WordText wordText) {
+
+        PageText pageText = searchModel.getPageTextHit(pageIndex);
+        if (pageText != null) {
+            WordText word;
+            ArrayList<LineText> pageLines = pageText.getPageLines();
+            for (int k = 0, maxk = pageLines.size(); k < maxk; k++) {
+                LineText lineText = pageLines.get(k);
+                List<WordText> words = lineText.getWords();
+                for (int j = 0, maxj = words.size(); j < maxj; j++) {
+                    word = words.get(j);
+                    if (word.equals(wordText)) {
+                        word.setHighlightCursor(true);
+                        searchModel.setSearchPageCursor(pageIndex);
+                        searchModel.setSearchLineCursor(k);
+                        searchModel.setSearchWordCursor(j);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -684,15 +718,19 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         ArrayList<String> words = new ArrayList<>();
         char c;
         char cPrev = 0;
+        boolean isPunctuation;
         for (int start = 0, curs = 0, max = phrase.length(); curs < max; curs++) {
             c = phrase.charAt(curs);
-            if (WordText.isWhiteSpace(c) || (WordText.isPunctuation(c) && !WordText.isDigit(cPrev))) {
+            isPunctuation = WordText.isPunctuation(c);
+            if (WordText.isWhiteSpace(c) || (isPunctuation && !WordText.isDigit(cPrev))) {
                 // add word segment
                 if (start != curs) {
                     words.add(phrase.substring(start, curs));
                 }
-                // add white space  as word too.
-                words.add(phrase.substring(curs, curs + 1));
+                // skip white space.
+                if (isPunctuation) {
+                    words.add(phrase.substring(curs, curs + 1));
+                }
                 // start
                 start = curs + 1 < max ? curs + 1 : start;
             } else if (curs + 1 == max) {

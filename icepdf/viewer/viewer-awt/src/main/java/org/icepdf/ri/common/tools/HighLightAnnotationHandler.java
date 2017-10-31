@@ -65,7 +65,7 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
     static {
         try {
             enableHighlightContents = Defs.booleanProperty(
-                    "org.icepdf.core.views.page.annotation.highlightContent.enabled", false);
+                    "org.icepdf.core.views.page.annotation.highlightContent.enabled", true);
         } catch (NumberFormatException e) {
             logger.warning("Error reading highlight selection content enabled property.");
         }
@@ -209,11 +209,13 @@ public class HighLightAnnotationHandler extends TextSelectionPageHandler {
                 TextMarkupAnnotation.HIGHLIGHT_ALPHA));
     }
 
-    private String getSelectedText() {
+    protected String getSelectedText() {
         Page currentPage = pageViewComponent.getPage();
         String selectedText = null;
         try {
             selectedText = currentPage.getViewText().getSelected().toString();
+            // remove line feeds and and 160 long breaking space
+            selectedText = selectedText.replaceAll("[\\s\\p{Z}]", " ");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.fine("HighLightAnnotation initialization interrupted.");
