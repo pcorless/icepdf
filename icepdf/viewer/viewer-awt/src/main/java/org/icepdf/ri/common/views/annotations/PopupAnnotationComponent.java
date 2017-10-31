@@ -28,7 +28,6 @@ import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.AnnotationComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.ResizableBorder;
-import org.icepdf.ri.images.Images;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -77,6 +76,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     public static int DEFAULT_HEIGHT = 150;
     public static Color backgroundColor = new Color(252, 253, 227);
     public static Color borderColor = new Color(153, 153, 153);
+    public static Dimension BUTTON_SIZE = new Dimension(22, 22);
 
     public static boolean PRIVATE_PROPERTY_ENABLED;
 
@@ -95,6 +95,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
     protected JPanel commentPanel;
     protected JTextArea textArea;
     protected JLabel creationLabel;
+    protected JLabel titleLabel;
     protected JButton minimizeButton;
     protected JToggleButton privateToggleButton;
     protected JTree commentTree;
@@ -272,18 +273,18 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         }
 
         // minimize button
-        Dimension buttonSize = new Dimension(22, 22);
+
         minimizeButton = new JButton("  _  ");
         minimizeButton.addActionListener(this);
         minimizeButton.setToolTipText(messageBundle.getString(
                 "viewer.annotation.popup.mimimize.tooltip.label"));
-        minimizeButton.setBackground(popupBackgroundColor);
         minimizeButton.setContentAreaFilled(false);
         minimizeButton.setBorder(BorderFactory.createLineBorder(borderColor));
         minimizeButton.setBorderPainted(true);
         minimizeButton.setFocusPainted(false);
         minimizeButton.addActionListener(this);
-        minimizeButton.setPreferredSize(buttonSize);
+        minimizeButton.setPreferredSize(BUTTON_SIZE);
+        minimizeButton.setSize(BUTTON_SIZE);
 
         // lock button
         privateToggleButton = new JToggleButton();
@@ -293,15 +294,12 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                 "viewer.utilityPane.markupAnnotation.view.publicToggleButton.tooltip.label"));
         privateToggleButton.setSelected(isPrivate);
         privateToggleButton.setFocusPainted(false);
-        privateToggleButton.setPreferredSize(buttonSize);
+        privateToggleButton.setPreferredSize(BUTTON_SIZE);
+        privateToggleButton.setSize(BUTTON_SIZE);
         privateToggleButton.addActionListener(this);
-        privateToggleButton.setBackground(popupBackgroundColor);
         privateToggleButton.setContentAreaFilled(false);
         privateToggleButton.setBorder(BorderFactory.createLineBorder(borderColor));
         privateToggleButton.setBorderPainted(true);
-        privateToggleButton.setIcon(new ImageIcon(Images.get("private_unlocked.png")));
-        privateToggleButton.setPressedIcon(new ImageIcon(Images.get("private_locked.png")));
-        privateToggleButton.setSelectedIcon(new ImageIcon(Images.get("private_locked.png")));
 
         // text area edited the selected annotation markup contents.
         String contents = annotation.getParent() != null ?
@@ -328,6 +326,14 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
                     .withLocale(Locale.getDefault());
             creationLabel.setText(creationDate.format(formatter));
         }
+        // title, user name.
+        String title = selectedMarkupAnnotation != null ?
+                selectedMarkupAnnotation.getTitleText() != null ?
+                        selectedMarkupAnnotation.getTitleText() : "" : "";
+        titleLabel = new JLabel(title);
+
+        // Setup color appearance values.
+        resetComponentColors();
 
         // main layout panel
         GridBagLayout layout = new GridBagLayout();
@@ -356,10 +362,8 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         // currently selected title
         constraints.fill = GridBagConstraints.EAST;
         constraints.weightx = 0;
-        String title = selectedMarkupAnnotation != null ?
-                selectedMarkupAnnotation.getTitleText() != null ?
-                        selectedMarkupAnnotation.getTitleText() : "" : "";
-        addGB(commentPanel, new JLabel(title), 0, 0, 1, 1);
+
+        addGB(commentPanel, titleLabel, 0, 0, 1, 1);
 
         // add minimize button
         constraints.fill = GridBagConstraints.REMAINDER;
@@ -837,6 +841,27 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
         return null;
     }
 
+    protected Icon createLockIcon(Color color, boolean isLock) {
+        return new LockIcon(color, BUTTON_SIZE, isLock);
+    }
+
+    protected void resetComponentColors() {
+        Color contrastColor = calculateContrastHighLowColor(popupBackgroundColor.getRGB());
+        minimizeButton.setForeground(contrastColor);
+        minimizeButton.setBackground(popupBackgroundColor);
+        minimizeButton.setBackground(popupBackgroundColor);
+        privateToggleButton.setBackground(popupBackgroundColor);
+        // lock icons.
+        Icon lockedIcon = createLockIcon(contrastColor, true);
+        Icon unlockedIcon = createLockIcon(contrastColor, false);
+        privateToggleButton.setIcon(unlockedIcon);
+        privateToggleButton.setPressedIcon(lockedIcon);
+        privateToggleButton.setSelectedIcon(lockedIcon);
+        // text colors.
+        titleLabel.setForeground(contrastColor);
+        creationLabel.setForeground(contrastColor);
+    }
+
     @Override
     public void resetAppearanceShapes() {
         MarkupAnnotation parentAnnotation = annotation.getParent();
@@ -846,6 +871,7 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
             minimizeButton.setBackground(color);
             privateToggleButton.setBackground(color);
             commentPanel.setBackground(color);
+            resetComponentColors();
         }
     }
 
@@ -853,10 +879,31 @@ public class PopupAnnotationComponent extends AbstractAnnotationComponent<PopupA
      * Some work is needed here to get xor painting for darker background colors and black text.
      */
     private Color checkColor(Color newColor) {
-        if (newColor.equals(Color.BLACK)) {
-            newColor = backgroundColor;
+        return newColor;
+    }
+
+    protected Color calculateContrastColor(int rgb) {
+        int tolerance = 120;
+        if (Math.abs(((rgb) & 0xFF) - 0x80) <= tolerance &&
+                Math.abs(((rgb >> 8) & 0xFF) - 0x80) <= tolerance &&
+                Math.abs(((rgb >> 16) & 0xFF) - 0x80) <= tolerance) {
+            return new Color((0x7F7F7F + rgb) & 0xFFFFFF);
+        } else {
+            return new Color(rgb ^ 0xFFFFFF);
         }
-        return newColor.brighter();
+
+    }
+
+    protected Color calculateContrastHighLowColor(int rgb) {
+        int tolerance = 120;
+        if ((rgb & 0xFF) <= tolerance &&
+                (rgb >> 8 & 0xFF) <= tolerance ||
+                (rgb >> 16 & 0xFF) <= tolerance) {
+            return Color.WHITE;
+        } else {
+            return Color.BLACK;
+        }
+
     }
 
     class PopupTreeListener extends MouseAdapter {
