@@ -87,6 +87,22 @@ public class OptionalContentGroup extends Dictionary implements OptionalContents
         return usage;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (name != null && obj instanceof OptionalContentGroup) {
+            return name.equals(((OptionalContentGroup) obj).getName());
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        if (name != null) {
+            return name.hashCode();
+        }
+        return super.hashCode();
+    }
+
     public boolean isVisible() {
         return visible;
     }

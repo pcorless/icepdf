@@ -106,6 +106,15 @@ public interface DocumentSearchController {
     void setCurrentPage(int page);
 
     /**
+     * Sets the specified word as the current search hit, so that next and previous will be relative to the the
+     * word position.
+     *
+     * @param pageIndex parent page index.
+     * @param wordText  word text to make current cursor.
+     */
+    void setCurrentSearchHit(int pageIndex, WordText wordText);
+
+    /**
      * Gets the next word that is marked as hit.  The word's highlightCursor flag is also set
      * allowing it to be painted differently then regular highlight flagged text.  If the last
      * page and word hit of the document is reached then the first page will be displayed next.

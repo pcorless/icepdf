@@ -162,7 +162,7 @@ public class WordText extends AbstractText implements TextSelect {
 
     public static boolean isWhiteSpace(int c) {
         return ((c == ' ') || (c == '\t') || (c == '\r') ||
-                (c == '\n') || (c == '\f'));
+                (c == '\n') || (c == '\f') || (c == 160));
     }
 
     public static boolean isDigit(WordText currentWord) {

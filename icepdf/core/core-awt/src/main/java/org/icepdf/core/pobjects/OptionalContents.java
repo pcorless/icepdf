@@ -22,9 +22,9 @@ package org.icepdf.core.pobjects;
  */
 public interface OptionalContents {
 
-    public boolean isVisible();
+    boolean isVisible();
 
-    public boolean isOCG();
+    boolean isOCG();
 
-    public void init() throws InterruptedException;
+    void init() throws InterruptedException;
 }
