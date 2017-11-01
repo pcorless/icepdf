@@ -578,12 +578,10 @@ public class PrintHelper implements Printable {
     }
 
     private PrintService[] lookForPrintServices() {
-
         PrintService[] services = PrintServiceLookup.lookupPrintServices(
                 DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
         // List of printer found services.
         java.util.List<PrintService> list = new ArrayList<>();
-
         // check for a default service and make sure it is at index 0. the lookupPrintServices does not
         // aways put the default printer first in the array.
         PrintService defaultService = lookupDefaultPrintService();
@@ -603,12 +601,12 @@ public class PrintHelper implements Printable {
     /**
      * Finds the default printer for a given system.
      *
-     * @return
+     * @return system default print service.
      */
     private static PrintService lookupDefaultPrintService() {
         PrintService printService = null;
         String defPrinter = getUserPrinterProperty();
-        if (defPrinter != null && defPrinter.length() > 0) {
+        if (defPrinter.length() > 0) {
             PrintService[] services = PrintServiceLookup.lookupPrintServices(
                     DocFlavor.SERVICE_FORMATTED.PAGEABLE, null);
             for (PrintService service : services) {
