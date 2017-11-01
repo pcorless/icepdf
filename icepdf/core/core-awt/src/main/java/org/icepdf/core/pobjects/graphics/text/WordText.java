@@ -52,7 +52,7 @@ public class WordText extends AbstractText implements TextSelect {
         // sets the shadow colour of the decorator.
         try {
             spaceFraction = Defs.sysPropertyInt(
-                    "org.icepdf.core.views.page.text.spaceFraction", 3);
+                    "org.icepdf.core.views.page.text.spaceFraction", 1);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text space fraction");
@@ -258,16 +258,25 @@ public class WordText extends AbstractText implements TextSelect {
         glyphs.add(sprite);
 
         currentGlyph = sprite;
-
+        Rectangle2D.Float rect = sprite.getBounds();
         // append the bounds calculation
         if (bounds == null) {
-            Rectangle2D.Float rect = sprite.getBounds();
             bounds = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
         } else {
+            if (glyphs.size() > 1) {
+                // compare with previous bounds to see if we can extend the width
+                GlyphText previous = glyphs.get(glyphs.size() - 2);
+                Rectangle2D.Float previousRect = previous.getBounds();
+                float diff = rect.x - (previousRect.x + previousRect.width);
+                if (diff > 0) {
+                    previousRect.setRect(previousRect.x, previousRect.y,
+                            previousRect.width + diff, previousRect.height);
+                }
+            }
             bounds.add(sprite.getBounds());
         }
         if (textExtractionBounds == null) {
-            Rectangle2D.Float rect = sprite.getTextExtractionBounds();
+            rect = sprite.getTextExtractionBounds();
             textExtractionBounds = new Rectangle2D.Float(rect.x, rect.y, rect.width, rect.height);
         } else {
             textExtractionBounds.add(sprite.getTextExtractionBounds());

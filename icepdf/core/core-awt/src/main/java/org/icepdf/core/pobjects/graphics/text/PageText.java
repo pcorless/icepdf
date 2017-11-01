@@ -20,6 +20,7 @@ import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.List;
 
@@ -536,6 +537,26 @@ public class PageText implements TextSelect {
             Collections.sort(sortedPageLines,
                     new LinePositionComparator());
         }
+
+        // Round out the word bounds
+        for (LineText lineText : sortedPageLines) {
+            List<WordText> words = lineText.getWords();
+            if (words.size() > 0) {
+                WordText wordTex;
+                Rectangle2D.Float currentWord, nextWord;
+                for (int i = 0, max = words.size() - 2; i < max; i++) {
+                    nextWord = words.get(i + 1).getBounds();
+                    currentWord = words.get(i).getBounds();
+                    // use regular rectangle so get a little rounding.
+                    float diff = nextWord.x - (currentWord.x + currentWord.width);
+                    if (diff > 0) {
+                        currentWord.setRect(currentWord.x, currentWord.y,
+                                currentWord.width + diff, currentWord.height);
+                    }
+                }
+            }
+        }
+
         // assign back the sorted lines.
         this.sortedPageLines = sortedPageLines;
 
