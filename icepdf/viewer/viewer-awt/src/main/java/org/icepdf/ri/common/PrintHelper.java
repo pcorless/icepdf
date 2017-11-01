@@ -21,6 +21,8 @@ import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import javax.print.*;
+import javax.print.attribute.Attribute;
+import javax.print.attribute.AttributeSet;
 import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.*;
@@ -29,6 +31,9 @@ import java.awt.*;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,6 +48,11 @@ public class PrintHelper implements Printable {
 
     private static final Logger logger =
             Logger.getLogger(PrintHelper.class.toString());
+
+    public static String PRINTER_NAME_ATTRIBUTE = "printer-name";
+
+    // private final as we execute this on teh host system and it must be immutable.
+    private static final String PRINTER_STATUS_COMMAND = "lpstat -d";
 
     private PageTree pageTree;
     private Container container;
@@ -568,25 +578,80 @@ public class PrintHelper implements Printable {
     }
 
     private PrintService[] lookForPrintServices() {
+
         PrintService[] services = PrintServiceLookup.lookupPrintServices(
                 DocFlavor.SERVICE_FORMATTED.PRINTABLE, null);
+        // List of printer found services.
+        java.util.List<PrintService> list = new ArrayList<>();
+
         // check for a default service and make sure it is at index 0. the lookupPrintServices does not
         // aways put the default printer first in the array.
-        PrintService defaultService = PrintServiceLookup.lookupDefaultPrintService();
+        PrintService defaultService = lookupDefaultPrintService();
         if (defaultService != null && services.length > 1) {
-            PrintService printService;
-            for (int i = 1, max = services.length; i < max; i++) {
-                printService = services[i];
+            for (PrintService printService : services) {
                 if (printService.equals(defaultService)) {
                     // found the default printer, now swap it with the first index.
-                    PrintService tmp = services[0];
-                    services[0] = defaultService;
-                    services[i] = tmp;
-                    break;
+                    list.add(0, printService);
+                } else {
+                    list.add(printService);
                 }
             }
         }
-        return services;
+        return list.toArray(new PrintService[0]);
+    }
+
+    /**
+     * Finds the default printer for a given system.
+     *
+     * @return
+     */
+    private static PrintService lookupDefaultPrintService() {
+        PrintService printService = null;
+        String defPrinter = getUserPrinterProperty();
+        if (defPrinter != null && defPrinter.length() > 0) {
+            PrintService[] services = PrintServiceLookup.lookupPrintServices(
+                    DocFlavor.SERVICE_FORMATTED.PAGEABLE, null);
+            for (PrintService service : services) {
+                AttributeSet attributes = service.getAttributes();
+                for (Attribute attribute : attributes.toArray()) {
+                    String name = attribute.getName();
+                    String value = attributes.get(attribute.getClass()).toString();
+                    if (PRINTER_NAME_ATTRIBUTE.equals(name) && value.equalsIgnoreCase(defPrinter)) {
+                        printService = service;
+                        break;
+                    }
+                }
+            }
+            return printService;
+        } else {
+            return PrintServiceLookup.lookupDefaultPrintService();
+        }
+    }
+
+    /**
+     * Executes the PRINTER_STATUS_COMMAND command to get a list of unix printer properties.
+     *
+     * @return default printer if command ran successfully
+     */
+    private static final String getUserPrinterProperty() {
+        StringBuilder ret = new StringBuilder();
+        try {
+            Process child = Runtime.getRuntime().exec(PRINTER_STATUS_COMMAND);
+            // Get the input stream and read from it
+            InputStream in = child.getInputStream();
+            int c;
+            while ((c = in.read()) != -1) {
+                ret.append((char) c);
+            }
+            in.close();
+            ret = new StringBuilder(ret.toString().replaceAll("[\r\n]+$", ""));
+            ret = new StringBuilder(ret.toString().replaceAll("[^:]*?[:]", "").trim());
+        } catch (IOException e) {
+            // ignore as we may be ona non unix system,  and life goes on.
+        }
+        ret = new StringBuilder(ret.toString().replaceAll("[\r\n]+$", ""));
+        ret = new StringBuilder(ret.toString().replaceAll("[^:]*?[:]", "").trim());
+        return ret.toString();
     }
 
     /**
