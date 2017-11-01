@@ -281,7 +281,7 @@ public class AnnotationColorPropertyPanel extends JPanel implements ActionListen
             setSize(15, 15);
             addActionListener(e -> {
                 buildRecentColours(getBackground());
-                annotationColorButton.setColor(getBackground(), false);
+                annotationColorButton.setColor(getBackground(), true);
                 lastColor = getBackground();
             });
         }

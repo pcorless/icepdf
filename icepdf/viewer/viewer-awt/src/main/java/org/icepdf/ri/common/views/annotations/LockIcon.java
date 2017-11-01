@@ -92,8 +92,9 @@ public class LockIcon implements Icon {
         unlockedPath.curveTo(9.75, 3, 14, 3, 14, 6);
 
         unlockKeyPath = new GeneralPath();
-        unlockKeyPath.moveTo(8, 13);
-        unlockKeyPath.lineTo(11, 13);
+        unlockKeyPath.moveTo(9.5, 11);
+        unlockKeyPath.lineTo(9.5, 15);
+
 
         lockedPath = new GeneralPath();
         lockedPath.moveTo(4, 9);
@@ -107,8 +108,8 @@ public class LockIcon implements Icon {
         lockedPath.curveTo(9.75, 3, 14, 3, 14, 9);
 
         lockedKeyPath = new GeneralPath();
-        lockedKeyPath.moveTo(9.5, 11);
-        lockedKeyPath.lineTo(9.5, 15);
+        lockedKeyPath.moveTo(8, 13);
+        lockedKeyPath.lineTo(11, 13);
 
     }
 
