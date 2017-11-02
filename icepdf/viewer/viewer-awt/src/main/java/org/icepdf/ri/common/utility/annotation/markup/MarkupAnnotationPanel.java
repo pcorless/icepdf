@@ -206,8 +206,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        constraints.anchor = GridBagConstraints.NORTH;
-        constraints.anchor = GridBagConstraints.WEST;
+        constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.insets = new Insets(0, 0, 0, 0);
 
         markupAnnotationPanel = new JPanel(new GridBagLayout());

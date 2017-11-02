@@ -238,6 +238,10 @@ public class PropertiesManager {
     public static final String PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED = "application.viewer.utility.search.case.cumulative.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED = "application.viewer.utility.search.case.pages.enabled";
 
+    // annotation summary panel font size and name.
+    public static final String PROPERTY_ANNOTATION_SUMMARY_FONT_NAME = "application.viewer.annotation.summary.font.name";
+    public static final String PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE = "application.viewer.annotation.summary.font.size";
+
     private static PropertiesManager propertiesManager;
 
     private static Preferences preferences = Preferences.userNodeForPackage(PropertiesManager.class);

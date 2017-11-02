@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,9 +46,16 @@ public class AnnotationSummaryBox extends PopupAnnotationComponent {
 
         commentPanel.getInsets().set(10, 10, 10, 10);
         setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-
-        // add property change events for font and font size
+        PropertiesManager propertiesManager = documentViewController.getParentController().getPropertiesManager();
+        setFontSize(propertiesManager.getPreferences().getInt(
+                PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
     }
 
+    public void setFontSize(float size) {
+        Font font = textArea.getFont().deriveFont(size);
+        textArea.setFont(font);
+        titleLabel.setFont(font);
+        creationLabel.setFont(font);
+    }
 
 }

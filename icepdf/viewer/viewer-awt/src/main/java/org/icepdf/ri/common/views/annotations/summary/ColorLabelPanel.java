@@ -17,18 +17,21 @@ package org.icepdf.ri.common.views.annotations.summary;
 
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
 
 /**
  *
  */
-public class ColorLabelPanel extends JPanel {
+public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
 
     private Controller controller;
     private DragDropColorList.ColorLabel colorLabel;
@@ -98,6 +101,24 @@ public class ColorLabelPanel extends JPanel {
         }
     }
 
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        Object newValue = evt.getNewValue();
+        Object oldValue = evt.getOldValue();
+        String propertyName = evt.getPropertyName();
+        switch (propertyName) {
+            case PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE:
+                Component[] comps = draggableAnnotationPanel.getComponents();
+                Component comp;
+                for (int i = 0; i < comps.length; i++) {
+                    comp = comps[i];
+                    if (comp instanceof AnnotationSummaryBox) {
+                        ((AnnotationSummaryBox) comp).setFontSize((int) newValue);
+                    }
+                }
+                break;
+        }
+    }
 
     public DragDropColorList.ColorLabel getColorLabel() {
         return colorLabel;

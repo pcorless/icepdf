@@ -21,17 +21,17 @@ import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.util.PropertyConstants;
 import org.icepdf.ri.common.DragDropColorList;
 import org.icepdf.ri.common.MutableDocument;
+import org.icepdf.ri.common.utility.annotation.properties.FreeTextAnnotationPanel;
+import org.icepdf.ri.common.utility.annotation.properties.ValueLabelItem;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewControllerImpl;
 import org.icepdf.ri.common.views.annotations.MarkupAnnotationComponent;
 import org.icepdf.ri.common.views.annotations.PopupAnnotationComponent;
+import org.icepdf.ri.util.PropertiesManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class AnnotationSummaryPanel extends JPanel implements MutableDocument, PropertyChangeListener,
-        MouseListener, ComponentListener {
+        MouseListener, ComponentListener, ItemListener {
 
     protected Controller controller;
     protected ResourceBundle messageBundle;
@@ -47,6 +47,16 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
     protected MarkupAnnotation lastSelectedMarkupAnnotation;
 
     protected GridBagConstraints constraints;
+    protected JPanel annotationsPanel;
+
+    // font configuration
+    private JComboBox<ValueLabelItem> fontNameBox;
+    private JComboBox<ValueLabelItem> fontSizeBox;
+    protected JPanel statusToolbarPanel;
+
+    private static final int DEFAULT_FONT_SIZE = 5;
+    private static final int DEFAULT_FONT_FAMILY = 0;
+
 
     protected ArrayList<ColorLabelPanel> annotationNamedColorPanels;
 
@@ -54,14 +64,15 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         this.controller = controller;
         messageBundle = controller.getMessageBundle();
 
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
         setAlignmentY(JPanel.TOP_ALIGNMENT);
         setFocusable(true);
         constraints = new GridBagConstraints();
 
+        buildStatusToolBarPanel();
+
         // listen for annotations changes.
         ((DocumentViewControllerImpl) controller.getDocumentViewController()).addPropertyChangeListener(this);
-
         addComponentListener(this);
     }
 
@@ -79,6 +90,9 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                 // build a panel for each color
                 for (DragDropColorList.ColorLabel colorLabel : colorLabels) {
                     ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(controller, colorLabel);
+                    annotationColumnPanel.addPropertyChangeListener(
+                            PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
+                            annotationColumnPanel);
                     annotationNamedColorPanels.add(annotationColumnPanel);
                     annotationColumnPanel.addMouseListener(this);
                     for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
@@ -98,6 +112,9 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             } else {
                 // other wise just one big panel with all the named colors.
                 ColorLabelPanel annotationColumnPanel = new ColorLabelPanel(controller, null);
+                annotationColumnPanel.addPropertyChangeListener(
+                        PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
+                        annotationColumnPanel);
                 annotationNamedColorPanels.add(annotationColumnPanel);
                 for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
                     List<Annotation> annotations = document.getPageTree().getPage(i).getAnnotations();
@@ -114,8 +131,54 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         refreshPanelLayout();
     }
 
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+        if (e.getSource() == fontSizeBox) {
+            PropertiesManager propertiesManager = controller.getPropertiesManager();
+            propertiesManager.getPreferences().putInt(PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE,
+                    (int) fontSizeBox.getModel().getElementAt(fontSizeBox.getSelectedIndex()).getValue());
+            ValueLabelItem tmp = (ValueLabelItem) fontSizeBox.getSelectedItem();
+            // fire the font size property change event.
+            if (annotationNamedColorPanels != null) {
+                for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
+                    colorLabelPanel.firePropertyChange(PropertyConstants.ANNOTATION_SUMMARY_BOX_FONT_SIZE_CHANGE,
+                            0, (int) tmp.getValue());
+                }
+            }
+        }
+    }
+
+    protected void buildStatusToolBarPanel() {
+
+        PropertiesManager propertiesManager = controller.getPropertiesManager();
+
+        fontSizeBox = new JComboBox<>(FreeTextAnnotationPanel.generateFontSizeNameList(messageBundle));
+        applySelectedValue(fontSizeBox, propertiesManager.checkAndStoreIntProperty(
+                PropertiesManager.PROPERTY_ANNOTATION_SUMMARY_FONT_SIZE, new JLabel().getFont().getSize()));
+        fontSizeBox.addItemListener(this);
+
+        statusToolbarPanel = new JPanel(new GridBagLayout());
+        statusToolbarPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.weightx = 0;
+        constraints.weighty = 1;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(5, 5, 5, 0);
+        addGB(statusToolbarPanel, new JLabel(messageBundle.getString("viewer.annotationSummary.fontSize.label")),
+                0, 0, 1, 1);
+        addGB(statusToolbarPanel, fontSizeBox, 1, 0, 1, 1);
+        constraints.weightx = 1;
+        addGB(statusToolbarPanel, new JLabel(), 2, 0, 1, 1);
+    }
+
     public void refreshPanelLayout() {
         removeAll();
+
+        annotationsPanel = new JPanel(new GridBagLayout());
+        annotationsPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        add(annotationsPanel, BorderLayout.CENTER);
+        add(statusToolbarPanel, BorderLayout.SOUTH);
+
         ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
         int numberOfPanels = colorLabels != null && colorLabels.size() > 0 ? colorLabels.size() : 1;
         constraints.weightx = 1.0 / (float) numberOfPanels;
@@ -125,7 +188,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         int k = 0;
         for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
             if (annotationColumnPanel.getNumberOfComponents() > 0) {
-                addGB(this, annotationColumnPanel, ++k, 0, 1, 1);
+                addGB(annotationsPanel, annotationColumnPanel, ++k, 0, 1, 1);
             }
         }
         invalidate();
@@ -262,6 +325,19 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         }
     }
 
+    private void applySelectedValue(JComboBox comboBox, Object value) {
+        comboBox.removeItemListener(this);
+        ValueLabelItem currentItem;
+        for (int i = 0; i < comboBox.getItemCount(); i++) {
+            currentItem = (ValueLabelItem) comboBox.getItemAt(i);
+            if (currentItem.getValue().equals(value)) {
+                comboBox.setSelectedIndex(i);
+                break;
+            }
+        }
+        comboBox.addItemListener(this);
+    }
+
     @Override
     public void disposeDocument() {
         annotationNamedColorPanels.clear();
@@ -283,7 +359,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             Component comp = (Component) e.getSource();
             if (annotationNamedColorPanels != null) {
                 double weightX = 1.0 / (float) annotationNamedColorPanels.size();
-                GridBagLayout gridBagLayout = (GridBagLayout) this.getLayout();
+                GridBagLayout gridBagLayout = (GridBagLayout) annotationsPanel.getLayout();
                 for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
                     GridBagConstraints constraints = gridBagLayout.getConstraints(colorLabelPanel);
                     if (colorLabelPanel.equals(comp)) {
@@ -308,7 +384,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
         // reset the constraint back to an even division of
         if (annotationNamedColorPanels != null) {
             double weightX = 1.0 / (float) annotationNamedColorPanels.size();
-            GridBagLayout gridBagLayout = (GridBagLayout) this.getLayout();
+            GridBagLayout gridBagLayout = (GridBagLayout) annotationsPanel.getLayout();
             for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
                 GridBagConstraints constraints = gridBagLayout.getConstraints(colorLabelPanel);
                 constraints.weightx = weightX;

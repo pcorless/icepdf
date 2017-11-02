@@ -33,6 +33,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ResourceBundle;
 
 /**
  * FreeTextAnnotationPanel is a configuration panel for changing the properties
@@ -261,56 +262,62 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         alphaSliderChange(e, freeTextAnnotation, PropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_OPACITY);
     }
 
-    /**
-     * Method to create link annotation GUI.
-     */
+    public static ValueLabelItem[] generateFontNameList(ResourceBundle messageBundle) {
+        return new ValueLabelItem[]{
+                new ValueLabelItem("Helvetica",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helvetica")),
+                new ValueLabelItem("Helvetica-Oblique",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helveticaOblique")),
+                new ValueLabelItem("Helvetica-Bold",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helveticaBold")),
+                new ValueLabelItem("Helvetica-BoldOblique",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.HelveticaBoldOblique")),
+                new ValueLabelItem("Times-Italic",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesItalic")),
+                new ValueLabelItem("Times-Bold",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesBold")),
+                new ValueLabelItem("Times-BoldItalic",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesBoldItalic")),
+                new ValueLabelItem("Times-Roman",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesRoman")),
+                new ValueLabelItem("Courier",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courier")),
+                new ValueLabelItem("Courier-Oblique",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierOblique")),
+                new ValueLabelItem("Courier-BoldOblique",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierBoldOblique")),
+                new ValueLabelItem("Courier-Bold",
+                        messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierBold"))};
+    }
+
+    public static ValueLabelItem[] generateFontSizeNameList(ResourceBundle messageBundle) {
+        return new ValueLabelItem[]{
+                new ValueLabelItem(6, messageBundle.getString("viewer.common.number.six")),
+                new ValueLabelItem(8, messageBundle.getString("viewer.common.number.eight")),
+                new ValueLabelItem(9, messageBundle.getString("viewer.common.number.nine")),
+                new ValueLabelItem(10, messageBundle.getString("viewer.common.number.ten")),
+                new ValueLabelItem(11, messageBundle.getString("viewer.common.number.eleven")),
+                new ValueLabelItem(12, messageBundle.getString("viewer.common.number.twelve")),
+                new ValueLabelItem(14, messageBundle.getString("viewer.common.number.fourteen")),
+                new ValueLabelItem(16, messageBundle.getString("viewer.common.number.sixteen")),
+                new ValueLabelItem(18, messageBundle.getString("viewer.common.number.eighteen")),
+                new ValueLabelItem(20, messageBundle.getString("viewer.common.number.twenty")),
+                new ValueLabelItem(24, messageBundle.getString("viewer.common.number.twentyFour")),
+                new ValueLabelItem(36, messageBundle.getString("viewer.common.number.thirtySix")),
+                new ValueLabelItem(48, messageBundle.getString("viewer.common.number.fortyEight"))};
+    }
+
     private void createGUI() {
 
         // font styles - core java font names and respective labels.  All Java JRE should have these fonts, these
         // fonts also have huge number of glyphs support many different languages.
         if (FONT_NAMES_LIST == null) {
-            FONT_NAMES_LIST = new ValueLabelItem[]{
-                    new ValueLabelItem("Helvetica",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helvetica")),
-                    new ValueLabelItem("Helvetica-Oblique",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helveticaOblique")),
-                    new ValueLabelItem("Helvetica-Bold",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.helveticaBold")),
-                    new ValueLabelItem("Helvetica-BoldOblique",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.HelveticaBoldOblique")),
-                    new ValueLabelItem("Times-Italic",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesItalic")),
-                    new ValueLabelItem("Times-Bold",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesBold")),
-                    new ValueLabelItem("Times-BoldItalic",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesBoldItalic")),
-                    new ValueLabelItem("Times-Roman",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.timesRoman")),
-                    new ValueLabelItem("Courier",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courier")),
-                    new ValueLabelItem("Courier-Oblique",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierOblique")),
-                    new ValueLabelItem("Courier-BoldOblique",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierBoldOblique")),
-                    new ValueLabelItem("Courier-Bold",
-                            messageBundle.getString("viewer.utilityPane.annotation.freeText.font.name.courierBold"))};
+            FONT_NAMES_LIST = generateFontNameList(messageBundle);
         }
 
         // Font size.
         if (FONT_SIZES_LIST == null) {
-            FONT_SIZES_LIST = new ValueLabelItem[]{
-                    new ValueLabelItem(6, messageBundle.getString("viewer.common.number.six")),
-                    new ValueLabelItem(8, messageBundle.getString("viewer.common.number.eight")),
-                    new ValueLabelItem(9, messageBundle.getString("viewer.common.number.nine")),
-                    new ValueLabelItem(10, messageBundle.getString("viewer.common.number.ten")),
-                    new ValueLabelItem(12, messageBundle.getString("viewer.common.number.twelve")),
-                    new ValueLabelItem(14, messageBundle.getString("viewer.common.number.fourteen")),
-                    new ValueLabelItem(16, messageBundle.getString("viewer.common.number.sixteen")),
-                    new ValueLabelItem(18, messageBundle.getString("viewer.common.number.eighteen")),
-                    new ValueLabelItem(20, messageBundle.getString("viewer.common.number.twenty")),
-                    new ValueLabelItem(24, messageBundle.getString("viewer.common.number.twentyFour")),
-                    new ValueLabelItem(36, messageBundle.getString("viewer.common.number.thirtySix")),
-                    new ValueLabelItem(48, messageBundle.getString("viewer.common.number.fortyEight"))};
+            FONT_SIZES_LIST = generateFontSizeNameList(messageBundle);
         }
 
         // Create and setup an Appearance panel
@@ -334,7 +341,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
         addGB(this, label, 0, 0, 1, 1);
         addGB(this, fontNameBox, 1, 0, 1, 1);
 
-        // border style
+        // font size
         fontSizeBox = new JComboBox<>(FONT_SIZES_LIST);
         fontSizeBox.setSelectedIndex(DEFAULT_FONT_SIZE);
         fontSizeBox.addItemListener(this);
